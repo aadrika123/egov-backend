@@ -4,8 +4,10 @@ namespace App\Repository\Water\Concrete;
 
 use App\EloquentModels\Common\ModelWard;
 use App\Http\Controllers\Water\NewConnectionController;
+use App\Models\ActiveCitizen;
 use App\Models\Payment\WebhookPaymentData;
 use App\Models\UlbMaster;
+use App\Models\User;
 use App\Models\Water\WaterApplicant;
 use App\Models\Water\WaterApplicantDoc;
 use App\Models\Water\WaterApplication;
@@ -33,6 +35,8 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
+
+use function PHPUnit\Framework\isNull;
 
 class WaterNewConnection implements IWaterNewConnection
 {
@@ -136,7 +140,8 @@ class WaterNewConnection implements IWaterNewConnection
                 $refConnectionCharge['applicationNo'] = $value['application_no'];
                 $value['connectionCharges'] = $refConnectionCharge;
                 $siteDetails = $mWaterSiteInspection->getInspectionById($value['id'])->first();
-                if (!empty($siteDetails)) {
+                $checkEmpty = collect($siteDetails)->first();
+                if (!empty($checkEmpty) || !isNull($checkEmpty)) {
                     $value['siteInspectionCall'] = $mWaterParamConnFee->getCallParameter($siteDetails['site_inspection_property_type_id'], $siteDetails['site_inspection_area_sqft'])->first();
                 }
                 return $value;
@@ -263,6 +268,7 @@ class WaterNewConnection implements IWaterNewConnection
             $transactionType = $RazorPayRequest->payment_from;
 
             $totalCharge = $chargeData['total_charge'];
+            $refUserDetails = ActiveCitizen::where('id', $refUserId);
             #-------------End Calculation-----------------------------
             #-------- Transection -------------------
             DB::beginTransaction();
@@ -290,6 +296,7 @@ class WaterNewConnection implements IWaterNewConnection
             $Tradetransaction->created_at       = $mTimstamp;
             $Tradetransaction->ip_address       = '';
             $Tradetransaction->ulb_id           = $refUlbId;
+            $Tradetransaction->user_type        = $refUserDetails->user_type;
             $Tradetransaction->save();
             $transaction_id                     = $Tradetransaction->id;
             $Tradetransaction->tran_no          = $args["transactionNo"];

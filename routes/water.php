@@ -63,7 +63,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
         # Site Inspection
         Route::post('admin/search-application', 'searchApplicationByParameter');                        // Admin
-        Route::post('admin/site-verification/comparision', 'listComparision');                          // Admin
+        Route::post('admin/site-verification/comparision', 'listComparision');                          // Admin / notused
         Route::post('admin/application/save-inspection-date', 'saveInspectionDateTime');                // Admin
         Route::post('admin/application/site-inspection-details', 'getSiteInspectionDetails');           // Admin
         Route::post('admin/application/cancel-inspection-scheduling', 'cancelSiteInspection');          // Admin
@@ -118,7 +118,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('getTranNo', 'readTransectionAndApl');                                              //12
 
         # Dashbording Api
-        Route::post(''); // Route
+        Route::post('jsk/application/get-applied-list', 'getJskAppliedApplication'); // Route
     });
 });
 Route::controller(WaterApplication::class)->group(function () {
