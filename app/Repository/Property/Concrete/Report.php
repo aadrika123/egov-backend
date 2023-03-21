@@ -68,9 +68,6 @@ class Report implements IReport
             if ($request->ulbId) {
                 $ulbId = $request->ulbId;
             }
-            if ($request->is_gbsaf) {
-                $isGbsaf = $request->is_gbsaf;
-            }
 
             // DB::enableQueryLog();
             $data = PropTransaction::SELECT(
@@ -149,9 +146,7 @@ class Report implements IReport
             if ($ulbId) {
                 $data = $data->where("prop_transactions.ulb_id", $ulbId);
             }
-            if ($isGbsaf) {
-                $data = $data->where("prop_properties.is_gb_saf", $isGbsaf);
-            }
+
             $data2 = $data;
             $totalHolding = $data2->count("prop_properties.id");
             $totalAmount = $data2->sum("prop_transactions.amount");

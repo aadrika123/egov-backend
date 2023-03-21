@@ -230,7 +230,7 @@ class ReportController extends Controller
 
 
     /**
-     * | gbSafCollection
+     * | GbSafCollection
      */
     public function gbSafCollection(Request $req)
     {
@@ -299,11 +299,19 @@ class ReportController extends Controller
             if ($req->wardMstrId)
                 $gbsafCollection = collect($gbsafCollection)->where('ward_mstr_id', $req->wardMstrId)->values();
 
+            if ($req->paymentMode)
+                $gbsafCollection = collect($gbsafCollection)->where('payment_mode', $req->paymentMode)->values();
+
+            if ($gbsafCollection->isEmpty())
+                throw new Exception('No data Found');
+
             return responseMsgs(true, "GB Saf Collection!", $gbsafCollection, '010801', '01', '623ms', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+
+
 
 
     #------------date 13/03/2023 -------------------------------------------------------------------------
