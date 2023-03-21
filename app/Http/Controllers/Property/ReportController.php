@@ -203,7 +203,8 @@ class ReportController extends Controller
             'prop_demands.balance',
             'prop_demands.ward_mstr_id',
             'ward_name as ward_no',
-            DB::raw("CONCAT (qtr,'/',fyear) AS fyear"),
+            DB::raw("qtr")
+            // DB::raw("CONCAT (qtr,'/',fyear) AS fyear"),
         )
             ->join('prop_properties', 'prop_properties.id', 'prop_demands.property_id')
             ->join('prop_owners', 'prop_owners.property_id', 'prop_demands.property_id')
@@ -231,6 +232,9 @@ class ReportController extends Controller
         return responseMsgs(true, "Ward Wise Holding Data!", $data, 'pr6.1', '1.1', $queryRunTime, 'Post', '');
     }
 
+    /**
+     * | List of financial year
+     */
     public function listFY(Request $request)
     {
         $currentYear = Carbon::now()->year;
