@@ -179,6 +179,7 @@ class ReportController extends Controller
      */
     public function wardWiseHoldingReport(Request $request)
     {
+        $mPropDemand = new PropDemand();
         $wardMstrId = $request->wardMstrId;
         $ulbId = authUser()->ulb_id;
         $currentMonth = Carbon::now()->month;
@@ -192,42 +193,15 @@ class ReportController extends Controller
         } else
             $toDate = ($currentYear . '-03-31');
 
+        $mreq = new Request([
+            "fromDate" => $fromDate,
+            "toDate" => $toDate,
+            "ulbId" => $ulbId,
+            "wardMstrId" => $wardMstrId
+        ]);
 
-        $data =  PropDemand::select(
-            'holding_no',
-            'new_holding_no',
-            'owner_name',
-            'mobile_no',
-            'pt_no',
-            'prop_address',
-            'prop_demands.balance',
-            'prop_demands.ward_mstr_id',
-            'ward_name as ward_no',
-            DB::raw("qtr")
-            // DB::raw("CONCAT (qtr,'/',fyear) AS fyear"),
-        )
-            ->join('prop_properties', 'prop_properties.id', 'prop_demands.property_id')
-            ->join('prop_owners', 'prop_owners.property_id', 'prop_demands.property_id')
-            ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_demands.ward_mstr_id')
-            ->where('paid_status', 0)
-            ->whereBetween('due_date', [$fromDate, $toDate])
-            ->where('prop_demands.ulb_id', $ulbId)
-            ->where('prop_demands.ward_mstr_id', $wardMstrId)
-            ->groupby(
-                'prop_demands.property_id',
-                'holding_no',
-                'new_holding_no',
-                'pt_no',
-                'prop_demands.balance',
-                'prop_demands.ward_mstr_id',
-                'fyear',
-                'prop_address',
-                'owner_name',
-                'mobile_no',
-                'ward_name',
-                'qtr'
-            )
-            ->get();
+        $data = $mPropDemand->wardWiseHolding($mreq);
+
         $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
         return responseMsgs(true, "Ward Wise Holding Data!", $data, 'pr6.1', '1.1', $queryRunTime, 'Post', '');
     }
@@ -252,6 +226,26 @@ class ReportController extends Controller
         }
         return responseMsgs(true, "Financial Year List", $financialYears, '010801', '01', '382ms-547ms', 'Post', '');
     }
+
+
+    /**
+     * | gbSafCollection
+     */
+    public function gbSafCollection(Request $req)
+    {
+        // $req->validate(
+        //     ["fromDate" => "required|date|date_format:Y-m-d",]
+        // );
+        $mreq = new Request([
+            "is_gbsaf" => true,
+            "fromDate" => $req->fromDate,
+            "uptoDate" => $req->uptoDate,
+            "metaData" => ["pr1.1", 1.1, null, $req->getMethod(), null]
+        ]);
+
+        return $this->collectionReport($mreq);
+    }
+
 
     #------------date 13/03/2023 -------------------------------------------------------------------------
     #   Code By Sandeep Bara
@@ -345,6 +339,6 @@ class ReportController extends Controller
             ]
         );
         $request->request->add(["metaData" => ["pr10.1", 1.1, null, $request->getMethod(), null,]]);
-        return $this->Repository->PropDeactedList($request); 
+        return $this->Repository->PropDeactedList($request);
     }
 }

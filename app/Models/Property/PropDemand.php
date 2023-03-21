@@ -127,4 +127,46 @@ class PropDemand extends Model
             ->where('paid_status', 0)
             ->get();
     }
+
+    /**
+     * | 
+     */
+    public function wardWiseHolding($req)
+    {
+        return PropDemand::select(
+            'holding_no',
+            'new_holding_no',
+            'owner_name',
+            'mobile_no',
+            'pt_no',
+            'prop_address',
+            'prop_demands.balance',
+            'prop_demands.ward_mstr_id',
+            'ward_name as ward_no',
+            DB::raw("string_agg(qtr::varchar,',') AS qtr"),
+            DB::raw("CONCAT (qtr,'/',fyear) AS fyear"),
+        )
+            ->join('prop_properties', 'prop_properties.id', 'prop_demands.property_id')
+            ->join('prop_owners', 'prop_owners.property_id', 'prop_demands.property_id')
+            ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_demands.ward_mstr_id')
+            ->where('paid_status', 0)
+            ->whereBetween('due_date', [$req->fromDate, $req->toDate])
+            ->where('prop_demands.ulb_id', $req->ulbId)
+            ->where('prop_demands.ward_mstr_id', $req->wardMstrId)
+            ->groupby(
+                'prop_demands.property_id',
+                'holding_no',
+                'new_holding_no',
+                'pt_no',
+                'prop_demands.balance',
+                'prop_demands.ward_mstr_id',
+                'fyear',
+                'prop_address',
+                'owner_name',
+                'mobile_no',
+                'ward_name',
+                'qtr'
+            )
+            ->get();
+    }
 }

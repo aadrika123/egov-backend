@@ -457,6 +457,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('reports/property/ward-wise-dcb', 'PropWardWiseDCB');
     Route::post('reports/property/holding-wise-fine-rebate', 'PropFineRebate');
     Route::post('reports/property/deactivated-list', 'PropDeactedList');
+    Route::post('reports/property/gbsaf-collection', 'gbSafCollection');
   });
 });
 
