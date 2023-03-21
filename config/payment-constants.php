@@ -35,6 +35,11 @@ return [
         'Neft'
     ],
 
+    "VERIFICATION_PAYMENT_MODE" =>[
+        'Cheque',
+        'DD',
+    ],
+
     'ONLINE' => "Online",
     "PAYMENT_OFFLINE_MODE" => [
         "1" => "Cash",

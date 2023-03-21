@@ -870,13 +870,13 @@ class WaterPaymentController extends Controller
     {
         try {
             # Variable Assignments
-            $offlinePaymentModes = Config::get('payment-constants.PAYMENT_OFFLINE_MODE_WATER');
+            $offlinePaymentModes = Config::get('payment-constants.VERIFICATION_PAYMENT_MODE');
             $todayDate = Carbon::now();
             $mWaterApplication = new WaterApplication();
             $mWaterConnectionCharge = new WaterConnectionCharge();
             $idGeneration = new IdGeneration;
             $waterTran = new WaterTran();
-            $userId = auth()->user()->id;  
+            $userId = auth()->user()->id;
             $userType = authUser()->user_type;                                                         # Authenticated user or Ghost User
             $refWaterApplication = $mWaterApplication->getApplicationById($req->applicationId)
                 ->firstOrFail();
