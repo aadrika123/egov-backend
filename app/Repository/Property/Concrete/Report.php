@@ -207,6 +207,9 @@ class Report implements IReport
             if ($request->ulbId) {
                 $ulbId = $request->ulbId;
             }
+            if ($request->is_gbsaf) {
+                $isGbsaf = $request->is_gbsaf;
+            }
 
             // DB::enableQueryLog();
             $activSaf = PropTransaction::select(

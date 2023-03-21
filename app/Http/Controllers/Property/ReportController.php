@@ -8,6 +8,7 @@ use App\Repository\Common\CommonFunction;
 use App\Repository\Property\Interfaces\IReport;
 use App\Traits\Auth;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
@@ -233,17 +234,75 @@ class ReportController extends Controller
      */
     public function gbSafCollection(Request $req)
     {
-        // $req->validate(
-        //     ["fromDate" => "required|date|date_format:Y-m-d",]
-        // );
-        $mreq = new Request([
-            "is_gbsaf" => true,
-            "fromDate" => $req->fromDate,
-            "uptoDate" => $req->uptoDate,
-            "metaData" => ["pr1.1", 1.1, null, $req->getMethod(), null]
-        ]);
+        $req->validate(
+            [
+                "fromDate" => "required|date|date_format:Y-m-d",
+                "uptoDate" => "required|date|date_format:Y-m-d",
+            ]
+        );
+        try {
+            $fromDate = $req->fromDate;
+            $uptoDate = $req->uptoDate;
 
-        return $this->collectionReport($mreq);
+            $first_query = DB::table('prop_active_safs')
+                ->select(
+                    't.id',
+                    'ward_name',
+                    'saf_no',
+                    'ward_mstr_id',
+                    'prop_address',
+                    'tran_date',
+                    'payment_mode',
+                    't.user_id as tc_id',
+                    'user_name as tc_name',
+                    'tran_no',
+                    'cheque_no',
+                    'bank_name',
+                    'branch_name',
+                    DB::raw("CONCAT (from_fyear,'(',from_qtr,')','/',to_fyear,'(',to_qtr,')') AS payment_year"),
+                )
+                ->join('prop_transactions as t', 't.saf_id', 'prop_active_safs.id')
+                ->join('users', 'users.id', 't.user_id')
+                ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_active_safs.ward_mstr_id')
+                ->leftJoin('prop_cheque_dtls', 'prop_cheque_dtls.transaction_id', 't.id')
+                ->where('is_gb_saf', true)
+                ->whereBetween('tran_date', [$fromDate, $uptoDate]);
+            // ->get();
+
+            $gbsafCollection = DB::table('prop_safs')
+                ->select(
+                    't.id',
+                    'ward_name',
+                    'saf_no',
+                    'ward_mstr_id',
+                    'prop_address',
+                    'tran_date',
+                    'payment_mode',
+                    't.user_id as tc_id',
+                    'user_name as tc_name',
+                    'tran_no',
+                    'cheque_no',
+                    'bank_name',
+                    'branch_name',
+                    DB::raw("CONCAT (from_fyear,'(',from_qtr,')','/',to_fyear,'(',to_qtr,')') AS payment_year"),
+
+                )
+                ->join('prop_transactions as t', 't.saf_id', 'prop_safs.id')
+                ->join('users', 'users.id', 't.user_id')
+                ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_safs.ward_mstr_id')
+                ->leftJoin('prop_cheque_dtls', 'prop_cheque_dtls.transaction_id', 't.id')
+                ->where('is_gb_saf', true)
+                ->whereBetween('tran_date', [$fromDate, $uptoDate])
+                ->union($first_query)
+                ->get();
+
+            if ($req->wardMstrId)
+                $gbsafCollection = collect($gbsafCollection)->where('ward_mstr_id', $req->wardMstrId)->values();
+
+            return responseMsgs(true, "GB Saf Collection!", $gbsafCollection, '010801', '01', '623ms', 'Post', '');
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
     }
 
 
