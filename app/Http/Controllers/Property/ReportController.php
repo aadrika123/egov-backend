@@ -203,7 +203,7 @@ class ReportController extends Controller
             'prop_demands.balance',
             'prop_demands.ward_mstr_id',
             'ward_name as ward_no',
-            'fyear',
+            DB::raw("CONCAT (qtr,'/',fyear) AS fyear"),
         )
             ->join('prop_properties', 'prop_properties.id', 'prop_demands.property_id')
             ->join('prop_owners', 'prop_owners.property_id', 'prop_demands.property_id')
@@ -223,10 +223,11 @@ class ReportController extends Controller
                 'prop_address',
                 'owner_name',
                 'mobile_no',
-                'ward_name'
+                'ward_name',
+                'qtr'
             )
             ->get();
-            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
+        $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
         return responseMsgs(true, "Ward Wise Holding Data!", $data, 'pr6.1', '1.1', $queryRunTime, 'Post', '');
     }
 
@@ -247,7 +248,7 @@ class ReportController extends Controller
         }
         return responseMsgs(true, "Financial Year List", $financialYears, '010801', '01', '382ms-547ms', 'Post', '');
     }
-    
+
     #------------date 13/03/2023 -------------------------------------------------------------------------
     #   Code By Sandeep Bara
     #   Payment Mode Wise Collection Report
@@ -324,7 +325,7 @@ class ReportController extends Controller
             ]
         );
         $request->request->add(["metaData" => ["pr9.1", 1.1, null, $request->getMethod(), null,]]);
-        return $this->Repository->PropFineRebate($request);  
+        return $this->Repository->PropFineRebate($request);
     }
 
     public function PropDeactedList(Request $request)
@@ -340,6 +341,6 @@ class ReportController extends Controller
             ]
         );
         $request->request->add(["metaData" => ["pr9.1", 1.1, null, $request->getMethod(), null,]]);
-        return $this->Repository->PropDeactedList($request);  
+        return $this->Repository->PropDeactedList($request);
     }
 }
