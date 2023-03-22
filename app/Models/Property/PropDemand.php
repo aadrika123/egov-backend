@@ -143,8 +143,7 @@ class PropDemand extends Model
             'prop_demands.balance',
             'prop_demands.ward_mstr_id',
             'ward_name as ward_no',
-            DB::raw("string_agg(qtr::varchar,',') AS qtr"),
-            DB::raw("CONCAT (qtr,'/',fyear) AS fyear"),
+            DB::raw("CONCAT (MIN(qtr),'/',fyear) AS fyear"),
         )
             ->join('prop_properties', 'prop_properties.id', 'prop_demands.property_id')
             ->join('prop_owners', 'prop_owners.property_id', 'prop_demands.property_id')
@@ -165,7 +164,7 @@ class PropDemand extends Model
                 'owner_name',
                 'mobile_no',
                 'ward_name',
-                'qtr'
+                // 'qtr'
             )
             ->get();
     }
@@ -173,7 +172,7 @@ class PropDemand extends Model
     /**
      * | Save cluster Id in prop Demand
      */
-    public function saveClusterInDemand($refPropId,$clusterId)
+    public function saveClusterInDemand($refPropId, $clusterId)
     {
         PropDemand::whereIn('property_id', $refPropId)
             ->update([
