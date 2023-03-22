@@ -26,6 +26,8 @@ use Illuminate\Support\Facades\DB;
 use App\Repository\Property\Interfaces\iSafRepository;
 use Carbon\Carbon;
 
+use function PHPUnit\Framework\isEmpty;
+
 /**
  * | Created On-10-02-2023 
  * | Created By-Mrinal Kumar
@@ -379,12 +381,17 @@ class ActiveSafControllerV2 extends Controller
                 array_push($clusterDemandList, $safDues['details']);
                 array_push($clusterDemands, $safDues);
             }
-            $totalLateAssessmentPenalty = collect($clusterDemands)->map(function ($item) {      // Total Collective Late Assessment Penalty
-                return $item['demand']['lateAssessmentPenalty'];
-            })->sum();
 
             $collapsedDemand = collect($clusterDemandList)->collapse();                       // Clusters Demands Collapsed into One
-            $groupedByYear = $collapsedDemand->groupBy('due_date');                        // Grouped By Financial Year and Quarter for the Separation of Demand  
+
+            if ($collapsedDemand->isEmpty())
+                throw new Exception("Demand Not Available for this Cluster");
+
+            $totalLateAssessmentPenalty = collect($clusterDemands)->map(function ($item) {      // Total Collective Late Assessment Penalty
+                return $item['demand']['lateAssessmentPenalty'] ?? 0;
+            })->sum();
+
+            $groupedByYear = $collapsedDemand->groupBy('due_date');                           // Grouped By Financial Year and Quarter for the Separation of Demand  
             $summedDemand = $groupedByYear->map(function ($item) use ($penaltyRebateCal) {    // Sum of all the Demands of Quarter and Financial Year
                 $quarterDueDate = $item->first()['due_date'];
                 $onePercPenaltyPerc = $penaltyRebateCal->calcOnePercPenalty($quarterDueDate);
