@@ -579,7 +579,6 @@ class TradeCitizen implements ITradeCitizen
 
             return responseMsg(true, "", $data);
         } catch (Exception $e) {
-            dd($e->getMessage(),$e->getLine(),$e->getFile());
             return responseMsg(false, $e->getMessage(), '');
         }
     }
