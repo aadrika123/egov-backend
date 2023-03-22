@@ -471,4 +471,13 @@ class WaterApplication extends Model
         WHERE apply_date = '$currentDate'
         AND user_type = '$refUserType'";
     }
+
+    /**
+     * | Get application According to current role
+     */
+    public function getApplicationByRole($roleId)
+    {
+        return WaterApplication::where('current_role',$roleId)
+        ->where('status',true);
+    }
 }

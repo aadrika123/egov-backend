@@ -21,4 +21,5 @@ interface IReport
     public function PropFineRebate(Request $request);
     public function PropDeactedList(Request $request);
     public function propIndividualDemandCollection($request);
+    public function gbsafIndividualDemandCollection($request);
 }

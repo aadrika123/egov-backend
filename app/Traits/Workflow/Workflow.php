@@ -6,6 +6,7 @@ use App\Models\WorkflowCandidate;
 use App\Models\Workflows\WfRole;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWardUser;
+use App\Models\Workflows\WfWorkflow;
 use App\Models\Workflows\WfWorkflowrolemap;
 use Carbon\Carbon;
 use Exception;
@@ -252,5 +253,17 @@ trait Workflow
         $workflowTrack->commented_by = $req['citizenId'];
         $workflowTrack->track_date = Carbon::now()->format('Y-m-d H:i:s');
         $workflowTrack->forwarded_to = $req['forwardedTo'] ?? null;
+    }
+
+    /**
+     * | Get workflowId using ulbId and workflow master Id
+     * | @param request
+     */
+    public function getWorkflowByUlb($request)
+    {
+        WfWorkflow::where('ulb_id', $request->ulbId)
+            ->where('wf_master_id', $request->wfMasterId)
+            ->where('is_suspended', false)
+            ->first();
     }
 }
