@@ -1888,7 +1888,9 @@ class Trade implements ITrade
                 $sms = $tradeDoc->doc_for . " " . strtoupper($request->btn);
                 return responseMsg(true, $sms, "");
             }
-        } catch (Exception $e) {
+        } 
+        catch (Exception $e) 
+        {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }

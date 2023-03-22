@@ -33,6 +33,7 @@ use App\Models\Trade\TradeParamCategoryType;
 use App\Http\Requests\Trade\ReqPostNextLevel;
 use App\Models\Trade\TradeParamOwnershipType;
 use App\Http\Requests\Trade\ReqUpdateBasicDtl;
+use App\Models\Workflows\WfRoleusermap;
 use App\Traits\Trade\TradeTrait;
 
 class TradeApplication extends Controller
@@ -102,7 +103,7 @@ class TradeApplication extends Controller
     }
     public function getApplyData(Request $request)
     {
-        try {
+        try {           
             $refUser            = Auth()->user();
             $refUserId          = $refUser->id;
             $refUlbId           = $refUser->ulb_id ?? $request->ulbId;
@@ -200,6 +201,10 @@ class TradeApplication extends Controller
         $refWorkflows       = $this->_parent->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
         $mApplicationTypeId = Config::get("TradeConstant.APPLICATION-TYPE." . $request->applicationType);
         try {
+            if((!$this->_parent->checkUsersWithtocken("users"))&& (strtoupper($mUserType)=="ONLINE"))
+            {
+                throw New Exception("Citizen Not Allowed");
+            }
             if (!in_array(strtoupper($mUserType), ["ONLINE", "JSK", "UTC", "TC", "SUPER ADMIN", "TL"])) {
                 throw new Exception("You Are Not Authorized For This Action !");
             }
@@ -226,7 +231,18 @@ class TradeApplication extends Controller
     }
     public function paymentCounter(paymentCounter $request)
     {
-        return $this->Repository->paymentCounter($request);
+        try{
+            if(!$this->_parent->checkUsersWithtocken("users"))
+            {
+                throw New Exception("Citizen Not Allowed");
+            }
+            return $this->Repository->paymentCounter($request);
+        }
+        catch(Exception $e)
+        {
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
+        
     }
     # Serial No : 02
     public function updateLicenseBo(ReqUpdateBasicDtl $request)
@@ -311,9 +327,58 @@ class TradeApplication extends Controller
     }
     
     # Serial No : 07
-    public function documentVirify(Request $request)
+    public function documentVerify(Request $request)
     {
-        return $this->Repository->documentVirify($request);
+        $request->validate([
+            'id' => 'required|digits_between:1,9223372036854775807',
+            'applicationId' => 'required|digits_between:1,9223372036854775807',
+            'docRemarks' =>  $request->docStatus == "Rejected" ? 'required|regex:/^[a-zA-Z1-9][a-zA-Z1-9\. \s]+$/' : "nullable",
+            'docStatus' => 'required|in:Verified,Rejected'
+        ]);
+        try {
+            if((!$this->_parent->checkUsersWithtocken("users")))
+            {
+                throw New Exception("Citizen Not Allowed");
+            }
+            // Variable Assignments
+            $user = Auth()->user();
+            $userId = $user->id;
+            $ulbId = $user->ulb_id;
+            $mWfDocument = new WfActiveDocument();            
+            $workflow_id = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
+            $rolles = $this->_parent->getUserRoll($userId, $ulbId, $workflow_id);
+            if (!$rolles || !$rolles->can_verify_document) {
+                throw new Exception("You are Not Authorized For Document Verify");
+            }
+            $wfDocId = $request->id;
+            $applicationId = $request->applicationId;
+            DB::beginTransaction();
+            if ($request->docStatus == "Verified") {
+                $status = 1;
+            }
+            if ($request->docStatus == "Rejected") 
+            {
+                $status = 2;
+            }
+
+            $myRequest = [
+                'remarks' => $request->docRemarks,
+                'verify_status' => $status,
+                'action_taken_by' => $userId
+            ];
+            $mWfDocument->docVerifyReject($wfDocId, $myRequest);
+            DB::commit();
+            $tradR = new Trade();
+            $doc =$tradR->getLicenseDocLists($request); 
+            $docVerifyStatus = $doc->original["data"]["docVerifyStatus"]??0;
+            
+            return responseMsgs(true, ["docVerifyStatus"=>$docVerifyStatus], "", "tc7.1", "1.0", "", "POST", $request->deviceId ?? "");
+        } catch (Exception $e) 
+        {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), "", "tc7.1", "1.0", "", "POST", $request->deviceId ?? "");
+        }
+        // return $this->Repository->documentVirify($request);
     }
     # Serial No : 08 
     public function getLicenceDtl(Request $request)
@@ -396,6 +461,10 @@ class TradeApplication extends Controller
         ]);
 
         try {
+            if(!$this->_parent->checkUsersWithtocken("users"))
+            {
+                throw New Exception("Citizen Not Allowed");
+            }
             $activeLicence = ActiveTradeLicence::find($req->applicationId);
             $track = new WorkflowTrack();
             DB::beginTransaction();
@@ -437,6 +506,10 @@ class TradeApplication extends Controller
         ]);
 
         try {
+            if(!$this->_parent->checkUsersWithtocken("users"))
+            {
+                throw New Exception("Citizen Not Allowed");
+            }
             // Trade Application Update Current Role Updation
             $user = Auth()->user();
             $user_id = $user->id;
@@ -540,6 +613,10 @@ class TradeApplication extends Controller
                 "applicationId" => "required",
                 "status" => "required"
             ]);
+            if(!$this->_parent->checkUsersWithtocken("users"))
+            {
+                throw New Exception("Citizen Not Allowed");
+            }
             $user = Auth()->user();
             $user_id = $user->id;
             $ulb_id = $user->ulb_id;
@@ -642,6 +719,10 @@ class TradeApplication extends Controller
     public function applyDenail(ReqApplyDenail $request)
     {
         try {
+            if(!$this->_parent->checkUsersWithtocken("users"))
+            {
+                throw New Exception("Citizen Not Allowed");
+            }
             $user = Auth()->user();
             $userId = $user->id;
             $ulbId = $user->ulb_id;

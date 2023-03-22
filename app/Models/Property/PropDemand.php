@@ -169,4 +169,15 @@ class PropDemand extends Model
             )
             ->get();
     }
+
+    /**
+     * | Save cluster Id in prop Demand
+     */
+    public function saveClusterInDemand($refPropId,$clusterId)
+    {
+        PropDemand::whereIn('property_id', $refPropId)
+            ->update([
+                'cluster_id' => $clusterId
+            ]);
+    }
 }

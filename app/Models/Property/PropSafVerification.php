@@ -77,6 +77,7 @@ class PropSafVerification extends Model
             'road_width' => $req->roadWidth,
             'area_of_plot' => $req->areaOfPlot,
             'ward_id' => $req->wardId,
+            'new_ward_id' => $req->newWardId,
             'has_mobile_tower' => $req->isMobileTower,
             'tower_area' => $req->mobileTowerArea,
             'tower_installation_date' => $req->mobileTowerDate,

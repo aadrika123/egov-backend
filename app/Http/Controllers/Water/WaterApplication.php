@@ -14,8 +14,10 @@ use App\Models\Water\WaterConsumerDemand;
 use App\Models\Water\WaterPenaltyInstallment;
 use App\Models\Water\WaterTran;
 use App\Models\Water\WaterTranDetail;
+use App\Models\Workflows\WfWorkflowrolemap;
 use App\Repository\Water\Interfaces\iNewConnection;
 use App\Repository\Water\Interfaces\IWaterNewConnection;
+use App\Traits\Workflow\Workflow;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
@@ -24,6 +26,7 @@ use Illuminate\Support\Facades\DB;
 
 class WaterApplication extends Controller
 {
+    use Workflow;
     private $Repository;
     private $_NewConnectionController;
     public function __construct(IWaterNewConnection $Repository, iNewConnection $newConnection)
@@ -87,11 +90,38 @@ class WaterApplication extends Controller
     {
         try {
             $mWaterApplication = new WaterWaterApplication();
-            $mWaterApplication->getJskAppliedApplications($request);
-            $returnData = 123;
-            return responseMsgs(true, "Data of application applied today!", remove_null($returnData), "", "01", ".ms", "POST", $request->deviceId);
+            $mWaterTran = new WaterTran();
+            $rawApplication = $mWaterApplication->getJskAppliedApplications();
+            $refTransaction = $mWaterTran->tranDetailByDate();
+            $applicationDetails = DB::select($rawApplication);
+            $transactionDetails = DB::select($refTransaction);
+
+            $returnData['applicationCount'] = collect($applicationDetails)->count();
+            $returnData['totalCollection']  = collect($transactionDetails)->pluck('amount')->sum();
+            $returnData['chequeCollection'] = collect($transactionDetails)->where('payment_mode', 'Cheque')->count();
+            $returnData['onlineCollection'] = collect($transactionDetails)->where('payment_mode', 'Online')->count();
+            $returnData['cashCollection']   = collect($transactionDetails)->where('payment_mode', 'Cash')->count();
+            $returnData['ddCollection']     = collect($transactionDetails)->where('payment_mode', 'DD')->count();
+            $returnData['neftCollection']   = collect($transactionDetails)->where('payment_mode', 'Neft')->count();
+            return responseMsgs(true,"dashbord Data!" ,remove_null($returnData),"","02",".ms","POST","");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", $request->deviceId);
         }
+    }
+
+
+    /**
+     * | Workflow dasboarding details
+     * | @param request 
+     */
+    public function workflowDashordDetails(Request $req)
+    {
+        try{
+            
+        }
+        catch(Exception $e)
+        {
+            return responseMsgs(false,$e->getMessage(),$e->getFile(),"","01",".ms","POST","")
+;        }
     }
 }

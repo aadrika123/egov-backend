@@ -1367,36 +1367,11 @@ class ActiveSafController extends Controller
             $req->request->add(['workflowId' => $safDetails->workflow_id, 'ghostUserId' => 0]);
             DB::beginTransaction();
             $orderDetails = $this->saveGenerateOrderid($req);                                      //<---------- Generate Order ID Trait
-
-            $this->postDemands($safDemandDetails, $req);                               // Update the data in saf prop demands
             DB::commit();
             return responseMsgs(true, "Order ID Generated", remove_null($orderDetails), "010114", "1.0", "1s", "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-
-    /**
-     * | Post Demands (14.1)
-     */
-    public function postDemands($safDemandDetails, $req)
-    {
-        $mPayPropPenalty = new PaymentPropPenalty();
-        foreach ($safDemandDetails as $item) {
-            $penaltyExist = $mPayPropPenalty->getPenaltyByDemandSafId($item['id'], $req->id);
-            $penaltyReqs = [
-                'saf_demand_id' => $item['id'],
-                'saf_id' => $req->id,
-                'fyear' => $item['fyear'],
-                'head_name' => 'Monthly 1 % Penalty',
-                'penalty_date' => $this->_todayDate->format('Y-m-d'),
-                'amount' => $item['onePercPenaltyTax']
-            ];
-            if ($penaltyExist)
-                $mPayPropPenalty->editPenalties($penaltyExist->id, $penaltyReqs);
-            else
-                $mPayPropPenalty->postPenalties($penaltyReqs);
         }
     }
 

@@ -944,6 +944,9 @@ class HoldingTaxController extends Controller
             }
             $collapsedDemand = collect($clusterDemandList)->collapse();                       // Clusters Demands Collapsed into One
 
+            if (collect($collapsedDemand)->isEmpty())
+                throw new Exception("Demand Not Available For This Cluster");
+
             $groupedByYear = $collapsedDemand->groupBy('quarteryear');                        // Grouped By Financial Year and Quarter for the Separation of Demand  
 
             $summedDemand = $groupedByYear->map(function ($item) use ($penaltyRebateCalc) {                            // Sum of all the Demands of Quarter and Financial Year

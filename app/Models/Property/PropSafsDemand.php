@@ -116,4 +116,15 @@ class PropSafsDemand extends Model
             ->where('paid_status', 0)
             ->get();
     }
+
+    /**
+     * | Save cluster in Saf demand
+     */
+    public function saveClusterinSafDemand($safIds, $clusterId)
+    {
+        PropSafsDemand::whereIn('saf_id', $safIds)
+            ->update([
+                'cluster_id' => $clusterId
+            ]);
+    }
 }

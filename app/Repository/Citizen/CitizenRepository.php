@@ -271,6 +271,7 @@ class CitizenRepository implements iCitizenRepository
         try {
             $application = array();
             $query = "SELECT   p.id AS prop_id,
+                                p.pt_no,
                                 p.holding_no,
                                 p.new_holding_no,
                                 p.application_date AS apply_date,

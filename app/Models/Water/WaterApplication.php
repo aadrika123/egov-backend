@@ -36,7 +36,6 @@ class WaterApplication extends Model
         $saveNewApplication->landmark               = $req->landmark ?? null;
         $saveNewApplication->pin                    = $req->pin;
         $saveNewApplication->connection_through     = $req->connection_through;
-        $saveNewApplication->elec_k_no              = $req->KNo;
         $saveNewApplication->workflow_id            = $ulbWorkflowId->id;
         $saveNewApplication->connection_fee_id      = $waterFeeId;
         $saveNewApplication->initiator              = collect($initiatorRoleId)->first()->role_id;
@@ -463,10 +462,13 @@ class WaterApplication extends Model
     /**
      * | Dash bording 
      */
-    public function getJskAppliedApplications($request)
+    public function getJskAppliedApplications()
     {
-        $query = "SELECT * FROM water_applications 
-			        WHERE apply_from = 'JSK'
-				    AND apply_date = '2023-03-14'";
+        $refUserType = authUser()->user_type;
+        $currentDate = Carbon::now()->format('Y-m-d');
+        return "SELECT COUNT(id) AS application_count
+        FROM water_applications
+        WHERE apply_date = '$currentDate'
+        AND user_type = '$refUserType'";
     }
 }

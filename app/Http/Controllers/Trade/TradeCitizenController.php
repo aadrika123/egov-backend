@@ -114,6 +114,10 @@ class TradeCitizenController extends Controller
         $this->_metaData["action"]    = $request->getMethod();
         $this->_metaData["deviceId"] = $request->ip();
         try {
+            if(!$this->_parent->checkUsersWithtocken("active_citizens"))
+            {
+                throw New Exception("Counter User Not Allowed");
+            }
             $refUser            = Auth()->user();
             $refUserId          = $refUser->id;
             $refUlbId           = $request->ulbId;
@@ -183,6 +187,10 @@ class TradeCitizenController extends Controller
                 "noticeNo" => "required|string",
                 "ulbId"    => "required|digits_between:1,92"
             ];
+            if(!$this->_parent->checkUsersWithtocken("active_citizens"))
+            {
+                throw New Exception("Counter User Not Allowed");
+            }
             $validator = Validator::make($request->all(), $rules,);
             if ($validator->fails()) {
                 return responseMsg(false, $validator->errors(), $request->all());
@@ -240,6 +248,10 @@ class TradeCitizenController extends Controller
         $this->_metaData["action"]    = $request->getMethod();
         $this->_metaData["deviceId"] = $request->ip();
         try {
+            if(!$this->_parent->checkUsersWithtocken("active_citizens"))
+            {
+                throw New Exception("Counter User Not Allowed");
+            }
             #------------------------ Declaration-----------------------
             $refUser            = Auth()->user();
             $refNoticeDetails   = null;
@@ -505,6 +517,10 @@ class TradeCitizenController extends Controller
     public function conformRazorPayTran(Request $request)
     {
         try {
+            if(!$this->_parent->checkUsersWithtocken("active_citizens"))
+            {
+                throw New Exception("Counter User Not Allowed");
+            }
             $refUser     = Auth()->user();
             $application = null;
             $transection = null;

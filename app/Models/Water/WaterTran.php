@@ -6,6 +6,7 @@ use App\MicroServices\IdGeneration;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
 class WaterTran extends Model
@@ -72,6 +73,7 @@ class WaterTran extends Model
         $Tradetransaction->payment_mode     = "Other";
         $Tradetransaction->amount           = $totalConnectionCharges;
         $Tradetransaction->emp_dtl_id       = authUser()->id;
+        $Tradetransaction->user_type        = authUser()->user_type;
         $Tradetransaction->created_at       = Carbon::now();
         $Tradetransaction->ip_address       = getClientIpAddress();
         $Tradetransaction->ulb_id           = $ulbId;
@@ -110,6 +112,7 @@ class WaterTran extends Model
         $waterTrans->tran_no        = $req['tranNo'];
         $waterTrans->payment_mode   = $req['paymentMode'];
         $waterTrans->emp_dtl_id     = $req['userId'];
+        $waterTrans->user_type      = $req['userType'];
         $waterTrans->ulb_id         = $req['ulbId'];
         $waterTrans->ward_id        = $consumer['ward_mstr_id'];
         $waterTrans->save();
@@ -136,5 +139,22 @@ class WaterTran extends Model
             ->where('verify_status', true)
             ->where('water_trans.ulb_id', $ulbId)
             ->groupBy(["users.id", "users.user_name"]);
+    }
+
+    /**
+     * | Get Transaction Details for current Date
+     * | And for current login user
+     */
+    public function tranDetailByDate()
+    {
+        $currentDate = Carbon::now()->format('Y-m-d');
+        $userType = authUser()->user_type;
+        $rfTransMode = Config::get("payment-constants.PAYMENT_OFFLINE_MODE.5");
+
+        return "SELECT * FROM water_trans
+        WHERE tran_date = '$currentDate'
+        AND user_type = '$userType'
+        AND tran_type IN ('New Connection', 'Regulaization')
+        AND payment_mode != '$rfTransMode'";
     }
 }

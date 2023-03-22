@@ -492,4 +492,15 @@ class PropProperty extends Model
         ];
         $property->update($reqs);
     }
+
+    /**
+     * | Save Cluster in property
+     */
+    public function saveClusterInProperty($holdingList, $clusterId)
+    {
+        PropProperty::whereIn('new_holding_no', $holdingList)
+            ->update([
+                'cluster_id' => $clusterId
+            ]);
+    }
 }
