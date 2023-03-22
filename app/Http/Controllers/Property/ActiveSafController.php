@@ -95,12 +95,14 @@ class ActiveSafController extends Controller
     protected $user_id;
     protected $_todayDate;
     protected $Repository;
+    protected $_moduleId;
     // Initializing function for Repository
     protected $saf_repository;
     public function __construct(iSafRepository $saf_repository)
     {
         $this->Repository = $saf_repository;
         $this->_todayDate = Carbon::now();
+        $this->_moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
     }
 
     /**
@@ -1520,6 +1522,7 @@ class ActiveSafController extends Controller
             // Update SAF Payment Status
             $activeSaf->payment_status = 1;
             $activeSaf->save();
+            $this->sendToWorkflow($activeSaf);        // Send to Workflow(15.2)
             DB::commit();
             return responseMsgs(true, "Payment Successfully Done",  ['TransactionNo' => $tranNo], "010115", "1.0", "567ms", "POST", $req->deviceId);
         } catch (Exception $e) {
@@ -1569,6 +1572,27 @@ class ActiveSafController extends Controller
             'cluster_id' => $clusterId
         ];
         $mTempTransaction->tempTransaction($tranReqs);
+    }
+
+    /**
+     * | Send to Workflow Level after payment(15.2)
+     */
+    public function sendToWorkflow($activeSaf)
+    {
+        $mWorkflowTrack = new WorkflowTrack();
+        $todayDate = $this->_todayDate;
+        $refTable = Config::get('PropertyConstaint.SAF_REF_TABLE');
+        $reqWorkflow = [
+            'workflow_id' => $activeSaf->workflow_id,
+            'ref_table_dot_id' => $refTable,
+            'ref_table_id_value' => $activeSaf->id,
+            'track_date' => $todayDate->format('Y-m-d h:i:s'),
+            'module_id' => $this->_moduleId,
+            'user_id' => null,
+            'receiver_role_id' => $activeSaf->current_role,
+            'ulb_id' => $activeSaf->ulb_id,
+        ];
+        $mWorkflowTrack->store($reqWorkflow);
     }
 
     /**
