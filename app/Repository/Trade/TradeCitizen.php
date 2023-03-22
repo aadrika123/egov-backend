@@ -61,13 +61,14 @@ class TradeCitizen implements ITradeCitizen
             "version" => 1.1,
             'queryRunTime' => $this->_queryRunTime,
         ];
+        
     }
     public function addRecord(Request $request)
     {
         $this->_metaData["apiId"] = "c2";
         $this->_metaData["queryRunTime"] = 2.48;
         $this->_metaData["action"]    = $request->getMethod();
-        $this->_metaData["deviceId"] = $request->ip();
+        $this->_metaData["deviceId"] = $request->ip();        
         try {
             $refUser            = Auth()->user();
             $refUserId          = $refUser->id;
