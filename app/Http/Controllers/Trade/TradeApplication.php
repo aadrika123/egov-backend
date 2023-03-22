@@ -327,7 +327,7 @@ class TradeApplication extends Controller
     }
     
     # Serial No : 07
-    public function documentVirify(Request $request)
+    public function documentVerify(Request $request)
     {
         $request->validate([
             'id' => 'required|digits_between:1,9223372036854775807',
