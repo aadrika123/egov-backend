@@ -102,9 +102,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('application/approved-list', 'approvedApplication');
 
         // Route::post('getComment', 'readIndipendentComment');
-        Route::post('application/get-independent-comment', 'readIndipendentComment');
-
-        Route::post('reports', 'reports');        
+        Route::post('application/get-independent-comment', 'readIndipendentComment');        
                
     });
 

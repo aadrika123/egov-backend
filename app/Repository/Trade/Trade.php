@@ -3709,24 +3709,50 @@ class Trade implements ITrade
                     return $val;
                 });
                 $mWardPermission = objToArray($mWardPermission);
-            } else {
+            } else 
+            {
                 $mWardPermission = $this->_COMMON_FUNCTION->WardPermission($refUserId);
             }
+
+            $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
+            
+            $key = null;
+            $wardNo = null;
+            if($request->fromDate)
+            {
+                $fromDate = $request->fromDate;
+            }
+            if($request->uptoDate)
+            {
+                $uptoDate = $request->uptoDate;
+            }
+            if(in_array(strtoupper($mUserType),["ONLINE"]))
+            {
+                $fromDate = $uptoDate=null;
+            }
+            if($request->key)
+            {
+                $key = trim($request->key);
+            }
+            if($request->wardNo)
+            {
+                $wardNo = $request->wardNo;
+            }
             $licence = TradeLicence::select(
-                "trade_licences.id",
-                "trade_licences.application_no",
-                "trade_licences.provisional_license_no",
-                "trade_licences.license_no",
-                "trade_licences.document_upload_status",
-                "trade_licences.payment_status",
-                "trade_licences.firm_name",
-                "trade_licences.application_date",
-                "trade_licences.apply_from",
-                "owner.owner_name",
-                "owner.guardian_name",
-                "owner.mobile_no",
-                "owner.email_id",
-            )
+                    "trade_licences.id",
+                    "trade_licences.application_no",
+                    "trade_licences.provisional_license_no",
+                    "trade_licences.license_no",
+                    "trade_licences.document_upload_status",
+                    "trade_licences.payment_status",
+                    "trade_licences.firm_name",
+                    "trade_licences.application_date",
+                    "trade_licences.apply_from",
+                    "owner.owner_name",
+                    "owner.guardian_name",
+                    "owner.mobile_no",
+                    "owner.email_id",
+                )
                 ->join(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
                                 STRING_AGG(guardian_name,',') AS guardian_name,
                                 STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
@@ -3739,10 +3765,11 @@ class Trade implements ITrade
                     $join->on("owner.temp_id", "trade_licences.id");
                 })
                 ->where("trade_licences.is_active", TRUE)
-                ->where("trade_licences.initiator_role", "trade_licences.finisher_role")
-                ->where("trade_licences.ulb_id", $refUlbId);
-            if (isset($inputs['key']) && trim($inputs['key'])) {
-                $key = trim($inputs['key']);
+                ->where(DB::RAW("trade_licences.current_role"),"=", DB::RAW("trade_licences.finisher_role"))
+                ->where("trade_licences.ulb_id", $refUlbId)
+                ->whereBetween('trade_licences.application_date', [$fromDate,$uptoDate]);
+            if ($key) 
+            {
                 $licence = $licence->where(function ($query) use ($key) {
                     $query->orwhere('trade_licences.holding_no', 'ILIKE', '%' . $key . '%')
                         ->orwhere('trade_licences.application_no', 'ILIKE', '%' . $key . '%')
@@ -3753,16 +3780,15 @@ class Trade implements ITrade
                         ->orwhere('owner.mobile_no', 'ILIKE', '%' . $key . '%');
                 });
             }
-            if (isset($inputs['wardNo']) && trim($inputs['wardNo']) && $inputs['wardNo'] != "ALL") {
-                $mWardIds = $inputs['wardNo'];
+            if ($wardNo && $wardNo!= "ALL") 
+            {
+                $mWardIds = $wardNo;
                 $licence = $licence
                     ->whereIn('trade_licences.ward_id', $mWardIds);
             }
-            if (isset($inputs['formDate']) && isset($inputs['toDate']) && trim($inputs['formDate']) && $inputs['toDate']) {
-                $licence = $licence
-                    ->whereBetween('trade_licences.application_date::date', [$inputs['formDate'], $inputs['formDate']]);
-            }
-            if (in_array(strtoupper($mUserType), ["ONLINE"])) {
+            
+            if (in_array(strtoupper($mUserType), ["ONLINE"])) 
+            {
                 $licence = $licence
                     ->where("citizen_id", $refUserId);
             }
@@ -3777,21 +3803,7 @@ class Trade implements ITrade
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
-    #------------------- Reports function ------------------
-
-    public function reports(Request $request)
-    {
-        try {
-            $rules["alias"] = "required|min:3|max:3";
-            $validator = Validator::make($request->all(), $rules);
-            if ($validator->fails()) {
-                return responseMsg(false, $validator->errors(), $request->all());
-            }
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), $request->all());
-        }
-    }
-    #------------------- End Reports Function --------------
+    
 
 
     #---------- core function for trade Application--------
