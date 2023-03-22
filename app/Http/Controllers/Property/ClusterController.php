@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Cluster\Cluster;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsOwner;
+use App\Models\Property\PropDemand;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
+use App\Models\Property\PropSafsDemand;
 use App\Repository\Cluster\Interfaces\iCluster;
 use Exception;
 use Illuminate\Database\Eloquent\Collection;
@@ -161,32 +163,35 @@ class ClusterController extends Controller
             'holdingNo'     => "required|array",
         ]);
         try {
+            $mPropProperty = new PropProperty();
+            $mCluster = new Cluster();
+            $mPropDemand = new PropDemand();
+            $notActive = "Not a valid cluter ID!";
 
             $uniqueValues = collect($request->holdingNo)->unique();
             if ($uniqueValues->count() !== count($request->holdingNo)) {
-                return responseMsg(false, "holding no Contain Dublicate Value!", "");
-            }
-            $mPropProperty = new PropProperty();
-            $results = $mPropProperty->searchCollectiveHolding($request->holdingNo);
-            if ($results->count() != count($request->holdingNo)) {
-                return responseMsg(false, "the holding details contain invalid data", "");
+                throw new Exception("holding should no Contain Dublicate Value!");
             }
 
-            $notActive = "Not a valid cluter ID!";
-            $mCluster = new Cluster();
+            $results = $mPropProperty->searchCollectiveHolding($request->holdingNo);
+            if ($results->count() != count($request->holdingNo)) {
+                throw new Exception("the holding details contain invalid data");
+            }
+
             $checkActiveCluster =  $mCluster->checkActiveCluster($request->clusterId);
-            if (collect($checkActiveCluster)->isEmpty())
+            if (collect($checkActiveCluster)->isEmpty()) {
                 throw new Exception("Cluster Not Found");
+            }
+
             $verifyCluster = collect($checkActiveCluster)->first();
             if ($verifyCluster) {
                 $holdingList = collect($request->holdingNo);
-                PropProperty::whereIn('new_holding_no', $holdingList)
-                    ->update([
-                        'cluster_id' => $request->clusterId
-                    ]);
+                $refPropId = collect($results)->pluck('id');
+                $mPropProperty->saveClusterInProperty($holdingList, $request->clusterId);
+                $mPropDemand->saveClusterInDemand($refPropId, $request->clusterId);
                 return responseMsgs(true, "Holding is Added to the respective Cluster!", $request->clusterId, "", "02", "", "POST", "");
             }
-            return responseMsg(false, $notActive, "");
+            throw new Exception($notActive);
         } catch (Exception $error) {
             return responseMsg(false, $error->getMessage(), "");
         }
@@ -217,29 +222,32 @@ class ClusterController extends Controller
             'safNo'     => "required|array",
         ]);
         try {
+            $mPropActiveSaf = new PropActiveSaf();
+            $mCluster = new Cluster();
+            $mPropSafsDemand = new PropSafsDemand();
+            $notActive = "Not a valid cluter ID!";
+
             $uniqueValues = collect($request->safNo)->unique();
             if ($uniqueValues->count() !== count($request->safNo)) {
-                return responseMsg(false, "saf Contain Dublicate Value!", "");
-            }
-            $mPropActiveSaf = new PropActiveSaf();
-            $results = $mPropActiveSaf->searchCollectiveSaf($request->safNo);
-            if ($results->count() !== count($request->safNo)) {
-                return responseMsg(false, "the saf details contain invalid data", "");
+                throw new Exception("saf Contain Dublicate Value!");
             }
 
-            $notActive = "Not a valid cluter ID!";
-            $mCluster = new Cluster();
+            $results = $mPropActiveSaf->searchCollectiveSaf($request->safNo);
+            if ($results->count() !== count($request->safNo)) {
+                throw new Exception("the saf details contain invalid data");
+            }
+
             $checkActiveCluster =  $mCluster->checkActiveCluster($request->clusterId);
             $verifyCluster = collect($checkActiveCluster)->first();
             if ($verifyCluster) {
                 $safNoList = collect($request->safNo);
-                PropActiveSaf::whereIn('saf_no', $safNoList)
-                    ->update([
-                        'cluster_id' => $request->clusterId
-                    ]);
+                $safIds = collect($results)->pluck('id');
+
+                $mPropActiveSaf->saveClusterInSaf($safNoList, $request->clusterId);
+                $mPropSafsDemand->saveClusterinSafDemand($safIds, $request->clusterId);
                 return responseMsgs(true, "saf is Added to the respective Cluster!", $request->clusterId, "", "02", "", "POST", "");
             }
-            return responseMsg(false, $notActive, "");
+            throw new Exception($notActive);
         } catch (Exception $error) {
             return responseMsg(false, $error->getMessage(), "");
         }
