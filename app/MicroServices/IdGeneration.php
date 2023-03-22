@@ -51,14 +51,14 @@ class IdGeneration
         $ulbDistrictCode = $ulbDtls->district_code;
         $ulbCategory = $ulbDtls->category;
         $code = $ulbDtls->code;
-        $stringVal = $ulbDistrictCode . $ulbCategory . $code;
+
+        $paramId = 3;                       // Pt String Id
+        $params = $mIdParam->getParams($paramId);
+        $prefixString = $params->string_val;
+        $stringVal = $prefixString . '/' . $ulbDistrictCode . $ulbCategory . $code;
 
         $stringSplit = collect(str_split($stringVal));
         $flag = ($stringSplit->sum()) % 9;
-
-        $paramId = 3;
-        $params = $mIdParam->getParams($paramId);
-
         $intVal = $params->int_val;
         // Case for the Increamental
         if ($incrementStatus == true) {
