@@ -48,14 +48,27 @@ class TradeApplication extends Controller
      */
 
     // Initializing function for Repository
-    private $Repository;
-    private $_modelWard;
-    private $_parent;
+
+    protected $_MODEL_WARD;
+    protected $_COMMON_FUNCTION;
+    protected $_REPOSITORY;
+    protected $_WF_MASTER_Id;
+    protected $_WF_NOTICE_MASTER_Id;
+    protected $_MODULE_ID;
+    protected $_REF_TABLE;
+    protected $_TRADE_CONSTAINT;
+
     public function __construct(ITrade $TradeRepository)
     {
-        $this->Repository = $TradeRepository;
-        $this->_modelWard = new ModelWard();
-        $this->_parent = new CommonFunction();
+        $this->_REPOSITORY = $TradeRepository;
+        $this->_MODEL_WARD = new ModelWard();
+        $this->_COMMON_FUNCTION = new CommonFunction();
+
+        $this->_WF_MASTER_Id = Config::get('workflow-constants.TRADE_MASTER_ID');
+        $this->_WF_NOTICE_MASTER_Id = Config::get('workflow-constants.TRADE_NOTICE_ID');
+        $this->_MODULE_ID = Config::get('module-constants.TRADE_MODULE_ID');
+        $this->_TRADE_CONSTAINT = Config::get("TradeConstant");
+        $this->_REF_TABLE = $this->_TRADE_CONSTAINT["TRADE_REF_TABLE"];
     }
     public function getMstrForNewLicense(Request $request)
     {
@@ -107,9 +120,9 @@ class TradeApplication extends Controller
             $refUser            = Auth()->user();
             $refUserId          = $refUser->id;
             $refUlbId           = $refUser->ulb_id ?? $request->ulbId;
-            $refWorkflowId      = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
-            $mUserType          = $this->_parent->userType($refWorkflowId);
-            $mApplicationTypeId = Config::get("TradeConstant.APPLICATION-TYPE." . $request->applicationType);
+            $refWorkflowId      = $this->_WF_MASTER_Id;
+            $mUserType          = $this->_COMMON_FUNCTION->userType($refWorkflowId);
+            $mApplicationTypeId = $this->_TRADE_CONSTAINT["APPLICATION-TYPE"][$request->applicationType];
             $mnaturOfBusiness   = null;
             $data               = array();
             $rules["applicationType"] = "required|string|in:NEWLICENSE,RENEWAL,AMENDMENT,SURRENDER";
@@ -134,7 +147,7 @@ class TradeApplication extends Controller
             {
                 $mOldLicenceId = $request->licenseId;
                 $nextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
-                $refOldLicece = $this->Repository->getLicenceById($mOldLicenceId); //TradeLicence::find($mOldLicenceId)
+                $refOldLicece = $this->_REPOSITORY->getLicenceById($mOldLicenceId); //TradeLicence::find($mOldLicenceId)
                 if (!$refOldLicece) {
                     throw new Exception("Old Licence Not Found");
                 }
@@ -171,7 +184,7 @@ class TradeApplication extends Controller
             
             if (in_array(strtoupper($mUserType), ["ONLINE", "JSK", "SUPER ADMIN", "TL"])) 
             {
-                $data['wardList'] = $this->_modelWard->getAllWard($refUlbId)->map(function ($val) {
+                $data['wardList'] = $this->_MODEL_WARD->getAllWard($refUlbId)->map(function ($val) {
                     $val->ward_no = $val->ward_name;
                     return $val;
                 });
@@ -179,7 +192,7 @@ class TradeApplication extends Controller
             } 
             else 
             {
-                $data['wardList'] = $this->_parent->WardPermission($refUserId);
+                $data['wardList'] = $this->_COMMON_FUNCTION->WardPermission($refUserId);
             }
             return responseMsg(true, "", remove_null($data));
         } catch (Exception $e) {
@@ -192,16 +205,16 @@ class TradeApplication extends Controller
         $refUser            = Auth()->user();
         $refUserId          = $refUser->id;
         $refUlbId           = $refUser->ulb_id;
-        if ($refUser->user_type == Config::get("TradeConstant.CITIZEN")) 
+        if ($refUser->user_type == $this->_TRADE_CONSTAINT["CITIZEN"]) 
         {
             $refUlbId = $request->ulbId ?? 0;
         }
-        $refWorkflowId      = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
-        $mUserType          = $this->_parent->userType($refWorkflowId);
-        $refWorkflows       = $this->_parent->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
-        $mApplicationTypeId = Config::get("TradeConstant.APPLICATION-TYPE." . $request->applicationType);
+        $refWorkflowId      = $this->_WF_MASTER_Id;
+        $mUserType          = $this->_COMMON_FUNCTION->userType($refWorkflowId);
+        $refWorkflows       = $this->_COMMON_FUNCTION->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
+        $mApplicationTypeId = $this->_TRADE_CONSTAINT["APPLICATION-TYPE"][$request->applicationType];
         try {
-            if((!$this->_parent->checkUsersWithtocken("users"))&& (strtoupper($mUserType)=="ONLINE"))
+            if((!$this->_COMMON_FUNCTION->checkUsersWithtocken("users"))&& (strtoupper($mUserType)=="ONLINE"))
             {
                 throw New Exception("Citizen Not Allowed");
             }
@@ -224,7 +237,7 @@ class TradeApplication extends Controller
             if (in_array($mApplicationTypeId, ["2", "3", "4"]) && (!$request->licenseId || !is_numeric($request->licenseId))) {
                 throw new Exception("Old licence Id Requird");
             }            
-            return $this->Repository->addRecord($request);
+            return $this->_REPOSITORY->addRecord($request);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
@@ -232,11 +245,11 @@ class TradeApplication extends Controller
     public function paymentCounter(paymentCounter $request)
     {
         try{
-            if(!$this->_parent->checkUsersWithtocken("users"))
+            if(!$this->_COMMON_FUNCTION->checkUsersWithtocken("users"))
             {
                 throw New Exception("Citizen Not Allowed");
             }
-            return $this->Repository->paymentCounter($request);
+            return $this->_REPOSITORY->paymentCounter($request);
         }
         catch(Exception $e)
         {
@@ -247,12 +260,12 @@ class TradeApplication extends Controller
     # Serial No : 02
     public function updateLicenseBo(ReqUpdateBasicDtl $request)
     {
-        return $this->Repository->updateLicenseBo($request);
+        return $this->_REPOSITORY->updateLicenseBo($request);
     }
 
     public function updateBasicDtl(ReqUpdateBasicDtl $request)
     {
-        return $this->Repository->updateBasicDtl($request);
+        return $this->_REPOSITORY->updateBasicDtl($request);
     }
 
     public function getDocList(Request $request)
@@ -318,12 +331,12 @@ class TradeApplication extends Controller
         {
             return responseMsg(false, $validator->errors(), $request->all());
         }
-        return $this->Repository->readPaymentReceipt($id, $transectionId);
+        return $this->_REPOSITORY->readPaymentReceipt($id, $transectionId);
     }
     # Serial No : 05
     public function documentUpload(Request $request)
     {
-        return $this->Repository->documentUpload($request);
+        return $this->_REPOSITORY->documentUpload($request);
     }
     
     # Serial No : 07
@@ -336,7 +349,7 @@ class TradeApplication extends Controller
             'docStatus' => 'required|in:Verified,Rejected'
         ]);
         try {
-            if((!$this->_parent->checkUsersWithtocken("users")))
+            if((!$this->_COMMON_FUNCTION->checkUsersWithtocken("users")))
             {
                 throw New Exception("Citizen Not Allowed");
             }
@@ -345,8 +358,8 @@ class TradeApplication extends Controller
             $userId = $user->id;
             $ulbId = $user->ulb_id;
             $mWfDocument = new WfActiveDocument();            
-            $workflow_id = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
-            $rolles = $this->_parent->getUserRoll($userId, $ulbId, $workflow_id);
+            $workflow_id = $this->_WF_MASTER_Id;
+            $rolles = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $workflow_id);
             if (!$rolles || !$rolles->can_verify_document) {
                 throw new Exception("You are Not Authorized For Document Verify");
             }
@@ -378,7 +391,7 @@ class TradeApplication extends Controller
             DB::rollBack();
             return responseMsgs(false, $e->getMessage(), "", "tc7.1", "1.0", "", "POST", $request->deviceId ?? "");
         }
-        // return $this->Repository->documentVirify($request);
+        // return $this->_REPOSITORY->documentVirify($request);
     }
     # Serial No : 08 
     public function getLicenceDtl(Request $request)
@@ -389,28 +402,28 @@ class TradeApplication extends Controller
         if ($validator->fails()) {
             return responseMsg(false, $validator->errors(), $request->all());
         }
-        return $this->Repository->readLicenceDtl($request);
+        return $this->_REPOSITORY->readLicenceDtl($request);
     }
     # Serial No : 09 
     public function getDenialDetails(Request $request)
     {
-        return $this->Repository->readDenialdtlbyNoticno($request);
+        return $this->_REPOSITORY->readDenialdtlbyNoticno($request);
     }
     # Serial No : 10 
     public function paybleAmount(ReqPaybleAmount $request)
     {
-        return $this->Repository->getPaybleAmount($request);
+        return $this->_REPOSITORY->getPaybleAmount($request);
     }
 
     # Serial No : 12 
     public function validateHoldingNo(Request $request)
     {
-        return $this->Repository->isvalidateHolding($request);
+        return $this->_REPOSITORY->isvalidateHolding($request);
     }
     # Serial No : 13 
     public function searchLicence(Request $request)
     {
-        return $this->Repository->searchLicenceByNo($request);
+        return $this->_REPOSITORY->searchLicenceByNo($request);
     }
     # Serial No : 14
     public function readApplication(Request $request)
@@ -423,30 +436,30 @@ class TradeApplication extends Controller
         if ($validator->fails()) {
             return responseMsg(false, $validator->errors(), $request->all());
         }
-        return $this->Repository->readApplication($request);
+        return $this->_REPOSITORY->readApplication($request);
     }
     # Serial No : 15
     public function postEscalate(Request $request)
     {
-        return $this->Repository->postEscalate($request);
+        return $this->_REPOSITORY->postEscalate($request);
     }
     public function specialInbox(Request $request)
     {
-        return $this->Repository->specialInbox($request);
+        return $this->_REPOSITORY->specialInbox($request);
     }
     public function btcInbox(Request $request)
     {
-        return $this->Repository->btcInbox($request);
+        return $this->_REPOSITORY->btcInbox($request);
     }
     # Serial No : 16
     public function inbox(ReqInbox $request)
     {
-        return $this->Repository->inbox($request);
+        return $this->_REPOSITORY->inbox($request);
     }
     # Serial No : 17
     public function outbox(Request $request)
     {
-        return $this->Repository->outbox($request);
+        return $this->_REPOSITORY->outbox($request);
     }
 
 
@@ -461,7 +474,7 @@ class TradeApplication extends Controller
         ]);
 
         try {
-            if(!$this->_parent->checkUsersWithtocken("users"))
+            if(!$this->_COMMON_FUNCTION->checkUsersWithtocken("users"))
             {
                 throw New Exception("Citizen Not Allowed");
             }
@@ -473,7 +486,7 @@ class TradeApplication extends Controller
             $activeLicence->is_parked = true;
             $activeLicence->save();
 
-            $metaReqs['moduleId'] = Config::get('module-constants.TRADE_MODULE_ID');
+            $metaReqs['moduleId'] = $this->_MODULE_ID;
             $metaReqs['workflowId'] = $activeLicence->workflow_id;
             $metaReqs['refTableDotId'] = 'active_trade_licences.id';
             $metaReqs['refTableIdValue'] = $req->applicationId;
@@ -495,8 +508,8 @@ class TradeApplication extends Controller
         $user = Auth()->user();
         $user_id = $user->id;
         $ulb_id = $user->ulb_id;
-        $refWorkflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
-        $role = $this->_parent->getUserRoll($user_id,$ulb_id,$refWorkflowId);
+        $refWorkflowId = $this->_WF_MASTER_Id;
+        $role = $this->_COMMON_FUNCTION->getUserRoll($user_id,$ulb_id,$refWorkflowId);
        
         $request->validate([
             'applicationId' => 'required|integer',
@@ -506,16 +519,13 @@ class TradeApplication extends Controller
         ]);
 
         try {
-            if(!$this->_parent->checkUsersWithtocken("users"))
+            if(!$this->_COMMON_FUNCTION->checkUsersWithtocken("users"))
             {
                 throw New Exception("Citizen Not Allowed");
             }
             // Trade Application Update Current Role Updation
-            $user = Auth()->user();
-            $user_id = $user->id;
-            $ulb_id = $user->ulb_id;
-            $refWorkflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
-            $workflowId = WfWorkflow::where('id', $refWorkflowId)
+           
+            $workflowId = WfWorkflow::where('wf_master_id', $refWorkflowId)
                 ->where('ulb_id', $ulb_id)
                 ->first();
             if (!$workflowId) 
@@ -528,10 +538,10 @@ class TradeApplication extends Controller
             {
                 throw new Exception("Data Not Found");
             }
-            $allRolse = collect($this->_parent->getAllRoles($user_id,$ulb_id,$refWorkflowId,0,true));
+            $allRolse = collect($this->_COMMON_FUNCTION->getAllRoles($user_id,$ulb_id,$refWorkflowId,0,true));
             $receiverRole = array_values(objToArray($allRolse->where("id",$request->receiverRoleId)))[0]??[];
             $senderRole = array_values(objToArray($allRolse->where("id",$request->senderRoleId)))[0]??[];
-            $role = $this->_parent->getUserRoll($user_id,$ulb_id,$refWorkflowId);
+            $role = $this->_COMMON_FUNCTION->getUserRoll($user_id,$ulb_id,$refWorkflowId);
             if($licence->payment_status!=1 && ($role->serial_no  < $receiverRole["serial_no"]??0))
             {
                 throw new Exception("Payment Not Clear");
@@ -587,7 +597,7 @@ class TradeApplication extends Controller
             $licence->update();
 
 
-            $metaReqs['moduleId'] = Config::get('module-constants.TRADE_MODULE_ID');
+            $metaReqs['moduleId'] = $this->_MODULE_ID;
             $metaReqs['workflowId'] = $licence->workflow_id;
             $metaReqs['refTableDotId'] = 'active_trade_licences';
             $metaReqs['refTableIdValue'] = $request->applicationId;
@@ -613,17 +623,17 @@ class TradeApplication extends Controller
                 "applicationId" => "required",
                 "status" => "required"
             ]);
-            if(!$this->_parent->checkUsersWithtocken("users"))
+            if(!$this->_COMMON_FUNCTION->checkUsersWithtocken("users"))
             {
                 throw New Exception("Citizen Not Allowed");
             }
             $user = Auth()->user();
             $user_id = $user->id;
             $ulb_id = $user->ulb_id;
-            $refWorkflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
+            $refWorkflowId = $this->_WF_MASTER_Id;
 
             $activeLicence = ActiveTradeLicence::find($req->applicationId);
-            $role = $this->_parent->getUserRoll($user_id,$ulb_id,$refWorkflowId);
+            $role = $this->_COMMON_FUNCTION->getUserRoll($user_id,$ulb_id,$refWorkflowId);
             if ($activeLicence->finisher_role != $role->role_id) {
                 return responseMsg(false, "Forbidden Access", "");
             }
@@ -697,7 +707,7 @@ class TradeApplication extends Controller
         {
             return responseMsg(false, $validator->errors(), $request->all());
         }
-        return $this->Repository->provisionalCertificate($request->id);
+        return $this->_REPOSITORY->provisionalCertificate($request->id);
     }
     # Serial No : 20
     public function licenceCertificate(Request $request)
@@ -713,33 +723,33 @@ class TradeApplication extends Controller
         {
             return responseMsg(false, $validator->errors(), $request->all());
         }
-        return $this->Repository->licenceCertificate($request->id);
+        return $this->_REPOSITORY->licenceCertificate($request->id);
     }
     # Serial No : 21
     public function applyDenail(ReqApplyDenail $request)
     {
         try {
-            if(!$this->_parent->checkUsersWithtocken("users"))
+            if(!$this->_COMMON_FUNCTION->checkUsersWithtocken("users"))
             {
                 throw New Exception("Citizen Not Allowed");
             }
             $user = Auth()->user();
             $userId = $user->id;
             $ulbId = $user->ulb_id;
-            $refWorkflowId = Config::get('workflow-constants.TRADE_NOTICE_ID');
-            $role = $this->_parent->getUserRoll($userId, $ulbId, $refWorkflowId);
+            $refWorkflowId = $this->_WF_NOTICE_MASTER_Id;
+            $role = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $refWorkflowId);
             if (!$role) {
                 throw new Exception("You Are Not Authorized");
             }
-            $userType = $this->_parent->userType($refWorkflowId);
+            $userType = $this->_COMMON_FUNCTION->userType($refWorkflowId);
             if (!in_array(strtoupper($userType), ["TC", "UTC"])) {
                 throw new Exception("You Are Not Authorize For Apply Denial");
             }
             if ($request->getMethod() == 'GET') {
-                $data['wardList'] = $this->_parent->WardPermission($userId);
+                $data['wardList'] = $this->_COMMON_FUNCTION->WardPermission($userId);
                 return  responseMsg(true, "", $data);
             }
-            return $this->Repository->addDenail($request);
+            return $this->_REPOSITORY->addDenail($request);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
@@ -747,12 +757,12 @@ class TradeApplication extends Controller
     # Serial No : 22
     public function addIndependentComment(Request $request)
     {
-        return $this->Repository->addIndependentComment($request);
+        return $this->_REPOSITORY->addIndependentComment($request);
     }
     # Serial No : 23
     public function readIndipendentComment(Request $request)
     {
-        return $this->Repository->readIndipendentComment($request);
+        return $this->_REPOSITORY->readIndipendentComment($request);
     }
     # Serial No : 24
     public function denialInbox(Request $request)
@@ -761,13 +771,13 @@ class TradeApplication extends Controller
             $user = Auth()->user();
             $user_id = $user->id;
             $ulb_id = $user->ulb_id;
-            $workflow_id = Config::get('workflow-constants.TRADE_NOTICE_ID');
-            $role = $this->_parent->getUserRoll($user_id, $ulb_id, $workflow_id);
+            $workflow_id = $this->_WF_NOTICE_MASTER_Id;
+            $role = $this->_COMMON_FUNCTION->getUserRoll($user_id, $ulb_id, $workflow_id);
             $role_id = $role->role_id ?? -1;
             if (!$role  || !in_array($role_id, [10])) {
                 throw new Exception("You Are Not Authorized");
             }
-            return $this->Repository->denialInbox($request);
+            return $this->_REPOSITORY->denialInbox($request);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
@@ -777,18 +787,18 @@ class TradeApplication extends Controller
     {
         $id = $request->id;
         $mailID = $request->mailID;
-        return $this->Repository->denialView($id, $mailID, $request);
+        return $this->_REPOSITORY->denialView($id, $mailID, $request);
     }
     # Serial No : 26
     public function approvedApplication(Request $request)
     {
-        return $this->Repository->approvedApplication($request);
+        return $this->_REPOSITORY->approvedApplication($request);
     }
 
 
     public function reports(Request $request)
     {
-        return $this->Repository->reports($request);
+        return $this->_REPOSITORY->reports($request);
     }
 
     /**
@@ -802,7 +812,7 @@ class TradeApplication extends Controller
         try {
             $mWfActiveDocument = new WfActiveDocument();
             $mActiveTradeLicence = new ActiveTradeLicence();
-            $modul_id = Config::get('module-constants.TRADE_MODULE_ID');
+            $modul_id = $this->_MODULE_ID;
             $licenceDetails = $mActiveTradeLicence->getLicenceNo($req->applicationId);
             if (!$licenceDetails)
                 throw new Exception("Application Not Found for this application Id");
@@ -838,7 +848,7 @@ class TradeApplication extends Controller
             $docUpload = new DocUpload;
             $mWfActiveDocument = new WfActiveDocument();
             $mActiveTradeLicence = new ActiveTradeLicence();
-            $relativePath = Config::get('TradeConstant.TRADE_RELATIVE_PATH');
+            $relativePath = $this->_TRADE_CONSTAINT["TRADE_RELATIVE_PATH"];
             $getLicenceDtls = $mActiveTradeLicence->getLicenceNo($req->applicationId);
             if(!$getLicenceDtls)
             {
@@ -901,7 +911,7 @@ class TradeApplication extends Controller
 
             $imageName = $docUpload->upload($refImageName, $document, $relativePath);
 
-            $metaReqs['moduleId'] = Config::get('module-constants.TRADE_MODULE_ID');
+            $metaReqs['moduleId'] = $this->_MODULE_ID;
             $metaReqs['activeId'] = $getLicenceDtls->id;
             $metaReqs['workflowId'] = $getLicenceDtls->workflow_id;
             $metaReqs['ulbId'] = $getLicenceDtls->ulb_id;

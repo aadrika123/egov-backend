@@ -20,4 +20,5 @@ interface IReport
     public function PropWardWiseDCB(Request $request);
     public function PropFineRebate(Request $request);
     public function PropDeactedList(Request $request);
+    public function propIndividualDemandCollection($request);
 }

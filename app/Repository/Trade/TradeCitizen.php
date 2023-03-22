@@ -42,40 +42,52 @@ class TradeCitizen implements ITradeCitizen
     use WardPermission;
     use Razorpay;
 
-    protected $_counter;
-    protected $_modelWard;
-    protected $_parent;
+    protected $_MODEL_WARD;
+    protected $_COMMON_FUNCTION;
+    protected $_REPOSITORY_TRADE;
+    protected $_WF_MASTER_Id;
+    protected $_WF_NOTICE_MASTER_Id;
+    protected $_MODULE_ID;
+    protected $_REF_TABLE;
+    protected $_TRADE_CONSTAINT;
 
-    protected $_metaData;
-    protected $_queryRunTime;
-    protected $_apiId;
+    protected $_META_DATA;
+    protected $_QUERY_RUN_TIME;
+    protected $_API_ID;
 
 
     public function __construct()
     {
-        $this->_modelWard = new ModelWard();
-        $this->_parent = new CommonFunction();
-        $this->_counter = new Trade;
-        $this->_metaData = [
-            "apiId" => $this->_apiId,
+        $this->_MODEL_WARD = new ModelWard();
+        $this->_COMMON_FUNCTION = new CommonFunction();
+        $this->_REPOSITORY_TRADE = new Trade();
+
+        $this->_WF_MASTER_Id = Config::get('workflow-constants.TRADE_MASTER_ID');
+        $this->_WF_NOTICE_MASTER_Id = Config::get('workflow-constants.TRADE_NOTICE_ID');
+        $this->_MODULE_ID = Config::get('module-constants.TRADE_MODULE_ID');
+        $this->_TRADE_CONSTAINT = Config::get("TradeConstant");
+        $this->_REF_TABLE = $this->_TRADE_CONSTAINT["TRADE_REF_TABLE"];
+        
+        $this->_META_DATA = [
+            "apiId" => $this->_API_ID,
             "version" => 1.1,
-            'queryRunTime' => $this->_queryRunTime,
+            'queryRunTime' => $this->_QUERY_RUN_TIME,
         ];
         
     }
     public function addRecord(Request $request)
     {
-        $this->_metaData["apiId"] = "c2";
-        $this->_metaData["queryRunTime"] = 2.48;
-        $this->_metaData["action"]    = $request->getMethod();
-        $this->_metaData["deviceId"] = $request->ip();        
+        $this->_META_DATA["apiId"] = "c2";
+        $this->_META_DATA["queryRunTime"] = 2.48;
+        $this->_META_DATA["action"]    = $request->getMethod();
+        $this->_META_DATA["deviceId"] = $request->ip();        
         try {
             $refUser            = Auth()->user();
             $refUserId          = $refUser->id;
             $refUlbId           = $request->ulbId;
-            $refWorkflowId      = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
-            $mUserType          = $this->_parent->userType($refWorkflowId);
-            $mApplicationTypeId = Config::get("TradeConstant.APPLICATION-TYPE." . $request->applicationType);
+            $refWorkflowId      = $this->_WF_MASTER_Id;
+            $mUserType          = $this->_COMMON_FUNCTION->userType($refWorkflowId);
+            $mApplicationTypeId = $this->_TRADE_CONSTAINT["APPLICATION-TYPE"][$request->applicationType];
             if (!in_array(strtoupper($mUserType), ["ONLINE"])) {
                 throw new Exception("You Are Not Authorized For This Action. Please Apply From Counter");
             }
@@ -105,7 +117,7 @@ class TradeCitizen implements ITradeCitizen
                 }
             }
             DB::beginTransaction();
-            $response = $this->_counter->addRecord($request);
+            $response = $this->_REPOSITORY_TRADE->addRecord($request);
             if (!$response->original["status"]) {
                 throw new Exception($response->original["message"]);
             }
@@ -114,22 +126,22 @@ class TradeCitizen implements ITradeCitizen
                 true,
                 $response->original["message"],
                 $response->original["data"],
-                $this->_metaData["apiId"],
-                $this->_metaData["version"],
-                $this->_metaData["queryRunTime"],
-                $this->_metaData["action"],
-                $this->_metaData["deviceId"]
+                $this->_META_DATA["apiId"],
+                $this->_META_DATA["version"],
+                $this->_META_DATA["queryRunTime"],
+                $this->_META_DATA["action"],
+                $this->_META_DATA["deviceId"]
             );
         } catch (Exception $e) {
             return responseMsgs(
                 false,
                 $e->getMessage(),
                 $request->all(),
-                $this->_metaData["apiId"],
-                $this->_metaData["version"],
-                $this->_metaData["queryRunTime"],
-                $this->_metaData["action"],
-                $this->_metaData["deviceId"]
+                $this->_META_DATA["apiId"],
+                $this->_META_DATA["version"],
+                $this->_META_DATA["queryRunTime"],
+                $this->_META_DATA["action"],
+                $this->_META_DATA["deviceId"]
             );
         }
     }
@@ -139,8 +151,8 @@ class TradeCitizen implements ITradeCitizen
             $refUser        = Auth()->user();
             $refUserId      = $refUser->id ?? $args["userId"];
             $refUlbId       = $refUser->ulb_id ?? $args["ulbId"];
-            $refWorkflowId  = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
-            $refWorkflows   = $this->_parent->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
+            $refWorkflowId  = $this->_WF_MASTER_Id;
+            $refWorkflows   = $this->_COMMON_FUNCTION->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
             $refNoticeDetails = null;
             $refDenialId    = null;
             $refUlbDtl      = UlbMaster::find($refUlbId);
@@ -167,7 +179,7 @@ class TradeCitizen implements ITradeCitizen
             }
             $refLecenceData = ActiveTradeLicence::find($args["id"]);
             $licenceId = $args["id"];
-            $refLevelData = $this->_counter->getWorkflowTrack($licenceId); //TradeLevelPending::getLevelData($licenceId);
+            $refLevelData = $this->_REPOSITORY_TRADE->getWorkflowTrack($licenceId); //TradeLevelPending::getLevelData($licenceId);
             if (!$refLecenceData) {
                 throw new Exception("Licence Data Not Found !!!!!");
             } elseif ($refLecenceData->application_type_id == 4) {
@@ -175,7 +187,7 @@ class TradeCitizen implements ITradeCitizen
             } elseif (in_array($refLecenceData->payment_status, [1, 2])) {
                 throw new Exception("Payment Already Done Of This Application");
             }
-            if ($refNoticeDetails = $this->_counter->readNotisDtl($refLecenceData->id)) {
+            if ($refNoticeDetails = $this->_REPOSITORY_TRADE->readNotisDtl($refLecenceData->id)) {
                 $refDenialId = $refNoticeDetails->dnialid;
                 $mNoticeDate = date("Y-m-d", strtotime($refNoticeDetails['created_on'])); //notice date 
             }
@@ -198,12 +210,12 @@ class TradeCitizen implements ITradeCitizen
             $args['licenseFor']          = $refLecenceData->licence_for_years;
             $args['nature_of_business']  = $refLecenceData->nature_of_bussiness;
             $args['noticeDate']          = $mNoticeDate;
-            $chargeData = $this->_counter->cltCharge($args);
+            $chargeData = $this->_REPOSITORY_TRADE->cltCharge($args);
             if ($chargeData['response'] == false || round($args['amount']) != round($chargeData['total_charge'])) {
                 throw new Exception("Payble Amount Missmatch!!!");
             }
 
-            $transactionType = Config::get('TradeConstant.APPLICATION-TYPE-BY-ID.' . $refLecenceData->application_type_id);
+            $transactionType = $this->_TRADE_CONSTAINT["APPLICATION-TYPE-BY-ID"][$refLecenceData->application_type_id];
 
             $totalCharge = $chargeData['total_charge'];
             $mDenialAmount = $chargeData['notice_amount'];
@@ -258,7 +270,7 @@ class TradeCitizen implements ITradeCitizen
                 $TradeFineRebet2->save();
             }
             $request = new Request(["applicationId"=>$licenceId,"ulb_id"=>$refUlbId,"user_id"=>$refUserId]);
-            if ($mPaymentStatus == 1 && $this->_counter->checkWorckFlowForwardBackord($request) && $refLecenceData->pending_status == 0 ) {
+            if ($mPaymentStatus == 1 && $this->_REPOSITORY_TRADE->checkWorckFlowForwardBackord($request) && $refLecenceData->pending_status == 0 ) {
                 $refLecenceData->current_role = $refWorkflows['initiator']['forward_role_id'];
                 $refLecenceData->document_upload_status = 1;
                 $refLecenceData->pending_status  = 1;
@@ -266,7 +278,7 @@ class TradeCitizen implements ITradeCitizen
                 $metaReqs['senderRoleId'] = $refWorkflows['initiator']['id'];
                 $metaReqs['receiverRoleId'] = $refWorkflows['initiator']['forward_role_id'];
                 $metaReqs['comment'] = "";
-                $metaReqs['moduleId'] = Config::get('module-constants.TRADE_MODULE_ID');
+                $metaReqs['moduleId'] = $this->_MODULE_ID;
                 $metaReqs['workflowId'] = $refLecenceData->workflow_id;
                 $metaReqs['refTableDotId'] = 'active_trade_licences';
                 $metaReqs['refTableIdValue'] = $licenceId;
@@ -278,11 +290,11 @@ class TradeCitizen implements ITradeCitizen
                 $tem = $track->saveTrack($myrequest);
             }
 
-            $provNo = $this->_counter->createProvisinalNo($mShortUlbName, $mWardNo, $licenceId);
+            $provNo = $this->_REPOSITORY_TRADE->createProvisinalNo($mShortUlbName, $mWardNo, $licenceId);
             $refLecenceData->provisional_license_no = $provNo;
             $refLecenceData->payment_status         = $mPaymentStatus;
             if ($refNoticeDetails) {
-                $this->_counter->updateStatusFine($refDenialId, $chargeData['notice_amount'], $licenceId, 1); //update status and fineAmount                     
+                $this->_REPOSITORY_TRADE->updateStatusFine($refDenialId, $chargeData['notice_amount'], $licenceId, 1); //update status and fineAmount                     
             }
             ($refLecenceData->id);
             $refLecenceData->update();
@@ -305,7 +317,7 @@ class TradeCitizen implements ITradeCitizen
 
             $refUser        = Auth()->user();
             $refUserId      = $refUser->id;
-            $refWorkflowId      = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
+            $refWorkflowId      = $this->_WF_MASTER_Id;
 
             $ActiveLicence = ActiveTradeLicence::select(
                 "active_trade_licences.id",
@@ -504,16 +516,16 @@ class TradeCitizen implements ITradeCitizen
             $refUser        = Auth()->user(); 
             $refUserId      = $refUser->id;
             $refUlbId       = $refUser->ulb_id ?? 0;
-            $refWorkflowId  = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
-            $modul_id = Config::get('module-constants.TRADE_MODULE_ID');
+            $refWorkflowId  = $this->_WF_MASTER_Id;
+            $modul_id = $this->_MODULE_ID;
            
-            $init_finish = $this->_parent->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
+            $init_finish = $this->_COMMON_FUNCTION->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
             
             $finisher = $init_finish['finisher'];
-            $finisher['short_user_name'] = Config::get('TradeConstant.USER-TYPE-SHORT-NAME.' . strtoupper($init_finish['finisher']['role_name']));
-            $mUserType      = $this->_parent->userType($refWorkflowId);
-            $refApplication = $this->_counter->getAllLicenceById($id);
-            $mStatus = $this->_counter->applicationStatus($id);
+            $finisher['short_user_name'] = $this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][strtoupper($init_finish['finisher']['role_name'])];
+            $mUserType      = $this->_COMMON_FUNCTION->userType($refWorkflowId);
+            $refApplication = $this->_REPOSITORY_TRADE->getAllLicenceById($id);
+            $mStatus = $this->_REPOSITORY_TRADE->applicationStatus($id);
             $mItemName      = "";
             $mCods          = "";
             
@@ -529,19 +541,19 @@ class TradeCitizen implements ITradeCitizen
             }
             $refApplication->items      = $mItemName;
             $refApplication->items_code = $mCods;
-            $refOwnerDtl                = $this->_counter->getAllOwnereDtlByLId($id);
+            $refOwnerDtl                = $this->_REPOSITORY_TRADE->getAllOwnereDtlByLId($id);
             $refTransactionDtl          = TradeTransaction::listByLicId($id);
-            $refTimeLine                = $this->_counter->getTimelin($id);
+            $refTimeLine                = $this->_REPOSITORY_TRADE->getTimelin($id);
             $mWfActiveDocument = new WfActiveDocument();
             $refUploadDocuments         = $mWfActiveDocument->getTradeDocByAppNo($refApplication->id,$refApplication->workflow_id,$modul_id);
             
             $pendingAt  = $init_finish['initiator']['id'];
-            $mlevelData = $this->_counter->getWorkflowTrack($id);
+            $mlevelData = $this->_REPOSITORY_TRADE->getWorkflowTrack($id);
             if ($mlevelData) {
                 $pendingAt = $mlevelData->receiver_user_type_id;
             }
-            $mworkflowRoles = $this->_parent->getWorkFlowAllRoles($refUserId, $refUlbId, $refWorkflowId, true);
-            $mileSton = $this->_parent->sortsWorkflowRols($mworkflowRoles);
+            $mworkflowRoles = $this->_COMMON_FUNCTION->getWorkFlowAllRoles($refUserId, $refUlbId, $refWorkflowId, true);
+            $mileSton = $this->_COMMON_FUNCTION->sortsWorkflowRols($mworkflowRoles);
 
             $data['licenceDtl']     = $refApplication;
             $data['ownerDtl']       = $refOwnerDtl;
