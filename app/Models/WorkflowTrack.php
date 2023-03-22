@@ -144,4 +144,17 @@ class WorkflowTrack extends Model
             ->whereIn('workflow_id', $propertyWorflows)
             ->get();
     }
+
+
+    /**
+     * | Get workflow track
+     */
+    public function getWfDashbordData($request)
+    {
+        $currentDate = Carbon::now()->format('Y-m-d');
+        return WorkflowTrack::where('workflow_id', $request->workflowId)
+            ->where('ulb_id', $request->ulbId)
+            ->where('forward_date', $currentDate)
+            ->where('module_id', $request->moduleId);
+    }
 }

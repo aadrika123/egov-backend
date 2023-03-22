@@ -15,6 +15,7 @@ use App\Models\Water\WaterPenaltyInstallment;
 use App\Models\Water\WaterTran;
 use App\Models\Water\WaterTranDetail;
 use App\Models\Workflows\WfWorkflowrolemap;
+use App\Models\WorkflowTrack;
 use App\Repository\Water\Interfaces\iNewConnection;
 use App\Repository\Water\Interfaces\IWaterNewConnection;
 use App\Traits\Workflow\Workflow;
@@ -103,7 +104,7 @@ class WaterApplication extends Controller
             $returnData['cashCollection']   = collect($transactionDetails)->where('payment_mode', 'Cash')->count();
             $returnData['ddCollection']     = collect($transactionDetails)->where('payment_mode', 'DD')->count();
             $returnData['neftCollection']   = collect($transactionDetails)->where('payment_mode', 'Neft')->count();
-            return responseMsgs(true,"dashbord Data!" ,remove_null($returnData),"","02",".ms","POST","");
+            return responseMsgs(true, "dashbord Data!", remove_null($returnData), "", "02", ".ms", "POST", "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", $request->deviceId);
         }
@@ -116,14 +117,32 @@ class WaterApplication extends Controller
      */
     public function workflowDashordDetails(Request $req)
     {
-        try{
-
+        try {
+            $userId = authUser()->id;
+            $ulbId = authUser()->ulb_id;
+            $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
+            $wfMstId = Config::get("workflow-constants.WATER_MASTER_ID");
+            $moduleId = Config::get("module-constants.WATER_MODULE_ID");
+            $WorkflowTrack = new WorkflowTrack();
             $mWaterWaterApplication = new WaterWaterApplication();
-            // $mWaterWaterApplication->
+            $metaRequest = new request();
+            $metaRequest->request->add([
+                'workflowId'    => $wfMstId,
+                'ulbId'         => $ulbId,
+                'moduleId'      => $moduleId
+            ]);
+            if (!$roleId) {
+                throw new Exception("role Not Defined!");
+            }
+            $dateWiseData = $WorkflowTrack->getWfDashbordData($metaRequest)->get();
+            $applicationCount  = $mWaterWaterApplication->getApplicationByRole($roleId)->count();
+            $returnData['todayForwardCount'] = collect($dateWiseData)->where('sender_role_id', $roleId)->count();
+            $returnData['todayReceivedCount'] = collect($dateWiseData)->where('receiver_role_id', $roleId)->count();
+            $returnData['pendingApplication'] = $applicationCount;
+            return responseMsgs(true, "", remove_null($returnData), "", "01", ".ms", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            dd($e->getLine(), $e->getFile());
+            return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", "");
         }
-        catch(Exception $e)
-        {
-            return responseMsgs(false,$e->getMessage(),$e->getFile(),"","01",".ms","POST","")
-;        }
     }
 }

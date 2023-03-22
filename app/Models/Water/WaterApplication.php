@@ -472,13 +472,12 @@ class WaterApplication extends Model
         AND user_type = '$refUserType'";
     }
 
-
     /**
-     * | workflow Dashbord Data
-     * | @param 
+     * | Get application According to current role
      */
-    public function getWfDashbordData()
+    public function getApplicationByRole($roleId)
     {
-        
+        return WaterApplication::where('current_role',$roleId)
+        ->where('status',true);
     }
 }

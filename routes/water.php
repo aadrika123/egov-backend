@@ -120,7 +120,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
         # Dashbording Api
         Route::post('admin/application/dashboard-data', 'getJskAppliedApplication');                    // 13
-        Route::post('');  // Route
+        Route::post('admin/workflow/dashboard-data','workflowDashordDetails');  // Route
     });
 });
 Route::controller(WaterApplication::class)->group(function () {
