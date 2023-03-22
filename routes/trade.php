@@ -54,7 +54,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('appliction/documents', 'getUploadDocuments');
 
         // Route::post('getUploadDocuments', 'getUploadDocuments');
-        Route::post('appliction/document-verify', 'documentVerify');
+        Route::post('application/document-verify', 'documentVerify');
 
         // Route::post('getLicenceDtl', 'getLicenceDtl');
         Route::post('application/dtl-by-id', 'getLicenceDtl');
@@ -102,9 +102,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('application/approved-list', 'approvedApplication');
 
         // Route::post('getComment', 'readIndipendentComment');
-        Route::post('application/get-independent-comment', 'readIndipendentComment');
-
-        Route::post('reports', 'reports');        
+        Route::post('application/get-independent-comment', 'readIndipendentComment');        
                
     });
 

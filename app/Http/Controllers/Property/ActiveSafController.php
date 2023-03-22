@@ -9,6 +9,7 @@ use App\Http\Requests\Property\ReqPayment;
 use App\Http\Requests\Property\ReqSiteVerification;
 use App\MicroServices\DocUpload;
 use App\MicroServices\IdGeneration;
+use App\MicroServices\IdGenerator\PrefixIdGenerator;
 use App\Models\CustomDetail;
 use App\Models\Payment\TempTransaction;
 use App\Models\Property\PaymentPropPenaltyrebate;
@@ -94,12 +95,14 @@ class ActiveSafController extends Controller
     protected $user_id;
     protected $_todayDate;
     protected $Repository;
+    protected $_moduleId;
     // Initializing function for Repository
     protected $saf_repository;
     public function __construct(iSafRepository $saf_repository)
     {
         $this->Repository = $saf_repository;
         $this->_todayDate = Carbon::now();
+        $this->_moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
     }
 
     /**
@@ -832,8 +835,9 @@ class ActiveSafController extends Controller
         $mPropMemoDtl = new PropSafMemoDtl();
         $todayDate = Carbon::now()->format('Y-m-d');
         $fYear = calculateFYear($todayDate);
-        $idGeneration = new IdGeneration;
-        $ptNo = $idGeneration->generatePtNo(true, $saf->ulb_id);
+
+        $ptParamId = Config::get('PropertyConstaint.PT_PARAM_ID');
+        $samParamId = Config::get('PropertyConstaint.SAM_PARAM_ID');
 
         // Derivative Assignments
         $demand = $mPropSafDemand->getFirstDemandByFyearSafId($saf->id, $fYear);
@@ -848,10 +852,13 @@ class ActiveSafController extends Controller
             case $wfLevels['DA']:                       // DA Condition
                 if ($saf->doc_verify_status == 0)
                     throw new Exception("Document Not Fully Verified");
-
+                $idGeneration = new PrefixIdGenerator($ptParamId, $saf->ulb_id);
+                $ptNo = $idGeneration->generate();
                 $saf->pt_no = $ptNo;                        // Generate New Property Tax No for All Conditions
                 $saf->save();
-                $samNo = "SAM-" . $saf->id;                 // Generate SAM No
+
+                $samIdGeneration = new PrefixIdGenerator($samParamId, $saf->ulb_id);
+                $samNo = $samIdGeneration->generate();                 // Generate SAM No
                 $mergedDemand = array_merge($demand->toArray(), [
                     'memo_type' => 'SAM',
                     'memo_no' => $samNo,
@@ -1064,6 +1071,7 @@ class ActiveSafController extends Controller
             $mPropDemand = new PropDemand();
             $todayDate = Carbon::now()->format('Y-m-d');
             $currentFinYear = calculateFYear($todayDate);
+            $famParamId = Config::get('PropertyConstaint.FAM_PARAM_ID');
 
             $userId = authUser()->id;
             $safId = $req->applicationId;
@@ -1074,6 +1082,9 @@ class ActiveSafController extends Controller
                 'workflowId' => $workflowId
             ]);
             $readRoleDtls = $mWfRoleUsermap->getRoleByUserWfId($getRoleReq);
+            if (collect($readRoleDtls)->isEmpty())
+                throw new Exception("You Are Not Authorized for this workflow");
+
             $roleId = $readRoleDtls->wf_role_id;
 
             if ($safDetails->finisher_role_id != $roleId)
@@ -1093,6 +1104,7 @@ class ActiveSafController extends Controller
             $fieldVerifiedSaf = $propSafVerification->getVerificationsBySafId($safId);
             if ($fieldVerifiedSaf->isEmpty())
                 throw new Exception("Site Verification not Exist");
+
             DB::beginTransaction();
             // Approval
             if ($req->status == 1) {
@@ -1104,8 +1116,11 @@ class ActiveSafController extends Controller
                     $demand = $mPropSafDemand->getFirstDemandByFyearSafId($safId, $currentFinYear);
                 if (collect($demand)->isEmpty())
                     throw new Exception("Demand Not Available for the Current Year to Generate FAM");
+
+                $idGeneration = new PrefixIdGenerator($famParamId, $activeSaf->ulb_id);
+
                 // SAF Application replication
-                $famNo = "FAM-" . $safId;
+                $famNo = $idGeneration->generate();
                 $mergedDemand = array_merge($demand->toArray(), [
                     'memo_type' => 'FAM',
                     'memo_no' => $famNo,
@@ -1129,7 +1144,7 @@ class ActiveSafController extends Controller
             $propSafVerification->deactivateVerifications($req->applicationId);                 // Deactivate Verification From Table
             $propSafVerificationDtl->deactivateVerifications($req->applicationId);              // Deactivate Verification from Saf floor Dtls
             DB::commit();
-            return responseMsgs(true, $msg, ['holdingNo' => $safDetails->holding_no], "010110", "1.0", "410ms", "POST", $req->deviceId);
+            return responseMsgs(true, $msg, ['holdingNo' => $safDetails->holding_no, 'ptNo' => $safDetails->pt_no], "010110", "1.0", "410ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
@@ -1507,6 +1522,7 @@ class ActiveSafController extends Controller
             // Update SAF Payment Status
             $activeSaf->payment_status = 1;
             $activeSaf->save();
+            $this->sendToWorkflow($activeSaf);        // Send to Workflow(15.2)
             DB::commit();
             return responseMsgs(true, "Payment Successfully Done",  ['TransactionNo' => $tranNo], "010115", "1.0", "567ms", "POST", $req->deviceId);
         } catch (Exception $e) {
@@ -1556,6 +1572,27 @@ class ActiveSafController extends Controller
             'cluster_id' => $clusterId
         ];
         $mTempTransaction->tempTransaction($tranReqs);
+    }
+
+    /**
+     * | Send to Workflow Level after payment(15.2)
+     */
+    public function sendToWorkflow($activeSaf)
+    {
+        $mWorkflowTrack = new WorkflowTrack();
+        $todayDate = $this->_todayDate;
+        $refTable = Config::get('PropertyConstaint.SAF_REF_TABLE');
+        $reqWorkflow = [
+            'workflow_id' => $activeSaf->workflow_id,
+            'ref_table_dot_id' => $refTable,
+            'ref_table_id_value' => $activeSaf->id,
+            'track_date' => $todayDate->format('Y-m-d h:i:s'),
+            'module_id' => $this->_moduleId,
+            'user_id' => null,
+            'receiver_role_id' => $activeSaf->current_role,
+            'ulb_id' => $activeSaf->ulb_id,
+        ];
+        $mWorkflowTrack->store($reqWorkflow);
     }
 
     /**

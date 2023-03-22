@@ -84,7 +84,8 @@ class CommonFunction implements ICommonFunction
                 )
                 ->join("wf_roles", "wf_roles.id", "wf_workflowrolemaps.wf_role_id")
                 ->where("wf_roles.is_suspended", false)
-                ->where("wf_workflows.id", $work_flow_id)
+                ->where("wf_workflows.ulb_id",$ulb_id)
+                ->where("wf_workflows.wf_master_id", $work_flow_id)
                 ->where("wf_workflows.is_suspended", false)
                 ->orderBy("wf_roles.id")
                 ->get();
@@ -206,7 +207,7 @@ class CommonFunction implements ICommonFunction
                 ->where("wf_roles.is_suspended", false)
                 ->where("wf_roleusermaps.user_id", $user_id)
                 ->where("wf_workflows.ulb_id", $ulb_id)
-                ->where("wf_workflows.id", $workflow_id)
+                ->where("wf_workflows.wf_master_id", $workflow_id)
                 ->orderBy("wf_roleusermaps.id", "desc")
                 ->first();
             // dd(DB::getQueryLog());

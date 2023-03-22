@@ -435,8 +435,15 @@ return [
         "LATE_ASSESSMENT_ID" => 2       // One Perc Penalty
     ],
 
+    /**
+     * | Id Generation Parmam Ids
+     */
+
     "PARAM_ID" => 1,
+    "PT_PARAM_ID" => 3,
     "GB_PARAM" => 4,
+    "SAM_PARAM_ID" => 5,
+    "FAM_PARAM_ID" => 6,
 
     /**
      * | Rebate and Penalty Masters

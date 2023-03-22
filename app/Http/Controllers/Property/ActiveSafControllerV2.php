@@ -425,16 +425,18 @@ class ActiveSafControllerV2 extends Controller
             $finalOnePerc = collect($summedDemand)->sum('onePercPenaltyTax');
             $finalOnePerc = roundFigure($finalOnePerc);
             $finalAmt = $finalDues + $finalOnePerc + $totalLateAssessmentPenalty;
-            $duesFrom = collect($clusterDemands)->first()['demand']['duesFrom'] ?? collect($clusterDemands)->last()['demand']['duesFrom'];
-            $duesTo = collect($clusterDemands)->first()['demand']['duesTo'] ?? collect($clusterDemands)->last()['demand']['duesTo'];
+            $duesFrom = collect($clusterDemands)->first()['demand']['duesFrom'] ?? collect($clusterDemands)->last()['demand']['duesFrom'] ?? [];
+            $duesTo = collect($clusterDemands)->first()['demand']['duesTo'] ?? collect($clusterDemands)->last()['demand']['duesTo'] ?? [];
 
             $finalClusterDemand['demand'] = [
                 'duesFrom' => $duesFrom,
                 'duesTo' => $duesTo,
+                'totalTax' => $finalDues,
                 'totalDues' => $finalDues,
                 'totalOnePercPenalty' => $finalOnePerc,
                 'lateAssessmentPenalty' => $totalLateAssessmentPenalty,
                 'finalAmt' => $finalAmt,
+                'totalDemand' => $finalAmt,
             ];
             $mLastQuarterDemand = collect($summedDemand)->where('fyear', $currentFYear)->sum('balance');
             $finalClusterDemand['demand'] = $penaltyRebateCal->readRebates($currentQuarter, $loggedInUserType, $mLastQuarterDemand, null, $finalAmt, $finalClusterDemand['demand']);
