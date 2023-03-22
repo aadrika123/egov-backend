@@ -729,4 +729,15 @@ class PropActiveSaf extends Model
             ->leftJoin('ulb_ward_masters as u1', 's.new_ward_mstr_id', '=', 'u1.id')
             ->first();
     }
+
+    /**
+     * | Save Cluster in saf
+     */
+    public function saveClusterInSaf($safNoList, $clusterId)
+    {
+        PropActiveSaf::whereIn('saf_no', $safNoList)
+            ->update([
+                'cluster_id' => $clusterId
+            ]);
+    }
 }

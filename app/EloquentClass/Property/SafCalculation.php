@@ -1083,12 +1083,14 @@ class SafCalculation
         if ($this->_propertyDetails['propertyType'] != $this->_vacantPropertyTypeId) {
             $floorDetails = collect($this->_floors);
             $lateAssementFloors = $floorDetails->filter(function ($value, $key) {                           // Collection of floors which have late Assessment
-                $currentDate = Carbon::now()->floorMonth();
-                $dateFrom = Carbon::createFromFormat('Y-m-d', $value['dateFrom'])->floorMonth();
-                $usageType = $value['useType'];
-                if ($usageType != 10) {                                                                     // Late Assessment Not Applicable for the Religious Floors
-                    $diffInMonths = $currentDate->diffInMonths($dateFrom);
-                    return $diffInMonths > 3;
+                if (!isset($value['propFloorDetailId'])) {                                                  // For This Floor Which is Not Existing Case of Reassessment
+                    $currentDate = Carbon::now()->floorMonth();
+                    $dateFrom = Carbon::createFromFormat('Y-m-d', $value['dateFrom'])->floorMonth();
+                    $usageType = $value['useType'];
+                    if ($usageType != 10) {                                                                     // Late Assessment Not Applicable for the Religious Floors
+                        $diffInMonths = $currentDate->diffInMonths($dateFrom);
+                        return $diffInMonths > 3;
+                    }
                 }
             });
             $this->_lateAssessmentStatus = $lateAssementFloors->isEmpty() == true ? false : true;

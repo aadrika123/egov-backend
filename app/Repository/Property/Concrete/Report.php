@@ -17,6 +17,7 @@ use App\Traits\Workflow\Workflow;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Mockery\CountValidator\Exact;
@@ -2428,6 +2429,98 @@ class Report implements IReport
                 "numberOfPages" => $numberOfPages
             ];
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
+            return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime, $action, $deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
+        }
+    }
+
+    /**
+     * | Property Individual Demand Collection
+     */
+    public function propIndividualDemandCollection($request)
+    {
+        $metaData = collect($request->metaData)->all();
+        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
+        $perPage = $request->perPage ? $request->perPage : 10;
+        $page = $request->page && $request->page > 0 ? $request->page : 1;
+        $limit = $perPage;
+        $offset =  $request->page && $request->page > 0 ? ($request->page * $perPage) : 0;
+        $wardMstrId = NULL;
+        $ulbId = authUser()->ulb_id;
+
+        if ($request->wardMstrId) {
+            $wardMstrId = $request->wardMstrId;
+        }
+
+        try {
+            $sql = "SELECT p.id,p.ward_mstr_id,ward_name,p.holding_no,p.new_holding_no,p.prop_address,pt_no,
+                        owner_name,
+                        mobile_no,
+                    prop_demands.total_demand,prop_demands.collection_amount,prop_demands.balance_amount
+        
+                FROM prop_properties AS p
+                left JOIN (
+                    SELECT property_id,
+                        STRING_AGG(owner_name,',')as owner_name,
+                        STRING_AGG(mobile_no::text,',')as mobile_no
+                    FROM prop_owners
+                    WHERE status =1
+                    GROUP BY property_id
+                ) prop_owners ON prop_owners.property_id = p.id
+                JOIN ulb_ward_masters AS w ON w.id = p.ward_mstr_id
+                left JOIN (
+                    SELECT property_id,
+                        SUM (amount) AS total_demand,
+                        SUM(CASE WHEN paid_status =1 THEN amount ELSE 0 END )AS collection_amount,
+                        SUM(CASE WHEN paid_status =0 THEN amount ELSE 0 END )AS balance_amount
+                    FROM prop_demands 
+                    WHERE status =1 
+                    GROUP BY property_id
+                    limit $limit offset $offset
+                )prop_demands ON prop_demands.property_id = p.id
+                WHERE p.ulb_id = $ulbId
+                " . ($wardMstrId ? " AND p.ward_mstr_id = $wardMstrId" : "") . "
+                limit $limit offset $offset";
+
+            $sql2 = "SELECT count(*) as total
+                    FROM prop_properties AS p
+                left JOIN (
+                    SELECT property_id,
+                        STRING_AGG(owner_name,',')as owner_name,
+                        STRING_AGG(mobile_no::text,',')as mobile_no
+                    FROM prop_owners
+                    WHERE status =1
+                    GROUP BY property_id
+                ) prop_owners ON prop_owners.property_id = p.id
+                JOIN ulb_ward_masters AS w ON w.id = p.ward_mstr_id
+                left JOIN (
+                    SELECT property_id,
+                        SUM (amount) AS total_demand,
+                        SUM(CASE WHEN paid_status =1 THEN amount ELSE 0 END )AS collection_amount,
+                        SUM(CASE WHEN paid_status =0 THEN amount ELSE 0 END )AS balance_amount
+                    FROM prop_demands 
+                    WHERE status =1 
+                    GROUP BY property_id                    
+                )prop_demands ON prop_demands.property_id = p.id
+                WHERE  p.ulb_id = $ulbId
+                " . ($wardMstrId ? " AND p.ward_mstr_id = $wardMstrId" : "") . "
+               ";
+
+            $data = DB::TABLE(DB::RAW("($sql )AS prop"))->get();
+            $items = $data;
+
+            $total = (collect(DB::SELECT($sql2))->first())->total ?? 0;
+            $numberOfPages = ceil($total / $perPage);
+            $list = [
+                "perPage" => $perPage,
+                "page" => $page,
+                "items" => $items,
+                "total" => $total,
+                "numberOfPages" => $numberOfPages
+            ];
+
+            $queryRunTime = (collect(DB::getQueryLog($sql, $sql2, $data))->sum("time"));
             return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime, $action, $deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
