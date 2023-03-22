@@ -117,7 +117,9 @@ class WaterApplication extends Controller
     public function workflowDashordDetails(Request $req)
     {
         try{
-            
+
+            $mWaterWaterApplication = new WaterWaterApplication();
+            // $mWaterWaterApplication->
         }
         catch(Exception $e)
         {

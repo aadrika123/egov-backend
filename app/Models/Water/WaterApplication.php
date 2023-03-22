@@ -471,4 +471,14 @@ class WaterApplication extends Model
         WHERE apply_date = '$currentDate'
         AND user_type = '$refUserType'";
     }
+
+
+    /**
+     * | workflow Dashbord Data
+     * | @param 
+     */
+    public function getWfDashbordData()
+    {
+        
+    }
 }
