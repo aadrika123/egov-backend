@@ -103,4 +103,10 @@ return [
         "2" => "2 Installment",
         "3" => "3 Installment"
     ],
+
+    "USER_TYPE" => [
+        'Tax_Collector' => 'TC',
+        'Jsk'           => 'JSK',
+        'Citizen'       => 'Citizen'
+    ]
 ];

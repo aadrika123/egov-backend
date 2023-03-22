@@ -247,18 +247,19 @@ class ReportController extends Controller
             $first_query = DB::table('prop_active_safs')
                 ->select(
                     't.id',
-                    'ward_name',
-                    'saf_no',
+                    'ward_name as ward_no',
+                    'saf_no as application_no',
                     'ward_mstr_id',
                     'prop_address',
                     'tran_date',
-                    'payment_mode',
+                    'payment_mode as transaction_mode',
                     't.user_id as tc_id',
-                    'user_name as tc_name',
+                    'user_name as emp_name',
                     'tran_no',
                     'cheque_no',
                     'bank_name',
                     'branch_name',
+                    'amount',
                     DB::raw("CONCAT (from_fyear,'(',from_qtr,')','/',to_fyear,'(',to_qtr,')') AS payment_year"),
                 )
                 ->join('prop_transactions as t', 't.saf_id', 'prop_active_safs.id')
@@ -272,19 +273,20 @@ class ReportController extends Controller
             $gbsafCollection = DB::table('prop_safs')
                 ->select(
                     't.id',
-                    'ward_name',
-                    'saf_no',
+                    'ward_name as ward_no',
+                    'saf_no as application_no',
                     'ward_mstr_id',
                     'prop_address',
                     'tran_date',
-                    'payment_mode',
+                    'payment_mode as transaction_mode',
                     't.user_id as tc_id',
-                    'user_name as tc_name',
+                    'user_name as emp_name',
                     'tran_no',
                     'cheque_no',
                     'bank_name',
                     'branch_name',
-                    DB::raw("CONCAT (from_fyear,'(',from_qtr,')','/',to_fyear,'(',to_qtr,')') AS payment_year"),
+                    'amount',
+                    DB::raw("CONCAT (from_fyear,'(',from_qtr,')','/',to_fyear,'(',to_qtr,')') AS from_upto_fy_qtr"),
 
                 )
                 ->join('prop_transactions as t', 't.saf_id', 'prop_safs.id')
