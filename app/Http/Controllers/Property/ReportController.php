@@ -7,6 +7,7 @@ use App\Models\Property\PropDemand;
 use App\Repository\Common\CommonFunction;
 use App\Repository\Property\Interfaces\IReport;
 use App\Traits\Auth;
+use App\Traits\Property\Report;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
@@ -16,6 +17,7 @@ use Illuminate\Support\Facades\DB;
 class ReportController extends Controller
 {
     use Auth;
+    use Report;
 
     private $Repository;
     private $_common;
@@ -243,57 +245,11 @@ class ReportController extends Controller
         try {
             $fromDate = $req->fromDate;
             $uptoDate = $req->uptoDate;
+            $tbl1 = 'prop_active_safs';
+            $tbl2 = 'prop_safs';
 
-            $first_query = DB::table('prop_active_safs')
-                ->select(
-                    't.id',
-                    'ward_name as ward_no',
-                    'saf_no as application_no',
-                    'ward_mstr_id',
-                    'prop_address',
-                    'tran_date',
-                    'payment_mode as transaction_mode',
-                    't.user_id as tc_id',
-                    'user_name as emp_name',
-                    'tran_no',
-                    'cheque_no',
-                    'bank_name',
-                    'branch_name',
-                    'amount',
-                    DB::raw("CONCAT (from_fyear,'(',from_qtr,')','/',to_fyear,'(',to_qtr,')') AS payment_year"),
-                )
-                ->join('prop_transactions as t', 't.saf_id', 'prop_active_safs.id')
-                ->join('users', 'users.id', 't.user_id')
-                ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_active_safs.ward_mstr_id')
-                ->leftJoin('prop_cheque_dtls', 'prop_cheque_dtls.transaction_id', 't.id')
-                ->where('is_gb_saf', true)
-                ->whereBetween('tran_date', [$fromDate, $uptoDate]);
-
-            $gbsafCollection = DB::table('prop_safs')
-                ->select(
-                    't.id',
-                    'ward_name as ward_no',
-                    'saf_no as application_no',
-                    'ward_mstr_id',
-                    'prop_address',
-                    'tran_date',
-                    'payment_mode as transaction_mode',
-                    't.user_id as tc_id',
-                    'user_name as emp_name',
-                    'tran_no',
-                    'cheque_no',
-                    'bank_name',
-                    'branch_name',
-                    'amount',
-                    DB::raw("CONCAT (from_fyear,'(',from_qtr,')','/',to_fyear,'(',to_qtr,')') AS from_upto_fy_qtr"),
-
-                )
-                ->join('prop_transactions as t', 't.saf_id', 'prop_safs.id')
-                ->join('users', 'users.id', 't.user_id')
-                ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_safs.ward_mstr_id')
-                ->leftJoin('prop_cheque_dtls', 'prop_cheque_dtls.transaction_id', 't.id')
-                ->where('is_gb_saf', true)
-                ->whereBetween('tran_date', [$fromDate, $uptoDate])
+            $first_query =  $this->gbSafCollectionQuery($tbl1, $fromDate, $uptoDate);
+            $gbsafCollection = $this->gbSafCollectionQuery($tbl2, $fromDate, $uptoDate)
                 ->union($first_query);
 
             if ($req->wardMstrId)
@@ -337,6 +293,21 @@ class ReportController extends Controller
         return $this->Repository->propIndividualDemandCollection($request);
     }
 
+
+    /**
+     * | GBSAF Ward wise Individual Demand
+     */
+    public function gbsafIndividualDemandCollection(Request $request)
+    {
+        $request->validate(
+            [
+                "ulbId" => "nullable|digits_between:1,9223372036854775807",
+                "wardMstrId" => "nullable|digits_between:1,9223372036854775807",
+            ]
+        );
+        $request->request->add(["metaData" => ["pr13.1", 1.1, null, $request->getMethod(), null,]]);
+        return $this->Repository->gbsafIndividualDemandCollection($request);
+    }
 
 
 

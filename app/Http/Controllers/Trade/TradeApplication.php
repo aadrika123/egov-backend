@@ -795,11 +795,7 @@ class TradeApplication extends Controller
         return $this->_REPOSITORY->approvedApplication($request);
     }
 
-
-    public function reports(Request $request)
-    {
-        return $this->_REPOSITORY->reports($request);
-    }
+    
 
     /**
      *  get uploaded documents

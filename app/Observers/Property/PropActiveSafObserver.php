@@ -3,6 +3,7 @@
 namespace App\Observers\Property;
 
 use App\MicroServices\IdGeneration;
+use App\MicroServices\IdGenerator\PrefixIdGenerator;
 use App\Models\Property\PropActiveSaf;
 use Illuminate\Support\Facades\Config;
 
@@ -18,11 +19,13 @@ class PropActiveSafObserver
     {
         $paramId = Config::get('PropertyConstaint.PARAM_ID');
         $gbParamId = Config::get('PropertyConstaint.GB_PARAM');
-        $idGeneration = new IdGeneration;
-        if ($propActiveSaf->is_gb_saf == false)
-            $safNo = $idGeneration->generateId($paramId, true);
-        else
-            $safNo = $idGeneration->generateId($gbParamId, true);
+        if ($propActiveSaf->is_gb_saf == false) {
+            $idGeneration = new PrefixIdGenerator($paramId, $propActiveSaf->ulb_id);
+            $safNo = $idGeneration->generate();
+        } else {
+            $idGeneration = new PrefixIdGenerator($gbParamId, $propActiveSaf->ulb_id);
+            $safNo = $idGeneration->generate();
+        }
         $propActiveSaf->saf_no = $safNo;
         $propActiveSaf->save();
     }

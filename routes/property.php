@@ -459,6 +459,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('reports/property/deactivated-list', 'PropDeactedList');
     Route::post('reports/property/gbsaf-collection', 'gbSafCollection');
     Route::post('reports/property/individual-demand-collection', 'propIndividualDemandCollection');
+    Route::post('reports/property/gbsaf-individual-demand-collection', 'gbsafIndividualDemandCollection');
   });
 });
 

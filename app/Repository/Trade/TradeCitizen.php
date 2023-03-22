@@ -519,16 +519,25 @@ class TradeCitizen implements ITradeCitizen
             $refWorkflowId  = $this->_WF_MASTER_Id;
             $modul_id = $this->_MODULE_ID;
            
-            $init_finish = $this->_COMMON_FUNCTION->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
             
-            $finisher = $init_finish['finisher'];
-            $finisher['short_user_name'] = $this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][strtoupper($init_finish['finisher']['role_name'])];
             $mUserType      = $this->_COMMON_FUNCTION->userType($refWorkflowId);
             $refApplication = $this->_REPOSITORY_TRADE->getAllLicenceById($id);
             $mStatus = $this->_REPOSITORY_TRADE->applicationStatus($id);
             $mItemName      = "";
             $mCods          = "";
+            if(!$refApplication)
+            {
+                throw new Exception("Data Not Found");
+            }
+            if(!$refUlbId)
+            {
+                $refUlbId = $refApplication->ulb_id;
+            }
             
+            $init_finish = $this->_COMMON_FUNCTION->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);            
+            $finisher = $init_finish['finisher'];
+            $finisher['short_user_name'] = $this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][strtoupper($init_finish['finisher']['role_name'])];
+
             if ($refApplication->nature_of_bussiness) 
             {
                 $items = TradeParamItemType::itemsById($refApplication->nature_of_bussiness);
@@ -570,6 +579,7 @@ class TradeCitizen implements ITradeCitizen
 
             return responseMsg(true, "", $data);
         } catch (Exception $e) {
+            dd($e->getMessage(),$e->getLine(),$e->getFile());
             return responseMsg(false, $e->getMessage(), '');
         }
     }
