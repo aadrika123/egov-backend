@@ -225,7 +225,7 @@ class ReportController extends Controller
             $financialYears[] = $financialYear;
             $end->subYear();
         }
-        return responseMsgs(true, "Financial Year List", $financialYears, '010801', '01', '382ms-547ms', 'Post', '');
+        return responseMsgs(true, "Financial Year List", $financialYears, 'pr11.1', '01', '382ms-547ms', 'Post', '');
     }
 
 
@@ -268,7 +268,6 @@ class ReportController extends Controller
                 ->leftJoin('prop_cheque_dtls', 'prop_cheque_dtls.transaction_id', 't.id')
                 ->where('is_gb_saf', true)
                 ->whereBetween('tran_date', [$fromDate, $uptoDate]);
-            // ->get();
 
             $gbsafCollection = DB::table('prop_safs')
                 ->select(
@@ -317,10 +316,25 @@ class ReportController extends Controller
                 "numberOfPages" => $numberOfPages
             ];
 
-            return responseMsgs(true, "GB Saf Collection!", $list, '010801', '01', '623ms', 'Post', '');
+            return responseMsgs(true, "GB Saf Collection!", $list, 'pr12.1', '01', '623ms', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
+    }
+
+    /**
+     * | Ward wise Individual Property Demand
+     */
+    public function propIndividualDemandCollection(Request $request)
+    {
+        $request->validate(
+            [
+                "ulbId" => "nullable|digits_between:1,9223372036854775807",
+                "wardMstrId" => "nullable|digits_between:1,9223372036854775807",
+            ]
+        );
+        $request->request->add(["metaData" => ["pr13.1", 1.1, null, $request->getMethod(), null,]]);
+        return $this->Repository->propIndividualDemandCollection($request);
     }
 
 
