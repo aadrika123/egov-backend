@@ -1367,8 +1367,6 @@ class ActiveSafController extends Controller
             $req->request->add(['workflowId' => $safDetails->workflow_id, 'ghostUserId' => 0]);
             DB::beginTransaction();
             $orderDetails = $this->saveGenerateOrderid($req);                                      //<---------- Generate Order ID Trait
-
-            // $this->postDemands($safDemandDetails, $req);                               // Update the data in saf prop demands
             DB::commit();
             return responseMsgs(true, "Order ID Generated", remove_null($orderDetails), "010114", "1.0", "1s", "POST", $req->deviceId);
         } catch (Exception $e) {
