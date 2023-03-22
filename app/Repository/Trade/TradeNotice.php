@@ -44,10 +44,29 @@ class TradeNotice implements ITradeNotice
     protected $_licenceId;
     protected $_shortUlbName;
 
+    protected $_MODEL_WARD;
+    protected $_COMMON_FUNCTION;
+    protected $_REPOSITORY_TRADE;
+    protected $_WF_MASTER_Id;
+    protected $_MODULE_ID;
+    protected $_REF_TABLE;
+    protected $_TRADE_CONSTAINT;
+    protected $_DOC_PATH;
+
+    protected $_META_DATA;
+    protected $_QUERY_RUN_TIME;
+    protected $_API_ID;
+
     public function __construct()
     {
-        $this->_modelWard = new ModelWard();
-        $this->_parent = new CommonFunction();
+        $this->_MODEL_WARD = new ModelWard();
+        $this->_COMMON_FUNCTION = new CommonFunction();
+
+        $this->_WF_MASTER_Id = Config::get('workflow-constants.TRADE_NOTICE_ID');
+        $this->_MODULE_ID = Config::get('module-constants.TRADE_MODULE_ID');
+        $this->_TRADE_CONSTAINT = Config::get("TradeConstant");
+        $this->_REF_TABLE = $this->_TRADE_CONSTAINT["TRADE_NOTICE_REF_TABLE"];
+        $this->_DOC_PATH = $this->_TRADE_CONSTAINT["TRADE_NOTICE_RELATIVE_PATH"];
     }
     public function addDenail(Request $request)
     {
@@ -56,8 +75,8 @@ class TradeNotice implements ITradeNotice
         $ulbId = $user->ulb_id;
         try {
             $data = array();
-            $refWorkflowId = Config::get('workflow-constants.TRADE_NOTICE_ID');
-            $refWorkflows       = $this->_parent->iniatorFinisher($userId, $ulbId, $refWorkflowId);
+            $refWorkflowId = $this->_WF_MASTER_Id;
+            $refWorkflows       = $this->_COMMON_FUNCTION->iniatorFinisher($userId, $ulbId, $refWorkflowId);
             DB::beginTransaction();
             $denialConsumer = new ActiveTradeNoticeConsumerDtl();
             $denialConsumer->firm_name  = $request->firmName;
@@ -89,7 +108,7 @@ class TradeNotice implements ITradeNotice
 
             
             $docUpload = new DocUpload;
-            $relativePath = Config::get('TradeConstant.TRADE_NOTICE_RELATIVE_PATH');
+            $relativePath = $this->_DOC_PATH;
             $refImageName = $request->docCode;
             $refImageName = $denial_id . '-' . str_replace(' ', '_', $refImageName);
             $document = $request->document;
@@ -124,15 +143,15 @@ class TradeNotice implements ITradeNotice
             $user = Auth()->user();
             $user_id = $user->id;
             $ulb_id = $user->ulb_id;
-            $workflow_id = Config::get('workflow-constants.TRADE_NOTICE_ID');
-            $role = $this->_parent->getUserRoll($user_id, $ulb_id, $workflow_id);
+            $workflow_id = $this->_WF_MASTER_Id;
+            $role = $this->_COMMON_FUNCTION->getUserRoll($user_id, $ulb_id, $workflow_id);
             $role_id = $role->role_id ?? -1;
             if (!$role) 
             {
                 throw new Exception("You Are Not Authorized");
             }
 
-            $wardList = $this->_parent->WardPermission($user_id);
+            $wardList = $this->_COMMON_FUNCTION->WardPermission($user_id);
             $data['wardList'] = $wardList;
             $ward_ids = array_map(function ($val) {
                 return $val['id'];
@@ -184,16 +203,16 @@ class TradeNotice implements ITradeNotice
             $user = Auth()->user();
             $user_id = $user->id;
             $ulb_id = $user->ulb_id;
-            $refWorkflowId = Config::get('workflow-constants.TRADE_NOTICE_ID');
-            $mUserType = $this->_parent->userType($refWorkflowId);
-            $ward_permission = $this->_parent->WardPermission($user_id);
-            $role = $this->_parent->getUserRoll($user_id, $ulb_id, $refWorkflowId);
+            $refWorkflowId = $this->_WF_MASTER_Id;
+            $mUserType = $this->_COMMON_FUNCTION->userType($refWorkflowId);
+            $ward_permission = $this->_COMMON_FUNCTION->WardPermission($user_id);
+            $role = $this->_COMMON_FUNCTION->getUserRoll($user_id, $ulb_id, $refWorkflowId);
             if (!$role) {
                 throw new Exception("You Are Not Authorized");
             }
             if ($role->is_initiator || in_array(strtoupper($mUserType), ["JSK", "SUPER ADMIN", "ADMIN", "TL", "PMU", "PM"])) 
             {
-                $ward_permission = $this->_modelWard->getAllWard($ulb_id)->map(function ($val) {
+                $ward_permission = $this->_MODEL_WARD->getAllWard($ulb_id)->map(function ($val) {
                     $val->ward_no = $val->ward_name;
                     return $val;
                 });
@@ -251,9 +270,9 @@ class TradeNotice implements ITradeNotice
             $refUser        = Auth()->user();
             $refUserId      = $refUser->id;
             $refUlbId       = $refUser->ulb_id;
-            $refWorkflowId  = Config::get('workflow-constants.TRADE_NOTICE_ID');
+            $refWorkflowId  = $this->_WF_MASTER_Id;
             
-            $mWardPermission = $this->_parent->WardPermission($refUserId);
+            $mWardPermission = $this->_COMMON_FUNCTION->WardPermission($refUserId);
             $inputs = $request->all();
             $denila_consumer = ActiveTradeNoticeConsumerDtl::select(
                 "active_trade_notice_consumer_dtls.*",
@@ -301,15 +320,15 @@ class TradeNotice implements ITradeNotice
             $refUser        = Auth()->user();
             $refUserId      = $refUser->id;
             $refUlbId       = $refUser->ulb_id;
-            $refWorkflowId  = Config::get('workflow-constants.TRADE_NOTICE_ID');
-            $mWardPermission = $this->_parent->WardPermission($refUserId);
-            $mRole = $this->_parent->getUserRoll($refUserId, $refUlbId, $refWorkflowId);
+            $refWorkflowId  = $this->_WF_MASTER_Id;
+            $mWardPermission = $this->_COMMON_FUNCTION->WardPermission($refUserId);
+            $mRole = $this->_COMMON_FUNCTION->getUserRoll($refUserId, $refUlbId, $refWorkflowId);
 
             if (!$mRole->is_initiator) {
                 throw new Exception("You Are Not Authorized For This Action");
             }
             if ($mRole->is_initiator) {
-                $mWardPermission = $this->_modelWard->getAllWard($refUlbId)->map(function ($val) {
+                $mWardPermission = $this->_MODEL_WARD->getAllWard($refUlbId)->map(function ($val) {
                     $val->ward_no = $val->ward_name;
                     return $val;
                 });
@@ -369,9 +388,9 @@ class TradeNotice implements ITradeNotice
      * |+ @var user  login user DATA 
      * |+ @var user_id login user ID
      * |+ @var ulb_id login user ULBID
-     * |+ @var workflow_id owrflow id 19 for trade **Config::get('workflow-constants.TRADE_WORKFLOW_ID')
+     * |+ @var workflow_id owrflow id 229 for trade **$this->_WF_MASTER_Id
      * |+ @var role_id login user ROLEID **this->_parent->getUserRoll($user_id, $ulb_id,$workflow_id)->role_id??-1
-     * | @var mUserType login user sort role name **$this->_parent->userType(workflow_id)
+     * | @var mUserType login user sort role name **$this->_COMMON_FUNCTION->userType(workflow_id)
      * |
      * |+ @var denial_details  apply denial detail **this->getDenialDetailsByID($id,$ulb_id)
      * |+ @var denialID =  denial_details->id
@@ -388,9 +407,9 @@ class TradeNotice implements ITradeNotice
             $user = Auth()->user();
             $user_id = $user->id;
             $ulb_id = $user->ulb_id;
-            $workflow_id = Config::get('workflow-constants.TRADE_NOTICE_ID');
-            $role_id = $this->_parent->getUserRoll($user_id, $ulb_id, $workflow_id)->role_id ?? -1;
-            $mUserType = $this->_parent->userType($workflow_id);
+            $workflow_id = $this->_WF_MASTER_Id;
+            $role_id = $this->_COMMON_FUNCTION->getUserRoll($user_id, $ulb_id, $workflow_id)->role_id ?? -1;
+            $mUserType = $this->_COMMON_FUNCTION->userType($workflow_id);
 
             $denial_details  = $this->getDenialDetailsByID($applicationId);            
             $data["denial_details"] = $denial_details;
@@ -409,13 +428,13 @@ class TradeNotice implements ITradeNotice
             $user = Auth()->user();
             $user_id = $user->id;
             $ulb_id = $user->ulb_id;
-            $refWorkflowId = Config::get('workflow-constants.TRADE_NOTICE_ID');
+            $refWorkflowId = $this->_WF_MASTER_Id;
             $req->validate([
                 "applicationId" => "required",
                 "status" => "required"
             ]);
             $application = ActiveTradeNoticeConsumerDtl::find($req->applicationId);
-            $role = $this->_parent->getUserRoll($user_id,$ulb_id,$refWorkflowId);
+            $role = $this->_COMMON_FUNCTION->getUserRoll($user_id,$ulb_id,$refWorkflowId);
             if(!$application)
             {
                 throw new Exception("Data Not Found");

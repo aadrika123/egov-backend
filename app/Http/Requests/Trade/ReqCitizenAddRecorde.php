@@ -20,7 +20,7 @@ class ReqCitizenAddRecorde extends TradeRequest
         $mRegex = '/^[a-zA-Z1-9][a-zA-Z1-9\. \s]+$/';
         $mFramNameRegex = '/^[a-zA-Z1-9][a-zA-Z1-9\.\,\'&\s]+$/';
         $reftrade = new CommonFunction();
-        $refWorkflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
+        $refWorkflowId = Config::get('workflow-constants.TRADE_MASTER_ID');
         $mUserType = $reftrade->userType($refWorkflowId);
         $rules = [];
         $rules["ulbId"]="required|digits_between:1,92";

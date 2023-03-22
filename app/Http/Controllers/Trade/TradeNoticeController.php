@@ -25,14 +25,30 @@ class TradeNoticeController extends Controller
      */
 
     // Initializing function for Repository
-    private $Repository;
-    private $_modelWard;
-    private $_parent;
+    
+    protected $_MODEL_WARD;
+    protected $_COMMON_FUNCTION;
+    protected $_REPOSITORY;
+    protected $_REPOSITORY_TRADE;
+    protected $_WF_MASTER_Id;
+    protected $_MODULE_ID;
+    protected $_REF_TABLE;
+    protected $_TRADE_CONSTAINT;
+
+    protected $_META_DATA;
+    protected $_QUERY_RUN_TIME;
+    protected $_API_ID;
+
     public function __construct(ITradeNotice $TradeRepository)
     {
-        $this->Repository = $TradeRepository;
-        $this->_modelWard = new ModelWard();
-        $this->_parent = new CommonFunction();
+        $this->_REPOSITORY = $TradeRepository;
+        $this->_MODEL_WARD = new ModelWard();
+        $this->_COMMON_FUNCTION = new CommonFunction();
+        
+        $this->_WF_MASTER_Id = Config::get('workflow-constants.TRADE_NOTICE_ID');
+        $this->_MODULE_ID = Config::get('module-constants.TRADE_MODULE_ID');
+        $this->_TRADE_CONSTAINT = Config::get("TradeConstant");
+        $this->_REF_TABLE = $this->_TRADE_CONSTAINT["TRADE_NOTICE_REF_TABLE"];
     }
     public function applyDenail(ReqApplyDenail $request)
     {
@@ -40,17 +56,17 @@ class TradeNoticeController extends Controller
             $user = Auth()->user();
             $userId = $user->id;
             $ulbId = $user->ulb_id;
-            $refWorkflowId = Config::get('workflow-constants.TRADE_NOTICE_ID');
-            $role = $this->_parent->getUserRoll($userId, $ulbId, $refWorkflowId);
+            $refWorkflowId = $this->_WF_MASTER_Id;
+            $role = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $refWorkflowId);
             // dd($role);
             if (!$role) {
                 throw new Exception("You Are Not Authorized");
             }
-            $userType = $this->_parent->userType($refWorkflowId);
+            $userType = $this->_COMMON_FUNCTION->userType($refWorkflowId);
             if (!in_array(strtoupper($userType), ["TC", "UTC"])) {
                 throw new Exception("You Are Not Authorize For Apply Denial");
             }
-            return $this->Repository->addDenail($request);
+            return $this->_REPOSITORY->addDenail($request);
         } catch (Exception $e) 
         {
             return responseMsg(false, $e->getMessage(), $request->all());
@@ -58,19 +74,19 @@ class TradeNoticeController extends Controller
     }
     public function inbox(Request $request)
     {
-       return  $this->Repository->inbox($request);
+       return  $this->_REPOSITORY->inbox($request);
     }
     public function outbox(Request $request)
     {
-        return  $this->Repository->outbox($request);
+        return  $this->_REPOSITORY->outbox($request);
     }
     public function specialInbox(Request $request)
     {
-        return  $this->Repository->specialInbox($request);
+        return  $this->_REPOSITORY->specialInbox($request);
     }
     public function btcInbox(Request $request)
     {
-        return  $this->Repository->btcInbox($request);
+        return  $this->_REPOSITORY->btcInbox($request);
     }
     public function postNextLevel(Request $request)
     {
@@ -87,7 +103,7 @@ class TradeNoticeController extends Controller
             $user = Auth()->user();
             $user_id = $user->id;
             $ulb_id = $user->ulb_id;
-            $refWorkflowId = Config::get('workflow-constants.TRADE_NOTICE_ID');
+            $refWorkflowId = $this->_WF_MASTER_Id;
             $workflowId = WfWorkflow::where('id', $refWorkflowId)
                 ->where('ulb_id', $ulb_id)
                 ->first();
@@ -101,9 +117,9 @@ class TradeNoticeController extends Controller
             {
                 throw new Exception("Data Not Found");
             }
-            $allRolse = collect($this->_parent->getAllRoles($user_id,$ulb_id,$refWorkflowId,0,true));
+            $allRolse = collect($this->_COMMON_FUNCTION->getAllRoles($user_id,$ulb_id,$refWorkflowId,0,true));
             $receiverRole = array_values(objToArray($allRolse->where("id",$request->receiverRoleId)))[0]??[];
-            $role = $this->_parent->getUserRoll($user_id,$ulb_id,$refWorkflowId);
+            $role = $this->_COMMON_FUNCTION->getUserRoll($user_id,$ulb_id,$refWorkflowId);
             
             
             if($application->current_role != $role->role_id)
@@ -125,7 +141,7 @@ class TradeNoticeController extends Controller
             $application->update();
 
 
-            $metaReqs['moduleId'] = Config::get('module-constants.TRADE_MODULE_ID');
+            $metaReqs['moduleId'] = $this->_MODULE_ID;
             $metaReqs['workflowId'] = $application->workflow_id;
             $metaReqs['refTableDotId'] = 'active_trade_licences';
             $metaReqs['refTableIdValue'] = $request->applicationId;
@@ -143,10 +159,10 @@ class TradeNoticeController extends Controller
     }
     public function denialView(Request $request)
     {
-        return  $this->Repository->denialView($request);
+        return  $this->_REPOSITORY->denialView($request);
     }
     public function approveReject(Request $request)
     {
-        return  $this->Repository->approveReject($request);
+        return  $this->_REPOSITORY->approveReject($request);
     }
 }
