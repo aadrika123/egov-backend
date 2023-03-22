@@ -25,6 +25,9 @@ class PrefixIdGenerator implements iIdGenerator
         $this->incrementStatus = true;
     }
 
+    /**
+     * | Id Generation Business Logic 
+     */
     public function generate(): string
     {
         $paramId = $this->paramId;

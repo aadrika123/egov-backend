@@ -13,6 +13,15 @@ class WorkflowTrack extends Model
 {
     use HasFactory;
     use SoftDeletes;
+    protected $guarded = [];
+
+    /**
+     * | Store Track
+     */
+    public function store($req)
+    {
+        WorkflowTrack::create($req);
+    }
 
     public function saveTrack($request)
     {
