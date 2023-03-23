@@ -14,6 +14,7 @@ use App\Models\Water\WaterConsumerDemand;
 use App\Models\Water\WaterPenaltyInstallment;
 use App\Models\Water\WaterTran;
 use App\Models\Water\WaterTranDetail;
+use App\Models\Workflows\WfRole;
 use App\Models\Workflows\WfWorkflowrolemap;
 use App\Models\WorkflowTrack;
 use App\Repository\Water\Interfaces\iNewConnection;
@@ -115,31 +116,39 @@ class WaterApplication extends Controller
      * | Workflow dasboarding details
      * | @param request 
      */
-    public function workflowDashordDetails(Request $req)
+    public function workflowDashordDetails(Request $request)
     {
         try {
-            $userId = authUser()->id;
-            $ulbId = authUser()->ulb_id;
-            $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
+            $user = authUser();
+            $ulbId = $user->ulb_id;
             $wfMstId = Config::get("workflow-constants.WATER_MASTER_ID");
             $moduleId = Config::get("module-constants.WATER_MODULE_ID");
             $WorkflowTrack = new WorkflowTrack();
             $mWaterWaterApplication = new WaterWaterApplication();
-            $metaRequest = new request();
-            $metaRequest->request->add([
+            $metaRequest = new Request([
                 'workflowId'    => $wfMstId,
                 'ulbId'         => $ulbId,
                 'moduleId'      => $moduleId
             ]);
-            if (!$roleId) {
+            $roleDetails = $this->getRole($metaRequest);
+            if (!$roleDetails) {
                 throw new Exception("role Not Defined!");
             }
+            $roleId = $roleDetails['wf_role_id'];
             $dateWiseData = $WorkflowTrack->getWfDashbordData($metaRequest)->get();
             $applicationCount  = $mWaterWaterApplication->getApplicationByRole($roleId)->count();
-            $returnData['todayForwardCount'] = collect($dateWiseData)->where('sender_role_id', $roleId)->count();
-            $returnData['todayReceivedCount'] = collect($dateWiseData)->where('receiver_role_id', $roleId)->count();
-            $returnData['pendingApplication'] = $applicationCount;
-            return responseMsgs(true, "", remove_null($returnData), "", "01", ".ms", "POST", $req->deviceId);
+            $roleData = WfRole::findOrFail($roleId);
+
+            $returnData = [
+                'userDetails'           => $user,
+                'roleId'                => $roleId,
+                'roleName'              => $roleData['role_name'],
+                'todayForwardCount'     => collect($dateWiseData)->where('sender_role_id', $roleId)->count(),
+                'todayReceivedCount'    => collect($dateWiseData)->where('receiver_role_id', $roleId)->count(),
+                'pendingApplication'    => $applicationCount
+            ];
+
+            return responseMsgs(true, "", remove_null($returnData), "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             dd($e->getLine(), $e->getFile());
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", "");

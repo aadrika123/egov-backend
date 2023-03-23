@@ -711,6 +711,7 @@ class WaterPaymentController extends Controller
 
     /**
      * | 
+        | Not Working
      */
     public function preOnlinePaymentParams($request)
     {
@@ -744,7 +745,9 @@ class WaterPaymentController extends Controller
 
     /**
      * | Calculate the Demand for the respective Consumer
-     * | @param request 
+     * | @param request request
+        | Working
+        | Serial No : 
      */
     public function callDemandByMonth(Request $request)
     {
@@ -754,14 +757,41 @@ class WaterPaymentController extends Controller
             'demandUpto' => 'required|date|date_format:Y-m-d',
         ]);
         try {
-            // $this->
+            $collectiveCharges = $this->checkCallParams($request);
 
+            $returnData['totalPayAmount'] = collect($collectiveCharges)->pluck('balance_amount')->sum();
+            $returnData['totalPenalty'] = collect($collectiveCharges)->pluck('penalty')->sum();
+            $returnData['toalDemand'] = collect($collectiveCharges)->pluck('amount')->sum();
+            return responseMsgs(true, "Amount Details!", remove_null($returnData), "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "", "01", ".ms", "POST", $request->deviceId);
         }
     }
 
+    /**
+     * | calling functon for checking params for callculating demand according to month
+     * | @param request
+        | Serial No :
+        | Working  
+     */
+    public function checkCallParams($request)
+    {
+        $consumerDetails = WaterConsumerDemand::find($request->consumerId);
+        if (!$consumerDetails) {
+            throw new Exception("Consumer dont exist!");
+        }
+        $mWaterConsumerDemand = new WaterConsumerDemand();
+        $allCharges = $mWaterConsumerDemand->getFirstConsumerDemand($request->consumerId)
+            ->where('demand_from', '>=', $request->demandFrom)
+            ->where('demand_upto', '<=', $request->demandUpto)
+            ->get();
 
+        $checkDemand = collect($allCharges)->first()->id;
+        if (!$checkDemand) {
+            throw new Exception("Demand according to date not found!");
+        }
+        return $allCharges;
+    }
 
 
     /**
