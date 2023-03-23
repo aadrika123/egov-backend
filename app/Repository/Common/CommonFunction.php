@@ -272,56 +272,6 @@ class CommonFunction implements ICommonFunction
     {
         return (collect($roles)->sortBy('serial_no')->values()->all());
     }
-    // public function sortsWorkflowRols($roles)
-    // {
-    //     $is_initiator = array_filter($roles,function($val){
-    //         return $val['is_initiator'];
-    //     });
-    //     $is_initiator = array_values($is_initiator)[0];
-    //     $forword = $is_initiator['forward_id'];
-    //     $maps = $this->maps($roles,$forword);
-    //     while($maps[sizeof($maps)-1]["forward_id"])
-    //     { 
-    //         $temp = $this->maps($roles,$maps[sizeof($maps)-1]["forward_id"]);
-    //         array_push($maps,$temp[0]);
-    //     }
-    //     array_unshift($maps,$is_initiator);
-    //     return($maps);
-    // }
-
-    // public function maps(array $roles,$forward_id,$ids=array())
-    // {
-
-    //     $rr = array_map(function($val)use($forward_id,$ids){                    
-    //                 if($val['id']==$forward_id && (!in_array($val['id'],$ids)))
-    //                 { 
-    //                     $forward_id = $val['forward_id'];                        
-    //                     return $val;
-    //                 }
-    //         },$roles); 
-    //     $rr = array_filter($rr, function ($val) {
-    //         return $val;
-    //     });
-    //     $rr = array_values($rr)??[];
-    //     if($rr)
-    //     {
-    //         array_push($ids,$rr[0]['id']);
-    //         $temp = $this->maps($roles,$forward_id,$ids);
-    //         if($temp){
-    //             $temp = array_filter($temp, function ($val) {
-    //                 return $val;
-    //             });
-    //             $temp = array_values($temp);
-    //             if($temp)
-    //             {
-    //                 array_push($rr,$temp);
-    //             }
-    //         }
-    //     }
-    //     else
-    //         return;                
-    //     return $rr;
-    // }
 
     public function checkUsersWithtocken($tbl="users")
     {

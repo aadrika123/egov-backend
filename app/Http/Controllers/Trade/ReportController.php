@@ -114,7 +114,65 @@ class ReportController extends Controller
     }
     public function applicationAgentNotice(Request $request)
     {
+        $request->validate(
+            [
+                "fromDate" => "required|date|date_format:Y-m-d",
+                "uptoDate" => "required|date|date_format:Y-m-d",
+                "wardId" => "nullable|digits_between:1,9223372036854775807",
+                "ulbId" => "nullable|digits_between:1,9223372036854775807",
+                "page" => "nullable|digits_between:1,9223372036854775807",
+                "perPage"=>"nullable|digits_between:1,9223372036854775807",
+            ]
+        );
         $request->request->add(["metaData"=>["tr8.1",1.1,null,$request->getMethod(),null,]]);
         return $this->Repository->applicationAgentNotice($request);
+    }
+    public function noticeSummary(Request $request)
+    {
+        $request->validate(
+            [
+                "fromDate" => "required|date|date_format:Y-m-d",
+                "uptoDate" => "required|date|date_format:Y-m-d",
+                "wardId" => "nullable|digits_between:1,9223372036854775807",
+                "ulbId" => "nullable|digits_between:1,9223372036854775807",
+                // "page" => "nullable|digits_between:1,9223372036854775807",
+                // "perPage"=>"nullable|digits_between:1,9223372036854775807",
+            ]
+        );
+        $request->request->add(["metaData"=>["tr9.1",1.1,null,$request->getMethod(),null,]]);
+        return $this->Repository->noticeSummary($request);
+    }
+
+    public function levelwisependingform(Request $request)
+    {
+        $request->request->add(["metaData" => ["tr10.1", 1.1, null, $request->getMethod(), null,]]);
+        return $this->Repository->levelwisependingform($request);
+    }
+
+    public function levelUserPending(Request $request)
+    {
+        $request->validate(
+            [
+                "roleId" => "required|digits_between:1,9223372036854775807",
+                "ulbId" => "nullable|digits_between:1,9223372036854775807",
+                "page" => "nullable|digits_between:1,9223372036854775807",
+                "perPage" => "nullable|digits_between:1,9223372036854775807",
+            ]
+        );
+        $request->request->add(["metaData" => ["tr10.2", 1.1, null, $request->getMethod(), null,]]);
+        return $this->Repository->levelUserPending($request);
+    }
+    public function userWiseWardWiseLevelPending(Request $request)
+    {
+        $request->validate(
+            [
+                "ulbId" => "nullable|digits_between:1,9223372036854775807",
+                "userId" => "required|digits_between:1,9223372036854775807",
+                "page" => "nullable|digits_between:1,9223372036854775807",
+                "perPage" => "nullable|digits_between:1,9223372036854775807",
+            ]
+        );
+        $request->request->add(["metaData" => ["pr10.2.1.1", 1.1, null, $request->getMethod(), null,]]);
+        return $this->Repository->userWiseWardWiseLevelPending($request);
     }
 }
