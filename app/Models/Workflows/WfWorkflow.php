@@ -17,10 +17,11 @@ class WfWorkflow extends Model
      * | @param ulbId
      * | @return  
      */
-    public function getulbWorkflowId($workflowID, $ulbId)
+    public function getulbWorkflowId($wfMstId, $ulbId)
     {
-        return  WfWorkflow::where('wf_master_id', $workflowID)
+        return  WfWorkflow::where('wf_master_id', $wfMstId)
             ->where('ulb_id', $ulbId)
+            ->where('is_suspended', false)
             ->first();
     }
 

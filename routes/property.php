@@ -275,6 +275,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('cluster/save-cluster-details', 'saveClusterDetails');
     Route::post('cluster/delete-cluster-data', 'deleteClusterData');
     Route::post('cluster/get-cluster-by-id', 'getClusterById');           // Remark
+    Route::post('cluster/basic-details', 'clusterBasicDtls');             // (06)
     # cluster maping
     Route::post('cluster/details-by-holding', 'detailsByHolding');
     Route::post('cluster/property-by-cluster', 'propertyByCluster');
@@ -423,6 +424,7 @@ Route::controller(HoldingTaxController::class)->group(function () {
   Route::post('prop-payment-history', 'propPaymentHistory');                                // (06) Property Payment History
   Route::post('prop-ulb-receipt', 'proUlbReceipt');                                         // (09) Property Ulb Payment Receipt
   Route::post('prop-comparative-demand', 'comparativeDemand');                              // (10) Property Comparative Demand
+  Route::post('cluster/payment-history', 'clusterPaymentHistory');                           // (13) Cluster Payment History
 });
 
 

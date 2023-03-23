@@ -11,15 +11,16 @@ use Illuminate\Support\Facades\DB;
 class SafRepository implements iSafRepository
 {
     /**
-     * | Get Saf Details
+     * | Meta Saf Details To Be Used in Various Common Functions
      */
-    public function getSaf($workflowIds)
+    public function metaSafDtls($workflowIds)
     {
-        $data = DB::table('prop_active_safs')
+        return DB::table('prop_active_safs')
             ->leftJoin('prop_active_safs_owners as o', 'o.saf_id', '=', 'prop_active_safs.id')
             ->join('ref_prop_types as p', 'p.id', '=', 'prop_active_safs.prop_type_mstr_id')
             ->join('ulb_ward_masters as ward', 'ward.id', '=', 'prop_active_safs.ward_mstr_id')
             ->select(
+                'prop_active_safs.payment_status',
                 'prop_active_safs.saf_no',
                 'prop_active_safs.id',
                 'prop_active_safs.ward_mstr_id',
@@ -37,7 +38,15 @@ class SafRepository implements iSafRepository
                 'prop_active_safs.applicant_name',
             )
             ->whereIn('workflow_id', $workflowIds)
-            ->where('is_gb_saf', false)
+            ->where('is_gb_saf', false);
+    }
+
+    /**
+     * | Get Saf Details
+     */
+    public function getSaf($workflowIds)
+    {
+        $data = $this->metaSafDtls($workflowIds)
             ->where('payment_status', 1);
         return $data;
     }

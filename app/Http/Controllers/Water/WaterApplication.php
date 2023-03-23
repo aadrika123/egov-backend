@@ -15,6 +15,7 @@ use App\Models\Water\WaterPenaltyInstallment;
 use App\Models\Water\WaterTran;
 use App\Models\Water\WaterTranDetail;
 use App\Models\Workflows\WfRole;
+use App\Models\Workflows\WfWorkflow;
 use App\Models\Workflows\WfWorkflowrolemap;
 use App\Models\WorkflowTrack;
 use App\Repository\Water\Interfaces\iNewConnection;
@@ -91,12 +92,27 @@ class WaterApplication extends Controller
     public function getJskAppliedApplication(Request $request)
     {
         try {
+            $user = authUser();
+            if (!in_array("$user->user_type", ['JSK', 'TC'])) {
+                $canView = false;
+            }
             $mWaterApplication = new WaterWaterApplication();
             $mWaterTran = new WaterTran();
+            $mWfWorkflow = new WfWorkflow();
             $refConnectionType = Config::get("waterConstaint.CONNECTION_TYPE");
+            $wfMstId = Config::get("workflow-constants.WATER_MASTER_ID");
             $applicationDetails = $mWaterApplication->getJskAppliedApplications();
-            $refTransaction = $mWaterTran->tranDetailByDate();
-            $transactionDetails = DB::select($refTransaction);
+            $transactionDetails = $mWaterTran->tranDetailByDate();
+            $workflow = $mWfWorkflow->getulbWorkflowId($wfMstId, $user->ulb_id);
+            $metaRequest = new Request([
+                'workflowId'    => $workflow->id,
+            ]);
+            $roleDetails = $this->getRole($metaRequest);
+            if (!collect($roleDetails)->first()) {
+                $returnData['canView'] = $canView ?? false;
+                return responseMsgs(false, "Daccess Denied! No Role ", $returnData, "", "01", ".ms", "POST", "");
+            }
+            $roleData = WfRole::findOrFail($roleDetails['wf_role_id']);
 
             $applicationData = [
                 'applicationCount'  => collect($applicationDetails)->count(),
@@ -106,11 +122,11 @@ class WaterApplication extends Controller
 
             $amountData = [
                 'totalCollection'  => collect($transactionDetails)->pluck('amount')->sum(),
-                'chequeAmount'     => collect($transactionDetails)->where('payment_mode', 'Cheque')->sum(),
-                'onlineAmount'     => collect($transactionDetails)->where('payment_mode', 'Online')->sum(),
-                'cashAmount'       => collect($transactionDetails)->where('payment_mode', 'Cash')->sum(),
-                'ddAmount'         => collect($transactionDetails)->where('payment_mode', 'DD')->sum(),
-                'neftAmount'       => collect($transactionDetails)->where('payment_mode', 'Neft')->sum()
+                'chequeAmount'     => collect($transactionDetails)->where('payment_mode', 'Cheque')->pluck('amount')->sum(),
+                'onlineAmount'     => collect($transactionDetails)->where('payment_mode', 'Online')->pluck('amount')->sum(),
+                'cashAmount'       => collect($transactionDetails)->where('payment_mode', 'Cash')->pluck('amount')->sum(),
+                'ddAmount'         => collect($transactionDetails)->where('payment_mode', 'DD')->pluck('amount')->sum(),
+                'neftAmount'       => collect($transactionDetails)->where('payment_mode', 'Neft')->pluck('amount')->sum()
             ];
 
             $paymentModeCount = [
@@ -119,10 +135,13 @@ class WaterApplication extends Controller
                 'onlineCollection'     => collect($transactionDetails)->where('payment_mode', 'Online')->count(),
                 'cashCollection'       => collect($transactionDetails)->where('payment_mode', 'Cash')->count(),
                 'ddCollection'         => collect($transactionDetails)->where('payment_mode', 'DD')->count(),
-                'neftCollection'       => collect($transactionDetails)->where('payment_mode', 'Neft')->count()
             ];
 
             $returnData = [
+                'canView'               => $canView ?? true,
+                'userDetails'           => $user,
+                'roleId'                => $roleDetails['wf_role_id'],
+                'roleName'              => $roleData['role_name'],
                 'applicationDetails'    => $applicationData,
                 'amountData'            => $amountData,
                 'transactionCount'      => $paymentModeCount
@@ -144,26 +163,35 @@ class WaterApplication extends Controller
     {
         try {
             $user = authUser();
+            if (in_array("$user->user_type", ['JSK', 'TC'])) {
+                $canView = false;
+            }
             $ulbId = $user->ulb_id;
             $wfMstId = Config::get("workflow-constants.WATER_MASTER_ID");
             $moduleId = Config::get("module-constants.WATER_MODULE_ID");
             $WorkflowTrack = new WorkflowTrack();
+            $mWfWorkflow = new WfWorkflow();
             $mWaterWaterApplication = new WaterWaterApplication();
+
+            $workflow = $mWfWorkflow->getulbWorkflowId($wfMstId, $ulbId);
             $metaRequest = new Request([
-                'workflowId'    => $wfMstId,
+                'workflowId'    => $workflow->id,
                 'ulbId'         => $ulbId,
                 'moduleId'      => $moduleId
             ]);
             $roleDetails = $this->getRole($metaRequest);
-            if (!$roleDetails) {
-                throw new Exception("role Not Defined!");
+            if (!collect($roleDetails)->first()) {
+                $returnData['canView'] = $canView;
+                return responseMsgs(false, "Daccess Denied! No Role", $returnData, "", "01", ".ms", "POST", "");
             }
             $roleId = $roleDetails['wf_role_id'];
+
             $dateWiseData = $WorkflowTrack->getWfDashbordData($metaRequest)->get();
-            $applicationCount  = $mWaterWaterApplication->getApplicationByRole($roleId)->count();
+            $applicationCount = $mWaterWaterApplication->getApplicationByRole($roleId)->count();
             $roleData = WfRole::findOrFail($roleId);
 
             $returnData = [
+                'canView'               => $canView ?? true,
                 'userDetails'           => $user,
                 'roleId'                => $roleId,
                 'roleName'              => $roleData['role_name'],
@@ -174,7 +202,6 @@ class WaterApplication extends Controller
 
             return responseMsgs(true, "", remove_null($returnData), "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
-            dd($e->getLine(), $e->getFile());
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", "");
         }
     }

@@ -3,6 +3,7 @@
 namespace App\Repository\Property\Concrete;
 
 use App\MicroServices\DocUpload;
+use App\MicroServices\IdGenerator\PrefixIdGenerator;
 use Exception;
 use App\Repository\Property\Interfaces\iObjectionRepository;
 use Illuminate\Support\Carbon;
@@ -17,6 +18,7 @@ use App\Models\Property\PropProperty;
 use App\Models\PropActiveObjectionDtl;
 use App\Models\PropActiveObjectionFloor;
 use App\Models\Workflows\WfActiveDocument;
+use App\Models\WorkflowTrack;
 use App\Repository\Property\Concrete\PropertyBifurcation;
 use Illuminate\Http\Request;
 use stdClass;
@@ -60,9 +62,11 @@ class ObjectionRepository implements iObjectionRepository
     {
         try {
             $userId = authUser()->id;
-            $ulbId = $request->ulbId;
+            $ulbId = $request->ulbId ?? authUser()->ulb_id;
             $userType = auth()->user()->user_type;
             $objectionFor = $request->objectionFor;
+            $tracks = new WorkflowTrack();
+            $objParamId = Config::get('PropertyConstaint.OBJ_PARAM_ID');
             $objectionNo = "";
             $objNo = "";
 
@@ -104,11 +108,9 @@ class ObjectionRepository implements iObjectionRepository
                 }
                 $objection->save();
 
-                //objection No generation in model
-                $objNo = new PropActiveObjection();
-                $objectionNo = $objNo->objectionNo($objection->id);
-                if (collect($objectionNo)->isEmpty())
-                    throw new Exception("Objection Not Found");
+                //objection No through id generation
+                $idGeneration = new PrefixIdGenerator($objParamId, $objection->ulb_id);
+                $objectionNo = $idGeneration->generate();
 
                 PropActiveObjection::where('id', $objection->id)
                     ->update(['objection_no' => $objectionNo]);
@@ -203,7 +205,7 @@ class ObjectionRepository implements iObjectionRepository
                 return responseMsg(true, "Successfully Saved", '');
             }
 
-            // objection against assesment
+            // Objection Against Assessment
             if ($objectionFor == 'Assessment Error') {
                 // return $request;
                 $ulbWorkflowId = WfWorkflow::where('wf_master_id', $this->_workflow_id_assesment)
@@ -221,14 +223,19 @@ class ObjectionRepository implements iObjectionRepository
                 $objection->date = Carbon::now();
                 $objection->created_at = Carbon::now();
                 $objection->workflow_id = $ulbWorkflowId->id;
-                // $objection->citizen_id = $citizenId;
                 $objection->current_role = $initiatorRoleId[0]->role_id;
                 $objection->initiator_role_id = collect($initiatorRoleId)->first()->role_id;
                 $objection->finisher_role_id = collect($finisherRoleId)->first()->role_id;
-                $objection->save();
 
-                PropActiveObjection::where('id', $objection->id)
-                    ->update(['objection_no' => $objectionNo]);
+                if ($userType == 'Citizen') {
+                    $objection->current_role = collect($initiatorRoleId)->first()->forward_role_id;
+                    $objection->initiator_role_id = collect($initiatorRoleId)->first()->forward_role_id;      // Send to DA in Case of Citizen
+                    $objection->last_role_id = collect($initiatorRoleId)->first()->forward_role_id;
+                    $objection->user_id = null;
+                    $objection->citizen_id = $userId;
+                    $objection->doc_upload_status = 1;
+                }
+                $objection->save();
 
                 if (is_string($request->assessmentData)) {
                     $request->assessmentData = json_decode($request->assessmentData);
@@ -280,9 +287,9 @@ class ObjectionRepository implements iObjectionRepository
                     $assement_error->save();
                 }
 
-                //objection No generation in model
-                $objNo = new PropActiveObjection();
-                $objectionNo = $objNo->objectionNo($objection->id);
+                //objection No through id generation
+                $idGeneration = new PrefixIdGenerator($objParamId, $objection->ulb_id);
+                $objectionNo = $idGeneration->generate();
 
                 PropActiveObjection::where('id', $objection->id)
                     ->update(['objection_no' => $objectionNo]);
@@ -316,6 +323,19 @@ class ObjectionRepository implements iObjectionRepository
                     $assement_floor->save();
                 }
             }
+            $wfReqs['workflowId'] = $ulbWorkflowId->id;
+            $wfReqs['refTableDotId'] = 'prop_active_objections.id';
+            $wfReqs['refTableIdValue'] = $objection->id;
+            $wfReqs['ulb_id'] = $objection->ulb_id;
+            $wfReqs['user_id'] = $userId;
+            if ($userType == 'Citizen') {
+                $wfReqs['citizenId'] = $userId;
+                $wfReqs['user_id'] = NULL;
+            }
+            $wfReqs['receiverRoleId'] = $objection->current_role;
+            $wfReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $request->request->add($wfReqs);
+            $tracks->saveTrack($request);
             DB::commit();
 
             return responseMsgs(true, "Successfully Saved", $objectionNo, '010801', '01', '382ms-547ms', 'Post', '');

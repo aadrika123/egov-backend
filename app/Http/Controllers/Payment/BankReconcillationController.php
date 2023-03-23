@@ -394,13 +394,12 @@ class BankReconcillationController extends Controller
                             );
 
                         //after penalty resolved
-
-                        // WaterPenaltyInstallment::where('apply_connection_id',$connectionChargeDtl->application_id)
-                        // ->update(
-                        //     [
-                        //         'payment_status' => 0
-                        //     ]
-                        // );
+                        WaterPenaltyInstallment::where('related_demand_id', $demandId)
+                            ->update(
+                                [
+                                    'payment_status' => 0
+                                ]
+                            );
                     }
                 }
 

@@ -330,6 +330,7 @@ class ActiveSafController extends Controller
                 ->orderByDesc('id')
                 ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name')
                 ->get();
+
             return responseMsgs(true, "Data Fetched", remove_null($safInbox->values()), "010103", "1.0", "339ms", "POST", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");

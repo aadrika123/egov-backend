@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Property;
 
 use App\Http\Controllers\Controller;
 use App\MicroServices\DocUpload;
+use App\MicroServices\IdGenerator\PrefixIdGenerator;
 use App\Models\CustomDetail;
 use App\Models\Masters\RefRequiredDocument;
 use App\Models\Property\PropActiveHarvesting;
@@ -12,16 +13,13 @@ use App\Models\Property\PropHarvestingGeotagUpload;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropRwhVerification;
-use App\Models\Property\RefPropDocsRequired;
 use App\Models\Workflows\WfActiveDocument;
 use App\Models\Workflows\WfRoleusermap;
-use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\Workflows\WfWorkflowrolemap;
 use App\Models\WorkflowTrack;
 use App\Repository\Property\Concrete\PropertyBifurcation;
 use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
-use App\Traits\Property\Concession;
 use Illuminate\Http\Request;
 use App\Traits\Property\SAF;
 use App\Traits\Property\SafDetailsTrait;
@@ -99,6 +97,8 @@ class RainWaterHarvestingController extends Controller
             $ulbId = $request->ulbId;
             $userId = auth()->user()->id;
             $userType = auth()->user()->user_type;
+            $track = new WorkflowTrack();
+            $harParamId = Config::get('PropertyConstaint.HAR_PARAM_ID');
 
             $ulbWorkflowId = WfWorkflow::where('wf_master_id', $this->_workflowId)
                 ->where('ulb_id', $ulbId)
@@ -122,8 +122,8 @@ class RainWaterHarvestingController extends Controller
             }
             $waterHaravesting->save();
 
-            $propHarvesting = new PropActiveHarvesting();
-            $harvestingNo = $propHarvesting->harvestingNo($waterHaravesting->id);
+            $idGeneration = new PrefixIdGenerator($harParamId, $waterHaravesting->ulb_id);
+            $harvestingNo = $idGeneration->generate();
 
             PropActiveHarvesting::where('id', $waterHaravesting->id)
                 ->update(['application_no' => $harvestingNo]);
@@ -138,7 +138,6 @@ class RainWaterHarvestingController extends Controller
                 $refImageName = $request->docCode;
                 $refImageName = $waterHaravesting->id . '-' . $refImageName;
                 $document = $request->document;
-
                 $imageName = $docUpload->upload($refImageName, $document, $relativePath);
 
                 $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
@@ -153,18 +152,20 @@ class RainWaterHarvestingController extends Controller
                 $mWfActiveDocument->postDocuments($metaReqs);
             }
 
-            //level pending
-            if (isset($waterHaravesting->application_no)) {
-
-                $track = new WorkflowTrack();
-                $wfReqs['workflowId'] = $ulbWorkflowId->id;
-                $wfReqs['refTableDotId'] = 'prop_active_harvestings.id';
-                $wfReqs['refTableIdValue'] = $waterHaravesting->id;
-                $wfReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
-
-                $request->request->add($wfReqs);
-                $track->saveTrack($request);
+            $wfReqs['workflowId'] = $ulbWorkflowId->id;
+            $wfReqs['refTableDotId'] = 'prop_active_harvestings.id';
+            $wfReqs['refTableIdValue'] = $waterHaravesting->id;
+            $wfReqs['ulb_id'] = $waterHaravesting->ulb_id;
+            $wfReqs['user_id'] = $userId;
+            if ($userType == 'Citizen') {
+                $wfReqs['citizenId'] = $userId;
+                $wfReqs['user_id'] = NULL;
             }
+            $wfReqs['receiverRoleId'] = $waterHaravesting->current_role;
+            $wfReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $request->request->add($wfReqs);
+            $track->saveTrack($request);
+
             return responseMsg(true, "Application applied!", $harvestingNo);
         } catch (Exception $error) {
             return responseMsg(false, "Error!", $error->getMessage());
