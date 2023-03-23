@@ -223,11 +223,11 @@ class CommonFunction implements ICommonFunction
             $initater = array_filter($getWorkFlowRoles, function ($val) {
                 return $val['is_initiator'] == true;
             });
-            $initater = array_values($initater)[0];
+            $initater = (array_values($initater)[0])??array(null);
             $finisher = array_filter($getWorkFlowRoles, function ($val) {
                 return $val['is_finisher'] == true;
             });
-            $finisher = array_values($finisher)[0];
+            $finisher = (array_values($finisher)[0])??array(null);
             return ["initiator" => $initater, "finisher" => $finisher];
         } catch (Exception $e) {
             echo $e->getMessage();
@@ -236,7 +236,7 @@ class CommonFunction implements ICommonFunction
     public function userType($refWorkflowId, $ulb_id = null): string
     {
         $user = Auth()->user();
-        $tableName = $user->gettable();
+        $tableName = $user?$user->gettable():null;
         $user_id = $user->id??0;
         $ulb_id = ($ulb_id?$ulb_id:($user->ulb_id??0));
         $user_data = $this->getUserRoll($user_id, $ulb_id, $refWorkflowId);

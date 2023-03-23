@@ -18,7 +18,7 @@ class WaterConsumerDemand extends Model
     public function getDemandBydemandId($demandId)
     {
         return WaterConsumerDemand::where('id', $demandId)
-            ->where('paid_status', true)
+            ->where('paid_status', 1)
             ->first();
     }
 
@@ -29,9 +29,9 @@ class WaterConsumerDemand extends Model
      */
     public function getConsumerDemand($consumerId)
     {
-        // $this->impos_penalty($consumerId);
+        $this->impos_penalty($consumerId);
         return WaterConsumerDemand::where('consumer_id', $consumerId)
-            ->where('paid_status', false)
+            ->where('paid_status', 0)
             ->where('status', true)
             ->orderByDesc('id')
             ->get();
@@ -84,8 +84,9 @@ class WaterConsumerDemand extends Model
      */
     public function getFirstConsumerDemand($consumerId)
     {
+        $this->impos_penalty($consumerId);
         return WaterConsumerDemand::where('consumer_id', $consumerId)
-            ->where('paid_status', false)
+            ->where('paid_status', 0)
             ->where('status', true)
             ->orderByDesc('id');
     }
@@ -103,7 +104,12 @@ class WaterConsumerDemand extends Model
             $penalty_amt = 0.00;
             $demand = array();
             $currend_date = Carbon::now()->format("Y-m-d");
-            $meter_demand_sql = "SELECT * FROM  water_consumer_demands where consumer_id=$consumerId and paid_status= false and status=true and connection_type in ('Metered', 'Meter')";
+            $meter_demand_sql = "SELECT * FROM  water_consumer_demands 
+                                    where consumer_id=$consumerId 
+                                    and paid_status= false #(status int)
+                                    and status=true 
+                                    and connection_type in ('Metered', 'Meter')";
+
             $meter_demand = DB::select($meter_demand_sql);
             DB::beginTransaction();
             #meter Demand
@@ -136,7 +142,11 @@ class WaterConsumerDemand extends Model
             }
 
             #fixed Demand
-            $fixed_demand_sql = "SELECT * FROM water_consumer_demands  where consumer_id=$consumerId and paid_status=false and status=true and connection_type='Fixed'";
+            $fixed_demand_sql = "SELECT * FROM water_consumer_demands  
+                                    where consumer_id=$consumerId 
+                                    and paid_status=false #(status int)
+                                    and status=true 
+                                    and connection_type='Fixed'";
             $fixed_demand = DB::select($fixed_demand_sql);
             foreach ($fixed_demand as $val) {
                 $val = collect($val)->all();

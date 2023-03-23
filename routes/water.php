@@ -82,6 +82,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('consumer/get-payment-history', 'getConsumerPaymentHistory');                       // Consumer
         Route::post('generate-payment-receipt', 'generatePaymentReceipt');                              // Citizen
         Route::post('admin/application/generate-payment-receipt', 'generateOfflinePaymentReceipt');     // Consumer
+        Route::post('consumer/online-demand-payment', 'initiateOnlineDemandPayment'); // Consumer
 
         Route::post('site-verification/save-site-details', 'saveSitedetails');                          // Admin
         Route::post('application/payment/offline/pay-connection-charge', 'offlineConnectionPayment');   // Admin
@@ -113,12 +114,13 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
  */
 Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {
     Route::controller(WaterApplication::class)->group(function () {
-        Route::get('citizenApplications', 'getCitizenApplication');                                     //10
+        Route::post('citizenApplications', 'getCitizenApplication');                                    //10
         Route::post('Razorpay-Orderid', 'handeRazorPay');                                               //11
         Route::post('getTranNo', 'readTransectionAndApl');                                              //12
 
         # Dashbording Api
-        Route::post('admin/application/dashboard-data', 'getJskAppliedApplication'); // Route
+        Route::post('admin/application/dashboard-data', 'getJskAppliedApplication');                    // 13
+        Route::post('admin/workflow/dashboard-data','workflowDashordDetails');  // Route
     });
 });
 Route::controller(WaterApplication::class)->group(function () {

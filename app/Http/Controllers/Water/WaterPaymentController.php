@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Water;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Water\WaterConsumer as WaterWaterConsumer;
 use App\Http\Requests\Property\ReqPayment;
 use App\Http\Requests\Water\ReqWaterPayment;
 use App\Http\Requests\Water\siteAdjustment;
@@ -659,36 +660,39 @@ class WaterPaymentController extends Controller
     // public function initiateOnlineDemandPayment(Request $request)
     // {
     //     try {
-    //         $request->validate([
-    //             'id'                => 'required|digits_between:1,9223372036854775807',
-    //             'applycationType'   => 'required|string|in:connection,consumer',
-    //             'fromDate'          => 'nullable|date|format:Y-m-d',
-    //             'toDate'            => 'nullable|date|format:Y-m-d'
-    //         ]);
+    //         $workflowMstId = Config::get("workflow-constants.WATER_MASTER_ID");
+    //         $return = $this->preOnlinePaymentParams($request);
+    //         $metaRequest = new Request();
+    //         $metaRequest = [
+    //             'ulbId' => $return['ulb_id'],
+    //             'wfMasterId' => $workflowMstId
+    //         ];
+    //         $workflowId = $this->getWorkflowByUlb($metaRequest);
+    //         if (!$workflowId) {
+    //             throw new Exception("workflow not Available!");
+    //         }
 
-    //         $refUser            = Auth()->user();
-    //         #------------ new connection --------------------
-    //         DB::beginTransaction();
-    //         $this->preOnlinePaymentParams($request);
-    //         if ($request = 1) {
+    //         if ($a = 1) {
     //             $myRequest = new \Illuminate\Http\Request();
     //             $myRequest->setMethod('POST');
     //             $myRequest->request->add(['amount' => $cahges->amount]);
-    //             $myRequest->request->add(['workflowId' => $application->workflow_id]);
+    //             $myRequest->request->add(['workflowId' => $workflowId]);
     //             $myRequest->request->add(['id' => $application->id]);
     //             $myRequest->request->add(['departmentId' => 2]);
+
     //             $temp = $this->saveGenerateOrderid($myRequest);
     //             $RazorPayRequest = new WaterRazorPayRequest;
     //             $RazorPayRequest->related_id   = $application->id;
-    //             $RazorPayRequest->payment_from = "New Connection";
+    //             $RazorPayRequest->payment_from = "Demand Collection";
     //             $RazorPayRequest->amount       = $cahges->amount;
     //             $RazorPayRequest->demand_from_upto = $cahges->ids;
     //             $RazorPayRequest->ip_address   = $request->ip();
     //             $RazorPayRequest->order_id        = $temp["orderId"];
     //             $RazorPayRequest->department_id = $temp["departmentId"];
     //             $RazorPayRequest->save();
-    //             #--------------------water Consumer----------------------
-    //         } else {
+    //         }
+    //         #--------------------water Consumer----------------------
+    //         else {
     //         }
     //         DB::commit();
     //         $temp['name']       = $refUser->user_name;
@@ -697,9 +701,10 @@ class WaterPaymentController extends Controller
     //         $temp['userId']     = $refUser->id;
     //         $temp['ulbId']      = $refUser->ulb_id;
     //         $temp["applycationType"] = $request->applycationType;
-    //         return responseMsg(true, "", $temp);
+
+
+    //         return true;
     //     } catch (Exception $e) {
-    //         DB::rollBack();
     //         return responseMsg(false, $e->getMessage(), $request->all());
     //     }
     // }
@@ -709,18 +714,53 @@ class WaterPaymentController extends Controller
      */
     public function preOnlinePaymentParams($request)
     {
+        $mWaterConsumerDemand = new WaterConsumerDemand();
+        $currentMonth = Carbon::now();
+
         if ($request->applycationType != "consumer") {
-            throw new Exception("Payment is not for consumer!");
+            throw new Exception("forbiden access!");
         }
-        $application = WaterConsumer::find($request->id);
-        if (!$application) {
+
+        $refConsumer = WaterConsumer::find($request->id);
+        if (!$refConsumer) {
             throw new Exception("Consumer Not Found!");
         }
-        $cahges = $this->getWaterConsumerDemand($application->id);
-        if (!$cahges) {
+
+        $consumerCahges = $mWaterConsumerDemand->getConsumerDemand($refConsumer->id);
+        $checkCharges = collect($consumerCahges)->last();
+        if (!$checkCharges->id) {
             throw new Exception("No Anny Due Amount!......");
         }
+        $details = $mWaterConsumerDemand->impos_penalty($request->id);
+        if ($details == false) {
+            throw new Exception("error in imposing Penalty!");
+        }
+        return [
+            "consumer" => $refConsumer,
+            "consumerCahges" => $consumerCahges,
+        ];
     }
+
+
+    /**
+     * | Calculate the Demand for the respective Consumer
+     * | @param request 
+     */
+    public function callDemandByMonth(Request $request)
+    {
+        $request->validate([
+            'consumerId' => 'required',
+            'demandFrom' => 'required|date|date_format:Y-m-d',
+            'demandUpto' => 'required|date|date_format:Y-m-d',
+        ]);
+        try {
+            // $this->
+
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "", "01", ".ms", "POST", $request->deviceId);
+        }
+    }
+
 
 
 

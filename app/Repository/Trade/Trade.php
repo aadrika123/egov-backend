@@ -4481,7 +4481,7 @@ class Trade implements ITrade
             $status = "Applilcation Not Appoved";
         }
 
-
+        
         return $status;
     }
 
