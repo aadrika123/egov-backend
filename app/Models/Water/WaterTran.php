@@ -151,10 +151,16 @@ class WaterTran extends Model
         $userType = authUser()->user_type;
         $rfTransMode = Config::get("payment-constants.PAYMENT_OFFLINE_MODE.5");
 
-        return "SELECT * FROM water_trans
-        WHERE tran_date = '$currentDate'
-        AND user_type = '$userType'
-        AND tran_type IN ('New Connection', 'Regulaization')
-        AND payment_mode != '$rfTransMode'";
+        return WaterTran::where('tran_date',$currentDate)
+        ->where('user_type',$userType)
+        ->where('payment_mode','!=',$rfTransMode)
+        ->whereIn('tran_type',['New Connection', 'Regulaization'])
+        ->get();
+
+        // return "SELECT * FROM water_trans
+        // WHERE tran_date = '$currentDate'
+        // AND user_type = '$userType'
+        // AND tran_type IN ('New Connection', 'Regulaization')
+        // AND payment_mode != '$rfTransMode'";
     }
 }

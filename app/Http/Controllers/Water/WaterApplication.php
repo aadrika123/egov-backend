@@ -95,8 +95,7 @@ class WaterApplication extends Controller
             $mWaterTran = new WaterTran();
             $refConnectionType = Config::get("waterConstaint.CONNECTION_TYPE");
             $applicationDetails = $mWaterApplication->getJskAppliedApplications();
-            $refTransaction = $mWaterTran->tranDetailByDate();
-            $transactionDetails = DB::select($refTransaction);
+            $transactionDetails = $mWaterTran->tranDetailByDate();
 
             $applicationData = [
                 'applicationCount'  => collect($applicationDetails)->count(),
@@ -106,11 +105,11 @@ class WaterApplication extends Controller
 
             $amountData = [
                 'totalCollection'  => collect($transactionDetails)->pluck('amount')->sum(),
-                'chequeAmount'     => collect($transactionDetails)->where('payment_mode', 'Cheque')->sum(),
-                'onlineAmount'     => collect($transactionDetails)->where('payment_mode', 'Online')->sum(),
-                'cashAmount'       => collect($transactionDetails)->where('payment_mode', 'Cash')->sum(),
-                'ddAmount'         => collect($transactionDetails)->where('payment_mode', 'DD')->sum(),
-                'neftAmount'       => collect($transactionDetails)->where('payment_mode', 'Neft')->sum()
+                'chequeAmount'     => collect($transactionDetails)->where('payment_mode', 'Cheque')->pluck('amount')->sum(),
+                'onlineAmount'     => collect($transactionDetails)->where('payment_mode', 'Online')->pluck('amount')->sum(),
+                'cashAmount'       => collect($transactionDetails)->where('payment_mode', 'Cash')->pluck('amount')->sum(),
+                'ddAmount'         => collect($transactionDetails)->where('payment_mode', 'DD')->pluck('amount')->sum(),
+                'neftAmount'       => collect($transactionDetails)->where('payment_mode', 'Neft')->pluck('amount')->sum()
             ];
 
             $paymentModeCount = [
