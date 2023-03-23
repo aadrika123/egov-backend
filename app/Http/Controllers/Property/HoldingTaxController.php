@@ -1104,4 +1104,26 @@ class HoldingTaxController extends Controller
             return responseMsgs(false, $e->getMessage(), "", "011612", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
+
+    /**
+     * | Cluster Payment History
+     */
+    public function clusterPaymentHistory(Request $req)
+    {
+        $req->validate([
+            'clusterId' => "required|numeric"
+        ]);
+
+        try {
+            $clusterId = $req->clusterId;
+            $mPropTrans = new PropTransaction();
+            $transactions = $mPropTrans->getPropTransactions($clusterId, "cluster_id");
+            if ($transactions->isEmpty())
+                throw new Exception("No Transaction Found for this Cluster");
+            $transactions = $transactions->groupBy('tran_type');
+            return responseMsgs(true, "Cluster Transactions", remove_null($transactions), "011613", "1.0", "", "", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "011613", "1.0", "", "", $req->deviceId ?? "");
+        }
+    }
 }
