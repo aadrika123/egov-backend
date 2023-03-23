@@ -93,6 +93,9 @@ class WaterApplication extends Controller
     {
         try {
             $user = authUser();
+            if (!in_array("$user->user_type", ['JSK', 'TC'])) {
+                $canView = false;
+            }
             $mWaterApplication = new WaterWaterApplication();
             $mWaterTran = new WaterTran();
             $mWfWorkflow = new WfWorkflow();
@@ -105,8 +108,9 @@ class WaterApplication extends Controller
                 'workflowId'    => $workflow->id,
             ]);
             $roleDetails = $this->getRole($metaRequest);
-            if (!$roleDetails) {
-                throw new Exception("role Not Defined!");
+            if (!collect($roleDetails)->first()) {
+                $returnData['canView'] = $canView ?? false;
+                return responseMsgs(false, "Daccess Denied! No Role ", $returnData, "", "01", ".ms", "POST", "");
             }
             $roleData = WfRole::findOrFail($roleDetails['wf_role_id']);
 
@@ -134,6 +138,7 @@ class WaterApplication extends Controller
             ];
 
             $returnData = [
+                'canView'               => $canView ?? true,
                 'userDetails'           => $user,
                 'roleId'                => $roleDetails['wf_role_id'],
                 'roleName'              => $roleData['role_name'],
@@ -158,12 +163,16 @@ class WaterApplication extends Controller
     {
         try {
             $user = authUser();
+            if (in_array("$user->user_type", ['JSK', 'TC'])) {
+                $canView = false;
+            }
             $ulbId = $user->ulb_id;
             $wfMstId = Config::get("workflow-constants.WATER_MASTER_ID");
             $moduleId = Config::get("module-constants.WATER_MODULE_ID");
             $WorkflowTrack = new WorkflowTrack();
             $mWfWorkflow = new WfWorkflow();
             $mWaterWaterApplication = new WaterWaterApplication();
+
             $workflow = $mWfWorkflow->getulbWorkflowId($wfMstId, $ulbId);
             $metaRequest = new Request([
                 'workflowId'    => $workflow->id,
@@ -171,15 +180,18 @@ class WaterApplication extends Controller
                 'moduleId'      => $moduleId
             ]);
             $roleDetails = $this->getRole($metaRequest);
-            if (!$roleDetails) {
-                throw new Exception("role Not Defined!");
+            if (!collect($roleDetails)->first()) {
+                $returnData['canView'] = $canView;
+                return responseMsgs(false, "Daccess Denied! No Role", $returnData, "", "01", ".ms", "POST", "");
             }
             $roleId = $roleDetails['wf_role_id'];
+
             $dateWiseData = $WorkflowTrack->getWfDashbordData($metaRequest)->get();
             $applicationCount = $mWaterWaterApplication->getApplicationByRole($roleId)->count();
             $roleData = WfRole::findOrFail($roleId);
 
             $returnData = [
+                'canView'               => $canView ?? true,
                 'userDetails'           => $user,
                 'roleId'                => $roleId,
                 'roleName'              => $roleData['role_name'],
@@ -190,7 +202,6 @@ class WaterApplication extends Controller
 
             return responseMsgs(true, "", remove_null($returnData), "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
-            dd($e->getLine(), $e->getFile());
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", "");
         }
     }

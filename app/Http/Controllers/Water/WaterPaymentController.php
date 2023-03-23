@@ -659,57 +659,10 @@ class WaterPaymentController extends Controller
         | Serial No : 05
         | Recheck / Not Working
      */
-    // public function initiateOnlineDemandPayment(Request $request)
-    // {
-    //     try {
-    //         $workflowMstId = Config::get("workflow-constants.WATER_MASTER_ID");
-    //         $return = $this->preOnlinePaymentParams($request);
-    //         $metaRequest = new Request();
-    //         $metaRequest = [
-    //             'ulbId' => $return['ulb_id'],
-    //             'wfMasterId' => $workflowMstId
-    //         ];
-    //         $workflowId = $this->getWorkflowByUlb($metaRequest);
-    //         if (!$workflowId) {
-    //             throw new Exception("workflow not Available!");
-    //         }
-
-    //         if ($a = 1) {
-    //             $myRequest = new \Illuminate\Http\Request();
-    //             $myRequest->setMethod('POST');
-    //             $myRequest->request->add(['amount' => $cahges->amount]);
-    //             $myRequest->request->add(['workflowId' => $workflowId]);
-    //             $myRequest->request->add(['id' => $application->id]);
-    //             $myRequest->request->add(['departmentId' => 2]);
-
-    //             $temp = $this->saveGenerateOrderid($myRequest);
-    //             $RazorPayRequest = new WaterRazorPayRequest;
-    //             $RazorPayRequest->related_id   = $application->id;
-    //             $RazorPayRequest->payment_from = "Demand Collection";
-    //             $RazorPayRequest->amount       = $cahges->amount;
-    //             $RazorPayRequest->demand_from_upto = $cahges->ids;
-    //             $RazorPayRequest->ip_address   = $request->ip();
-    //             $RazorPayRequest->order_id        = $temp["orderId"];
-    //             $RazorPayRequest->department_id = $temp["departmentId"];
-    //             $RazorPayRequest->save();
-    //         }
-    //         #--------------------water Consumer----------------------
-    //         else {
-    //         }
-    //         DB::commit();
-    //         $temp['name']       = $refUser->user_name;
-    //         $temp['mobile']     = $refUser->mobile;
-    //         $temp['email']      = $refUser->email;
-    //         $temp['userId']     = $refUser->id;
-    //         $temp['ulbId']      = $refUser->ulb_id;
-    //         $temp["applycationType"] = $request->applycationType;
-
-
-    //         return true;
-    //     } catch (Exception $e) {
-    //         return responseMsg(false, $e->getMessage(), $request->all());
-    //     }
-    // }
+    public function hgsg()
+    {
+        
+    }
 
     /**
      * | 
