@@ -250,6 +250,7 @@ class ReportController extends Controller
             $tranType = $req->tranType;
             $mpropTransaction = new PropTransaction();
             $holdingCotroller = new HoldingTaxController($safRepo);
+            $activeSafController = new ActiveSafController($safRepo);
             $propReceipts = collect();
             $receipts = collect();
 
@@ -261,8 +262,8 @@ class ReportController extends Controller
             if ($tranType == 'Saf')
                 $data = $transaction->whereNotNull('saf_id')->get();
 
-            if ($data->isEmpty())
-                throw new Exception('No Data Found');
+            // if ($data->isEmpty())
+            //     throw new Exception('No Data Found');
 
             $tranNos = collect($data)->pluck('tran_no');
 
@@ -270,7 +271,12 @@ class ReportController extends Controller
                 $mreq = new Request(
                     ["tranNo" => $tranNo]
                 );
-                $data = $holdingCotroller->propPaymentReceipt($mreq);
+                if ($tranType == 'Property')
+                    $data = $holdingCotroller->propPaymentReceipt($mreq);
+
+                if ($tranType == 'Saf')
+                    $data = $activeSafController->generatePaymentReceipt($mreq);
+
                 $propReceipts->push($data);
             }
 

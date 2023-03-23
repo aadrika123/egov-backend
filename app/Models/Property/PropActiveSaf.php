@@ -586,9 +586,7 @@ class PropActiveSaf extends Model
     public function todayAppliedApplications($userId)
     {
         $date = Carbon::now();
-        return PropActiveSaf::select(
-            'id'
-        )
+        return PropActiveSaf::select('id')
             ->where('prop_active_safs.user_id', $userId)
             ->where('application_date', $date);
         // ->get();
