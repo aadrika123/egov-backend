@@ -111,7 +111,7 @@ class WardUserController extends Controller
         ]);
         try {
             $ulbId =  authUser()->ulb_id;
-            $TC = ['TC', 'TL', 'JSK'];
+            $TC = ['TC', 'TL'];
 
             $data = User::select(
                 'users.id',
