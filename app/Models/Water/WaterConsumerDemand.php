@@ -106,7 +106,7 @@ class WaterConsumerDemand extends Model
             $currend_date = Carbon::now()->format("Y-m-d");
             $meter_demand_sql = "SELECT * FROM  water_consumer_demands 
                                     where consumer_id=$consumerId 
-                                    and paid_status= false #(status int)
+                                    and paid_status= false
                                     and status=true 
                                     and connection_type in ('Metered', 'Meter')";
 
@@ -144,7 +144,7 @@ class WaterConsumerDemand extends Model
             #fixed Demand
             $fixed_demand_sql = "SELECT * FROM water_consumer_demands  
                                     where consumer_id=$consumerId 
-                                    and paid_status=false #(status int)
+                                    and paid_status=false 
                                     and status=true 
                                     and connection_type='Fixed'";
             $fixed_demand = DB::select($fixed_demand_sql);

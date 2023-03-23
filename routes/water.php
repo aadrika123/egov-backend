@@ -82,7 +82,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('consumer/get-payment-history', 'getConsumerPaymentHistory');                       // Consumer
         Route::post('generate-payment-receipt', 'generatePaymentReceipt');                              // Citizen
         Route::post('admin/application/generate-payment-receipt', 'generateOfflinePaymentReceipt');     // Consumer
-        Route::post('consumer/online-demand-payment', 'initiateOnlineDemandPayment'); // Consumer
+        Route::post('consumer/calculate-month-demand', 'callDemandByMonth'); // Route
+        Route::post('consumer/online-demand-payment', 'initiateOnlineDemandPayment'); // Consumer/Route
 
         Route::post('site-verification/save-site-details', 'saveSitedetails');                          // Admin
         Route::post('application/payment/offline/pay-connection-charge', 'offlineConnectionPayment');   // Admin
@@ -120,14 +121,13 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
         # Dashbording Api
         Route::post('admin/application/dashboard-data', 'getJskAppliedApplication');                    // 13
-        Route::post('admin/workflow/dashboard-data','workflowDashordDetails');  // Route
+        Route::post('admin/workflow/dashboard-data', 'workflowDashordDetails');  // Route
     });
 });
 Route::controller(WaterApplication::class)->group(function () {
     Route::post('payment-recipt', 'paymentRecipt');                                                     //15
     Route::post('cargeCal', 'calWaterConCharge');                                                       //16
     Route::post('consumerChargeCal', 'calConsumerDemand');                                              //17
-    Route::post('payment-water', 'paymentWater');                                                       // Not Build
 });
 Route::controller(WaterConsumer::class)->group(function () {
     Route::post('consumerChargeCal', 'calConsumerDemand');                                              //18        
