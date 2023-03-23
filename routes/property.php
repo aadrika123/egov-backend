@@ -358,7 +358,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('caretaker-property-tagging', 'caretakerPropertyTag');        // 02
     Route::post('citizen-holding-saf', 'citizenHoldingSaf');                  // 03
 
-    Route::post('reports/print-bulk-receipt', 'bulkReceipt');
     Route::post('basic-edit', 'basicPropertyEdit');
   });
 
@@ -450,6 +449,10 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
     Route::post('reports/ward-wise-holding', 'wardWiseHoldingReport');
     Route::post('reports/list-fy', 'listFY');
+    Route::post('reports/print-bulk-receipt', 'bulkReceipt');
+    Route::post('reports/property/gbsaf-collection', 'gbSafCollection');
+    Route::post('reports/property/individual-demand-collection', 'propIndividualDemandCollection');
+    Route::post('reports/property/gbsaf-individual-demand-collection', 'gbsafIndividualDemandCollection');
 
     Route::post('reports/property/payment-mode-wise-summery', 'PropPaymentModeWiseSummery');
     Route::post('reports/saf/payment-mode-wise-summery', 'SafPaymentModeWiseSummery');
@@ -457,9 +460,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('reports/property/ward-wise-dcb', 'PropWardWiseDCB');
     Route::post('reports/property/holding-wise-fine-rebate', 'PropFineRebate');
     Route::post('reports/property/deactivated-list', 'PropDeactedList');
-    Route::post('reports/property/gbsaf-collection', 'gbSafCollection');
-    Route::post('reports/property/individual-demand-collection', 'propIndividualDemandCollection');
-    Route::post('reports/property/gbsaf-individual-demand-collection', 'gbsafIndividualDemandCollection');
   });
 });
 
