@@ -58,6 +58,20 @@ class PropOwner extends Model
     }
 
     /**
+     * | 1st owner by property Id
+     */
+    public function getfirstOwner($propertyId)
+    {
+        return PropOwner::select(
+            'owner_name as applicant_name',
+            '*'
+        )
+            ->where('property_id', $propertyId)
+            ->orderBy('id')
+            ->first();
+    }
+
+    /**
      * | Get Owner by Owner Id
      * | function used in replicate saf function
      */

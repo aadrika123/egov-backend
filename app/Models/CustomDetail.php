@@ -111,6 +111,60 @@ class CustomDetail extends Model
                 $customDetails->save();
             }
 
+            if ($customFor == 'SELF') {
+                $customDetails->ref_type = 'SELF';
+                $this->saveCustomDetail($request, $filename, $customDetails);
+                $customDetails->save();
+            }
+
+            if ($customFor == 'MOVABLE') {
+                $customDetails->ref_type = 'MOVABLE';
+                $this->saveCustomDetail($request, $filename, $customDetails);
+                $customDetails->save();
+            }
+
+            if ($customFor == 'PRIVATE') {
+                $customDetails->ref_type = 'PRIVATE';
+                $this->saveCustomDetail($request, $filename, $customDetails);
+                $customDetails->save();
+            }
+
+            if ($customFor == 'AGENCY') {
+                $customDetails->ref_type = 'AGENCY';
+                $this->saveCustomDetail($request, $filename, $customDetails);
+                $customDetails->save();
+            }
+
+            if ($customFor == 'HOARDING') {
+                $customDetails->ref_type = 'HOARDING';
+                $this->saveCustomDetail($request, $filename, $customDetails);
+                $customDetails->save();
+            }
+
+            if ($customFor == 'BANQUET') {
+                $customDetails->ref_type = 'BANQUET';
+                $this->saveCustomDetail($request, $filename, $customDetails);
+                $customDetails->save();
+            }
+
+            if ($customFor == 'LODGE') {
+                $customDetails->ref_type = 'LODGE';
+                $this->saveCustomDetail($request, $filename, $customDetails);
+                $customDetails->save();
+            }
+
+            if ($customFor == 'HOSTEL') {
+                $customDetails->ref_type = 'HOSTEL';
+                $this->saveCustomDetail($request, $filename, $customDetails);
+                $customDetails->save();
+            }
+
+            if ($customFor == 'DHARAMSHALA') {
+                $customDetails->ref_type = 'DHARAMSHALA';
+                $this->saveCustomDetail($request, $filename, $customDetails);
+                $customDetails->save();
+            }
+
             return responseMsg(true, "Successfully Saved", $customDetails);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
