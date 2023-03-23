@@ -284,7 +284,6 @@ class PropProperty extends Model
             'under_ground_area' => $fieldVerifiedSaf->underground_area,
             'petrol_pump_completion_date' => $fieldVerifiedSaf->petrol_pump_completion_date,
             'is_water_harvesting' => $fieldVerifiedSaf->has_water_harvesting,
-            'zone_mstr_id' => $fieldVerifiedSaf->zone_id,
             'new_ward_mstr_id' => $fieldVerifiedSaf->new_ward_id,
             'ulb_id' => $fieldVerifiedSaf->ulb_id
         ];

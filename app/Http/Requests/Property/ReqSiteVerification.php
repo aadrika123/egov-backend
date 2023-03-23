@@ -41,7 +41,6 @@ class ReqSiteVerification extends FormRequest
             'petrolPump.area' => 'required_if:isPetrolPump,1',
             'petrolPump.dateFrom' => 'required_if:isPetrolPump,1',
             'isWaterHarvesting' => 'required|bool',
-            'zone' => 'required|integer',
             'floor' => 'required|array',
             'floor.*.floorId' => 'numeric',
             'floor.*.floorNo' => 'required|integer',

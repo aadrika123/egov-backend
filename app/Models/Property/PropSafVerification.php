@@ -88,7 +88,6 @@ class PropSafVerification extends Model
             'underground_area' => $req->petrolPumpUndergroundArea,
             'petrol_pump_completion_date' => $req->petrolPumpDate,
             'has_water_harvesting' => $req->isHarvesting,
-            'zone_id' => $req->zone,
             'user_id' => $req->userId,
             'ulb_id' => $req->ulbId,
             'gb_usage_types' => $req->gbUsageTypes,

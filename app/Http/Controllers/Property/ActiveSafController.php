@@ -1156,7 +1156,7 @@ class ActiveSafController extends Controller
      */
     public function finalApprovalSafReplica($mPropProperties, $propId, $fieldVerifiedSaf, $activeSaf, $ownerDetails, $floorDetails, $mPropFloors, $safId)
     {
-        $mPropProperties->replicateVerifiedSaf($propId, collect($fieldVerifiedSaf)->first());             // Replicate to Saf Table
+        $mPropProperties->replicateVerifiedSaf($propId, collect($fieldVerifiedSaf)->first());             // Replicate to Prop Property Table
         $approvedSaf = $activeSaf->replicate();
         $approvedSaf->setTable('prop_safs');
         $approvedSaf->id = $activeSaf->id;
