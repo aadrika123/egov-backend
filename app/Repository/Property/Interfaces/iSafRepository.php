@@ -9,5 +9,6 @@ namespace App\Repository\Property\Interfaces;
  */
 interface iSafRepository
 {
+    public function metaSafDtls($workflowIds);
     public function getSaf($workflowIds);
 }
