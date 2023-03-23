@@ -72,6 +72,24 @@ class ClusterController extends Controller
         }
     }
 
+    /**
+     * | Get Cluster basic Details
+     */
+    public function clusterBasicDtls(Request $req)
+    {
+        $req->validate([
+            'clusterId' => 'required|numeric'
+        ]);
+        try {
+            $mCluster = new Cluster();
+            $clusterId = $req->clusterId;
+            $detail = $mCluster::findOrFail($clusterId);
+            return responseMsgs(true, "Cluster Details", remove_null($detail), "011204", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "011204", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
     //updating the cluster details to the respective id
     public function editClusterDetails(Request $request)
     {

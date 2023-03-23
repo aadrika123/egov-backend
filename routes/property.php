@@ -275,6 +275,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('cluster/save-cluster-details', 'saveClusterDetails');
     Route::post('cluster/delete-cluster-data', 'deleteClusterData');
     Route::post('cluster/get-cluster-by-id', 'getClusterById');           // Remark
+    Route::post('cluster/basic-details', 'clusterBasicDtls');             // (06)
     # cluster maping
     Route::post('cluster/details-by-holding', 'detailsByHolding');
     Route::post('cluster/property-by-cluster', 'propertyByCluster');
