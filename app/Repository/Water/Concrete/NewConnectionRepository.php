@@ -157,14 +157,14 @@ class NewConnectionRepository implements iNewConnection
                 $mWaterApplicant->saveWaterApplicant($applicationId, $tenants, $reftenant);
             }
         }
+        # connection charges
+        $connectionId = $mWaterConnectionCharge->saveWaterCharge($applicationId, $req, $newConnectionCharges);
         # water penalty
         if (!is_null($installment)) {
             foreach ($installment as $installments) {
-                $mWaterPenaltyInstallment->saveWaterPenelty($applicationId, $installments, $connectionType);
+                $mWaterPenaltyInstallment->saveWaterPenelty($applicationId, $installments, $connectionType, $connectionId);
             }
         }
-        # connection charges
-        $connectionId = $mWaterConnectionCharge->saveWaterCharge($applicationId, $req, $newConnectionCharges);
         # in case of connection charge is 0
         if ($totalConnectionCharges == 0) {
             $mWaterTran->saveZeroConnectionCharg($totalConnectionCharges, $ulbId, $req, $applicationId, $connectionId, $connectionType);

@@ -341,6 +341,7 @@ class HoldingTaxController extends Controller
             $idGeneration = new IdGeneration;
             $mPropTrans = new PropTransaction();
             $propId = $req['id'];
+            $verifyPaymentModes = Config::get('payment-constants.VERIFICATION_PAYMENT_MODES');
 
             $tranNo = $req['transactionNo'];
             if (!$tranNo)
@@ -368,6 +369,13 @@ class HoldingTaxController extends Controller
                 'amount' => $dueList['payableAmount'],
                 'tranBy' => $tranBy
             ]);
+
+            if (in_array($req['paymentMode'], $verifyPaymentModes)) {
+                $req->merge([
+                    'verifyStatus' => 2
+                ]);
+            }
+
             DB::beginTransaction();
             $propTrans = $mPropTrans->postPropTransactions($req, $demands);
 
@@ -1094,6 +1102,28 @@ class HoldingTaxController extends Controller
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsgs(false, $e->getMessage(), "", "011612", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
+    /**
+     * | Cluster Payment History
+     */
+    public function clusterPaymentHistory(Request $req)
+    {
+        $req->validate([
+            'clusterId' => "required|numeric"
+        ]);
+
+        try {
+            $clusterId = $req->clusterId;
+            $mPropTrans = new PropTransaction();
+            $transactions = $mPropTrans->getPropTransactions($clusterId, "cluster_id");
+            if ($transactions->isEmpty())
+                throw new Exception("No Transaction Found for this Cluster");
+            $transactions = $transactions->groupBy('tran_type');
+            return responseMsgs(true, "Cluster Transactions", remove_null($transactions), "011613", "1.0", "", "", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "011613", "1.0", "", "", $req->deviceId ?? "");
         }
     }
 }

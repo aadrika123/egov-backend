@@ -112,4 +112,9 @@ class ReportController extends Controller
         $request->request->add(["metaData"=>["tr7.1",1.1,null,$request->getMethod(),null,]]);
         return $this->Repository->ApplicantionTrackStatus($request);
     }
+    public function applicationAgentNotice(Request $request)
+    {
+        $request->request->add(["metaData"=>["tr8.1",1.1,null,$request->getMethod(),null,]]);
+        return $this->Repository->applicationAgentNotice($request);
+    }
 }
