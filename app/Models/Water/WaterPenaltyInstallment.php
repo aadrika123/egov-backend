@@ -15,7 +15,7 @@ class WaterPenaltyInstallment extends Model
      * | @var
         |
      */
-    public function saveWaterPenelty($applicationId, $installments, $connectionFor)
+    public function saveWaterPenelty($applicationId, $installments, $connectionFor,$connectionId)
     {
         $quaters = new WaterPenaltyInstallment();
         $quaters->apply_connection_id = $applicationId;
@@ -23,6 +23,7 @@ class WaterPenaltyInstallment extends Model
         $quaters->penalty_head = $installments['penalty_head'];
         $quaters->balance_amount = $installments['balance_amount'];
         $quaters->payment_from = $connectionFor;
+        $quaters->related_demand_id = $connectionId ?? null;
         $quaters->save();
     }
 

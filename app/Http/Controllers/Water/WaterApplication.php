@@ -114,6 +114,7 @@ class WaterApplication extends Controller
             ];
 
             $paymentModeCount = [
+                'totalCollectionCount' => collect($transactionDetails)->count(),
                 'chequeCollection'     => collect($transactionDetails)->where('payment_mode', 'Cheque')->count(),
                 'onlineCollection'     => collect($transactionDetails)->where('payment_mode', 'Online')->count(),
                 'cashCollection'       => collect($transactionDetails)->where('payment_mode', 'Cash')->count(),
