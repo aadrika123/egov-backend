@@ -1035,6 +1035,10 @@ class HoldingTaxController extends Controller
             $offlinePaymentModes = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
 
             $dues = $this->getClusterHoldingDues($dueReq);
+
+            if ($dues->original['status'] == false)
+                throw new Exception($dues->original['message']);
+
             $dues = $dues->original['data'];
             $demands = $dues['demandList'];
             $tranNo = $idGeneration->generateTransactionNo();
