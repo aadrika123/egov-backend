@@ -466,10 +466,11 @@ class WaterApplication extends Model
     {
         $refUserType = authUser()->user_type;
         $currentDate = Carbon::now()->format('Y-m-d');
-        return "SELECT COUNT(id) AS application_count
-        FROM water_applications
-        WHERE apply_date = '$currentDate'
-        AND user_type = '$refUserType'";
+
+        return WaterApplication::where('apply_date', $currentDate)
+            ->where('user_type', $refUserType)
+            ->where('status', true)
+            ->get();
     }
 
     /**
@@ -477,7 +478,7 @@ class WaterApplication extends Model
      */
     public function getApplicationByRole($roleId)
     {
-        return WaterApplication::where('current_role',$roleId)
-        ->where('status',true);
+        return WaterApplication::where('current_role', $roleId)
+            ->where('status', true);
     }
 }

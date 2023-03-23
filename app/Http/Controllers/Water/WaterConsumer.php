@@ -129,7 +129,6 @@ class WaterConsumer extends Controller
             $this->checkDemandGeneration($request);
             $consumerDetails = WaterWaterConsumer::findOrFail($request->consumerId);
             $calculatedDemand = $this->Repository->calConsumerDemand($request);
-
             if (isset($calculatedDemand)) {
                 # get the demand
                 DB::beginTransaction();

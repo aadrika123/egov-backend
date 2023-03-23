@@ -7,6 +7,7 @@ use App\EloquentClass\Property\SafCalculation;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Property\ReqPayment;
 use App\MicroServices\IdGeneration;
+use App\Models\Cluster\Cluster;
 use App\Models\Payment\TempTransaction;
 use App\Models\Payment\WebhookPaymentData;
 use App\Models\Property\MPropBuildingRentalrate;
@@ -340,6 +341,7 @@ class HoldingTaxController extends Controller
             $idGeneration = new IdGeneration;
             $mPropTrans = new PropTransaction();
             $propId = $req['id'];
+            $verifyPaymentModes = Config::get('payment-constants.VERIFICATION_PAYMENT_MODES');
 
             $tranNo = $req['transactionNo'];
             if (!$tranNo)
@@ -367,6 +369,13 @@ class HoldingTaxController extends Controller
                 'amount' => $dueList['payableAmount'],
                 'tranBy' => $tranBy
             ]);
+
+            if (in_array($req['paymentMode'], $verifyPaymentModes)) {
+                $req->merge([
+                    'verifyStatus' => 2
+                ]);
+            }
+
             DB::beginTransaction();
             $propTrans = $mPropTrans->postPropTransactions($req, $demands);
 
@@ -920,6 +929,7 @@ class HoldingTaxController extends Controller
             $todayDate = Carbon::now();
             $clusterId = $req->clusterId;
             $mPropProperty = new PropProperty();
+            $mClusters = new Cluster();
             $penaltyRebateCalc = new PenaltyRebateCalculation;
             $properties = $mPropProperty->getPropsByClusterId($clusterId);
             $clusterDemands = array();
@@ -929,9 +939,12 @@ class HoldingTaxController extends Controller
             $loggedInUserType = authUser()->user_type;
             $currentFYear = getFY();
 
+            $clusterDtls = $mClusters::findOrFail($clusterId);
+
             if ($properties->isEmpty())
                 throw new Exception("Properties Not Available");
 
+            $arrear = $properties->sum('balance');
             foreach ($properties as $item) {
                 $propIdReq = new Request([
                     'propId' => $item['id']
@@ -983,7 +996,7 @@ class HoldingTaxController extends Controller
             $finalOnePerc = collect($summedDemand)->sum('onePercPenaltyTax');
             $finalOnePerc = roundFigure($finalOnePerc);
 
-            $finalAmt = $finalDues + $finalOnePerc;
+            $finalAmt = $finalDues + $finalOnePerc + $arrear;
             $duesFrom = collect($clusterDemands)->first()['duesList']['duesFrom'] ?? collect($clusterDemands)->last()['duesList']['duesFrom'];
             $duesTo = collect($clusterDemands)->first()['duesList']['duesTo'] ?? collect($clusterDemands)->last()['duesList']['duesTo'];
             $paymentUptoYrs = collect($clusterDemands)->first()['duesList']['paymentUptoYrs'] ?? collect($clusterDemands)->last()['duesList']['paymentUptoYrs'];
@@ -997,6 +1010,7 @@ class HoldingTaxController extends Controller
                 'totalDues' => $finalDues,
                 'onePercPenalty' => $finalOnePerc,
                 'finalAmt' => $finalAmt,
+                'arrear' => $arrear,
             ];
             $mLastQuarterDemand = collect($summedDemand)->where('fyear', $currentFYear)->sum('balance');
             $finalClusterDemand['duesList'] = $penaltyRebateCalc->readRebates($currentQuarter, $loggedInUserType, $mLastQuarterDemand, null, $finalAmt, $finalClusterDemand['duesList']);
@@ -1004,9 +1018,10 @@ class HoldingTaxController extends Controller
             $finalClusterDemand['duesList']['payableAmount'] = round($payableAmount);
 
             $finalClusterDemand['demandList'] = $summedDemand;
+            $finalClusterDemand['basicDetails'] = $clusterDtls;
             return responseMsgs(true, "Generated Demand of the Cluster", remove_null($finalClusterDemand), "011611", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "011611", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), ['basicDetails' => $clusterDtls], "011611", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 
@@ -1028,6 +1043,10 @@ class HoldingTaxController extends Controller
             $offlinePaymentModes = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
 
             $dues = $this->getClusterHoldingDues($dueReq);
+
+            if ($dues->original['status'] == false)
+                throw new Exception($dues->original['message']);
+
             $dues = $dues->original['data'];
             $demands = $dues['demandList'];
             $tranNo = $idGeneration->generateTransactionNo();

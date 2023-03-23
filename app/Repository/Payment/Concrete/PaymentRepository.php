@@ -328,6 +328,7 @@ class PaymentRepository implements iPayment
                         $api = $mApiMaster->getAdvApi();
                         Http::withHeaders([])
                             ->post("$api->end_point", $transfer);
+                        $check = $api;
                         break;
                 }
             }

@@ -76,7 +76,7 @@ class PropertyDetailsController extends Controller
                     $mPropHarvesting = new PropActiveHarvesting();
                     $mPropOwners = new PropOwner();
                     $application = collect($mPropHarvesting->getDtlsByHarvestingNo($applicationNo));
-                    $owners = collect($mPropOwners->getOwnerByPropId($application['property_id']));
+                    $owners = collect($mPropOwners->getfirstOwner($application['property_id']));
                     $details = $application->merge($owners);
                     break;
                 case ('holdingDeactivation'):
