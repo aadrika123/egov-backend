@@ -636,28 +636,28 @@ class Report implements IReport
 
             $data["total_collection"]["mode_wise"] = $total_transacton->all();
             $data["total_collection"]["total"] = [
-                    "payment_mode"=>"total",
+                    "payment_mode"=>"Total",
                     "amount"=>$total_collection_amount,
                     "total_transaction"=>$total_collection_transection,
                     "total_consumer"=>$total_collection_consumer,
                 ];
             $data["deactivate_collection"]["mode_wise"] = $deactivate_transacton->all();
             $data["deactivate_collection"]["total"] = [
-                    "payment_mode"=>"total",
+                    "payment_mode"=>"Total",
                     "amount"=>$deactivate_collection_amount,
                     "total_transaction"=>$deactivate_collection_transection,
                     "total_consumer"=>$deactivate_collection_consumer,
                 ];
             $data["actual_collection"]["mode_wise"] = $actual_transacton->all();
             $data["actual_collection"]["total"] = [
-                    "payment_mode"=>"total",
+                    "payment_mode"=>"Total",
                     "amount"=>$actual_collection_amount,
                     "total_transaction"=>$actual_collection_transection,
                     "total_consumer"=>$actual_collection_consumer,
                 ];
             $data["application_collection"]["mode_wise"] = $application_type_transacton->all();
             $data["application_collection"]["total"] = [
-                    "payment_mode"=>"total",
+                    "payment_mode"=>"Total",
                     "amount"=>$application_type_collection_amount,
                     "total_transaction"=>$application_type_collection_transection,
                     "total_consumer"=>$application_type_collection_consumer,
