@@ -16,6 +16,7 @@ use App\Models\Property\PropDemand;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropSafsDemand;
 use App\Models\Workflows\WfWorkflow;
+use App\Models\WorkflowTrack;
 use App\Traits\Property\SAF;
 use App\Traits\Workflow\Workflow;
 use Carbon\Carbon;
@@ -465,6 +466,7 @@ class ApplySafController extends Controller
                 'ulb_id' => $ulbId
             ];
             $mPropGbOfficer->store($gbOfficerReq);
+            $this->sendToWorkflow($createSaf, $userId);
 
             $demand['details'] = $demand['details']->groupBy('ruleSet');
             DB::commit();
@@ -478,5 +480,26 @@ class ApplySafController extends Controller
             DB::rollBack();
             return responseMsgs(false, $e->getMessage(), "", "010103", "1.0", "", "POST", $req->deviceId ?? "");
         }
+    }
+
+    /**
+     * | Send to Workflow Level after payment(15.2)
+     */
+    public function sendToWorkflow($activeSaf, $userId)
+    {
+        $mWorkflowTrack = new WorkflowTrack();
+        $todayDate = $this->_todayDate;
+        $refTable = Config::get('PropertyConstaint.SAF_REF_TABLE');
+        $reqWorkflow = [
+            'workflow_id' => $activeSaf->original['workflow_id'],
+            'ref_table_dot_id' => $refTable,
+            'ref_table_id_value' => $activeSaf->original['safId'],
+            'track_date' => $todayDate->format('Y-m-d h:i:s'),
+            'module_id' => Config::get('module-constants.PROPERTY_MODULE_ID'),
+            'user_id' => $userId,
+            'receiver_role_id' => $activeSaf->original['current_role'],
+            'ulb_id' => $activeSaf->original['ulb_id'],
+        ];
+        $mWorkflowTrack->store($reqWorkflow);
     }
 }

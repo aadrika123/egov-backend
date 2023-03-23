@@ -18,6 +18,7 @@ use App\Models\Property\PropProperty;
 use App\Models\PropActiveObjectionDtl;
 use App\Models\PropActiveObjectionFloor;
 use App\Models\Workflows\WfActiveDocument;
+use App\Models\WorkflowTrack;
 use App\Repository\Property\Concrete\PropertyBifurcation;
 use Illuminate\Http\Request;
 use stdClass;
@@ -64,6 +65,7 @@ class ObjectionRepository implements iObjectionRepository
             $ulbId = $request->ulbId ?? authUser()->ulb_id;
             $userType = auth()->user()->user_type;
             $objectionFor = $request->objectionFor;
+            $tracks = new WorkflowTrack();
             $objParamId = Config::get('PropertyConstaint.OBJ_PARAM_ID');
             $objectionNo = "";
             $objNo = "";
@@ -321,6 +323,19 @@ class ObjectionRepository implements iObjectionRepository
                     $assement_floor->save();
                 }
             }
+            $wfReqs['workflowId'] = $ulbWorkflowId->id;
+            $wfReqs['refTableDotId'] = 'prop_active_objections.id';
+            $wfReqs['refTableIdValue'] = $objection->id;
+            $wfReqs['ulb_id'] = $objection->ulb_id;
+            $wfReqs['user_id'] = $userId;
+            if ($userType == 'Citizen') {
+                $wfReqs['citizenId'] = $userId;
+                $wfReqs['user_id'] = NULL;
+            }
+            $wfReqs['receiverRoleId'] = $objection->current_role;
+            $wfReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $request->request->add($wfReqs);
+            $tracks->saveTrack($request);
             DB::commit();
 
             return responseMsgs(true, "Successfully Saved", $objectionNo, '010801', '01', '382ms-547ms', 'Post', '');

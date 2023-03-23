@@ -25,6 +25,8 @@ class PropActiveHarvesting extends Model
             'a.ward_mstr_id',
             'u.ward_name as ward_no',
             'a.holding_no',
+            'new_holding_no',
+            'pt_no',
             'a.prop_type_mstr_id',
             'p.property_type',
             'prop_active_harvestings.workflow_id',
@@ -43,7 +45,9 @@ class PropActiveHarvesting extends Model
                 'u.ward_name',
                 'a.holding_no',
                 'a.prop_type_mstr_id',
-                'p.property_type'
+                'p.property_type',
+                'new_holding_no',
+                'pt_no',
             );
     }
 

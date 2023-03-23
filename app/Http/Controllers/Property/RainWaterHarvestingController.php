@@ -156,9 +156,11 @@ class RainWaterHarvestingController extends Controller
             $wfReqs['refTableDotId'] = 'prop_active_harvestings.id';
             $wfReqs['refTableIdValue'] = $waterHaravesting->id;
             $wfReqs['ulb_id'] = $waterHaravesting->ulb_id;
-            if ($userType == 'Citizen')
-                $wfReqs['citizenId'] = $userId;
             $wfReqs['user_id'] = $userId;
+            if ($userType == 'Citizen') {
+                $wfReqs['citizenId'] = $userId;
+                $wfReqs['user_id'] = NULL;
+            }
             $wfReqs['receiverRoleId'] = $waterHaravesting->current_role;
             $wfReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
             $request->request->add($wfReqs);
