@@ -439,11 +439,15 @@ return [
      * | Id Generation Parmam Ids
      */
 
-    "PARAM_ID" => 1,
-    "PT_PARAM_ID" => 3,
-    "GB_PARAM" => 4,
-    "SAM_PARAM_ID" => 5,
-    "FAM_PARAM_ID" => 6,
+    "PARAM_ID"      => 1,
+    "PT_PARAM_ID"   => 3,
+    "GB_PARAM"      => 4,
+    "SAM_PARAM_ID"  => 5,
+    "FAM_PARAM_ID"  => 6,
+    "CON_PARAM_ID"  => 7,
+    "OBJ_PARAM_ID"  => 8,
+    "HAR_PARAM_ID"  => 9,
+
 
     /**
      * | Rebate and Penalty Masters

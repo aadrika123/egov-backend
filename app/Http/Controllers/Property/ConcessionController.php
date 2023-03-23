@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Property;
 
 use App\Http\Controllers\Controller;
 use App\MicroServices\DocUpload;
+use App\MicroServices\IdGenerator\PrefixIdGenerator;
 use App\Models\CustomDetail;
 use App\Models\Masters\RefRequiredDocument;
 use App\Models\Property\PropActiveConcession;
@@ -78,6 +79,8 @@ class ConcessionController extends Controller
             $ulbId = $request->ulbId;
             $userType = auth()->user()->user_type;
             $userId = auth()->user()->id;
+            $track = new WorkflowTrack();
+            $conParamId = Config::get('PropertyConstaint.CON_PARAM_ID');
             $concessionNo = "";
 
             $ulbWorkflowId = WfWorkflow::where('wf_master_id', $this->_workflowId)
@@ -89,11 +92,6 @@ class ConcessionController extends Controller
 
             $refFinisherRoleId = $this->getFinisherId($ulbWorkflowId->id);
             $finisherRoleId = DB::select($refFinisherRoleId);
-
-            // if ($userType == "JSK") {
-            // $obj  = new SafRepository();
-            // $data = $obj->getPropByHoldingNo($request);
-            // }
 
             DB::beginTransaction();
             $concession = new PropActiveConcession;
@@ -127,9 +125,21 @@ class ConcessionController extends Controller
             $concession->date = Carbon::now();
             $concession->save();
 
-            //concession number generate in model
-            $conNo = new PropActiveConcession();
-            $concessionNo = $conNo->concessionNo($concession->id);
+            $wfReqs['workflowId'] = $ulbWorkflowId->id;
+            $wfReqs['refTableDotId'] = 'prop_active_harvestings.id';
+            $wfReqs['refTableIdValue'] = $concession->id;
+            $wfReqs['ulb_id'] = $concession->ulb_id;
+            if ($userType == 'Citizen')
+                $wfReqs['citizenId'] = $userId;
+            $wfReqs['user_id'] = $userId;
+            $wfReqs['receiverRoleId'] = $concession->current_role;
+            $wfReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $request->request->add($wfReqs);
+            $track->saveTrack($request);
+
+            //concession number through id generation
+            $idGeneration = new PrefixIdGenerator($conParamId, $concession->ulb_id);
+            $concessionNo = $idGeneration->generate();
 
             PropActiveConcession::where('id', $concession->id)
                 ->update(['application_no' => $concessionNo]);
@@ -676,7 +686,6 @@ class ConcessionController extends Controller
             $propOwners->save();
         }
     }
-
 
     /**
      * | Back to Citizen
