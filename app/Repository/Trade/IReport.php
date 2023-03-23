@@ -12,5 +12,6 @@ interface IReport
     public function CollectionSummary(Request $request);
     public function tradeDaseboard(Request $request);
     public function ApplicantionTrackStatus(Request $request);
+    public function applicationAgentNotice(Request $request);
 
 }

@@ -2291,6 +2291,7 @@ class ActiveSafController extends Controller
                     $safDetails2["zone_mstr_id"] = $saf->zone_mstr_id;
                     $safDetails2["road_type_mstr_id"] = $saf->road_type_mstr_id;
                     $safDetails2["road_width"] = $saf->road_width;
+                    $safDetails2["is_gb_saf"] = $saf->is_gb_saf;
 
                     $safDetails2["is_mobile_tower"] = $safDetails2["has_mobile_tower"];
                     $safDetails2["tower_area"] = $safDetails2["tower_area"];
@@ -2319,8 +2320,8 @@ class ActiveSafController extends Controller
 
 
                     $safDetails2['owners'] = $owners;
-
                     $array2 = $this->generateSafRequest($safDetails2);
+                    // dd($array);
                     $request2 = new Request($array2);
                     $safTaxes2 = $safCalculation->calculateTax($request2);
                     // $safTaxes2 = json_decode(json_encode($safTaxes2), true);

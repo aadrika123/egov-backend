@@ -17,6 +17,7 @@ use App\Traits\Workflow\Workflow;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 
 class Report implements IReport
 {
@@ -919,103 +920,127 @@ class Report implements IReport
             // $item2 =[];
             foreach($items as $key=>$val)
             {
-                $level = [];
-                $dealingStatus = WorkflowTrack::select("workflow_tracks.track_date",
-                                        "workflow_tracks.forward_date",
-                                        "verification_status",
-                                        DB::raw("'dealing' AS Role")
-                                        )
-                                    ->join("wf_roles","wf_roles.id","workflow_tracks.receiver_role_id")
-                                    ->where("wf_roles.role_name","ILIKE","Dealing Assistant")
-                                    ->where("workflow_tracks.ref_table_id_value",$val["id"])
-                                    ->where("workflow_tracks.ref_table_dot_id","active_trade_licences")
-                                    ->where("workflow_tracks.status",true)
-                                    ->where("workflow_tracks.workflow_id",$val["workflow_id"])
-                                    ->whereNull("workflow_tracks.citizen_id")
-                                    ->orderBy("workflow_tracks.id","DESC")
-                                    ->first();
-                $juniorStatus = WorkflowTrack::select("workflow_tracks.track_date",
-                                "workflow_tracks.forward_date",
-                                "verification_status",
-                                DB::raw("'junior' AS Role")
-                                )
-                                ->join("wf_roles","wf_roles.id","workflow_tracks.receiver_role_id")
-                                ->where("wf_roles.role_name","ILIKE","Junior Engineer")
-                                ->where("workflow_tracks.ref_table_id_value",$val["id"])
-                                ->where("workflow_tracks.ref_table_dot_id","active_trade_licences")
-                                ->where("workflow_tracks.status",true)
-                                ->where("workflow_tracks.workflow_id",$val["workflow_id"])
-                                ->whereNull("workflow_tracks.citizen_id")
-                                ->orderBy("workflow_tracks.id","DESC")
-                                ->first();
-                $sectionStatus = WorkflowTrack::select("workflow_tracks.track_date",
-                                "workflow_tracks.forward_date",
-                                "verification_status",
-                                DB::raw("'section' AS Role")
-                                )
-                                ->join("wf_roles","wf_roles.id","workflow_tracks.receiver_role_id")
-                                ->where("wf_roles.role_name","ILIKE","Section Head")
-                                ->where("workflow_tracks.ref_table_id_value",$val["id"])
-                                ->where("workflow_tracks.ref_table_dot_id","active_trade_licences")
-                                ->where("workflow_tracks.status",true)
-                                ->where("workflow_tracks.workflow_id",$val["workflow_id"])
-                                ->whereNull("workflow_tracks.citizen_id")
-                                ->orderBy("workflow_tracks.id","DESC")
-                                ->first();
 
-                $assistantStatus = WorkflowTrack::select("workflow_tracks.track_date",
-                                "workflow_tracks.forward_date",
-                                "verification_status",
-                                DB::raw("'assistant' AS Role")
-                                )
-                                ->join("wf_roles","wf_roles.id","workflow_tracks.receiver_role_id")
-                                ->where("wf_roles.role_name","ILIKE","Assistant Engineer")
-                                ->where("workflow_tracks.ref_table_id_value",$val["id"])
-                                ->where("workflow_tracks.ref_table_dot_id","active_trade_licences")
-                                ->where("workflow_tracks.status",true)
-                                ->where("workflow_tracks.workflow_id",$val["workflow_id"])
-                                ->whereNull("workflow_tracks.citizen_id")
-                                ->orderBy("workflow_tracks.id","DESC")
-                                ->first();
+                $level = DB::SELECT("
+                select array_to_json(array_agg(row_to_json(levle))) as level
+                from (
+                        select workflow_tracks.track_date, workflow_tracks.forward_date, verification_status, 
+                            ids.role_name
+                        from workflow_tracks 
+                        join(
+                            select max(workflow_tracks.id)as id,wf_workflowrolemaps.serial_no,wf_roles.role_name
+                            from workflow_tracks
+                            inner join wf_roles on wf_roles.id = workflow_tracks.receiver_role_id 
+                            inner join wf_workflowrolemaps on wf_workflowrolemaps.wf_role_id = wf_roles.id 
+                                and wf_workflowrolemaps.workflow_id = ".$val["workflow_id"]."
+                            where 
+                                workflow_tracks.ref_table_id_value = ".$val["id"]."
+                                and workflow_tracks.ref_table_dot_id = 'active_trade_licences' and workflow_tracks.status = true 
+                                and workflow_tracks.workflow_id = ".$val["workflow_id"]."
+                                and workflow_tracks.citizen_id is null 
+                                and workflow_tracks.deleted_at is null 
+                            group by wf_roles.id,wf_workflowrolemaps.serial_no,wf_roles.role_name
+                            )ids on ids.id = workflow_tracks.id
+                    )levle
+                "); 
+                $val["level"]  =(collect($level)->first())->level?(json_decode((collect($level)->first())->level,true)):[]; 
+                    
+                // $dealingStatus = WorkflowTrack::select("workflow_tracks.track_date",
+                //                         "workflow_tracks.forward_date",
+                //                         "verification_status",
+                //                         DB::raw("'dealing' AS Role")
+                //                         )
+                //                     ->join("wf_roles","wf_roles.id","workflow_tracks.receiver_role_id")
+                //                     ->where("wf_roles.role_name","ILIKE","Dealing Assistant")
+                //                     ->where("workflow_tracks.ref_table_id_value",$val["id"])
+                //                     ->where("workflow_tracks.ref_table_dot_id","active_trade_licences")
+                //                     ->where("workflow_tracks.status",true)
+                //                     ->where("workflow_tracks.workflow_id",$val["workflow_id"])
+                //                     ->whereNull("workflow_tracks.citizen_id")
+                //                     ->orderBy("workflow_tracks.id","DESC")
+                //                     ->first();
+                // $juniorStatus = WorkflowTrack::select("workflow_tracks.track_date",
+                //                 "workflow_tracks.forward_date",
+                //                 "verification_status",
+                //                 DB::raw("'junior' AS Role")
+                //                 )
+                //                 ->join("wf_roles","wf_roles.id","workflow_tracks.receiver_role_id")
+                //                 ->where("wf_roles.role_name","ILIKE","Junior Engineer")
+                //                 ->where("workflow_tracks.ref_table_id_value",$val["id"])
+                //                 ->where("workflow_tracks.ref_table_dot_id","active_trade_licences")
+                //                 ->where("workflow_tracks.status",true)
+                //                 ->where("workflow_tracks.workflow_id",$val["workflow_id"])
+                //                 ->whereNull("workflow_tracks.citizen_id")
+                //                 ->orderBy("workflow_tracks.id","DESC")
+                //                 ->first();
+                // $sectionStatus = WorkflowTrack::select("workflow_tracks.track_date",
+                //                 "workflow_tracks.forward_date",
+                //                 "verification_status",
+                //                 DB::raw("'section' AS Role")
+                //                 )
+                //                 ->join("wf_roles","wf_roles.id","workflow_tracks.receiver_role_id")
+                //                 ->where("wf_roles.role_name","ILIKE","Section Head")
+                //                 ->where("workflow_tracks.ref_table_id_value",$val["id"])
+                //                 ->where("workflow_tracks.ref_table_dot_id","active_trade_licences")
+                //                 ->where("workflow_tracks.status",true)
+                //                 ->where("workflow_tracks.workflow_id",$val["workflow_id"])
+                //                 ->whereNull("workflow_tracks.citizen_id")
+                //                 ->orderBy("workflow_tracks.id","DESC")
+                //                 ->first();
 
-                $executiveStatus = WorkflowTrack::select("workflow_tracks.track_date",
-                                "workflow_tracks.forward_date",
-                                "verification_status",                                
-                                DB::raw("'executive' AS Role")
-                                )
-                                ->join("wf_roles","wf_roles.id","workflow_tracks.receiver_role_id")
-                                ->where("wf_roles.role_name","ILIKE","Executive Officer")
-                                ->where("workflow_tracks.ref_table_id_value",$val["id"])
-                                ->where("workflow_tracks.ref_table_dot_id","active_trade_licences")
-                                ->where("workflow_tracks.status",true)
-                                ->where("workflow_tracks.workflow_id",$val["workflow_id"])
-                                ->whereNull("workflow_tracks.citizen_id")
-                                ->orderBy("workflow_tracks.id","DESC")
-                                ->first();
-                if($dealingStatus)
-                {
-                    $level[] = $dealingStatus;
+                // $assistantStatus = WorkflowTrack::select("workflow_tracks.track_date",
+                //                 "workflow_tracks.forward_date",
+                //                 "verification_status",
+                //                 DB::raw("'assistant' AS Role")
+                //                 )
+                //                 ->join("wf_roles","wf_roles.id","workflow_tracks.receiver_role_id")
+                //                 ->where("wf_roles.role_name","ILIKE","Assistant Engineer")
+                //                 ->where("workflow_tracks.ref_table_id_value",$val["id"])
+                //                 ->where("workflow_tracks.ref_table_dot_id","active_trade_licences")
+                //                 ->where("workflow_tracks.status",true)
+                //                 ->where("workflow_tracks.workflow_id",$val["workflow_id"])
+                //                 ->whereNull("workflow_tracks.citizen_id")
+                //                 ->orderBy("workflow_tracks.id","DESC")
+                //                 ->first();
+
+                // $executiveStatus = WorkflowTrack::select("workflow_tracks.track_date",
+                //                 "workflow_tracks.forward_date",
+                //                 "verification_status",                                
+                //                 DB::raw("'executive' AS Role")
+                //                 )
+                //                 ->join("wf_roles","wf_roles.id","workflow_tracks.receiver_role_id")
+                //                 ->where("wf_roles.role_name","ILIKE","Executive Officer")
+                //                 ->where("workflow_tracks.ref_table_id_value",$val["id"])
+                //                 ->where("workflow_tracks.ref_table_dot_id","active_trade_licences")
+                //                 ->where("workflow_tracks.status",true)
+                //                 ->where("workflow_tracks.workflow_id",$val["workflow_id"])
+                //                 ->whereNull("workflow_tracks.citizen_id")
+                //                 ->orderBy("workflow_tracks.id","DESC")
+                //                 ->first();
+                // if($dealingStatus)
+                // {
+                //     $level[] = $dealingStatus;
                     
-                }
-                if($juniorStatus)
-                {
-                    $level[] = $juniorStatus;
-                }
-                if($sectionStatus)
-                {
-                    $level[] = $sectionStatus;
-                }
-                if($assistantStatus)
-                {
-                    $level[] = $assistantStatus;
-                }
-                if($executiveStatus)
-                {
+                // }
+                // if($juniorStatus)
+                // {
+                //     $level[] = $juniorStatus;
+                // }
+                // if($sectionStatus)
+                // {
+                //     $level[] = $sectionStatus;
+                // }
+                // if($assistantStatus)
+                // {
+                //     $level[] = $assistantStatus;
+                // }
+                // if($executiveStatus)
+                // {
                     
-                    $level[] = $executiveStatus;
-                }
+                //     $level[] = $executiveStatus;
+                // }
                 
-                $val["level"]=$level;
+                // $val["level"]=$level;
                 // array_push($item2,$val);
             }               
             $list=[
@@ -1025,9 +1050,71 @@ class Report implements IReport
                 "total"=>$total,
                 "numberOfPages"=>$numberOfPages
             ];
-            // dd(DB::getQueryLog());
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true,"",$list,$apiId, $version, $queryRunTime,$action,$deviceId);
+        }
+        catch(Exception $e)
+        {
+            return responseMsgs(false,$e->getMessage(),$request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
+        }
+    }
+
+    public function applicationAgentNotice(Request $request)
+    {
+        $metaData= collect($request->metaData)->all();
+        list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
+        try{
+            $refUser        = Auth()->user();
+            $refUserId      = $refUser->id;
+            $ulbId          = $refUser->ulb_id;
+            $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
+            $wardId = null;
+            
+            if($request->fromDate)
+            {
+                $fromDate = $request->fromDate;
+            }
+            if($request->uptoDate)
+            {
+                $uptoDate = $request->uptoDate;
+            }
+            if($request->wardId)
+            {
+                $wardId = $request->wardId;
+            }
+            if($request->ulbId)
+            {
+                $ulbId = $request->ulbId;
+            }
+            $active = ActiveTradeLicence::select(
+                DB::RAW("
+                trade_notice_consumer_dtls.notice_no,
+                cast(trade_notice_consumer_dtls.notice_date as date) as notice_date,
+                cast(trade_notice_consumer_dtls.created_at as date) as notice_apply_date,
+                cast(active_trade_licences.application_date as date) as application_date,
+                active_trade_licences.application_no,
+                active_trade_licences.firm_name,
+                active_trade_licences.address,
+                owners.owner_name,owners.guardian_name,owners.mobile_no,
+                ulb_ward_masters.ward_name as ward_no
+                ")
+            )
+            ->JOIN("ulb_ward_masters","ulb_ward_masters.id","active_trade_licences.ward_id")
+            ->JOIN("trade_notice_consumer_dtls","trade_notice_consumer_dtls.id","active_trade_licences.denial_id")
+            ->LEFTJOIN(DB::RAW("(
+                select temp_id,
+                    string_agg(owner_name,',')as owner_name,
+                    string_agg(guardian_name,',')as guardian_name,
+                    string_agg(mobile_no,',')as mobile_no
+                from active_trade_owners
+                join active_trade_licences.id = active_trade_owners.temp_id
+                where is_active = true
+                    AND 
+                group by temp_id
+            )owners"),function($join){
+                $join->on("owners.temp_id","active_trade_licences.id");
+            })
+            ->WHEREBETWEEN("active_trade_licences.application_date",[$fromDate,$uptoDate]);
         }
         catch(Exception $e)
         {
