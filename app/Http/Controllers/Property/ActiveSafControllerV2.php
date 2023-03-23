@@ -6,6 +6,7 @@ use App\EloquentClass\Property\PenaltyRebateCalculation;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Property\ReqPayment;
 use App\MicroServices\IdGeneration;
+use App\Models\Cluster\Cluster;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropActiveSafsOwner;
@@ -359,6 +360,8 @@ class ActiveSafControllerV2 extends Controller
             $mPropActiveSaf = new PropActiveSaf();
             $penaltyRebateCal = new PenaltyRebateCalculation;
             $activeSafController = new ActiveSafController($iSafRepository);
+            $mClusters = new Cluster();
+            $clusterDtls = $mClusters::findOrFail($clusterId);
 
             $clusterDemands = array();
             $finalClusterDemand = array();
@@ -425,6 +428,7 @@ class ActiveSafControllerV2 extends Controller
             $finalOnePerc = collect($summedDemand)->sum('onePercPenaltyTax');
             $finalOnePerc = roundFigure($finalOnePerc);
             $finalAmt = $finalDues + $finalOnePerc + $totalLateAssessmentPenalty;
+            $finalAmt = roundFigure($finalAmt);
             $duesFrom = collect($clusterDemands)->first()['demand']['duesFrom'] ?? collect($clusterDemands)->last()['demand']['duesFrom'] ?? [];
             $duesTo = collect($clusterDemands)->first()['demand']['duesTo'] ?? collect($clusterDemands)->last()['demand']['duesTo'] ?? [];
 
@@ -444,9 +448,10 @@ class ActiveSafControllerV2 extends Controller
             $finalClusterDemand['demand']['payableAmount'] = round($payableAmount);
 
             $finalClusterDemand['details'] = $summedDemand;
-            return responseMsgs(true, "Cluster Saf Demand", remove_null($finalClusterDemand), "011807", "1.0", "", "POST", $req->deviceId ?? "");
+            $finalClusterDemand['basicDetails'] = $clusterDtls;
+            return responseMsgs(true, "Cluster Demands", remove_null($finalClusterDemand), "011807", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "011807", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), ['basicDetails' => $clusterDtls], "011807", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 
@@ -468,6 +473,10 @@ class ActiveSafControllerV2 extends Controller
             $offlinePaymentModes = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
 
             $dues1 = $this->getClusterSafDues($dueReq, $iSafRepository);
+
+            if ($dues1->original['status'] == false)
+                throw new Exception($dues1->original['message']);
+
             $dues = $dues1->original['data'];
 
             $demands = $dues['details'];
