@@ -341,6 +341,7 @@ class HoldingTaxController extends Controller
             $idGeneration = new IdGeneration;
             $mPropTrans = new PropTransaction();
             $propId = $req['id'];
+            $verifyPaymentModes = Config::get('payment-constants.VERIFICATION_PAYMENT_MODES');
 
             $tranNo = $req['transactionNo'];
             if (!$tranNo)
@@ -368,6 +369,13 @@ class HoldingTaxController extends Controller
                 'amount' => $dueList['payableAmount'],
                 'tranBy' => $tranBy
             ]);
+
+            if (in_array($req['paymentMode'], $verifyPaymentModes)) {
+                $req->merge([
+                    'verifyStatus' => 2
+                ]);
+            }
+
             DB::beginTransaction();
             $propTrans = $mPropTrans->postPropTransactions($req, $demands);
 

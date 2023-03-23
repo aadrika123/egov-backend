@@ -716,6 +716,8 @@ class PropActiveSaf extends Model
                 'role_name as currentRole',
                 's.user_id',
                 's.citizen_id',
+                'gb_office_name',
+                'building_type',
                 DB::raw(
                     "case when s.user_id is not null then 'TC/TL/JSK' when 
                     s.citizen_id is not null then 'Citizen' end as appliedBy
@@ -723,6 +725,8 @@ class PropActiveSaf extends Model
                 ),
             )
             ->join('wf_roles', 'wf_roles.id', 's.current_role')
+            ->leftjoin('ref_prop_gbpropusagetypes as p', 'p.id', '=', 's.gb_usage_types')
+            ->leftjoin('ref_prop_gbbuildingusagetypes as q', 'q.id', '=', 's.gb_prop_usage_types')
             ->join('ulb_ward_masters as u', 's.ward_mstr_id', '=', 'u.id')
             ->leftJoin('ulb_ward_masters as u1', 's.new_ward_mstr_id', '=', 'u1.id')
             ->first();
