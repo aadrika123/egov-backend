@@ -1455,6 +1455,7 @@ class ActiveSafController extends Controller
             $idGeneration = new IdGeneration;
             $propTrans = new PropTransaction();
             $mPropSafsDemands = new PropSafsDemand();
+            $verifyPaymentModes = Config::get('payment-constants.VERIFICATION_PAYMENT_MODES');
 
             $userId = $req['userId'];
             $safId = $req['id'];
@@ -1493,6 +1494,13 @@ class ActiveSafController extends Controller
                 'amount' => $amount,
                 'tranBy' => $tranBy
             ]);
+            $activeSaf->payment_status = 1; // Paid for Online or Cash
+            if (in_array($req['paymentMode'], $verifyPaymentModes)) {
+                $req->merge([
+                    'verifyStatus' => 2
+                ]);
+                $activeSaf->payment_status = 2;         // Under Verification for Cheque, Cash, DD
+            }
             DB::beginTransaction();
             $propTrans = $propTrans->postSafTransaction($req, $demands);
 
@@ -1520,7 +1528,6 @@ class ActiveSafController extends Controller
             // Replication Prop Rebates Penalties
             $this->postPenaltyRebates($safCalculation, $safId, $propTrans['id']);
             // Update SAF Payment Status
-            $activeSaf->payment_status = 1;
             $activeSaf->save();
             $this->sendToWorkflow($activeSaf);        // Send to Workflow(15.2)
             DB::commit();

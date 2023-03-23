@@ -2,6 +2,7 @@
 
 namespace App\EloquentClass\Property;
 
+use App\Models\Property\MCapitalValueRate;
 use App\Models\Property\MPropBuildingRentalconst;
 use App\Models\Property\MPropBuildingRentalrate;
 use App\Models\Property\MPropCvRate;
@@ -315,31 +316,42 @@ class SafCalculation
     public function readCapitalValueRate()
     {
         $readFloors = $this->_floors;
-
         // Capital Value Rate
-        $readRoadType = $this->_readRoadType[$this->_effectiveDateRule3];
-        $col3 = Config::get("PropertyConstaint.CIRCALE-RATE-ROAD.$this->_effectiveDateRule3.$readRoadType");
+        $readRoadType = ($this->_readRoadType[$this->_effectiveDateRule3] == 1) ? 1 : 0;
+        $mCapitalValueRates = new MCapitalValueRate();
+        $capitalValue = array();
 
-        $capitalValue = collect($readFloors)->map(function ($readfloor) use ($col3) {
-            $readFloorType = $readfloor['useType'] == 1 ? 1 : 2;
-            $col1 = Config::get("PropertyConstaint.CIRCALE-RATE-USAGE.$readFloorType");
+        foreach ($readFloors as $readFloor) {
+            $constType = $readFloor['constructionType'] == 1 ? 'PAKKA' : 'KACCHA';
 
-            $readConstructionType = $readfloor['constructionType'];
-            $col2 = Config::get("PropertyConstaint.CIRCALE-RATE-PROP.$this->_effectiveDateRule3.$readConstructionType");
             if ($this->_propertyDetails['propertyType'] == 3)
-                $col2 = '_apt';
-            $column = $col1 . $col2 . $col3;
-            $capitalValueRate = json_decode(Redis::get('propMCapitalValueRateRaw-u-' . $this->_ulbId . '-w-' . $this->_wardNo . '-col-' . $column));
-            if (!$capitalValueRate) {
-                $capitalValueRate = MPropCvRate::select($column)
-                    ->where('ulb_id', $this->_ulbId)
-                    ->where('ward_no', $this->_wardNo)
-                    ->first();
-                $this->_redis->set('propMCapitalValueRateRaw-u-' . $this->_ulbId . '-w-' . $this->_wardNo . '-col-' . $column, json_encode($capitalValueRate));
-            }
+                $propertyType = "DLX_APARTMENT";
+            else
+                $propertyType = "BUILDING_" . $constType;
 
-            return $capitalValueRate->$column;
-        });
+            $usageType = $readFloor['useType'] == 1 ? 'RESIDENTIAL' : 'COMMERCIAL';
+            $capitalValueReq = new Request(
+                [
+                    'roadTypeMstrId' => $readRoadType,
+                    'propertyType' => $propertyType,
+                    'wardNo' => $this->_wardNo,
+                    'usageType' => $usageType,
+                    'ulbId' => $this->_ulbId
+                ]
+            );
+            $capitalValueRate = Redis::get('cv_rate-road-' . $readRoadType . 'propertyType' . $propertyType . 'wardNo-' . $this->_wardNo . 'usageType-' . $usageType . 'ulbId' . $this->_ulbId);
+            $capitalValueRate = json_decode($capitalValueRate);
+            if (!$capitalValueRate) {
+                $capitalValueRate = $mCapitalValueRates->getCVRate($capitalValueReq);
+                $this->_redis->set(
+                    'cv_rate-road-' . $readRoadType . 'propertyType' . $propertyType . 'wardNo-' . $this->_wardNo . 'usageType-' . $usageType . 'ulbId' . $this->_ulbId,
+                    json_encode($capitalValueRate)
+                );
+            }
+            $capitalValueRate->rate = ($capitalValueRate->rate > $capitalValueRate->max_rate) ? $capitalValueRate->max_rate : $capitalValueRate->rate;
+            array_push($capitalValue, $capitalValueRate->rate);
+        }
+
         return $capitalValue;
     }
 
@@ -348,20 +360,30 @@ class SafCalculation
      */
     public function readCapitalValueRateMHP()
     {
-        $col1 = 'com';
-        $col2 = '_pakka';
-        $readRoadType = $this->_readRoadType[$this->_effectiveDateRule3];
-        $col3 = Config::get("PropertyConstaint.CIRCALE-RATE-ROAD.$readRoadType");
-        $column = $col1 . $col2 . $col3;
-        $capitalValueRate = json_decode(Redis::get('propCapitalValueRateRaw-u-' . $this->_ulbId . '-w-' . $this->_wardNo . '-' . $column));         // Check Capital Value on Redis
+        $propertyType = "BUILDING_PAKKA";
+        $usageType = "COMMERCIAL";
+
+        $readRoadType = ($this->_readRoadType[$this->_effectiveDateRule3] == 1) ? 1 : 0;
+        $mCapitalValueRates = new MCapitalValueRate();
+        $capitalValueReq = new Request(
+            [
+                'roadTypeMstrId' => $readRoadType,
+                'propertyType' => $propertyType,
+                'wardNo' => $this->_wardNo,
+                'usageType' => $usageType,
+                'ulbId' => $this->_ulbId
+            ]
+        );
+        $capitalValueRate = Redis::get('cv_rate-road-' . $readRoadType . 'propertyType' . $propertyType . 'wardNo-' . $this->_wardNo . 'usageType-' . $usageType . 'ulbId' . $this->_ulbId);
+        $capitalValueRate = json_decode($capitalValueRate);
         if (!$capitalValueRate) {
-            $capitalValueRate = MPropCvRate::select($column)
-                ->where('ulb_id', $this->_ulbId)
-                ->where('ward_no', $this->_wardNo)                                                                                                  // Ward No Fixed temprory
-                ->first();
-            $this->_redis->set('propCapitalValueRateRaw-u-' . $this->_ulbId . '-w-' . $this->_wardNo . '-' . $column, json_encode($capitalValueRate));
+            $capitalValueRate = $mCapitalValueRates->getCVRate($capitalValueReq);
+            $this->_redis->set(
+                'cv_rate-road-' . $readRoadType . 'propertyType' . $propertyType . 'wardNo-' . $this->_wardNo . 'usageType-' . $usageType . 'ulbId' . $this->_ulbId,
+                json_encode($capitalValueRate)
+            );
         }
-        return $capitalValueRate->$column;
+        return $capitalValueRate->rate = ($capitalValueRate->rate > $capitalValueRate->max_rate) ? $capitalValueRate->max_rate : $capitalValueRate->rate;
     }
 
     /**
