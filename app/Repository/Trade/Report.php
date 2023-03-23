@@ -565,10 +565,10 @@ class Report implements IReport
                                 count(trade_transactions.temp_id) as total_consumer,
                                 payment_modes.mode as payment_mode
                             FROM ( 
-                                    SELECT distinct(payment_mode) as mode
+                                    SELECT distinct(upper(payment_mode)) as mode
                                     FROM trade_transactions 
                                 ) payment_modes
-                            LEFT JOIN trade_transactions ON trade_transactions.payment_mode = payment_modes.mode
+                            LEFT JOIN trade_transactions ON upper(trade_transactions.payment_mode) = upper(payment_modes.mode)
                                 $where
                             GROUP BY  payment_modes.mode
                             ");
@@ -579,10 +579,10 @@ class Report implements IReport
                                 count(trade_transactions.temp_id) as total_consumer,
                                 payment_modes.mode as payment_mode
                             FROM ( 
-                                    SELECT distinct(payment_mode) as mode
+                                    SELECT distinct(upper(payment_mode)) as mode
                                     FROM trade_transactions 
                                 ) payment_modes
-                            LEFT JOIN trade_transactions ON trade_transactions.payment_mode = payment_modes.mode
+                            LEFT JOIN trade_transactions ON upper(trade_transactions.payment_mode) = upper(payment_modes.mode)
                                 $where AND trade_transactions.status IN(0,3)
                             GROUP BY  payment_modes.mode
                             ");
@@ -593,10 +593,10 @@ class Report implements IReport
                                 count(trade_transactions.temp_id) as total_consumer,
                                 payment_modes.mode as payment_mode
                             FROM ( 
-                                    SELECT distinct(payment_mode) as mode
+                                    SELECT distinct(upper(payment_mode)) as mode
                                     FROM trade_transactions 
                                 ) payment_modes
-                            LEFT JOIN trade_transactions ON trade_transactions.payment_mode = payment_modes.mode
+                            LEFT JOIN trade_transactions ON upper(trade_transactions.payment_mode) = upper(payment_modes.mode)
                                 $where AND trade_transactions.status IN(1,2)
                             GROUP BY  payment_modes.mode
                             ");
@@ -605,7 +605,7 @@ class Report implements IReport
                                 sum(COALESCE(trade_transactions.paid_amount,0)) as amount, 
                                 count(trade_transactions.id) as total_transaction,
                                 count(trade_transactions.temp_id) as total_consumer,
-                                trade_param_application_types.application_type,
+                                initcap(trade_param_application_types.application_type) as application_type ,
                                 trade_param_application_types.id 
                             FROM trade_param_application_types
                             LEFT JOIN trade_transactions ON trade_transactions.tran_type =  trade_param_application_types.application_type 
