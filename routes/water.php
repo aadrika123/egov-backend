@@ -68,7 +68,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('admin/application/site-inspection-details', 'getSiteInspectionDetails');           // Admin
         Route::post('admin/application/cancel-inspection-scheduling', 'cancelSiteInspection');          // Admin
         Route::post('admin/application/je-site-details', 'getJeSiteDetails');                           // Admin
-        Route::post('admin/application/online-site-inspection', '');     // Admin
+        Route::post('admin/application/online-site-inspection', '');     // Admin/Remark
     });
 
     /**
@@ -82,12 +82,14 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('consumer/get-payment-history', 'getConsumerPaymentHistory');                       // Consumer
         Route::post('generate-payment-receipt', 'generatePaymentReceipt');                              // Citizen
         Route::post('admin/application/generate-payment-receipt', 'generateOfflinePaymentReceipt');     // Consumer
-        Route::post('consumer/calculate-month-demand', 'callDemandByMonth'); // Route
+        Route::post('consumer/calculate-month-demand', 'callDemandByMonth');                            // Admin/Consumer
+        Route::post('application/payment/get-payment-history', 'getApplicationPaymentHistory');         // Admin/Consumer
         Route::post('consumer/online-demand-payment', 'initiateOnlineDemandPayment'); // Consumer/Route
 
+        # Site inspection 
         Route::post('site-verification/save-site-details', 'saveSitedetails');                          // Admin
         Route::post('application/payment/offline/pay-connection-charge', 'offlineConnectionPayment');   // Admin
-        Route::post('application/payment/get-payment-history', 'getApplicationPaymentHistory');         // Admin / Consumer
+
     });
 
     /**
@@ -97,7 +99,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      */
     Route::controller(WaterConsumer::class)->group(function () {
         Route::post('consumer/list-demand', 'listConsumerDemand');                                      // Consumer
-        Route::post('admin/consumer/generate-demand', 'saveGenerateConsumerDemand');                    // Admin /
+        Route::post('admin/consumer/generate-demand', 'saveGenerateConsumerDemand');                    // Admin
         Route::post('admin/consumer/save-connection-meter', 'saveUpdateMeterDetails');                  // Admin
         Route::post('admin/consumer/get-meter-list', 'getMeterList');                                   // Admin
 

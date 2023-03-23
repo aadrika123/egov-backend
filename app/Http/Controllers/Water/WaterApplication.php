@@ -82,10 +82,10 @@ class WaterApplication extends Controller
 
     /**
      * | Get All application Applied from jsk
-     * | @param
-     * | @var 
-     * | @return 
-        | Serial No : 
+     * | @param request
+     * | @var mWaterApplication
+     * | @return returnData
+        | Serial No : 01
         | Not Working
      */
     public function getJskAppliedApplication(Request $request)
@@ -93,18 +93,39 @@ class WaterApplication extends Controller
         try {
             $mWaterApplication = new WaterWaterApplication();
             $mWaterTran = new WaterTran();
-            $rawApplication = $mWaterApplication->getJskAppliedApplications();
+            $refConnectionType = Config::get("waterConstaint.CONNECTION_TYPE");
+            $applicationDetails = $mWaterApplication->getJskAppliedApplications();
             $refTransaction = $mWaterTran->tranDetailByDate();
-            $applicationDetails = DB::select($rawApplication);
             $transactionDetails = DB::select($refTransaction);
 
-            $returnData['applicationCount'] = collect($applicationDetails)->count();
-            $returnData['totalCollection']  = collect($transactionDetails)->pluck('amount')->sum();
-            $returnData['chequeCollection'] = collect($transactionDetails)->where('payment_mode', 'Cheque')->count();
-            $returnData['onlineCollection'] = collect($transactionDetails)->where('payment_mode', 'Online')->count();
-            $returnData['cashCollection']   = collect($transactionDetails)->where('payment_mode', 'Cash')->count();
-            $returnData['ddCollection']     = collect($transactionDetails)->where('payment_mode', 'DD')->count();
-            $returnData['neftCollection']   = collect($transactionDetails)->where('payment_mode', 'Neft')->count();
+            $applicationData = [
+                'applicationCount'  => collect($applicationDetails)->count(),
+                'newConnectionList' => collect($applicationDetails)->where('connection_type_id', $refConnectionType['NEW_CONNECTION'])->count(),
+                'RegulizationList'  => collect($applicationDetails)->where('connection_type_id', $refConnectionType['REGULAIZATION'])->count()
+            ];
+
+            $amountData = [
+                'totalCollection'  => collect($transactionDetails)->pluck('amount')->sum(),
+                'chequeAmount'     => collect($transactionDetails)->where('payment_mode', 'Cheque')->sum(),
+                'onlineAmount'     => collect($transactionDetails)->where('payment_mode', 'Online')->sum(),
+                'cashAmount'       => collect($transactionDetails)->where('payment_mode', 'Cash')->sum(),
+                'ddAmount'         => collect($transactionDetails)->where('payment_mode', 'DD')->sum(),
+                'neftAmount'       => collect($transactionDetails)->where('payment_mode', 'Neft')->sum()
+            ];
+
+            $paymentModeCount = [
+                'chequeCollection'     => collect($transactionDetails)->where('payment_mode', 'Cheque')->count(),
+                'onlineCollection'     => collect($transactionDetails)->where('payment_mode', 'Online')->count(),
+                'cashCollection'       => collect($transactionDetails)->where('payment_mode', 'Cash')->count(),
+                'ddCollection'         => collect($transactionDetails)->where('payment_mode', 'DD')->count(),
+                'neftCollection'       => collect($transactionDetails)->where('payment_mode', 'Neft')->count()
+            ];
+
+            $returnData = [
+                'applicationDetails'    => $applicationData,
+                'amountData'            => $amountData,
+                'transactionCount'      => $paymentModeCount
+            ];
             return responseMsgs(true, "dashbord Data!", remove_null($returnData), "", "02", ".ms", "POST", "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", $request->deviceId);
@@ -115,6 +136,8 @@ class WaterApplication extends Controller
     /**
      * | Workflow dasboarding details
      * | @param request 
+        | Serial No : 02
+        | Working
      */
     public function workflowDashordDetails(Request $request)
     {
