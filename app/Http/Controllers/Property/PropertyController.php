@@ -154,61 +154,6 @@ class PropertyController extends Controller
     }
 
     /**
-     * | Printing of bulk receipt
-     */
-    public function bulkReceipt(Request $req, iSafRepository $safRepo)
-    {
-        $req->validate([
-            'fromDate' => 'required|date',
-            'toDate' => 'required|date',
-            'tranType' => 'required|In:Property,Saf',
-            'userId' => 'required|numeric',
-        ]);
-        try {
-            $fromDate = $req->fromDate;
-            $toDate = $req->toDate;
-            $userId = $req->userId;
-            $tranType = $req->tranType;
-            $mpropTransaction = new PropTransaction();
-            $holdingCotroller = new HoldingTaxController($safRepo);
-            $propReceipts = collect();
-            $receipts = collect();
-
-            $transaction = $mpropTransaction->tranDtl($userId, $fromDate, $toDate);
-
-            if ($tranType == 'Property')
-                $data = $transaction->whereNotNull('property_id')->get();
-
-            if ($tranType == 'Saf')
-                $data = $transaction->whereNotNull('saf_id')->get();
-
-            if ($data->isEmpty())
-                throw new Exception('No Data Found');
-
-            $tranNos = collect($data)->pluck('tran_no');
-
-            foreach ($tranNos as $tranNo) {
-                $mreq = new Request(
-                    ["tranNo" => $tranNo]
-                );
-                $data = $holdingCotroller->propPaymentReceipt($mreq);
-                $propReceipts->push($data);
-            }
-
-            foreach ($propReceipts as $propReceipt) {
-                $receipt = $propReceipt->original['data'];
-                $receipts->push($receipt);
-            }
-
-            $queryRunTime = (collect(DB::getQueryLog($data))->sum("time"));
-
-            return responseMsgs(true, 'Bulk Receipt', remove_null($receipts), '010801', '01', $queryRunTime, 'Post', '');
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-
-    /**
      * | Property Basic Edit
      */
     public function basicPropertyEdit(Request $req)

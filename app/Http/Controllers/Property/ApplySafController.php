@@ -124,7 +124,6 @@ class ApplySafController extends Controller
                 $metaReqs['citizenId'] = $user_id;
             }
             $metaReqs['finisherRoleId'] = collect($finisherRoleId)->first()->role_id;
-
             $lateAssessmentPenalty = $safTaxes->original['data']['demand']['lateAssessmentPenalty'];
             $metaReqs['lateAssessmentPenalty'] = ($lateAssessmentPenalty > 0) ? $lateAssessmentPenalty : null;
             $request->merge($metaReqs);

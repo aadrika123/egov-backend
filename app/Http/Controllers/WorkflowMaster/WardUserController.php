@@ -107,24 +107,33 @@ class WardUserController extends Controller
     public function tcList(Request $req)
     {
         $req->validate([
-            'wardId' => 'required',
+            'wardId' => 'nullable',
         ]);
         try {
             $ulbId =  authUser()->ulb_id;
-            $TC = ['TC', 'TL', 'JSK'];
+            $TC = ['TC', 'TL'];
+
             $data = User::select(
                 'users.id',
                 'user_name',
                 'user_type',
-                // DB::raw("user_name  as applicantName"),
             )
-                // ->join('wf_ward_users', 'wf_ward_users.id', 'users.id')
                 ->where('ulb_id', $ulbId)
-                // ->where('ward_id', $req->wardId)
                 ->whereIN('user_type', $TC)
                 ->get();
 
-            // return collect($data)->
+            if ($req->wardId) {
+                $data = User::select(
+                    'users.id',
+                    'user_name',
+                    'user_type',
+                )
+                    ->join('wf_ward_users', 'wf_ward_users.user_id', 'users.id')
+                    ->where('ulb_id', $ulbId)
+                    ->where('ward_id', $req->wardId)
+                    ->whereIN('user_type', $TC)
+                    ->get();
+            }
 
             return responseMsgs(true, "TC List", remove_null($data), "010201", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {

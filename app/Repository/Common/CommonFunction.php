@@ -223,11 +223,11 @@ class CommonFunction implements ICommonFunction
             $initater = array_filter($getWorkFlowRoles, function ($val) {
                 return $val['is_initiator'] == true;
             });
-            $initater = array_values($initater)[0];
+            $initater = (array_values($initater)[0])??array(null);
             $finisher = array_filter($getWorkFlowRoles, function ($val) {
                 return $val['is_finisher'] == true;
             });
-            $finisher = array_values($finisher)[0];
+            $finisher = (array_values($finisher)[0])??array(null);
             return ["initiator" => $initater, "finisher" => $finisher];
         } catch (Exception $e) {
             echo $e->getMessage();
