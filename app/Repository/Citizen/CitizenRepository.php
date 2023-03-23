@@ -132,8 +132,8 @@ class CitizenRepository implements iCitizenRepository
                 $query->on('prop_active_safs.id', '=', 'v.saf_id')->where('v.agency_verification', true)->orderByDesc('v.id')->limit(1);
             })
             ->select(
-                DB::raw("(CASE WHEN v.agency_verification=true and v.agency_verification  notnull THEN 'true' ELSE 'false' END) as agency_verification"),
-                DB::raw("(CASE WHEN is_field_verified=true and is_field_verified  notnull THEN 'true' ELSE 'false' END) as is_ulbfield_verified"),
+                DB::raw("(CASE WHEN v.agency_verification=true and v.agency_verification  notnull THEN 'true' ELSE 'false' END) as is_agency_verified"),
+                DB::raw("(CASE WHEN is_field_verified=true and is_field_verified  notnull THEN 'true' ELSE 'false' END) as is_ulb_verified"),
                 'r.role_name as current_level',
                 'prop_active_safs.id as application_id',
                 'saf_no',
