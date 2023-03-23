@@ -338,7 +338,7 @@ class ApplySafController extends Controller
             $assessmentId = $req->assessmentType;
 
             // Derivative Assignments
-            $ulbWfId = $this->readAssessUlbWfId($req, $ulbId);
+            $ulbWfId = $this->readGbAssessUlbWfId($req, $ulbId);
             $roadWidthType = $this->readRoadWidthType($req->roadWidth);                               // Read Road Width Type
             $refInitiatorRoleId = $this->getInitiatorId($ulbWfId->id);                                // Get Current Initiator ID
             $initiatorRoleId = collect(DB::select($refInitiatorRoleId))->first();
@@ -483,7 +483,27 @@ class ApplySafController extends Controller
     }
 
     /**
-     * | Send to Workflow Level after payment(15.2)
+     * | Read GB Assessment Type and Ulb Workflow Id
+     */
+    public function readGbAssessUlbWfId($request, $ulb_id)
+    {
+        if ($request->assessmentType == 1) {                                                    // New Assessment 
+            $workflow_id = Config::get('workflow-constants.GBSAF_NEW_ASSESSMENT');
+            $request->assessmentType = Config::get('PropertyConstaint.ASSESSMENT-TYPE.1');
+        }
+
+        if ($request->assessmentType == 2) {                                                    // Reassessment
+            $workflow_id = Config::get('workflow-constants.GBSAF_REASSESSMENT');
+            $request->assessmentType = Config::get('PropertyConstaint.ASSESSMENT-TYPE.2');
+        }
+
+        return WfWorkflow::where('wf_master_id', $workflow_id)
+            ->where('ulb_id', $ulb_id)
+            ->first();
+    }
+
+    /**
+     * | Send to Workflow Level
      */
     public function sendToWorkflow($activeSaf, $userId)
     {
