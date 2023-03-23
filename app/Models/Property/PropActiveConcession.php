@@ -81,21 +81,6 @@ class PropActiveConcession extends Model
         return $concession;
     }
 
-    //concession number generation
-    public function concessionNo($id)
-    {
-        try {
-            $count = PropActiveConcession::where('id', $id)
-                ->select('id')
-                ->get();
-            $concessionNo = 'CON' . "/" . str_pad($count['0']->id, 5, '0', STR_PAD_LEFT);
-
-            return $concessionNo;
-        } catch (Exception $e) {
-            echo $e->getMessage();
-        }
-    }
-
 
     public function escalate($req)
     {

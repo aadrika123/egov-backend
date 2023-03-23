@@ -30,26 +30,6 @@ class PropActiveObjection extends Model
         return $objection;
     }
 
-    /**
-     * This code is for generating the appliction number of Objection 
-     * | @param id
-        | remove try catch
-     */
-
-    public function objectionNo($id)
-    {
-        try {
-            $count = PropActiveObjection::where('id', $id)
-                ->select('id')
-                ->get();
-            $_objectionNo = 'OBJ' . "/" . str_pad($count['0']->id, 5, '0', STR_PAD_LEFT);
-
-            return $_objectionNo;
-        } catch (Exception $e) {
-            echo $e->getMessage();
-        }
-    }
-
     public function objectionList()
     {
         return DB::table('prop_active_objections')
