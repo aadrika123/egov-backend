@@ -2609,4 +2609,86 @@ class Report implements IReport
             return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
         }
     }
+
+    /**
+     * | Not paid from 2019-2017
+     */
+    public function notPaidFrom2016($request)
+    {
+        $metaData = collect($request->metaData)->all();
+        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
+        $perPage = $request->perPage ? $request->perPage : 10;
+        $page = $request->page && $request->page > 0 ? $request->page : 1;
+        $limit = $perPage;
+        $offset =  $request->page && $request->page > 0 ? ($request->page * $perPage) : 0;
+        $wardMstrId = NULL;
+        $ulbId = authUser()->ulb_id;
+
+        if ($request->wardMstrId) {
+            $wardMstrId = $request->wardMstrId;
+        }
+        try {
+            $sql = "SELECT prop_demands.property_id,prop_demands.ward_mstr_id,holding_no,new_holding_no,
+                        owner_name,mobile_no,prop_address,ward_name,
+                        SUM (amount) AS total_demand,
+                        SUM(CASE WHEN paid_status =0 THEN amount ELSE 0 END )AS balance_amount
+                    FROM prop_demands 
+                    JOIN (
+                        SELECT property_id,
+                        STRING_AGG(owner_name,',')as owner_name,
+                        STRING_AGG(mobile_no::text,',')as mobile_no
+                            FROM prop_owners
+                            WHERE status =1
+                            GROUP BY property_id 
+                        ) AS o ON o.property_id = prop_demands.property_id
+            
+                    JOIN prop_properties on prop_properties.id = prop_demands.property_id
+                    JOIN ulb_ward_masters ON ulb_ward_masters.id = prop_properties.ward_mstr_id
+                    WHERE prop_demands.status =1 
+                    " . ($wardMstrId ? " AND prop_demands.ward_mstr_id = $wardMstrId" : "") . "
+                    AND fyear > '2016-2017'
+                    AND paid_status = 0
+                    AND prop_demands.ulb_id = $ulbId
+                    GROUP BY prop_demands.property_id,holding_no,new_holding_no,owner_name,mobile_no,
+                             prop_address,prop_demands.ward_mstr_id,ward_name
+                    order by prop_demands.property_id
+                    limit $limit offset $offset";
+
+            $sql2 = "SELECT count(DISTINCT prop_demands.property_id) as total
+                        FROM prop_demands 
+                        JOIN (
+                            SELECT property_id,
+                            STRING_AGG(owner_name,',')as owner_name,
+                            STRING_AGG(mobile_no::text,',')as mobile_no
+                                FROM prop_owners
+                                WHERE status =1
+                                GROUP BY property_id 
+                            ) AS o ON o.property_id = prop_demands.property_id
+                        
+                            JOIN prop_properties on prop_properties.id = prop_demands.property_id
+                        WHERE prop_demands.status =1 
+                        " . ($wardMstrId ? " AND prop_demands.ward_mstr_id = $wardMstrId" : "") . "
+                        AND fyear > '2016-2017'
+                        AND paid_status = 0
+            ";
+
+            $data = DB::TABLE(DB::RAW("($sql )AS prop"))->get();
+            $items = $data;
+
+            $total = (collect(DB::SELECT($sql2))->first())->total ?? 0;
+            $numberOfPages = ceil($total / $perPage);
+            $list = [
+                "perPage" => $perPage,
+                "page" => $page,
+                "items" => $items,
+                "total" => $total,
+                "numberOfPages" => $numberOfPages
+            ];
+
+            $queryRunTime = (collect(DB::getQueryLog($sql, $sql2, $data))->sum("time"));
+            return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime, $action, $deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
+        }
+    }
 }
