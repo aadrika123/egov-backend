@@ -84,11 +84,11 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('admin/application/generate-payment-receipt', 'generateOfflinePaymentReceipt');     // Consumer
         Route::post('consumer/calculate-month-demand', 'callDemandByMonth');                            // Admin/Consumer
         Route::post('application/payment/get-payment-history', 'getApplicationPaymentHistory');         // Admin/Consumer
-        Route::post('consumer/online-demand-payment', 'initiateOnlineDemandPayment'); // Consumer/Route
+        Route::post('consumer/offline-demand-payment', 'offlineDemandPayment'); // Consumer/Route
+        Route::post('application/payment/offline/pay-connection-charge', 'offlineConnectionPayment');   // Admin
 
         # Site inspection 
         Route::post('site-verification/save-site-details', 'saveSitedetails');                          // Admin
-        Route::post('application/payment/offline/pay-connection-charge', 'offlineConnectionPayment');   // Admin
 
     });
 

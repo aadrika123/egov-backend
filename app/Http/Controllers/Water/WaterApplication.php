@@ -113,6 +113,24 @@ class WaterApplication extends Controller
                 return responseMsgs(false, "Daccess Denied! No Role ", $returnData, "", "01", ".ms", "POST", "");
             }
             $roleData = WfRole::findOrFail($roleDetails['wf_role_id']);
+            $returnApplicationDetails = collect($applicationDetails)->map(function ($value) {
+                return [
+                    'id'                    => $value['id'],
+                    'application_no'        => $value['application_no'],
+                    'apply_date'            => $value['apply_date'],
+                    'connection_type_id'    => $value['connection_type_id'],
+                    'applicantname'         => $value['applicantname'],
+                ];
+            });
+
+            $returnTransactionDetails = collect($transactionDetails)->map(function ($value) {
+                return [
+                    'tran_no'       => $value['tran_no'],
+                    'payment_mode'  => $value['payment_mode'],
+                    'amount'        => $value['amount'],
+                    'tran_date'     => $value['tran_date']
+                ];
+            });
 
             $applicationData = [
                 'applicationCount'  => collect($applicationDetails)->count(),
@@ -144,7 +162,9 @@ class WaterApplication extends Controller
                 'roleName'              => $roleData['role_name'],
                 'applicationDetails'    => $applicationData,
                 'amountData'            => $amountData,
-                'transactionCount'      => $paymentModeCount
+                'transactionCount'      => $paymentModeCount,
+                'applicationList'       => $returnApplicationDetails,
+                'transactionDetails'    => $returnTransactionDetails
             ];
             return responseMsgs(true, "dashbord Data!", remove_null($returnData), "", "02", ".ms", "POST", "");
         } catch (Exception $e) {
