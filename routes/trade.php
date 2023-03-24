@@ -177,6 +177,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post("application/leveluserpending", "levelUserPending"); 
         Route::post('application/userWiseWardWiseLevelPending', 'userWiseWardWiseLevelPending');
         Route::post('application/levelformdetail', 'levelformdetail');
+        Route::post('application/userwiselevelpending', 'userWiseLevelPending');
     });
 });
 
