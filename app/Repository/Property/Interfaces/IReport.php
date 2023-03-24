@@ -22,4 +22,5 @@ interface IReport
     public function PropDeactedList(Request $request);
     public function propIndividualDemandCollection($request);
     public function gbsafIndividualDemandCollection($request);
+    public function notPaidFrom2016($request);
 }

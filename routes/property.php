@@ -455,6 +455,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('reports/property/gbsaf-collection', 'gbSafCollection');
     Route::post('reports/property/individual-demand-collection', 'propIndividualDemandCollection');
     Route::post('reports/property/gbsaf-individual-demand-collection', 'gbsafIndividualDemandCollection');
+    Route::post('reports/not-paid-from-2016', 'notPaidFrom2016');
 
     Route::post('reports/property/payment-mode-wise-summery', 'PropPaymentModeWiseSummery');
     Route::post('reports/saf/payment-mode-wise-summery', 'SafPaymentModeWiseSummery');

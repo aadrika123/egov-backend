@@ -52,7 +52,7 @@ class CustomDetail extends Model
     public function postCustomDetails($request)
     {
         try {
-            $customFor = $request->customFor;
+            $customFor = strtoupper($request->customFor);
             $customDetails = new CustomDetail;
             $filename = NULL;
 
