@@ -662,7 +662,17 @@ class WaterPaymentController extends Controller
     public function offlineDemandPayment(Request $request)
     {
         try {
-            
+            $request->validate([
+                'consumerId'    => 'required',
+                'demandFrom'   => 'required|date_format:Y-m-d|',
+                'demandUpto'   => 'required|date_format:Y-m-d|',
+                'amount'        => 'nullable'
+            ]);
+            $startingDate = Carbon::createFromFormat('Y-m-d',  $request->demandFrom)->startOfMonth();
+            $startingDate = $startingDate->toDateString();
+            $endDate = Carbon::createFromFormat('Y-m-d',  $request->demandUpto)->endOfMonth();
+            $endDate = $endDate->toDateString();
+            return $this->preOfflinePaymentParams($request, $startingDate, $endDate);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", $request->deviceId);
         }
@@ -672,21 +682,36 @@ class WaterPaymentController extends Controller
      * | 
         | Not Working
      */
-    public function preOfflinePaymentParams($request)
+    public function preOfflinePaymentParams($request, $startingDate, $endDate)
     {
         $mWaterConsumerDemand = new WaterConsumerDemand();
-        $refConsumer = WaterConsumer::find($request->id);
+        $mWaterConsumer = new WaterConsumer();
         $consumerId = $request->consumerId;
+        $refAmount = $request->amount;
+        if ($startingDate > $endDate) {
+            throw new Exception("demandFrom Date should not be grater than demandUpto date!");
+        }
+        $refConsumer = $mWaterConsumer->getConsumerDetailById($consumerId);
         if (!$refConsumer) {
             throw new Exception("Consumer Not Found!");
         }
-        $allCharges = $mWaterConsumerDemand->getFirstConsumerDemand($consumerId)
-            ->where('demand_from', '>=', $request->demandFrom)
-            ->where('demand_upto', '<=', $request->demandUpto)
+        return $allCharges = $mWaterConsumerDemand->getFirstConsumerDemand($consumerId)
+            ->where('demand_from', '>=', $startingDate)
+            ->where('demand_upto', '<=', $endDate)
             ->get();
         $checkCharges = collect($allCharges)->last();
         if (!$checkCharges->id) {
             throw new Exception("Chrges for respective date dont exise!......");
+        }
+        $totalPaymentAmount = collect($allCharges)->sum('balance_amount');
+        if ($totalPaymentAmount != $refAmount) {
+            throw new Exception("amount Not Matched!");
+        }
+        $totalgeneratedDemand = collect($allCharges)->sum('amount');
+        $totalPenalty = collect($allCharges)->sum('penalty');
+        $refgeneratedDemand = $refAmount - $totalPenalty;
+        if ($refgeneratedDemand != $totalgeneratedDemand) {
+            throw new Exception("penallty Not mathched!");
         }
         return [
             "consumer" => $refConsumer,
@@ -697,7 +722,9 @@ class WaterPaymentController extends Controller
 
     /**
      * | Calculate the Demand for the respective Consumer
-     * | @param request request
+     * | @param request
+     * | @var collectiveCharges
+     * | @var returnData
         | Working
         | Serial No : 
      */
@@ -709,7 +736,12 @@ class WaterPaymentController extends Controller
             'demandUpto' => 'required|date|date_format:Y-m-d',
         ]);
         try {
-            $collectiveCharges = $this->checkCallParams($request);
+            $startingDate = Carbon::createFromFormat('Y-m-d',  $request->demandFrom)->startOfMonth();
+            $startingDate = $startingDate->toDateString();
+            $endDate = Carbon::createFromFormat('Y-m-d',  $request->demandUpto)->endOfMonth();
+            $endDate = $endDate->toDateString();
+
+            $collectiveCharges = $this->checkCallParams($request, $startingDate, $endDate);
 
             $returnData['totalPayAmount'] = collect($collectiveCharges)->pluck('balance_amount')->sum();
             $returnData['totalPenalty'] = collect($collectiveCharges)->pluck('penalty')->sum();
@@ -723,19 +755,27 @@ class WaterPaymentController extends Controller
     /**
      * | calling functon for checking params for callculating demand according to month
      * | @param request
+     * | @var consumerDetails
+     * | @var mWaterConsumerDemand
+     * | @var allCharges
+     * | @var checkDemand
+     * | @return allCharges
         | Serial No :
         | Working  
      */
-    public function checkCallParams($request)
+    public function checkCallParams($request, $startingDate, $endDate)
     {
+        if ($startingDate > $endDate) {
+            throw new Exception("demandFrom Date should not be grater than demandUpto date!");
+        }
         $consumerDetails = WaterConsumerDemand::find($request->consumerId);
         if (!$consumerDetails) {
             throw new Exception("Consumer dont exist!");
         }
         $mWaterConsumerDemand = new WaterConsumerDemand();
         $allCharges = $mWaterConsumerDemand->getFirstConsumerDemand($request->consumerId)
-            ->where('demand_from', '>=', $request->demandFrom)
-            ->where('demand_upto', '<=', $request->demandUpto)
+            ->where('demand_from', '>=', $startingDate)
+            ->where('demand_upto', '<=', $endDate)
             ->get();
 
         $checkDemand = collect($allCharges)->first()->id;
