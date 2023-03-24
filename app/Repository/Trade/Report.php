@@ -1551,6 +1551,100 @@ class Report implements IReport
 
     public function levelformdetail(Request $request)
     {
-
+        # $roleId =8 jsk , $roleId =11 back office
+        $metaData = collect($request->metaData)->all();
+        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
+        try {
+            $refUser        = Auth()->user();
+            $refUserId      = $refUser->id;
+            $ulbId          = $refUser->ulb_id;
+            $roleId = $roleId2 = $userId = null;
+            $mWardPermission = collect([]);
+            
+            if ($request->ulbId) 
+            {
+                $ulbId = $request->ulbId;
+            }
+            if ($request->roleId) 
+            {
+                $roleId = $request->roleId;
+            }
+            if ($request->userId) 
+            {
+                $userId = $request->userId;
+                $roleId2 = ($this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_WF_MASTER_Id))->role_id ?? 0;
+            }
+            if (($request->roleId && $request->userId) && ($roleId != $roleId2)) 
+            {
+                throw new Exception("Invalid RoleId Pass");
+            }
+            $roleId = $roleId2 ? $roleId2 : $roleId;
+            if (!in_array($roleId, [11, 8])) 
+            {
+                $mWfWardUser = new WfWardUser();
+                $mWardPermission = $mWfWardUser->getWardsByUserId($userId);
+            }
+            $mWardIds = $mWardPermission->implode("ward_id", ",");
+            $mWardIds = explode(',', ($mWardIds ? $mWardIds : "0"));
+           
+            // DB::enableQueryLog();
+            $data = ActiveTradeLicence::SELECT(
+                    DB::RAW("wf_roles.id AS role_id, wf_roles.role_name,
+                        active_trade_licences.id, active_trade_licences.application_no, active_trade_licences.address,
+                        ward_name as ward_no, 
+                        owner.owner_name, owner.mobile_no")
+                )
+                ->JOIN("ulb_ward_masters", "ulb_ward_masters.id", "active_trade_licences.ward_id")
+                ->LEFTJOIN(DB::RAW("( 
+                                SELECT DISTINCT(active_trade_owners.temp_id) AS temp_id,STRING_AGG(owner_name,',') AS owner_name, 
+                                    STRING_AGG(mobile_no::TEXT,',') AS mobile_no
+                                FROM active_trade_owners
+                                JOIN active_trade_licences ON active_trade_licences.id = active_trade_owners.temp_id
+                                WHERE active_trade_owners.is_active = true 
+                                    AND active_trade_licences.ulb_id = $ulbId
+                                GROUP BY active_trade_owners.temp_id
+                                ) AS owner
+                                "), function ($join) {
+                    $join->on("owner.temp_id", "=", "active_trade_licences.id");
+                });
+            if ($roleId == 8) 
+            {
+                $data = $data->LEFTJOIN("wf_roles", "wf_roles.id", "active_trade_licences.current_role")
+                    ->WHERENOTNULL("active_trade_licences.user_id")
+                    ->WHERE(function ($where) {
+                        $where->WHERE("active_trade_licences.payment_status", "=", 0)
+                            ->ORWHERENULL("active_trade_licences.payment_status");
+                    });
+            } 
+            else 
+            {
+                $data = $data->JOIN("wf_roles", "wf_roles.id", "active_trade_licences.current_role")
+                    ->WHERE("wf_roles.id", $roleId);
+            }
+            $data = $data->WHERE("active_trade_licences.ulb_id", $ulbId);
+            if (!in_array($roleId, [11, 8]) && $userId) 
+            {
+                $data = $data->WHEREIN("active_trade_licences.ward_id", $mWardIds);
+            }
+            $perPage = $request->perPage ? $request->perPage : 10;
+            $page = $request->page && $request->page > 0 ? $request->page : 1;
+            $paginator = $data->paginate($perPage);
+            $items = $paginator->items();
+            $total = $paginator->total();
+            $numberOfPages = ceil($total / $perPage);
+            $list = [
+                "perPage" => $perPage,
+                "page" => $page,
+                "items" => $items,
+                "total" => $total,
+                "numberOfPages" => $numberOfPages
+            ];
+            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
+            return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime, $action, $deviceId);
+        } 
+        catch (Exception $e) 
+        {
+            return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
+        }
     }
 }
