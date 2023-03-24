@@ -2623,7 +2623,8 @@ class Report implements IReport
             $wardMstrId = $request->wardMstrId;
         }
         try {
-            $sql = "SELECT prop_demands.property_id,prop_demands.ward_mstr_id,holding_no,new_holding_no,owner_name,mobile_no,prop_address,
+            $sql = "SELECT prop_demands.property_id,prop_demands.ward_mstr_id,holding_no,new_holding_no,
+                        owner_name,mobile_no,prop_address,ward_name,
                         SUM (amount) AS total_demand,
                         SUM(CASE WHEN paid_status =0 THEN amount ELSE 0 END )AS balance_amount
                     FROM prop_demands 
@@ -2636,13 +2637,15 @@ class Report implements IReport
                             GROUP BY property_id 
                         ) AS o ON o.property_id = prop_demands.property_id
             
-                    join prop_properties on prop_properties.id = prop_demands.property_id
+                    JOIN prop_properties on prop_properties.id = prop_demands.property_id
+                    JOIN ulb_ward_masters ON ulb_ward_masters.id = prop_properties.ward_mstr_id
                     WHERE prop_demands.status =1 
                     " . ($wardMstrId ? " AND prop_demands.ward_mstr_id = $wardMstrId" : "") . "
                     AND fyear > '2016-2017'
                     AND paid_status = 0
                     AND prop_demands.ulb_id = $ulbId
-                    GROUP BY prop_demands.property_id,holding_no,new_holding_no,owner_name,mobile_no,prop_address,prop_demands.ward_mstr_id
+                    GROUP BY prop_demands.property_id,holding_no,new_holding_no,owner_name,mobile_no,
+                             prop_address,prop_demands.ward_mstr_id,ward_name
                     order by prop_demands.property_id
                     limit $limit offset $offset";
 
