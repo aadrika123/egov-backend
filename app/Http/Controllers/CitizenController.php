@@ -375,7 +375,7 @@ class CitizenController extends Controller
             $citizen->save();
 
             Redis::del('user:' . auth()->user()->id);   //DELETING REDIS KEY
-            return responseMsgs(true, "Successfully Changed the Password", "", "", "01", ".ms", "POST", $request->deviceId);
+            return responseMsgs(true, "Password changed!", "", "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "", "01", ".ms", "POST", $request->deviceId);
         }
