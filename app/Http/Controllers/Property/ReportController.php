@@ -367,8 +367,23 @@ class ReportController extends Controller
                 "wardMstrId" => "nullable|digits_between:1,9223372036854775807",
             ]
         );
-        $request->request->add(["metaData" => ["pr13.1", 1.1, null, $request->getMethod(), null,]]);
+        $request->request->add(["metaData" => ["pr14.1", 1.1, null, $request->getMethod(), null,]]);
         return $this->Repository->gbsafIndividualDemandCollection($request);
+    }
+
+    /**
+     * | Not paid from 2019-2017
+     */
+    public function notPaidFrom2016(Request $request)
+    {
+        $request->validate(
+            [
+                "ulbId" => "nullable|digits_between:1,9223372036854775807",
+                "wardMstrId" => "nullable|digits_between:1,9223372036854775807",
+            ]
+        );
+        $request->request->add(["metaData" => ["pr15.1", 1.1, null, $request->getMethod(), null,]]);
+        return $this->Repository->notPaidFrom2016($request);
     }
 
 
