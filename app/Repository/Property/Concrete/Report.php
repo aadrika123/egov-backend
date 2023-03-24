@@ -2359,7 +2359,7 @@ class Report implements IReport
             $refUser        = Auth()->user();
             $refUserId      = $refUser->id;
             $ulbId          = $refUser->ulb_id;
-            $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
+            $fromDate = $uptoDate = null;
             $wardId = null;
             if ($request->fromDate) {
                 $fromDate = $request->fromDate;
@@ -2378,6 +2378,7 @@ class Report implements IReport
             $data = PropProperty::select(
                 DB::RAW("
                             prop_properties.id,
+                            prop_properties.pt_no,
                             ulb_ward_masters.ward_name AS ward_no,
                             CASE WHEN prop_properties.new_holding_no!='' 
                                 THEN prop_properties.new_holding_no 
@@ -2406,8 +2407,12 @@ class Report implements IReport
                         )owners_details"), function ($join) {
                     $join->on("owners_details.property_id", "prop_properties.id");
                 })
-                ->WHERE("prop_properties.status", 0)
-                ->WHEREBETWEEN("prop_deactivation_requests.approve_date", [$fromDate, $uptoDate]);
+                ->WHERE("prop_properties.status", 0);
+                if($fromDate && $uptoDate)
+                {
+
+                    $data = $data->WHEREBETWEEN("prop_deactivation_requests.approve_date", [$fromDate, $uptoDate]);
+                }
 
             if ($wardId) {
                 $data = $data->WHERE("ulb_ward_masters.id", $wardId);
