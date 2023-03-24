@@ -633,6 +633,9 @@ class WaterPaymentController extends Controller
      * | Check for the old penalty 
      * | @param applicationID
      * | @param chargeCatagory
+     * | @var mWaterPenaltyInstallment
+     * | @var oldPenalty
+     * | @var unpaidPenalty
         | Serial No : 04.02.01
         | Working
      */
@@ -655,10 +658,12 @@ class WaterPaymentController extends Controller
      * | Iniciate demand payment / In Case Of Online
      * | Online Payment Of Consumer Demand
      * | @param request
-     * | @var 
+     * | @var user
+     * | @var midGeneration
+     * | @var mwaterTran
      * | @return 
         | Serial No : 05
-        | Recheck / Not Working
+        | Working
      */
     public function offlineDemandPayment(reqDemandPayment $request)
     {
@@ -709,6 +714,7 @@ class WaterPaymentController extends Controller
                 $this->saveConsumerPaymentStatus($request, $offlinePaymentModes, $charges, $refWaterConsumer, $waterTrans);
             }
             DB::commit();
+            return responseMsgs(true, "payment Done!", "", "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", $request->deviceId);
@@ -717,6 +723,7 @@ class WaterPaymentController extends Controller
 
     /**
      * | Check the Condition before payment
+        | Serial No : 05:01
         | Not Working
      */
     public function preOfflinePaymentParams($request, $startingDate, $endDate)
@@ -759,6 +766,7 @@ class WaterPaymentController extends Controller
 
     /**
      * | Save the consumer demand payment status
+        | Serial No : 50:02
         | Not Working
      */
     public function saveConsumerPaymentStatus($request, $offlinePaymentModes, $charges, $waterTrans)

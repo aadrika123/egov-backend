@@ -39,7 +39,7 @@ class reqDemandPayment extends FormRequest
                 # throw error
             }
         }
-        $rules['chargeCategory']    = 'required|in:"Demand Collection"';
+        // $rules['chargeCategory']    = 'required|in:"Demand Collection"';
         $rules['consumerId']        = 'required';
         $rules['amount']            = 'required';
         $rules['demandUpto']        = 'required|date_format:Y-m-d|';
