@@ -1390,12 +1390,17 @@ class Report implements IReport
             {
                 $ulbId = $request->ulbId;
             }
+            if ($request->userId) 
+            {
+                $userId = $request->userId;
+                $roleId2 = ($this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_WF_MASTER_Id))->role_id ?? 0;
+            }
             if ($request->roleId) 
             {
                 $roleId = $request->roleId;
             }
             if (($request->roleId && $request->userId) && ($roleId != $roleId2)) 
-            {
+            {                
                 throw new Exception("Invalid RoleId Pass");
             }
             if (in_array($roleId, [11, 8])) 
@@ -1576,6 +1581,7 @@ class Report implements IReport
             }
             if (($request->roleId && $request->userId) && ($roleId != $roleId2)) 
             {
+                // dd($roleId,$roleId2,$this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_WF_MASTER_Id),DB::getQueryLog());
                 throw new Exception("Invalid RoleId Pass");
             }
             $roleId = $roleId2 ? $roleId2 : $roleId;
