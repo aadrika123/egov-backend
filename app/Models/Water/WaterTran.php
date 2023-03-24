@@ -154,7 +154,6 @@ class WaterTran extends Model
         return WaterTran::where('tran_date',$currentDate)
         ->where('user_type',$userType)
         ->where('payment_mode','!=',$rfTransMode)
-        ->whereIn('tran_type',['New Connection', 'Regulaization'])
         ->get();
 
         // return "SELECT * FROM water_trans
