@@ -330,6 +330,7 @@ class ActiveSafController extends Controller
                 ->orderByDesc('id')
                 ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name')
                 ->get();
+
             return responseMsgs(true, "Data Fetched", remove_null($safInbox->values()), "010103", "1.0", "339ms", "POST", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
@@ -2325,9 +2326,7 @@ class ActiveSafController extends Controller
                     $request2 = new Request($array2);
                     $safTaxes2 = $safCalculation->calculateTax($request2);
                     // $safTaxes2 = json_decode(json_encode($safTaxes2), true);
-
                     $safTaxes3 = $this->reviewTaxCalculation($safTaxes);
-
                     // dd($safTaxes2);
                     $safTaxes4 = $this->reviewTaxCalculation($safTaxes2);
                     // dd(json_decode(json_encode($safTaxes), true));

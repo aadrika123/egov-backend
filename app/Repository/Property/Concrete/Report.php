@@ -946,7 +946,7 @@ class Report implements IReport
                 $mWardPermission = $mWfWardUser->getWardsByUserId($userId);
             }
 
-            $mWardIds = $mWardPermission->implode("id", ",");
+            $mWardIds = $mWardPermission->implode("ward_id", ",");
             $mWardIds = explode(',', ($mWardIds ? $mWardIds : "0"));
             // DB::enableQueryLog();
             $data = UlbWardMaster::SELECT(

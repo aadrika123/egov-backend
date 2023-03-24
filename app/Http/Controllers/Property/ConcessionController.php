@@ -126,12 +126,13 @@ class ConcessionController extends Controller
             $concession->save();
 
             $wfReqs['workflowId'] = $ulbWorkflowId->id;
-            $wfReqs['refTableDotId'] = 'prop_active_harvestings.id';
+            $wfReqs['refTableDotId'] = 'prop_active_concessions.id';
             $wfReqs['refTableIdValue'] = $concession->id;
-            $wfReqs['ulb_id'] = $concession->ulb_id;
-            if ($userType == 'Citizen')
-                $wfReqs['citizenId'] = $userId;
             $wfReqs['user_id'] = $userId;
+            if ($userType == 'Citizen') {
+                $wfReqs['citizenId'] = $userId;
+                $wfReqs['user_id'] = NULL;
+            }
             $wfReqs['receiverRoleId'] = $concession->current_role;
             $wfReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
             $request->request->add($wfReqs);

@@ -113,6 +113,9 @@ class PropActiveSaf extends Model
         return response()->json([
             'safId' => $propActiveSafs->id,
             'safNo' => $propActiveSafs->saf_no,
+            'workflow_id' => $propActiveSafs->workflow_id,
+            'current_role' => $propActiveSafs->current_role,
+            'ulb_id' => $propActiveSafs->ulb_id,
         ]);
     }
 
@@ -632,6 +635,7 @@ class PropActiveSaf extends Model
             ->join('ref_prop_road_types as r', 'r.id', 'prop_active_safs.road_type_mstr_id')
             ->select(
                 'prop_active_safs.id',
+                'prop_active_safs.payment_status',
                 'prop_active_safs.saf_no',
                 'prop_active_safs.ward_mstr_id',
                 'ward.ward_name as ward_no',

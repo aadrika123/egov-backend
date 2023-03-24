@@ -4,11 +4,18 @@ namespace App\Repository\Trade;
 
 use App\EloquentModels\Common\ModelWard;
 use App\Models\Trade\ActiveTradeLicence;
+use App\Models\Trade\ActiveTradeNoticeConsumerDtl;
 use App\Models\Trade\RejectedTradeLicence;
+use App\Models\Trade\RejectedTradeNoticeConsumerDtl;
 use App\Models\Trade\TradeLicence;
+use App\Models\Trade\TradeNoticeConsumerDtl;
 use App\Models\Trade\TradeRenewal;
 use App\Models\Trade\TradeTransaction;
+use App\Models\UlbWardMaster;
+use App\Models\Workflows\WfRole;
 use App\Models\Workflows\WfTrack;
+use App\Models\Workflows\WfWardUser;
+use App\Models\Workflows\WfWorkflow;
 use App\Models\WorkflowTrack;
 use App\Repository\Common\CommonFunction;
 use App\Traits\Auth;
@@ -16,6 +23,7 @@ use Carbon\Carbon;
 use App\Traits\Workflow\Workflow;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
@@ -24,12 +32,23 @@ class Report implements IReport
     use Auth;
     use Workflow;
 
-    protected $_common;
-    protected $_modelWard;
+    protected $_MODEL_WARD;
+    protected $_COMMON_FUNCTION;
+    protected $_WF_MASTER_Id;
+    protected $_WF_NOTICE_MASTER_Id;
+    protected $_MODULE_ID;
+    protected $_REF_TABLE;
+    protected $_TRADE_CONSTAINT;
     public function __construct()
     {
-        $this->_common = new CommonFunction();
-        $this->_modelWard = new ModelWard();
+        $this->_COMMON_FUNCTION = new CommonFunction();
+        $this->_MODEL_WARD = new ModelWard();
+
+        $this->_WF_MASTER_Id = Config::get('workflow-constants.TRADE_MASTER_ID');
+        $this->_WF_NOTICE_MASTER_Id = Config::get('workflow-constants.TRADE_NOTICE_ID');
+        $this->_MODULE_ID = Config::get('module-constants.TRADE_MODULE_ID');
+        $this->_TRADE_CONSTAINT = Config::get("TradeConstant");
+        $this->_REF_TABLE = $this->_TRADE_CONSTAINT["TRADE_REF_TABLE"];
     }
 
     public function CollectionReports(Request $request)
@@ -1102,23 +1121,436 @@ class Report implements IReport
             ->JOIN("ulb_ward_masters","ulb_ward_masters.id","active_trade_licences.ward_id")
             ->JOIN("trade_notice_consumer_dtls","trade_notice_consumer_dtls.id","active_trade_licences.denial_id")
             ->LEFTJOIN(DB::RAW("(
-                select temp_id,
+                SELECT active_trade_owners.temp_id,
                     string_agg(owner_name,',')as owner_name,
                     string_agg(guardian_name,',')as guardian_name,
                     string_agg(mobile_no,',')as mobile_no
-                from active_trade_owners
-                join active_trade_licences.id = active_trade_owners.temp_id
-                where is_active = true
-                    AND 
-                group by temp_id
+                FROM  active_trade_owners
+                JOIN active_trade_licences ON active_trade_licences.id = active_trade_owners.temp_id
+                WHERE active_trade_owners.is_active = TRUE
+                    AND active_trade_licences.ulb_id = $ulbId
+                    AND active_trade_licences.application_date BETWEEN '$fromDate' AND '$uptoDate'
+                    ".($wardId?" AND active_trade_licences.ward_id":"")."
+                GROUP BY active_trade_owners.temp_id
             )owners"),function($join){
                 $join->on("owners.temp_id","active_trade_licences.id");
             })
+            ->WHERE("active_trade_licences.ulb_id",$ulbId)
             ->WHEREBETWEEN("active_trade_licences.application_date",[$fromDate,$uptoDate]);
+
+            $rejected = RejectedTradeLicence::select(
+                DB::RAW("
+                trade_notice_consumer_dtls.notice_no,
+                cast(trade_notice_consumer_dtls.notice_date as date) as notice_date,
+                cast(trade_notice_consumer_dtls.created_at as date) as notice_apply_date,
+                cast(rejected_trade_licences.application_date as date) as application_date,
+                rejected_trade_licences.application_no,
+                rejected_trade_licences.firm_name,
+                rejected_trade_licences.address,
+                owners.owner_name,owners.guardian_name,owners.mobile_no,
+                ulb_ward_masters.ward_name as ward_no
+                ")
+            )
+            ->JOIN("ulb_ward_masters","ulb_ward_masters.id","rejected_trade_licences.ward_id")
+            ->JOIN("trade_notice_consumer_dtls","trade_notice_consumer_dtls.id","rejected_trade_licences.denial_id")
+            ->LEFTJOIN(DB::RAW("(
+                SELECT rejected_trade_owners.temp_id,
+                    string_agg(owner_name,',')as owner_name,
+                    string_agg(guardian_name,',')as guardian_name,
+                    string_agg(mobile_no,',')as mobile_no
+                FROM rejected_trade_owners
+                JOIN rejected_trade_licences ON rejected_trade_licences.id = rejected_trade_owners.temp_id
+                WHERE rejected_trade_owners.is_active = true
+                    AND rejected_trade_licences.ulb_id = $ulbId
+                    AND rejected_trade_licences.application_date BETWEEN '$fromDate' AND '$uptoDate'
+                    ".($wardId?" AND rejected_trade_licences.ward_id":"")."
+                GROUP BY rejected_trade_owners.temp_id
+            )owners"),function($join){
+                $join->on("owners.temp_id","rejected_trade_licences.id");
+            })
+            ->WHERE("rejected_trade_licences.ulb_id",$ulbId)
+            ->WHEREBETWEEN("rejected_trade_licences.application_date",[$fromDate,$uptoDate]);
+
+            $approved = TradeLicence::select(
+                DB::RAW("
+                trade_notice_consumer_dtls.notice_no,
+                cast(trade_notice_consumer_dtls.notice_date as date) as notice_date,
+                cast(trade_notice_consumer_dtls.created_at as date) as notice_apply_date,
+                cast(trade_licences.application_date as date) as application_date,
+                trade_licences.application_no,
+                trade_licences.firm_name,
+                trade_licences.address,
+                owners.owner_name,owners.guardian_name,owners.mobile_no,
+                ulb_ward_masters.ward_name as ward_no
+                ")
+            )
+            ->JOIN("ulb_ward_masters","ulb_ward_masters.id","trade_licences.ward_id")
+            ->JOIN("trade_notice_consumer_dtls","trade_notice_consumer_dtls.id","trade_licences.denial_id")
+            ->LEFTJOIN(DB::RAW("(
+                SELECT trade_owners.temp_id,
+                    string_agg(owner_name,',')as owner_name,
+                    string_agg(guardian_name,',')as guardian_name,
+                    string_agg(mobile_no,',')as mobile_no
+                FROM trade_owners
+                JOIN trade_licences ON trade_licences.id = trade_owners.temp_id
+                WHERE trade_owners.is_active = true
+                    AND trade_licences.ulb_id = $ulbId
+                    AND trade_licences.application_date BETWEEN '$fromDate' AND '$uptoDate'
+                    ".($wardId?" AND trade_licences.ward_id":"")."
+                GROUP BY trade_owners.temp_id
+            )owners"),function($join){
+                $join->on("owners.temp_id","trade_licences.id");
+            })
+            ->WHERE("trade_licences.ulb_id",$ulbId)
+            ->WHEREBETWEEN("trade_licences.application_date",[$fromDate,$uptoDate]);
+
+            $old = TradeRenewal::select(
+                DB::RAW("
+                trade_notice_consumer_dtls.notice_no,
+                cast(trade_notice_consumer_dtls.notice_date as date) as notice_date,
+                cast(trade_notice_consumer_dtls.created_at as date) as notice_apply_date,
+                cast(trade_renewals.application_date as date) as application_date,
+                trade_renewals.application_no,
+                trade_renewals.firm_name,
+                trade_renewals.address,
+                owners.owner_name,owners.guardian_name,owners.mobile_no,
+                ulb_ward_masters.ward_name as ward_no
+                ")
+            )
+            ->JOIN("ulb_ward_masters","ulb_ward_masters.id","trade_renewals.ward_id")
+            ->JOIN("trade_notice_consumer_dtls","trade_notice_consumer_dtls.id","trade_renewals.denial_id")
+            ->LEFTJOIN(DB::RAW("(
+                SELECT trade_owners.temp_id,
+                    string_agg(owner_name,',')as owner_name,
+                    string_agg(guardian_name,',')as guardian_name,
+                    string_agg(mobile_no,',')as mobile_no
+                FROM trade_owners
+                JOIN trade_renewals ON trade_renewals.id = trade_owners.temp_id
+                WHERE trade_owners.is_active = true
+                    AND trade_renewals.ulb_id = $ulbId
+                    AND trade_renewals.application_date BETWEEN '$fromDate' AND '$uptoDate'
+                    ".($wardId?" AND trade_renewals.ward_id":"")."
+                GROUP BY trade_owners.temp_id
+            )owners"),function($join){
+                $join->on("owners.temp_id","trade_renewals.id");
+            })
+            ->WHERE("trade_renewals.ulb_id",$ulbId)
+            ->WHEREBETWEEN("trade_renewals.application_date",[$fromDate,$uptoDate]);            
+            $data = $active
+                    ->union($rejected)
+                    ->union($approved)
+                    ->union($old);
+
+            $perPage = $request->perPage ? $request->perPage : 10;
+            $page = $request->page && $request->page > 0 ? $request->page : 1;
+
+            $paginator = $data->paginate($perPage);
+            $items = $paginator->items();
+            $total = $paginator->total();
+            $numberOfPages = ceil($total/$perPage);                
+            $list=[
+                "perPage"=>$perPage,
+                "page"=>$page,
+                "items"=>$items,
+                "total"=>$total,
+                "numberOfPages"=>$numberOfPages
+            ];
+            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
+            return responseMsgs(true,"",$list,$apiId, $version, $queryRunTime,$action,$deviceId);
         }
         catch(Exception $e)
         {
             return responseMsgs(false,$e->getMessage(),$request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
         }
+    }
+
+    public function noticeSummary(Request $request)
+    {
+        $metaData= collect($request->metaData)->all();
+        list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
+        try{
+            $refUser        = Auth()->user();
+            $refUserId      = $refUser->id;
+            $ulbId          = $refUser->ulb_id;
+            $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
+            $wardId = null;
+            
+            if($request->fromDate)
+            {
+                $fromDate = $request->fromDate;
+            }
+            if($request->uptoDate)
+            {
+                $uptoDate = $request->uptoDate;
+            }
+            if($request->wardId)
+            {
+                $wardId = $request->wardId;
+            }
+            if($request->ulbId)
+            {
+                $ulbId = $request->ulbId;
+            }
+
+            $data["approved"]= TradeNoticeConsumerDtl::WHEREBETWEEN(DB::RAW("cast(created_at as date)"),[$fromDate,$uptoDate])
+                        ->WHERE("ulb_id",$ulbId)
+                        ->count("id");
+            $data["pending"] = ActiveTradeNoticeConsumerDtl::WHEREBETWEEN(DB::RAW("cast(created_at as date)"),[$fromDate,$uptoDate])
+                        ->WHERE("ulb_id",$ulbId)
+                        ->count("id");
+            $data["rejected"] = RejectedTradeNoticeConsumerDtl::WHEREBETWEEN(DB::RAW("cast(created_at as date)"),[$fromDate,$uptoDate])
+                        ->WHERE("ulb_id",$ulbId)
+                        ->count("id");
+            $data["total"] = $data["approved"]+$data["pending"]+$data["rejected"];
+
+            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
+            return responseMsgs(true,"",$data,$apiId, $version, $queryRunTime,$action,$deviceId);
+        }
+        catch(Exception $e)
+        {
+            return responseMsgs(false,$e->getMessage(),$request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
+        }
+    }
+
+    public function levelwisependingform(Request $request)
+    {
+        $metaData = collect($request->metaData)->all();
+        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
+        try{
+            $refUser        = Auth()->user();
+            $refUserId      = $refUser->id;
+            $ulbId          = $refUser->ulb_id;
+            if ($request->ulbId) 
+            {
+                $ulbId = $request->ulbId;
+            }
+            $refWfWorkflow     = WfWorkflow::where('wf_master_id', $this->_WF_MASTER_Id)
+                ->where('ulb_id', $ulbId)
+                ->first();
+            if (!$refWfWorkflow) 
+            {
+                throw new Exception("Workflow Not Available");
+            }
+            $workflow_id = $refWfWorkflow->id;
+            $data = WfRole::SELECT(
+                "wf_roles.id",
+                "wf_roles.role_name",
+                DB::RAW("COUNT(active_trade_licences.id) AS total")
+            )
+                ->JOIN(DB::RAW("(
+                                        SELECT distinct(wf_role_id) as wf_role_id
+                                        FROM wf_workflowrolemaps 
+                                        WHERE  wf_workflowrolemaps.is_suspended = false AND (forward_role_id IS NOT NULL OR backward_role_id IS NOT NULL)
+                                            AND workflow_id IN(".$workflow_id.") 
+                                        GROUP BY wf_role_id 
+                                ) AS roles
+                    "), function ($join) {
+                    $join->on("wf_roles.id", "roles.wf_role_id");
+                })
+                ->LEFTJOIN("active_trade_licences", function ($join) use ($ulbId) {
+                    $join->ON("active_trade_licences.current_role", "roles.wf_role_id")
+                        ->WHERE("active_trade_licences.ulb_id", $ulbId)
+                        ->WHERE(function ($where) {
+                            $where->ORWHERE("active_trade_licences.payment_status", "<>", 0)
+                                ->ORWHERENOTNULL("active_trade_licences.payment_status");
+                        });
+                })
+                ->GROUPBY(["wf_roles.id", "wf_roles.role_name"])
+                ->UNION(
+                    ActiveTradeLicence::SELECT(
+                        DB::RAW("8 AS id, 'JSK' AS role_name,
+                                COUNT(active_trade_licences.id)")
+                    )
+                        ->WHERE("active_trade_licences.ulb_id", $ulbId)
+                        ->WHERENOTNULL("active_trade_licences.user_id")
+                        ->WHERE(function ($where) {
+                            $where->WHERE("active_trade_licences.payment_status", "=", 0)
+                                ->ORWHERENULL("active_trade_licences.payment_status");
+                        })
+                )
+                ->GET();
+            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
+            return responseMsgs(true, "", $data, $apiId, $version, $queryRunTime, $action, $deviceId);
+        }
+        catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
+        }
+    }
+    public function levelUserPending(Request $request)
+    {
+        $metaData = collect($request->metaData)->all();
+        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
+        try {
+            $refUser        = Auth()->user();
+            $refUserId      = $refUser->id;
+            $ulbId          = $refUser->ulb_id;
+            $roleId = $roleId2 = $userId = null;
+            $joins = "join";
+            if ($request->ulbId) 
+            {
+                $ulbId = $request->ulbId;
+            }
+            if ($request->roleId) 
+            {
+                $roleId = $request->roleId;
+            }
+            if (($request->roleId && $request->userId) && ($roleId != $roleId2)) 
+            {
+                throw new Exception("Invalid RoleId Pass");
+            }
+            if (in_array($roleId, [11, 8])) 
+            {
+                $joins = "leftjoin";
+            }
+
+            // DB::enableQueryLog();
+            $data = ActiveTradeLicence::SELECT(
+                DB::RAW(
+                    "count(active_trade_licences.id),
+                    users_role.user_id ,
+                    users_role.user_name,
+                    users_role.wf_role_id as role_id,
+                    users_role.role_name"
+                )
+            )
+                ->$joins(
+                    DB::RAW("(
+                        select wf_role_id,user_id,user_name,role_name,concat('{',ward_ids,'}') as ward_ids
+                        from (
+                            select wf_roleusermaps.wf_role_id,wf_roleusermaps.user_id,
+                            users.user_name, wf_roles.role_name,
+                            string_agg(wf_ward_users.ward_id::text,',') as ward_ids
+                            from wf_roleusermaps 
+                            join wf_roles on wf_roles.id = wf_roleusermaps.wf_role_id
+                                AND wf_roles.status =1
+                            join users on users.id = wf_roleusermaps.user_id
+                            left join wf_ward_users on wf_ward_users.user_id = wf_roleusermaps.user_id and wf_ward_users.is_suspended = false
+                            where wf_roleusermaps.wf_role_id =$roleId
+                                AND wf_roleusermaps.is_suspended = false
+                            group by wf_roleusermaps.wf_role_id,wf_roleusermaps.user_id,users.user_name,wf_roles.role_name
+                        )role_user_ward
+                    ) users_role
+                    "),
+                    function ($join) use ($joins) 
+                    {
+                        if ($joins == "join") 
+                        {
+                            $join->on("users_role.wf_role_id", "=", "active_trade_licences.current_role")
+                                ->where("active_trade_licences.ward_id", DB::raw("ANY (ward_ids::int[])"));
+                        } 
+                        else 
+                        {
+                            $join->on(DB::raw("1"), DB::raw("1"));
+                        }
+                    }
+                )
+                ->WHERE("active_trade_licences.ulb_id", $ulbId)
+                ->groupBy(["users_role.user_id", "users_role.user_name", "users_role.wf_role_id", "users_role.role_name"]);
+
+            $perPage = $request->perPage ? $request->perPage : 10;
+            $page = $request->page && $request->page > 0 ? $request->page : 1;
+            $paginator = $data->paginate($perPage);
+            $items = $paginator->items();
+            $total = $paginator->total();
+            $numberOfPages = ceil($total / $perPage);
+            $list = [
+                "perPage" => $perPage,
+                "page" => $page,
+                "items" => $items,
+                "total" => $total,
+                "numberOfPages" => $numberOfPages
+            ];
+            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
+            return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime, $action, $deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
+        }
+    }
+
+    public function userWiseWardWiseLevelPending(Request $request)
+    {
+        $metaData = collect($request->metaData)->all();
+        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
+        try {
+            $refUser        = Auth()->user();
+            $refUserId      = $refUser->id;
+            $ulbId          = $refUser->ulb_id;
+            $roleId = $roleId2 = $userId = null;
+            $mWardPermission = collect([]);
+            if ($request->ulbId) 
+            {
+                $ulbId = $request->ulbId;
+            }
+            if ($request->roleId) 
+            {
+                $roleId = $request->roleId;
+            }
+            if ($request->userId) 
+            {
+                $userId = $request->userId;
+                $roleId2 = ($this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_WF_MASTER_Id))->role_id ?? 0;
+            }
+            if (($request->roleId && $request->userId) && ($roleId != $roleId2)) 
+            {
+                throw new Exception("Invalid RoleId Pass");
+            }
+            $roleId = $roleId2 ? $roleId2 : $roleId;
+            if (!in_array($roleId, [11, 8])) 
+            {
+                $mWfWardUser = new WfWardUser();
+                $mWardPermission = $mWfWardUser->getWardsByUserId($userId);
+            }
+            
+            $mWardIds = $mWardPermission->implode("ward_id", ",");
+            $mWardIds = explode(',', ($mWardIds ? $mWardIds : "0"));
+            // DB::enableQueryLog();
+            $data = UlbWardMaster::SELECT(
+                DB::RAW(" DISTINCT(ward_name) as ward_no, COUNT(active_trade_licences.id) AS total")
+            )
+                ->LEFTJOIN("active_trade_licences", "ulb_ward_masters.id", "active_trade_licences.ward_id");
+            if ($roleId == 8) 
+            {
+                $data = $data->LEFTJOIN("wf_roles", "wf_roles.id", "active_trade_licences.current_role")
+                    ->WHERENOTNULL("active_trade_licences.user_id")
+                    ->WHERE(function ($where) {
+                        $where->WHERE("active_trade_licences.payment_status", "=", 0)
+                            ->ORWHERENULL("active_trade_licences.payment_status");
+                    });
+            } 
+            else 
+            {
+                $data = $data->JOIN("wf_roles", "wf_roles.id", "active_trade_licences.current_role")
+                    ->WHERE("wf_roles.id", $roleId);
+            }
+            if (!in_array($roleId, [11, 8]) && $userId) 
+            {
+                $data = $data->WHEREIN("active_trade_licences.ward_id", $mWardIds);
+            }
+            $data = $data->WHERE("active_trade_licences.ulb_id", $ulbId);
+            $data = $data->groupBy(["ward_name"]);
+
+            $perPage = $request->perPage ? $request->perPage : 10;
+            $page = $request->page && $request->page > 0 ? $request->page : 1;
+            $paginator = $data->paginate($perPage);
+            $items = $paginator->items();
+            $total = $paginator->total();
+            $numberOfPages = ceil($total / $perPage);
+            $list = [
+                "perPage" => $perPage,
+                "page" => $page,
+                "items" => $items,
+                "total" => $total,
+                "numberOfPages" => $numberOfPages
+            ];
+            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
+            return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime, $action, $deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
+        }
+    }
+
+    public function levelformdetail(Request $request)
+    {
+
     }
 }
