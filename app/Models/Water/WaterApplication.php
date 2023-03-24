@@ -457,6 +457,20 @@ class WaterApplication extends Model
         $activeSaf->save();
     }
 
+
+    /**
+     * | Update the payment Status ini case of pending
+     * | in case of application is under verification 
+     * | @param applicationId
+     */
+    public function updatePendingStatus($applicationId)
+    {
+        $activeSaf = WaterApplication::find($applicationId);
+        $activeSaf->payment_status = 2;
+        $activeSaf->save();
+    }
+
+
     #--------------------------------------------------------------------------------------------------------------------#
 
     /**
@@ -467,9 +481,21 @@ class WaterApplication extends Model
         $refUserType = authUser()->user_type;
         $currentDate = Carbon::now()->format('Y-m-d');
 
-        return WaterApplication::where('apply_date', $currentDate)
+        return WaterApplication::select(
+            'water_applications.*',
+            DB::raw("string_agg(water_applicants.applicant_name,',') as applicantName"),
+            DB::raw("string_agg(water_applicants.mobile_no::VARCHAR,',') as mobileNo"),
+            DB::raw("string_agg(water_applicants.guardian_name,',') as guardianName"),
+        )
+            ->join('water_applicants', 'water_applicants.application_id', '=', 'water_applications.id')
+            ->where('apply_date', $currentDate)
             ->where('user_type', $refUserType)
-            ->where('status', true)
+            ->where('water_applications.status', true)
+            ->where('water_applicants.status', true)
+            ->groupBy(
+                'water_applications.id',
+                'water_applicants.application_id',
+            )
             ->get();
     }
 

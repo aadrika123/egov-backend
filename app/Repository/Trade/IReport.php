@@ -13,5 +13,10 @@ interface IReport
     public function tradeDaseboard(Request $request);
     public function ApplicantionTrackStatus(Request $request);
     public function applicationAgentNotice(Request $request);
+    public function noticeSummary(Request $request);
+    public function levelwisependingform(Request $request);
+    public function levelUserPending(Request $request);
+    public function userWiseWardWiseLevelPending(Request $request);
+    public function levelformdetail(Request $request);
 
 }

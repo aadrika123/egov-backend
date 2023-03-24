@@ -2326,9 +2326,7 @@ class ActiveSafController extends Controller
                     $request2 = new Request($array2);
                     $safTaxes2 = $safCalculation->calculateTax($request2);
                     // $safTaxes2 = json_decode(json_encode($safTaxes2), true);
-
                     $safTaxes3 = $this->reviewTaxCalculation($safTaxes);
-
                     // dd($safTaxes2);
                     $safTaxes4 = $this->reviewTaxCalculation($safTaxes2);
                     // dd(json_decode(json_encode($safTaxes), true));

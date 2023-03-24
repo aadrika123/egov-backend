@@ -659,48 +659,72 @@ class WaterPaymentController extends Controller
         | Serial No : 05
         | Recheck / Not Working
      */
-    public function hgsg()
+    public function offlineDemandPayment(Request $request)
     {
-        
+        try {
+            $request->validate([
+                'consumerId'    => 'required',
+                'demandFrom'   => 'required|date_format:Y-m-d|',
+                'demandUpto'   => 'required|date_format:Y-m-d|',
+                'amount'        => 'nullable'
+            ]);
+            $startingDate = Carbon::createFromFormat('Y-m-d',  $request->demandFrom)->startOfMonth();
+            $startingDate = $startingDate->toDateString();
+            $endDate = Carbon::createFromFormat('Y-m-d',  $request->demandUpto)->endOfMonth();
+            $endDate = $endDate->toDateString();
+            return $this->preOfflinePaymentParams($request, $startingDate, $endDate);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", $request->deviceId);
+        }
     }
 
     /**
      * | 
         | Not Working
      */
-    public function preOnlinePaymentParams($request)
+    public function preOfflinePaymentParams($request, $startingDate, $endDate)
     {
         $mWaterConsumerDemand = new WaterConsumerDemand();
-        $currentMonth = Carbon::now();
-
-        if ($request->applycationType != "consumer") {
-            throw new Exception("forbiden access!");
+        $mWaterConsumer = new WaterConsumer();
+        $consumerId = $request->consumerId;
+        $refAmount = $request->amount;
+        if ($startingDate > $endDate) {
+            throw new Exception("demandFrom Date should not be grater than demandUpto date!");
         }
-
-        $refConsumer = WaterConsumer::find($request->id);
+        $refConsumer = $mWaterConsumer->getConsumerDetailById($consumerId);
         if (!$refConsumer) {
             throw new Exception("Consumer Not Found!");
         }
-
-        $consumerCahges = $mWaterConsumerDemand->getConsumerDemand($refConsumer->id);
-        $checkCharges = collect($consumerCahges)->last();
+        return $allCharges = $mWaterConsumerDemand->getFirstConsumerDemand($consumerId)
+            ->where('demand_from', '>=', $startingDate)
+            ->where('demand_upto', '<=', $endDate)
+            ->get();
+        $checkCharges = collect($allCharges)->last();
         if (!$checkCharges->id) {
-            throw new Exception("No Anny Due Amount!......");
+            throw new Exception("Chrges for respective date dont exise!......");
         }
-        $details = $mWaterConsumerDemand->impos_penalty($request->id);
-        if ($details == false) {
-            throw new Exception("error in imposing Penalty!");
+        $totalPaymentAmount = collect($allCharges)->sum('balance_amount');
+        if ($totalPaymentAmount != $refAmount) {
+            throw new Exception("amount Not Matched!");
+        }
+        $totalgeneratedDemand = collect($allCharges)->sum('amount');
+        $totalPenalty = collect($allCharges)->sum('penalty');
+        $refgeneratedDemand = $refAmount - $totalPenalty;
+        if ($refgeneratedDemand != $totalgeneratedDemand) {
+            throw new Exception("penallty Not mathched!");
         }
         return [
             "consumer" => $refConsumer,
-            "consumerCahges" => $consumerCahges,
+            "consumerCahges" => $allCharges,
         ];
     }
 
 
     /**
      * | Calculate the Demand for the respective Consumer
-     * | @param request request
+     * | @param request
+     * | @var collectiveCharges
+     * | @var returnData
         | Working
         | Serial No : 
      */
@@ -712,7 +736,12 @@ class WaterPaymentController extends Controller
             'demandUpto' => 'required|date|date_format:Y-m-d',
         ]);
         try {
-            $collectiveCharges = $this->checkCallParams($request);
+            $startingDate = Carbon::createFromFormat('Y-m-d',  $request->demandFrom)->startOfMonth();
+            $startingDate = $startingDate->toDateString();
+            $endDate = Carbon::createFromFormat('Y-m-d',  $request->demandUpto)->endOfMonth();
+            $endDate = $endDate->toDateString();
+
+            $collectiveCharges = $this->checkCallParams($request, $startingDate, $endDate);
 
             $returnData['totalPayAmount'] = collect($collectiveCharges)->pluck('balance_amount')->sum();
             $returnData['totalPenalty'] = collect($collectiveCharges)->pluck('penalty')->sum();
@@ -726,19 +755,27 @@ class WaterPaymentController extends Controller
     /**
      * | calling functon for checking params for callculating demand according to month
      * | @param request
+     * | @var consumerDetails
+     * | @var mWaterConsumerDemand
+     * | @var allCharges
+     * | @var checkDemand
+     * | @return allCharges
         | Serial No :
         | Working  
      */
-    public function checkCallParams($request)
+    public function checkCallParams($request, $startingDate, $endDate)
     {
+        if ($startingDate > $endDate) {
+            throw new Exception("demandFrom Date should not be grater than demandUpto date!");
+        }
         $consumerDetails = WaterConsumerDemand::find($request->consumerId);
         if (!$consumerDetails) {
             throw new Exception("Consumer dont exist!");
         }
         $mWaterConsumerDemand = new WaterConsumerDemand();
         $allCharges = $mWaterConsumerDemand->getFirstConsumerDemand($request->consumerId)
-            ->where('demand_from', '>=', $request->demandFrom)
-            ->where('demand_upto', '<=', $request->demandUpto)
+            ->where('demand_from', '>=', $startingDate)
+            ->where('demand_upto', '<=', $endDate)
             ->get();
 
         $checkDemand = collect($allCharges)->first()->id;
@@ -912,7 +949,7 @@ class WaterPaymentController extends Controller
             # Derivative Assignments
             $tranNo = $idGeneration->generateTransactionNo();
             $charges = $mWaterConnectionCharge->getWaterchargesById($req->applicationId)
-                ->where('paid_status', false)
+                ->where('paid_status', 0)
                 ->get();                                                                                        # get water User connectin charges
 
             if (!$charges || collect($charges)->isEmpty())
@@ -946,22 +983,9 @@ class WaterPaymentController extends Controller
 
             # Reflect on water Tran Details
             foreach ($charges as $charges) {
-                $charges->paid_status = 1;           // <-------- Update Demand Paid Status 
-                $charges->save();
-
-                $waterTranDetail = new WaterTranDetail();
-                $waterTranDetail->saveDefaultTrans(
-                    $req->amount,
-                    $req->applicationId,
-                    $waterTrans['id'],
-                    $charges['id'],
-                );
+                $this->savePaymentStatus($req, $offlinePaymentModes, $charges, $refWaterApplication, $waterTrans);
             }
 
-            # Update Water Application Payment Status
-            if ($refWaterApplication['payment_status'] == false) {
-                $mWaterApplication->updateOnlyPaymentstatus($req['id']);
-            }
 
             # Readjust Water Penalties
             $this->updatePenaltyPaymentStatus($req);
@@ -971,6 +995,37 @@ class WaterPaymentController extends Controller
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
+    }
+
+
+    /**
+     * | Save the payment status for respective payment
+     * | @param req
+        | Serial No : 07.04
+        | Working
+     */
+    public function savePaymentStatus($req, $offlinePaymentModes, $charges, $refWaterApplication, $waterTrans)
+    {
+        $mWaterApplication = new WaterApplication();
+        if (in_array($req['paymentMode'], $offlinePaymentModes)) {
+            $charges->paid_status = 2;
+            $mWaterApplication->updatePendingStatus($req['id']);
+        } else {
+            $charges->paid_status = 1;                                      // <-------- Update Demand Paid Status 
+
+            if ($refWaterApplication['payment_status'] == 0) {              // <----------- Update Water Application Payment Status
+                $mWaterApplication->updateOnlyPaymentstatus($req['id']);
+            }
+        }
+        $charges->save();
+
+        $waterTranDetail = new WaterTranDetail();
+        $waterTranDetail->saveDefaultTrans(
+            $req->amount,
+            $req->applicationId,
+            $waterTrans['id'],
+            $charges['id'],
+        );
     }
 
 
@@ -1024,7 +1079,7 @@ class WaterPaymentController extends Controller
                             ->where('charge_category', $req->chargeCategory)
                             ->firstOrFail();
 
-                        if ($actualCharge['paid_status'] == false) {
+                        if ($actualCharge['paid_status'] == 0) {
                             $refAmount = $req->amount - $refPenaltySumAmount;
                             $actualAmount = $actualCharge['conn_fee'];
                             if ($actualAmount != $refAmount) {
@@ -1082,7 +1137,7 @@ class WaterPaymentController extends Controller
             case ($req->chargeCategory == $paramChargeCatagory['SITE_INSPECTON']):
                 $actualCharge = $mWaterConnectionCharge->getWaterchargesById($req->applicationId)
                     ->where('charge_category', $paramChargeCatagory['SITE_INSPECTON'])
-                    ->where('paid_status', false)
+                    ->where('paid_status', 0)
                     ->firstOrFail();
                 if ($actualCharge['amount'] != $req->amount) {
                     throw new Exception("Amount Not Matched!");
@@ -1231,7 +1286,7 @@ class WaterPaymentController extends Controller
                     })->filter()->sum();
 
                     # return data
-                    if ($penaltyPaymentStatus == false || $value['paid_status'] == false) {
+                    if ($penaltyPaymentStatus == 0 || $value['paid_status'] == 0) {
                         $status['penaltyPaymentStatus']     = $penaltyPaymentStatus ?? null;
                         $status['chargeCatagory']           = $value['charge_category'];
                         $status['penaltyAmount']            = $penaltyAmount;

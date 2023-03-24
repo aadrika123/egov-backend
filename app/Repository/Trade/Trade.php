@@ -4426,10 +4426,12 @@ class Trade implements ITrade
         $refWorkflowId  = $this->_WF_MASTER_Id ;
         $mUserType      = $this->_COMMON_FUNCTION->userType($refWorkflowId, $refUlbId);
         $application = TradeLicence::find($licenceId);
-        if (!$application) {
+        if (!$application) 
+        {
             $application = ActiveTradeLicence::find($licenceId);
         }
-        if (!$application) {
+        if (!$application) 
+        {
             $application = RejectedTradeLicence::find($licenceId);
         }
         $status = "";
@@ -4440,20 +4442,27 @@ class Trade implements ITrade
             {
                 $status = "License Expired On ".$application->valid_upto;
             }
-        } elseif ($application->is_parked) {
+        } 
+        elseif ($application->is_parked) 
+        {
             $rols  = WfRole::find($application->current_role);
             $status = "Application back to citizen by " . $rols->role_name;
-        } elseif ($application->pending_status!=0 && (($application->current_role != $application->finisher_role) || ($application->current_role == $application->finisher_role))) {
+        } 
+        elseif ($application->pending_status!=0 && (($application->current_role != $application->finisher_role) || ($application->current_role == $application->finisher_role))) 
+        {
             $rols  = WfRole::find($application->current_role);
             $status = "Application pending at " . $rols->role_name;
-        } elseif (!$application->is_active) {
+        } 
+        elseif (!$application->is_active) 
+        {
             $status = "Application rejected ";
         } 
         elseif(strtoupper($mUserType)=="ONLINE" && $application->citizen_id == $refUserId && $application->payment_status == 0 )
         {
             $request = new Request(["applicationId"=>$licenceId,"ulb_id"=>$refUlbId,"user_id"=>$refUserId]);
             $doc_status = $this->checkWorckFlowForwardBackord($request);
-            if($doc_status && $application->payment_status==0){
+            if($doc_status && $application->payment_status==0)
+            {
                 $status = "All Required Documents Are Uploaded But Payment is Pending ";
             }
             elseif($doc_status && $application->payment_status==1)
@@ -4469,15 +4478,32 @@ class Trade implements ITrade
                 $status = "Payment is Pending And Document Not Uploaded";
             }
         }
-        elseif ($application->payment_status == 0 && $application->document_upload_status == 0) {
+        elseif ($application->payment_status == 0 && $application->document_upload_status == 0) 
+        {
             $status = "Payment is pending and document not uploaded ";
-        } elseif ($application->payment_status == 1 && $application->document_upload_status == 0) {
+        } 
+        elseif ($application->payment_status == 1 && $application->document_upload_status == 0) 
+        {
             $status = "Payment is done but document not uploaded ";
-        } elseif ($application->payment_status == 0 && $application->document_upload_status == 1) {
+        }
+        elseif ($application->payment_status == 0 && $application->document_upload_status == 1) 
+        {
             $status = "Payment is pending but document is uploaded ";
-        } elseif ($application->payment_status == 1 && $application->document_upload_status == 1) {
+        } 
+        elseif ($application->payment_status == 1 && $application->document_upload_status == 1) 
+        {
             $status = "Payment is done and document is uploaded ";
-        } else {
+        } 
+        elseif ($application->payment_status == 2 && $application->document_upload_status == 1) 
+        {
+            $status = "Document is uploaded but Payment is not clear";
+        }
+        elseif ($application->payment_status == 2 && $application->document_upload_status == 0) 
+        {
+            $status = "Payment is not clear and document not uploaded ";
+        }
+        else 
+        {
             $status = "Applilcation Not Appoved";
         }
 
