@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Water;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Water\WaterConsumer as WaterWaterConsumer;
 use App\Http\Requests\Property\ReqPayment;
+use App\Http\Requests\Water\reqDemandPayment;
 use App\Http\Requests\Water\ReqWaterPayment;
 use App\Http\Requests\Water\siteAdjustment;
 use App\MicroServices\IdGeneration;
@@ -659,27 +660,63 @@ class WaterPaymentController extends Controller
         | Serial No : 05
         | Recheck / Not Working
      */
-    public function offlineDemandPayment(Request $request)
+    public function offlineDemandPayment(reqDemandPayment $request)
     {
         try {
-            $request->validate([
-                'consumerId'    => 'required',
-                'demandFrom'   => 'required|date_format:Y-m-d|',
-                'demandUpto'   => 'required|date_format:Y-m-d|',
-                'amount'        => 'nullable'
-            ]);
+            $user = authUser();
+            $midGeneration = new IdGeneration;
+            $mwaterTran = new waterTran();
+            $offlinePaymentModes = Config::get('payment-constants.VERIFICATION_PAYMENT_MODE');
+            $todayDate = Carbon::now();
             $startingDate = Carbon::createFromFormat('Y-m-d',  $request->demandFrom)->startOfMonth();
             $startingDate = $startingDate->toDateString();
             $endDate = Carbon::createFromFormat('Y-m-d',  $request->demandUpto)->endOfMonth();
             $endDate = $endDate->toDateString();
-            return $this->preOfflinePaymentParams($request, $startingDate, $endDate);
+
+            $finalCharges = $this->preOfflinePaymentParams($request, $startingDate, $endDate);
+            $tranNo = $midGeneration->generateTransactionNo();
+            $request->merge([
+                'userId'    => $user->id,
+                'userType'  => $user->user_type,
+                'todayDate' => $todayDate->format('Y-m-d'),
+                'tranNo'    => $tranNo,
+                'id'        => $request->consumerId,
+                'ulbId'     => $user->ulb_id,
+                'chargeCategory' => "Demand Collection",
+            ]);
+
+            DB::beginTransaction();
+            # Save the Details of the transaction
+            $wardId['ward_mstr_id'] = collect($finalCharges['consumer'])['ward_mstr_id'];
+            $waterTrans = $mwaterTran->waterTransaction($request, $wardId);
+
+            # Save the Details for the Cheque,DD,nfet
+            if (in_array($request['paymentMode'], $offlinePaymentModes)) {
+                $request->merge([
+                    'chequeDate'    => $request['chequeDate'],
+                    'tranId'        => $waterTrans['id'],
+                    'applicationNo' => collect($finalCharges['consumer'])['consumer_no'],
+                    'workflowId'    => 0,
+                    'ward_no'       => collect($finalCharges['consumer'])['ward_mstr_id']
+                ]);
+                $this->postOtherPaymentModes($request);
+            }
+
+            # Reflect on water Tran Details
+            $consumercharges = collect($finalCharges['consumerChages']);
+            $refWaterConsumer = collect($finalCharges['consumer']);
+            foreach ($consumercharges as $charges) {
+                $this->saveConsumerPaymentStatus($request, $offlinePaymentModes, $charges, $refWaterConsumer, $waterTrans);
+            }
+            DB::commit();
         } catch (Exception $e) {
+            DB::rollBack();
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", $request->deviceId);
         }
     }
 
     /**
-     * | 
+     * | Check the Condition before payment
         | Not Working
      */
     public function preOfflinePaymentParams($request, $startingDate, $endDate)
@@ -695,13 +732,13 @@ class WaterPaymentController extends Controller
         if (!$refConsumer) {
             throw new Exception("Consumer Not Found!");
         }
-        return $allCharges = $mWaterConsumerDemand->getFirstConsumerDemand($consumerId)
+        $allCharges = $mWaterConsumerDemand->getFirstConsumerDemand($consumerId)
             ->where('demand_from', '>=', $startingDate)
             ->where('demand_upto', '<=', $endDate)
             ->get();
         $checkCharges = collect($allCharges)->last();
         if (!$checkCharges->id) {
-            throw new Exception("Chrges for respective date dont exise!......");
+            throw new Exception("Charges for respective date don't exist!......");
         }
         $totalPaymentAmount = collect($allCharges)->sum('balance_amount');
         if ($totalPaymentAmount != $refAmount) {
@@ -711,13 +748,38 @@ class WaterPaymentController extends Controller
         $totalPenalty = collect($allCharges)->sum('penalty');
         $refgeneratedDemand = $refAmount - $totalPenalty;
         if ($refgeneratedDemand != $totalgeneratedDemand) {
-            throw new Exception("penallty Not mathched!");
+            throw new Exception("penally Not matched!");
         }
         return [
-            "consumer" => $refConsumer,
-            "consumerCahges" => $allCharges,
+            "consumer"          => $refConsumer,
+            "consumerChages"    => $allCharges,
         ];
     }
+
+
+    /**
+     * | Save the consumer demand payment status
+        | Not Working
+     */
+    public function saveConsumerPaymentStatus($request, $offlinePaymentModes, $charges, $waterTrans)
+    {
+        $waterTranDetail = new WaterTranDetail();
+        $mWaterTran = new WaterTran();
+        if (in_array($request['paymentMode'], $offlinePaymentModes)) {
+            $charges->paid_status = 2;
+            $mWaterTran->saveVerifyStatus($waterTrans['id']);
+        } else {
+            $charges->paid_status = 1;                                      // <-------- Update Demand Paid Status 
+        }
+        $charges->save();
+        $waterTranDetail->saveDefaultTrans(
+            $request->amount,
+            $request->consumerId,
+            $waterTrans['id'],
+            $charges['id'],
+        );
+    }
+
 
 
     /**
@@ -743,9 +805,30 @@ class WaterPaymentController extends Controller
 
             $collectiveCharges = $this->checkCallParams($request, $startingDate, $endDate);
 
-            $returnData['totalPayAmount'] = collect($collectiveCharges)->pluck('balance_amount')->sum();
-            $returnData['totalPenalty'] = collect($collectiveCharges)->pluck('penalty')->sum();
-            $returnData['toalDemand'] = collect($collectiveCharges)->pluck('amount')->sum();
+            # when advance is collected
+            // update the penalty used status after its use
+            // $advanceAmount = $this->checkAdvance($request);
+            $advanceAmount = 0;
+            $totalPaymentAmount  = collect($collectiveCharges)->pluck('balance_amount')->sum();
+            $actualCallAmount = $totalPaymentAmount - $advanceAmount;
+            if ($actualCallAmount < 0) {
+                $totalPayAmount = 0;
+                $renmaningAmount = $actualCallAmount * -1;
+                // $this->updateAdvanceStatus();
+            } else {
+                $totalPayAmount = $actualCallAmount;
+                $renmaningAmount = 0;
+                // $this->updateAdvanceStatus();
+            }
+
+            $returnData = [
+                'totalPayAmount'        => $totalPayAmount,
+                'totalPenalty'          => collect($collectiveCharges)->pluck('penalty')->sum(),
+                'totalDemand'           => collect($collectiveCharges)->pluck('amount')->sum(),
+                'totalAdvance'          => $advanceAmount,
+                'totalRebate'           => 0,
+                'remaningAdvanceAmount' => $renmaningAmount
+            ];
             return responseMsgs(true, "Amount Details!", remove_null($returnData), "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "", "01", ".ms", "POST", $request->deviceId);
@@ -1007,9 +1090,11 @@ class WaterPaymentController extends Controller
     public function savePaymentStatus($req, $offlinePaymentModes, $charges, $refWaterApplication, $waterTrans)
     {
         $mWaterApplication = new WaterApplication();
+        $mWaterTran = new WaterTran();
         if (in_array($req['paymentMode'], $offlinePaymentModes)) {
             $charges->paid_status = 2;
             $mWaterApplication->updatePendingStatus($req['id']);
+            $mWaterTran->saveVerifyStatus($waterTrans['id']);
         } else {
             $charges->paid_status = 1;                                      // <-------- Update Demand Paid Status 
 

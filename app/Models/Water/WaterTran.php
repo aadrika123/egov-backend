@@ -163,4 +163,16 @@ class WaterTran extends Model
         // AND tran_type IN ('New Connection', 'Regulaization')
         // AND payment_mode != '$rfTransMode'";
     }
+
+    /**
+     * | Save the verify status in case of pending verification
+     * | @param watertransId
+     */
+    public function saveVerifyStatus($watertransId)
+    {
+        WaterTran::where('id',$watertransId)
+        ->update([
+            'verify_status' => 2
+        ]);
+    }
 }
