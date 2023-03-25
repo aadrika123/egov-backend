@@ -237,4 +237,19 @@ class ReportController extends Controller
         }
         return responseMsgs($respons["original"]["status"], $respons["original"]["message"], $respons["original"]["data"], $apiId, $version, $queryRunTime, $action, $deviceId);
     }
+
+    public function bulkPaymentRecipt(Request $request)
+    {
+        $request->validate(
+            [
+                "fromDate" => "required|date|date_format:Y-m-d",
+                "uptoDate" => "required|date|date_format:Y-m-d",
+                "wardId" => "nullable|digits_between:1,9223372036854775807",
+                "ulbId" => "nullable|digits_between:1,9223372036854775807",
+                "userId" => "nullable|digits_between:1,9223372036854775807",
+            ]
+        );
+        $request->request->add(["metaData" => ["tr11.1", 1.1, null, $request->getMethod(), null,]]);
+        return $this->Repository->bulkPaymentRecipt($request);
+    }
 }
