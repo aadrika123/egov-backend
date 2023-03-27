@@ -9,6 +9,7 @@ class ReqInbox extends TradeRequest
      *
      * @return array
      */
+    # gk ggl
     public function rules()
     {
         return [

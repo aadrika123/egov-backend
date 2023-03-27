@@ -681,7 +681,7 @@ class PropActiveSaf extends Model
             ->where('prop_active_safs.holding_no', '!=', null)
             ->orderByDesc('prop_active_safs.id')
             ->skip(0)
-            ->take(50)
+            ->take(200)
             ->get();
     }
 
