@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Property;
 
+use App\BLL\Property\HandleTcVerification;
 use App\EloquentClass\Property\PenaltyRebateCalculation;
 use App\EloquentClass\Property\SafCalculation;
 use App\Http\Controllers\Controller;
@@ -1068,8 +1069,8 @@ class ActiveSafController extends Controller
             $mPropSafMemoDtl = new PropSafMemoDtl();
             $mPropSafDemand = new PropSafsDemand();
             $mPropProperties = new PropProperty();
-            $mPropFloors = new PropFloor();
             $mPropDemand = new PropDemand();
+            $handleTcVerification = new HandleTcVerification;
             $todayDate = Carbon::now()->format('Y-m-d');
             $currentFinYear = calculateFYear($todayDate);
             $famParamId = Config::get('PropertyConstaint.FAM_PARAM_ID');
@@ -1102,7 +1103,7 @@ class ActiveSafController extends Controller
 
             $propDtls = $mPropProperties->getPropIdBySafId($req->applicationId);
             $propId = $propDtls->id;
-            $fieldVerifiedSaf = $propSafVerification->getVerificationsBySafId($safId);
+            $fieldVerifiedSaf = $propSafVerification->getVerificationsBySafId($safId);          // Get fields Verified Saf with all Floor Details
             if ($fieldVerifiedSaf->isEmpty())
                 throw new Exception("Site Verification not Exist");
 
@@ -1133,7 +1134,15 @@ class ActiveSafController extends Controller
                 ]);
                 $memoReqs = new Request($mergedDemand);
                 $mPropSafMemoDtl->postSafMemoDtls($memoReqs);
-                $this->finalApprovalSafReplica($mPropProperties, $propId, $fieldVerifiedSaf, $activeSaf, $ownerDetails, $floorDetails, $mPropFloors, $safId);
+                $this->finalApprovalSafReplica($mPropProperties, $propId, $fieldVerifiedSaf, $activeSaf, $ownerDetails, $floorDetails, $safId);
+                $tcVerifyParams = [
+                    'safId' => $safId,
+                    'fieldVerificationDtls' => $fieldVerifiedSaf,
+                    'assessmentType' => $safDetails->assessment_type,
+                    'ulbId' => $activeSaf->ulb_id,
+                    'activeSafDtls' => $activeSaf
+                ];
+                return $handleTcVerification->generateTcVerifiedDemand($tcVerifyParams);                // current object function (10.3)
                 $msg = "Application Approved Successfully";
             }
             // Rejection
@@ -1155,8 +1164,9 @@ class ActiveSafController extends Controller
     /**
      * | Replication of Final Approval SAf(10.1)
      */
-    public function finalApprovalSafReplica($mPropProperties, $propId, $fieldVerifiedSaf, $activeSaf, $ownerDetails, $floorDetails, $mPropFloors, $safId)
+    public function finalApprovalSafReplica($mPropProperties, $propId, $fieldVerifiedSaf, $activeSaf, $ownerDetails, $floorDetails, $safId)
     {
+        $mPropFloors = new PropFloor();
         $mPropProperties->replicateVerifiedSaf($propId, collect($fieldVerifiedSaf)->first());             // Replicate to Prop Property Table
         $approvedSaf = $activeSaf->replicate();
         $approvedSaf->setTable('prop_safs');
@@ -1185,7 +1195,6 @@ class ActiveSafController extends Controller
 
         foreach ($fieldVerifiedSaf as $key) {
             $ifFloorExist = $mPropFloors->getFloorBySafFloorIdSafId($safId, $key->saf_floor_id);
-
             $floorReqs = new Request([
                 'floor_mstr_id' => $key->floor_mstr_id,
                 'usage_type_mstr_id' => $key->usage_type_id,

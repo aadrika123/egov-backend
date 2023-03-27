@@ -50,7 +50,6 @@ class SafCalculation
     private $_petrolPumpQuaterlyRuleSets;
     private $_vacantRentalRates;
     private $_vacantPropertyTypeId;
-    private $_currentQuarterStartDate;
     private $_currentQuarterDate;
     private $_loggedInUserType;
     public $_redis;
