@@ -1713,8 +1713,12 @@ class Report implements IReport
             $ulbId          = $refUser->ulb_id;
             $wardId = null;
             $fiYear = getFY();
+            $isGbsaf = null;
             if ($request->fiYear) {
                 $fiYear = $request->fiYear;
+            }
+            if ($request->isGbsaf) {
+                $isGbsaf = $request->isGbsaf;
             }
             list($fromYear, $toYear) = explode("-", $fiYear);
             if ($toYear - $fromYear != 1) {
@@ -1738,7 +1742,7 @@ class Report implements IReport
                 FROM (
                     SELECT *
                     FROM prop_properties
-                    WHERE prop_properties.ulb_id = 2
+                    WHERE prop_properties.ulb_id = $ulbId
                     ORDER BY id
                     limit $limit offset $offset
                   )prop_properties
@@ -1750,7 +1754,7 @@ class Report implements IReport
                     JOIN (
                         SELECT * 
                         FROM prop_properties
-                        WHERE prop_properties.ulb_id = 2
+                        WHERE prop_properties.ulb_id = $ulbId
                         ORDER BY id
                         limit $limit offset $offset
                       )prop_properties ON prop_properties.id = prop_owners.property_id
@@ -1776,7 +1780,7 @@ class Report implements IReport
                     JOIN (
                         SELECT * 
                         FROM prop_properties
-                        WHERE prop_properties.ulb_id = 2
+                        WHERE prop_properties.ulb_id = $ulbId
                         ORDER BY id
                         limit $limit offset $offset
                       )prop_properties ON prop_properties.id = prop_demands.property_id
@@ -1803,7 +1807,7 @@ class Report implements IReport
                     JOIN (
                         SELECT * 
                         FROM prop_properties
-                        WHERE prop_properties.ulb_id = 2
+                        WHERE prop_properties.ulb_id = $ulbId
                         ORDER BY id
                         limit $limit offset $offset
                       )prop_properties ON prop_properties.id = prop_demands.property_id
@@ -1825,7 +1829,7 @@ class Report implements IReport
                     JOIN (
                         SELECT * 
                         FROM prop_properties
-                        WHERE prop_properties.ulb_id = 2
+                        WHERE prop_properties.ulb_id = $ulbId
                         ORDER BY id
                         limit $limit offset $offset
                       )prop_properties ON prop_properties.id = prop_demands.property_id
@@ -2408,11 +2412,10 @@ class Report implements IReport
                     $join->on("owners_details.property_id", "prop_properties.id");
                 })
                 ->WHERE("prop_properties.status", 0);
-                if($fromDate && $uptoDate)
-                {
+            if ($fromDate && $uptoDate) {
 
-                    $data = $data->WHEREBETWEEN("prop_deactivation_requests.approve_date", [$fromDate, $uptoDate]);
-                }
+                $data = $data->WHEREBETWEEN("prop_deactivation_requests.approve_date", [$fromDate, $uptoDate]);
+            }
 
             if ($wardId) {
                 $data = $data->WHERE("ulb_ward_masters.id", $wardId);
