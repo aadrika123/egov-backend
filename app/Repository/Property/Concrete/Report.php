@@ -2686,4 +2686,108 @@ class Report implements IReport
             return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
         }
     }
+
+    /**
+     * | Paid Previous Year but not Current Year
+     */
+    public function previousYearPaidButnotCurrentYear($request)
+    {
+        try {
+            $metaData = collect($request->metaData)->all();
+            list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
+            $perPage = $request->perPage ? $request->perPage : 10;
+            $page = $request->page && $request->page > 0 ? $request->page : 1;
+            $limit = $perPage;
+            $offset =  $request->page && $request->page > 0 ? ($request->page * $perPage) : 0;
+            $wardMstrId = NULL;
+            $ulbId = authUser()->ulb_id;
+
+            $currentYear = Carbon::now()->year;
+            $financialYearStart = $currentYear;
+            if (Carbon::now()->month < 4) {
+                $financialYearStart--;
+            }
+            $currentFinancialYear = $financialYearStart . '-' . ($financialYearStart + 1);
+            $previousFinancialYear =  ($financialYearStart - 1) . '-' . ($financialYearStart);
+
+            if ($request->wardMstrId) {
+                $wardMstrId = $request->wardMstrId;
+            }
+
+            $sql = "SELECT prop_demands.property_id,new_holding_no,new_holding_no,pt_no,prop_address,ward_name,owner_name,mobile_no,
+                        SUM (amount) AS total_demand,
+                        SUM(CASE WHEN paid_status =0 THEN amount ELSE 0 END )AS balance_amount,
+                        SUM(CASE WHEN paid_status =1 THEN amount ELSE 0 END )AS paid_amount
+                    FROM prop_demands
+                    JOIN (
+                        SELECT property_id,
+                        STRING_AGG(owner_name,',')as owner_name,
+                        STRING_AGG(mobile_no::text,',')as mobile_no
+                            FROM prop_owners
+                            WHERE status =1
+                            GROUP BY property_id 
+                        ) AS ow ON ow.property_id = prop_demands.property_id
+        
+                    left join(
+                            select property_id
+                                from prop_demands
+                                WHERE prop_demands.status =1
+                                AND fyear = '$previousFinancialYear'
+                                AND paid_status = 1
+                            GROUP BY property_id 
+                            ) AS o ON o.property_id = prop_demands.property_id 
+                            join prop_properties on prop_properties.id=prop_demands.property_id 
+                            join ulb_ward_masters on ulb_ward_masters.id = prop_demands.ward_mstr_id
+                        WHERE prop_demands.status =1 
+                        " . ($wardMstrId ? " AND prop_demands.ward_mstr_id = $wardMstrId" : "") . "
+                        AND fyear = '$currentFinancialYear' 
+                        AND paid_status = 0
+                        GROUP BY prop_demands.property_id,new_holding_no,new_holding_no,pt_no,prop_address,ward_name,owner_name,mobile_no
+                    limit $limit offset $offset";
+
+            $sql2 = "SELECT count(distinct prop_demands.property_id) as total
+                        FROM prop_demands
+                        JOIN (
+                            SELECT property_id,
+                            STRING_AGG(owner_name,',')as owner_name,
+                            STRING_AGG(mobile_no::text,',')as mobile_no
+                                FROM prop_owners
+                                WHERE status =1
+                                GROUP BY property_id 
+                            ) AS ow ON ow.property_id = prop_demands.property_id
+            
+                    left join(
+                            select property_id
+                                from prop_demands
+                                WHERE prop_demands.status =1
+                                AND fyear = '2021-2022'
+                                AND paid_status = 1
+                            GROUP BY property_id 
+                            ) AS o ON o.property_id = prop_demands.property_id 
+                            join prop_properties on prop_properties.id=prop_demands.property_id 
+                            join ulb_ward_masters on ulb_ward_masters.id = prop_demands.ward_mstr_id
+                        WHERE prop_demands.status =1 
+                        " . ($wardMstrId ? " AND prop_demands.ward_mstr_id = $wardMstrId" : "") . "
+                        AND fyear = '2022-2023' 
+                        AND paid_status = 0";
+
+            $data = DB::TABLE(DB::RAW("($sql )AS prop"))->get();
+            $items = $data;
+
+            $total = (collect(DB::SELECT($sql2))->first()->total) ?? 0;
+            $numberOfPages = ceil($total / $perPage);
+            $list = [
+                "perPage" => $perPage,
+                "page" => $page,
+                "items" => $items,
+                "total" => $total,
+                "numberOfPages" => $numberOfPages
+            ];
+
+            $queryRunTime = (collect(DB::getQueryLog($sql, $sql2, $data))->sum("time"));
+            return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime, $action, $deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
+        }
+    }
 }

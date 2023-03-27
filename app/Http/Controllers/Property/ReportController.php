@@ -386,6 +386,21 @@ class ReportController extends Controller
         return $this->Repository->notPaidFrom2016($request);
     }
 
+    /**
+     * | Not paid from 2019-2017
+     */
+    public function previousYearPaidButnotCurrentYear(Request $request)
+    {
+        $request->validate(
+            [
+                "ulbId" => "nullable|digits_between:1,9223372036854775807",
+                "wardMstrId" => "nullable|digits_between:1,9223372036854775807",
+            ]
+        );
+        $request->request->add(["metaData" => ["pr16.1", 1.1, null, $request->getMethod(), null,]]);
+        return $this->Repository->previousYearPaidButnotCurrentYear($request);
+    }
+
 
 
     #------------date 13/03/2023 -------------------------------------------------------------------------
