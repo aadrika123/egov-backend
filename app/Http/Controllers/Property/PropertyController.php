@@ -220,11 +220,17 @@ class PropertyController extends Controller
                 'wardId' => 'required|integer',
             ]);
             $mPropSaf = new PropActiveSaf();
-            $refWaterNewConnection  = new WaterNewConnection();
             $propDetails = $mPropSaf->getpropLatLongDetails($req->wardId);
-            $propDetails = collect($propDetails)->map(function ($value)
-            use ($refWaterNewConnection) {
-                $path = $refWaterNewConnection->readDocumentPath($value['doc_path']);
+            $propDetails = collect($propDetails)->map(function ($value) {
+                $currentDate = Carbon::now();
+                $geoDate = strtotime($value['created_at']);
+                $geoDate = date('Y-m-d', $geoDate);
+                if ($geoDate < $currentDate) {
+                    $path = $this->readRefDocumentPath($value['doc_path']);
+                    $value['full_doc'] = !empty(trim($value['doc_path'])) ? $path : null;
+                    return $value;
+                }
+                $path = $this->readDocumentPath($value['doc_path']);
                 $value['full_doc'] = !empty(trim($value['doc_path'])) ? $path : null;
                 return $value;
             });
@@ -232,5 +238,15 @@ class PropertyController extends Controller
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", $req->deviceId);
         }
+    }
+    public function readRefDocumentPath($path)
+    {
+        $path = ("http://smartulb.co.in/RMCDMC/getImageLink.php?path=" . "/" . $path);
+        return $path;
+    }
+    public function readDocumentPath($path)
+    {
+        $path = (config('app.url') . "/" . $path);
+        return $path;
     }
 }
