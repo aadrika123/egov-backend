@@ -12,6 +12,7 @@ class ReqUpdateBasicDtl extends TradeRequest
      *
      * @return array
      */
+    #jflkdj
     public function rules()
     {
         return [

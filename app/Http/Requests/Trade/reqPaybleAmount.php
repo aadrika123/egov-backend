@@ -10,6 +10,7 @@ class ReqPaybleAmount extends TradeRequest
      *
      * @return array
      */
+    # fjl
     public function rules()
     {
         $rules["applicationType"]   = "required|string";
