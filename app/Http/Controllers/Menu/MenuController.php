@@ -435,7 +435,18 @@ class MenuController extends Controller
             $roleId = $wfRole->pluck('wf_role_id');
 
             $menuList = $mWfRolemenu->getMenuListByRoleId($roleId);
-            $data = collect($menuList)->where('module_id', $req->moduleId);
+            $allMenu = collect($menuList)->where('module_id', $req->moduleId);
+
+            $data = collect($allMenu)->map(function ($value, $key) {
+                $return = array();
+                $return['id'] = $value['id'];
+                $return['parentId'] = $value['parent_join'];
+                $return['path'] = $value['route'];
+                $return['name'] = $value['menu_name'];
+                $return['order'] = $value['serial_no'];
+                $return['children'] = array();
+                return ($return);
+            });
 
 
             return responseMsgs(true, "Parent Menu!", $data, "", "", "", "POST", "");

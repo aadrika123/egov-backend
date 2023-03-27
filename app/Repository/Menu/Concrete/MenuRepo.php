@@ -146,8 +146,8 @@ class MenuRepo implements iMenuRepo
         }
 
         $data = collect($data)->values();
-        if ($req->roleId) {
-            $mRoleMenues = $mMenuMaster->getMenuByRole($req->roleId);
+        if ($req->roleId && $req->moduleId) {
+            $mRoleMenues = $mMenuMaster->getMenuByRole($req->roleId, $req->moduleId); //addition of module Id
 
             $roleWise = collect($mRoleMenues)->map(function ($value) use ($mMenuMaster) {
                 if ($value['parent_serial'] > 0) {
