@@ -709,9 +709,8 @@ class WaterPaymentController extends Controller
 
             # Reflect on water Tran Details
             $consumercharges = collect($finalCharges['consumerChages']);
-            $refWaterConsumer = collect($finalCharges['consumer']);
             foreach ($consumercharges as $charges) {
-                $this->saveConsumerPaymentStatus($request, $offlinePaymentModes, $charges, $refWaterConsumer, $waterTrans);
+                $this->saveConsumerPaymentStatus($request, $offlinePaymentModes, $charges, $waterTrans);
             }
             DB::commit();
             return responseMsgs(true, "payment Done!", "", "", "01", ".ms", "POST", $request->deviceId);
