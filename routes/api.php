@@ -343,6 +343,25 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('sub-menu/get-children-node', 'getChildrenNode');               // Get the children menues
 
     });
+
+    /**
+     * | Created On-27-03-2023
+     * | Created By- Mrinal Kumar
+     * | Menu Permissions
+     */
+    Route::controller(MenuController::class)->group(function () {
+        Route::post('menu/get-all-menus', 'menuList');                       // Get All the Menu List
+        Route::post('menu/add-new-menus', 'addNewMenu');                     // adding the details of the menues in the menue table
+        Route::post('menu/update-menus', 'updateMenu');                      // Update the menu master
+        Route::post('menu/delete-menus', 'deleteMenu');                      // Soft Delition of the menus
+        Route::post('menu/by-id', 'menuById');                               // Get menu bu menu Id
+
+        Route::post('menu-roles/list-parent-menu', 'listSerialMenu');        // Get the list of parent menus
+
+        Route::post('menu/by-module', 'getMenuByModuleId');                  // Get menu by role 
+        Route::post('sub-menu/get-children-node', 'getChildrenNode');               // Get the children menues
+
+    });
 });
 
 /**
