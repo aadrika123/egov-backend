@@ -4,6 +4,7 @@ namespace App\BLL\Property;
 
 use App\EloquentClass\Property\SafCalculation;
 use App\Http\Controllers\Property\ApplySafController;
+use App\Models\Property\PropDemand;
 use App\Models\Property\PropSafsDemand;
 use App\Traits\Property\SAF;
 use Illuminate\Http\Request;
@@ -22,11 +23,13 @@ class HandleTcVerification
     public $_reqs;
     public $_activeSafDtls;
     public $_quaterlyTax;
+    public $_mPropDemands;
     public function __construct()
     {
         $this->_mPropSafsDemands = new PropSafsDemand();
         $this->_safCalculation = new SafCalculation;
         $this->_applySafController = new ApplySafController;
+        $this->_mPropDemands = new PropDemand();
     }
 
     /** 
@@ -111,11 +114,35 @@ class HandleTcVerification
      */
     public function adjustVerifiedDemand()
     {
+        $newDemand = array();
+        $mPropDemand = $this->_mPropDemands;
         $mPropSafsDemands = $this->_mPropSafsDemands;
         $quaterlyTax = $this->_quaterlyTax;
         $propSafsDemands = $mPropSafsDemands->getFullDemandsBySafId($this->_activeSafDtls['id']);
-        return $quaterlyTax;
         foreach ($quaterlyTax as $tax) {
+            $safQtrDemand = $propSafsDemands->where('due_date', $tax['dueDate'])->first();
+            if ($tax['totalTax'] > $safQtrDemand->amount) {
+                $adjustAmt = roundFigure($safQtrDemand->amount - $safQtrDemand->adjust_amount);
+                $balance = roundFigure($tax['balance'] - $adjustAmt);
+                $taxes = [
+                    'property_id' => 1,
+                    'qtr' => $tax['qtr'],
+                    'holding_tax' => $tax['holdingTax'],
+                    'water_tax' => $tax['waterTax'],
+                    'education_cess' => $tax['educationTax'],
+                    'health_cess' => $tax['healthCess'],
+                    'latrine_tax' => $tax['latrineTax'],
+                    'additional_tax' => $tax['additionTax'],
+                    'fyear' => $tax['quarterYear'],
+                    'due_date' => $tax['dueDate'],
+                    'amount' => $tax['totalTax'],
+                    'arv' => $tax['arv'],
+                    'adjust_amount' => $adjustAmt,
+                    'balance' => $balance,
+                ];
+                array_push($newDemand, $taxes);
+            }
         }
+        return $newDemand;
     }
 }
