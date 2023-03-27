@@ -673,6 +673,7 @@ class PropActiveSaf extends Model
             'prop_active_safs.prop_address',
             'prop_saf_geotag_uploads.latitude',
             'prop_saf_geotag_uploads.longitude',
+            'prop_saf_geotag_uploads.created_at',
             DB::raw("concat(relative_path,'/',image_path) as doc_path"),
         )
             ->leftjoin('prop_saf_geotag_uploads', 'prop_saf_geotag_uploads.saf_id', '=', 'prop_active_safs.id')
