@@ -38,6 +38,7 @@ class MenuMaster extends Model
         $newMenues->serial = $request->serial;
         $newMenues->route = $request->route;
         $newMenues->icon = $request->icon;
+        $newMenues->module_id = $request->moduleId;
         $newMenues->save();
     }
 
@@ -123,6 +124,7 @@ class MenuMaster extends Model
                     'route'         => $request->route          ?? $refValues->route,
                     'icon'          => $request->icon           ?? $refValues->icon,
                     'is_deleted'    => $request->delete         ?? $refValues->is_deleted,
+                    'module_id'    => $request->moduleId       ?? $refValues->module_id,
                 ]
             );
     }
