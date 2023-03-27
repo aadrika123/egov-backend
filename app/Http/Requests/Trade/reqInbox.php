@@ -5,7 +5,7 @@ class ReqInbox extends TradeRequest
 {
     
     /**
-     * Get the validation rules that apply to the request.
+     * Get the validation rules that apply to the request.ddd
      *
      * @return array
      */
