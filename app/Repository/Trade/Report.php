@@ -1942,7 +1942,27 @@ class Report implements IReport
                     })
                     ->WHEREBETWEEN('trade_transactions.tran_date',[$fromDate,$uptoDate])
                     ->WHEREIN('trade_transactions.status',[1,2]);
-            
+            if($wardId)
+            {
+                $active = $active->WHERE('ulb_ward_masters.id',$wardId);
+                $approved = $approved->WHERE('ulb_ward_masters.id',$wardId);
+                $rejected = $rejected->WHERE('ulb_ward_masters.id',$wardId);
+                $renewal = $renewal->WHERE('ulb_ward_masters.id',$wardId);
+            }
+            if($userId)
+            {
+                $active = $active->WHERE('trade_transactions.emp_dtl_id',$userId);
+                $approved = $approved->WHERE('trade_transactions.emp_dtl_id',$userId);
+                $rejected = $rejected->WHERE('trade_transactions.emp_dtl_id',$userId);
+                $renewal = $renewal->WHERE('trade_transactions.emp_dtl_id',$userId);
+            }
+            if($ulbId)
+            {
+                $active = $active->WHERE('active_trade_licences.ulb_id',$ulbId);
+                $approved = $approved->WHERE('trade_licences.ulb_id',$ulbId);
+                $rejected = $rejected->WHERE('rejected_trade_licences.ulb_id',$ulbId);
+                $renewal = $renewal->WHERE('trade_renewals.ulb_id',$ulbId);
+            }
             $data = $active->union($approved)
                     ->union($rejected)
                     ->union($renewal)
