@@ -41,9 +41,9 @@ class ApplySafController extends Controller
     protected $_todayDate;
     protected $_REQUEST;
     protected $_safDemand;
-    protected $_generatedDemand;
+    public $_generatedDemand;
     protected $_propProperty;
-    protected $_holdingNo;
+    public $_holdingNo;
     protected $_citizenUserType;
     protected $_currentFYear;
     protected $_penaltyRebateCalc;
