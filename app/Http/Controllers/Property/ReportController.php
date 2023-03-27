@@ -486,8 +486,8 @@ class ReportController extends Controller
     {
         $request->validate(
             [
-                "fromDate" => "required|date|date_format:Y-m-d",
-                "uptoDate" => "required|date|date_format:Y-m-d",
+                "fromDate" => "nullable|date|date_format:Y-m-d",
+                "uptoDate" => "nullable|date|date_format:Y-m-d",
                 "ulbId" => "nullable|digits_between:1,9223372036854775807",
                 "wardId" => "nullable|digits_between:1,9223372036854775807",
                 "page" => "nullable|digits_between:1,9223372036854775807",

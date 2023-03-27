@@ -1390,12 +1390,17 @@ class Report implements IReport
             {
                 $ulbId = $request->ulbId;
             }
+            if ($request->userId) 
+            {
+                $userId = $request->userId;
+                $roleId2 = ($this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_WF_MASTER_Id))->role_id ?? 0;
+            }
             if ($request->roleId) 
             {
                 $roleId = $request->roleId;
             }
             if (($request->roleId && $request->userId) && ($roleId != $roleId2)) 
-            {
+            {                
                 throw new Exception("Invalid RoleId Pass");
             }
             if (in_array($roleId, [11, 8])) 
@@ -1576,6 +1581,7 @@ class Report implements IReport
             }
             if (($request->roleId && $request->userId) && ($roleId != $roleId2)) 
             {
+                // dd($roleId,$roleId2,$this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_WF_MASTER_Id),DB::getQueryLog());
                 throw new Exception("Invalid RoleId Pass");
             }
             $roleId = $roleId2 ? $roleId2 : $roleId;
@@ -1642,6 +1648,332 @@ class Report implements IReport
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime, $action, $deviceId);
         } 
+        catch (Exception $e) 
+        {
+            return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
+        }
+    }
+
+    public function bulkPaymentRecipt(Request $request)
+    {
+        $metaData = collect($request->metaData)->all();
+        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
+        try{
+            $refUser        = Auth()->user();
+            $refUserId      = $refUser->id;
+            $ulbId          = $refUser->ulb_id;
+            $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
+            $wardId = null;
+            $userId = null;
+            if($request->fromDate)
+            {
+                $fromDate = $request->fromDate;
+            }
+            if($request->uptoDate)
+            {
+                $uptoDate = $request->uptoDate;
+            }
+            if($request->wardId)
+            {
+                $wardId = $request->wardId;
+            }
+            if($request->ulbId)
+            {
+                $ulbId = $request->ulbId;
+            }
+            if($request->userId)
+            {
+                $userId = $request->userId;
+            }
+            $active = ActiveTradeLicence::select(
+                    "active_trade_licences.id as application_id",
+                    "trade_transactions.id as tran_id",
+                    "active_trade_licences.application_no",
+                    "active_trade_licences.provisional_license_no",
+                    "active_trade_licences.license_no",
+                    "active_trade_licences.firm_name",
+                    "active_trade_licences.holding_no",
+                    "active_trade_licences.address",
+                    "owner.owner_name",
+                    "owner.guardian_name",
+                    "owner.mobile",
+                    "trade_transactions.tran_no",
+                    "trade_transactions.tran_type",
+                    "trade_transactions.tran_date",
+                    "trade_transactions.payment_mode",
+                    "trade_transactions.paid_amount",
+                    "trade_transactions.penalty",
+                    "trade_cheque_dtls.cheque_no",
+                    "trade_cheque_dtls.cheque_date",
+                    "trade_cheque_dtls.bank_name",
+                    "trade_cheque_dtls.branch_name",
+                    "fine_rebate.delay_fee",
+                    "fine_rebate.denial_fee",
+                    DB::raw("ulb_ward_masters.ward_name AS ward_no, 
+                            ulb_masters.id as ulb_id, ulb_masters.ulb_name,ulb_masters.ulb_type,
+                            (trade_transactions.paid_amount-fine_rebate.penalty)as rate
+                            ")
+                )
+                ->join("ulb_masters", "ulb_masters.id", "active_trade_licences.ulb_id")
+                ->join("ulb_ward_masters", function ($join) {
+                    $join->on("ulb_ward_masters.id", "=", "active_trade_licences.ward_id");
+                })
+                ->join("trade_transactions","trade_transactions.temp_id","active_trade_licences.id")
+                ->leftjoin("trade_cheque_dtls", "trade_cheque_dtls.tran_id", "trade_transactions.id")
+                ->leftjoin(DB::raw("(SELECT STRING_AGG(active_trade_owners.owner_name,',') as owner_name,
+                                                STRING_AGG(active_trade_owners.guardian_name,',') as guardian_name,
+                                                STRING_AGG(active_trade_owners.mobile_no::text,',') as mobile,
+                                                active_trade_owners.temp_id
+                                            FROM active_trade_owners 
+                                            JOIN trade_transactions ON trade_transactions.temp_id = active_trade_owners.temp_id 
+                                            WHERE trade_transactions.tran_date BETWEEN '$fromDate' AND '$uptoDate'
+                                                AND trade_transactions.status in(1,2)
+                                                AND active_trade_owners.is_active  = TRUE
+                                            GROUP BY active_trade_owners.temp_id
+                                            ) owner"), function ($join) {
+                    $join->on("owner.temp_id", "=", "active_trade_licences.id");
+                })
+                ->leftjoin(DB::RAW("(SELECT trade_transactions.id AS tran_id,
+                                        SUM(CASE WHEN trade_fine_rebetes.type = 'Delay Apply License' THEN  trade_fine_rebetes.amount ELSE 0 END ) AS delay_fee,
+                                        SUM(CASE WHEN trade_fine_rebetes.type = 'Denial Apply' THEN  trade_fine_rebetes.amount ELSE 0 END ) AS denial_fee,
+                                        SUM( trade_fine_rebetes.amount) AS penalty
+                                    FROM trade_fine_rebetes
+                                    JOIN trade_transactions ON trade_transactions.id = trade_fine_rebetes.tran_id 
+                                    WHERE trade_transactions.tran_date BETWEEN '$fromDate' AND '$uptoDate'
+                                        AND trade_transactions.status in(1,2)
+                                        AND trade_fine_rebetes.status  = 1
+                                    GROUP BY trade_transactions.id
+                        ) fine_rebate"),function($join){
+                            $join->on("fine_rebate.tran_id","trade_transactions.id");
+                        })
+                ->WHEREBETWEEN('trade_transactions.tran_date',[$fromDate,$uptoDate])
+                ->WHEREIN('trade_transactions.status',[1,2]);
+           
+            
+            $approved = TradeLicence::select(
+                    "trade_licences.id as application_id",
+                    "trade_transactions.id as tran_id",
+                    "trade_licences.application_no",
+                    "trade_licences.provisional_license_no",
+                    "trade_licences.license_no",
+                    "trade_licences.firm_name",
+                    "trade_licences.holding_no",
+                    "trade_licences.address",
+                    "owner.owner_name",
+                    "owner.guardian_name",
+                    "owner.mobile",
+                    "trade_transactions.tran_no",
+                    "trade_transactions.tran_type",
+                    "trade_transactions.tran_date",
+                    "trade_transactions.payment_mode",
+                    "trade_transactions.paid_amount",
+                    "trade_transactions.penalty",
+                    "trade_cheque_dtls.cheque_no",
+                    "trade_cheque_dtls.cheque_date",
+                    "trade_cheque_dtls.bank_name",
+                    "trade_cheque_dtls.branch_name",
+                    "fine_rebate.delay_fee",
+                    "fine_rebate.denial_fee",
+                    DB::raw("ulb_ward_masters.ward_name AS ward_no, 
+                            ulb_masters.id as ulb_id, ulb_masters.ulb_name,ulb_masters.ulb_type,
+                            (trade_transactions.paid_amount-fine_rebate.penalty)as rate
+                        ")
+                    
+                )
+                ->join("ulb_masters", "ulb_masters.id", "trade_licences.ulb_id")
+                ->join("ulb_ward_masters", function ($join) {
+                    $join->on("ulb_ward_masters.id", "=", "trade_licences.ward_id");
+                })
+                ->join("trade_transactions","trade_transactions.temp_id","trade_licences.id")
+                ->leftjoin("trade_cheque_dtls", "trade_cheque_dtls.tran_id", "trade_transactions.id")
+                ->leftjoin(DB::raw("(SELECT STRING_AGG(trade_owners.owner_name,',') as owner_name,
+                                            STRING_AGG(trade_owners.guardian_name,',') as guardian_name,
+                                            STRING_AGG(trade_owners.mobile_no,',') as mobile,
+                                            trade_owners.temp_id
+                                        FROM trade_owners 
+                                        JOIN trade_transactions ON trade_transactions.temp_id = trade_owners.temp_id 
+                                        WHERE trade_transactions.tran_date BETWEEN '$fromDate' AND '$uptoDate'
+                                            AND trade_transactions.status in(1,2)
+                                            AND trade_owners.is_active  = TRUE
+                                        GROUP BY trade_owners.temp_id
+                                        ) owner"), function ($join) {
+                    $join->on("owner.temp_id", "=", "trade_licences.id");
+                })
+                ->leftjoin(DB::RAW("(SELECT trade_transactions.id AS tran_id,
+                                        SUM(CASE WHEN trade_fine_rebetes.type = 'Delay Apply License' THEN  trade_fine_rebetes.amount ELSE 0 END ) AS delay_fee,
+                                        SUM(CASE WHEN trade_fine_rebetes.type = 'Denial Apply' THEN  trade_fine_rebetes.amount ELSE 0 END ) AS denial_fee,
+                                        SUM( trade_fine_rebetes.amount) AS penalty
+                                    FROM trade_fine_rebetes
+                                    JOIN trade_transactions ON trade_transactions.id = trade_fine_rebetes.tran_id 
+                                    WHERE trade_transactions.tran_date BETWEEN '$fromDate' AND '$uptoDate'
+                                        AND trade_transactions.status in(1,2)
+                                        AND trade_fine_rebetes.status  = 1
+                                    GROUP BY trade_transactions.id
+                        ) fine_rebate"),function($join){
+                            $join->on("fine_rebate.tran_id","trade_transactions.id");
+                        })
+                ->WHEREBETWEEN('trade_transactions.tran_date',[$fromDate,$uptoDate])
+                ->WHEREIN('trade_transactions.status',[1,2]);
+        
+            $rejected = RejectedTradeLicence::select(
+                    "rejected_trade_licences.id as application_id",
+                    "trade_transactions.id as tran_id",
+                    "rejected_trade_licences.application_no",
+                    "rejected_trade_licences.provisional_license_no",
+                    "rejected_trade_licences.license_no",
+                    "rejected_trade_licences.firm_name",
+                    "rejected_trade_licences.holding_no",
+                    "rejected_trade_licences.address",
+                    "owner.owner_name",
+                    "owner.guardian_name",
+                    "owner.mobile",
+                    "trade_transactions.tran_no",
+                    "trade_transactions.tran_type",
+                    "trade_transactions.tran_date",
+                    "trade_transactions.payment_mode",
+                    "trade_transactions.paid_amount",
+                    "trade_transactions.penalty",
+                    "trade_cheque_dtls.cheque_no",
+                    "trade_cheque_dtls.cheque_date",
+                    "trade_cheque_dtls.bank_name",
+                    "trade_cheque_dtls.branch_name",
+                    "fine_rebate.delay_fee",
+                    "fine_rebate.denial_fee",
+                    DB::raw("ulb_ward_masters.ward_name AS ward_no, 
+                            ulb_masters.id as ulb_id, ulb_masters.ulb_name,ulb_masters.ulb_type,
+                            (trade_transactions.paid_amount-fine_rebate.penalty)as rate
+                        ")
+                )
+                ->join("ulb_masters", "ulb_masters.id", "rejected_trade_licences.ulb_id")
+                ->join("ulb_ward_masters", function ($join) {
+                    $join->on("ulb_ward_masters.id", "=", "rejected_trade_licences.ward_id");
+                })
+                ->join("trade_transactions","trade_transactions.temp_id","rejected_trade_licences.id")
+                ->leftjoin("trade_cheque_dtls", "trade_cheque_dtls.tran_id", "trade_transactions.id")
+                ->leftjoin(DB::raw("(SELECT STRING_AGG(rejected_trade_owners.owner_name,',') as owner_name,
+                                            STRING_AGG(rejected_trade_owners.guardian_name,',') as guardian_name,
+                                            STRING_AGG(rejected_trade_owners.mobile_no,',') as mobile,
+                                            rejected_trade_owners.temp_id
+                                        FROM rejected_trade_owners 
+                                        JOIN trade_transactions ON trade_transactions.temp_id = rejected_trade_owners.temp_id 
+                                        WHERE trade_transactions.tran_date BETWEEN '$fromDate' AND '$uptoDate'
+                                            AND trade_transactions.status in(1,2)
+                                            AND rejected_trade_owners.is_active  = TRUE
+                                        GROUP BY rejected_trade_owners.temp_id
+                                        ) owner"), function ($join) {
+                    $join->on("owner.temp_id", "=", "rejected_trade_licences.id");
+                })
+                ->leftjoin(DB::RAW("(SELECT trade_transactions.id AS tran_id,
+                                    SUM(CASE WHEN trade_fine_rebetes.type = 'Delay Apply License' THEN  trade_fine_rebetes.amount ELSE 0 END ) AS delay_fee,
+                                    SUM(CASE WHEN trade_fine_rebetes.type = 'Denial Apply' THEN  trade_fine_rebetes.amount ELSE 0 END ) AS denial_fee,
+                                    SUM( trade_fine_rebetes.amount) AS penalty
+                                FROM trade_fine_rebetes
+                                JOIN trade_transactions ON trade_transactions.id = trade_fine_rebetes.tran_id 
+                                WHERE trade_transactions.tran_date BETWEEN '$fromDate' AND '$uptoDate'
+                                    AND trade_transactions.status in(1,2)
+                                    AND trade_fine_rebetes.status  = 1
+                                GROUP BY trade_transactions.id
+                    ) fine_rebate"),function($join){
+                        $join->on("fine_rebate.tran_id","trade_transactions.id");
+                })
+                ->WHEREBETWEEN('trade_transactions.tran_date',[$fromDate,$uptoDate])
+                ->WHEREIN('trade_transactions.status',[1,2]);
+        
+            $renewal = TradeRenewal::select(
+                        "trade_renewals.id as application_id",
+                        "trade_transactions.id as tran_id",
+                        "trade_renewals.application_no",
+                        "trade_renewals.provisional_license_no",
+                        "trade_renewals.license_no",
+                        "trade_renewals.firm_name",
+                        "trade_renewals.holding_no",
+                        "trade_renewals.address",
+                        "owner.owner_name",
+                        "owner.guardian_name",
+                        "owner.mobile",
+                        "trade_transactions.tran_no",
+                        "trade_transactions.tran_type",
+                        "trade_transactions.tran_date",
+                        "trade_transactions.payment_mode",
+                        "trade_transactions.paid_amount",
+                        "trade_transactions.penalty",
+                        "trade_cheque_dtls.cheque_no",
+                        "trade_cheque_dtls.cheque_date",
+                        "trade_cheque_dtls.bank_name",
+                        "trade_cheque_dtls.branch_name",
+                        "fine_rebate.delay_fee",
+                        "fine_rebate.denial_fee",
+                        DB::raw("ulb_ward_masters.ward_name AS ward_no, 
+                                ulb_masters.id as ulb_id, ulb_masters.ulb_name,ulb_masters.ulb_type,
+                                (trade_transactions.paid_amount-fine_rebate.penalty)as rate
+                            ")
+                    )
+                    ->join("ulb_masters", "ulb_masters.id", "trade_renewals.ulb_id")
+                    ->join("ulb_ward_masters", function ($join) {
+                        $join->on("ulb_ward_masters.id", "=", "trade_renewals.ward_id");
+                    })
+                    ->join("trade_transactions","trade_transactions.temp_id","trade_renewals.id")
+                    ->leftjoin("trade_cheque_dtls", "trade_cheque_dtls.tran_id", "trade_transactions.id")
+                    ->leftjoin(DB::raw("(SELECT STRING_AGG(trade_owners.owner_name,',') as owner_name,
+                                                STRING_AGG(trade_owners.guardian_name,',') as guardian_name,
+                                                STRING_AGG(trade_owners.mobile_no,',') as mobile,
+                                                trade_owners.temp_id
+                                            FROM trade_owners 
+                                            JOIN trade_transactions ON trade_transactions.temp_id = trade_owners.temp_id 
+                                            WHERE trade_transactions.tran_date BETWEEN '$fromDate' AND '$uptoDate'
+                                                AND trade_transactions.status in(1,2)
+                                                AND trade_owners.is_active  = TRUE
+                                            GROUP BY trade_owners.temp_id
+                                            ) owner"), function ($join) {
+                        $join->on("owner.temp_id", "=", "trade_renewals.id");
+                    })
+                    ->leftjoin(DB::RAW("(SELECT trade_transactions.id AS tran_id,
+                                        SUM(CASE WHEN trade_fine_rebetes.type = 'Delay Apply License' THEN  trade_fine_rebetes.amount ELSE 0 END ) AS delay_fee,
+                                        SUM(CASE WHEN trade_fine_rebetes.type = 'Denial Apply' THEN  trade_fine_rebetes.amount ELSE 0 END ) AS denial_fee,
+                                        SUM( trade_fine_rebetes.amount) AS penalty
+                                    FROM trade_fine_rebetes
+                                    JOIN trade_transactions ON trade_transactions.id = trade_fine_rebetes.tran_id 
+                                    WHERE trade_transactions.tran_date BETWEEN '$fromDate' AND '$uptoDate'
+                                        AND trade_transactions.status in(1,2)
+                                        AND trade_fine_rebetes.status  = 1
+                                    GROUP BY trade_transactions.id
+                        ) fine_rebate"),function($join){
+                            $join->on("fine_rebate.tran_id","trade_transactions.id");
+                    })
+                    ->WHEREBETWEEN('trade_transactions.tran_date',[$fromDate,$uptoDate])
+                    ->WHEREIN('trade_transactions.status',[1,2]);
+            if($wardId)
+            {
+                $active = $active->WHERE('ulb_ward_masters.id',$wardId);
+                $approved = $approved->WHERE('ulb_ward_masters.id',$wardId);
+                $rejected = $rejected->WHERE('ulb_ward_masters.id',$wardId);
+                $renewal = $renewal->WHERE('ulb_ward_masters.id',$wardId);
+            }
+            if($userId)
+            {
+                $active = $active->WHERE('trade_transactions.emp_dtl_id',$userId);
+                $approved = $approved->WHERE('trade_transactions.emp_dtl_id',$userId);
+                $rejected = $rejected->WHERE('trade_transactions.emp_dtl_id',$userId);
+                $renewal = $renewal->WHERE('trade_transactions.emp_dtl_id',$userId);
+            }
+            if($ulbId)
+            {
+                $active = $active->WHERE('active_trade_licences.ulb_id',$ulbId);
+                $approved = $approved->WHERE('trade_licences.ulb_id',$ulbId);
+                $rejected = $rejected->WHERE('rejected_trade_licences.ulb_id',$ulbId);
+                $renewal = $renewal->WHERE('trade_renewals.ulb_id',$ulbId);
+            }
+            $data = $active->union($approved)
+                    ->union($rejected)
+                    ->union($renewal)
+                    ->get();
+            foreach ($data as $key => $val) 
+            {
+                $data[$key]["paid_amount_in_words"] = getIndianCurrency($val->paid_amount);
+            }            
+            $data = remove_null($data);            
+            return responseMsg(true, "", $data);
+        }
         catch (Exception $e) 
         {
             return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);

@@ -154,7 +154,6 @@ class WaterTran extends Model
         return WaterTran::where('tran_date',$currentDate)
         ->where('user_type',$userType)
         ->where('payment_mode','!=',$rfTransMode)
-        ->whereIn('tran_type',['New Connection', 'Regulaization'])
         ->get();
 
         // return "SELECT * FROM water_trans
@@ -162,5 +161,17 @@ class WaterTran extends Model
         // AND user_type = '$userType'
         // AND tran_type IN ('New Connection', 'Regulaization')
         // AND payment_mode != '$rfTransMode'";
+    }
+
+    /**
+     * | Save the verify status in case of pending verification
+     * | @param watertransId
+     */
+    public function saveVerifyStatus($watertransId)
+    {
+        WaterTran::where('id',$watertransId)
+        ->update([
+            'verify_status' => 2
+        ]);
     }
 }
