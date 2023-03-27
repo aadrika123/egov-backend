@@ -439,28 +439,29 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
    | Serial No : 
    */
   Route::controller(ReportController::class)->group(function () {
-    Route::post('reports/property/collection', 'collectionReport');
-    Route::post('reports/saf/collection', 'safCollection');
-    Route::post('reports/property/prop-saf-individual-demand-collection', 'safPropIndividualDemandAndCollection');
-    Route::post('reports/saf/levelwisependingform', 'levelwisependingform');
-    Route::post('reports/saf/levelformdetail', 'levelformdetail');
-    Route::post('reports/saf/leveluserpending', 'levelUserPending');
+    Route::post('reports/property/collection', 'collectionReport'); //done
+    Route::post('reports/saf/collection', 'safCollection');         //done
+    Route::post('reports/property/prop-saf-individual-demand-collection', 'safPropIndividualDemandAndCollection');  //done
+    Route::post('reports/saf/levelwisependingform', 'levelwisependingform'); //done
+    Route::post('reports/saf/levelformdetail', 'levelformdetail'); //done
+    Route::post('reports/saf/leveluserpending', 'levelUserPending'); //done
     Route::post('reports/saf/userwiselevelpending', 'userWiseLevelPending');
-    Route::post('reports/saf/userWiseWardWireLevelPending', 'userWiseWardWireLevelPending');
+    Route::post('reports/saf/userWiseWardWireLevelPending', 'userWiseWardWireLevelPending'); //done
     Route::post('reports/saf/saf-sam-fam-geotagging', 'safSamFamGeotagging');
 
-    Route::post('reports/ward-wise-holding', 'wardWiseHoldingReport');
-    Route::post('reports/list-fy', 'listFY');
-    Route::post('reports/print-bulk-receipt', 'bulkReceipt');
-    Route::post('reports/property/gbsaf-collection', 'gbSafCollection');
-    Route::post('reports/property/individual-demand-collection', 'propIndividualDemandCollection');
+    Route::post('reports/ward-wise-holding', 'wardWiseHoldingReport'); //done
+    Route::post('reports/list-fy', 'listFY');                          //done
+    Route::post('reports/print-bulk-receipt', 'bulkReceipt');         //done
+    Route::post('reports/property/gbsaf-collection', 'gbSafCollection');    //done
+    Route::post('reports/property/individual-demand-collection', 'propIndividualDemandCollection'); //done
     Route::post('reports/property/gbsaf-individual-demand-collection', 'gbsafIndividualDemandCollection');
-    Route::post('reports/not-paid-from-2016', 'notPaidFrom2016');
+    Route::post('reports/not-paid-from-2016', 'notPaidFrom2016');       //done
+    Route::post('reports/previous-year-paid-not-current-year', 'previousYearPaidButnotCurrentYear');
 
-    Route::post('reports/property/payment-mode-wise-summery', 'PropPaymentModeWiseSummery');
-    Route::post('reports/saf/payment-mode-wise-summery', 'SafPaymentModeWiseSummery');
-    Route::post('reports/property/dcb', 'PropDcb');
-    Route::post('reports/property/ward-wise-dcb', 'PropWardWiseDCB');
+    Route::post('reports/property/payment-mode-wise-summery', 'PropPaymentModeWiseSummery'); //done
+    Route::post('reports/saf/payment-mode-wise-summery', 'SafPaymentModeWiseSummery');       //done
+    Route::post('reports/property/dcb', 'PropDcb');                                         //done
+    Route::post('reports/property/ward-wise-dcb', 'PropWardWiseDCB');                       //done
     Route::post('reports/property/holding-wise-fine-rebate', 'PropFineRebate');
     Route::post('reports/property/deactivated-list', 'PropDeactedList');
   });
