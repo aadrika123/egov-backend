@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Menu;
 
 use App\Http\Controllers\Controller;
 use App\Models\Menu\MenuMaster;
+use App\Models\Menu\MenuMasterHierarchy;
 use App\Models\Menu\WfRolemenu;
+use App\Models\Workflows\WfRoleusermap;
 use App\Repository\Menu\Concrete\MenuRepo;
 use App\Repository\Menu\Interface\iMenuRepo;
 use Exception;
@@ -265,6 +267,178 @@ class MenuController extends Controller
                 throw new Exception("Menu Not found!");
             }
             return responseMsgs(true, "Role Waise Menu!", $menuList, "", "02", "", "", "");
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    //================================================================================================
+
+    /**
+     * | Created On-27-03-2023
+     * | Modified By-Mrinal Kumar
+     * | Created for the Menus Operations
+     */
+
+    /**
+     * | Get all menus
+     */
+    public function menuList(Request $req)
+    {
+        try {
+            $mMenuMaster = new MenuMasterHierarchy();
+            $refmenues = $mMenuMaster->fetchAllMenus();
+            $menues = $refmenues->sortByDesc("id");
+            $listedMenues = collect($menues)->map(function ($value) use ($mMenuMaster) {
+                if ($value['parent_join'] != 0) {
+                    $parent = $mMenuMaster->getMenuById($value['parent_join']);
+                    $parentName = $parent['menu_name'];
+                    $value['parentName'] = $parentName;
+                    return $value;
+                }
+                return $value;
+            })->values();
+            return responseMsgs(true, "List of Menues!", $listedMenues, "", "01", "", "Post", "");
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Add New Menues
+     */
+    public function addNewMenu(Request $req)
+    {
+        try {
+            $req->validate([
+                'menuName'      => 'required',
+                'moduleId'      => 'required',
+                'route'         => 'nullable',
+            ]);
+            $mMenuMaster = new MenuMasterHierarchy();
+            $mreqs = [
+                'menu_name' => $req->menuName,
+                'parent_join' => $req->parentJoin ?? 0,
+                'description' => $req->description,
+                'serial_no' => $req->serialNo,
+                'route' => $req->route,
+                'icon' => $req->icon,
+                'module_id' => $req->moduleId,
+            ];
+            $menu = $mMenuMaster->store($mreqs);
+
+            return responseMsgs(true, "Menu Added Succesfully", $menu, "", "01", "", "Post", "");
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Update Menu
+     */
+    public function updateMenu(Request $req)
+    {
+        $req->validate([
+            'id' => 'required',
+            'serial_no' => 'nullable|int',
+        ]);
+        try {
+            $mMenuMasterHierarchy = new MenuMasterHierarchy();
+            $mreqs =  [
+                'id' => $req->id,
+                'menu_name' => $req->menuName,
+                'parent_join' => $req->parentJoin,
+                'description' => $req->description,
+                'serial_no' => $req->serialNo,
+                'route' => $req->route,
+                'icon' => $req->icon,
+                'module_id' => $req->moduleId,
+
+            ];
+            $mMenuMasterHierarchy->edit($mreqs);
+            return responseMsgs(true, "Menu Updated!", "", "", "02", "733", "POST", "");
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Delete Menus
+     */
+    public function deleteMenu(Request $req)
+    {
+        $req->validate([
+            'id' => 'required',
+        ]);
+        try {
+            MenuMasterHierarchy::where('id', $req->id)
+                ->update(['status' => 0]);
+
+            return responseMsgs(true, "Menu Deleted!", "", "", "01", "733", "POST", "");
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Get menu by id
+     */
+    public function menuById(Request $request)
+    {
+        $request->validate([
+            'menuId' => 'required|int'
+        ]);
+        try {
+            $mMenuMaster = new MenuMasterHierarchy();
+            $menues = $mMenuMaster->getMenuById($request->menuId);
+            if ($menues['parent_join'] == 0) {
+                return responseMsgs(true, "Menu List!", $menues, "", "01", "", "POST", "");
+            }
+            $parent = $mMenuMaster->getMenuById($menues['parent_join']);
+            // if ($menues['parent_join']->contains(',')) {
+            //     $parentJoins = explode(',', $menues['parent_join']);
+            //     foreach ($parentJoins as $parentJoin)
+            //         $parent = $mMenuMaster->getMenuById($parentJoin);
+            // }
+            $menues['parentName'] = $parent['menu_name'];
+            return responseMsgs(true, "Menu List!", $menues, "", "01", "", "POST", "");
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | List Serial Parent
+     */
+    public function listSerialMenu()
+    {
+        try {
+            $mMenuMasterHierarchy = new MenuMasterHierarchy();
+            $parentMenu = $mMenuMasterHierarchy->getParentMenu()->get();
+            return responseMsgs(true, "Parent Menu!", $parentMenu, "", "", "", "POST", "");
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Get Menu by module 
+     */
+    public function getMenuByModuleId(Request $req)
+    {
+        try {
+            $userId = authUser()->id;
+            $mWfRoleUserMap = new WfRoleusermap();
+            $mWfRolemenu = new WfRolemenu();
+
+            $wfRole = $mWfRoleUserMap->getRoleIdByUserId($userId);
+            $roleId = $wfRole->pluck('wf_role_id');
+
+            $menuList = $mWfRolemenu->getMenuListByRoleId($roleId);
+            $data = collect($menuList)->where('module_id', $req->moduleId);
+
+
+            return responseMsgs(true, "Parent Menu!", $data, "", "", "", "POST", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
