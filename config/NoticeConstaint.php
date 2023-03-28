@@ -1,0 +1,28 @@
+<?php
+
+/**
+ * | Created On-28-03-2023 
+ * | Created By-Sandeep Bara
+ * | For Notice Module
+ */
+
+ return [
+    "CITIZEN"       => "Citizen",
+    "NOTICE_REF_TABLE" => "notice_applications",
+    "NOTICE_RELATIVE_PATH" => "Uploads/Notice",
+
+    "NOTICE-TYPE" =>
+    [
+        "GENERAL NOTICE"    =>  "1",
+        "DENIAL NOTICE"       =>  "2",
+        "PAYMENT RELATED NOTICE"     =>  "3",
+        "ILLEGAL OCCUPATION NOTICE"     =>  "4"
+    ],
+    "NOTICE-TYPE-BY-ID" =>
+    [
+        "1" =>  "GENERAL NOTICE",
+        "2" =>  "DENIAL NOTICE",
+        "3" =>  "PAYMENT RELATED NOTICE",
+        "4" =>  "ILLEGAL OCCUPATION NOTICE"
+    ],
+];

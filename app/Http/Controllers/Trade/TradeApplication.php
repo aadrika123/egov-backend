@@ -212,7 +212,7 @@ class TradeApplication extends Controller
         $refWorkflowId      = $this->_WF_MASTER_Id;
         $mUserType          = $this->_COMMON_FUNCTION->userType($refWorkflowId);
         $refWorkflows       = $this->_COMMON_FUNCTION->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
-        $mApplicationTypeId = $this->_TRADE_CONSTAINT["APPLICATION-TYPE"][$request->applicationType];
+        $mApplicationTypeId = ($this->_TRADE_CONSTAINT["APPLICATION-TYPE"][$request->applicationType]??null);
         try {
             if((!$this->_COMMON_FUNCTION->checkUsersWithtocken("users"))&& (strtoupper($mUserType)=="ONLINE"))
             {
