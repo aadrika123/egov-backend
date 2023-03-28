@@ -136,7 +136,7 @@ class ObjectionRepository implements iObjectionRepository
 
                     $docUpload = new DocUpload;
                     $mWfActiveDocument = new WfActiveDocument();
-                    $relativePath = Config::get('PropertyConstaint.CONCESSION_RELATIVE_PATH');
+                    $relativePath = Config::get('PropertyConstaint.OBJECTION_RELATIVE_PATH');
                     $refImageName = $request->nameCode;
                     $refImageName = $objection->id . '-' . str_replace(' ', '_', $refImageName);
                     $document = $request->nameDoc;
@@ -159,7 +159,7 @@ class ObjectionRepository implements iObjectionRepository
 
                     $docUpload = new DocUpload;
                     $mWfActiveDocument = new WfActiveDocument();
-                    $relativePath = Config::get('PropertyConstaint.CONCESSION_RELATIVE_PATH');
+                    $relativePath = Config::get('PropertyConstaint.OBJECTION_RELATIVE_PATH');
                     $refImageName = $request->addressCode;
                     $refImageName = $objection->id . '-' . str_replace(' ', '_', $refImageName);
                     $document = $request->addressDoc;

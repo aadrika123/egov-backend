@@ -4,17 +4,23 @@ namespace App\BLL\Property;
 
 use App\EloquentClass\Property\SafCalculation;
 use App\Http\Controllers\Property\ApplySafController;
+use App\Models\Property\PropAdvance;
 use App\Models\Property\PropDemand;
+use App\Models\Property\PropProperty;
 use App\Models\Property\PropSafsDemand;
+use App\Models\Property\PropTransaction;
 use App\Traits\Property\SAF;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Config;
+
 
 /**
  * | Created On-27-03-2023 
  * | Created by- Anshu Kumar
  * | Handle TC Verifications Datas
+ * | Status-Open
  */
-class HandleTcVerification
+class TcVerificationDemandAdjust
 {
     use SAF;
     public $_mPropSafsDemands;
@@ -24,12 +30,23 @@ class HandleTcVerification
     public $_activeSafDtls;
     public $_quaterlyTax;
     public $_mPropDemands;
+    public $_propertyId;
+    public $_propNewDemand;
+    public $_adjustmentType;
+    public $_propAdvDemand;
+    public $_mPropAdvance;
+    private $_mPropTransactions;
+    private $_tcId;
+
     public function __construct()
     {
         $this->_mPropSafsDemands = new PropSafsDemand();
         $this->_safCalculation = new SafCalculation;
         $this->_applySafController = new ApplySafController;
         $this->_mPropDemands = new PropDemand();
+        $this->_adjustmentType = Config::get('PropertyConstaint.ADJUSTMENT_TYPES.ULB_ADJUSTMENT');
+        $this->_mPropAdvance = new PropAdvance();
+        $this->_mPropTransactions = new PropTransaction();
     }
 
     /** 
@@ -40,7 +57,8 @@ class HandleTcVerification
         $this->_reqs = $req;
         $this->_activeSafDtls = $req['activeSafDtls'];
         $this->_quaterlyTax = $this->calculateQuaterlyTax();           // (1.1)
-        return $this->adjustVerifiedDemand();
+        $this->_tcId = collect($this->_reqs['fieldVerificationDtls'])->first()->user_id;
+        $this->adjustVerifiedDemand();
     }
 
     /**
@@ -114,18 +132,18 @@ class HandleTcVerification
      */
     public function adjustVerifiedDemand()
     {
-        $newDemand = array();
-        $mPropDemand = $this->_mPropDemands;
+        $newDemand = collect();
+        $collectAdvanceAmt = collect();
         $mPropSafsDemands = $this->_mPropSafsDemands;
         $quaterlyTax = $this->_quaterlyTax;
-        $propSafsDemands = $mPropSafsDemands->getFullDemandsBySafId($this->_activeSafDtls['id']);
+        $propSafsDemands = $mPropSafsDemands->getPaidDemandBySafId($this->_activeSafDtls['id']);
         foreach ($quaterlyTax as $tax) {
             $safQtrDemand = $propSafsDemands->where('due_date', $tax['dueDate'])->first();
-            if ($tax['totalTax'] > $safQtrDemand->amount) {
+            if ($tax['totalTax'] > $safQtrDemand->amount) {                                         // Case IF The Demand is Increasing
                 $adjustAmt = roundFigure($safQtrDemand->amount - $safQtrDemand->adjust_amount);
                 $balance = roundFigure($tax['balance'] - $adjustAmt);
                 $taxes = [
-                    'property_id' => 1,
+                    'property_id' => $this->_reqs['propId'],
                     'qtr' => $tax['qtr'],
                     'holding_tax' => $tax['holdingTax'],
                     'water_tax' => $tax['waterTax'],
@@ -137,12 +155,62 @@ class HandleTcVerification
                     'due_date' => $tax['dueDate'],
                     'amount' => $tax['totalTax'],
                     'arv' => $tax['arv'],
-                    'adjust_amount' => $adjustAmt,
+                    'adjust_amt' => $adjustAmt,
                     'balance' => $balance,
+                    'adjust_type' => $this->_adjustmentType,
+                    'ulb_id' => $this->_reqs['ulbId'],
+                    'user_id' => $this->_tcId
                 ];
-                array_push($newDemand, $taxes);
+                $newDemand->push($taxes);
+            }
+            if ($tax['totalTax'] < $safQtrDemand->amount) {                                       // Case if the Demand is Decreasing
+                $advanceAmt = roundFigure($safQtrDemand->amount - $tax['totalTax']);
+                $collectAdvanceAmt->push($advanceAmt);
             }
         }
-        return $newDemand;
+        $this->_propNewDemand = $newDemand;
+        if ($newDemand->isNotEmpty())
+            $this->storeDemand();               // (Function Store Demand) 1.2.1
+
+        $this->_propAdvDemand = $collectAdvanceAmt;
+        if ($collectAdvanceAmt->isNotEmpty())
+            $this->storeAdvance();              // (Function Advance Demand Store)  1.2.2
+    }
+
+
+    /**
+     * | Store New Demand (1.2.1)
+     */
+    public function storeDemand()
+    {
+        $propNewDemands = $this->_propNewDemand;        // Created Demand
+        $mPropDemands = $this->_mPropDemands;            // Model Prop Demands
+        $mPropDemands->store($propNewDemands->toArray());
+    }
+
+    /**
+     * | Store Advance Demand (1.2.2)
+     */
+    public function storeAdvance()
+    {
+        $mPropAdvance = $this->_mPropAdvance;
+        $mPropTransactions = $this->_mPropTransactions;
+        $tranDtls = $mPropTransactions->getLastTranByKeyId('saf_id', $this->_reqs['safId']);
+        $tranId = $tranDtls->id;
+
+        $advanceAmtCollection = $this->_propAdvDemand;
+        $advanceAmt = collect($advanceAmtCollection)->sum();
+        $advanceAmt = roundFigure($advanceAmt);
+        if ($advanceAmt > 0) {
+            $advReq = [
+                'prop_id' => $this->_reqs['propId'],
+                'tran_id' => $tranId,
+                'amount' => $advanceAmt,
+                'remarks' => "Field Verification Adjustment",
+                'user_id' => $this->_tcId,
+                'ulb_id' => $this->_reqs['ulbId'],
+            ];
+            $mPropAdvance->store($advReq);
+        }
     }
 }

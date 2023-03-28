@@ -14,6 +14,8 @@ use App\Models\Property\MPropBuildingRentalrate;
 use App\Models\Property\MPropMultiFactor;
 use App\Models\Property\MPropRoadType;
 use App\Models\Property\PaymentPropPenaltyrebate;
+use App\Models\Property\PropAdjustment;
+use App\Models\Property\PropAdvance;
 use App\Models\Property\PropChequeDtl;
 use App\Models\Property\PropDemand;
 use App\Models\Property\PropOwner;
@@ -33,6 +35,8 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
+
+use function PHPUnit\Framework\isEmpty;
 
 class HoldingTaxController extends Controller
 {
@@ -129,6 +133,7 @@ class HoldingTaxController extends Controller
 
         try {
             $todayDate = Carbon::now()->format('Y-m-d');
+            $mPropAdvance = new PropAdvance();
             $mPropDemand = new PropDemand();
             $mPropProperty = new PropProperty();
             $penaltyRebateCalc = new PenaltyRebateCalculation;
@@ -171,7 +176,13 @@ class HoldingTaxController extends Controller
             $dues = roundFigure($demandList->sum('balance'));
             $onePercTax = roundFigure($demandList->sum('onePercPenaltyTax'));
             $rwhPenaltyTax = roundFigure($demandList->sum('additional_tax'));
-            $adjustAmt = roundFigure($demandList->sum('adjust_amt'));
+            $advanceAdjustments = $mPropAdvance->getPropAdvanceAdjustAmt($req->propId);
+
+            if (collect($advanceAdjustments)->isEmpty())
+                return $advanceAmt = 0;
+            else
+                $advanceAmt = $advanceAdjustments->advance - $advanceAdjustments->adjustment_amt;
+
             $mLastQuarterDemand = $demandList->where('fyear', $currentFYear)->sum('balance');
 
             collect($demandList)->map(function ($value) use ($pendingFYears, $qtrs) {
@@ -190,7 +201,8 @@ class HoldingTaxController extends Controller
                 'duesTo' => $dueTo,
                 'onePercPenalty' => $onePercTax,
                 'totalQuarters' => $demandList->count(),
-                'arrear' => $balance
+                'arrear' => $balance,
+                'advanceAmt' => $advanceAmt
             ];
             $currentQtr = calculateQtr($todayDate);
 
@@ -200,7 +212,7 @@ class HoldingTaxController extends Controller
 
             $totalDuesList = $penaltyRebateCalc->readRebates($currentQuarter, $loggedInUserType, $mLastQuarterDemand, $ownerDetails, $dues, $totalDuesList);
 
-            $finalPayableAmt = ($dues + $onePercTax + $balance) - ($totalDuesList['rebateAmt'] + $totalDuesList['specialRebateAmt']);
+            $finalPayableAmt = ($dues + $onePercTax + $balance) - ($totalDuesList['rebateAmt'] + $totalDuesList['specialRebateAmt']) - $advanceAmt;
             $totalDuesList['payableAmount'] = round($finalPayableAmt);
             $totalDuesList['paymentUptoYrs'] = [$paymentUptoYrs->first()];
             $totalDuesList['paymentUptoQtrs'] = $pendingQtrs->unique()->values();
@@ -210,7 +222,7 @@ class HoldingTaxController extends Controller
 
             $demand['basicDetails'] = $basicDtls;
 
-            $total = roundFigure($dues - $adjustAmt);
+            $total = roundFigure($dues - $advanceAmt);
             $totalPayable = round($total + $onePercTax);
 
             $demand['dueReceipt'] = [
@@ -226,7 +238,7 @@ class HoldingTaxController extends Controller
                 'duesTo' => $dueTo,
                 'rwhPenalty' => $rwhPenaltyTax,
                 'demand' => $dues,
-                'alreadyPaid' => $adjustAmt,
+                'alreadyPaid' => $advanceAmt,
                 'total' => $total,
                 'onePercPenalty' => $onePercTax,
                 'totalPayable' => $totalPayable,
@@ -342,6 +354,7 @@ class HoldingTaxController extends Controller
             $mPropTrans = new PropTransaction();
             $propId = $req['id'];
             $verifyPaymentModes = Config::get('payment-constants.VERIFICATION_PAYMENT_MODES');
+            $mPropAdjustment = new PropAdjustment();
 
             $tranNo = $req['transactionNo'];
             if (!$tranNo)
@@ -350,9 +363,12 @@ class HoldingTaxController extends Controller
                 'propId' => $req['id']
             ]);
             $propCalculation = $this->getHoldingDues($propCalReq);
+            if ($propCalculation->original['status'] == false)
+                throw new Exception($propCalculation->original['message']);
 
             $demands = $propCalculation->original['data']['demandList'];
             $dueList = $propCalculation->original['data']['duesList'];
+            $advanceAmt = $dueList['advanceAmt'];
             if ($demands->isEmpty())
                 throw new Exception("No Dues For this Property");
             // Property Transactions
@@ -369,7 +385,6 @@ class HoldingTaxController extends Controller
                 'amount' => $dueList['payableAmount'],
                 'tranBy' => $tranBy
             ]);
-
             if (in_array($req['paymentMode'], $verifyPaymentModes)) {
                 $req->merge([
                     'verifyStatus' => 2
@@ -404,6 +419,20 @@ class HoldingTaxController extends Controller
 
             // Replication Prop Rebates Penalties
             $this->postPaymentPenaltyRebate($dueList, $propId, $propTrans['id']);
+
+            if ($advanceAmt > 0) {
+                $adjustReq = [
+                    'prop_id' => $propId,
+                    'tran_id' => $propTrans['id'],
+                    'amount' => $advanceAmt
+                ];
+                if ($tranBy == 'Citizen')
+                    $adjustReq = array_merge($adjustReq, ['citizen_id' => $userId ?? 0]);
+                else
+                    $adjustReq = array_merge($adjustReq, ['user_id' => $userId ?? 0]);
+
+                $mPropAdjustment->store($adjustReq);
+            }
             DB::commit();
             return responseMsgs(true, "Payment Successfully Done", ['TransactionNo' => $tranNo], "011604", "1.0", "", "POST", $req->deviceId);
         } catch (Exception $e) {

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Property;
 
 use App\BLL\Property\HandleTcVerification;
+use App\BLL\Property\TcVerificationDemandAdjust;
 use App\EloquentClass\Property\PenaltyRebateCalculation;
 use App\EloquentClass\Property\SafCalculation;
 use App\Http\Controllers\Controller;
@@ -1070,7 +1071,7 @@ class ActiveSafController extends Controller
             $mPropSafDemand = new PropSafsDemand();
             $mPropProperties = new PropProperty();
             $mPropDemand = new PropDemand();
-            $handleTcVerification = new HandleTcVerification;
+            $handleTcVerification = new TcVerificationDemandAdjust;
             $todayDate = Carbon::now()->format('Y-m-d');
             $currentFinYear = calculateFYear($todayDate);
             $famParamId = Config::get('PropertyConstaint.FAM_PARAM_ID');
@@ -1104,7 +1105,7 @@ class ActiveSafController extends Controller
             $propDtls = $mPropProperties->getPropIdBySafId($req->applicationId);
             $propId = $propDtls->id;
             $fieldVerifiedSaf = $propSafVerification->getVerificationsBySafId($safId);          // Get fields Verified Saf with all Floor Details
-            if ($fieldVerifiedSaf->isEmpty())
+            if (collect($fieldVerifiedSaf)->isEmpty())
                 throw new Exception("Site Verification not Exist");
 
             DB::beginTransaction();
@@ -1140,9 +1141,10 @@ class ActiveSafController extends Controller
                     'fieldVerificationDtls' => $fieldVerifiedSaf,
                     'assessmentType' => $safDetails->assessment_type,
                     'ulbId' => $activeSaf->ulb_id,
-                    'activeSafDtls' => $activeSaf
+                    'activeSafDtls' => $activeSaf,
+                    'propId' => $propId
                 ];
-                return $handleTcVerification->generateTcVerifiedDemand($tcVerifyParams);                // current object function (10.3)
+                $handleTcVerification->generateTcVerifiedDemand($tcVerifyParams);                // current object function (10.3)
                 $msg = "Application Approved Successfully";
             }
             // Rejection
