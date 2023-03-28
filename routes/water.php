@@ -86,6 +86,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('application/payment/get-payment-history', 'getApplicationPaymentHistory');         // Admin/Consumer
         Route::post('consumer/offline-demand-payment', 'offlineDemandPayment'); // Consumer/Route
         Route::post('application/payment/offline/pay-connection-charge', 'offlineConnectionPayment');   // Admin
+        Route::post('consumer/demand/generate-payment-receipt', 'generateDemandPaymentReceipt');
 
         # Site inspection 
         Route::post('site-verification/save-site-details', 'saveSitedetails');                          // Admin

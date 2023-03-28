@@ -42,7 +42,7 @@ class WaterTranDetail extends Model
      */
     public function getTransDemandByIds($transIds)
     {
-        return WaterTranDetail::whereIn('tran_id', $transIds)
+        return WaterTranDetail::where('tran_id', $transIds)
             ->where('status', 1);
     }
 

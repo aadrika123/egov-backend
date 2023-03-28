@@ -19,6 +19,8 @@ use App\Models\Water\WaterConnectionThroughMstr;
 use App\Models\Water\WaterConnectionTypeMstr;
 use App\Models\Water\WaterConsumer;
 use App\Models\Water\WaterConsumerDemand;
+use App\Models\Water\WaterConsumerMeter;
+use App\Models\Water\WaterConsumerTax;
 use App\Models\Water\WaterOwnerTypeMstr;
 use App\Models\Water\WaterParamPipelineType;
 use App\Models\Water\WaterPenaltyInstallment;
@@ -1392,6 +1394,113 @@ class WaterPaymentController extends Controller
                 "paymentList" => $penaltyList->values()->first()
             ];
             return responseMsgs(true, "", remove_null($transactions), "", "01", "ms", "POST", $request->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", "ms", "POST", "");
+        }
+    }
+
+
+    /**
+     * | Generate Demand Payment receipt
+     * | @param req
+     * | @var 
+     * | @return 
+        | Serial No : 09
+        | Not Working
+     */
+    public function generateDemandPaymentReceipt(Request $req)
+    {
+        $req->validate([
+            'transactionNo' => 'required'
+        ]);
+        try {
+            $refTransactionNo = $req->transactionNo;
+            $mWaterConsumerDemand = new WaterConsumerDemand();
+            $mWaterConsumerMeter = new WaterConsumerMeter();
+            $mWaterConsumer = new WaterConsumer();
+            $mWaterTranDetail = new WaterTranDetail();
+            $mWaterChequeDtl = new WaterChequeDtl();
+            $mWaterTran = new WaterTran();
+
+            $mTowards = Config::get('waterConstaint.TOWARDS');
+            $mAccDescription = Config::get('waterConstaint.ACCOUNT_DESCRIPTION');
+            $mDepartmentSection = Config::get('waterConstaint.DEPARTMENT_SECTION');
+            $mPaymentModes = Config::get('payment-constants.PAYMENT_OFFLINE_MODE');
+            $refMeterConnection = Config::get('waterConstaint.WATER_MASTER_DATA.METER_CONNECTION_TYPE');
+
+            # transaction Deatils
+            $transactionDetails = $mWaterTran->getTransactionByTransactionNo($refTransactionNo)
+                ->firstOrFail();
+
+            #  Data not equal to Cash
+            if (!in_array($transactionDetails['payment_mode'], [$mPaymentModes['1'], $mPaymentModes['5']])) {
+                $chequeDetails = $mWaterChequeDtl->getChequeDtlsByTransId($transactionDetails['id'])->first();
+            }
+            # Application Deatils
+            $consumerDetails = $mWaterConsumer->getRefDetailByConsumerNo("id", $transactionDetails->related_id)->firstOrFail();
+
+            # consumer Demand Details 
+            $detailsOfDemand = $mWaterTranDetail->getTransDemandByIds($transactionDetails->id)->get();
+
+            # Connection Charges
+            $demandIds = collect($detailsOfDemand)->pluck('demand_id');
+            $consumerDemands = $mWaterConsumerDemand->getDemandCollectively($demandIds)
+                ->orderByDesc('demand_from')
+                ->get();
+
+            # All unpaid demand and due amount
+            $unpaidDemand = $mWaterConsumerDemand->getConsumerDemand($consumerDetails->id);
+            $dueAmount = collect($unpaidDemand)->sum('balance_amount');
+
+            $fromDate = collect($consumerDemands)->first()->demand_from;
+            $startingDate = Carbon::createFromFormat('Y-m-d',  $fromDate)->startOfMonth();
+            $uptoDate = collect($consumerDemands)->first()->demand_upto;
+            $endingDate = Carbon::createFromFormat('Y-m-d',  $uptoDate)->endOfMonth();
+            $penaltyAmount = collect($consumerDemands)->sum('penalty');
+
+            // # water Conumer Meter details 
+            // $taxDetails = collect($consumerDemands)->map(function($value)
+            // {
+
+            // });
+            
+            // return $meterConnectionDetails;
+            // $flipConnetionType = array_flip($refMeterConnection);
+            // $typeOfConnection = $flipConnetionType[$meterConnectionDetails->connection_type];
+
+
+            $returnValues = [
+                "departmentSection" => $mDepartmentSection,
+                "accountDescription" => $mAccDescription,
+                "transactionDate" => $transactionDetails['tran_date'],
+                "transactionNo" => $refTransactionNo,
+                "applicationNo" => $consumerDetails['consumer_no'],
+                "customerName" => $consumerDetails['applicant_name'],
+                "customerMobile" => $consumerDetails['mobile_no'],
+                "address" => $consumerDetails['address'],
+                "paidFrom" => $startingDate->format('Y-m-d'),
+                "holdingNo" => $consumerDetails['holding_no'],
+                "safNo" => $consumerDetails['saf_no'],
+                "paidUpto" => $endingDate->format('Y-m-d'),
+                "paymentMode" => $transactionDetails['payment_mode'],
+                "bankName" => $chequeDetails['bank_name'] ?? null,                                   // in case of cheque,dd,nfts
+                "branchName" => $chequeDetails['branch_name'] ?? null,                                 // in case of chque,dd,nfts
+                "chequeNo" => $chequeDetails['cheque_no']  ?? null,                                  // in case of chque,dd,nfts
+                "chequeDate" => $chequeDetails['cheque_date'] ?? null,                                 // in case of chque,dd,nfts
+                "penaltyAmount" => $penaltyAmount,
+                "demandAmount" => $transactionDetails->amount,
+                "taxDetails" => "",
+                "ulbId" => $consumerDetails['ulb_id'],
+                "ulbName" => $consumerDetails['ulb_name'],
+                "WardNo" => $consumerDetails['ward_name'],
+                "towards" => $mTowards,
+                "description" => $mAccDescription,
+                "totalPaidAmount" => $transactionDetails->amount,
+                "DueAmount" => $dueAmount,
+                "meterConnectionType" => "",
+                "paidAmtInWords" => getIndianCurrency($transactionDetails->amount),
+            ];
+            return responseMsgs(true, "Payment Receipt", remove_null($returnValues), "", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", "ms", "POST", "");
         }

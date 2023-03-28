@@ -182,4 +182,15 @@ class WaterConsumerDemand extends Model
             return false;
         }
     }
+
+    /**
+     * | Get collictively consumer demand by demand Ids
+     * | @param ids
+     */
+    public function getDemandCollectively($ids)
+    {
+        return WaterConsumerDemand::whereIn('id',$ids)
+        ->where('status',true)
+        ->where('paid_status',1);
+    }
 }
