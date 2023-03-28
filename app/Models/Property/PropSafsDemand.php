@@ -108,6 +108,19 @@ class PropSafsDemand extends Model
     }
 
     /**
+     * | Get Paid Demand by Saf Id
+     */
+    public function getPaidDemandBySafId($safId)
+    {
+        $safDemand = PropSafsDemand::where('saf_id', $safId)
+            ->where('status', 1)
+            ->where('paid_status', 1)
+            ->orderBy('due_date')
+            ->get();
+        return $safDemand;
+    }
+
+    /**
      * | Get Demands by Cluster ID
      */
     public function getDemandsByClusterId($clusterId)

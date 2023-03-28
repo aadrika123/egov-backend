@@ -9,6 +9,15 @@ use Illuminate\Support\Facades\DB;
 class PropDemand extends Model
 {
     use HasFactory;
+    protected $guarded = [];
+
+    /**
+     * | Create Demands
+     */
+    public function store($req)
+    {
+        PropDemand::insert($req);
+    }
 
     /**
      * | Get the Last Demand Date by Property Id
