@@ -68,7 +68,7 @@ class MenuMaster extends Model
             ->join('wf_rolemenus', 'wf_rolemenus.menu_id', '=', 'menu_masters.id')
             ->where('menu_masters.is_deleted', false)
             ->where('wf_rolemenus.status', true)
-            ->where('wf_rolemenus.role_id', $roleId)
+            ->whereIn('wf_rolemenus.role_id', $roleId)
             ->where('module_id', $moduleId)         //changes by mrinal and sam
             ->orderBy("menu_masters.serial", "Asc")
             ->get();

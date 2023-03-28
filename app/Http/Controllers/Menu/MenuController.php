@@ -429,27 +429,27 @@ class MenuController extends Controller
         try {
             $userId = authUser()->id;
             $mWfRoleUserMap = new WfRoleusermap();
-            $mWfRolemenu = new WfRolemenu();
+            $mMenuRepo = new MenuRepo();
 
-            $wfRole = $mWfRoleUserMap->getRoleIdByUserId($userId);
-            $roleId = $wfRole->pluck('wf_role_id');
+            $wfRole = $mWfRoleUserMap->getRoleDetailsByUserId($userId);
+            $roleId = $wfRole->pluck('roleId');
 
-            $menuList = $mWfRolemenu->getMenuListByRoleId($roleId);
-            $allMenu = collect($menuList)->where('module_id', $req->moduleId);
+            $mreqs = new Request([
+                'roleId' => $roleId,
+                'moduleId' => $req->moduleId
+            ]);
 
-            $data = collect($allMenu)->map(function ($value, $key) {
-                $return = array();
-                $return['id'] = $value['id'];
-                $return['parentId'] = $value['parent_join'];
-                $return['path'] = $value['route'];
-                $return['name'] = $value['menu_name'];
-                $return['order'] = $value['serial_no'];
-                $return['children'] = array();
-                return ($return);
-            });
+            $treeStructure = $mMenuRepo->generateMenuTree($mreqs);
+            $menuPermission = collect($treeStructure)['original']['data'];
 
+            // $treeStructure = $mMenuRepo->generateMenuTree($mreqs);
+            // $menuPermission['permission'] = collect($treeStructure)['original']['data'];
+            // $menuPermission['userDetails'] = [
+            //     'userName' => $user->user_name,
+            //     'roles' => $wfRole->pluck('roles')
+            // ];
 
-            return responseMsgs(true, "Parent Menu!", $data, "", "", "", "POST", "");
+            return responseMsgs(true, "Parent Menu!", $menuPermission, "", "", "", "POST", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }

@@ -2,6 +2,7 @@
 
 namespace App\Repository\Water\Concrete;
 
+use App\MicroServices\IdGenerator\PrefixIdGenerator;
 use App\Models\CustomDetail;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropProperty;
@@ -51,7 +52,6 @@ class NewConnectionRepository implements iNewConnection
     private $_dealingAssistent;
     private $_vacantLand;
     private $_waterWorkflowId;
-    private $_waterWorkId;
     private $_waterModulId;
     private $_juniorEngRoleId;
 
@@ -60,7 +60,6 @@ class NewConnectionRepository implements iNewConnection
         $this->_dealingAssistent = Config::get('workflow-constants.DEALING_ASSISTENT_WF_ID');
         $this->_vacantLand = Config::get('PropertyConstaint.VACANT_LAND');
         $this->_waterWorkflowId = Config::get('workflow-constants.WATER_MASTER_ID');
-        $this->_waterWorkId = Config::get('workflow-constants.WATER_WORKFLOW_ID');
         $this->_waterModulId = Config::get('module-constants.WATER_MODULE_ID');
         $this->_juniorEngRoleId  = Config::get('workflow-constants.WATER_JE_ROLE_ID');
     }
@@ -364,7 +363,8 @@ class NewConnectionRepository implements iNewConnection
         $mWfRoleMaps = new WfWorkflowrolemap();
         $wfLevels = Config::get('waterConstaint.ROLE-LABEL');
         $waterApplication = WaterApplication::find($req->applicationId);
-        // Derivative Assignments
+
+        # Derivative Assignments
         $senderRoleId = $waterApplication->current_role;
         $ulbWorkflowId = $waterApplication->workflow_id;
         $ulbWorkflowMaps = $mWfWorkflows->getWfDetails($ulbWorkflowId);
@@ -391,7 +391,7 @@ class NewConnectionRepository implements iNewConnection
 
         $waterApplication->save();
         $metaReqs['moduleId'] =  $this->_waterModulId;
-        $metaReqs['workflowId'] = $this->_waterWorkId;
+        $metaReqs['workflowId'] = $waterApplication->workflow_id;
         $metaReqs['refTableDotId'] = 'water_applications.id';
         $metaReqs['refTableIdValue'] = $req->applicationId;
         $metaReqs['user_id'] = authUser()->id;
@@ -534,6 +534,7 @@ class NewConnectionRepository implements iNewConnection
      * | Only for the EO approval
      * | @param request
      * | @param roleId
+        | Working
         | check the field verified status 
      */
     public function preApprovalConditionCheck($request, $roleId)
@@ -548,13 +549,13 @@ class NewConnectionRepository implements iNewConnection
         if ($waterDetails->doc_status == false) {
             throw new Exception("Documet is Not verified!");
         }
-        if ($waterDetails->payment_status == 0) {
+        if ($waterDetails->payment_status != 1) {
             throw new Exception("Payment Not Done!");
         }
         if ($waterDetails->doc_upload_status == false) {
             throw new Exception("Full document is Not Uploaded!");
         }
-        // if ($waterDetails->is_field_verified == false) {
+        // if ($waterDetails->is_field_verified == 0) {
         //     throw new Exception("Field Verification Not Done!!");
         // }
     }

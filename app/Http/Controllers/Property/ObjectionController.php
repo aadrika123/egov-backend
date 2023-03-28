@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Property;
 use App\Repository\Property\Interfaces\iObjectionRepository;
 use App\Http\Controllers\Controller;
 use App\MicroServices\DocUpload;
+use App\MicroServices\IdGenerator\PrefixIdGenerator;
 use App\Models\CustomDetail;
 use App\Models\Masters\RefRequiredDocument;
 use App\Models\PropActiveObjectionDtl;
@@ -878,12 +879,14 @@ class ObjectionController extends Controller
 
         // return $request->owners[0]['gender'];
         try {
-
+            $mPropProperty = new PropProperty();
             $userId = authUser()->id;
-            $ulbId = $request->ulbId;
             $userType = auth()->user()->user_type;
             $objectionFor = $request->objectionFor;
+            $objParamId = Config::get('PropertyConstaint.OBJ_PARAM_ID');
             $owner = $request->owners;
+            $propDtl = $mPropProperty->getPropById($request->propId);
+            $ulbId = $propDtl->ulb_id;
 
             $ulbWorkflowId = WfWorkflow::where('wf_master_id', Config::get('workflow-constants.PROPERTY_OBJECTION_CLERICAL'))
                 ->where('ulb_id', $ulbId)
@@ -905,25 +908,50 @@ class ObjectionController extends Controller
             $objection->property_id = $request->propId;
             $objection->remarks = $request->remarks;
             $objection->date = Carbon::now();
-            $objection->created_at = Carbon::now();
             $objection->workflow_id = $ulbWorkflowId->id;
             $objection->current_role = $initiatorRoleId[0]->role_id;
             $objection->initiator_role_id = collect($initiatorRoleId)->first()->role_id;
             $objection->finisher_role_id = collect($finisherRoleId)->first()->role_id;
+            $objection->last_role_id = collect($initiatorRoleId)->first()->role_id;
+
+            if ($userType == 'Citizen') {
+                $objection->current_role = collect($initiatorRoleId)->first()->forward_role_id;
+                $objection->initiator_role_id = collect($initiatorRoleId)->first()->forward_role_id;      // Send to DA in Case of Citizen
+                $objection->last_role_id = collect($initiatorRoleId)->first()->forward_role_id;
+                $objection->user_id = null;
+                $objection->citizen_id = $userId;
+            }
             $objection->save();
 
-            //objection No generation in model
-            $objNo = new PropActiveObjection();
-            $objectionNo = $objNo->objectionNo($objection->id);
+            $idGeneration = new PrefixIdGenerator($objParamId, $objection->ulb_id);
+            $objectionNo = $idGeneration->generate();
 
             PropActiveObjection::where('id', $objection->id)
                 ->update(['objection_no' => $objectionNo]);
 
+            if ($request->document) {
+                $docUpload = new DocUpload;
+                $mWfActiveDocument = new WfActiveDocument();
+                $relativePath = Config::get('PropertyConstaint.OBJECTION_RELATIVE_PATH');
+                $refImageName = $request->docCode;
+                $refImageName = $objection->id . '-' . str_replace(' ', '_', $refImageName);
+                $document = $request->document;
+                $imageName = $docUpload->upload($refImageName, $document, $relativePath);
+
+                $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+                $metaReqs['activeId'] = $objection->id;
+                $metaReqs['workflowId'] = $objection->workflow_id;
+                $metaReqs['ulbId'] = $objection->ulb_id;
+                $metaReqs['document'] = $imageName;
+                $metaReqs['relativePath'] = $relativePath;
+                $metaReqs['docCode'] = $request->docCode;
+
+                $metaReqs = new Request($metaReqs);
+                $mWfActiveDocument->postDocuments($metaReqs);
+            }
 
             //saving objection owner details
-            # Flag : call model <----------
             foreach ($owner as $owners) {
-
                 $objectionOwner = new PropActiveObjectionOwner();
                 $objectionOwner->objection_id = $objection->id;
                 $objectionOwner->gender = $owners['gender'] ?? null;
@@ -961,6 +989,13 @@ class ObjectionController extends Controller
             case ('address'):
                 $data =  RefRequiredDocument::select('*')
                     ->where('code', 'OBJECTION_CLERICAL_ADDRESS')
+                    ->first();
+                $code = $this->filterCitizenDoc($data);
+                break;
+
+            case ('addOwner'):
+                $data =  RefRequiredDocument::select('*')
+                    ->where('code', 'OBJECTION_CLERICAL_ADD_OWNER')
                     ->first();
                 $code = $this->filterCitizenDoc($data);
                 break;

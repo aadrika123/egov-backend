@@ -1952,14 +1952,14 @@ class NewConnectionController extends Controller
             $refJe = Config::get("waterConstaint.ROLE-LABEL.JE");
             # level logic
             $sheduleDate = $mWaterSiteInspectionsScheduling->getInspectionData($request->applicationId)->first();
-            if ($sheduleDate->site_verify_status == true) {
+            if (!is_null($sheduleDate) && $sheduleDate->site_verify_status == true) {
                 $returnData = $mWaterSiteInspection->getSiteDetails($request->applicationId)
                     ->where('order_officer', $refJe)
                     ->first();
                 $returnData['final_verify'] = true;
                 return responseMsgs(true, "JE Inspection details!", remove_null($returnData), "", "01", ".ms", "POST", $request->deviceId);
             }
-            return responseMsgs(true, "Dat not Found!", remove_null($returnData), "", "01", ".ms", "POST", $request->deviceId);
+            return responseMsgs(true, "Data not Found!", remove_null($returnData), "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", $request->deviceId);
         }
