@@ -929,26 +929,26 @@ class ObjectionController extends Controller
             PropActiveObjection::where('id', $objection->id)
                 ->update(['objection_no' => $objectionNo]);
 
-            // if ($request->document) {
-            //     $docUpload = new DocUpload;
-            //     $mWfActiveDocument = new WfActiveDocument();
-            //     $relativePath = Config::get('PropertyConstaint.OBJECTION_RELATIVE_PATH');
-            //     $refImageName = $request->docCode;
-            //     $refImageName = $objection->id . '-' . str_replace(' ', '_', $refImageName);
-            //     $document = $request->nameDoc;
-            //     $imageName = $docUpload->upload($refImageName, $document, $relativePath);
+            if ($request->document) {
+                $docUpload = new DocUpload;
+                $mWfActiveDocument = new WfActiveDocument();
+                $relativePath = Config::get('PropertyConstaint.OBJECTION_RELATIVE_PATH');
+                $refImageName = $request->docCode;
+                $refImageName = $objection->id . '-' . str_replace(' ', '_', $refImageName);
+                $document = $request->document;
+                $imageName = $docUpload->upload($refImageName, $document, $relativePath);
 
-            //     $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
-            //     $metaReqs['activeId'] = $objection->id;
-            //     $metaReqs['workflowId'] = $objection->workflow_id;
-            //     $metaReqs['ulbId'] = $objection->ulb_id;
-            //     $metaReqs['document'] = $imageName;
-            //     $metaReqs['relativePath'] = $relativePath;
-            //     $metaReqs['docCode'] = $request->docCode;
+                $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+                $metaReqs['activeId'] = $objection->id;
+                $metaReqs['workflowId'] = $objection->workflow_id;
+                $metaReqs['ulbId'] = $objection->ulb_id;
+                $metaReqs['document'] = $imageName;
+                $metaReqs['relativePath'] = $relativePath;
+                $metaReqs['docCode'] = $request->docCode;
 
-            //     $metaReqs = new Request($metaReqs);
-            //     $mWfActiveDocument->postDocuments($metaReqs);
-            // }
+                $metaReqs = new Request($metaReqs);
+                $mWfActiveDocument->postDocuments($metaReqs);
+            }
 
             //saving objection owner details
             foreach ($owner as $owners) {
@@ -989,6 +989,13 @@ class ObjectionController extends Controller
             case ('address'):
                 $data =  RefRequiredDocument::select('*')
                     ->where('code', 'OBJECTION_CLERICAL_ADDRESS')
+                    ->first();
+                $code = $this->filterCitizenDoc($data);
+                break;
+
+            case ('addOwner'):
+                $data =  RefRequiredDocument::select('*')
+                    ->where('code', 'OBJECTION_CLERICAL_ADD_OWNER')
                     ->first();
                 $code = $this->filterCitizenDoc($data);
                 break;
