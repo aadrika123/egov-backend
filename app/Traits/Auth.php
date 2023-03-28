@@ -289,7 +289,7 @@ trait Auth
         // $menuDetails = collect($roleBasedMenu)->collapse();
         // $collection['menuPermission'] = $menuDetails->unique()->values();
         $metaReqs = [
-            'roleId' => collect($menuRoleDetails)->first()->roleId,
+            'roleId' => $menuRoleDetails->pluck('roleId'),
         ];
         $lodeData = new Request($metaReqs);
         $mMenuRepo = new MenuRepo();

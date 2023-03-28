@@ -355,11 +355,9 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('menu/update-menus', 'updateMenu');                      // Update the menu master
         Route::post('menu/delete-menus', 'deleteMenu');                      // Soft Delition of the menus
         Route::post('menu/by-id', 'menuById');                               // Get menu bu menu Id
-
         Route::post('menu-roles/list-parent-menu', 'listSerialMenu');        // Get the list of parent menus
 
         Route::post('menu/by-module', 'getMenuByModuleId');                  // Get menu by role 
-        Route::post('sub-menu/get-children-node', 'getChildrenNode');               // Get the children menues
 
     });
 });
