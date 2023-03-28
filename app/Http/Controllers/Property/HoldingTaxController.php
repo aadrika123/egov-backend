@@ -363,6 +363,8 @@ class HoldingTaxController extends Controller
                 'propId' => $req['id']
             ]);
             $propCalculation = $this->getHoldingDues($propCalReq);
+            if ($propCalculation->original['status'] == false)
+                throw new Exception($propCalculation->original['message']);
 
             $demands = $propCalculation->original['data']['demandList'];
             $dueList = $propCalculation->original['data']['duesList'];
