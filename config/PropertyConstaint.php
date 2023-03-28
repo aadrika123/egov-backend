@@ -487,6 +487,12 @@ return [
             "value" => "Special Rebate",
             "perc" => 5
         ],
+    ],
+
+    // Adjustment Types
+    "ADJUSTMENT_TYPES" => [
+        "ULB_ADJUSTMENT" => "Demand Adjustment"
     ]
+
 
 ];
