@@ -1952,7 +1952,7 @@ class NewConnectionController extends Controller
             $refJe = Config::get("waterConstaint.ROLE-LABEL.JE");
             # level logic
             $sheduleDate = $mWaterSiteInspectionsScheduling->getInspectionData($request->applicationId)->first();
-            if ($sheduleDate->site_verify_status == true) {
+            if (!is_null($sheduleDate) && $sheduleDate->site_verify_status == true) {
                 $returnData = $mWaterSiteInspection->getSiteDetails($request->applicationId)
                     ->where('order_officer', $refJe)
                     ->first();

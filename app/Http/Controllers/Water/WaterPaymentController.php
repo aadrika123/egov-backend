@@ -683,13 +683,14 @@ class WaterPaymentController extends Controller
             $finalCharges = $this->preOfflinePaymentParams($request, $startingDate, $endDate);
             $tranNo = $midGeneration->generateTransactionNo();
             $request->merge([
-                'userId'    => $user->id,
-                'userType'  => $user->user_type,
-                'todayDate' => $todayDate->format('Y-m-d'),
-                'tranNo'    => $tranNo,
-                'id'        => $request->consumerId,
-                'ulbId'     => $user->ulb_id,
-                'chargeCategory' => "Demand Collection",
+                'userId'            => $user->id,
+                'userType'          => $user->user_type,
+                'todayDate'         => $todayDate->format('Y-m-d'),
+                'tranNo'            => $tranNo,
+                'id'                => $request->consumerId,
+                'ulbId'             => $user->ulb_id,
+                'chargeCategory'    => "Demand Collection",
+                'leftDemandAmount'  => $finalCharges['leftDemandAmount']
             ]);
 
             DB::beginTransaction();
@@ -758,9 +759,16 @@ class WaterPaymentController extends Controller
         if ($refgeneratedDemand != $totalgeneratedDemand) {
             throw new Exception("penally Not matched!");
         }
+        $allLeftCharges = $mWaterConsumerDemand->getFirstConsumerDemand($consumerId)
+            ->where('demand_from', '<', $startingDate)
+            ->where('demand_upto', '>', $endDate)
+            ->get();
+        $leftAmount = collect($allLeftCharges)->sum('balance_amount');
+
         return [
             "consumer"          => $refConsumer,
             "consumerChages"    => $allCharges,
+            "leftDemandAmount"  => $leftAmount
         ];
     }
 
@@ -1416,7 +1424,6 @@ class WaterPaymentController extends Controller
         try {
             $refTransactionNo = $req->transactionNo;
             $mWaterConsumerDemand = new WaterConsumerDemand();
-            $mWaterConsumerMeter = new WaterConsumerMeter();
             $mWaterConsumer = new WaterConsumer();
             $mWaterTranDetail = new WaterTranDetail();
             $mWaterChequeDtl = new WaterChequeDtl();
@@ -1426,7 +1433,6 @@ class WaterPaymentController extends Controller
             $mAccDescription = Config::get('waterConstaint.ACCOUNT_DESCRIPTION');
             $mDepartmentSection = Config::get('waterConstaint.DEPARTMENT_SECTION');
             $mPaymentModes = Config::get('payment-constants.PAYMENT_OFFLINE_MODE');
-            $refMeterConnection = Config::get('waterConstaint.WATER_MASTER_DATA.METER_CONNECTION_TYPE');
 
             # transaction Deatils
             $transactionDetails = $mWaterTran->getTransactionByTransactionNo($refTransactionNo)
@@ -1445,60 +1451,59 @@ class WaterPaymentController extends Controller
             # Connection Charges
             $demandIds = collect($detailsOfDemand)->pluck('demand_id');
             $consumerDemands = $mWaterConsumerDemand->getDemandCollectively($demandIds)
-                ->orderByDesc('demand_from')
+                ->orderBy('demand_from')
                 ->get();
-
-            # All unpaid demand and due amount
-            $unpaidDemand = $mWaterConsumerDemand->getConsumerDemand($consumerDetails->id);
-            $dueAmount = collect($unpaidDemand)->sum('balance_amount');
 
             $fromDate = collect($consumerDemands)->first()->demand_from;
             $startingDate = Carbon::createFromFormat('Y-m-d',  $fromDate)->startOfMonth();
-            $uptoDate = collect($consumerDemands)->first()->demand_upto;
+            $uptoDate = collect($consumerDemands)->last()->demand_upto;
             $endingDate = Carbon::createFromFormat('Y-m-d',  $uptoDate)->endOfMonth();
             $penaltyAmount = collect($consumerDemands)->sum('penalty');
 
-            // # water Conumer Meter details 
-            // $taxDetails = collect($consumerDemands)->map(function($value)
-            // {
-
-            // });
-            
-            // return $meterConnectionDetails;
-            // $flipConnetionType = array_flip($refMeterConnection);
-            // $typeOfConnection = $flipConnetionType[$meterConnectionDetails->connection_type];
-
+            # water consumer consumed
+            $consumerTaxes = $mWaterConsumerDemand->getConsumerTax($demandIds);
+            $initialReading = $consumerTaxes->wherein("connection_type", ["Meter", "Metered"])
+                ->min("initial_reading");
+            $finalReading = $consumerTaxes->wherein("connection_type", ["Meter", "Metered"])
+                ->max("final_reading");
+            $fixedFrom = $consumerTaxes->where("connection_type", "Fixed")
+                ->min("demand_from");
+            $fixedUpto = $consumerTaxes->where("connection_type", "Fixed")
+                ->max("demand_upto");
 
             $returnValues = [
                 "departmentSection" => $mDepartmentSection,
                 "accountDescription" => $mAccDescription,
                 "transactionDate" => $transactionDetails['tran_date'],
                 "transactionNo" => $refTransactionNo,
-                "applicationNo" => $consumerDetails['consumer_no'],
+                "consumerNo" => $consumerDetails['consumer_no'],
                 "customerName" => $consumerDetails['applicant_name'],
                 "customerMobile" => $consumerDetails['mobile_no'],
                 "address" => $consumerDetails['address'],
                 "paidFrom" => $startingDate->format('Y-m-d'),
+                "paidUpto" => $endingDate->format('Y-m-d'),
                 "holdingNo" => $consumerDetails['holding_no'],
                 "safNo" => $consumerDetails['saf_no'],
-                "paidUpto" => $endingDate->format('Y-m-d'),
                 "paymentMode" => $transactionDetails['payment_mode'],
-                "bankName" => $chequeDetails['bank_name'] ?? null,                                   // in case of cheque,dd,nfts
-                "branchName" => $chequeDetails['branch_name'] ?? null,                                 // in case of chque,dd,nfts
-                "chequeNo" => $chequeDetails['cheque_no']  ?? null,                                  // in case of chque,dd,nfts
-                "chequeDate" => $chequeDetails['cheque_date'] ?? null,                                 // in case of chque,dd,nfts
+                "bankName" => $chequeDetails['bank_name'] ?? null,                                      // in case of cheque,dd,nfts
+                "branchName" => $chequeDetails['branch_name'] ?? null,                                  // in case of chque,dd,nfts
+                "chequeNo" => $chequeDetails['cheque_no']  ?? null,                                     // in case of chque,dd,nfts
+                "chequeDate" => $chequeDetails['cheque_date'] ?? null,                                  // in case of chque,dd,nfts
                 "penaltyAmount" => $penaltyAmount,
                 "demandAmount" => $transactionDetails->amount,
-                "taxDetails" => "",
                 "ulbId" => $consumerDetails['ulb_id'],
                 "ulbName" => $consumerDetails['ulb_name'],
                 "WardNo" => $consumerDetails['ward_name'],
                 "towards" => $mTowards,
                 "description" => $mAccDescription,
                 "totalPaidAmount" => $transactionDetails->amount,
-                "DueAmount" => $dueAmount,
-                "meterConnectionType" => "",
+                "DueAmount" => $transactionDetails->due_amount,
+                "rebate" => 0,
+                "waterConsumed" => (($finalReading ?? 0.00) - ($initialReading ?? 0.00)),
+                "fixedpaidFrom" => (Carbon::createFromFormat('Y-m-d',  $fixedFrom)->startOfMonth())->format('Y-m-d'),
+                "fixedpaidUpto" => (Carbon::createFromFormat('Y-m-d',  $fixedUpto)->startOfMonth())->format('Y-m-d'),
                 "paidAmtInWords" => getIndianCurrency($transactionDetails->amount),
+
             ];
             return responseMsgs(true, "Payment Receipt", remove_null($returnValues), "", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {

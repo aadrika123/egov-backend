@@ -189,8 +189,29 @@ class WaterConsumerDemand extends Model
      */
     public function getDemandCollectively($ids)
     {
-        return WaterConsumerDemand::whereIn('id',$ids)
-        ->where('status',true)
-        ->where('paid_status',1);
+        return WaterConsumerDemand::whereIn('id', $ids)
+            ->where('status', true)
+            ->where('paid_status', 1);
+    }
+
+    /**
+     * | get the meter listing
+     */
+    public function getConsumerTax($demandIds)
+    {
+        return WaterConsumerDemand::select(
+            'water_consumer_taxes.initial_reading',
+            "water_consumer_taxes.final_reading",
+            'water_consumer_demands.*'
+        )
+            ->leftjoin('water_consumer_taxes', function($join){
+                $join->on('water_consumer_taxes.id', 'water_consumer_demands.consumer_tax_id')                
+                ->where('water_consumer_taxes.status', 1)
+                ->where('water_consumer_taxes.charge_type', 'Meter');
+            })
+            ->whereIn('water_consumer_demands.id', $demandIds)
+            ->where('water_consumer_demands.status', 1)
+            ->orderByDesc('water_consumer_demands.id')
+            ->get();
     }
 }

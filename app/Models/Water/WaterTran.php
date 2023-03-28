@@ -115,6 +115,7 @@ class WaterTran extends Model
         $waterTrans->user_type      = $req['userType'];
         $waterTrans->ulb_id         = $req['ulbId'];
         $waterTrans->ward_id        = $consumer['ward_mstr_id'];
+        $waterTrans->due_amount     = $req['leftDemandAmount'] ?? 0;
         $waterTrans->save();
 
         return [
@@ -151,10 +152,10 @@ class WaterTran extends Model
         $userType = authUser()->user_type;
         $rfTransMode = Config::get("payment-constants.PAYMENT_OFFLINE_MODE.5");
 
-        return WaterTran::where('tran_date',$currentDate)
-        ->where('user_type',$userType)
-        ->where('payment_mode','!=',$rfTransMode)
-        ->get();
+        return WaterTran::where('tran_date', $currentDate)
+            ->where('user_type', $userType)
+            ->where('payment_mode', '!=', $rfTransMode)
+            ->get();
 
         // return "SELECT * FROM water_trans
         // WHERE tran_date = '$currentDate'
@@ -169,9 +170,9 @@ class WaterTran extends Model
      */
     public function saveVerifyStatus($watertransId)
     {
-        WaterTran::where('id',$watertransId)
-        ->update([
-            'verify_status' => 2
-        ]);
+        WaterTran::where('id', $watertransId)
+            ->update([
+                'verify_status' => 2
+            ]);
     }
 }
