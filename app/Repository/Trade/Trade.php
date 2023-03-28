@@ -2765,7 +2765,6 @@ class Trade implements ITrade
             // dd($licence);            
             return responseMsg(true, "", $licence);
         } catch (Exception $e) {
-            dd($e->getMessage(),$e->getLine(),$e->getFile());
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }

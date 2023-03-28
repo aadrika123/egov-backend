@@ -5,10 +5,11 @@ class ReqInbox extends TradeRequest
 {
     
     /**
-     * Get the validation rules that apply to the request.
+     * Get the validation rules that apply to the request.safas
      *
      * @return array
      */
+    # gk ggl
     public function rules()
     {
         return [

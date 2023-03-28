@@ -8,10 +8,11 @@ class ReqUpdateBasicDtl extends TradeRequest
 {
     
     /**
-     * Get the validation rules that apply to the request.
+     * Get the validation rules that apply to the request. 
      *
      * @return array
      */
+    #jflkdj
     public function rules()
     {
         return [
