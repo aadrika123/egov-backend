@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\Water\NewConnectionController;
-use App\Http\Controllers\water\WaterApplication;
+use App\Http\Controllers\Water\WaterApplication;
 use App\Http\Controllers\Water\WaterConsumer;
 use App\Http\Controllers\Water\WaterPaymentController;
 use Illuminate\Support\Facades\Route;
