@@ -502,4 +502,13 @@ class PropProperty extends Model
                 'cluster_id' => $clusterId
             ]);
     }
+
+    /**
+     * | Independent Edit
+     */
+    public function edit($propId, $req)
+    {
+        $property = PropProperty::findOrFail($propId);
+        $property->update($req);
+    }
 }

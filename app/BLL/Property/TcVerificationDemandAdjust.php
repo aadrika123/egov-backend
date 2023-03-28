@@ -6,6 +6,7 @@ use App\EloquentClass\Property\SafCalculation;
 use App\Http\Controllers\Property\ApplySafController;
 use App\Models\Property\PropAdvance;
 use App\Models\Property\PropDemand;
+use App\Models\Property\PropProperty;
 use App\Models\Property\PropSafsDemand;
 use App\Models\Property\PropTransaction;
 use App\Traits\Property\SAF;
@@ -57,7 +58,7 @@ class TcVerificationDemandAdjust
         $this->_activeSafDtls = $req['activeSafDtls'];
         $this->_quaterlyTax = $this->calculateQuaterlyTax();           // (1.1)
         $this->_tcId = collect($this->_reqs['fieldVerificationDtls'])->first()->user_id;
-        return $this->adjustVerifiedDemand();
+        $this->adjustVerifiedDemand();
     }
 
     /**
