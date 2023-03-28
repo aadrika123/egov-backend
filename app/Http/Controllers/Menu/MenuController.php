@@ -431,8 +431,8 @@ class MenuController extends Controller
             $mWfRoleUserMap = new WfRoleusermap();
             $mMenuRepo = new MenuRepo();
 
-            $wfRole = $mWfRoleUserMap->getRoleIdByUserId($userId);
-            $roleId = $wfRole->pluck('wf_role_id');
+            $wfRole = $mWfRoleUserMap->getRoleDetailsByUserId($userId);
+            $roleId = $wfRole->pluck('roleId');
 
             $mreqs = new Request([
                 'roleId' => $roleId,
@@ -441,6 +441,13 @@ class MenuController extends Controller
 
             $treeStructure = $mMenuRepo->generateMenuTree($mreqs);
             $menuPermission = collect($treeStructure)['original']['data'];
+
+            // $treeStructure = $mMenuRepo->generateMenuTree($mreqs);
+            // $menuPermission['permission'] = collect($treeStructure)['original']['data'];
+            // $menuPermission['userDetails'] = [
+            //     'userName' => $user->user_name,
+            //     'roles' => $wfRole->pluck('roles')
+            // ];
 
             return responseMsgs(true, "Parent Menu!", $menuPermission, "", "", "", "POST", "");
         } catch (Exception $e) {
