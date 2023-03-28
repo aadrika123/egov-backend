@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\water;
+namespace App\Http\Controllers\Water;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Water\NewConnectionController;
