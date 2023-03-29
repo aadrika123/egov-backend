@@ -5,12 +5,15 @@ namespace App\Repository\Notice;
 use App\EloquentModels\Common\ModelWard;
 use App\MicroServices\DocUpload;
 use App\Models\Notice\NoticeApplication;
+use App\Models\Workflows\WfRole;
 use App\Repository\Common\CommonFunction;
 use App\Traits\Auth;
+use App\Traits\Notice\NoticeTrait;
 use App\Traits\Workflow\Workflow;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
@@ -24,6 +27,7 @@ use Illuminate\Support\Facades\DB;
  {
     use Auth;
     use Workflow;
+    use NoticeTrait;
 
     private $_COMMON_FUNCTION;
     private $_WF_MASTER_ID;
@@ -214,7 +218,6 @@ use Illuminate\Support\Facades\DB;
     {
         try{
             $user = Auth()->user();
-            $user_id = $user->id;
             $ulb_id = $user->ulb_id;
             $notice = NoticeApplication::select(
                 "notice_applications.id",
@@ -238,15 +241,68 @@ use Illuminate\Support\Facades\DB;
                 "notice_applications.documents",
                 "notice_applications.status",
                 "notice_type_masters.notice_type",
-                DB::raw("caset(notice_applications.created_at,date) as apply_date"),
+                "notice_applications.notice_for_module_id",
+                DB::raw("cast(notice_applications.created_at as date) as apply_date"),
             )
             ->join("notice_type_masters","notice_type_masters.id","notice_applications.notice_type_id")
             ->where("notice_applications.ulb_id",$ulb_id)
             ->where("notice_applications.status","<>",0)
-            ->where("notice_applications.notice_for_module_id",$request->moduleId)
+            ->where("notice_applications.id",$request->applicationId)
             ->first();
-
-    
+            if(!$notice)
+            {
+                throw new Exception("Data Not Found");
+            }
+            $fullDetailsData = array();            
+            $basicElement = [
+                'headerTitle' => "Basic Details",
+                "data" =>  $this->generateBasicDetails($notice)      // Trait function to get Basic Details
+            ];
+            $cardElement=[];
+            switch($notice->notice_for_module_id)   
+            {
+                #property
+                case 1:  $cardElement = [
+                            'headerTitle' => "Property & Address",
+                            'data' => $cardDetails = $this->generateProperty($notice)
+                        ];
+                        break;
+                #water
+                case 2:  $cardElement = [
+                            'headerTitle' => "Property & Address",
+                            'data' => $cardDetails = $this->generateWater($notice)
+                        ];
+                        break;
+                #tade
+                case 3:  $cardElement = [
+                            'headerTitle' => "Property & Address",
+                            'data' => $cardDetails = $this->generateTrade($notice)
+                        ];
+                        break;
+                #SWM
+                case 4:  $cardElement = [
+                            'headerTitle' => "Property & Address",
+                            'data' => $cardDetails = $this->generateProperty($notice)
+                        ];
+                        break;
+                #ADVERTISEMENT
+                case 5:  $cardElement = [
+                            'headerTitle' => "Property & Address",
+                            'data' => $cardDetails = $this->generateProperty($notice)
+                        ];
+                        break;
+                // case 6:  $cardElement = [
+                //             'headerTitle' => "Property & Address",
+                //             'data' => $cardDetails = $this->generateProperty($notice)
+                //         ];
+                //         break;
+                default : throw new Exception("Invalid Module");
+            }  
+            $mStatus = $this->applicationStatus($request->applicationId);
+            $fullDetailsData['application_no'] = $notice->notice_no?$notice->notice_no:$mStatus;
+            $fullDetailsData['fullDetailsData']['dataArray'] = new Collection([$basicElement,$cardElement]);
+            return responseMsg(true, 'Data Fetched', remove_null($fullDetailsData));
+           
         }
         catch(Exception $e)
         {
@@ -315,5 +371,28 @@ use Illuminate\Support\Facades\DB;
     {
         $noticeNO = "NOT/" . date('dmy') . $applicationId;
         return $noticeNO;
+    }
+
+    public function applicationStatus($applicationId)
+    {
+        $refUser        = Auth()->user();
+        $refUserId      = $refUser->id ?? 0;
+        $refUlbId       = $refUser->ulb_id ?? 0;
+        $application = NoticeApplication::find($applicationId);
+        $status = "";
+        if ($application->status == 5) 
+        {
+            $status = "Notce Created Successfully";
+        } 
+        elseif ($application->status == 4) 
+        {
+            $status = "Notce Rejected";
+        } 
+        else 
+        {
+            $rols  = WfRole::find($application->current_role);
+            $status = "Notice Pending At " . $rols->role_name;
+        } 
+        return $status;
     }
  }

@@ -15,4 +15,5 @@ use Illuminate\Http\Request;
 {
     function add(Request $request);
     public function noticeList(Request $request);
+    public function noticeView(Request $request);
 }

@@ -236,5 +236,20 @@ class Application extends Controller
         }
         
     }
+    public function noticeView(Request $request)
+    {
+        try{
+            $request->validate(
+                [
+                    "applicationId"=>"required|digits_between:1,9223372036854775807",
+                ]
+            );
+            return $this->_REPOSITORY->noticeView($request);
+        }
+        catch (Exception $e) 
+        {
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
+    }
     
 }

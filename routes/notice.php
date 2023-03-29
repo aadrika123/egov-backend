@@ -8,5 +8,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post("search-application", "serApplication");
         Route::post("add", "add");
         Route::post("get-notice-list", "noticeList");
+        Route::post("application/dtl-by-id", "noticeView");
     });
 });
