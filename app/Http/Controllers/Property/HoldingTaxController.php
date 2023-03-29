@@ -1155,4 +1155,83 @@ class HoldingTaxController extends Controller
             return responseMsgs(false, $e->getMessage(), "", "011613", "1.0", "", "", $req->deviceId ?? "");
         }
     }
+
+    /**
+     * | Generate Cluster Payment Receipt (011613)
+     */
+    public function clusterPaymentReceipt(Request $req)
+    {
+        $req->validate([
+            'tranNo' => 'required'
+        ]);
+
+        try {
+            $mTransaction = new PropTransaction();
+            $mPropPenalties = new PropPenaltyrebate();
+            $safController = new ActiveSafController($this->_safRepo);
+            $mClusters = new Cluster();
+
+            $mTowards = Config::get('PropertyConstaint.SAF_TOWARDS');
+            $mAccDescription = Config::get('PropertyConstaint.ACCOUNT_DESCRIPTION');
+            $mDepartmentSection = Config::get('PropertyConstaint.DEPARTMENT_SECTION');
+
+            $rebatePenalMstrs = collect(Config::get('PropertyConstaint.REBATE_PENAL_MASTERS'));
+            $onePercKey = $rebatePenalMstrs->where('id', 1)->first()['value'];
+            $specialRebateKey = $rebatePenalMstrs->where('id', 6)->first()['value'];
+            $firstQtrKey = $rebatePenalMstrs->where('id', 2)->first()['value'];
+            $onlineRebate = $rebatePenalMstrs->where('id', 3)->first()['value'];
+
+            $propTrans = $mTransaction->getPropByTranPropId($req->tranNo);
+            $clusterId = $propTrans->cluster_id;
+
+            $propCluster = $mClusters->getClusterDtlsById($clusterId);
+
+            // Get Property Penalty and Rebates
+            $penalRebates = $mPropPenalties->getPropPenalRebateByTranId($propTrans->id);
+
+            $onePercPenalty = collect($penalRebates)->where('head_name', $onePercKey)->first()->amount ?? 0;
+            $rebate = collect($penalRebates)->where('head_name', 'Rebate')->first()->amount ?? "";
+            $specialRebate = collect($penalRebates)->where('head_name', $specialRebateKey)->first()->amount ?? 0;
+            $firstQtrRebate = collect($penalRebates)->where('head_name', $firstQtrKey)->first()->amount ?? 0;
+            $jskOrOnlineRebate = collect($penalRebates)->where('head_name', $onlineRebate)->first()->amount ?? 0;
+            $lateAssessmentPenalty = 0;
+
+            $taxDetails = $safController->readPenalyPmtAmts($lateAssessmentPenalty, $onePercPenalty, $rebate, $specialRebate, $firstQtrRebate, $propTrans->amount, $jskOrOnlineRebate);
+            $responseData = [
+                "departmentSection" => $mDepartmentSection,
+                "accountDescription" => $mAccDescription,
+                "transactionDate" => $propTrans->tran_date,
+                "transactionNo" => $propTrans->tran_no,
+                "transactionTime" => $propTrans->created_at->format('H:i:s'),
+                "applicationNo" => "",
+                "customerName" => $propCluster->authorized_person_name,
+                "mobileNo" => $propCluster->mobile_no,
+                "receiptWard" => "",
+                "address" => $propCluster->address,
+                "paidFrom" => $propTrans->from_fyear,
+                "paidFromQtr" => $propTrans->from_qtr,
+                "paidUpto" => $propTrans->to_fyear,
+                "paidUptoQtr" => $propTrans->to_qtr,
+                "paymentMode" => $propTrans->payment_mode,
+                "bankName" => $propTrans->bank_name,
+                "branchName" => $propTrans->branch_name,
+                "chequeNo" => $propTrans->cheque_no,
+                "chequeDate" => $propTrans->cheque_date,
+                "demandAmount" => $propTrans->demand_amt,
+                "taxDetails" => $taxDetails,
+                "ulbId" => $propCluster->ulb_id,
+                "oldWardNo" => $propCluster->old_ward,
+                "newWardNo" => $propCluster->new_ward,
+                "towards" => $mTowards,
+                "description" => [
+                    "keyString" => "Holding Tax"
+                ],
+                "totalPaidAmount" => $propTrans->amount,
+                "paidAmtInWords" => getIndianCurrency($propTrans->amount),
+            ];
+            return responseMsgs(true, "Cluster Payment Receipt", remove_null($responseData), "011613", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "011613", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
 }
