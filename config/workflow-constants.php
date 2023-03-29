@@ -32,6 +32,9 @@ return [
     "WATER_WORKFLOW_ID"                 => "16",
     "DEALING_ASSISTENT_WF_ID"           => "6",
     "WATER_JE_ROLE_ID"                  => "40",
+    "GENERAL_NOTICE_MASTER_ID"          => "634",
+    "PAYMENT_NOTICE_MASTER_ID"          =>"635",
+    "ILLEGAL_OCCUPATION_NOTICE_MASTER_ID" =>"636",
 
     // User Types
     "USER_TYPES" => [

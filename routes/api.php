@@ -10,6 +10,7 @@ use App\Http\Controllers\Menu\MenuController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\SelfAdvertisementController;
+use App\Http\Controllers\Service\IdGeneratorController;
 use App\Http\Controllers\ThirdPartyController;
 use App\Http\Controllers\UlbController;
 use App\Http\Controllers\UlbWorkflowController;
@@ -317,6 +318,13 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::controller(CustomController::class)->group(function () {
         Route::post('get-all-custom-tab-data', 'getCustomDetails');
         Route::post('post-custom-data', 'postCustomDetails');
+    });
+
+    /**
+     * | Id Generator
+     */
+    Route::controller(IdGeneratorController::class)->group(function () {
+        Route::post('id-generator', 'idGenerator');
     });
 });
 
