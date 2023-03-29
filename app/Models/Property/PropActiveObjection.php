@@ -76,11 +76,11 @@ class PropActiveObjection extends Model
                 'a.*',
             )
 
-            ->join('prop_properties as p', 'p.id', '=', 'prop_active_objections.property_id')
-            ->join('ulb_ward_masters as w', 'w.id', '=', 'p.ward_mstr_id')
-            ->join('ulb_ward_masters as nw', 'nw.id', '=', 'p.new_ward_mstr_id')
-            ->join('ref_prop_ownership_types as o', 'o.id', '=', 'p.ownership_type_mstr_id')
-            ->join('ref_prop_types as pt', 'pt.id', '=', 'p.prop_type_mstr_id')
+            ->leftjoin('prop_properties as p', 'p.id', '=', 'prop_active_objections.property_id')
+            ->leftjoin('ulb_ward_masters as w', 'w.id', '=', 'p.ward_mstr_id')
+            ->leftjoin('ulb_ward_masters as nw', 'nw.id', '=', 'p.new_ward_mstr_id')
+            ->leftjoin('ref_prop_ownership_types as o', 'o.id', '=', 'p.ownership_type_mstr_id')
+            ->leftjoin('ref_prop_types as pt', 'pt.id', '=', 'p.prop_type_mstr_id')
             ->leftJoin('prop_apartment_dtls as a', 'a.id', '=', 'p.apartment_details_id')
             ->where('p.status', 1)
             ->where('prop_active_objections.id', $objId)

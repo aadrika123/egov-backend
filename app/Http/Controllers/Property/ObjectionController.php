@@ -947,6 +947,9 @@ class ObjectionController extends Controller
 
                 $metaReqs = new Request($metaReqs);
                 $mWfActiveDocument->postDocuments($metaReqs);
+
+                PropActiveObjection::where('id', $objection->id)
+                    ->update(['doc_upload_status' => 1]);
             }
 
             //saving objection owner details
