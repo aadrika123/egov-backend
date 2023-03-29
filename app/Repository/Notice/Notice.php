@@ -76,10 +76,14 @@ use Illuminate\Support\Facades\DB;
             {
                 $this->_WF_MASTER_ID = $this->_ILLEGAL_OCCUPATION_WF_MASTER_Id;
             }
-
+            $notice_for_module_id=$this->_NOTICE_CONSTAINT["NOTICE-MODULE"][strtoupper($request->moduleName)]??null;
             if(!$this->_WF_MASTER_ID)
             {
                 throw new Exception("Workflow Not Avalable");
+            }
+            if(!$notice_for_module_id)
+            {
+                throw new Exception("Enter Valide Module Name");
             }
             $notice_type_id = $request->noticeType??NULL;
             $notice_type = $this->_NOTICE_CONSTAINT["NOTICE-TYPE-BY-ID"][$notice_type_id]??null;
@@ -88,6 +92,7 @@ use Illuminate\Support\Facades\DB;
             DB::beginTransaction();
             $noticeApplication = new NoticeApplication();
             $noticeApplication->notice_type_id  = $notice_type_id;
+            $noticeApplication->notice_for_module_id  = $notice_for_module_id;
             $noticeApplication->application_id  = $request->applicationId??NULL;
             if($request->applicationId && $request->moduleId)
             {
@@ -205,7 +210,7 @@ use Illuminate\Support\Facades\DB;
                     ->where("notice_applications.status",1)
                     ->where("notice_applications.ulb_id",$ulb_id)
                     ->where(function($where){
-                        $where->orWhere("notice_applications.module_id", $this->_MODULE_CONSTAINT["PROPERTY_MODULE_ID"])
+                        $where->orWhere("notice_applications.notice_for_module_id", $this->_MODULE_CONSTAINT["PROPERTY_MODULE_ID"])
                         ->WHERE("notice_type_masters.id","<>",$this->_NOTICE_CONSTAINT["NOTICE-TYPE"]["DENIAL NOTICE"]);
                     })
                     ->get();

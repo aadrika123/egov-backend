@@ -84,7 +84,7 @@ class Application extends Controller
                 );
             $url = null;
             $key = null;
-            if($request->moduleId==1)
+            if($request->moduleId==1)#property
             {
                 if(strtoupper($request->searchBy)=="CONSUMER")
                 {
@@ -105,10 +105,10 @@ class Application extends Controller
                 else{
                     $key = "safNo";
                 }
-                $url=("http://127.0.0.1:8001/api/water/search-consumer");
+                $url=("http://128.0.0.1:8001/api/water/search-consumer");
                 $request->request->add(["filterBy"=>"$key","parameter"=>$request->value]);
             }
-            if($request->moduleId==2)
+            if($request->moduleId==2)#water
             {
                 
                 if(strtoupper($request->searchBy)=="HOLDING")
@@ -126,10 +126,10 @@ class Application extends Controller
                 else{
                     $key = "address";
                 }
-                $url=("http://127.0.0.1:8001/api/property/get-filter-property-details");
+                $url=("http://128.0.0.1:8001/api/property/get-filter-property-details");
                 $request->request->add(["filteredBy"=>"$key","parameter"=>$request->value]);
             }
-            if($request->moduleId==3)
+            if($request->moduleId==3)#trade
             {
                 if(strtoupper($request->searchBy)=="LICENSE")
                 {
@@ -150,7 +150,7 @@ class Application extends Controller
                 else{
                     $key = "APPLICATION";
                 }
-                $url=("http://127.0.0.1:8001/api/trade/application/list");
+                $url=("http://128.0.0.1:8001/api/trade/application/list");
                 $request->request->add(["entityName"=>"$key","entityValue"=>$request->value]);
             }
             
