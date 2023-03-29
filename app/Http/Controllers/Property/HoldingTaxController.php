@@ -36,7 +36,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
 
-use function PHPUnit\Framework\isEmpty;
 
 class HoldingTaxController extends Controller
 {
@@ -148,6 +147,18 @@ class HoldingTaxController extends Controller
             $demand = array();
             $demandList = $mPropDemand->getDueDemandByPropId($req->propId);
             $demandList = collect($demandList);
+
+            // Property Part Payment
+            if (isset($req->fYear) && isset($req->qtr)) {
+                $demandDueDate = $demandList->where('fyear', $req->fYear)->where('qtr', $req->qtr)->first()->due_date;
+                $demandList = $demandList->filter(function ($item) use ($demandDueDate) {
+                    $response = $item->due_date <= $demandDueDate;
+                    if ($response == true)
+                        return $item;
+                });
+                $demandList = $demandList->values();
+            }
+
             $propDtls = $mPropProperty->getPropById($req->propId);
             $balance = $propDtls->balance ?? 0;
 
@@ -179,7 +190,7 @@ class HoldingTaxController extends Controller
             $advanceAdjustments = $mPropAdvance->getPropAdvanceAdjustAmt($req->propId);
 
             if (collect($advanceAdjustments)->isEmpty())
-                return $advanceAmt = 0;
+                $advanceAmt = 0;
             else
                 $advanceAmt = $advanceAdjustments->advance - $advanceAdjustments->adjustment_amt;
 
@@ -360,13 +371,17 @@ class HoldingTaxController extends Controller
             if (!$tranNo)
                 $tranNo = $idGeneration->generateTransactionNo();
             $propCalReq = new Request([
-                'propId' => $req['id']
+                'propId' => $req['id'],
+                'fYear' => $req['fYear'],
+                'qtr' => $req['qtr']
             ]);
             $propCalculation = $this->getHoldingDues($propCalReq);
+
             if ($propCalculation->original['status'] == false)
                 throw new Exception($propCalculation->original['message']);
 
             $demands = $propCalculation->original['data']['demandList'];
+
             $dueList = $propCalculation->original['data']['duesList'];
             $advanceAmt = $dueList['advanceAmt'];
             if ($demands->isEmpty())
@@ -419,7 +434,7 @@ class HoldingTaxController extends Controller
 
             // Replication Prop Rebates Penalties
             $this->postPaymentPenaltyRebate($dueList, $propId, $propTrans['id']);
-
+            // Advance Adjustment 
             if ($advanceAmt > 0) {
                 $adjustReq = [
                     'prop_id' => $propId,
@@ -433,6 +448,7 @@ class HoldingTaxController extends Controller
 
                 $mPropAdjustment->store($adjustReq);
             }
+
             DB::commit();
             return responseMsgs(true, "Payment Successfully Done", ['TransactionNo' => $tranNo], "011604", "1.0", "", "POST", $req->deviceId);
         } catch (Exception $e) {
@@ -960,6 +976,7 @@ class HoldingTaxController extends Controller
             $mPropProperty = new PropProperty();
             $mClusters = new Cluster();
             $penaltyRebateCalc = new PenaltyRebateCalculation;
+            $mPropAdvance = new PropAdvance();
             $properties = $mPropProperty->getPropsByClusterId($clusterId);
             $clusterDemands = array();
             $finalClusterDemand = array();
@@ -1031,6 +1048,14 @@ class HoldingTaxController extends Controller
             $paymentUptoYrs = collect($clusterDemands)->first()['duesList']['paymentUptoYrs'] ?? collect($clusterDemands)->last()['duesList']['paymentUptoYrs'];
             $paymentUptoQtrs = collect($clusterDemands)->first()['duesList']['paymentUptoQtrs'] ?? collect($clusterDemands)->last()['duesList']['paymentUptoQtrs'];
 
+            $advanceAdjustments = $mPropAdvance->getClusterAdvanceAdjustAmt($clusterId);
+
+            if (collect($advanceAdjustments)->isEmpty())
+                $advanceAmt = 0;
+            else
+                $advanceAmt = $advanceAdjustments->advance - $advanceAdjustments->adjustment_amt;
+
+            $advanceAmt = roundFigure($advanceAmt);
             $finalClusterDemand['duesList'] = [
                 'paymentUptoYrs' => $paymentUptoYrs,
                 'paymentUptoQtrs' => $paymentUptoQtrs,
@@ -1040,11 +1065,12 @@ class HoldingTaxController extends Controller
                 'onePercPenalty' => $finalOnePerc,
                 'finalAmt' => $finalAmt,
                 'arrear' => $arrear,
+                'advanceAmt' => $advanceAmt
             ];
             $mLastQuarterDemand = collect($summedDemand)->where('fyear', $currentFYear)->sum('balance');
             $finalClusterDemand['duesList'] = $penaltyRebateCalc->readRebates($currentQuarter, $loggedInUserType, $mLastQuarterDemand, null, $finalAmt, $finalClusterDemand['duesList']);
             $payableAmount = $finalAmt - ($finalClusterDemand['duesList']['rebateAmt'] + $finalClusterDemand['duesList']['specialRebateAmt']);
-            $finalClusterDemand['duesList']['payableAmount'] = round($payableAmount);
+            $finalClusterDemand['duesList']['payableAmount'] = round($payableAmount - $advanceAmt);
 
             $finalClusterDemand['demandList'] = $summedDemand;
             $finalClusterDemand['basicDetails'] = $clusterDtls;
@@ -1070,6 +1096,7 @@ class HoldingTaxController extends Controller
             $mPropTrans = new PropTransaction();
             $mPropDemand = new PropDemand();
             $offlinePaymentModes = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
+            $mPropAdjustment = new PropAdjustment();
 
             $dues = $this->getClusterHoldingDues($dueReq);
 
@@ -1080,6 +1107,7 @@ class HoldingTaxController extends Controller
             $demands = $dues['demandList'];
             $tranNo = $idGeneration->generateTransactionNo();
             $payableAmount = $dues['duesList']['payableAmount'];
+            $advanceAmt = $dues['duesList']['advanceAmt'];
             // Property Transactions
             if (in_array($req['paymentMode'], $offlinePaymentModes)) {
                 $userId = auth()->user()->id ?? null;
@@ -1126,6 +1154,20 @@ class HoldingTaxController extends Controller
             }
             // Replication Prop Rebates Penalties
             $this->postPaymentPenaltyRebate($dues['duesList'], null, $propTrans['id'], $clusterId);
+
+            if ($advanceAmt > 0) {
+                $adjustReq = [
+                    'cluster_id' => $clusterId,
+                    'tran_id' => $propTrans['id'],
+                    'amount' => $advanceAmt
+                ];
+                if ($tranBy == 'Citizen')
+                    $adjustReq = array_merge($adjustReq, ['citizen_id' => $userId ?? 0]);
+                else
+                    $adjustReq = array_merge($adjustReq, ['user_id' => $userId ?? 0]);
+
+                $mPropAdjustment->store($adjustReq);
+            }
             DB::commit();
             return responseMsgs(true, "Payment Successfully Done", "", "011612", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
