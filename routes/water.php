@@ -68,7 +68,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('admin/application/site-inspection-details', 'getSiteInspectionDetails');           // Admin
         Route::post('admin/application/cancel-inspection-scheduling', 'cancelSiteInspection');          // Admin
         Route::post('admin/application/je-site-details', 'getJeSiteDetails');                           // Admin
-        Route::post('admin/application/online-site-inspection', '');     // Admin/Remark
+        Route::post('admin/application/online-technical-inspection', 'onlineSiteInspection');           // Admin
     });
 
     /**
@@ -84,7 +84,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('admin/application/generate-payment-receipt', 'generateOfflinePaymentReceipt');     // Consumer
         Route::post('consumer/calculate-month-demand', 'callDemandByMonth');                            // Admin/Consumer
         Route::post('application/payment/get-payment-history', 'getApplicationPaymentHistory');         // Admin/Consumer
-        Route::post('consumer/offline-demand-payment', 'offlineDemandPayment'); // Consumer/Route
+        Route::post('consumer/offline-demand-payment', 'offlineDemandPayment');                         // Consumer
         Route::post('application/payment/offline/pay-connection-charge', 'offlineConnectionPayment');   // Admin
         Route::post('consumer/demand/generate-payment-receipt', 'generateDemandPaymentReceipt');
 

@@ -4,28 +4,17 @@ namespace App\Http\Controllers\Water;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Water\NewConnectionController;
-use App\MicroServices\IdGeneration;
-use App\Models\Payment\TempTransaction;
-use App\Models\Water\WaterApplicant;
 use App\Models\Water\WaterApplication as WaterWaterApplication;
-use App\Models\Water\WaterChequeDtl;
-use App\Models\Water\WaterConsumer;
-use App\Models\Water\WaterConsumerDemand;
-use App\Models\Water\WaterPenaltyInstallment;
 use App\Models\Water\WaterTran;
-use App\Models\Water\WaterTranDetail;
 use App\Models\Workflows\WfRole;
 use App\Models\Workflows\WfWorkflow;
-use App\Models\Workflows\WfWorkflowrolemap;
 use App\Models\WorkflowTrack;
 use App\Repository\Water\Interfaces\iNewConnection;
 use App\Repository\Water\Interfaces\IWaterNewConnection;
 use App\Traits\Workflow\Workflow;
-use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\DB;
 
 class WaterApplication extends Controller
 {
