@@ -105,7 +105,7 @@ class Application extends Controller
                 else{
                     $key = "safNo";
                 }
-                $url=("http://128.0.0.1:8001/api/water/search-consumer");
+                $url=("http://127.0.0.1:8008/api/water/search-consumer");
                 $request->request->add(["filterBy"=>"$key","parameter"=>$request->value]);
             }
             if($request->moduleId==2)#water
@@ -126,7 +126,7 @@ class Application extends Controller
                 else{
                     $key = "address";
                 }
-                $url=("http://128.0.0.1:8001/api/property/get-filter-property-details");
+                $url=("http://127.0.0.1:8008/api/property/get-filter-property-details");
                 $request->request->add(["filteredBy"=>"$key","parameter"=>$request->value]);
             }
             if($request->moduleId==3)#trade
@@ -150,7 +150,7 @@ class Application extends Controller
                 else{
                     $key = "APPLICATION";
                 }
-                $url=("http://128.0.0.1:8001/api/trade/application/list");
+                $url=("http://127.0.0.1:8008/api/trade/application/list");
                 $request->request->add(["entityName"=>"$key","entityValue"=>$request->value]);
             }
             
