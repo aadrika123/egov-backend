@@ -33,6 +33,7 @@ class Application extends Controller
     protected $_MODULE_ID;
     protected $_REF_TABLE;
     protected $_NOTICE_CONSTAINT;
+    protected $_MODULE_CONSTAINT;
     protected $_NOTICE_TYPE;
     public function __construct(INotice $Repository)
     {
@@ -43,6 +44,7 @@ class Application extends Controller
         $this->_PAYMENT_NOTICE_WF_MASTER_Id = Config::get('workflow-constants.PAYMENT_NOTICE_MASTER_ID');
         $this->_ILLEGAL_OCCUPATION_WF_MASTER_Id = Config::get('workflow-constants.ILLEGAL_OCCUPATION_NOTICE_MASTER_ID');
         $this->_MODULE_ID = Config::get('module-constants.NOTICE_MASTER_ID');
+        $this->_MODULE_CONSTAINT = Config::get('module-constants');
         $this->_NOTICE_CONSTAINT = Config::get("NoticeConstaint");
         $this->_REF_TABLE = $this->_NOTICE_CONSTAINT["NOTICE_REF_TABLE"];
         $this->_NOTICE_TYPE = $this->_NOTICE_CONSTAINT["NOTICE-TYPE"]??null;
@@ -84,10 +86,13 @@ class Application extends Controller
                 );
             $url = null;
             $key = null;
+            $moduleId = null;
+            $moduleType = null;
             
             if($request->moduleId==1)#property
             {
-                
+                $moduleId = $this->_MODULE_CONSTAINT["PROPERTY_MODULE_ID"];
+                $moduleType = "PROPERTY";
                 if(strtoupper($request->searchBy)=="HOLDING")
                 {
                     $key = "holdingNo";
@@ -108,6 +113,8 @@ class Application extends Controller
             }
             if($request->moduleId==2)#water
             {
+                $moduleId = $this->_MODULE_CONSTAINT["WATER_MODULE_ID"];
+                $moduleType = "WATER CONSUMER";
                 if(strtoupper($request->searchBy)=="CONSUMER")
                 {
                     $key = "consumerNo";
@@ -132,6 +139,8 @@ class Application extends Controller
             }
             if($request->moduleId==3)#trade
             {
+                $moduleId = $this->_MODULE_CONSTAINT["TRADE_MODULE_ID"];
+                $moduleType = "TRADE LICENSE";
                 if(strtoupper($request->searchBy)=="LICENSE")
                 {
                     $key = "LICENSE";
@@ -171,8 +180,8 @@ class Application extends Controller
             $responseBody = json_decode($response->getBody());
             foreach($responseBody->data as $key=>$val)
             {
-                $responseBody->data[$key]->moduleId = 1;
-                $responseBody->data[$key]->moduleType = "PROPERTY";
+                $responseBody->data[$key]->moduleId = $moduleId;
+                $responseBody->data[$key]->moduleType = $moduleType;
             }
             return($responseBody);            
         }
