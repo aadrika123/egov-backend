@@ -167,7 +167,14 @@ class Application extends Controller
             // {
             //     $url=("http://127.0.0.1:8001/api/property/searchByHoldingNo");
             // }
-            return $data->post($url,$request->all());
+            $response =  $data->post($url,$request->all());
+            $responseBody = json_decode($response->getBody());
+            foreach($responseBody->data as $key=>$val)
+            {
+                $responseBody->data[$key]->moduleId = 1;
+                $responseBody->data[$key]->moduleType = "PROPERTY";
+            }
+            return($responseBody);            
         }
         catch (Exception $e) 
         {

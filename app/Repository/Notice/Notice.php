@@ -187,8 +187,6 @@ use Illuminate\Support\Facades\DB;
                         "notice_applications.owner_name",
                         "notice_applications.documents",
                         "notice_applications.status",
-                        "notice_applications.status",
-                        "notice_applications.status",
                         "notice_type_masters.notice_type"
                     )
                     ->join("notice_type_masters","notice_type_masters.id","notice_applications.notice_type_id")
@@ -215,7 +213,40 @@ use Illuminate\Support\Facades\DB;
     public function noticeView(Request $request)
     {
         try{
+            $user = Auth()->user();
+            $user_id = $user->id;
+            $ulb_id = $user->ulb_id;
+            $notice = NoticeApplication::select(
+                "notice_applications.id",
+                "notice_applications.notice_type_id",
+                "notice_applications.notice_no",
+                "notice_applications.notice_date",
+                "notice_applications.notice_state",
+                "notice_applications.application_id",
+                "notice_applications.module_id",
+                "notice_applications.module_type",
+                "notice_applications.firm_name",
+                "notice_applications.ptn_no",
+                "notice_applications.holding_no",
+                "notice_applications.license_no",                        
+                "notice_applications.served_to",
+                "notice_applications.address",
+                "notice_applications.locality",
+                "notice_applications.mobile_no",
+                "notice_applications.notice_content",
+                "notice_applications.owner_name",
+                "notice_applications.documents",
+                "notice_applications.status",
+                "notice_type_masters.notice_type",
+                DB::raw("caset(notice_applications.created_at,date) as apply_date"),
+            )
+            ->join("notice_type_masters","notice_type_masters.id","notice_applications.notice_type_id")
+            ->where("notice_applications.ulb_id",$ulb_id)
+            ->where("notice_applications.status","<>",0)
+            ->where("notice_applications.notice_for_module_id",$request->moduleId)
+            ->first();
 
+    
         }
         catch(Exception $e)
         {
