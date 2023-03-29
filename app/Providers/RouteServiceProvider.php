@@ -93,6 +93,12 @@ class RouteServiceProvider extends ServiceProvider
                 ->middleware('api')
                 ->namespace($this->namespace)
                 ->group(base_path('routes/permission.php'));
+
+            // Notice Api
+            Route::prefix('api/notice')
+                ->middleware('api')
+                ->namespace($this->namespace)
+                ->group(base_path('routes/notice.php'));
         });
     }
 

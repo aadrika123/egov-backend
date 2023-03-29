@@ -1959,7 +1959,7 @@ class NewConnectionController extends Controller
                 $returnData['final_verify'] = true;
                 return responseMsgs(true, "JE Inspection details!", remove_null($returnData), "", "01", ".ms", "POST", $request->deviceId);
             }
-            return responseMsgs(true, "Dat not Found!", remove_null($returnData), "", "01", ".ms", "POST", $request->deviceId);
+            return responseMsgs(true, "Data not Found!", remove_null($returnData), "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", $request->deviceId);
         }
