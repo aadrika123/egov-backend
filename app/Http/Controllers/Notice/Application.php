@@ -86,27 +86,27 @@ class Application extends Controller
             $key = null;
             if($request->moduleId==1)
             {
-                if(strtoupper($request->searchBy)=="LICENSE")
+                if(strtoupper($request->searchBy)=="CONSUMER")
                 {
-                    $key = "LICENSE";
+                    $key = "consumerNo";
                 }
                 elseif(strtoupper($request->searchBy)=="HOLDING")
                 {
-                    $key = "HOLDING";
+                    $key = "holdingNo";
                 }
                 elseif(strtoupper($request->searchBy)=="MOBILE")
                 {
-                    $key = "MOBILE";
+                    $key = "mobileNo";
                 }
                 elseif(strtoupper($request->searchBy)=="OWNER")
                 {
-                    $key = "OWNER";
+                    $key = "applicantName";
                 }
                 else{
-                    $key = "APPLICATION";
+                    $key = "safNo";
                 }
-                $url=("http://127.0.0.1:8001/api/trade/application/list");
-                $request->request->add(["entityName"=>"$key","entityValue"=>$request->value]);
+                $url=("http://127.0.0.1:8001/api/water/search-consumer");
+                $request->request->add(["filterBy"=>"$key","parameter"=>$request->value]);
             }
             if($request->moduleId==2)
             {
@@ -131,28 +131,29 @@ class Application extends Controller
             }
             if($request->moduleId==3)
             {
-                if(strtoupper($request->searchBy)=="CONSUMER")
+                if(strtoupper($request->searchBy)=="LICENSE")
                 {
-                    $key = "consumerNo";
+                    $key = "LICENSE";
                 }
                 elseif(strtoupper($request->searchBy)=="HOLDING")
                 {
-                    $key = "holdingNo";
+                    $key = "HOLDING";
                 }
                 elseif(strtoupper($request->searchBy)=="MOBILE")
                 {
-                    $key = "mobileNo";
+                    $key = "MOBILE";
                 }
                 elseif(strtoupper($request->searchBy)=="OWNER")
                 {
-                    $key = "applicantName";
+                    $key = "OWNER";
                 }
                 else{
-                    $key = "safNo";
+                    $key = "APPLICATION";
                 }
-                $url=("http://127.0.0.1:8001/api/water/search-consumer");
-                $request->request->add(["filterBy"=>"$key","parameter"=>$request->value]);
+                $url=("http://127.0.0.1:8001/api/trade/application/list");
+                $request->request->add(["entityName"=>"$key","entityValue"=>$request->value]);
             }
+            
             // if($request->moduleId==4)
             // {
             //     $url=("http://127.0.0.1:8001/api/property/searchByHoldingNo");
