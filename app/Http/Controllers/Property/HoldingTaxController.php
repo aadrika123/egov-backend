@@ -150,13 +150,14 @@ class HoldingTaxController extends Controller
 
             // Property Part Payment
             if (isset($req->fYear) && isset($req->qtr)) {
-                $demandDueDate = $demandList->where('fyear', $req->fYear)->where('qtr', $req->qtr)->first()->due_date;
-                $demandList = $demandList->filter(function ($item) use ($demandDueDate) {
-                    $response = $item->due_date <= $demandDueDate;
-                    if ($response == true)
-                        return $item;
-                });
-                $demandList = $demandList->values();
+                $demandTillQtr = $demandList->where('fyear', $req->fYear)->where('qtr', $req->qtr)->first();
+                if (collect($demandTillQtr)->isNotEmpty()) {
+                    $demandDueDate = $demandTillQtr->due_date;
+                    $demandList = $demandList->filter(function ($item) use ($demandDueDate) {
+                        return $item->due_date <= $demandDueDate;
+                    });
+                    $demandList = $demandList->values();
+                }
             }
 
             $propDtls = $mPropProperty->getPropById($req->propId);
@@ -298,7 +299,13 @@ class HoldingTaxController extends Controller
                     throw new Exception("Demand Not Available");
 
             $propDtls = $propProperties->getPropById($req->propId);
-            $req->request->add(['workflowId' => '0', 'departmentId' => $departmentId, 'ulbId' => $propDtls->ulb_id, 'id' => $req->propId, 'ghostUserId' => 0]);
+            $req->request->add([
+                'workflowId' => '0',
+                'departmentId' => $departmentId,
+                'ulbId' => $propDtls->ulb_id,
+                'id' => $req->propId,
+                'ghostUserId' => 0
+            ]);
             $orderDetails = $this->saveGenerateOrderid($req);                                      //<---------- Generate Order ID Trait
             return responseMsgs(true, "Order id Generated", remove_null($orderDetails), "011603", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
