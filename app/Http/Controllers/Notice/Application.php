@@ -183,7 +183,7 @@ class Application extends Controller
             $role2 = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_PAYMENT_NOTICE_WF_MASTER_Id);
             $role3 = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_ILLEGAL_OCCUPATION_WF_MASTER_Id);
             
-            if (!$role1 || !$role2 || !$role3) 
+            if (!$role1 && !$role2 && !$role3) 
             {
                 throw new Exception("You Are Not Authorized");
             }
@@ -204,6 +204,13 @@ class Application extends Controller
 
     public function noticeList(Request $request)
     {
+        $user = Auth()->user();
+            $userId = $user->id;
+            $ulbId = $user->ulb_id;
+            $role1 = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_GENERAL_NOTICE_WF_MASTER_Id);
+            $role2 = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_PAYMENT_NOTICE_WF_MASTER_Id);
+            $role3 = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_ILLEGAL_OCCUPATION_WF_MASTER_Id);
+        dd($role1,$role2,$role3);
         try{
             $request->validate(
                 [
