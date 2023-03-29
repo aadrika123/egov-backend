@@ -51,10 +51,9 @@ class Application extends Controller
     public function noticeType(Request $request)
     {
         try{
-            $data = NoticeTypeMaster::select("id","notice_type")
+            $data= NoticeTypeMaster::select("id","notice_type")
                     ->where("status",1)
                     ->get();
-            
             return responseMsg(true, "", $data);
         }
         catch (Exception $e) 
@@ -184,7 +183,7 @@ class Application extends Controller
             $role2 = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_PAYMENT_NOTICE_WF_MASTER_Id);
             $role3 = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_ILLEGAL_OCCUPATION_WF_MASTER_Id);
             
-            if (!$role1 && !$role2 && !$role3) 
+            if (!$role1 || !$role2 || !$role3) 
             {
                 throw new Exception("You Are Not Authorized");
             }
@@ -205,7 +204,19 @@ class Application extends Controller
 
     public function noticeList(Request $request)
     {
-        return $this->_REPOSITORY->noticeList($request);
+        try{
+            $request->validate(
+                [
+                    "moduleId"=>"required|digits_between:1,6",
+                ]
+            );
+            return $this->_REPOSITORY->noticeList($request);
+        }
+        catch (Exception $e) 
+        {
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
+        
     }
     
 }

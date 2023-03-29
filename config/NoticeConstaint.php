@@ -25,4 +25,14 @@
         "3" =>  "PAYMENT RELATED NOTICE",
         "4" =>  "ILLEGAL OCCUPATION NOTICE"
     ],
+    "NOTICE-MODULE"=>
+    [
+        "PROPERTY"      => "1",
+        "WATER"         => "2",
+        "TRADE"         => "3",
+        "SWM"           => "4",
+        "SOLID WASTE USER CHARGE" => "4",
+        "ADVERTISEMENT" => "5",
+    ],
+    "MODULE-TYPE"=> ["PROPERTY","WATER","TRADE","SOLID WASTE USER CHARGE","ADVERTISEMENT"],
 ];
