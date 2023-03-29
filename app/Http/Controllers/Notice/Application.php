@@ -167,7 +167,6 @@ class Application extends Controller
             // {
             //     $url=("http://127.0.0.1:8001/api/property/searchByHoldingNo");
             // }
-            dd($url,$request->all());
             return $data->post($url,$request->all());
         }
         catch (Exception $e) 
