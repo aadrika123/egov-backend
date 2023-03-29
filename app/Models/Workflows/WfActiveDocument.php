@@ -137,7 +137,7 @@ class WfActiveDocument extends Model
             ->select(
                 'd.id',
                 'd.document',
-                DB::raw("concat(relative_path,'/',document) as doc_path"),
+                DB::raw("concat(relative_path,'/',document) as ref_doc_path"),
                 'd.remarks',
                 'd.verify_status',
                 'd.doc_code',
