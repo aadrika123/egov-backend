@@ -451,7 +451,7 @@ class TradeApplication extends Controller
     {
         return $this->_REPOSITORY->btcInbox($request);
     }
-    # Serial No : 16
+    # Serial No : 16 App\Http\Requests\Trade\ReqInbox
     public function inbox(ReqInbox $request)
     {
         return $this->_REPOSITORY->inbox($request);
