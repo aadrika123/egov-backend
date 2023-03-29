@@ -870,11 +870,9 @@ class ObjectionController extends Controller
      */
     public function addMembers(Request $request)
     {
-        return $request;
         // $request->validate([
         //     // "objectionFor" => "required",
         //     // "document" => "required|mimes:pdf,jpeg,png,jpg,gif",
-        //     // "docMstrId" => "required|numeric",
         //     // "docRefName" => "required"
         // ]);
 
