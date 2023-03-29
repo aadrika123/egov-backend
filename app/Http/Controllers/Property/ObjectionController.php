@@ -187,10 +187,14 @@ class ObjectionController extends Controller
 
                 //Clerical Mistake  
                 $objectionOwnerList = $mObjectionOwners->getOwnerDetail($details->objection_id);
+                if ($objectionOwnerList->first()->prop_owner_id == Null)
+                    $headerTitle = 'Objection Add Owner Details';
+                else
+                    $headerTitle = 'Objection Owner Details';
                 $objectionOwnerList = json_decode(json_encode($objectionOwnerList), true);       // Convert Std class to array
                 $objectionOwnerDetails = $this->objectionOwnerDetails($objectionOwnerList);
                 $objectionOwnerElement = [
-                    'headerTitle' => 'Objection Owner Details',
+                    'headerTitle' => $headerTitle,
                     'tableHead' => ["#", "Owner Name", "Gender", "DOB", "Guardian Name", "Relation", "Mobile No", "Aadhar", "PAN", "Email", "IsArmedForce", "isSpeciallyAbled"],
                     'tableData' => $objectionOwnerDetails
                 ];

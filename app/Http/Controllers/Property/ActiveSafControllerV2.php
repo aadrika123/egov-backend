@@ -301,11 +301,9 @@ class ActiveSafControllerV2 extends Controller
             ]);
             $mPropApartmentDtl = new PropApartmentDtl();
             $ulbId = $req->ulbId ?? authUser()->ulb_id;
-            $mreq = new Request([
-                'ulbId' => $ulbId,
-                'wardMstrId' => $req->wardMstrId,
-            ]);
-            $data = $mPropApartmentDtl->apartmentList($mreq);
+            $req->request->add(['ulbId' => $ulbId,]);
+
+            $data = $mPropApartmentDtl->apartmentList($req);
 
             if (($data->isEmpty())) {
                 throw new Exception("Enter Valid wardMstrId");
