@@ -154,36 +154,19 @@ use Illuminate\Support\Facades\DB;
         }
     }
     public function noticeList(Request $request)
-    {
-        dd(json_encode($this->_NOTICE_CONSTAINT["MODULE-TYPE"]));
+    {        
         try{
-            switch($request->moduleId)
+            $user = Auth()->user();
+            $user_id = $user->id;
+            $ulb_id = $user->ulb_id;
+            if(!in_array(strtoupper($request->moduleName),$this->_NOTICE_CONSTAINT["MODULE-TYPE"]))
             {
-                case 1 : return $this->propertyNotice($request);
-                         break;
-                case 2 : return $this->waterNotice($request);
-                         break;
-                case 3 : return $this->tradeNotice($request);
-                         break;
-                case 4 : return $this->tradeNotice($request);
-                         break;
-                case 5 : return $this->tradeNotice($request);
-                         break;
-                default : throw new Exception("Unable To Fetch Data");
+                throw new Exception("Invalide Module");
             }
-        }
-        catch(Exception $e)
-        {
-            return responseMsg(false, $e->getMessage(), $request->all());
-        }
-    }
-    private function propertyNotice(Request $request)
-    {
-        try{
-            $user = Auth()->user();
-            $user_id = $user->id;
-            $ulb_id = $user->ulb_id;
-            $data = NoticeApplication::select(
+            $notice_for_module_id=$this->_NOTICE_CONSTAINT["NOTICE-MODULE"][strtoupper($request->moduleName)]??null;
+            $request->request->add(["moduleId"=>$notice_for_module_id]);   
+
+            $notice = NoticeApplication::select(
                         "notice_applications.id",
                         "notice_applications.notice_type_id",
                         "notice_applications.notice_no",
@@ -203,113 +186,43 @@ use Illuminate\Support\Facades\DB;
                         "notice_applications.notice_content",
                         "notice_applications.owner_name",
                         "notice_applications.documents",
-
+                        "notice_applications.status",
+                        "notice_applications.status",
+                        "notice_applications.status",
                         "notice_type_masters.notice_type"
                     )
                     ->join("notice_type_masters","notice_type_masters.id","notice_applications.notice_type_id")
-                    ->where("notice_applications.status",1)
                     ->where("notice_applications.ulb_id",$ulb_id)
-                    ->where(function($where){
-                        $where->orWhere("notice_applications.notice_for_module_id", $this->_MODULE_CONSTAINT["PROPERTY_MODULE_ID"])
-                        ->WHERE("notice_type_masters.id","<>",$this->_NOTICE_CONSTAINT["NOTICE-TYPE"]["DENIAL NOTICE"]);
-                    })
+                    ->where("notice_applications.status","<>",0)
+                    ->where("notice_applications.notice_for_module_id",$request->moduleId)
                     ->get();
-            return responseMsg(true, "", remove_null($data));
+            $data["application"] = $notice;
+            $data["total_notice"] = $notice->count();
+            $data["total_aproved_notice"] = $notice->where("status",5)->count();
+            $data["total_rejected_notice"] = $notice->where("status",4)->count();
+            $data["total_general_notice"] = $notice->where("notice_type_id",($this->_NOTICE_TYPE["GENERAL NOTICE"]??0))->count();
+            $data["total_denial_notice"] = $notice->where("notice_type_id",($this->_NOTICE_TYPE["DENIAL NOTICE"]??0))->count();
+            $data["total_payment_notice"] = $notice->where("notice_type_id",($this->_NOTICE_TYPE["PAYMENT RELATED NOTICE"]??0))->count();
+            $data["total_illegal_notice"] = $notice->where("notice_type_id",($this->_NOTICE_TYPE["ILLEGAL OCCUPATION NOTICE"]??0))->count();
+            return responseMsg(true, "",  remove_null($data));
         }
         catch(Exception $e)
         {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
-    private function waterNotice(Request $request)
+
+    public function noticeView(Request $request)
     {
         try{
-            $user = Auth()->user();
-            $user_id = $user->id;
-            $ulb_id = $user->ulb_id;
-            $data = NoticeApplication::select(
-                        "notice_applications.id",
-                        "notice_applications.notice_type_id",
-                        "notice_applications.notice_no",
-                        "notice_applications.notice_date",
-                        "notice_applications.notice_state",
-                        "notice_applications.application_id",
-                        "notice_applications.module_id",
-                        "notice_applications.module_type",
-                        "notice_applications.firm_name",
-                        "notice_applications.ptn_no",
-                        "notice_applications.holding_no",
-                        "notice_applications.license_no",                        
-                        "notice_applications.served_to",
-                        "notice_applications.address",
-                        "notice_applications.locality",
-                        "notice_applications.mobile_no",
-                        "notice_applications.notice_content",
-                        "notice_applications.owner_name",
-                        "notice_applications.documents",
 
-                        "notice_type_masters.notice_type"
-                    )
-                    ->join("notice_type_masters","notice_type_masters.id","notice_applications.notice_type_id")
-                    ->where("notice_applications.status",1)
-                    ->where("notice_applications.ulb_id",$ulb_id)
-                    ->where(function($where){
-                        $where->orWhere("notice_applications.module_id", $this->_MODULE_CONSTAINT["WATER_MODULE_ID"])
-                        ->WHERE("notice_type_masters.id","<>",$this->_NOTICE_CONSTAINT["NOTICE-TYPE"]["DENIAL NOTICE"]);
-                    })
-                    ->get();
-            return responseMsg(true, "", remove_null($data));
         }
         catch(Exception $e)
         {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
-    private function tradeNotice(Request $request)
-    {
-        try{
-            $user = Auth()->user();
-            $user_id = $user->id;
-            $ulb_id = $user->ulb_id;
-            return $data = NoticeApplication::select(
-                        "notice_applications.id",
-                        "notice_applications.notice_type_id",
-                        "notice_applications.notice_no",
-                        "notice_applications.notice_date",
-                        "notice_applications.notice_state",
-                        "notice_applications.application_id",
-                        "notice_applications.module_id",
-                        "notice_applications.module_type",
-                        "notice_applications.firm_name",
-                        "notice_applications.ptn_no",
-                        "notice_applications.holding_no",
-                        "notice_applications.license_no",                        
-                        "notice_applications.served_to",
-                        "notice_applications.address",
-                        "notice_applications.locality",
-                        "notice_applications.mobile_no",
-                        "notice_applications.notice_content",
-                        "notice_applications.owner_name",
-                        "notice_applications.documents",
-
-                        "notice_type_masters.notice_type"
-                    )
-                    ->join("notice_type_masters","notice_type_masters.id","notice_applications.notice_type_id")
-                    ->where("notice_applications.status",1)
-                    ->where("notice_applications.ulb_id",$ulb_id)
-                    ->where(function($where){
-                        $where->orWhere("notice_applications.module_id", $this->_MODULE_CONSTAINT["TRADE_MODULE_ID"])
-                        ->ORWHERE("notice_type_masters.id",$this->_NOTICE_CONSTAINT["NOTICE-TYPE"]["DENIAL NOTICE"]);
-                    })
-                    ->get();
-            return responseMsg(true, "", remove_null($data));
-        }
-        catch(Exception $e)
-        {
-            return responseMsg(false, $e->getMessage(), $request->all());
-        }
-    }
-    
+        
 
     public function approveReject(Request $req)
     {

@@ -206,17 +206,10 @@ class Application extends Controller
 
     public function noticeList(Request $request)
     {
-        $user = Auth()->user();
-            $userId = $user->id;
-            $ulbId = $user->ulb_id;
-            $role1 = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_GENERAL_NOTICE_WF_MASTER_Id);
-            $role2 = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_PAYMENT_NOTICE_WF_MASTER_Id);
-            $role3 = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_ILLEGAL_OCCUPATION_WF_MASTER_Id);
-        dd($role1,$role2,$role3);
         try{
             $request->validate(
                 [
-                    "moduleId"=>"required|digits_between:1,6",
+                    "moduleName"=>"required|regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9\.\,\_\-\']+)*$/",
                 ]
             );
             return $this->_REPOSITORY->noticeList($request);
