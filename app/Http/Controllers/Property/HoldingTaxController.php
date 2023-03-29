@@ -1206,7 +1206,7 @@ class HoldingTaxController extends Controller
                 "applicationNo" => "",
                 "customerName" => $propCluster->authorized_person_name,
                 "mobileNo" => $propCluster->mobile_no,
-                "receiptWard" => "",
+                "receiptWard" => $propCluster->old_ward,
                 "address" => $propCluster->address,
                 "paidFrom" => $propTrans->from_fyear,
                 "paidFromQtr" => $propTrans->from_qtr,
