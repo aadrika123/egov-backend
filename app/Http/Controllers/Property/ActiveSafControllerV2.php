@@ -297,9 +297,12 @@ class ActiveSafControllerV2 extends Controller
         try {
             $req->validate([
                 'wardMstrId' => 'required',
-                'ulbId' => 'required',
+                'ulbId' => 'nullable',
             ]);
             $mPropApartmentDtl = new PropApartmentDtl();
+            $ulbId = $req->ulbId ?? authUser()->ulb_id;
+            $req->request->add(['ulbId' => $ulbId,]);
+
             $data = $mPropApartmentDtl->apartmentList($req);
 
             if (($data->isEmpty())) {
