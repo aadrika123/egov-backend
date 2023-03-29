@@ -51,10 +51,9 @@ class Application extends Controller
     public function noticeType(Request $request)
     {
         try{
-            $data = NoticeTypeMaster::select("id","notice_type")
+            $data= NoticeTypeMaster::select("id","notice_type")
                     ->where("status",1)
                     ->get();
-            
             return responseMsg(true, "", $data);
         }
         catch (Exception $e) 
@@ -85,31 +84,8 @@ class Application extends Controller
                 );
             $url = null;
             $key = null;
-            if($request->moduleId==1)
-            {
-                if(strtoupper($request->searchBy)=="LICENSE")
-                {
-                    $key = "LICENSE";
-                }
-                elseif(strtoupper($request->searchBy)=="HOLDING")
-                {
-                    $key = "HOLDING";
-                }
-                elseif(strtoupper($request->searchBy)=="MOBILE")
-                {
-                    $key = "MOBILE";
-                }
-                elseif(strtoupper($request->searchBy)=="OWNER")
-                {
-                    $key = "OWNER";
-                }
-                else{
-                    $key = "APPLICATION";
-                }
-                $url=("http://127.0.0.1:8001/api/trade/application/list");
-                $request->request->add(["entityName"=>"$key","entityValue"=>$request->value]);
-            }
-            if($request->moduleId==2)
+            
+            if($request->moduleId==1)#property
             {
                 
                 if(strtoupper($request->searchBy)=="HOLDING")
@@ -127,10 +103,10 @@ class Application extends Controller
                 else{
                     $key = "address";
                 }
-                $url=("http://127.0.0.1:8001/api/property/get-filter-property-details");
+                $url=("http://192.168.0.165:8008/api/property/get-filter-property-details");
                 $request->request->add(["filteredBy"=>"$key","parameter"=>$request->value]);
             }
-            if($request->moduleId==3)
+            if($request->moduleId==2)#water
             {
                 if(strtoupper($request->searchBy)=="CONSUMER")
                 {
@@ -151,9 +127,34 @@ class Application extends Controller
                 else{
                     $key = "safNo";
                 }
-                $url=("http://127.0.0.1:8001/api/water/search-consumer");
+                $url=("http://192.168.0.165:8008/api/water/search-consumer");
                 $request->request->add(["filterBy"=>"$key","parameter"=>$request->value]);
             }
+            if($request->moduleId==3)#trade
+            {
+                if(strtoupper($request->searchBy)=="LICENSE")
+                {
+                    $key = "LICENSE";
+                }
+                elseif(strtoupper($request->searchBy)=="HOLDING")
+                {
+                    $key = "HOLDING";
+                }
+                elseif(strtoupper($request->searchBy)=="MOBILE")
+                {
+                    $key = "MOBILE";
+                }
+                elseif(strtoupper($request->searchBy)=="OWNER")
+                {
+                    $key = "OWNER";
+                }
+                else{
+                    $key = "APPLICATION";
+                }
+                $url=("http://192.168.0.165:8008/api/trade/application/list");
+                $request->request->add(["entityName"=>"$key","entityValue"=>$request->value]);
+            }
+            
             // if($request->moduleId==4)
             // {
             //     $url=("http://127.0.0.1:8001/api/property/searchByHoldingNo");
@@ -205,7 +206,26 @@ class Application extends Controller
 
     public function noticeList(Request $request)
     {
-        return $this->_REPOSITORY->noticeList($request);
+        $user = Auth()->user();
+            $userId = $user->id;
+            $ulbId = $user->ulb_id;
+            $role1 = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_GENERAL_NOTICE_WF_MASTER_Id);
+            $role2 = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_PAYMENT_NOTICE_WF_MASTER_Id);
+            $role3 = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_ILLEGAL_OCCUPATION_WF_MASTER_Id);
+        dd($role1,$role2,$role3);
+        try{
+            $request->validate(
+                [
+                    "moduleId"=>"required|digits_between:1,6",
+                ]
+            );
+            return $this->_REPOSITORY->noticeList($request);
+        }
+        catch (Exception $e) 
+        {
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
+        
     }
     
 }
