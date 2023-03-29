@@ -84,7 +84,29 @@ class Application extends Controller
                 );
             $url = null;
             $key = null;
+            
             if($request->moduleId==1)#property
+            {
+                
+                if(strtoupper($request->searchBy)=="HOLDING")
+                {
+                    $key = "holdingNo";
+                }
+                elseif(strtoupper($request->searchBy)=="MOBILE")
+                {
+                    $key = "mobileNo";
+                }
+                elseif(strtoupper($request->searchBy)=="OWNER")
+                {
+                    $key = "ownerName";
+                }
+                else{
+                    $key = "address";
+                }
+                $url=("http://192.168.0.165:8008/api/property/get-filter-property-details");
+                $request->request->add(["filteredBy"=>"$key","parameter"=>$request->value]);
+            }
+            if($request->moduleId==2)#water
             {
                 if(strtoupper($request->searchBy)=="CONSUMER")
                 {
@@ -107,27 +129,6 @@ class Application extends Controller
                 }
                 $url=("http://192.168.0.165:8008/api/water/search-consumer");
                 $request->request->add(["filterBy"=>"$key","parameter"=>$request->value]);
-            }
-            if($request->moduleId==2)#water
-            {
-                
-                if(strtoupper($request->searchBy)=="HOLDING")
-                {
-                    $key = "holdingNo";
-                }
-                elseif(strtoupper($request->searchBy)=="MOBILE")
-                {
-                    $key = "mobileNo";
-                }
-                elseif(strtoupper($request->searchBy)=="OWNER")
-                {
-                    $key = "ownerName";
-                }
-                else{
-                    $key = "address";
-                }
-                $url=("http://192.168.0.165:8008/api/property/get-filter-property-details");
-                $request->request->add(["filteredBy"=>"$key","parameter"=>$request->value]);
             }
             if($request->moduleId==3)#trade
             {
@@ -166,6 +167,7 @@ class Application extends Controller
             // {
             //     $url=("http://127.0.0.1:8001/api/property/searchByHoldingNo");
             // }
+            dd($url,$request->all());
             return $data->post($url,$request->all());
         }
         catch (Exception $e) 
