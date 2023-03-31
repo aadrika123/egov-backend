@@ -13,6 +13,9 @@ class PropRazorpayRequest extends Model
     // Store 
     public function store($req)
     {
-        PropRazorpayRequest::create($req);
+        $stored = PropRazorpayRequest::create($req);
+        return [
+            'razorPayReqId' => $stored->id
+        ];
     }
 }
