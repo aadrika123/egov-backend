@@ -5,17 +5,21 @@ namespace App\Http\Controllers\Notice;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Notice\Add;
 use App\Models\ModuleMaster;
+use App\Models\Notice\NoticeApplication;
 use App\Models\Notice\NoticeTypeMaster;
+use App\Models\Workflows\WfWorkflow;
+use App\Models\WorkflowTrack;
 use App\Repository\Common\CommonFunction;
 use App\Repository\Notice\INotice;
 use Illuminate\Http\Request;
 use App\Traits\Auth;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
-class Application extends Controller
+class NoticeController extends Controller
 {
     /**
      * Created By Sandeep Bara
@@ -248,6 +252,94 @@ class Application extends Controller
         }
         catch (Exception $e) 
         {
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
+    }
+    public function inbox(Request $request)
+    {
+        return $this->_REPOSITORY->inbox($request);
+    }
+    public function outbox(Request $request)
+    {
+        return $this->_REPOSITORY->outbox($request);
+    }
+    public function postNextLevel(Request $request)
+    {
+
+        try {
+            $user = Auth()->user();
+            $user_id = $user->id;
+            $ulb_id = $user->ulb_id;
+        
+            $request->validate([
+                'applicationId' => 'required|integer',
+                'senderRoleId' => 'required|integer',
+                'receiverRoleId' => 'required|integer',
+            ]);
+            if(!$this->_COMMON_FUNCTION->checkUsersWithtocken("users"))
+            {
+                throw New Exception("Citizen Not Allowed");
+            }
+            
+            
+            $appllication = NoticeApplication::find($request->applicationId);
+            if(!$appllication)
+            {
+                throw new Exception("Data Not Found");
+            }
+            
+            $refWorkflowId = $appllication->workflow_id;
+            $role = $this->_COMMON_FUNCTION->getUserRoll($user_id,$ulb_id,$refWorkflowId);
+            $request->validate([
+                'comment' => ($role->is_initiator??false)?"nullable":'required',
+            ]);
+            // Application Update Current Role Updation
+           
+            $workflowId = WfWorkflow::where('wf_master_id', $refWorkflowId)
+                ->where('ulb_id', $ulb_id)
+                ->first();
+            if (!$workflowId) 
+            {
+                throw new Exception("Workflow Not Available");
+            }
+
+            $allRolse = collect($this->_COMMON_FUNCTION->getAllRoles($user_id,$ulb_id,$refWorkflowId,0,true));
+            $receiverRole = array_values(objToArray($allRolse->where("id",$request->receiverRoleId)))[0]??[];
+            $senderRole = array_values(objToArray($allRolse->where("id",$request->senderRoleId)))[0]??[];
+            $role = $this->_COMMON_FUNCTION->getUserRoll($user_id,$ulb_id,$refWorkflowId);
+           
+            if($appllication->current_role != $role->role_id)
+            {
+                throw new Exception("You Have Not Pending This Application");
+            }
+            $sms ="Application BackWord To ".$receiverRole["role_name"]??"";
+            
+            if($role->serial_no  < $receiverRole["serial_no"]??0)
+            {
+                $sms ="Application Forward To ".$receiverRole["role_name"]??"";
+            }
+           
+
+            DB::beginTransaction();
+            $appllication->max_level_attained = ($appllication->max_level_attained < ($receiverRole["serial_no"]??0)) ? ($receiverRole["serial_no"]??0) : $appllication->max_level_attained;
+            $appllication->current_role = $request->receiverRoleId;
+            $appllication->update();
+
+
+            $metaReqs['moduleId'] = $this->_MODULE_ID;
+            $metaReqs['workflowId'] = $appllication->workflow_id;
+            $metaReqs['refTableDotId'] = $this->_REF_TABLE;
+            $metaReqs['refTableIdValue'] = $request->applicationId;
+            $metaReqs['user_id']=$user_id;
+            $metaReqs['ulb_id']=$ulb_id;
+            $request->request->add($metaReqs);
+
+            $track = new WorkflowTrack();
+            $track->saveTrack($request);
+            DB::commit();
+            return responseMsgs(true, $sms, "", "010109", "1.0", "286ms", "POST", $request->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }

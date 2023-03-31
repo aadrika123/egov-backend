@@ -6,6 +6,7 @@ use App\EloquentModels\Common\ModelWard;
 use App\MicroServices\DocUpload;
 use App\Models\Notice\NoticeApplication;
 use App\Models\Workflows\WfRole;
+use App\Models\WorkflowTrack;
 use App\Repository\Common\CommonFunction;
 use App\Traits\Auth;
 use App\Traits\Notice\NoticeTrait;
@@ -309,8 +310,159 @@ use Illuminate\Support\Facades\DB;
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
-        
+    public function inbox(Request $request)
+    {
+        try {
+            $refUser        = Auth()->user();
+            $refUserId      = $refUser->id;
+            $refUlbId       = $refUser->ulb_id;
+           
+            $role1 = $this->_COMMON_FUNCTION->getUserRoll($refUserId, $refUlbId, $this->_GENERAL_NOTICE_WF_MASTER_Id)->role_id??0;
+            $role2 = $this->_COMMON_FUNCTION->getUserRoll($refUserId, $refUlbId, $this->_PAYMENT_NOTICE_WF_MASTER_Id)->role_id??0;
+            $role3 = $this->_COMMON_FUNCTION->getUserRoll($refUserId, $refUlbId, $this->_ILLEGAL_OCCUPATION_WF_MASTER_Id)->role_id??0;
+            
+            $inputs = $request->all();
+            // DB::enableQueryLog();          
+            $application = NoticeApplication::select(
+                    "notice_applications.id",
+                    "notice_applications.firm_name",
+                    "notice_applications.ptn_no",
+                    "notice_applications.holding_no",
+                    "notice_applications.license_no",                        
+                    "notice_applications.served_to",
+                    "notice_applications.address",
+                    "notice_applications.locality",
+                    "notice_applications.mobile_no",
+                    "notice_applications.notice_content",
+                    "notice_applications.owner_name",
+                    "notice_type_masters.notice_type",
+                    "module_masters.module_name"
+                )
+                ->join("notice_type_masters","notice_type_masters.id","notice_applications.notice_type_id")
+                ->join("module_masters","module_masters.id","notice_applications.notice_for_module_id")
+                ->where("notice_applications.ulb_id",$refUlbId)
+                ->where("notice_applications.status","<>",0)
+                ->where(function($where)use($role1,$role2,$role3){
+                    $where->ORWHERE(function($where2)use($role1){
+                        $where2->where("notice_applications.current_role", $role1)
+                        ->where("notice_applications.workflow_id",$this->_GENERAL_NOTICE_WF_MASTER_Id);
+                    })
+                    ->ORWHERE(function($where2)use($role2){
+                        $where2->where("notice_applications.current_role", $role2)
+                        ->where("notice_applications.workflow_id",$this->_PAYMENT_NOTICE_WF_MASTER_Id);
+                    })
+                    ->ORWHERE(function($where2)use($role3){
+                        $where2->where("notice_applications.current_role", $role3)
+                        ->where("notice_applications.workflow_id",$this->_ILLEGAL_OCCUPATION_WF_MASTER_Id);
+                    });
+                });
+            if (isset($inputs['key']) && trim($inputs['key'])) 
+            {
+                $key = trim($inputs['key']);
+                $application = $application->where(function ($query) use ($key) {
+                    $query->orwhere('notice_applications.holding_no', 'ILIKE', '%' . $key . '%')
+                        ->orwhere('notice_applications.ptn_no', 'ILIKE', '%' . $key . '%')
+                        ->orwhere("notice_applications.license_no", 'ILIKE', '%' . $key . '%')
+                        ->orwhere("notice_applications.firm_name", 'ILIKE', '%' . $key . '%')
+                        ->orwhere('notice_applications.owner_name', 'ILIKE', '%' . $key . '%')
+                        ->orwhere('notice_applications.mobile_no', 'ILIKE', '%' . $key . '%');
+                });
+            }
+            if (isset($inputs['wardNo']) && trim($inputs['wardNo']) && $inputs['wardNo'] != "ALL") {
+                $mWardIds = $inputs['wardNo'];
+            }
+            if (isset($inputs['formDate']) && isset($inputs['toDate']) && trim($inputs['formDate']) && $inputs['toDate']) 
+            {
+                $application = $application
+                    ->whereBetween(DB::raw('cast(notice_applications.application_date as date)'), [$inputs['formDate'], $inputs['formDate']]);
+            }
+            $application = $application
+                // ->whereIn('active_trade_licences.ward_id', $mWardIds)
+                ->get();           
+            return responseMsg(true, "", $application);
+        } 
+        catch (Exception $e) 
+        {
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
+    } 
 
+    public function outbox(Request $request)
+    {
+        try {
+            $refUser        = Auth()->user();
+            $refUserId      = $refUser->id;
+            $refUlbId       = $refUser->ulb_id;
+           
+            $role1 = $this->_COMMON_FUNCTION->getUserRoll($refUserId, $refUlbId, $this->_GENERAL_NOTICE_WF_MASTER_Id)->role_id??0;
+            $role2 = $this->_COMMON_FUNCTION->getUserRoll($refUserId, $refUlbId, $this->_PAYMENT_NOTICE_WF_MASTER_Id)->role_id??0;
+            $role3 = $this->_COMMON_FUNCTION->getUserRoll($refUserId, $refUlbId, $this->_ILLEGAL_OCCUPATION_WF_MASTER_Id)->role_id??0;
+            
+            $inputs = $request->all();
+            // DB::enableQueryLog();          
+            $application = NoticeApplication::select(
+                    "notice_applications.id",
+                    "notice_applications.firm_name",
+                    "notice_applications.ptn_no",
+                    "notice_applications.holding_no",
+                    "notice_applications.license_no",                        
+                    "notice_applications.served_to",
+                    "notice_applications.address",
+                    "notice_applications.locality",
+                    "notice_applications.mobile_no",
+                    "notice_applications.notice_content",
+                    "notice_applications.owner_name",
+                    "notice_type_masters.notice_type",
+                    "module_masters.module_name"
+                )
+                ->join("notice_type_masters","notice_type_masters.id","notice_applications.notice_type_id")
+                ->join("module_masters","module_masters.id","notice_applications.notice_for_module_id")
+                ->where("notice_applications.ulb_id",$refUlbId)
+                ->where("notice_applications.status","<>",0)
+                ->where(function($where)use($role1,$role2,$role3){
+                    $where->ORWHERE(function($where2)use($role1){
+                        $where2->where("notice_applications.current_role","<>", $role1)
+                        ->where("notice_applications.workflow_id",$this->_GENERAL_NOTICE_WF_MASTER_Id);
+                    })
+                    ->ORWHERE(function($where2)use($role2){
+                        $where2->where("notice_applications.current_role","<>", $role2)
+                        ->where("notice_applications.workflow_id",$this->_PAYMENT_NOTICE_WF_MASTER_Id);
+                    })
+                    ->ORWHERE(function($where2)use($role3){
+                        $where2->where("notice_applications.current_role","<>", $role3)
+                        ->where("notice_applications.workflow_id",$this->_ILLEGAL_OCCUPATION_WF_MASTER_Id);
+                    });
+                });
+            if (isset($inputs['key']) && trim($inputs['key'])) 
+            {
+                $key = trim($inputs['key']);
+                $application = $application->where(function ($query) use ($key) {
+                    $query->orwhere('notice_applications.holding_no', 'ILIKE', '%' . $key . '%')
+                        ->orwhere('notice_applications.ptn_no', 'ILIKE', '%' . $key . '%')
+                        ->orwhere("notice_applications.license_no", 'ILIKE', '%' . $key . '%')
+                        ->orwhere("notice_applications.firm_name", 'ILIKE', '%' . $key . '%')
+                        ->orwhere('notice_applications.owner_name', 'ILIKE', '%' . $key . '%')
+                        ->orwhere('notice_applications.mobile_no', 'ILIKE', '%' . $key . '%');
+                });
+            }
+            if (isset($inputs['wardNo']) && trim($inputs['wardNo']) && $inputs['wardNo'] != "ALL") {
+                $mWardIds = $inputs['wardNo'];
+            }
+            if (isset($inputs['formDate']) && isset($inputs['toDate']) && trim($inputs['formDate']) && $inputs['toDate']) 
+            {
+                $application = $application
+                    ->whereBetween(DB::raw('cast(notice_applications.application_date as date)'), [$inputs['formDate'], $inputs['formDate']]);
+            }
+            $application = $application
+                // ->whereIn('active_trade_licences.ward_id', $mWardIds)
+                ->get();           
+            return responseMsg(true, "", $application);
+        } 
+        catch (Exception $e) 
+        {
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
+    }
     public function approveReject(Request $req)
     {
         try {

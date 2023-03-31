@@ -16,4 +16,6 @@ use Illuminate\Http\Request;
     function add(Request $request);
     public function noticeList(Request $request);
     public function noticeView(Request $request);
+    public function inbox(Request $request);
+    public function outbox(Request $request);
 }
