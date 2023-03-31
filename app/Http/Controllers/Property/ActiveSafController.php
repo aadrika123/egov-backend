@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Property;
 
 use App\BLL\Property\CalculateSafById;
 use App\BLL\Property\HandleTcVerification;
+use App\BLL\Property\PostRazorPayPenaltyRebate;
 use App\BLL\Property\RazorpayRequest;
 use App\BLL\Property\TcVerificationDemandAdjust;
 use App\EloquentClass\Property\PenaltyRebateCalculation;
@@ -888,7 +889,8 @@ class ActiveSafController extends Controller
         }
         return [
             'holdingNo' =>  $holdingNo ?? "",
-            'samNo' => $samNo ?? ""
+            'samNo' => $samNo ?? "",
+            'ptNo' => $ptNo ?? "",
         ];
     }
 
@@ -1348,7 +1350,7 @@ class ActiveSafController extends Controller
         try {
             $ipAddress = getClientIpAddress();
             $mPropRazorPayRequest = new PropRazorpayRequest();
-            $mPropRazorpayPenalRebates = new PropRazorpayPenalrebate();
+            $postRazorPayPenaltyRebate = new PostRazorPayPenaltyRebate;
             $req->merge(['departmentId' => 1]);
             $calculateSafById = $this->calculateSafBySafId($req);
             $safDetails = PropActiveSaf::find($req->id);
@@ -1358,7 +1360,7 @@ class ActiveSafController extends Controller
             DB::beginTransaction();
             $orderDetails = $this->saveGenerateOrderid($req);                                      //<---------- Generate Order ID Trait
             $demands = array_merge($demands->toArray(), [
-                'orderId' => "ffffffff"
+                'orderId' => $orderDetails['orderId']
             ]);
             // Store Razor pay Request
             $razorPayRequest = [
@@ -1372,9 +1374,11 @@ class ActiveSafController extends Controller
                 'ulb_id' => $safDetails->ulb_id,
                 'ip_address' => $ipAddress,
             ];
-            $mPropRazorPayRequest->store($razorPayRequest);
+            $storedRazorPayReqs = $mPropRazorPayRequest->store($razorPayRequest);
             // Store Razor pay penalty Rebates
-            $mPropRazorpayPenalRebates->store();
+            $postRazorPayPenaltyRebate->_safId = $req->id;
+            $postRazorPayPenaltyRebate->_razorPayRequestId = $storedRazorPayReqs['razorPayReqId'];
+            $postRazorPayPenaltyRebate->postRazorPayPenaltyRebates($demands);
             DB::commit();
             return responseMsgs(true, "Order ID Generated", remove_null($orderDetails), "010114", "1.0", "1s", "POST", $req->deviceId);
         } catch (Exception $e) {
@@ -1477,6 +1481,93 @@ class ActiveSafController extends Controller
                     throw new Exception("User Should Be Logged In");
                 $tranBy = authUser()->user_type;
             }
+
+            // Property Transactions
+            $req->merge([
+                'userId' => $userId,
+                'todayDate' => $todayDate->format('Y-m-d'),
+                'tranNo' => $tranNo,
+                'workflowId' => $activeSaf->workflow_id,
+                'amount' => $amount,
+                'tranBy' => $tranBy
+            ]);
+            $activeSaf->payment_status = 1; // Paid for Online or Cash
+            if (in_array($req['paymentMode'], $verifyPaymentModes)) {
+                $req->merge([
+                    'verifyStatus' => 2
+                ]);
+                $activeSaf->payment_status = 2;         // Under Verification for Cheque, Cash, DD
+            }
+            DB::beginTransaction();
+            $propTrans = $propTrans->postSafTransaction($req, $demands);
+
+            if (in_array($req['paymentMode'], $offlinePaymentModes)) {
+                $req->merge([
+                    'chequeDate' => $req['chequeDate'],
+                    'tranId' => $propTrans['id']
+                ]);
+                $this->postOtherPaymentModes($req);
+            }
+            // Reflect on Prop Tran Details
+            foreach ($demands as $demand) {
+                $safDemand = $mPropSafsDemands->getDemandById($demand['id']);
+                $safDemand->balance = 0;
+                $safDemand->paid_status = 1;           // <-------- Update Demand Paid Status 
+                $safDemand->save();
+
+                $propTranDtl = new PropTranDtl();
+                $propTranDtl->tran_id = $propTrans['id'];
+                $propTranDtl->saf_demand_id = $demand['id'];
+                $propTranDtl->total_demand = $demand['amount'];
+                $propTranDtl->save();
+            }
+
+            // Replication Prop Rebates Penalties
+            $this->postPenaltyRebates($safCalculation, $safId, $propTrans['id']);
+            // Update SAF Payment Status
+            $activeSaf->save();
+            $this->sendToWorkflow($activeSaf);        // Send to Workflow(15.2)
+            DB::commit();
+            return responseMsgs(true, "Payment Successfully Done",  ['TransactionNo' => $tranNo], "010115", "1.0", "567ms", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Offline Saf Payment
+     */
+    public function offlinePaymentSaf(ReqPayment $req)
+    {
+        try {
+            // Variable Assignments
+            $offlinePaymentModes = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
+            $todayDate = Carbon::now();
+            $idGeneration = new IdGeneration;
+            $propTrans = new PropTransaction();
+            $mPropSafsDemands = new PropSafsDemand();
+            $verifyPaymentModes = Config::get('payment-constants.VERIFICATION_PAYMENT_MODES');
+
+            $safId = $req['id'];
+
+            $activeSaf = PropActiveSaf::findOrFail($req['id']);
+
+            $userId = auth()->user()->id;                                      // Authenticated user or Ghost User
+            $tranBy = authUser()->user_type;
+
+            $tranNo = $req['transactionNo'];
+            // Derivative Assignments
+            if (!$tranNo)
+                $tranNo = $idGeneration->generateTransactionNo();
+
+            $safCalculation = $this->calculateSafBySafId($req);
+            $demands = $safCalculation->original['data']['details'];
+            $amount = $safCalculation->original['data']['demand']['payableAmount'];
+
+            if (!$demands || collect($demands)->isEmpty())
+                throw new Exception("Demand Not Available for Payment");
+
 
             // Property Transactions
             $req->merge([

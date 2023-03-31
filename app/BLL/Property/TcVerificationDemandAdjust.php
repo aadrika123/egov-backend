@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Config;
  * | Created On-27-03-2023 
  * | Created by- Anshu Kumar
  * | Handle TC Verifications Datas
- * | Status-Open
+ * | Status-Closed
  */
 class TcVerificationDemandAdjust
 {
@@ -56,8 +56,8 @@ class TcVerificationDemandAdjust
     {
         $this->_reqs = $req;
         $this->_activeSafDtls = $req['activeSafDtls'];
+        $this->_tcId = collect($req['fieldVerificationDtls'])->first()->user_id;
         $this->_quaterlyTax = $this->calculateQuaterlyTax();           // (1.1)
-        $this->_tcId = collect($this->_reqs['fieldVerificationDtls'])->first()->user_id;
         $this->adjustVerifiedDemand();
     }
 
