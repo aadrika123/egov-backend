@@ -319,7 +319,6 @@ class NoticeController extends Controller
                 $sms ="Application Forward To ".$receiverRole["role_name"]??"";
             }
            
-
             DB::beginTransaction();
             $appllication->max_level_attained = ($appllication->max_level_attained < ($receiverRole["serial_no"]??0)) ? ($receiverRole["serial_no"]??0) : $appllication->max_level_attained;
             $appllication->current_role = $request->receiverRoleId;
@@ -342,6 +341,10 @@ class NoticeController extends Controller
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), $request->all());
         }
+    }
+    public function approveReject(Request $request)
+    {
+        
     }
     
 }

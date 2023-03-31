@@ -379,7 +379,7 @@ use Illuminate\Support\Facades\DB;
             $application = $application
                 // ->whereIn('active_trade_licences.ward_id', $mWardIds)
                 ->get();           
-            return responseMsg(true, "", $application);
+            return responseMsg(true, "", remove_null($application));
         } 
         catch (Exception $e) 
         {
@@ -455,25 +455,25 @@ use Illuminate\Support\Facades\DB;
             }
             $application = $application
                 // ->whereIn('active_trade_licences.ward_id', $mWardIds)
-                ->get();           
-            return responseMsg(true, "", $application);
+                ->get();       
+            return responseMsg(true, "", remove_null($application));
         } 
         catch (Exception $e) 
         {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
-    public function approveReject(Request $req)
+    public function approveReject(Request $request)
     {
         try {
             $user = Auth()->user();
             $user_id = $user->id;
             $ulb_id = $user->ulb_id;
-            $req->validate([
+            $request->validate([
                 "applicationId" => "required",
                 "status" => "required"
             ]);
-            $application = NoticeApplication::find($req->applicationId);           
+            $application = NoticeApplication::find($request->applicationId);           
             if(!$application)
             {
                 throw new Exception("Data Not Found");
@@ -487,7 +487,7 @@ use Illuminate\Support\Facades\DB;
             DB::beginTransaction();
 
             // Approval
-            if ($req->status == 1) 
+            if ($request->status == 1) 
             {
                 // Objection Application replication
                 $application->status=5;
@@ -498,7 +498,7 @@ use Illuminate\Support\Facades\DB;
             }
 
             // Rejection
-            if ($req->status == 0) 
+            if ($request->status == 0) 
             {
                 // Objection Application replication
                 $application->status = 4;

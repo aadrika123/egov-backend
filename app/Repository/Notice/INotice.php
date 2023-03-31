@@ -18,4 +18,5 @@ use Illuminate\Http\Request;
     public function noticeView(Request $request);
     public function inbox(Request $request);
     public function outbox(Request $request);
+    public function approveReject(Request $request);
 }
