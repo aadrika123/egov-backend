@@ -58,6 +58,7 @@ class PropProperty extends Model
         return DB::table('prop_properties')
             ->select(
                 'prop_properties.*',
+                'prop_properties.status as active_status',
                 'prop_properties.assessment_type as assessment',
                 'w.ward_name as old_ward_no',
                 'nw.ward_name as new_ward_no',
