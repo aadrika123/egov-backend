@@ -59,6 +59,9 @@ class PropActiveSafsOwner extends Model
             ->get();
     }
 
+    /***
+     * | Get First Saf Owner By SafId
+     */
     public function getOwnerDtlsBySafId1($safId)
     {
         return PropActiveSafsOwner::where('saf_id', $safId)
