@@ -35,11 +35,27 @@ class PropertyDeactivate implements IPropertyDeactivate
     protected $_common;
     protected $_modelWard;
     protected $_track;
+
+    private $_COMMON_FUNCTION;
+    private $_PROPERTY_CONSTAINT;
+    private $_MODEL_WARD;
+    private $_WF_MASTER_ID;
+    protected $_MODULE_ID;
+    protected $_REF_TABLE;
+    protected $_DOC_PATH;
+    protected $_MODULE_CONSTAINT;
+    protected $_WORKFLOW_TRACK;
     public function __construct()
     {
-        $this->_common = new CommonFunction();
-        $this->_modelWard = new ModelWard();
-        $this->_track = new WorkflowTrack();
+        $this->_COMMON_FUNCTION = new CommonFunction();
+        $this->_MODEL_WARD = new ModelWard();
+        $this->_WORKFLOW_TRACK = new WorkflowTrack();
+        $this->_WF_MASTER_ID=Config::get('workflow-constants.PROPERTY_DEACTIVATION_MASTER_ID');
+        $this->_MODULE_CONSTAINT=Config::get('module-constants');
+        $this->_MODULE_ID = Config::get('module-constants.PROPERTY_MODULE_ID');
+        $this->_PROPERTY_CONSTAINT = Config::get("PropertyConstaint");
+        $this->_REF_TABLE = null;
+        $this->_DOC_PATH = null;
     }
     /**
      * | Searching the valide Property With New Holding No
@@ -113,7 +129,7 @@ class PropertyDeactivate implements IPropertyDeactivate
      * | @var refUlbId   = refUser->ulb_id          | loging user Ulb Id
      * | @var mRegex     = '/^[a-zA-Z1-9][a-zA-Z1-9\. \s]+$/'  | rejex
      * | @var mNowDate   = Carbon::now()->format("Y-m-d")       | current date
-     * | @var refWorkflowId = Config::get('workflow-constants.PROPERTY_DEACTIVATION_WORKFLOW_ID')  | workflowId
+     * | @var refWorkflowId = $this->_WF_MASTER_ID  | workflowId
      * | @var mUserType  = this->_common->userType(refWorkflowId) | loging user short Role Name On Currert Workflow
      * | @var workflowId  (model)WfWorkflow->id
      * |
@@ -138,9 +154,9 @@ class PropertyDeactivate implements IPropertyDeactivate
             $refUser    = Auth()->user();
             $refUserId  = $refUser->id;
             $refUlbId   = $refUser->ulb_id;
-            $refWorkflowId = Config::get('workflow-constants.PROPERTY_DEACTIVATION_WORKFLOW_ID'); 
+            $refWorkflowId = $this->_WF_MASTER_ID; 
                       
-            $mUserType  = $this->_common->userType($refWorkflowId);
+            $mUserType  = $this->_COMMON_FUNCTION->userType($refWorkflowId);
             if(!in_array(strtoupper($mUserType),['BO',"SUPER ADMIN","ONLINE"]))
             {
                 throw new Exception("You Are Not Authorized For Deactivate Property!");
@@ -159,7 +175,7 @@ class PropertyDeactivate implements IPropertyDeactivate
             {
                 $refUlbId = $mProperty->ulb_id;
             }
-            $init_finish = $this->_common->iniatorFinisher($refUserId,$refUlbId,$refWorkflowId);
+            $init_finish = $this->_COMMON_FUNCTION->iniatorFinisher($refUserId,$refUlbId,$refWorkflowId);
             if(!$init_finish)
             {
                 throw new Exception("Full Work Flow Not Desigen Properly. Please Contact Admin !!!...");
@@ -225,18 +241,17 @@ class PropertyDeactivate implements IPropertyDeactivate
             $refUser        = Auth()->user();
             $refUserId      = $refUser->id;
             $refUlbId       = $refUser->ulb_id;
-            $refWorkflowId  = Config::get('workflow-constants.PROPERTY_DEACTIVATION_WORKFLOW_ID');
-            $refWorkflowMstrId     = WfWorkflow::where('id', $refWorkflowId)
+            $refWorkflowId  = $this->_WF_MASTER_ID;
+            $refWorkflowMstrId     = WfWorkflow::where('wf_master_id', $refWorkflowId)
                                     ->where('ulb_id', $refUlbId)
                                     ->first();
             if (!$refWorkflowMstrId) 
             {
                 throw new Exception("Workflow Not Available");
             }
-            $mUserType = $this->_common->userType($refWorkflowId);
-            $mWardPermission = $this->_common->WardPermission($refUserId);           
-            $mRole = $this->_common->getUserRoll($refUserId,$refUlbId,$refWorkflowId); 
-                     
+            $mUserType = $this->_COMMON_FUNCTION->userType($refWorkflowId);
+            $mWardPermission = $this->_COMMON_FUNCTION->WardPermission($refUserId);           
+            $mRole = $this->_COMMON_FUNCTION->getUserRoll($refUserId,$refUlbId,$refWorkflowId);
             if (!$mRole) 
             {
                 throw new Exception("You Are Not Authorized For This Action");
@@ -244,7 +259,7 @@ class PropertyDeactivate implements IPropertyDeactivate
 
             if($mRole->is_initiator ) 
             {
-                $mWardPermission = $this->_modelWard->getAllWard($refUlbId)->map(function($val){
+                $mWardPermission = $this->_MODEL_WARD->getAllWard($refUlbId)->map(function($val){
                     $val->ward_no = $val->ward_name;
                     return $val;
                 });
@@ -321,24 +336,24 @@ class PropertyDeactivate implements IPropertyDeactivate
             $user = Auth()->user();
             $refUserId = $user->id;
             $refUlbId = $user->ulb_id;
-            $refWorkflowId  = Config::get('workflow-constants.PROPERTY_DEACTIVATION_WORKFLOW_ID');
-            $refWorkflowMstrId     = WfWorkflow::where('id', $refWorkflowId)
+            $refWorkflowId  = $this->_WF_MASTER_ID;
+            $refWorkflowMstrId     = WfWorkflow::where('wf_master_id', $refWorkflowId)
                                     ->where('ulb_id', $refUlbId)
                                     ->first();
             if (!$refWorkflowMstrId) 
             {
                 throw new Exception("Workflow Not Available");
             }
-            $mUserType = $this->_common->userType($refWorkflowId);
-            $mWardPermission = $this->_common->WardPermission($refUserId);           
-            $mRole = $this->_common->getUserRoll($refUserId,$refUlbId,$refWorkflowId);           
+            $mUserType = $this->_COMMON_FUNCTION->userType($refWorkflowId);
+            $mWardPermission = $this->_COMMON_FUNCTION->WardPermission($refUserId);           
+            $mRole = $this->_COMMON_FUNCTION->getUserRoll($refUserId,$refUlbId,$refWorkflowId);           
             if (!$mRole) 
             {
                 throw new Exception("You Are Not Authorized");
             }
             if($mRole->is_initiator || in_array(strtoupper($mUserType),["JSK","SUPER ADMIN","ADMIN","TL","PMU","PM"]))
             {
-                $mWardPermission = $this->_modelWard->getAllWard($refUlbId)->map(function($val){
+                $mWardPermission = $this->_MODEL_WARD->getAllWard($refUlbId)->map(function($val){
                     $val->ward_no = $val->ward_name;
                     return $val;
                 });
@@ -410,8 +425,8 @@ class PropertyDeactivate implements IPropertyDeactivate
             $refUser        = Auth()->user();
             $refUserId      = $refUser->id;
             $refUlbId       = $refUser->ulb_id;
-            $refWorkflowId  = Config::get('workflow-constants.PROPERTY_DEACTIVATION_WORKFLOW_ID');
-            $mUserType = $this->_common->userType($refWorkflowId);
+            $refWorkflowId  = $this->_WF_MASTER_ID;
+            $mUserType = $this->_COMMON_FUNCTION->userType($refWorkflowId);
             $rules = [
                 "applicationId" => "required|int",
             ];
@@ -426,13 +441,13 @@ class PropertyDeactivate implements IPropertyDeactivate
             }
 
             $pendingAt  = $refRequestData->current_role;                   
-            $mworkflowRoles = $this->_common->getWorkFlowAllRoles($refUserId,$refUlbId,$refWorkflowId,true);
-            $mileSton = $this->_common->sortsWorkflowRols($mworkflowRoles);
+            $mworkflowRoles = $this->_COMMON_FUNCTION->getWorkFlowAllRoles($refUserId,$refUlbId,$refWorkflowId,true);
+            $mileSton = $this->_COMMON_FUNCTION->sortsWorkflowRols($mworkflowRoles);
            
             $refProperty = $this->getPropertyById($refRequestData->property_id);
             $refProperty->old_ward_no = $refProperty->ward_no;
             $refOwners   = $this->getPropOwnerByProId($refRequestData->property_id);
-            $refTimeLine =  $this->_track->getTracksByRefId("prop_active_deactivation_requests",$refRequestData->id);
+            $refTimeLine =  $this->_WORKFLOW_TRACK->getTracksByRefId("prop_active_deactivation_requests",$refRequestData->id);
             
             // Trait function to get Basic Details
             $basicElement = [
@@ -481,7 +496,7 @@ class PropertyDeactivate implements IPropertyDeactivate
             $fullDetailsData['fullDetailsData']['cardArray'] = Collect($cardElement);
             $fullDetailsData['levelComment'] = $refTimeLine;
             $fullDetailsData['citizenComment'] = $this->citizenComments("prop_active_deactivation_requests",$refRequestData->id);
-            $fullDetailsData['roleDetails'] = $this->_common->getUserRoll($refUserId,$refUlbId,$refWorkflowId);
+            $fullDetailsData['roleDetails'] = $this->_COMMON_FUNCTION->getUserRoll($refUserId,$refUlbId,$refWorkflowId);
             
             $metaReqs['customFor'] = 'PROPERTY DEACTIVATION';
             $metaReqs['wfRoleId'] = $fullDetailsData['roleDetails']['role_id'];
@@ -518,18 +533,17 @@ class PropertyDeactivate implements IPropertyDeactivate
             $refUser        = Auth()->user();
             $refUserId      = $refUser->id;
             $refUlbId       = $refUser->ulb_id;
-            $refWorkflowId  = Config::get('workflow-constants.PROPERTY_DEACTIVATION_WORKFLOW_ID');
-            $refWorkflowMstrId     = WfWorkflow::where('id', $refWorkflowId)
+            $refWorkflowId  = $this->_WF_MASTER_ID;
+            $refWorkflowMstrId     = WfWorkflow::where('wf_master_id', $refWorkflowId)
                                     ->where('ulb_id', $refUlbId)
                                     ->first();
             if (!$refWorkflowMstrId) 
             {
                 throw new Exception("Workflow Not Available");
             }
-            $mUserType = $this->_common->userType($refWorkflowId);
-            $mWardPermission = $this->_common->WardPermission($refUserId);           
-            $mRole = $this->_common->getUserRoll($refUserId,$refUlbId,$refWorkflowId); 
-                     
+            $mUserType = $this->_COMMON_FUNCTION->userType($refWorkflowId);
+            $mWardPermission = $this->_COMMON_FUNCTION->WardPermission($refUserId);           
+            $mRole = $this->_COMMON_FUNCTION->getUserRoll($refUserId,$refUlbId,$refWorkflowId);                  
             if (!$mRole) 
             {
                 throw new Exception("You Are Not Authorized For This Action");
@@ -537,7 +551,7 @@ class PropertyDeactivate implements IPropertyDeactivate
 
             if($mRole->is_initiator ) 
             {
-                $mWardPermission = $this->_modelWard->getAllWard($refUlbId)->map(function($val){
+                $mWardPermission = $this->_MODEL_WARD->getAllWard($refUlbId)->map(function($val){
                     $val->ward_no = $val->ward_name;
                     return $val;
                 });
