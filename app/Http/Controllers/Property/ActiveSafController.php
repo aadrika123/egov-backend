@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Property;
 
+use App\BLL\Property\CalculateSafById;
 use App\BLL\Property\HandleTcVerification;
+use App\BLL\Property\RazorpayRequest;
 use App\BLL\Property\TcVerificationDemandAdjust;
 use App\EloquentClass\Property\PenaltyRebateCalculation;
 use App\EloquentClass\Property\SafCalculation;
@@ -25,6 +27,8 @@ use App\Models\Property\PropFloor;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropPenaltyrebate;
 use App\Models\Property\PropProperty;
+use App\Models\Property\PropRazorpayPenalrebate;
+use App\Models\Property\PropRazorpayRequest;
 use App\Models\Property\PropSafGeotagUpload;
 use App\Models\Property\PropSafMemoDtl;
 use App\Models\Property\PropSafsDemand;
@@ -1304,50 +1308,9 @@ class ActiveSafController extends Controller
     public function calculateSafBySafId(Request $req)
     {
         try {
-            $demands = array();
-            $safId = $req->id;
-            $currentFYear = getFY();
-            $mPropSafDemand = new PropSafsDemand();
-            $mPropActiveSafOwner = new PropActiveSafsOwner();
-            $penaltyRebateCalc = new PenaltyRebateCalculation;
-
-            $activeSaf = PropActiveSaf::findOrFail($safId);
-            $loggedInUserType = authUser()->user_type ?? "Citizen";
-            $currentQuarter = calculateQtr($this->_todayDate->format('Y-m-d'));
-            $firstOwner = $mPropActiveSafOwner->getOwnerDtlsBySafId1($safId);
-            $safDemandList = $mPropSafDemand->getDemandBySafId($safId);
-
-            if ($safDemandList->isEmpty())
-                throw new Exception("Demand Not Found");
-
-            $safDemandList = $safDemandList->map(function ($item) {                                // One Perc Penalty Tax
-                return $this->calcOnePercPenalty($item);           // Function Calculation one perc penalty()
-            });
-            $dues = roundFigure($safDemandList->sum('balance'));
-            $onePercTax = roundFigure($safDemandList->sum('onePercPenaltyTax'));
-            $lateAssessementPenalty = $activeSaf->late_assess_penalty ?? 0;
-            $totalDemand = roundFigure($dues + $onePercTax + $lateAssessementPenalty);
-            $mLastQuarterDemand = $safDemandList->where('fyear', $currentFYear)->sum('balance');
-            $dueFrom = "Quarter " . $safDemandList->last()->qtr . "/ Year " . $safDemandList->last()->fyear;
-            $dueTo = "Quarter " . $safDemandList->first()->qtr . "/ Year " . $safDemandList->first()->fyear;
-            $totalDuesList = [
-                'totalTax' => $dues,
-                'totalOnePercPenalty' => $onePercTax,
-                'totalQuarters' => $safDemandList->count(),
-                'duesFrom' => $dueFrom,
-                'duesTo' => $dueTo,
-                'lateAssessmentStatus' => (empty($lateAssessementPenalty)) ? false : true,
-                'lateAssessmentPenalty' => $lateAssessementPenalty,
-                'totalDemand' => $totalDemand,
-            ];
-            $totalDuesList = $penaltyRebateCalc->readRebates($currentQuarter, $loggedInUserType, $mLastQuarterDemand, $firstOwner, $totalDemand, $totalDuesList);
-
-            $finalPayableAmt = $totalDemand - ($totalDuesList['rebateAmt'] + $totalDuesList['specialRebateAmt']);
-            $totalDuesList['payableAmount'] = round($finalPayableAmt);
-
-            $demands['demand'] = $totalDuesList;
-            $demands['details'] = $safDemandList;
-            return responseMsgs(true, "Demand List", remove_null($demands));
+            $calculateSafById = new CalculateSafById;
+            $demand = $calculateSafById->calculateTax($req);
+            return responseMsgs(true, "Demand Details", remove_null($demand));
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "");
         }
@@ -1380,20 +1343,38 @@ class ActiveSafController extends Controller
     {
         $req->validate([
             'id' => 'required|integer',
-            'amount' => 'required|numeric'
         ]);
 
         try {
-            $auth = auth()->user();
+            $ipAddress = getClientIpAddress();
+            $mPropRazorPayRequest = new PropRazorpayRequest();
+            $mPropRazorpayPenalRebates = new PropRazorpayPenalrebate();
             $req->merge(['departmentId' => 1]);
             $calculateSafById = $this->calculateSafBySafId($req);
-            $safDemandDetails = $calculateSafById->original['data']['details'];
             $safDetails = PropActiveSaf::find($req->id);
             $demands = $calculateSafById->original['data']['demand'];
             $totalAmount = $demands['payableAmount'];
-            $req->request->add(['workflowId' => $safDetails->workflow_id, 'ghostUserId' => 0]);
+            $req->request->add(['workflowId' => $safDetails->workflow_id, 'ghostUserId' => 0, 'amount' => $totalAmount]);
             DB::beginTransaction();
             $orderDetails = $this->saveGenerateOrderid($req);                                      //<---------- Generate Order ID Trait
+            $demands = array_merge($demands->toArray(), [
+                'orderId' => "ffffffff"
+            ]);
+            // Store Razor pay Request
+            $razorPayRequest = [
+                'order_id' => $demands['orderId'],
+                'saf_id' => $req->id,
+                'from_fyear' => $demands['dueFromFyear'],
+                'from_qtr' => $demands['dueFromQtr'],
+                'to_fyear' => $demands['dueToFyear'],
+                'to_qtr' => $demands['dueToQtr'],
+                'demand_amt' => $demands['totalTax'],
+                'ulb_id' => $safDetails->ulb_id,
+                'ip_address' => $ipAddress,
+            ];
+            $mPropRazorPayRequest->store($razorPayRequest);
+            // Store Razor pay penalty Rebates
+            $mPropRazorpayPenalRebates->store();
             DB::commit();
             return responseMsgs(true, "Order ID Generated", remove_null($orderDetails), "010114", "1.0", "1s", "POST", $req->deviceId);
         } catch (Exception $e) {

@@ -14,6 +14,16 @@ class PropActiveSafsFloor extends Model
     protected $guarded = [];
 
     /**
+     * | Get Safs Floors By Saf Id
+     */
+    public function getSafFloorsBySafId($safId)
+    {
+        return PropActiveSafsFloor::where('saf_id', $safId)
+            ->where('status', 1)
+            ->get();
+    }
+
+    /**
      * | Get Saf Floor Details by SAF id
      */
     public function getFloorsBySafId($safId)
@@ -25,6 +35,7 @@ class PropActiveSafsFloor extends Model
             ->join('ref_prop_occupancy_types as o', 'o.id', '=', 'prop_active_safs_floors.occupancy_type_mstr_id')
             ->join('ref_prop_construction_types as c', 'c.id', '=', 'prop_active_safs_floors.const_type_mstr_id')
             ->where('saf_id', $safId)
+            ->where('prop_active_safs_floors.status', 1)
             ->get();
     }
 
