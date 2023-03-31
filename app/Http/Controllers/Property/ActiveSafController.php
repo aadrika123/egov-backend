@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Property;
 
 use App\BLL\Property\CalculateSafById;
 use App\BLL\Property\HandleTcVerification;
+use App\BLL\Property\RazorpayRequest;
 use App\BLL\Property\TcVerificationDemandAdjust;
 use App\EloquentClass\Property\PenaltyRebateCalculation;
 use App\EloquentClass\Property\SafCalculation;
@@ -26,6 +27,8 @@ use App\Models\Property\PropFloor;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropPenaltyrebate;
 use App\Models\Property\PropProperty;
+use App\Models\Property\PropRazorpayPenalrebate;
+use App\Models\Property\PropRazorpayRequest;
 use App\Models\Property\PropSafGeotagUpload;
 use App\Models\Property\PropSafMemoDtl;
 use App\Models\Property\PropSafsDemand;
@@ -1343,6 +1346,9 @@ class ActiveSafController extends Controller
         ]);
 
         try {
+            $ipAddress = getClientIpAddress();
+            $mPropRazorPayRequest = new PropRazorpayRequest();
+            $mPropRazorpayPenalRebates = new PropRazorpayPenalrebate();
             $req->merge(['departmentId' => 1]);
             $calculateSafById = $this->calculateSafBySafId($req);
             $safDetails = PropActiveSaf::find($req->id);
@@ -1351,7 +1357,24 @@ class ActiveSafController extends Controller
             $req->request->add(['workflowId' => $safDetails->workflow_id, 'ghostUserId' => 0, 'amount' => $totalAmount]);
             DB::beginTransaction();
             $orderDetails = $this->saveGenerateOrderid($req);                                      //<---------- Generate Order ID Trait
-            return $orderDetails;
+            $demands = array_merge($demands->toArray(), [
+                'orderId' => "ffffffff"
+            ]);
+            // Store Razor pay Request
+            $razorPayRequest = [
+                'order_id' => $demands['orderId'],
+                'saf_id' => $req->id,
+                'from_fyear' => $demands['dueFromFyear'],
+                'from_qtr' => $demands['dueFromQtr'],
+                'to_fyear' => $demands['dueToFyear'],
+                'to_qtr' => $demands['dueToQtr'],
+                'demand_amt' => $demands['totalTax'],
+                'ulb_id' => $safDetails->ulb_id,
+                'ip_address' => $ipAddress,
+            ];
+            $mPropRazorPayRequest->store($razorPayRequest);
+            // Store Razor pay penalty Rebates
+            $mPropRazorpayPenalRebates->store();
             DB::commit();
             return responseMsgs(true, "Order ID Generated", remove_null($orderDetails), "010114", "1.0", "1s", "POST", $req->deviceId);
         } catch (Exception $e) {

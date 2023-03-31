@@ -223,6 +223,10 @@ class CalculateSafById
         $totalOnePercPenalty = roundFigure($demandDetails->sum('onePercPenaltyTax'));
         $totalDemand = $totalTax + $totalOnePercPenalty + $this->_calculatedDemand['demand']['lateAssessmentStatus'] + $this->_calculatedDemand['demand']['lateAssessmentPenalty'];
         $this->_generatedDemand['demand'] = [
+            'dueFromFyear' => $demandDetails->first()['fyear'],
+            'dueToFyear' => $demandDetails->last()['fyear'],
+            'dueFromQtr' => $demandDetails->first()['qtr'],
+            'dueToQtr' => $demandDetails->last()['qtr'],
             'totalTax' => $totalTax,
             'totalOnePercPenalty' => $totalOnePercPenalty,
             'totalQuarters' => $demandDetails->count(),
