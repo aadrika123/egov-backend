@@ -32,9 +32,6 @@ class PropertyDeactivate implements IPropertyDeactivate
      * | Property Deactivation WorkFlow 
      * | status (Open)
     */
-    protected $_common;
-    protected $_modelWard;
-    protected $_track;
 
     private $_COMMON_FUNCTION;
     private $_PROPERTY_CONSTAINT;
