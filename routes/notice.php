@@ -12,5 +12,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post("application/inbox", "inbox");
         Route::post("application/outbox", "outbox");
         Route::post("application/post-next", "postNextLevel");
+        Route::post("application/approve-reject", "approveReject");
     });
 });

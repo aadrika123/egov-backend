@@ -307,7 +307,6 @@ class NoticeController extends Controller
             $receiverRole = array_values(objToArray($allRolse->where("id",$request->receiverRoleId)))[0]??[];
             $senderRole = array_values(objToArray($allRolse->where("id",$request->senderRoleId)))[0]??[];
             $role = $this->_COMMON_FUNCTION->getUserRoll($user_id,$ulb_id,$refWorkflowId);
-           
             if($appllication->current_role != $role->role_id)
             {
                 throw new Exception("You Have Not Pending This Application");
@@ -344,7 +343,15 @@ class NoticeController extends Controller
     }
     public function approveReject(Request $request)
     {
-        
+        try{
+            $request->validate([
+                "applicationId" => "required",
+                "status" => "required|in:1,0"
+            ]);
+            return $this->_REPOSITORY->approveReject($request);
+        }catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
     }
     
 }

@@ -116,7 +116,7 @@ use Illuminate\Support\Facades\DB;
             $noticeApplication->notice_content  = $request->noticeDescription;
             $noticeApplication->initater_role   = $refWorkflows["initiator"]["id"];
             $noticeApplication->current_role    = $refWorkflows["initiator"]["id"];
-            $noticeApplication->finiser_role    = $refWorkflows["finisher"]["id"];
+            $noticeApplication->finisehr_role    = $refWorkflows["finisher"]["id"];
             $noticeApplication->workflow_id     = $this->_WF_MASTER_ID;
             $noticeApplication->user_id         = $userId;
             $noticeApplication->ulb_id          = $ulbId;
