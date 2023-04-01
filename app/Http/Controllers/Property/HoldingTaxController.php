@@ -620,7 +620,6 @@ class HoldingTaxController extends Controller
 
                 $mPropAdjustment->store($adjustReq);
             }
-
             DB::commit();
             return responseMsgs(true, "Payment Successfully Done", ['TransactionNo' => $tranNo], "011604", "1.0", "", "POST", $req->deviceId);
         } catch (Exception $e) {
