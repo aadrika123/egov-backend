@@ -140,9 +140,9 @@ class CalculateSafById
         $calculationReq = [
             "ulbId" => $safDetails['ulb_id'],
             "ward" => $safDetails['ward_mstr_id'],
-            "propertyType" => $safDetails['property_type'],
+            "propertyType" => $safDetails['prop_type_mstr_id'],
             "landOccupationDate" => $safDetails['land_occupation_date'],
-            "ownershipType" => $safDetails['ownership_type'],
+            "ownershipType" => $safDetails['ownership_type_mstr_id'],
             "roadType" => $safDetails['road_width'],
             "areaOfPlot" => $safDetails['area_of_plot'],
             "isMobileTower" => $safDetails['is_mobile_tower'],

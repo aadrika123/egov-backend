@@ -100,7 +100,6 @@ class ApplySafController extends Controller
             $saf = new PropActiveSaf();
             $mOwner = new PropActiveSafsOwner();
             $safCalculation = new SafCalculation();
-            $tax = new InsertTax();
             // Derivative Assignments
             $ulbWorkflowId = $this->readAssessUlbWfId($request, $ulb_id);           // (2.1)
             $roadWidthType = $this->readRoadWidthType($request->roadType);          // Read Road Width Type
