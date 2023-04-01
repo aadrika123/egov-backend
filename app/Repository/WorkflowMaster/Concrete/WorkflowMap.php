@@ -130,6 +130,8 @@ class WorkflowMap implements iWorkflowMapRepository
             'old_ward_name'
         )
             ->where('ulb_id', $request->ulbId)
+            ->distinct('ward_name')
+            ->orderBy('ward_name')
             ->get();
         return responseMsg(true, "Data Retrived", remove_null($workkFlow));
     }

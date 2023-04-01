@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\Menu\MenuMaster;
 use App\Models\Menu\MenuMasterHierarchy;
 use App\Models\Menu\WfRolemenu;
+use App\Models\User;
 use App\Models\Workflows\WfRoleusermap;
 use App\Repository\Menu\Concrete\MenuRepo;
 use App\Repository\Menu\Interface\iMenuRepo;
+use Database\Seeders\UserSeeder;
 use Exception;
 use Illuminate\Http\Request;
 
@@ -431,6 +433,13 @@ class MenuController extends Controller
             $userId = $user->id;
             $mWfRoleUserMap = new WfRoleusermap();
             $mMenuRepo = new MenuRepo();
+            $ulbId = $user->ulb_id;
+
+            $ulbName =  User::select('ulb_name')
+                ->join('ulb_masters', 'ulb_masters.id', 'users.ulb_id')
+                ->where('ulb_id', $ulbId)
+                ->where('users.id', $userId)
+                ->first();
 
             $wfRole = $mWfRoleUserMap->getRoleDetailsByUserId($userId);
             $roleId = $wfRole->pluck('roleId');
@@ -447,13 +456,13 @@ class MenuController extends Controller
             $menuPermission['permission'] = $menu;
             $menuPermission['userDetails'] = [
                 'userName' => $user->user_name,
-                'ulb'      => $user->ulb_id,
+                'ulb'      => $ulbName->ulb_name,
                 'mobileNo' => $user->mobile,
                 'email'    => $user->email,
                 'imageUrl' => $user->photo_relative_path . '/' . $user->photo,
-                'roles' => $wfRole->first()->roles
+                // 'roles' => $wfRole->first()->roles
 
-                // 'roles' => $wfRole->pluck('roles')           //use in case of if the user has multiple roles
+                'roles' => $wfRole->pluck('roles')           //use in case of if the user has multiple roles
             ];
             return responseMsgs(true, "Parent Menu!", $menuPermission, "", "", "", "POST", "");
         } catch (Exception $e) {
