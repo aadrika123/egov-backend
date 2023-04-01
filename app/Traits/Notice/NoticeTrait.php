@@ -27,6 +27,19 @@ use Illuminate\Support\Facades\Config;
             ['displayString' => 'Notice For', 'key' => 'module_type', 'value' => $data->module_type??""],
         ]);
     }
+    public function generateCardDetails($data)
+    {
+        $owners = collect($data)->implode('owner_name', ',');
+        return new Collection([
+            ['displayString' => 'Notice Against.', 'key' => 'firm_name', 'value' => $data->firm_name],
+            ['displayString' => 'Owner Name', 'key' => 'ownerName', 'value' => $owners],
+            ['displayString' => 'Property Type', 'key' => 'propertyType', 'value' => $data->property_type],
+            ['displayString' => 'Application Type', 'key' => 'applicationType', 'value' => $data->application_type],
+            ['displayString' => 'Ownership Type', 'key' => 'ownershipType', 'value' => $data->ownership_type],
+            ['displayString' => 'Apply-Date', 'key' => 'applyDate', 'value' => $data->application_date],
+            ['displayString' => 'Area In Sqft.', 'key' => 'area', 'value' => $data->area_in_sqft],
+        ]);
+    }
 
     public function generateProperty($data)
     {

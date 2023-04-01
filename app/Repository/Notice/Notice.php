@@ -3,6 +3,7 @@
 namespace App\Repository\Notice;
 
 use App\EloquentModels\Common\ModelWard;
+use App\Http\Controllers\Service\IdGeneratorController;
 use App\MicroServices\DocUpload;
 use App\Models\Notice\NoticeApplication;
 use App\Models\Workflows\WfRole;
@@ -41,19 +42,28 @@ use Illuminate\Support\Facades\DB;
     protected $_DOC_PATH;
     protected $_NOTICE_TYPE;
     protected $_MODULE_CONSTAINT;
+    protected $_ID_GENERATOR;
+    protected $_APPLICATION_NO_CONST;
+    protected $_NOTICE_NO_CONST;
     public function __construct()
     {
-        $this->_COMMON_FUNCTION = new CommonFunction();
-        $this->_GENERAL_NOTICE_WF_MASTER_Id = Config::get('workflow-constants.GENERAL_NOTICE_MASTER_ID');
-        $this->_PAYMENT_NOTICE_WF_MASTER_Id = Config::get('workflow-constants.PAYMENT_NOTICE_MASTER_ID');
+        $this->_COMMON_FUNCTION             =   new CommonFunction();
+        $this->_ID_GENERATOR                =   new IdGeneratorController();
+
+        $this->_GENERAL_NOTICE_WF_MASTER_Id =   Config::get('workflow-constants.GENERAL_NOTICE_MASTER_ID');
+        $this->_PAYMENT_NOTICE_WF_MASTER_Id =   Config::get('workflow-constants.PAYMENT_NOTICE_MASTER_ID');
         $this->_ILLEGAL_OCCUPATION_WF_MASTER_Id = Config::get('workflow-constants.ILLEGAL_OCCUPATION_NOTICE_MASTER_ID');
-        $this->_MODULE_CONSTAINT=Config::get('module-constants');
-        $this->_MODULE_ID = Config::get('module-constants.NOTICE_MASTER_ID');
-        $this->_NOTICE_CONSTAINT = Config::get("NoticeConstaint");
-        $this->_REF_TABLE = $this->_NOTICE_CONSTAINT["NOTICE_REF_TABLE"]??null;
-        $this->_DOC_PATH = $this->_NOTICE_CONSTAINT["NOTICE_RELATIVE_PATH"]??null;
-        $this->_NOTICE_TYPE = $this->_NOTICE_CONSTAINT["NOTICE-TYPE"]??null;
-        $this->_WF_MASTER_ID=null;
+        $this->_MODULE_CONSTAINT            =   Config::get('module-constants');
+        $this->_MODULE_ID                   =   Config::get('module-constants.NOTICE_MASTER_ID');
+        $this->_NOTICE_CONSTAINT            =   Config::get("NoticeConstaint");
+
+        $this->_REF_TABLE                   =   $this->_NOTICE_CONSTAINT["NOTICE_REF_TABLE"]??null;
+        $this->_APPLICATION_NO_CONST        =   $this->_NOTICE_CONSTAINT["APPLICATION_NO_GENERATOR_ID"]??null;
+        $this->_NOTICE_NO_CONST             =   $this->_NOTICE_CONSTAINT["NOTICE_NO_GENERATOR_ID"]??null;
+        $this->_DOC_PATH                    =   $this->_NOTICE_CONSTAINT["NOTICE_RELATIVE_PATH"]??null;
+        $this->_NOTICE_TYPE                 =   $this->_NOTICE_CONSTAINT["NOTICE-TYPE"]??null;
+        $this->_WF_MASTER_ID                =   null;
+        
         
     }
 
@@ -116,11 +126,13 @@ use Illuminate\Support\Facades\DB;
             $noticeApplication->notice_content  = $request->noticeDescription;
             $noticeApplication->initater_role   = $refWorkflows["initiator"]["id"];
             $noticeApplication->current_role    = $refWorkflows["initiator"]["id"];
-            $noticeApplication->finisehr_role    = $refWorkflows["finisher"]["id"];
+            $noticeApplication->finisher_role    = $refWorkflows["finisher"]["id"];
             $noticeApplication->workflow_id     = $this->_WF_MASTER_ID;
             $noticeApplication->user_id         = $userId;
             $noticeApplication->ulb_id          = $ulbId;
-            
+            $id_request = new Request(["ulbId"=>$ulbId,"paramId"=>$this->_APPLICATION_NO_CONST]);
+            $id_respons = $this->_ID_GENERATOR->idGenerator($id_request);
+            $noticeApplication->application_no  = $id_respons->original["data"];
             $noticeApplication->save();
             $notice_id = $noticeApplication->id;
             if ($notice_id && $request->document) 
@@ -132,7 +144,7 @@ use Illuminate\Support\Facades\DB;
                 $imageName = $docUpload->upload($refImageName, $document, $this->_DOC_PATH);
 
                 $noticeApplication->documents = $this->_DOC_PATH."/".$imageName;
-                $noticeApplication->update();
+                $noticeApplication->save();
 
             }
             $message="Notice Apply Successfully";
@@ -173,6 +185,7 @@ use Illuminate\Support\Facades\DB;
 
             $notice = NoticeApplication::select(
                         "notice_applications.id",
+                        "notice_applications.application_no",
                         "notice_applications.notice_type_id",
                         "notice_applications.notice_no",
                         "notice_applications.notice_date",
@@ -222,6 +235,7 @@ use Illuminate\Support\Facades\DB;
             $ulb_id = $user->ulb_id;
             $notice = NoticeApplication::select(
                 "notice_applications.id",
+                "notice_applications.application_no",
                 "notice_applications.notice_type_id",
                 "notice_applications.notice_no",
                 "notice_applications.notice_date",
@@ -299,8 +313,13 @@ use Illuminate\Support\Facades\DB;
                 //         break;
                 default : throw new Exception("Invalid Module");
             }  
+            $cardDetails = $this->generateCardDetails($notice);
+            $cardElement = [
+                'headerTitle' => "About Trade",
+                'data' => $cardDetails
+            ];
             $mStatus = $this->applicationStatus($request->applicationId);
-            $fullDetailsData['application_no'] = $notice->notice_no?$notice->notice_no:$mStatus;
+            $fullDetailsData['application_no'] = $notice->application_no;
             $fullDetailsData['fullDetailsData']['dataArray'] = new Collection([$basicElement,$cardElement]);
             return responseMsg(true, 'Data Fetched', remove_null($fullDetailsData));
            
@@ -325,6 +344,7 @@ use Illuminate\Support\Facades\DB;
             // DB::enableQueryLog();          
             $application = NoticeApplication::select(
                     "notice_applications.id",
+                    "notice_applications.application_no",
                     "notice_applications.firm_name",
                     "notice_applications.ptn_no",
                     "notice_applications.holding_no",
@@ -341,7 +361,7 @@ use Illuminate\Support\Facades\DB;
                 ->join("notice_type_masters","notice_type_masters.id","notice_applications.notice_type_id")
                 ->join("module_masters","module_masters.id","notice_applications.notice_for_module_id")
                 ->where("notice_applications.ulb_id",$refUlbId)
-                ->where("notice_applications.status","<>",0)
+                ->whereNOTIN("notice_applications.status",[0,5])    
                 ->where(function($where)use($role1,$role2,$role3){
                     $where->ORWHERE(function($where2)use($role1){
                         $where2->where("notice_applications.current_role", $role1)
@@ -361,6 +381,7 @@ use Illuminate\Support\Facades\DB;
                 $key = trim($inputs['key']);
                 $application = $application->where(function ($query) use ($key) {
                     $query->orwhere('notice_applications.holding_no', 'ILIKE', '%' . $key . '%')
+                        ->orwhere('notice_applications.application_no', 'ILIKE', '%' . $key . '%')
                         ->orwhere('notice_applications.ptn_no', 'ILIKE', '%' . $key . '%')
                         ->orwhere("notice_applications.license_no", 'ILIKE', '%' . $key . '%')
                         ->orwhere("notice_applications.firm_name", 'ILIKE', '%' . $key . '%')
@@ -402,6 +423,7 @@ use Illuminate\Support\Facades\DB;
             // DB::enableQueryLog();          
             $application = NoticeApplication::select(
                     "notice_applications.id",
+                    "notice_applications.application_no",
                     "notice_applications.firm_name",
                     "notice_applications.ptn_no",
                     "notice_applications.holding_no",
@@ -418,7 +440,7 @@ use Illuminate\Support\Facades\DB;
                 ->join("notice_type_masters","notice_type_masters.id","notice_applications.notice_type_id")
                 ->join("module_masters","module_masters.id","notice_applications.notice_for_module_id")
                 ->where("notice_applications.ulb_id",$refUlbId)
-                ->where("notice_applications.status","<>",0)
+                ->whereNOTIN("notice_applications.status",[0,5])
                 ->where(function($where)use($role1,$role2,$role3){
                     $where->ORWHERE(function($where2)use($role1){
                         $where2->where("notice_applications.current_role","<>", $role1)
@@ -438,6 +460,7 @@ use Illuminate\Support\Facades\DB;
                 $key = trim($inputs['key']);
                 $application = $application->where(function ($query) use ($key) {
                     $query->orwhere('notice_applications.holding_no', 'ILIKE', '%' . $key . '%')
+                        ->orwhere('notice_applications.application_no', 'ILIKE', '%' . $key . '%')
                         ->orwhere('notice_applications.ptn_no', 'ILIKE', '%' . $key . '%')
                         ->orwhere("notice_applications.license_no", 'ILIKE', '%' . $key . '%')
                         ->orwhere("notice_applications.firm_name", 'ILIKE', '%' . $key . '%')
@@ -480,7 +503,8 @@ use Illuminate\Support\Facades\DB;
             }
             $this->_WF_MASTER_ID = $application->workflow_id;
             $role = $this->_COMMON_FUNCTION->getUserRoll($user_id,$ulb_id,$this->_WF_MASTER_ID);
-            if ($application->finisher_role != $role->role_id) 
+            
+            if ($application->finisher_role != ($role->role_id??0)) 
             {
                 return responseMsg(false, "Forbidden Access", "");
             }
@@ -491,7 +515,9 @@ use Illuminate\Support\Facades\DB;
             {
                 // Objection Application replication
                 $application->status=5;
-                $application->notice_no = $this->generateNoticNo($application->id);
+                $id_request = new Request(["ulbId"=>$ulb_id,"paramId"=>$this->_NOTICE_NO_CONST]);
+                $id_respons = $this->_ID_GENERATOR->idGenerator($id_request);
+                $application->notice_no = $id_respons->original["data"];//$this->generateNoticNo($application->id);
                 $application->notice_date = Carbon::now()->format("Y-m-d");
                 $application->update();
                 $msg =  "Notice Successfully Generated !!. Your Notice No. ".$application->notice_no;
@@ -524,7 +550,6 @@ use Illuminate\Support\Facades\DB;
         $noticeNO = "NOT/" . date('dmy') . $applicationId;
         return $noticeNO;
     }
-
     public function applicationStatus($applicationId)
     {
         $refUser        = Auth()->user();
