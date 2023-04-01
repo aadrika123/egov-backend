@@ -427,7 +427,8 @@ class MenuController extends Controller
     public function getMenuByModuleId(Request $req)
     {
         try {
-            $userId = authUser()->id;
+            $user = authUser();
+            $userId = $user->id;
             $mWfRoleUserMap = new WfRoleusermap();
             $mMenuRepo = new MenuRepo();
 
@@ -440,15 +441,20 @@ class MenuController extends Controller
             ]);
 
             $treeStructure = $mMenuRepo->generateMenuTree($mreqs);
-            $menuPermission = collect($treeStructure)['original']['data'];
+            $menu = collect($treeStructure)['original']['data'];
 
-            // $treeStructure = $mMenuRepo->generateMenuTree($mreqs);
-            // $menuPermission['permission'] = collect($treeStructure)['original']['data'];
-            // $menuPermission['userDetails'] = [
-            //     'userName' => $user->user_name,
-            //     'roles' => $wfRole->pluck('roles')
-            // ];
+            $treeStructure = $mMenuRepo->generateMenuTree($mreqs);
+            $menuPermission['permission'] = $menu;
+            $menuPermission['userDetails'] = [
+                'userName' => $user->user_name,
+                'ulb'      => $user->ulb_id,
+                'mobileNo' => $user->mobile,
+                'email'    => $user->email,
+                'imageUrl' => $user->photo_relative_path . '/' . $user->photo,
+                'roles' => $wfRole->first()->roles
 
+                // 'roles' => $wfRole->pluck('roles')           //use in case of if the user has multiple roles
+            ];
             return responseMsgs(true, "Parent Menu!", $menuPermission, "", "", "", "POST", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
