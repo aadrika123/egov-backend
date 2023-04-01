@@ -233,7 +233,9 @@ class PropProperty extends Model
                 'prop_properties.prop_address AS address',
                 'ref_prop_types.property_type AS propertyType',
                 'prop_properties.cluster_id',
-                'prop_properties.holding_no as holdingNo'
+                'prop_properties.holding_no as holdingNo',
+                'prop_properties.ulb_id',
+                'prop_properties.ward_mstr_id as ward_no'
             )
             ->where('prop_properties.cluster_id', $clusterId)
             ->where('prop_properties.status', 1)
