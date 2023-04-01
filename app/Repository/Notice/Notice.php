@@ -315,7 +315,7 @@ use Illuminate\Support\Facades\DB;
             }  
             $cardDetails = $this->generateCardDetails($notice);
             $cardElement = [
-                'headerTitle' => "About Trade",
+                'headerTitle' => "Status:",
                 'data' => $cardDetails
             ];
             $mStatus = $this->applicationStatus($request->applicationId);
@@ -497,7 +497,7 @@ use Illuminate\Support\Facades\DB;
                 "applicationId" => "required",
                 "status" => "required"
             ]);
-            $application = NoticeApplication::find($request->applicationId);           
+            $application = NoticeApplication::where("status",1)->find($request->applicationId);           
             if(!$application)
             {
                 throw new Exception("Data Not Found");
