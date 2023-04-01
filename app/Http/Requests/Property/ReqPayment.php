@@ -33,7 +33,6 @@ class ReqPayment extends FormRequest
             $rules['branchName'] = "required";
             $rules['chequeNo'] = "required";
         }
-        $rules['ulbId'] = "required";
         $rules['paymentMode'] = "required";
         $rules['id'] = "required";
 

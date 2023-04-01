@@ -10,6 +10,8 @@
     "CITIZEN"       => "Citizen",
     "NOTICE_REF_TABLE" => "notice_applications",
     "NOTICE_RELATIVE_PATH" => "Uploads/Notice",
+    "APPLICATION_NO_GENERATOR_ID" => "22",
+    "NOTICE_NO_GENERATOR_ID" => "23",
 
     "NOTICE-TYPE" =>
     [

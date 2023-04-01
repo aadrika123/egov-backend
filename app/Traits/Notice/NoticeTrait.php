@@ -27,6 +27,17 @@ use Illuminate\Support\Facades\Config;
             ['displayString' => 'Notice For', 'key' => 'module_type', 'value' => $data->module_type??""],
         ]);
     }
+    public function generateCardDetails($data)
+    {
+        return new Collection([
+            ['displayString' => 'Notice Against.', 'key' => 'firm_name', 'value' => $data->firm_name],
+            ['displayString' => 'Owner Name', 'key' => 'ownerName', 'value' => $data->owner_name],
+            ['displayString' => 'Application No', 'key' => 'application_no', 'value' => $data->application_no],
+            ['displayString' => 'Apply date', 'key' => 'apply_date', 'value' => $data->apply_date],
+            ['displayString' => 'Reason for notice', 'key' => 'notice_content', 'value' => $data->notice_content],
+           
+        ]);
+    }
 
     public function generateProperty($data)
     {

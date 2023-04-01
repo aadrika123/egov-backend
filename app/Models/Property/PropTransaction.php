@@ -302,4 +302,15 @@ class PropTransaction extends Model
             ->where('status', 1)
             ->first();
     }
+
+    /**
+     * | Store Transaction
+     */
+    public function storeTrans(array $req)
+    {
+        $stored = PropTransaction::create($req);
+        return [
+            'id' => $stored->id
+        ];
+    }
 }

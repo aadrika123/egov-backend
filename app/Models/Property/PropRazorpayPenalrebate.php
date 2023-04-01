@@ -17,4 +17,13 @@ class PropRazorpayPenalrebate extends Model
     {
         PropRazorpayPenalrebate::create($req);
     }
+
+    /**
+     * | Get Penalty Rebates by Request Id
+     */
+    public function getPenalRebatesByReqId($razorPayReqId)
+    {
+        return PropRazorpayPenalrebate::where('razorpay_request_id', $razorPayReqId)
+            ->get();
+    }
 }
