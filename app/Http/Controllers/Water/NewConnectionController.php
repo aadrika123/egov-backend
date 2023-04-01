@@ -2027,13 +2027,11 @@ class NewConnectionController extends Controller
             $mWaterSiteInspection = new WaterSiteInspection();
             $refRole = Config::get("waterConstaint.ROLE-LABEL");
             # level logic
-            $returnData = $mWaterSiteInspection->getSiteDetails($request->applicationId)
+            $returnData['aeData'] = $mWaterSiteInspection->getSiteDetails($request->applicationId)
                 ->where('order_officer', $refRole['AE'])
                 ->first();
-            if (!$returnData) {
-                $jeData = $this->jeSiteInspectDetails($request, $refRole);
-                return responseMsgs(true, "JE inspection data! and AE has not done technical inspection!", remove_null($jeData), "", "01", ".ms", "POST", $request->deviceId);
-            }
+            $jeData = $this->jeSiteInspectDetails($request, $refRole);
+            $returnData['jeData'] = $jeData;
             return responseMsgs(true, "AE Inspection details!", remove_null($returnData), "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", $request->deviceId);
