@@ -1450,6 +1450,9 @@ class ActiveSafController extends Controller
     public function paymentSaf(ReqPayment $req)
     {
         try {
+            $req->validate([
+                'paymentId' => "required"
+            ]);
             // Variable Assignments
             $mPropTransactions = new PropTransaction();
             $mPropSafsDemands = new PropSafsDemand();
@@ -1464,7 +1467,7 @@ class ActiveSafController extends Controller
             $paymentId = $req['paymentId'];
             $activeSaf = PropActiveSaf::findOrFail($req['id']);
 
-            if ($activeSaf == 1)
+            if ($activeSaf->payment_status == 1)
                 throw new Exception("Payment Already Done");
             $req['ulbId'] = $activeSaf->ulb_id;
             $razorPayReqs = new Request([
