@@ -273,40 +273,40 @@ use Illuminate\Support\Facades\DB;
                 'headerTitle' => "Basic Details",
                 "data" =>  $this->generateBasicDetails($notice)      // Trait function to get Basic Details
             ];
-            $cardElement=[];
+            $addressElement=[];
             switch($notice->notice_for_module_id)   
             {
                 #property
-                case 1:  $cardElement = [
+                case 1:  $addressElement = [
                             'headerTitle' => "Property & Address",
                             'data' => $cardDetails = $this->generateProperty($notice)
                         ];
                         break;
                 #water
-                case 2:  $cardElement = [
+                case 2:  $addressElement = [
                             'headerTitle' => "Property & Address",
                             'data' => $cardDetails = $this->generateWater($notice)
                         ];
                         break;
                 #tade
-                case 3:  $cardElement = [
+                case 3:  $addressElement = [
                             'headerTitle' => "Property & Address",
                             'data' => $cardDetails = $this->generateTrade($notice)
                         ];
                         break;
                 #SWM
-                case 4:  $cardElement = [
+                case 4:  $addressElement = [
                             'headerTitle' => "Property & Address",
                             'data' => $cardDetails = $this->generateProperty($notice)
                         ];
                         break;
                 #ADVERTISEMENT
-                case 5:  $cardElement = [
+                case 5:  $addressElement = [
                             'headerTitle' => "Property & Address",
                             'data' => $cardDetails = $this->generateProperty($notice)
                         ];
                         break;
-                // case 6:  $cardElement = [
+                // case 6:  $addressElement = [
                 //             'headerTitle' => "Property & Address",
                 //             'data' => $cardDetails = $this->generateProperty($notice)
                 //         ];
@@ -315,12 +315,13 @@ use Illuminate\Support\Facades\DB;
             }  
             $cardDetails = $this->generateCardDetails($notice);
             $cardElement = [
-                'headerTitle' => "About Trade",
+                'headerTitle' => "Status:",
                 'data' => $cardDetails
             ];
             $mStatus = $this->applicationStatus($request->applicationId);
             $fullDetailsData['application_no'] = $notice->application_no;
-            $fullDetailsData['fullDetailsData']['dataArray'] = new Collection([$basicElement,$cardElement]);
+            $fullDetailsData['fullDetailsData']['dataArray'] = new Collection([$basicElement,$addressElement]);
+            $fullDetailsData['fullDetailsData']['cardArray'] = new Collection([$cardElement]);
             return responseMsg(true, 'Data Fetched', remove_null($fullDetailsData));
            
         }
@@ -496,7 +497,7 @@ use Illuminate\Support\Facades\DB;
                 "applicationId" => "required",
                 "status" => "required"
             ]);
-            $application = NoticeApplication::find($request->applicationId);           
+            $application = NoticeApplication::where("status",1)->find($request->applicationId);           
             if(!$application)
             {
                 throw new Exception("Data Not Found");
