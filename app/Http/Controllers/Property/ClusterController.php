@@ -15,6 +15,7 @@ use Exception;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Symfony\Contracts\Service\Attribute\Required;
 
 /**
  * | Property Cluster
@@ -66,7 +67,7 @@ class ClusterController extends Controller
             $porpList['Property'] =  $mPropProperty->searchPropByCluster($refCluster);
             $safList['Saf'] = $mPropActiveSaf->safByCluster($refCluster);
             $returnValues = array_merge($clusterList, $porpList, $safList);
-            return responseMsgs(true, "List Of Data1", $returnValues, "", "", "", "POST", "");
+            return responseMsgs(true, "List Of Data!", $returnValues, "", "", "", "POST", "");
         } catch (Exception $error) {
             return responseMsg(false, $error->getMessage(), "");
         }
@@ -102,7 +103,11 @@ class ClusterController extends Controller
                     'id'                    => 'required',
                     'clusterAddress'        => 'required',
                     'clusterMobileNo'       => ['required', 'min:10', 'max:10'],
-                    'clusterAuthPersonName' => 'required'
+                    'clusterAuthPersonName' => 'required',
+                    'ulbId'                 => 'required',
+                    'wardNo'                => 'required',
+                    'newWardNo'             => 'required',
+                    'status'                => 'nullable|in:1,0'
                 ]
             );
             if ($validateUser->fails()) {
@@ -127,7 +132,10 @@ class ClusterController extends Controller
                     'clusterType'           => 'required',
                     'clusterAddress'        => 'required',
                     'clusterAuthPersonName' => 'required',
-                    'clusterMobileNo'       => ['required', 'min:10', 'max:10']
+                    'clusterMobileNo'       => ['required', 'min:10', 'max:10'],
+                    'ulbId'                => 'required',
+                    'wardNo'                => 'required',
+                    'newWardNo'             => 'required'
                 ]
             );
             if ($validateUser->fails()) {
