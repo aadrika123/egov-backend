@@ -212,6 +212,7 @@ class WebhookPaymentData extends Model
                 'payment_transaction_id as transaction_no'
             )
             ->where('payment_order_id', $req->orderId)
+            ->orderByDesc('id')
             ->first();
     }
 }
