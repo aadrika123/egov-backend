@@ -1928,7 +1928,7 @@ class NewConnectionController extends Controller
             $request->request->add([
                 'wardId'            => $refDetails['refApplication']->ward_id,
                 'userId'            => $user->id,
-                'applicationId'     => $refDetails['refApplication']->is,
+                'applicationId'     => $refDetails['refApplication']->id,
                 'roleId'            => $refDetails['roleDetails']->wf_role_id,
                 'inspectionDate'    => $currentDate,
                 'inspectionTime'    => $currentTime
