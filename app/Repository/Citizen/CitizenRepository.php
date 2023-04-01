@@ -166,6 +166,8 @@ class CitizenRepository implements iCitizenRepository
                 'prop_active_concessions.applicant_name',
                 'prop_active_concessions.date as apply_date',
                 'p.holding_no',
+                'p.new_holding_no',
+                'p.pt_no',
                 'r.role_name as pending_at',
                 'prop_active_concessions.workflow_id'
             )
@@ -182,6 +184,8 @@ class CitizenRepository implements iCitizenRepository
                 'prop_active_objections.objection_no',
                 'prop_active_objections.date as apply_date',
                 'p.holding_no',
+                'p.new_holding_no',
+                'p.pt_no',
                 DB::raw("string_agg(prop_owners.owner_name,',') as applicant_name"),
                 'r.role_name as pending_at',
                 'prop_active_objections.workflow_id',
@@ -192,7 +196,7 @@ class CitizenRepository implements iCitizenRepository
                 'prop_active_objections.id',
                 'objection_no',
                 'date',
-                'holding_no',
+                'p.id',
                 'r.role_name',
                 'prop_active_objections.workflow_id',
                 'prop_active_objections.objection_for'
@@ -203,15 +207,20 @@ class CitizenRepository implements iCitizenRepository
         $harvestingApplications = DB::table('prop_active_harvestings')
             ->join('wf_roles as r', 'r.id', '=', 'prop_active_harvestings.current_role')
             ->join('prop_properties as p', 'p.id', '=', 'prop_active_harvestings.property_id')
+            ->join('prop_owners', 'prop_owners.property_id', '=', 'p.id')
             ->select(
                 'prop_active_harvestings.id as application_id',
                 'prop_active_harvestings.application_no',
-                'prop_active_harvestings.created_at as apply_date',
+                'prop_active_harvestings.date as apply_date',
+                DB::raw("string_agg(prop_owners.owner_name,',') as applicant_name"),
                 'p.holding_no',
+                'p.new_holding_no',
+                'p.pt_no',
                 'r.role_name as pending_at',
                 'prop_active_harvestings.workflow_id'
             )
             ->where('prop_active_harvestings.citizen_id', $userId)
+            ->groupBy('prop_active_harvestings.id', 'p.id', 'r.role_name')
             ->get();
         $applications['harvestings'] = $harvestingApplications;
 
