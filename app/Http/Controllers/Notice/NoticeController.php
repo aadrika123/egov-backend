@@ -5,17 +5,21 @@ namespace App\Http\Controllers\Notice;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Notice\Add;
 use App\Models\ModuleMaster;
+use App\Models\Notice\NoticeApplication;
 use App\Models\Notice\NoticeTypeMaster;
+use App\Models\Workflows\WfWorkflow;
+use App\Models\WorkflowTrack;
 use App\Repository\Common\CommonFunction;
 use App\Repository\Notice\INotice;
 use Illuminate\Http\Request;
 use App\Traits\Auth;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
-class Application extends Controller
+class NoticeController extends Controller
 {
     /**
      * Created By Sandeep Bara
@@ -33,6 +37,7 @@ class Application extends Controller
     protected $_MODULE_ID;
     protected $_REF_TABLE;
     protected $_NOTICE_CONSTAINT;
+    protected $_MODULE_CONSTAINT;
     protected $_NOTICE_TYPE;
     public function __construct(INotice $Repository)
     {
@@ -43,6 +48,7 @@ class Application extends Controller
         $this->_PAYMENT_NOTICE_WF_MASTER_Id = Config::get('workflow-constants.PAYMENT_NOTICE_MASTER_ID');
         $this->_ILLEGAL_OCCUPATION_WF_MASTER_Id = Config::get('workflow-constants.ILLEGAL_OCCUPATION_NOTICE_MASTER_ID');
         $this->_MODULE_ID = Config::get('module-constants.NOTICE_MASTER_ID');
+        $this->_MODULE_CONSTAINT = Config::get('module-constants');
         $this->_NOTICE_CONSTAINT = Config::get("NoticeConstaint");
         $this->_REF_TABLE = $this->_NOTICE_CONSTAINT["NOTICE_REF_TABLE"];
         $this->_NOTICE_TYPE = $this->_NOTICE_CONSTAINT["NOTICE-TYPE"]??null;
@@ -84,10 +90,13 @@ class Application extends Controller
                 );
             $url = null;
             $key = null;
+            $moduleId = null;
+            $moduleType = null;
             
             if($request->moduleId==1)#property
             {
-                
+                $moduleId = $this->_MODULE_CONSTAINT["PROPERTY_MODULE_ID"];
+                $moduleType = "PROPERTY";
                 if(strtoupper($request->searchBy)=="HOLDING")
                 {
                     $key = "holdingNo";
@@ -108,6 +117,8 @@ class Application extends Controller
             }
             if($request->moduleId==2)#water
             {
+                $moduleId = $this->_MODULE_CONSTAINT["WATER_MODULE_ID"];
+                $moduleType = "WATER CONSUMER";
                 if(strtoupper($request->searchBy)=="CONSUMER")
                 {
                     $key = "consumerNo";
@@ -132,6 +143,8 @@ class Application extends Controller
             }
             if($request->moduleId==3)#trade
             {
+                $moduleId = $this->_MODULE_CONSTAINT["TRADE_MODULE_ID"];
+                $moduleType = "TRADE LICENSE";
                 if(strtoupper($request->searchBy)=="LICENSE")
                 {
                     $key = "LICENSE";
@@ -167,7 +180,14 @@ class Application extends Controller
             // {
             //     $url=("http://127.0.0.1:8001/api/property/searchByHoldingNo");
             // }
-            return $data->post($url,$request->all());
+            $response =  $data->post($url,$request->all());
+            $responseBody = json_decode($response->getBody());
+            foreach($responseBody->data as $key=>$val)
+            {
+                $responseBody->data[$key]->moduleId = $moduleId;
+                $responseBody->data[$key]->moduleType = $moduleType;
+            }
+            return($responseBody);            
         }
         catch (Exception $e) 
         {
@@ -206,17 +226,10 @@ class Application extends Controller
 
     public function noticeList(Request $request)
     {
-        $user = Auth()->user();
-            $userId = $user->id;
-            $ulbId = $user->ulb_id;
-            $role1 = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_GENERAL_NOTICE_WF_MASTER_Id);
-            $role2 = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_PAYMENT_NOTICE_WF_MASTER_Id);
-            $role3 = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_ILLEGAL_OCCUPATION_WF_MASTER_Id);
-        dd($role1,$role2,$role3);
         try{
             $request->validate(
                 [
-                    "moduleId"=>"required|digits_between:1,6",
+                    "moduleName"=>"required|regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9\.\,\_\-\']+)*$/",
                 ]
             );
             return $this->_REPOSITORY->noticeList($request);
@@ -226,6 +239,119 @@ class Application extends Controller
             return responseMsg(false, $e->getMessage(), $request->all());
         }
         
+    }
+    public function noticeView(Request $request)
+    {
+        try{
+            $request->validate(
+                [
+                    "applicationId"=>"required|digits_between:1,9223372036854775807",
+                ]
+            );
+            return $this->_REPOSITORY->noticeView($request);
+        }
+        catch (Exception $e) 
+        {
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
+    }
+    public function inbox(Request $request)
+    {
+        return $this->_REPOSITORY->inbox($request);
+    }
+    public function outbox(Request $request)
+    {
+        return $this->_REPOSITORY->outbox($request);
+    }
+    public function postNextLevel(Request $request)
+    {
+
+        try {
+            $user = Auth()->user();
+            $user_id = $user->id;
+            $ulb_id = $user->ulb_id;
+        
+            $request->validate([
+                'applicationId' => 'required|integer',
+                'senderRoleId' => 'required|integer',
+                'receiverRoleId' => 'required|integer',
+            ]);
+            if(!$this->_COMMON_FUNCTION->checkUsersWithtocken("users"))
+            {
+                throw New Exception("Citizen Not Allowed");
+            }
+            
+            
+            $appllication = NoticeApplication::find($request->applicationId);
+            if(!$appllication)
+            {
+                throw new Exception("Data Not Found");
+            }
+            
+            $refWorkflowId = $appllication->workflow_id;
+            $role = $this->_COMMON_FUNCTION->getUserRoll($user_id,$ulb_id,$refWorkflowId);
+            $request->validate([
+                'comment' => ($role->is_initiator??false)?"nullable":'required',
+            ]);
+            // Application Update Current Role Updation
+           
+            $workflowId = WfWorkflow::where('wf_master_id', $refWorkflowId)
+                ->where('ulb_id', $ulb_id)
+                ->first();
+            if (!$workflowId) 
+            {
+                throw new Exception("Workflow Not Available");
+            }
+
+            $allRolse = collect($this->_COMMON_FUNCTION->getAllRoles($user_id,$ulb_id,$refWorkflowId,0,true));
+            $receiverRole = array_values(objToArray($allRolse->where("id",$request->receiverRoleId)))[0]??[];
+            $senderRole = array_values(objToArray($allRolse->where("id",$request->senderRoleId)))[0]??[];
+            $role = $this->_COMMON_FUNCTION->getUserRoll($user_id,$ulb_id,$refWorkflowId);
+            if($appllication->current_role != $role->role_id)
+            {
+                throw new Exception("You Have Not Pending This Application");
+            }
+            $sms ="Application BackWord To ".$receiverRole["role_name"]??"";
+            
+            if($role->serial_no  < $receiverRole["serial_no"]??0)
+            {
+                $sms ="Application Forward To ".$receiverRole["role_name"]??"";
+            }
+           
+            DB::beginTransaction();
+            $appllication->max_level_attained = ($appllication->max_level_attained < ($receiverRole["serial_no"]??0)) ? ($receiverRole["serial_no"]??0) : $appllication->max_level_attained;
+            $appllication->current_role = $request->receiverRoleId;
+            $appllication->update();
+
+
+            $metaReqs['moduleId'] = $this->_MODULE_ID;
+            $metaReqs['workflowId'] = $appllication->workflow_id;
+            $metaReqs['refTableDotId'] = $this->_REF_TABLE;
+            $metaReqs['refTableIdValue'] = $request->applicationId;
+            $metaReqs['user_id']=$user_id;
+            $metaReqs['ulb_id']=$ulb_id;
+            $request->request->add($metaReqs);
+
+            $track = new WorkflowTrack();
+            $track->saveTrack($request);
+            DB::commit();
+            return responseMsgs(true, $sms, "", "010109", "1.0", "286ms", "POST", $request->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
+    }
+    public function approveReject(Request $request)
+    {
+        try{
+            $request->validate([
+                "applicationId" => "required",
+                "status" => "required|in:1,0"
+            ]);
+            return $this->_REPOSITORY->approveReject($request);
+        }catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
     }
     
 }

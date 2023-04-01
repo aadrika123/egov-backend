@@ -14,7 +14,7 @@ class Add extends Notice
     {
         $modul = "SAF,PROPERTY,TRADE LICENSE,WATER CONNECTION,WATER CONSUMER,ADVERTISMENT,MARKET,SOLID WASTE";
         $mRegex = '/^[a-zA-Z1-9][a-zA-Z1-9\. \s]+$/';
-        $mFramNameRegex = '/^[a-zA-Z1-9][a-zA-Z1-9\.\,\'&\s]+$/';
+        $mFramNameRegex = '/^[a-zA-Z1-9][a-zA-Z1-9\.\,\-\_\'&\s]+$/';
         $rules = [
             "noticeType" => "required|in:1,2,3,4",
             "moduleName" => "required|regex:/^[a-zA-Z]+$/i",

@@ -258,6 +258,8 @@ class SafCalculation
     {
         $readRoadWidth = $this->_propertyDetails['roadType'];
 
+        if (!$readRoadWidth)
+            throw new Exception("Road Width Not Available");
         $refRoadType = json_decode(Redis::get('roadType-effective-' . $effectiveDate . 'roadWidth-' . $readRoadWidth));
         if (!$refRoadType) {
             $queryRoadType = "SELECT * FROM m_prop_road_types

@@ -2949,7 +2949,7 @@ class Trade implements ITrade
         ]);
 
         try {
-            // SAF Application Update Current Role Updation
+            // Application Update Current Role Updation
             DB::beginTransaction();
             $licence = ActiveTradeLicence::find($request->id);
             $licence->current_role = $request->receiverRoleId;

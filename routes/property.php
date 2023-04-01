@@ -90,7 +90,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('saf/verifications-comp', 'getVerifications');
     Route::post('saf/IndiVerificationsList', 'getSafVerificationList');
     Route::post('saf/static-saf-dtls', 'getStaticSafDetails');                                          // (27) Static SAf Details
-    Route::post('saf/offline-saf-payment', 'paymentSaf');                                               // SAF Payment(15)
+    Route::post('saf/offline-saf-payment', 'offlinePaymentSaf');                                               // SAF Payment(15)
   });
 
   /**
