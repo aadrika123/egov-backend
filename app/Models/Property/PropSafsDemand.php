@@ -57,7 +57,7 @@ class PropSafsDemand extends Model
     /**
      * | Save SAF Demand
      */
-    public function postDemands($req)
+    public function postDemands(array $req)
     {
         PropSafsDemand::create($req);
     }
