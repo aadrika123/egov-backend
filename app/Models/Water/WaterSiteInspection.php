@@ -112,6 +112,7 @@ class WaterSiteInspection extends Model
         $roleName = WfRole::where('id', $req->roleId)
             ->where('is_suspended', false)
             ->first();
+            
         $mWaterSiteInspection = new WaterSiteInspection();
         $mWaterSiteInspection->water_lock_arng      =   $req->waterLockArng;
         $mWaterSiteInspection->gate_valve           =   $req->gateValve;
