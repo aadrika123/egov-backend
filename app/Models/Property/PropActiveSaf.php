@@ -466,7 +466,9 @@ class PropActiveSaf extends Model
                 DB::raw("string_agg(o.owner_name,',') as ownerName"),
                 'ref_prop_types.property_type as propertyType',
                 'prop_active_safs.cluster_id',
-                'prop_active_safs.prop_address as address'
+                'prop_active_safs.prop_address as address',
+                'prop_active_safs.ulb_id',
+                'prop_active_safs.ward_mstr_id as ward_no'
             )
             ->where('prop_active_safs.cluster_id', $clusterId)
             ->where('ref_prop_types.status', 1)

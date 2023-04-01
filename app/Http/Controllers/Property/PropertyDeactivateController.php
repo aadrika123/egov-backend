@@ -37,22 +37,42 @@ class PropertyDeactivateController extends Controller
     protected $_common;
     protected $_modelWard;
     protected $_track;
+
+    protected $_REPOSITORY;
+    protected $_SAF_REPOSITORY;
+    protected $_COMMON_FUNCTION;
+    protected $_PROPERTY_CONSTAINT;
+    protected $_MODEL_WARD;
+    protected $_WF_MASTER_ID;
+    protected $_MODULE_ID;
+    protected $_REF_TABLE;
+    protected $_DOC_PATH;
+    protected $_MODULE_CONSTAINT;
+    protected $_WORKFLOW_TRACK;
+
     public function __construct(IPropertyDeactivate $PropertyDeactivate,iSafRepository $saf_repository)
     {
-        $this->Repository = $PropertyDeactivate ;
-        $this->saf_repository = new ActiveSafController($saf_repository);
-        $this->_common = new CommonFunction();
-        $this->_modelWard = new ModelWard();
-        $this->_track = new WorkflowTrack();
+        $this->_REPOSITORY = $PropertyDeactivate ;
+        $this->_SAF_REPOSITORY = new ActiveSafController($saf_repository);
+        $this->_COMMON_FUNCTION = new CommonFunction();
+        $this->_MODEL_WARD = new ModelWard();
+        $this->_WORKFLOW_TRACK = new WorkflowTrack();
+        $this->_WF_MASTER_ID=Config::get('workflow-constants.PROPERTY_DEACTIVATION_MASTER_ID');
+        $this->_MODULE_CONSTAINT=Config::get('module-constants');
+        $this->_PROPERTY_CONSTAINT = Config::get("PropertyConstaint");
+        $this->_MODULE_ID = $this->_PROPERTY_CONSTAINT["PROPERTY_MODULE_ID"]??NULL;
+        $this->_REF_TABLE = null;
+        $this->_DOC_PATH = null;
+
     }
     public function readHoldigbyNo(Request $request)
     {
-        return $this->Repository->readHoldigbyNo($request);
+        return $this->_REPOSITORY->readHoldigbyNo($request);
     }
     public function readPorertyById(reqReadProperty $request)
     {
         try{
-            $mProperty = $this->saf_repository->getPropByHoldingNo($request);
+            $mProperty = $this->_SAF_REPOSITORY->getPropByHoldingNo($request);
             if(!$mProperty->original['status'])
             {
                 throw new Exception($mProperty->original['message']);
@@ -93,7 +113,7 @@ class PropertyDeactivateController extends Controller
             {
                 throw new Exception("Request is already submited. Please check request status...!");
             }
-            return $this->Repository->deactivatProperty($request);
+            return $this->_REPOSITORY->deactivatProperty($request);
         }
         catch(Exception $e)
         {
@@ -103,11 +123,11 @@ class PropertyDeactivateController extends Controller
     }
     public function inbox(Request $request)
     {
-        return $this->Repository->inbox($request);
+        return $this->_REPOSITORY->inbox($request);
     }
     public function outbox(Request $request)
     {
-        return $this->Repository->outbox($request);
+        return $this->_REPOSITORY->outbox($request);
     }
     public function postNextLevel(reqPostNext $request)
     {
@@ -124,8 +144,8 @@ class PropertyDeactivateController extends Controller
                 throw new Exception("Workflow Not Available");
             }
             $refDeactivationReq = PropActiveDeactivationRequest::find($request->applicationId);
-            $role = $this->_common->getUserRoll($user_id,$ulb_id,$refWorkflowId);
-            $init_finish = $this->_common->iniatorFinisher($user_id,$ulb_id,$refWorkflowId); 
+            $role = $this->_COMMON_FUNCTION->getUserRoll($user_id,$ulb_id,$refWorkflowId);
+            $init_finish = $this->_COMMON_FUNCTION->iniatorFinisher($user_id,$ulb_id,$refWorkflowId); 
             if(!$refDeactivationReq)
             {
                 throw new Exception("Data Not Found");
@@ -150,7 +170,7 @@ class PropertyDeactivateController extends Controller
             {
                 throw new Exception("Finisher Not Available. Please Contact Admin !!!...");
             }
-            $allRolse = collect($this->_common->getAllRoles($user_id,$ulb_id,$refWorkflowId,0,true));
+            $allRolse = collect($this->_COMMON_FUNCTION->getAllRoles($user_id,$ulb_id,$refWorkflowId,0,true));
             $receiverRole = array_values(objToArray($allRolse->where("id",$request->receiverRoleId)))[0]??[];
             
             $sms ="Application BackWord To ".$receiverRole["role_name"]??"";
@@ -170,12 +190,12 @@ class PropertyDeactivateController extends Controller
             foreach ($request->all() as $key2 => $val2) {
                 $myRequest->request->add([$key2 => $val2]);
             }
-            $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $metaReqs['moduleId'] = $this->_MODULE_ID;
             $metaReqs['workflowId'] = $refWorkflowId;
             $metaReqs['refTableDotId'] = 'prop_active_deactivation_requests';
             $metaReqs['refTableIdValue'] = $request->applicationId;
             $myRequest->request->add($metaReqs);
-            $this->_track->saveTrack($myRequest);
+            $this->_WORKFLOW_TRACK->saveTrack($myRequest);
 
             DB::commit();
 
@@ -271,7 +291,7 @@ class PropertyDeactivateController extends Controller
     }
     public function readDeactivationReq(Request $request)
     {
-        return $this->Repository-> readDeactivationReq($request);
+        return $this->_REPOSITORY-> readDeactivationReq($request);
     }
     public function commentIndependent(Request $request)
     {
@@ -286,7 +306,7 @@ class PropertyDeactivateController extends Controller
             $user_id = $user->id;
             $ulb_id = $user->ulb_id;
             $refDeactivationReq = PropActiveDeactivationRequest::find($request->applicationId);                // SAF Details
-            $mModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $mModuleId = $this->_MODULE_ID;
             $metaReqs = array();
             DB::beginTransaction();
             // Save On Workflow Track For Level Independent
@@ -301,7 +321,7 @@ class PropertyDeactivateController extends Controller
             $metaReqs = array_merge($metaReqs, ['citizenId' => $user_id]);
 
             $request->request->add($metaReqs);
-            $this->_track->saveTrack($request);
+            $this->_WORKFLOW_TRACK->saveTrack($request);
             DB::commit();
             return responseMsgs(true, "You Have Commented Successfully!!", ['Comment' => $request->comment], "00006", "1.0", "", "POST", $request->deviceId);
         } 
@@ -341,7 +361,7 @@ class PropertyDeactivateController extends Controller
             {
                 throw new Exception("Data Not Found!.......");
             }
-            $docpath = !empty(trim($refDeactivationReq->documents))? $this->Repository->readDocumentPath($refDeactivationReq->documents):"";
+            $docpath = !empty(trim($refDeactivationReq->documents))? $this->_REPOSITORY->readDocumentPath($refDeactivationReq->documents):"";
             
             return responseMsgs(true, "Document Fetched", $docpath, "00008", "1.0", "", "POST", $request->deviceId);
         }

@@ -1497,11 +1497,11 @@ class WaterPaymentController extends Controller
                 "towards" => $mTowards,
                 "description" => $mAccDescription,
                 "totalPaidAmount" => $transactionDetails->amount,
-                "DueAmount" => $transactionDetails->due_amount,
+                "dueAmount" => $transactionDetails->due_amount,
                 "rebate" => 0,
                 "waterConsumed" => (($finalReading ?? 0.00) - ($initialReading ?? 0.00)),
-                "fixedpaidFrom" => (Carbon::createFromFormat('Y-m-d',  $fixedFrom)->startOfMonth())->format('Y-m-d'),
-                "fixedpaidUpto" => (Carbon::createFromFormat('Y-m-d',  $fixedUpto)->startOfMonth())->format('Y-m-d'),
+                "fixedPaidFrom" => (Carbon::createFromFormat('Y-m-d',  $fixedFrom)->startOfMonth())->format('Y-m-d'),
+                "fixedPaidUpto" => (Carbon::createFromFormat('Y-m-d',  $fixedUpto)->startOfMonth())->format('Y-m-d'),
                 "paidAmtInWords" => getIndianCurrency($transactionDetails->amount),
 
             ];

@@ -14,12 +14,13 @@ class Add extends Notice
     {
         $modul = "SAF,PROPERTY,TRADE LICENSE,WATER CONNECTION,WATER CONSUMER,ADVERTISMENT,MARKET,SOLID WASTE";
         $mRegex = '/^[a-zA-Z1-9][a-zA-Z1-9\. \s]+$/';
-        $mFramNameRegex = '/^[a-zA-Z1-9][a-zA-Z1-9\.\,\'&\s]+$/';
+        $mFramNameRegex = '/^[a-zA-Z1-9][a-zA-Z1-9\.\,\-\_\'&\s]+$/';
         $rules = [
             "noticeType" => "required|in:1,2,3,4",
-            "applicationId" => "nullable|digits_between:1,9223372036854775807",
+            "moduleName" => "required|regex:/^[a-zA-Z]+$/i",
             "moduleId"      => "nullable|digits_between:1,6",
-            "moduleType"    => "nullable|in:$modul",
+            "applicationId" => $this->moduleId?"required|digits_between:1,9223372036854775807":"nullable",
+            "moduleType"    => $this->moduleId?"required|in:$modul":"nullable|in:$modul",
             "firmName"      => "nullable|regex:$mFramNameRegex",
             "ptnNo"         => "nullable",
             "holdingNo"     =>"nullable",
@@ -28,7 +29,7 @@ class Add extends Notice
             "address"       => "required|regex:$mFramNameRegex",
             "locality"      => "nullable|regex:$mFramNameRegex",
             "mobileNo"      => "required|digits:10|regex:/[0-9]{10}/",
-            "noticeDescription" => "required|regex:$mFramNameRegex|min:50",
+            "noticeDescription" => "required|regex:$mFramNameRegex|min:20",
             "ownerName"     => "nullable|regex:$mRegex",
             "document"     => "required|mimes:pdf,jpg,jpeg,png|max:2048",
         ];

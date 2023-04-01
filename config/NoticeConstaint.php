@@ -10,6 +10,8 @@
     "CITIZEN"       => "Citizen",
     "NOTICE_REF_TABLE" => "notice_applications",
     "NOTICE_RELATIVE_PATH" => "Uploads/Notice",
+    "APPLICATION_NO_GENERATOR_ID" => "22",
+    "NOTICE_NO_GENERATOR_ID" => "23",
 
     "NOTICE-TYPE" =>
     [
@@ -25,4 +27,14 @@
         "3" =>  "PAYMENT RELATED NOTICE",
         "4" =>  "ILLEGAL OCCUPATION NOTICE"
     ],
+    "NOTICE-MODULE"=>
+    [
+        "PROPERTY"      => "1",
+        "WATER"         => "2",
+        "TRADE"         => "3",
+        "SWM"           => "4",
+        "SOLID WASTE USER CHARGE" => "4",
+        "ADVERTISEMENT" => "5",
+    ],
+    "MODULE-TYPE"=> ["PROPERTY","WATER","TRADE","SOLID WASTE USER CHARGE","ADVERTISEMENT"],
 ];

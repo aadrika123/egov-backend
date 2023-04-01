@@ -838,7 +838,12 @@ class NewConnectionController extends Controller
 
             $workflowId = $waterDetails->workflow_id;
             $documents = $mWfActiveDocument->getWaterDocsByAppNo($req->applicationId, $workflowId, $moduleId);
-            return responseMsgs(true, "Uploaded Documents", remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");
+            $returnData = collect($documents)->map(function ($value) {
+                $path =  $this->readDocumentPath($value->ref_doc_path);
+                $value->doc_path = !empty(trim($value->ref_doc_path)) ? $path : null;
+                return $value;
+            });
+            return responseMsgs(true, "Uploaded Documents", remove_null($returnData), "010102", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
         }
@@ -1154,11 +1159,13 @@ class NewConnectionController extends Controller
                     ->where('owner_dtl_id', $ownerId)
                     ->first();
                 if ($uploadedDoc) {
+                    $path = $this->readDocumentPath($uploadedDoc->doc_path);
+                    $fullDocPath = !empty(trim($uploadedDoc->doc_path)) ? $path : null;
                     $response = [
                         "uploadedDocId" => $uploadedDoc->id ?? "",
                         "documentCode" => $item,
                         "ownerId" => $uploadedDoc->owner_dtl_id ?? "",
-                        "docPath" => $uploadedDoc->doc_path ?? "",
+                        "docPath" => $fullDocPath ?? "",
                         "verifyStatus" => $uploadedDoc->verify_status ?? "",
                         "remarks" => $uploadedDoc->remarks ?? "",
                     ];
@@ -1173,10 +1180,14 @@ class NewConnectionController extends Controller
                 $uploadedDoc = $uploadedDocs->where('doc_code', $doc)->first();
                 $strLower = strtolower($doc);
                 $strReplace = str_replace('_', ' ', $strLower);
+                if (isset($uploadedDoc)) {
+                    $path =  $this->readDocumentPath($uploadedDoc->doc_path);
+                    $fullDocPath = !empty(trim($uploadedDoc->doc_path)) ? $path : null;
+                }
                 $arr = [
                     "documentCode" => $doc,
                     "docVal" => ucwords($strReplace),
-                    "uploadedDoc" => $uploadedDoc->doc_path ?? "",
+                    "uploadedDoc" => $fullDocPath ?? "",
                     "uploadedDocId" => $uploadedDoc->id ?? "",
                     "verifyStatus'" => $uploadedDoc->verify_status ?? "",
                     "remarks'" => $uploadedDoc->remarks ?? "",
@@ -1258,6 +1269,16 @@ class NewConnectionController extends Controller
     }
 
     /**
+     * |----------------------------- Read the server url ------------------------------|
+     */
+    public function readDocumentPath($path)
+    {
+        $path = (config('app.url') . "/" . $path);
+        return $path;
+    }
+
+
+    /**
      * |---------------------------- Search Application ----------------------------|
      * | Search Application using provided condition For the Admin 
      */
@@ -1301,8 +1322,6 @@ class NewConnectionController extends Controller
                         throw new Exception("Data Not Found!");
                     break;
                 case ('mobileNo'):
-                    $string = preg_replace("/([A-Z])/", "_$1", $key);
-                    $refstring = strtolower($string);
                     $waterReturnDetails = $mWaterConsumer->getDetailByOwnerDetails($refstring, $paramenter);
                     $checkVal = collect($waterReturnDetails)->first();
                     if (!$checkVal)
@@ -1893,9 +1912,26 @@ class NewConnectionController extends Controller
         try {
             $request->validate([
                 'applicationId' => 'required',
+                'waterLockArng' => 'required|',
+                'gateValve'     => 'required|',
+                'pipelineSize'  => 'required|',
+                'pipeSize'      => 'required|',
+                'ferruleType'   => 'required|',
             ]);
+            $user = authUser();
+            $current = Carbon::now();
+            $currentDate = $current->format('Y-m-d');
+            $currentTime = $current->format('H:i:s');
             $mWaterSiteInspection = new WaterSiteInspection();
-            $this->onlineSitePreConditionCheck($request);
+            $refDetails = $this->onlineSitePreConditionCheck($request);
+            $request->request->add([
+                'wardId'            => $refDetails['refApplication']->ward_id,
+                'userId'            => $user->id,
+                'applicationId'     => $refDetails['refApplication']->is,
+                'roleId'            => $refDetails['roleDetails']->wf_role_id,
+                'inspectionDate'    => $currentDate,
+                'inspectionTime'    => $currentTime
+            ]);
             $mWaterSiteInspection->saveOnlineSiteDetails($request);
             return responseMsgs(true, "Technical Inspection Completed!", "", "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
@@ -1922,12 +1958,20 @@ class NewConnectionController extends Controller
         ]);
         $readRoles = $mWfRoleUser->getRoleByUserWfId($metaReqs);                      // Model to () get Role By User Id
 
+        # Condition checking
         if ($refApplication['current_role'] != $WaterRoles['AE']) {
-            throw new Exception("Application is not Under the Assistent Engineer!");
+            throw new Exception("Application is not under Assistent Engineer!");
         }
         if ($readRoles->wf_role_id != $WaterRoles['AE']) {
-            throw new Exception("you Are Not Autherised for the process!");
+            throw new Exception("You are not autherised for the process!");
         }
+        if ($refApplication['is_field_verified'] == false) {
+            throw new Exception("Site verification by Junier Engineer is not done!");
+        }
+        return [
+            'refApplication' => $refApplication,
+            'roleDetails' => $readRoles
+        ];
     }
 
 

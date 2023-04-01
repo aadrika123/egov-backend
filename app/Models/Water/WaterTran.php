@@ -36,7 +36,8 @@ class WaterTran extends Model
     {
         return WaterTran::where('related_id', $applicationId)
             ->where('tran_type', "=", "Demand Collection")
-            ->where('status', true);
+            ->where('status', true)
+            ->orderByDesc('id');
     }
 
     /**
