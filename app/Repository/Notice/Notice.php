@@ -222,8 +222,23 @@ use Illuminate\Support\Facades\DB;
                     ->where("notice_applications.notice_for_module_id",$request->moduleId)
                     ->get();
             $data["application"] = $notice;
+            switch(strtoupper($request->keyWord))
+            {
+                case "APPROVE" : $data["application"]   =  $notice->where("status",5);
+                                 break;
+                case "REJECT" : $data["application"]    =   $notice->where("status",4);
+                                 break;
+                case "GENERAL" : $data["application"]   =  $notice->where("notice_type_id",($this->_NOTICE_TYPE["GENERAL NOTICE"]??0));
+                                 break;
+                case "DENIAL" : $data["application"]    =   $notice->where("notice_type_id",($this->_NOTICE_TYPE["DENIAL NOTICE"]??0));
+                                 break;
+                case "PAYMENT" : $data["application"]   =   $notice->where("notice_type_id",($this->_NOTICE_TYPE["PAYMENT RELATED NOTICE"]??0));
+                                 break;
+                case "ILLEGAL" : $data["application"]   =   $notice->where("notice_type_id",($this->_NOTICE_TYPE["ILLEGAL OCCUPATION NOTICE"]??0));
+                                 break;
+            }
             $data["total_notice"] = $notice->count();
-            $data["total_aproved_notice"] = $notice->where("status",5)->count();
+            $data["total_approved_notice"] = $notice->where("status",5)->count();
             $data["total_rejected_notice"] = $notice->where("status",4)->count();
             $data["total_general_notice"] = $notice->where("notice_type_id",($this->_NOTICE_TYPE["GENERAL NOTICE"]??0))->count();
             $data["total_denial_notice"] = $notice->where("notice_type_id",($this->_NOTICE_TYPE["DENIAL NOTICE"]??0))->count();
