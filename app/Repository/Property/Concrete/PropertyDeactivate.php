@@ -3,6 +3,7 @@
 namespace App\Repository\Property\Concrete;
 
 use App\EloquentModels\Common\ModelWard;
+use App\Http\Controllers\Service\IdGeneratorController;
 use App\Models\Property\PropActiveDeactivationRequest;
 // use App\Models\Property\PropDeactivationReqInbox;
 use App\Models\Property\PropDeactivationRequest;
@@ -42,17 +43,21 @@ class PropertyDeactivate implements IPropertyDeactivate
     protected $_DOC_PATH;
     protected $_MODULE_CONSTAINT;
     protected $_WORKFLOW_TRACK;
+    protected $_APPLICATION_NO_CONST;
+    protected $_ID_GENERATOR;
     public function __construct()
     {
-        $this->_COMMON_FUNCTION = new CommonFunction();
-        $this->_MODEL_WARD = new ModelWard();
-        $this->_WORKFLOW_TRACK = new WorkflowTrack();
-        $this->_WF_MASTER_ID=Config::get('workflow-constants.PROPERTY_DEACTIVATION_MASTER_ID');
-        $this->_MODULE_CONSTAINT=Config::get('module-constants');
-        $this->_MODULE_ID = Config::get('module-constants.PROPERTY_MODULE_ID');
-        $this->_PROPERTY_CONSTAINT = Config::get("PropertyConstaint");
-        $this->_REF_TABLE = null;
-        $this->_DOC_PATH = null;
+        $this->_COMMON_FUNCTION     =   new CommonFunction();
+        $this->_MODEL_WARD          =   new ModelWard();
+        $this->_WORKFLOW_TRACK      =   new WorkflowTrack();
+        $this->_ID_GENERATOR        =   new IdGeneratorController();
+        $this->_WF_MASTER_ID        =   Config::get('workflow-constants.PROPERTY_DEACTIVATION_MASTER_ID');
+        $this->_MODULE_CONSTAINT    =   Config::get('module-constants');
+        $this->_MODULE_ID           =   Config::get('module-constants.PROPERTY_MODULE_ID');
+        $this->_PROPERTY_CONSTAINT  =   Config::get("PropertyConstaint");
+        $this->_APPLICATION_NO_CONST =  $this->_PROPERTY_CONSTAINT["DEACTIV_PARAM_ID"]??0;
+        $this->_REF_TABLE           = null;
+        $this->_DOC_PATH            = null;
     }
     /**
      * | Searching the valide Property With New Holding No
@@ -188,7 +193,7 @@ class PropertyDeactivate implements IPropertyDeactivate
                                           ->first();
             if($PropDeactivationRequest)
             {
-                throw new Exception("Request is already submited. Please check request status...!");
+                throw new Exception("Request is already submited. Please check request status with APPN - $PropDeactivationRequest->application_no !....");
             }
             if($request->getMethod()=="POST")
             {                          
@@ -206,6 +211,10 @@ class PropertyDeactivate implements IPropertyDeactivate
                 $PropDeactivationRequest->initiator_role     = $init_finish["initiator"]["id"]??null;
                 $PropDeactivationRequest->finisher_role      = $init_finish["finisher"]["id"]??null;
 
+                $id_request = new Request(["ulbId"=>$refUlbId,"paramId"=>$this->_APPLICATION_NO_CONST]);
+                $id_respons = $this->_ID_GENERATOR->idGenerator($id_request);
+                $PropDeactivationRequest->application_no  = $id_respons->original["data"];
+
                 $PropDeactivationRequest->save();
                 $DeactivationReqId = $PropDeactivationRequest->id;
                 if($DeactivationReqId)
@@ -220,7 +229,7 @@ class PropertyDeactivate implements IPropertyDeactivate
                 }
                 DB::commit();
 
-                return  responseMsgs(true,"Property Deactivation Request Apply Succesfully!",[],"00002", "1.0", "", "POST", $request->deviceId);
+                return  responseMsgs(true,"APN: $PropDeactivationRequest->application_no",[],"00002", "1.0", "", "POST", $request->deviceId);
 
             }
 
@@ -274,6 +283,7 @@ class PropertyDeactivate implements IPropertyDeactivate
             } 
             // DB::enableQueryLog();          
             $mProperty = PropActiveDeactivationRequest::select("prop_active_deactivation_requests.id",
+                                            "prop_active_deactivation_requests.application_no",
                                             "properties.holding_no",
                                             "properties.new_holding_no",
                                             "properties.owner_name",
@@ -298,6 +308,7 @@ class PropertyDeactivate implements IPropertyDeactivate
                                                 $key = trim($inputs['key']);
                                                 $join = $join->where(function ($query) use ($key) {
                                                     $query->orwhere('properties.holding_no', 'ILIKE', '%' . $key . '%')
+                                                        ->orwhere("prop_active_deactivation_requests.application_no",'%' . $key . '%')
                                                         ->orwhere('properties.new_holding_no', 'ILIKE', '%' . $key . '%')                                            
                                                         ->orwhere('properties.owner_name', 'ILIKE', '%' . $key . '%')
                                                         ->orwhere('properties.guardian_name', 'ILIKE', '%' . $key . '%')
@@ -365,6 +376,7 @@ class PropertyDeactivate implements IPropertyDeactivate
             $inputs = $request->all();
             // DB::enableQueryLog();
             $mProperty = PropActiveDeactivationRequest::select("prop_active_deactivation_requests.id",
+                                            "prop_active_deactivation_requests.application_no",
                                             "properties.holding_no",
                                             "properties.new_holding_no",
                                             "properties.owner_name",
@@ -389,6 +401,7 @@ class PropertyDeactivate implements IPropertyDeactivate
                                                 $key = trim($inputs['key']);
                                                 $join = $join->where(function ($query) use ($key) {
                                                     $query->orwhere('properties.holding_no', 'ILIKE', '%' . $key . '%')
+                                                        ->orwhere("prop_active_deactivation_requests.application_no",'%' . $key . '%')
                                                         ->orwhere('properties.new_holding_no', 'ILIKE', '%' . $key . '%')                                            
                                                         ->orwhere('properties.owner_name', 'ILIKE', '%' . $key . '%')
                                                         ->orwhere('properties.guardian_name', 'ILIKE', '%' . $key . '%')
@@ -466,7 +479,7 @@ class PropertyDeactivate implements IPropertyDeactivate
                 'headerTitle' => 'Electricity & Water Details',
                 'data' =>  $this->generateElectDtls($refProperty),
             ];
-            $fullDetailsData['application_no'] = $refProperty->holding_no;
+            $fullDetailsData['application_no'] = $refProperty->application_no;
             $fullDetailsData['apply_date'] = $refRequestData->apply_date;
             $fullDetailsData['fullDetailsData']['dataArray'] = collect([$basicElement, $propertyElement, $corrElement, $electElement]);
             // Table Array
@@ -566,6 +579,7 @@ class PropertyDeactivate implements IPropertyDeactivate
             } 
             // DB::enableQueryLog();          
             $mProperty = PropActiveDeactivationRequest::select("prop_active_deactivation_requests.id",
+                                            "prop_active_deactivation_requests.application_no",
                                             "properties.holding_no",
                                             "properties.new_holding_no",
                                             "properties.owner_name",
@@ -590,6 +604,7 @@ class PropertyDeactivate implements IPropertyDeactivate
                                                 $key = trim($inputs['key']);
                                                 $join = $join->where(function ($query) use ($key) {
                                                     $query->orwhere('properties.holding_no', 'ILIKE', '%' . $key . '%')
+                                                        ->orwhere("prop_active_deactivation_requests.application_no",'%' . $key . '%')
                                                         ->orwhere('properties.new_holding_no', 'ILIKE', '%' . $key . '%')                                            
                                                         ->orwhere('properties.owner_name', 'ILIKE', '%' . $key . '%')
                                                         ->orwhere('properties.guardian_name', 'ILIKE', '%' . $key . '%')

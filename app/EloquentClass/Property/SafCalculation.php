@@ -519,8 +519,8 @@ class SafCalculation
             $carbonDateFrom = Carbon::parse($readDateFrom)->format('Y-m-d');
 
             if ($readDateUpto == null) {
-                $readDateUpto = Carbon::now();
-                $readDateUpto = readFinancialDueQuarter($readDateUpto);
+                $readDateUpto = Carbon::now()->endOfYear()->addMonths(3);           // Get The Full Financial Year
+                $readDateUpto = $readDateUpto->format('Y-m-d');
             }
 
             $carbonDateUpto = Carbon::parse($readDateUpto)->format('Y-m-d');
