@@ -32,11 +32,10 @@ use Illuminate\Support\Facades\Config;
         return new Collection([
             ['displayString' => 'Notice Against.', 'key' => 'firm_name', 'value' => $data->firm_name],
             ['displayString' => 'Owner Name', 'key' => 'ownerName', 'value' => $data->owner_name],
-            ['displayString' => 'Property Type', 'key' => 'propertyType', 'value' => $data->property_type],
-            ['displayString' => 'Application Type', 'key' => 'applicationType', 'value' => $data->application_type],
-            ['displayString' => 'Ownership Type', 'key' => 'ownershipType', 'value' => $data->ownership_type],
-            ['displayString' => 'Apply-Date', 'key' => 'applyDate', 'value' => $data->application_date],
-            ['displayString' => 'Area In Sqft.', 'key' => 'area', 'value' => $data->area_in_sqft],
+            ['displayString' => 'Application No', 'key' => 'application_no', 'value' => $data->application_no],
+            ['displayString' => 'Apply date', 'key' => 'apply_date', 'value' => $data->apply_date],
+            ['displayString' => 'Reason for notice', 'key' => 'notice_content', 'value' => $data->notice_content],
+           
         ]);
     }
 
