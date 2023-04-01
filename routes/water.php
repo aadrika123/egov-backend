@@ -64,11 +64,12 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         # Site Inspection
         Route::post('admin/search-application', 'searchApplicationByParameter');                        // Admin
         Route::post('admin/site-verification/comparision', 'listComparision');                          // Admin / notused
-        Route::post('admin/application/save-inspection-date', 'saveInspectionDateTime');                // Admin
-        Route::post('admin/application/site-inspection-details', 'getSiteInspectionDetails');           // Admin
-        Route::post('admin/application/cancel-inspection-scheduling', 'cancelSiteInspection');          // Admin
-        Route::post('admin/application/je-site-details', 'getJeSiteDetails');                           // Admin
-        Route::post('admin/application/online-technical-inspection', 'onlineSiteInspection');           // Admin
+        Route::post('admin/application/save-inspection-date', 'saveInspectionDateTime');                // Workflow/Admin
+        Route::post('admin/application/site-inspection-details', 'getSiteInspectionDetails');           // Workflow/Admin
+        Route::post('admin/application/cancel-inspection-scheduling', 'cancelSiteInspection');          // Workflow/Admin
+        Route::post('admin/application/je-site-details', 'getJeSiteDetails');                           // Workflow/Admin
+        Route::post('admin/application/online-technical-inspection', 'onlineSiteInspection');           // Workflow
+        Route::post('admin/application/technical-inspection-details', 'getTechnicalInsDetails');        // Workflow
     });
 
     /**

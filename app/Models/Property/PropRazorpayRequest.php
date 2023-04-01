@@ -18,4 +18,16 @@ class PropRazorpayRequest extends Model
             'razorPayReqId' => $stored->id
         ];
     }
+
+    /**
+     * | Get Razor pay request by order id and saf id
+     * | @param Request $req
+     */
+    public function getRazorPayRequests($req)
+    {
+        return PropRazorpayRequest::where('order_id', $req->orderId)
+            ->where("$req->key", $req->keyId)
+            ->orderByDesc('id')
+            ->first();
+    }
 }

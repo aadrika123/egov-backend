@@ -1912,11 +1912,11 @@ class NewConnectionController extends Controller
         try {
             $request->validate([
                 'applicationId' => 'required',
-                'waterLockArng' => 'required|',
-                'gateValve'     => 'required|',
-                'pipelineSize'  => 'required|',
-                'pipeSize'      => 'required|',
-                'ferruleType'   => 'required|',
+                'waterLockArng' => 'required',
+                'gateValve'     => 'required',
+                'pipelineSize'  => 'required',
+                'pipeSize'      => 'required|in:15,20,25',
+                'ferruleType'   => 'required|in:6,10,12,16'
             ]);
             $user = authUser();
             $current = Carbon::now();
@@ -1944,7 +1944,7 @@ class NewConnectionController extends Controller
      * | pre conditional Check for the AE online Site inspection
      * | @param
      * | @var mWfRoleUser
-        | Not Working 
+        | Working 
      */
     public function onlineSitePreConditionCheck($request)
     {
@@ -1999,6 +1999,7 @@ class NewConnectionController extends Controller
             if (!is_null($sheduleDate) && $sheduleDate->site_verify_status == true) {
                 $returnData = $mWaterSiteInspection->getSiteDetails($request->applicationId)
                     ->where('order_officer', $refJe)
+                    ->where('emp_details_id', authUser()->id)
                     ->first();
                 $returnData['final_verify'] = true;
                 return responseMsgs(true, "JE Inspection details!", remove_null($returnData), "", "01", ".ms", "POST", $request->deviceId);
@@ -2007,5 +2008,68 @@ class NewConnectionController extends Controller
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", $request->deviceId);
         }
+    }
+
+    /**
+     * | Get AE technical Inspection
+     * | Pick the first details for the respective application 
+     * | @param request
+     * | @var 
+     * | @return 
+        | Not Working
+     */
+    public function getTechnicalInsDetails(Request $request)
+    {
+        try {
+            $request->validate([
+                'applicationId' => 'required',
+            ]);
+            # variable defining
+            $mWaterSiteInspection = new WaterSiteInspection();
+            $refRole = Config::get("waterConstaint.ROLE-LABEL");
+            # level logic
+            $returnData = $mWaterSiteInspection->getSiteDetails($request->applicationId)
+                ->where('order_officer', $refRole['AE'])
+                ->where('emp_details_id', authUser()->id)
+                ->first();
+            if (!$returnData) {
+                $jeData = $this->jeSiteInspectDetails($request, $refRole);
+                return responseMsgs(true, "JE inspection data! and AE has not done technical inspection!", remove_null($jeData), "", "01", ".ms", "POST", $request->deviceId);
+            }
+            return responseMsgs(true, "AE Inspection details!", remove_null($returnData), "", "01", ".ms", "POST", $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", $request->deviceId);
+        }
+    }
+
+    /**
+     * | Check and get the je site inspection details
+     * | @param request
+        | Not Working
+     */
+    public function jeSiteInspectDetails($request, $refRole)
+    {
+        $mWaterApplication = new WaterApplication();
+        $mWaterSiteInspection = new WaterSiteInspection();
+        $applicationId = $request->applicationId;
+
+        $mWaterApplication->getApplicationById($applicationId)
+            ->where('is_field_verified', 1)
+            ->first();
+        if (!$mWaterApplication) {
+            throw new Exception("Application not found!");
+        }
+        $jeData = $mWaterSiteInspection->getSiteDetails($applicationId)
+            ->where('order_officer', $refRole['JE'])
+            ->first();
+        if (!$jeData) {
+            throw new Exception("JE site inspection data not found!");
+        }
+        $returnData = [
+            'pipeline_size' => $jeData->pipeline_size,
+            'pipe_size'     => $jeData->pipe_size,
+            'ferrule_type'  => $jeData->ferrule_type
+        ];
+        return $returnData;
     }
 }
