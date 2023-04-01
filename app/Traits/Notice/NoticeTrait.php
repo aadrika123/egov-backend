@@ -29,10 +29,9 @@ use Illuminate\Support\Facades\Config;
     }
     public function generateCardDetails($data)
     {
-        $owners = collect($data)->implode('owner_name', ',');
         return new Collection([
             ['displayString' => 'Notice Against.', 'key' => 'firm_name', 'value' => $data->firm_name],
-            ['displayString' => 'Owner Name', 'key' => 'ownerName', 'value' => $owners],
+            ['displayString' => 'Owner Name', 'key' => 'ownerName', 'value' => $data->owner_name],
             ['displayString' => 'Property Type', 'key' => 'propertyType', 'value' => $data->property_type],
             ['displayString' => 'Application Type', 'key' => 'applicationType', 'value' => $data->application_type],
             ['displayString' => 'Ownership Type', 'key' => 'ownershipType', 'value' => $data->ownership_type],
