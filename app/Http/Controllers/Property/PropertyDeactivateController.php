@@ -49,6 +49,7 @@ class PropertyDeactivateController extends Controller
     protected $_DOC_PATH;
     protected $_MODULE_CONSTAINT;
     protected $_WORKFLOW_TRACK;
+    protected $_APPLICATION_NO_CONST;
 
     public function __construct(IPropertyDeactivate $PropertyDeactivate,iSafRepository $saf_repository)
     {
@@ -60,6 +61,7 @@ class PropertyDeactivateController extends Controller
         $this->_WF_MASTER_ID=Config::get('workflow-constants.PROPERTY_DEACTIVATION_MASTER_ID');
         $this->_MODULE_CONSTAINT=Config::get('module-constants');
         $this->_PROPERTY_CONSTAINT = Config::get("PropertyConstaint");
+        $this->_APPLICATION_NO_CONST =  $this->_PROPERTY_CONSTAINT["DEACTIV_PARAM_ID"]??0;
         $this->_MODULE_ID = $this->_PROPERTY_CONSTAINT["PROPERTY_MODULE_ID"]??NULL;
         $this->_REF_TABLE = null;
         $this->_DOC_PATH = null;
@@ -111,7 +113,7 @@ class PropertyDeactivateController extends Controller
                                               ->first();
             if($PropDeactivationRequest)
             {
-                throw new Exception("Request is already submited. Please check request status...!");
+                throw new Exception("Request is already submited. Please check request status with APPN - $PropDeactivationRequest->application_no !....");
             }
             return $this->_REPOSITORY->deactivatProperty($request);
         }
