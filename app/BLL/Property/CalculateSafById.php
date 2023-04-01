@@ -269,12 +269,12 @@ class CalculateSafById
 
         // Demand Adjustment
         foreach ($generatedDemand as $item) {
-            $demand = $fullDemandList->where('due_date', $item['dueDate'])->first();
+            $demand = $fullDemandList->where('due_date', $item['due_date'])->first();
             if (collect($demand)->isEmpty())
                 $item['adjustAmount'] = 0;
             else
                 $item['adjustAmount'] = $demand->amount - $demand->balance;
-            $item['balance'] = roundFigure($item['totalTax'] - $item['adjustAmount']);
+            $item['balance'] = roundFigure($item['amount'] - $item['adjust_amount']);
             if ($item['balance'] == 0)
                 $item['onePercPenaltyTax'] = 0;
         }
