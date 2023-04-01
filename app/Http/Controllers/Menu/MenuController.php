@@ -460,9 +460,9 @@ class MenuController extends Controller
                 'mobileNo' => $user->mobile,
                 'email'    => $user->email,
                 'imageUrl' => $user->photo_relative_path . '/' . $user->photo,
-                'roles' => $wfRole->first()->roles
+                // 'roles' => $wfRole->first()->roles
 
-                // 'roles' => $wfRole->pluck('roles')           //use in case of if the user has multiple roles
+                'roles' => $wfRole->pluck('roles')           //use in case of if the user has multiple roles
             ];
             return responseMsgs(true, "Parent Menu!", $menuPermission, "", "", "", "POST", "");
         } catch (Exception $e) {
