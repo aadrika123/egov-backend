@@ -1797,7 +1797,7 @@ class NewConnectionController extends Controller
      * | @param request
      * | @var 
      * | @return 
-        | Recheck
+        | Working
      */
     public function saveInspectionDateTime(Request $request)
     {
@@ -1825,6 +1825,7 @@ class NewConnectionController extends Controller
     /**
      * | Check the validation for saving the site inspection 
      * | @param request
+        | Working
         | Add more Validation 
      */
     public function checkForSaveDateTime($request)
@@ -1883,7 +1884,7 @@ class NewConnectionController extends Controller
      * | Checking the sheduled Date for inspection
      * | @param
      * | @var 
-    | Working
+        | Working
      */
     public function checkCanInspect($siteInspection)
     {
@@ -2015,7 +2016,7 @@ class NewConnectionController extends Controller
      * | @param request
      * | @var 
      * | @return 
-        | Not Working
+        | Working
      */
     public function getTechnicalInsDetails(Request $request)
     {
@@ -2041,7 +2042,7 @@ class NewConnectionController extends Controller
     /**
      * | Check and get the je site inspection details
      * | @param request
-        | Not Working
+        | Working
      */
     public function jeSiteInspectDetails($request, $refRole)
     {
