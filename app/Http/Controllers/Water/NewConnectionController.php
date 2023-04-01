@@ -2049,10 +2049,10 @@ class NewConnectionController extends Controller
         $mWaterSiteInspection = new WaterSiteInspection();
         $applicationId = $request->applicationId;
 
-        $mWaterApplication->getApplicationById($applicationId)
-            ->where('is_field_verified', 1)
+        $applicationDetails = $mWaterApplication->getApplicationById($applicationId)
+            ->where('is_field_verified', true)
             ->first();
-        if (!$mWaterApplication) {
+        if (!$applicationDetails) {
             throw new Exception("Application not found!");
         }
         $jeData = $mWaterSiteInspection->getSiteDetails($applicationId)
