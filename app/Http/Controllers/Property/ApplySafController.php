@@ -100,7 +100,6 @@ class ApplySafController extends Controller
             $saf = new PropActiveSaf();
             $mOwner = new PropActiveSafsOwner();
             $safCalculation = new SafCalculation();
-            $tax = new InsertTax();
             // Derivative Assignments
             $ulbWorkflowId = $this->readAssessUlbWfId($request, $ulb_id);           // (2.1)
             $roadWidthType = $this->readRoadWidthType($request->roadType);          // Read Road Width Type
@@ -182,7 +181,6 @@ class ApplySafController extends Controller
             $safTaxes->original['data']['demand']['payableAmount'] = round($payableAmount);
             $demandResponse['amounts'] = $safTaxes->original['data']['demand'];
             $demandResponse['details'] =  $generatedDemandDtls->groupBy('ruleSet');
-            $tax->insertTax($safId, $ulb_id, $generatedDemandDtls);      // Insert SAF Tax
             DB::commit();
             return responseMsgs(true, "Successfully Submitted Your Application Your SAF No. $safNo", [
                 "safNo" => $safNo,
@@ -330,7 +328,6 @@ class ApplySafController extends Controller
             $safCalculation = new SafCalculation;
             $mPropFloors = new PropActiveSafsFloor();
             $mPropGbOfficer = new PropActiveGbOfficer();
-            $mPropSafDemand = $this->_safDemand;
             $demand = array();
             $safReq = array();
             $reqFloors = $req->floors;
@@ -432,28 +429,6 @@ class ApplySafController extends Controller
             $totalRebate = $safTaxes->original['data']['demand']['rebateAmt'] + $safTaxes->original['data']['demand']['specialRebateAmt'];
             $payableAmount = $totalDemand - $totalRebate;
             $safTaxes->original['data']['demand']['payableAmount'] = round($payableAmount);
-            // Insert Demand
-            foreach ($generatedDemandDtls as $item) {
-                $reqPostDemand = [
-                    'saf_id' => $safId,
-                    'qtr' => $item['qtr'],
-                    'holding_tax' => $item['holdingTax'],
-                    'water_tax' => $item['waterTax'],
-                    'education_cess' => $item['educationTax'],
-                    'health_cess' => $item['healthCess'],
-                    'latrine_tax' => $item['latrineTax'],
-                    'additional_tax' => $item['additionTax'],
-                    'fyear' => $item['quarterYear'],
-                    'due_date' => $item['dueDate'],
-                    'amount' => $item['totalTax'],
-                    'user_id' => $userId,
-                    'ulb_id' => $ulbId,
-                    'arv' => $item['arv'],
-                    'adjust_amount' => $item['adjustAmount'],
-                    'balance' => $item['balance'],
-                ];
-                $mPropSafDemand->postDemands($reqPostDemand);
-            }
 
             // Insert Officer Details
             $gbOfficerReq = [

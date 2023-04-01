@@ -1797,7 +1797,7 @@ class NewConnectionController extends Controller
      * | @param request
      * | @var 
      * | @return 
-        | Recheck
+        | Working
      */
     public function saveInspectionDateTime(Request $request)
     {
@@ -1825,6 +1825,7 @@ class NewConnectionController extends Controller
     /**
      * | Check the validation for saving the site inspection 
      * | @param request
+        | Working
         | Add more Validation 
      */
     public function checkForSaveDateTime($request)
@@ -1883,7 +1884,7 @@ class NewConnectionController extends Controller
      * | Checking the sheduled Date for inspection
      * | @param
      * | @var 
-    | Working
+        | Working
      */
     public function checkCanInspect($siteInspection)
     {
@@ -1912,11 +1913,11 @@ class NewConnectionController extends Controller
         try {
             $request->validate([
                 'applicationId' => 'required',
-                'waterLockArng' => 'required|',
-                'gateValve'     => 'required|',
-                'pipelineSize'  => 'required|',
-                'pipeSize'      => 'required|',
-                'ferruleType'   => 'required|',
+                'waterLockArng' => 'required',
+                'gateValve'     => 'required',
+                'pipelineSize'  => 'required',
+                'pipeSize'      => 'required|in:15,20,25',
+                'ferruleType'   => 'required|in:6,10,12,16'
             ]);
             $user = authUser();
             $current = Carbon::now();
@@ -1927,7 +1928,7 @@ class NewConnectionController extends Controller
             $request->request->add([
                 'wardId'            => $refDetails['refApplication']->ward_id,
                 'userId'            => $user->id,
-                'applicationId'     => $refDetails['refApplication']->is,
+                'applicationId'     => $refDetails['refApplication']->id,
                 'roleId'            => $refDetails['roleDetails']->wf_role_id,
                 'inspectionDate'    => $currentDate,
                 'inspectionTime'    => $currentTime
@@ -1944,7 +1945,7 @@ class NewConnectionController extends Controller
      * | pre conditional Check for the AE online Site inspection
      * | @param
      * | @var mWfRoleUser
-        | Not Working 
+        | Working 
      */
     public function onlineSitePreConditionCheck($request)
     {
@@ -2007,5 +2008,65 @@ class NewConnectionController extends Controller
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", $request->deviceId);
         }
+    }
+
+    /**
+     * | Get AE technical Inspection
+     * | Pick the first details for the respective application 
+     * | @param request
+     * | @var 
+     * | @return 
+        | Working
+     */
+    public function getTechnicalInsDetails(Request $request)
+    {
+        try {
+            $request->validate([
+                'applicationId' => 'required',
+            ]);
+            # variable defining
+            $mWaterSiteInspection = new WaterSiteInspection();
+            $refRole = Config::get("waterConstaint.ROLE-LABEL");
+            # level logic
+            $returnData['aeData'] = $mWaterSiteInspection->getSiteDetails($request->applicationId)
+                ->where('order_officer', $refRole['AE'])
+                ->first();
+            $jeData = $this->jeSiteInspectDetails($request, $refRole);
+            $returnData['jeData'] = $jeData;
+            return responseMsgs(true, "AE Inspection details!", remove_null($returnData), "", "01", ".ms", "POST", $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", $request->deviceId);
+        }
+    }
+
+    /**
+     * | Check and get the je site inspection details
+     * | @param request
+        | Working
+     */
+    public function jeSiteInspectDetails($request, $refRole)
+    {
+        $mWaterApplication = new WaterApplication();
+        $mWaterSiteInspection = new WaterSiteInspection();
+        $applicationId = $request->applicationId;
+
+        $applicationDetails = $mWaterApplication->getApplicationById($applicationId)
+            ->where('is_field_verified', true)
+            ->first();
+        if (!$applicationDetails) {
+            throw new Exception("Application not found!");
+        }
+        $jeData = $mWaterSiteInspection->getSiteDetails($applicationId)
+            ->where('order_officer', $refRole['JE'])
+            ->first();
+        if (!$jeData) {
+            throw new Exception("JE site inspection data not found!");
+        }
+        $returnData = [
+            'pipeline_size' => $jeData->pipeline_size,
+            'pipe_size'     => $jeData->pipe_size,
+            'ferrule_type'  => $jeData->ferrule_type
+        ];
+        return $returnData;
     }
 }

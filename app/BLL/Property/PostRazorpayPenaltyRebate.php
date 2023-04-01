@@ -77,6 +77,11 @@ class PostRazorPayPenaltyRebate
                 'keyString' => $this->_rebatePenalList->where('id', 1)->first()['value'],
                 'value' => $this->_dueList['onePercPenalty'] ?? $this->_dueList['totalOnePercPenalty'],
                 'isRebate' => false
+            ],
+            [
+                'keyString' => $this->_rebatePenalList->where('id', 5)->first()['value'],
+                'value' => $this->_dueList['lateAssessmentPenalty'] ?? 0,
+                'isRebate' => false
             ]
         ];
         $this->_headNames = array_merge($headNames, $rebateList);

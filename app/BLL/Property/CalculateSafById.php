@@ -140,9 +140,9 @@ class CalculateSafById
         $calculationReq = [
             "ulbId" => $safDetails['ulb_id'],
             "ward" => $safDetails['ward_mstr_id'],
-            "propertyType" => $safDetails['property_type'],
+            "propertyType" => $safDetails['prop_type_mstr_id'],
             "landOccupationDate" => $safDetails['land_occupation_date'],
-            "ownershipType" => $safDetails['ownership_type'],
+            "ownershipType" => $safDetails['ownership_type_mstr_id'],
             "roadType" => $safDetails['road_width'],
             "areaOfPlot" => $safDetails['area_of_plot'],
             "isMobileTower" => $safDetails['is_mobile_tower'],
@@ -269,12 +269,12 @@ class CalculateSafById
 
         // Demand Adjustment
         foreach ($generatedDemand as $item) {
-            $demand = $fullDemandList->where('due_date', $item['dueDate'])->first();
+            $demand = $fullDemandList->where('due_date', $item['due_date'])->first();
             if (collect($demand)->isEmpty())
                 $item['adjustAmount'] = 0;
             else
                 $item['adjustAmount'] = $demand->amount - $demand->balance;
-            $item['balance'] = roundFigure($item['totalTax'] - $item['adjustAmount']);
+            $item['balance'] = roundFigure($item['amount'] - $item['adjust_amount']);
             if ($item['balance'] == 0)
                 $item['onePercPenaltyTax'] = 0;
         }
