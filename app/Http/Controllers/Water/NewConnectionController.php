@@ -1999,7 +1999,6 @@ class NewConnectionController extends Controller
             if (!is_null($sheduleDate) && $sheduleDate->site_verify_status == true) {
                 $returnData = $mWaterSiteInspection->getSiteDetails($request->applicationId)
                     ->where('order_officer', $refJe)
-                    ->where('emp_details_id', authUser()->id)
                     ->first();
                 $returnData['final_verify'] = true;
                 return responseMsgs(true, "JE Inspection details!", remove_null($returnData), "", "01", ".ms", "POST", $request->deviceId);
@@ -2030,7 +2029,6 @@ class NewConnectionController extends Controller
             # level logic
             $returnData = $mWaterSiteInspection->getSiteDetails($request->applicationId)
                 ->where('order_officer', $refRole['AE'])
-                ->where('emp_details_id', authUser()->id)
                 ->first();
             if (!$returnData) {
                 $jeData = $this->jeSiteInspectDetails($request, $refRole);
