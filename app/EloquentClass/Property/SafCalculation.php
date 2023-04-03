@@ -1080,14 +1080,6 @@ class SafCalculation
         $this->_GRID['demand']['lateAssessmentStatus'] = $this->_lateAssessmentStatus;
         $this->_GRID['demand']['lateAssessmentPenalty'] = $fine;
 
-        // For Government Building SAF The total Tax 
-        if (isset($this->_propertyDetails['isGBSaf'])) {
-            if ($this->_propertyDetails['isGBSaf'] == true && $this->_isResidential == true) {
-                $this->_GRID['demand']['isGBSaf'] = true;
-                $this->_GRID['demand']['totalTax'] = roundFigure($this->_GRID['demand']['totalTax'] / 2);
-            }
-        }
-
         $taxes = collect($this->_GRID['demand'])->only(['totalTax', 'totalOnePercPenalty', 'lateAssessmentPenalty']);   // All Penalties are Added
         $totalDemandAmount = $taxes->sum();                                                                             // Total Demand with Penalty
         $this->_GRID['demand']['adjustAmount'] = 0;
