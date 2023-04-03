@@ -447,6 +447,7 @@ return [
     "CON_PARAM_ID"  => 7,
     "OBJ_PARAM_ID"  => 8,
     "HAR_PARAM_ID"  => 9,
+    "DEACTIV_PARAM_ID"  =>24,
 
 
     /**

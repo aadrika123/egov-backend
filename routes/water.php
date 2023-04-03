@@ -32,7 +32,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      * | ------------------- Water Connection / mobile ------------------------ |
      */
     Route::controller(NewConnectionController::class)->group(function () {
-        # water Workflow
+        # Workflow
         Route::post('inbox', 'waterInbox');                                                             // Workflow
         Route::post('outbox', 'waterOutbox');                                                           // Workflow
         Route::post('post-next-level', 'postNextLevel');                                                // Workflow
@@ -50,6 +50,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('upload-document', 'uploadWaterDoc');                                               // Workflow/Citizen
         Route::post('get-upload-documents', 'getUploadDocuments');                                      // Workflow/Citizen  
 
+        # Admin / Citizen view
         Route::Post('application/delete', 'deleteWaterApplication');                                    // Citizen     
         Route::post('application/get-by-id', 'getApplicationDetails');                                  // Citizen
         Route::post('citizen/get-doc-list', 'getDocToUpload');                                          // Citizen  
