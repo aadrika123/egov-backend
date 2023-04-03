@@ -210,7 +210,7 @@ class CalculateSafById
 
         $this->_demandDetails = $demandDetails;
 
-        if (in_array($this->_safDetails['assessment_type'], ['Re Assessment', 'ReAssessment']))     // In Case of Reassessment Adjust the Amount
+        if (in_array($this->_safDetails['assessment_type'], ['Re Assessment', 'ReAssessment', 'Mutation']))     // In Case of Reassessment Adjust the Amount
             $this->adjustAmount();         // (1.2.1)
 
         $this->calculateOnePercPenalty();   // (1.2.2)
