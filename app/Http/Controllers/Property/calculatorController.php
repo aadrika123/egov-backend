@@ -98,7 +98,7 @@ class calculatorController extends Controller
                             return collect($qtr)->pipe(function ($floors) use ($quaterlyTaxes, $key) {
                                 $taxes = [
                                     'key' => $key,
-                                    'effectingFrom' => $floors->first()['dateFrom'],
+                                    'effectingFrom' => $floors->first()['quarterYear'] . '/' . $floors->first()['qtr'],
                                     'qtr' => $floors->first()['qtr'],
                                     'arv' => roundFigure($floors->sum('arv')),
                                     'holdingTax' => roundFigure($floors->sum('holdingTax')),
