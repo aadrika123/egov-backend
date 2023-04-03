@@ -1164,7 +1164,7 @@ class ActiveSafController extends Controller
                     'activeSafDtls' => $activeSaf,
                     'propId' => $propId
                 ];
-                $handleTcVerification->generateTcVerifiedDemand($tcVerifyParams);                // current object function (10.3)
+                // $handleTcVerification->generateTcVerifiedDemand($tcVerifyParams);                // current object function (10.3)
                 $msg = "Application Approved Successfully";
 
                 $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
@@ -1172,6 +1172,7 @@ class ActiveSafController extends Controller
                 $metaReqs['refTableDotId'] = Config::get('PropertyConstaint.SAF_REF_TABLE');
                 $metaReqs['refTableIdValue'] = $req->applicationId;
                 $metaReqs['senderRoleId'] = $senderRoleId;
+                $metaReqs['verificationStatus'] = 1;
                 $metaReqs['user_id'] = $userId;
                 $metaReqs['trackDate'] = $this->_todayDate->format('Y-m-d H:i:s');
                 $req->request->add($metaReqs);
