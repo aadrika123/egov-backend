@@ -40,7 +40,7 @@ class WorkflowTrack extends Model
         $track->forward_time = $request->forwardTime ?? null;
         $track->sender_role_id = $request->senderRoleId ?? null;
         $track->receiver_role_id = $request->receiverRoleId ?? null;
-        $track->verification_status = $request->verificationStatus;
+        $track->verification_status = $request->verificationStatus ?? 0;
         $track->user_id = $userId;
         $track->ulb_id = $ulbId;
         return  $track->save();

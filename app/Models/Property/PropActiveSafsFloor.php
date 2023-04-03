@@ -80,7 +80,7 @@ class PropActiveSafsFloor extends Model
     public function editFloor($req, $citizenId)
     {
         $req = new Request($req);
-        $floor = PropActiveSafsFloor::find($req->floorId);
+        $floor = PropActiveSafsFloor::find($req->safFloorId);
         if ($req->useType == 1)
             $carpetArea =  $req->buildupArea * 0.70;
         else
