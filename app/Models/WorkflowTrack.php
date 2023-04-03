@@ -27,7 +27,7 @@ class WorkflowTrack extends Model
     {
         $userId = $request->user_id;
         $ulbId = $request->ulb_id ?? authUser()->ulb_id;
-        $mTrackDate = Carbon::now()->format('Y-m-d H:i:s');
+        $mTrackDate = $request->trackDate ?? Carbon::now()->format('Y-m-d H:i:s');
         $track = new WorkflowTrack;
         $track->workflow_id = $request->workflowId;
         $track->citizen_id = $request->citizenId;
@@ -36,8 +36,8 @@ class WorkflowTrack extends Model
         $track->ref_table_id_value = $request->refTableIdValue;
         $track->track_date = $mTrackDate;
         $track->message = $request->comment;
-        $track->forward_date = Carbon::now()->format('Y-m-d') ?? null;
-        $track->forward_time = Carbon::now()->format('H:i:s') ?? null;
+        $track->forward_date = $request->forwardDate ?? null;
+        $track->forward_time = $request->forwardTime ?? null;
         $track->sender_role_id = $request->senderRoleId ?? null;
         $track->receiver_role_id = $request->receiverRoleId ?? null;
         $track->verification_status = $request->verificationStatus;
@@ -165,5 +165,18 @@ class WorkflowTrack extends Model
             ->where('ulb_id', $request->ulbId)
             ->where('forward_date', $currentDate)
             ->where('module_id', $request->moduleId);
+    }
+
+    /**
+     * | Get Workflow Track by Ref Table, Workflow, and ref table Value and Receiver RoleId
+     */
+    public function getWfTrackByRefId(array $req)
+    {
+        return WorkflowTrack::where('workflow_id', $req['workflowId'])
+            ->where('ref_table_dot_id', $req['refTableDotId'])
+            ->where('ref_table_id_value', $req['refTableIdValue'])
+            ->where('receiver_role_id', $req['receiverRoleId'])
+            ->where('status', true)
+            ->firstOrFail();
     }
 }
