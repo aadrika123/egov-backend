@@ -127,10 +127,17 @@ class PropertyDeactivateController extends Controller
     {
         return $this->_REPOSITORY->inbox($request);
     }
+    
     public function outbox(Request $request)
     {
         return $this->_REPOSITORY->outbox($request);
     }
+
+    public function specialInbox(Request $request)
+    {
+        return $this->_REPOSITORY->specialInbox($request);
+    }
+    
     public function postNextLevel(reqPostNext $request)
     {
         try{

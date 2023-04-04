@@ -32,7 +32,11 @@ class reqApplySaf extends FormRequest
         if ($userType == 'Citizen')
             $rules['ulbId'] = "required|int";
 
-        $rules['assessmentType'] = "required|int|in:1,2,3,4,5";
+        if (isset($this->edit) && $this->edit == true)
+            $rules['assessmentType'] = "nullable";
+        else
+            $rules['assessmentType'] = "required|int|in:1,2,3,4,5";
+
         if (isset($this->assessmentType) && $this->assessmentType == 3) {
             $rules['transferModeId'] = "required";
             $rules['dateOfPurchase'] = "required|date|date_format:Y-m-d|before_or_equal:$mNowDate";
@@ -81,6 +85,7 @@ class reqApplySaf extends FormRequest
         } else {
             $rules['floor']        = "required|array";
             if (isset($this->floor) && $this->floor) {
+                $rules["floor.*.propFloorDetailId"] =   "nullable|numeric";
                 $rules["floor.*.floorNo"]           =   "required|int";
                 $rules["floor.*.useType"]           =   "required|int";
                 $rules["floor.*.constructionType"]  =   "required|int|in:1,2,3";

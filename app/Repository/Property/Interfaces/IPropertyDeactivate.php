@@ -15,6 +15,7 @@ interface IPropertyDeactivate
    public function deactivatProperty(Request $request);
    public function inbox(Request $request);
    public function outbox(Request $request);
+   public function specialInbox(Request $request);
    public function readDeactivationReq(Request $request);
    public function readDocumentPath($path);
 }

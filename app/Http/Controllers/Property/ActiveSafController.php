@@ -820,11 +820,22 @@ class ActiveSafController extends Controller
             $metaReqs['refTableIdValue'] = $request->applicationId;
             $metaReqs['senderRoleId'] = $senderRoleId;
             $metaReqs['user_id'] = $userId;
-
+            $metaReqs['trackDate'] = $this->_todayDate->format('Y-m-d H:i:s');
             $request->request->add($metaReqs);
-
             $track->saveTrack($request);
 
+            // Updation of Received Date
+            $preWorkflowReq = [
+                'workflowId' => $saf->workflow_id,
+                'refTableDotId' => Config::get('PropertyConstaint.SAF_REF_TABLE'),
+                'refTableIdValue' => $request->applicationId,
+                'receiverRoleId' => $senderRoleId
+            ];
+            $previousWorkflowTrack = $track->getWfTrackByRefId($preWorkflowReq);
+            $previousWorkflowTrack->update([
+                'forward_date' => $this->_todayDate->format('Y-m-d'),
+                'forward_time' => $this->_todayDate->format('H:i:s')
+            ]);
             DB::commit();
             return responseMsgs(true, "Successfully Forwarded The Application!!", $samHoldingDtls, "010109", "1.0", "", "POST", $request->deviceId);
         } catch (Exception $e) {
@@ -1078,10 +1089,12 @@ class ActiveSafController extends Controller
             $mPropSafDemand = new PropSafsDemand();
             $mPropProperties = new PropProperty();
             $mPropDemand = new PropDemand();
+            $track = new WorkflowTrack();
             $handleTcVerification = new TcVerificationDemandAdjust;
             $todayDate = Carbon::now()->format('Y-m-d');
             $currentFinYear = calculateFYear($todayDate);
             $famParamId = Config::get('PropertyConstaint.FAM_PARAM_ID');
+            $senderRoleId = $safDetails->current_role;
 
             $userId = authUser()->id;
             $safId = $req->applicationId;
@@ -1151,8 +1164,32 @@ class ActiveSafController extends Controller
                     'activeSafDtls' => $activeSaf,
                     'propId' => $propId
                 ];
-                $handleTcVerification->generateTcVerifiedDemand($tcVerifyParams);                // current object function (10.3)
+                // $handleTcVerification->generateTcVerifiedDemand($tcVerifyParams);                // current object function (10.3)
                 $msg = "Application Approved Successfully";
+
+                $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+                $metaReqs['workflowId'] = $safDetails->workflow_id;
+                $metaReqs['refTableDotId'] = Config::get('PropertyConstaint.SAF_REF_TABLE');
+                $metaReqs['refTableIdValue'] = $req->applicationId;
+                $metaReqs['senderRoleId'] = $senderRoleId;
+                $metaReqs['verificationStatus'] = 1;
+                $metaReqs['user_id'] = $userId;
+                $metaReqs['trackDate'] = $this->_todayDate->format('Y-m-d H:i:s');
+                $req->request->add($metaReqs);
+                $track->saveTrack($req);
+
+                // Updation of Received Date
+                $preWorkflowReq = [
+                    'workflowId' => $safDetails->workflow_id,
+                    'refTableDotId' => Config::get('PropertyConstaint.SAF_REF_TABLE'),
+                    'refTableIdValue' => $req->applicationId,
+                    'receiverRoleId' => $senderRoleId
+                ];
+                $previousWorkflowTrack = $track->getWfTrackByRefId($preWorkflowReq);
+                $previousWorkflowTrack->update([
+                    'forward_date' => $this->_todayDate->format('Y-m-d'),
+                    'forward_time' => $this->_todayDate->format('H:i:s')
+                ]);
             }
             // Rejection
             if ($req->status == 0) {
@@ -1451,7 +1488,8 @@ class ActiveSafController extends Controller
     {
         try {
             $req->validate([
-                'paymentId' => "required"
+                'paymentId' => "required",
+                "transactionNo" => "required"
             ]);
             // Variable Assignments
             $mPropTransactions = new PropTransaction();

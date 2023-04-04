@@ -159,7 +159,7 @@ class ApplySafController extends Controller
             $totalOnePercPenalty = $generatedDemandDtls->sum('onePercPenaltyTax');
             $totalDemand = $totalBalance + $totalOnePercPenalty + $lateAssessmentPenalty;
 
-            if ($assessmentId == 2) {                                    // In Case Of Reassessment Amount Adjustment
+            if ($assessmentId == 2 || $assessmentId == 3) {                                    // In Case Of Reassessment,Mutation Amount Adjustment
                 $this->_holdingNo = $request->holdingNo;
                 $generatedDemandDtls = $this->adjustDemand();            // (2.3)
 

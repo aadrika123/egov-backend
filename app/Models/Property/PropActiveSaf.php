@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
-class PropActiveSaf extends Model
+class  PropActiveSaf extends Model
 {
     use HasFactory;
 
@@ -79,7 +79,7 @@ class PropActiveSaf extends Model
             'ip_address' => getClientIpAddress(),
             'new_ward_mstr_id' => $req->newWard,
             'percentage_of_property_transfer' => $req->percOfPropertyTransfer,
-            'apartment_details_id' => $req->apartmentDetail,
+            'apartment_details_id' => $req->apartmentId,
             'applicant_name' => collect($req->owner)->first()['ownerName'],
             'road_width' => $req->roadType,
             'user_id' => $req->userId,
@@ -554,15 +554,10 @@ class PropActiveSaf extends Model
             'ip_address' => getClientIpAddress(),
             'new_ward_mstr_id' => $req->newWard,
             'percentage_of_property_transfer' => $req->percOfPropertyTransfer,
-            'apartment_details_id' => $req->apartmentDetail,
+            'apartment_details_id' => $req->apartmentId,
             'applicant_name' => collect($req->owner)->first()['ownerName'],
             'road_width' => $req->roadType,
             'user_id' => $req->userId,
-            'workflow_id' => $req->workflowId,
-            'ulb_id' => $req->ulbId,
-            'current_role' => $req->initiatorRoleId,
-            'initiator_role_id' => $req->initiatorRoleId,
-            'finisher_role_id' => $req->finisherRoleId,
             'citizen_id' => $citizenId,
         ];
         return $mPropActiveSaf->update($reqs);
