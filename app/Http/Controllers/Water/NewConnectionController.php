@@ -220,18 +220,17 @@ class NewConnectionController extends Controller
             $mDeviceId = $req->deviceId ?? "";
 
             $workflowRoles = $this->getRoleIdByUserId($userId);
-            $roleId = $workflowRoles->map(function ($value, $key) {                         // Get user Workflow Roles
+            $roleId = $workflowRoles->map(function ($value) {                         // Get user Workflow Roles
                 return $value->wf_role_id;
             });
 
             $refWard = $mWfWardUser->getWardsByUserId($userId);
-            $wardId = $refWard->map(function ($value, $key) {
+            $wardId = $refWard->map(function ($value) {
                 return $value->ward_id;
             });
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
 
             $waterList = $this->getWaterApplicatioList($workflowIds, $ulbId)
-                ->whereIn('water_applications.current_role', $roleId)
                 ->whereIn('water_applications.ward_id', $wardId)
                 ->where('parked', true)
                 ->orderByDesc('water_applications.id')
