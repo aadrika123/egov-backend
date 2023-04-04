@@ -31,15 +31,13 @@ class StateDashboardController extends Controller
         $fromDate = '01-04-' . $financialYearStart;
         $toDate   = '31-03-' . $financialYearStart + 1;
 
-        $ulbIds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+        $ulbIds = [1, 2, 3, 4, 5];
+        $ulbName = ['Adityapur', 'Ranchi'];
 
         foreach ($ulbIds as $ulbId) {
-            $collection[] = $this->collection($ulbId, $fromDate, $toDate);
+            $collection[$ulbId] = $this->collection($ulbId, $fromDate, $toDate);
         }
         return $collection;
-        // return $data;
-
-        // return $total =  collect($data)->sum('total');
     }
 
     public function collection($ulbId, $fromDate, $toDate)
@@ -66,6 +64,7 @@ class StateDashboardController extends Controller
             AND tran_date BETWEEN '$fromDate' AND '$toDate'
             )
         )select * from  transaction";
-        return $data = DB::select($sql);
+        $data = DB::select($sql);
+        return collect($data)->pluck('total')->sum();
     }
 }
