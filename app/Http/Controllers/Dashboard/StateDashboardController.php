@@ -3,8 +3,12 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
+use App\Models\Property\PropTransaction;
+use App\Models\Trade\TradeTransaction;
+use App\Models\Water\WaterTran;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon as SupportCarbon;
 use Illuminate\Support\Facades\DB;
 use stdClass;
 
@@ -30,14 +34,17 @@ class StateDashboardController extends Controller
 
         $fromDate = '01-04-' . $financialYearStart;
         $toDate   = '31-03-' . $financialYearStart + 1;
+        $collection = collect();
 
         $ulbIds = [1, 2, 3, 4, 5];
         $ulbName = ['Adityapur', 'Ranchi'];
 
         foreach ($ulbIds as $ulbId) {
-            $collection[$ulbId] = $this->collection($ulbId, $fromDate, $toDate);
+            $data['ulbId'] = $ulbId;
+            $data['collection'] = $this->collection($ulbId, $fromDate, $toDate);
+            $collection->push($data);
         }
-        return $collection;
+        return responseMsgs(true, "Ulb Wise Collection", remove_null($collection), "", '', '01', '314ms-451ms', 'Post', '');
     }
 
     public function collection($ulbId, $fromDate, $toDate)
@@ -66,5 +73,33 @@ class StateDashboardController extends Controller
         )select * from  transaction";
         $data = DB::select($sql);
         return collect($data)->pluck('total')->sum();
+    }
+
+    /**
+     * | Module wise count of online payment
+     */
+    public function onlinePaymentCount(Request $req)
+    {
+        $today = Carbon::now()->format('y-m-d');
+        $data = PropTransaction::where('payment_mode', 'ONLINE')
+            ->where('tran_date', $today)
+            ->get();
+
+        $data = TradeTransaction::where('payment_mode', 'Online')
+            ->where('tran_date', $today)
+            ->get();
+
+        return $data = WaterTran::where('payment_mode', 'Online')
+            ->where('tran_date', $today)
+            ->get();
+
+        return $data->count();
+    }
+
+    /**
+     * | State Wise Collection Percentage
+     */
+    public function stateWiseCollectionPercentage(Request $req)
+    {
     }
 }
