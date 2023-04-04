@@ -936,7 +936,6 @@ class NewConnectionRepository implements iNewConnection
         $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
 
         $waterList = $this->getWaterApplicatioList($workflowIds, $ulbId)
-            ->where('water_applications.current_role', $roleId)
             ->whereIn('water_applications.ward_id', $wardId)
             ->where('is_field_verified', true)
             ->orderByDesc('water_applications.id')
