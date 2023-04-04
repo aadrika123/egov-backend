@@ -60,7 +60,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('admin/application/get-details-by-id', 'getApplicationDetailById');                 // Admin
         Route::post('admin/application/list-details-by-date', 'listApplicationBydate');                 // Admin
         Route::post('search-consumer', 'searchWaterConsumer');                                          // Admin/Consumer   
-        Route::post('consumer/get-listed-details', 'approvedWaterApplications');                        // Consumer
+        Route::post('consumer/get-listed-details', 'approvedWaterApplications');                        // Consumer 
 
         # Site Inspection
         Route::post('admin/search-application', 'searchApplicationByParameter');                        // Admin

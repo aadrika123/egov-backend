@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Property;
 
 use App\EloquentClass\Property\PenaltyRebateCalculation;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Property\reqApplySaf;
 use App\Http\Requests\Property\ReqPayment;
 use App\MicroServices\IdGeneration;
 use App\Models\Cluster\Cluster;
@@ -42,46 +43,67 @@ class ActiveSafControllerV2 extends Controller
      * | @param request $req
      * | Serial 01
      */
-    public function editCitizenSaf(Request $req)
+    public function editCitizenSaf(reqApplySaf $req)
     {
         $req->validate([
             'id' => 'required|numeric'
         ]);
-
         try {
             $id = $req->id;
             $mPropActiveSaf = PropActiveSaf::find($id);
-            $mPropSaf = new PropActiveSaf();
             $citizenId = authUser()->id;
             $mPropSafOwners = new PropActiveSafsOwner();
             $mPropSafFloors = new PropActiveSafsFloor();
-            $mOwners = $req->owner;
-            $mfloors = $req->floor;
+            $mActiveSaf = new PropActiveSaf();
+            $reqOwners = $req->owner;
+            $reqFloors = $req->floor;
+
+            $refSafFloors = $mPropSafFloors->getSafFloorsBySafId($id);
+            $refSafOwners = $mPropSafOwners->getOwnersBySafId($id);
 
             if ($mPropActiveSaf->payment_status == 1)
                 throw new Exception("You cannot edit the application");
 
             if ($mPropActiveSaf->payment_status == 0) {
+                // Floors
+                $newFloors = collect($reqFloors)->whereNull('safFloorId')->values();
+                $existingFloors = collect($reqFloors)->whereNotNull('safFloorId')->values();
+                $existingFloorIds = $existingFloors->pluck('safFloorId');
+                $toDeleteFloors = $refSafFloors->whereNotIn('id', $existingFloorIds)->values();
+                $toDeleteFloorIds = $toDeleteFloors->pluck('id');
+                // Owners
+                $newOwners = collect($reqOwners)->whereNull('safOwnerId')->values();
+                $existingOwners = collect($reqOwners)->whereNotNull('safOwnerId')->values();
+                $existingOwnerIds = $existingOwners->pluck('safOwnerId');
+                $toDeleteOwners = $refSafOwners->whereNotIn('id', $existingOwnerIds)->values();
+                $toDeleteOwnerIds = $toDeleteOwners->pluck('id');
                 DB::beginTransaction();
+                // Edit Active Saf
+                $mActiveSaf->safEdit($req, $mPropActiveSaf, $citizenId);
+                // Delete No Existing floors
+                PropActiveSafsFloor::destroy($toDeleteFloorIds);
+                // Update Existing floors
+                foreach ($existingFloors as $existingFloor) {
+                    $mPropSafFloors->editFloor($existingFloor, $citizenId);
+                }
+                // Add New Floors
+                foreach ($newFloors as $newFloor) {
+                    $mPropSafFloors->addfloor($newFloor, $id, $citizenId);
+                }
 
-                $mPropSaf->safEdit($req, $mPropActiveSaf, $citizenId);
+                // Delete No Existing Owners
+                PropActiveSafsOwner::destroy($toDeleteOwnerIds);
+                // Update Existing Owners
+                foreach ($existingOwners as $existingOwner) {
+                    $mPropSafOwners->edit($existingOwner);
+                }
 
-                collect($mOwners)->map(function ($owner) use ($mPropSafOwners, $citizenId, $id) {            // Updation of Owner Basic Details
-                    if (isset($owner['ownerId']))
-                        $mPropSafOwners->ownerEdit($owner, $citizenId);
-                    else
-                        $mPropSafOwners->addOwner($owner, $id, $citizenId);
-                });
-
-                collect($mfloors)->map(function ($floor) use ($mPropSafFloors, $citizenId, $id) {            // Updation of Owner Basic Details
-                    if (isset($floor['floorId']))
-                        $mPropSafFloors->editFloor($floor, $citizenId);
-                    else
-                        $mPropSafFloors->addFloor($floor, $id, $citizenId);
-                });
-                DB::commit();
+                // Add New Owners
+                foreach ($newOwners as $newOwner) {
+                    $mPropSafOwners->addOwner($newOwner, $id, $citizenId);
+                }
             }
-
+            DB::commit();
             return responseMsgs(true, "Successfully Updated the Data", "", 010124, 1.0, "308ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();

@@ -82,6 +82,7 @@ class NewConnectionRepository implements iNewConnection
      * | Generating the demand amount for the applicant in Water Connection Charges Table 
         | Serila No : 01
         | Check the ulb_id
+        | send it in track
      */
     public function store(Request $req)
     {
@@ -500,6 +501,7 @@ class NewConnectionRepository implements iNewConnection
         | Serial No : 07 
         | Working / Check it / remove the comment ?? for delete / save the Details of the site inspection
         | Use the micrervice for the consumerId 
+        | Save it inthe track 
      */
     public function approvalRejectionWater($request, $roleId)
     {
@@ -555,9 +557,31 @@ class NewConnectionRepository implements iNewConnection
         if ($waterDetails->doc_upload_status == false) {
             throw new Exception("Full document is Not Uploaded!");
         }
-        // if ($waterDetails->is_field_verified == 0) {
-        //     throw new Exception("Field Verification Not Done!!");
-        // }
+        if ($waterDetails->is_field_verified == 0) {
+            throw new Exception("Field Verification Not Done!!");
+        }
+        $this->checkDataApprovalCondition($request, $roleId, $waterDetails);
+    }
+
+
+    /**
+     * | Check in the database for the final approval of application
+     * | only for EO
+     * | @param request
+     * | @param roleId
+        | working
+        | Check payment,docUpload,docVerify,feild
+     */
+    public function checkDataApprovalCondition($request, $roleId, $waterDetails)
+    {
+        $mWaterConnectionCharge = new WaterConnectionCharge();
+
+        $applicationCharges = $mWaterConnectionCharge->getWaterchargesById($waterDetails->id)->get();
+        $paymentStatus = collect($applicationCharges)->paid_status;
+
+        if (in_array(false, $paymentStatus)) {
+            throw new Exception("full payment for the application is not done!");
+        }
     }
 
 
@@ -912,7 +936,6 @@ class NewConnectionRepository implements iNewConnection
         $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
 
         $waterList = $this->getWaterApplicatioList($workflowIds, $ulbId)
-            ->where('water_applications.current_role', $roleId)
             ->whereIn('water_applications.ward_id', $wardId)
             ->where('is_field_verified', true)
             ->orderByDesc('water_applications.id')

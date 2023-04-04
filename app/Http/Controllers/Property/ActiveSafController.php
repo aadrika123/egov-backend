@@ -1597,7 +1597,6 @@ class ActiveSafController extends Controller
             }
 
             $this->sendToWorkflow($activeSaf);        // Send to Workflow(15.2)
-            return "Fine Till Here";
             DB::commit();
             return responseMsgs(true, "Payment Successfully Done",  ['TransactionNo' => $tranNo], "010115", "1.0", "567ms", "POST", $req->deviceId);
         } catch (Exception $e) {
