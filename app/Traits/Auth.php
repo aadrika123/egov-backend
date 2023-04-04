@@ -288,13 +288,16 @@ trait Auth
 
         // $menuDetails = collect($roleBasedMenu)->collapse();
         // $collection['menuPermission'] = $menuDetails->unique()->values();
-        $metaReqs = [
-            'roleId' => $menuRoleDetails->pluck('roleId'),
-        ];
-        $lodeData = new Request($metaReqs);
-        $mMenuRepo = new MenuRepo();
-        $treeStructure = $mMenuRepo->generateMenuTree($lodeData);
-        $collection['menuPermission'] = collect($treeStructure)['original']['data'];
+
+        # calling the menu permission
+        // $metaReqs = [
+        //     'roleId' => $menuRoleDetails->pluck('roleId'),
+        // ];
+        // $lodeData = new Request($metaReqs);
+        // $mMenuRepo = new MenuRepo();
+        // $treeStructure = $mMenuRepo->generateMenuTree($lodeData);
+        // $collection['menuPermission'] = collect($treeStructure)['original']['data'];
+
         return $collection;
     }
 }

@@ -312,7 +312,7 @@ class NewConnectionController extends Controller
                 "applicationId" => "required",
                 "status" => "required"
             ]);
-            $waterDetails = WaterApplication::find($request->applicationId);
+            $waterDetails = WaterApplication::findOrFail($request->applicationId);
             $mWfRoleUsermap = new WfRoleusermap();
             $waterRoles = $this->_waterRoles;
 
@@ -325,8 +325,8 @@ class NewConnectionController extends Controller
             ]);
             $readRoleDtls = $mWfRoleUsermap->getRoleByUserWfId($getRoleReq);
             $roleId = $readRoleDtls->wf_role_id;
-            if ($roleId != $waterRoles['EO']) {
-                throw new Exception("You are not Executive Officer!");
+            if ($roleId != $waterDetails->finisher) {
+                throw new Exception("You are not the Finisher!");
             }
             if ($waterDetails) {
                 return $this->newConnection->approvalRejectionWater($request, $roleId);
@@ -462,17 +462,20 @@ class NewConnectionController extends Controller
     {
         $req->validate([
             'applicationId' => 'required|integer',
-            'workflowId' => 'required|integer',
-            'currentRoleId' => 'required|integer',
             'comment' => 'required|string'
         ]);
 
         try {
-            $mWaterApplication = WaterApplication::find($req->applicationId);
+            $mWaterApplication = WaterApplication::findOrFail($req->applicationId);
             $WorkflowTrack = new WorkflowTrack();
+            $refWorkflowId = Config::get("workflow-constants.WATER_MASTER_ID");
+            $metaRequest = new Request([
+                "workflowId" => $refWorkflowId
+            ]);
+            $roleId = $this->getRole($metaRequest)->pluck('wf_role_id');
+            $this->btcParamcheck($roleId, $mWaterApplication);
 
             DB::beginTransaction();
-
             $initiatorRoleId = $mWaterApplication->initiator_role_id;
             $mWaterApplication->current_role = $initiatorRoleId;
             $mWaterApplication->parked = true;                        //<------  Pending Status true
@@ -482,7 +485,7 @@ class NewConnectionController extends Controller
             $metaReqs['workflowId'] = $mWaterApplication->workflow_id;
             $metaReqs['refTableDotId'] = 'water_applications.id';
             $metaReqs['refTableIdValue'] = $req->applicationId;
-            $metaReqs['senderRoleId'] = $req->currentRoleId;
+            $metaReqs['senderRoleId'] = $roleId;
             $req->request->add($metaReqs);
             $WorkflowTrack->saveTrack($req);
 
@@ -493,6 +496,23 @@ class NewConnectionController extends Controller
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+
+    /**
+     * | check the application for back to citizen case
+     * | check for the 
+     */
+    public function btcParamcheck($roleId, $mWaterApplication)
+    {
+        $refDealingAssistent = Config::get('waterConstaint.ROLE-LABEL.DA');
+        if ($roleId != $refDealingAssistent) {
+            throw new Exception("you are not authorized role!");
+        }
+
+        if ($mWaterApplication->current_role != $roleId) {
+            throw new Exception("the application is not under your possession!");
+        }
+    }
+
 
     // Delete the Application
     /**
@@ -717,7 +737,6 @@ class NewConnectionController extends Controller
         ]);
 
         try {
-
             $metaReqs = array();
             $docUpload = new DocUpload;
             $mWfActiveDocument = new WfActiveDocument();
