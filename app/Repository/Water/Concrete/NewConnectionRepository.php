@@ -170,15 +170,15 @@ class NewConnectionRepository implements iNewConnection
         if ($totalConnectionCharges == 0) {
             $mWaterTran->saveZeroConnectionCharg($totalConnectionCharges, $ulbId, $req, $applicationId, $connectionId, $connectionType);
         }
-        # Save the record in the tracks
-        $metaReqs['moduleId'] =  $this->_waterModulId;
-        $metaReqs['workflowId'] = $ulbWorkflowId;
-        $metaReqs['refTableDotId'] = 'water_applications.id';
-        $metaReqs['refTableIdValue'] = $applicationId;
-        $metaReqs['user_id'] = authUser()->id;
-        $metaReqs['ulb_id'] = $ulbId;
-        $req->request->add($metaReqs);
-        $waterTrack->saveTrack($req);
+        // # Save the record in the tracks
+        // $metaReqs['moduleId'] =  $this->_waterModulId;
+        // $metaReqs['workflowId'] = $ulbWorkflowId;
+        // $metaReqs['refTableDotId'] = 'water_applications.id';
+        // $metaReqs['refTableIdValue'] = $applicationId;
+        // $metaReqs['user_id'] = authUser()->id;
+        // $metaReqs['ulb_id'] = $ulbId;
+        // $req->request->add($metaReqs);
+        // $waterTrack->saveTrack($req);
         DB::commit();
 
         $returnResponse = [
@@ -374,6 +374,7 @@ class NewConnectionRepository implements iNewConnection
         $mWfRoleMaps = new WfWorkflowrolemap();
         $wfLevels = Config::get('waterConstaint.ROLE-LABEL');
         $waterApplication = WaterApplication::find($req->applicationId);
+        $current = Carbon::now();
 
         # Derivative Assignments
         $senderRoleId = $waterApplication->current_role;
@@ -410,6 +411,19 @@ class NewConnectionRepository implements iNewConnection
 
         $waterTrack = new WorkflowTrack();
         $waterTrack->saveTrack($req);
+
+        // Updation of Received Date
+        $preWorkflowReq = [
+            'workflowId' => $waterApplication->workflow_id,
+            'refTableDotId' => "water_applications.id",
+            'refTableIdValue' => $req->applicationId,
+            'receiverRoleId' => $senderRoleId
+        ];
+        $previousWorkflowTrack = $waterTrack->getWfTrackByRefId($preWorkflowReq);
+        $previousWorkflowTrack->update([
+            'forward_date' => $current->format('Y-m-d'),
+            'forward_time' => $current->format('H:i:s')
+        ]);
         DB::commit();
 
         return responseMsgs(true, "Successfully Forwarded The Application!!", "", "", "", '01', '.ms', 'Post', '');
@@ -424,18 +438,35 @@ class NewConnectionRepository implements iNewConnection
     public function checkPostCondition($senderRoleId, $wfLevels, $application)
     {
         switch ($senderRoleId) {
-            case $wfLevels['BO']:                        // Back Office Condition
-                if ($application->doc_upload_status == false)
-                    throw new Exception("Document Not Fully Uploaded");
+            case $wfLevels['BO']:                       // Back Office Condition
+                if ($application->doc_upload_status == false || $application->payment_status == 1)
+                    throw new Exception("Document Not Fully Uploaded or Payment in not Done!");
                 break;
-                // case $wfLevels['DA']:                       // DA Condition
-                //     if ($application->doc_status == 0)
-                //         throw new Exception("Document Not Fully Verified");
-                //     break;
-                // case $wfLevels['JE']:                       // JE Coditon in case of site adjustment
-                //     if ($application->doc_status == 0 || $application->payment_status == 0)
-                //         throw new Exception("Document Not Fully Verified or Payment in not Done!");
-                //     break;
+            case $wfLevels['DA']:                       // DA Condition
+                if ($application->doc_status == 0 || $application->payment_status == 1)
+                    throw new Exception("Document Not Fully Verified");
+                break;
+            case $wfLevels['JE']:                       // JE Coditon in case of site adjustment
+                if ($application->doc_status == 0 || $application->payment_status == 0)
+                    throw new Exception("Document Not Fully Verified or Payment in not Done!");
+                if ($application->doc_upload_status == false) {
+                    throw new Exception("Document Not Fully Uploaded");
+                }
+                break;
+            case $wfLevels['SH']:                       // SH conditional checking
+                if ($application->doc_status == 0 || $application->payment_status == 0)
+                    throw new Exception("Document Not Fully Verified or Payment in not Done!");
+                if ($application->doc_upload_status == false || $application->is_field_verified == false) {
+                    throw new Exception("Document Not Fully Uploaded or site inspection not done!");
+                }
+                break;
+            case $wfLevels['AE']:                       // AE conditional checking
+                if ($application->doc_status == 0 || $application->payment_status == 0)
+                    throw new Exception("Document Not Fully Verified or Payment in not Done!");
+                if ($application->doc_upload_status == false || $application->is_field_verified == false) {
+                    throw new Exception("Document Not Fully Uploaded or site inspection not done!");
+                }
+                break;
         }
     }
 
