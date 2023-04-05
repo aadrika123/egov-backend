@@ -49,7 +49,6 @@ class CashVerificationController extends Controller
                     ->get();
             }
 
-
             $collection = collect($data->groupBy("id")->all());
 
             $data = $collection->map(function ($val) use ($date, $propertyModuleId, $waterModuleId, $tradeModuleId) {

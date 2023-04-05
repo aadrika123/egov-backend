@@ -942,6 +942,7 @@ class HoldingTaxController extends Controller
             $safCalculation->_effectiveDateRule3 = $effectDateRuleset3;
             $safCalculation->_multiFactors = $safCalculation->readMultiFactor();        // Get Multi Factors List
             $safCalculation->_propertyDetails['roadType'] = $basicDetails->road_width;
+            $safCalculation->_propertyDetails['propertyType'] = $basicDetails->prop_type_mstr_id;
             $safCalculation->_readRoadType[$effectDateRuleset2] = $safCalculation->readRoadType($effectDateRuleset2);
             $safCalculation->_readRoadType[$effectDateRuleset3] = $safCalculation->readRoadType($effectDateRuleset3);
             $safCalculation->_ulbId = $basicDetails->ulb_id;

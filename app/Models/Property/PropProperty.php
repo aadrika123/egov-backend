@@ -433,6 +433,7 @@ class PropProperty extends Model
                 'f.carpet_area',
             )
             ->join('ulb_ward_masters as w', 'w.id', '=', 'p.ward_mstr_id')
+            ->join('ref_prop_types', 'ref_prop_types.id', 'p.prop_type_mstr_id')
             ->leftJoin('ulb_ward_masters as nw', 'nw.id', '=', 'p.new_ward_mstr_id')
             ->leftJoin('prop_floors as f', 'f.property_id', '=', 'p.id')
             ->where('p.id', $propId)
