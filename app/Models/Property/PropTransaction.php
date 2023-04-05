@@ -291,4 +291,26 @@ class PropTransaction extends Model
         return PropTransaction::where('user_id', $userId)
             ->whereBetween('tran_date', [$fromDate, $toDate]);
     }
+
+    /**
+     * | Get Last Tranid by Prop or Saf Id
+     */
+    public function getLastTranByKeyId($key, $appId)
+    {
+        return PropTransaction::where("$key", $appId)
+            ->orderByDesc('id')
+            ->where('status', 1)
+            ->first();
+    }
+
+    /**
+     * | Store Transaction
+     */
+    public function storeTrans(array $req)
+    {
+        $stored = PropTransaction::create($req);
+        return [
+            'id' => $stored->id
+        ];
+    }
 }

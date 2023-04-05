@@ -53,4 +53,21 @@ class WfRolemenu extends Model
             ->where('wf_roleusermaps.is_suspended', false)
             ->get();
     }
+
+    /**
+     * | Get menu By RoleId 
+     */
+    public function getMenuListByRoleId($roleIds)
+    {
+        return WfRolemenu::select(
+            'm.menu_name AS menuName',
+            'm.route AS menuPath',
+            '*'
+        )
+            ->join('menu_master_hierarchies as m', 'm.id', '=', 'wf_rolemenus.menu_id')
+            ->where('wf_rolemenus.role_id', $roleIds)
+            ->where('wf_rolemenus.status', 1)
+            ->orderByDesc('m.id')
+            ->get();
+    }
 }

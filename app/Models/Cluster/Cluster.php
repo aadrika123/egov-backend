@@ -6,6 +6,7 @@ use App\Models\User;
 use Exception;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class Cluster extends Model
 {
@@ -27,13 +28,16 @@ class Cluster extends Model
         $ulbId = auth()->user()->ulb_id;
 
         $newCluster = new Cluster();
-        $newCluster->ulb_id  = $ulbId;
-        $newCluster->user_id  = $userId;
-        $newCluster->cluster_name  = $request->clusterName;
-        $newCluster->cluster_type  = $request->clusterType;
-        $newCluster->address  = $request->clusterAddress;
-        $newCluster->mobile_no = $request->clusterMobileNo;
+        $newCluster->ulb_id                 = $ulbId;
+        $newCluster->user_id                = $userId;
+        $newCluster->cluster_name           = $request->clusterName;
+        $newCluster->cluster_type           = $request->clusterType;
+        $newCluster->address                = $request->clusterAddress;
+        $newCluster->mobile_no              = $request->clusterMobileNo;
         $newCluster->authorized_person_name = $request->clusterAuthPersonName;
+        $newCluster->ward_mstr_id           = $request->wardNo;
+        $newCluster->new_ward_mstr_id       = $request->newWardNo;
+        $newCluster->filled_ulb_id          = $request->ulbId;
         $newCluster->save();
     }
 
@@ -49,34 +53,40 @@ class Cluster extends Model
      */
     public function editClusterDetails($request)
     {
-            $userId = auth()->user()->id;
-            $ulbId = auth()->user()->ulb_id;
+        $userId = auth()->user()->id;
+        $ulbId = auth()->user()->ulb_id;
 
-            if (is_null($request->status)) {
-                Cluster::where('id', $request->id)
-                    ->update([
-                        'ulb_id' => $ulbId,
-                        'user_id' => $userId,
-                        'cluster_name' => $request->clusterName,
-                        'cluster_type' => $request->clusterType,
-                        'address' => $request->clusterAddress,
-                        'mobile_no' => $request->clusterMobileNo,
-                        'authorized_person_name' => $request->clusterAuthPersonName
-                    ]);
-                return responseMsg(true, "Cluster Saved without status!", "");
-            }
+        if (is_null($request->status)) {
             Cluster::where('id', $request->id)
                 ->update([
-                    'status' => $request->status,
-                    'ulb_id' => $ulbId,
-                    'user_id' => $userId,
-                    'cluster_name' => $request->clusterName,
-                    'cluster_type' => $request->clusterType,
-                    'address' => $request->clusterAddress,
-                    'mobile_no' => $request->clusterMobileNo,
-                    'authorized_person_name' => $request->clusterAuthPersonName
+                    'ulb_id'                    => $ulbId,
+                    'user_id'                   => $userId,
+                    'cluster_name'              => $request->clusterName,
+                    'cluster_type'              => $request->clusterType,
+                    'address'                   => $request->clusterAddress,
+                    'mobile_no'                 => $request->clusterMobileNo,
+                    'authorized_person_name'    => $request->clusterAuthPersonName,
+                    'ward_mstr_id'              => $request->wardNo,
+                    'new_ward_mstr_id'          => $request->newWardNo,
+                    'filled_ulb_id'             => $request->ulbId
                 ]);
-            return responseMsg(true, "Cluster Saved with status!", "");
+            return responseMsg(true, "Cluster Saved without status!", "");
+        }
+        Cluster::where('id', $request->id)
+            ->update([
+                'status'                    => $request->status,
+                'ulb_id'                    => $ulbId,
+                'user_id'                   => $userId,
+                'cluster_name'              => $request->clusterName,
+                'cluster_type'              => $request->clusterType,
+                'address'                   => $request->clusterAddress,
+                'mobile_no'                 => $request->clusterMobileNo,
+                'authorized_person_name'    => $request->clusterAuthPersonName,
+                'ward_mstr_id'              => $request->wardNo,
+                'new_ward_mstr_id'          => $request->newWardNo,
+                'filled_ulb_id'             => $request->ulbId
+            ]);
+        return responseMsg(true, "Cluster Saved with status!", "");
     }
 
 
@@ -94,10 +104,13 @@ class Cluster extends Model
             'address',
             'mobile_no AS mobileNo',
             'authorized_person_name AS authPersonName',
-            'status'
+            'status',
+            'ward_mstr_id as oldWard',
+            'new_ward_mstr_id as newWard'
         )
             ->where('status', 1)
-            ->where('ulb_id',auth()->user()->ulb_id)
+            ->where('ulb_id', auth()->user()->ulb_id)
+            ->orderBy('id')
             ->get();
     }
 
@@ -121,8 +134,21 @@ class Cluster extends Model
      */
     public function checkActiveCluster($clusterId)
     {
-        return Cluster::where('id',$clusterId)
-        ->where('status',1)
-        ->first();
+        return Cluster::where('id', $clusterId)
+            ->where('status', 1)
+            ->first();
+    }
+
+    /**
+     * | Get cluster Details by id
+     */
+    public function getClusterDtlsById($id)
+    {
+        return DB::table('clusters as c')
+            ->select('c.*', 'ow.ward_name as old_ward', 'nw.ward_name as new_ward')
+            ->leftJoin('ulb_ward_masters as ow', 'ow.id', 'c.ward_mstr_id')
+            ->leftJoin('ulb_ward_masters as nw', 'ow.id', 'c.new_ward_mstr_id')
+            ->where('c.id', $id)
+            ->first();
     }
 }

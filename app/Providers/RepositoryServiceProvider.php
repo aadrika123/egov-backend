@@ -13,7 +13,8 @@ use App\Repository\Grievance\Interfaces\iGrievance;
 
 use App\Repository\Menu\Interface\iMenuRepo;
 use App\Repository\Menu\Concrete\MenuRepo;
-
+use App\Repository\Notice\INotice;
+use App\Repository\Notice\Notice;
 use App\Repository\Payment\Concrete\PaymentRepository;
 use App\Repository\Payment\Interfaces\iPayment;
 
@@ -150,6 +151,9 @@ class RepositoryServiceProvider extends ServiceProvider
 
         //traits
         $this->app->bind(iWorkflowRepository::class, WorkflowRepository::class);
+
+         #------Notice module----------
+         $this->app->bind(INotice::class, Notice::class);
     }
 
     /**

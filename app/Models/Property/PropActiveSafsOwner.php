@@ -17,7 +17,7 @@ class PropActiveSafsOwner extends Model
     public function edit($req)
     {
         $req = new Request($req);
-        $owner = PropActiveSafsOwner::find($req->ownerId);
+        $owner = PropActiveSafsOwner::find($req->safOwnerId);
 
         $reqs = [
             'owner_name' => $req->ownerName,
@@ -38,6 +38,7 @@ class PropActiveSafsOwner extends Model
     public function getOwnersBySafId($safId)
     {
         return PropActiveSafsOwner::where('saf_id', $safId)
+            ->where('status', 1)
             ->get();
     }
 
@@ -59,6 +60,9 @@ class PropActiveSafsOwner extends Model
             ->get();
     }
 
+    /***
+     * | Get First Saf Owner By SafId
+     */
     public function getOwnerDtlsBySafId1($safId)
     {
         return PropActiveSafsOwner::where('saf_id', $safId)

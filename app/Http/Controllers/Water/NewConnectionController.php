@@ -220,18 +220,17 @@ class NewConnectionController extends Controller
             $mDeviceId = $req->deviceId ?? "";
 
             $workflowRoles = $this->getRoleIdByUserId($userId);
-            $roleId = $workflowRoles->map(function ($value, $key) {                         // Get user Workflow Roles
+            $roleId = $workflowRoles->map(function ($value) {                         // Get user Workflow Roles
                 return $value->wf_role_id;
             });
 
             $refWard = $mWfWardUser->getWardsByUserId($userId);
-            $wardId = $refWard->map(function ($value, $key) {
+            $wardId = $refWard->map(function ($value) {
                 return $value->ward_id;
             });
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
 
             $waterList = $this->getWaterApplicatioList($workflowIds, $ulbId)
-                ->whereIn('water_applications.current_role', $roleId)
                 ->whereIn('water_applications.ward_id', $wardId)
                 ->where('parked', true)
                 ->orderByDesc('water_applications.id')
@@ -312,7 +311,7 @@ class NewConnectionController extends Controller
                 "applicationId" => "required",
                 "status" => "required"
             ]);
-            $waterDetails = WaterApplication::find($request->applicationId);
+            $waterDetails = WaterApplication::findOrFail($request->applicationId);
             $mWfRoleUsermap = new WfRoleusermap();
             $waterRoles = $this->_waterRoles;
 
@@ -325,8 +324,8 @@ class NewConnectionController extends Controller
             ]);
             $readRoleDtls = $mWfRoleUsermap->getRoleByUserWfId($getRoleReq);
             $roleId = $readRoleDtls->wf_role_id;
-            if ($roleId != $waterRoles['EO']) {
-                throw new Exception("You are not Executive Officer!");
+            if ($roleId != $waterDetails->finisher) {
+                throw new Exception("You are not the Finisher!");
             }
             if ($waterDetails) {
                 return $this->newConnection->approvalRejectionWater($request, $roleId);
@@ -462,17 +461,20 @@ class NewConnectionController extends Controller
     {
         $req->validate([
             'applicationId' => 'required|integer',
-            'workflowId' => 'required|integer',
-            'currentRoleId' => 'required|integer',
             'comment' => 'required|string'
         ]);
 
         try {
-            $mWaterApplication = WaterApplication::find($req->applicationId);
+            $mWaterApplication = WaterApplication::findOrFail($req->applicationId);
             $WorkflowTrack = new WorkflowTrack();
+            $refWorkflowId = Config::get("workflow-constants.WATER_MASTER_ID");
+            $metaRequest = new Request([
+                "workflowId" => $refWorkflowId
+            ]);
+            $roleId = $this->getRole($metaRequest)->pluck('wf_role_id');
+            $this->btcParamcheck($roleId, $mWaterApplication);
 
             DB::beginTransaction();
-
             $initiatorRoleId = $mWaterApplication->initiator_role_id;
             $mWaterApplication->current_role = $initiatorRoleId;
             $mWaterApplication->parked = true;                        //<------  Pending Status true
@@ -482,7 +484,7 @@ class NewConnectionController extends Controller
             $metaReqs['workflowId'] = $mWaterApplication->workflow_id;
             $metaReqs['refTableDotId'] = 'water_applications.id';
             $metaReqs['refTableIdValue'] = $req->applicationId;
-            $metaReqs['senderRoleId'] = $req->currentRoleId;
+            $metaReqs['senderRoleId'] = $roleId;
             $req->request->add($metaReqs);
             $WorkflowTrack->saveTrack($req);
 
@@ -493,6 +495,23 @@ class NewConnectionController extends Controller
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+
+    /**
+     * | check the application for back to citizen case
+     * | check for the 
+     */
+    public function btcParamcheck($roleId, $mWaterApplication)
+    {
+        $refDealingAssistent = Config::get('waterConstaint.ROLE-LABEL.DA');
+        if ($roleId != $refDealingAssistent) {
+            throw new Exception("you are not authorized role!");
+        }
+
+        if ($mWaterApplication->current_role != $roleId) {
+            throw new Exception("the application is not under your possession!");
+        }
+    }
+
 
     // Delete the Application
     /**
@@ -717,7 +736,6 @@ class NewConnectionController extends Controller
         ]);
 
         try {
-
             $metaReqs = array();
             $docUpload = new DocUpload;
             $mWfActiveDocument = new WfActiveDocument();
@@ -838,7 +856,12 @@ class NewConnectionController extends Controller
 
             $workflowId = $waterDetails->workflow_id;
             $documents = $mWfActiveDocument->getWaterDocsByAppNo($req->applicationId, $workflowId, $moduleId);
-            return responseMsgs(true, "Uploaded Documents", remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");
+            $returnData = collect($documents)->map(function ($value) {
+                $path =  $this->readDocumentPath($value->ref_doc_path);
+                $value->doc_path = !empty(trim($value->ref_doc_path)) ? $path : null;
+                return $value;
+            });
+            return responseMsgs(true, "Uploaded Documents", remove_null($returnData), "010102", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
         }
@@ -1154,11 +1177,13 @@ class NewConnectionController extends Controller
                     ->where('owner_dtl_id', $ownerId)
                     ->first();
                 if ($uploadedDoc) {
+                    $path = $this->readDocumentPath($uploadedDoc->doc_path);
+                    $fullDocPath = !empty(trim($uploadedDoc->doc_path)) ? $path : null;
                     $response = [
                         "uploadedDocId" => $uploadedDoc->id ?? "",
                         "documentCode" => $item,
                         "ownerId" => $uploadedDoc->owner_dtl_id ?? "",
-                        "docPath" => $uploadedDoc->doc_path ?? "",
+                        "docPath" => $fullDocPath ?? "",
                         "verifyStatus" => $uploadedDoc->verify_status ?? "",
                         "remarks" => $uploadedDoc->remarks ?? "",
                     ];
@@ -1173,10 +1198,14 @@ class NewConnectionController extends Controller
                 $uploadedDoc = $uploadedDocs->where('doc_code', $doc)->first();
                 $strLower = strtolower($doc);
                 $strReplace = str_replace('_', ' ', $strLower);
+                if (isset($uploadedDoc)) {
+                    $path =  $this->readDocumentPath($uploadedDoc->doc_path);
+                    $fullDocPath = !empty(trim($uploadedDoc->doc_path)) ? $path : null;
+                }
                 $arr = [
                     "documentCode" => $doc,
                     "docVal" => ucwords($strReplace),
-                    "uploadedDoc" => $uploadedDoc->doc_path ?? "",
+                    "uploadedDoc" => $fullDocPath ?? "",
                     "uploadedDocId" => $uploadedDoc->id ?? "",
                     "verifyStatus'" => $uploadedDoc->verify_status ?? "",
                     "remarks'" => $uploadedDoc->remarks ?? "",
@@ -1258,6 +1287,16 @@ class NewConnectionController extends Controller
     }
 
     /**
+     * |----------------------------- Read the server url ------------------------------|
+     */
+    public function readDocumentPath($path)
+    {
+        $path = (config('app.url') . "/" . $path);
+        return $path;
+    }
+
+
+    /**
      * |---------------------------- Search Application ----------------------------|
      * | Search Application using provided condition For the Admin 
      */
@@ -1301,8 +1340,6 @@ class NewConnectionController extends Controller
                         throw new Exception("Data Not Found!");
                     break;
                 case ('mobileNo'):
-                    $string = preg_replace("/([A-Z])/", "_$1", $key);
-                    $refstring = strtolower($string);
                     $waterReturnDetails = $mWaterConsumer->getDetailByOwnerDetails($refstring, $paramenter);
                     $checkVal = collect($waterReturnDetails)->first();
                     if (!$checkVal)
@@ -1778,7 +1815,7 @@ class NewConnectionController extends Controller
      * | @param request
      * | @var 
      * | @return 
-        | Recheck
+        | Working
      */
     public function saveInspectionDateTime(Request $request)
     {
@@ -1806,6 +1843,7 @@ class NewConnectionController extends Controller
     /**
      * | Check the validation for saving the site inspection 
      * | @param request
+        | Working
         | Add more Validation 
      */
     public function checkForSaveDateTime($request)
@@ -1864,7 +1902,7 @@ class NewConnectionController extends Controller
      * | Checking the sheduled Date for inspection
      * | @param
      * | @var 
-    | Working
+        | Working
      */
     public function checkCanInspect($siteInspection)
     {
@@ -1893,9 +1931,26 @@ class NewConnectionController extends Controller
         try {
             $request->validate([
                 'applicationId' => 'required',
+                'waterLockArng' => 'required',
+                'gateValve'     => 'required',
+                'pipelineSize'  => 'required',
+                'pipeSize'      => 'required|in:15,20,25',
+                'ferruleType'   => 'required|in:6,10,12,16'
             ]);
+            $user = authUser();
+            $current = Carbon::now();
+            $currentDate = $current->format('Y-m-d');
+            $currentTime = $current->format('H:i:s');
             $mWaterSiteInspection = new WaterSiteInspection();
-            $this->onlineSitePreConditionCheck($request);
+            $refDetails = $this->onlineSitePreConditionCheck($request);
+            $request->request->add([
+                'wardId'            => $refDetails['refApplication']->ward_id,
+                'userId'            => $user->id,
+                'applicationId'     => $refDetails['refApplication']->id,
+                'roleId'            => $refDetails['roleDetails']->wf_role_id,
+                'inspectionDate'    => $currentDate,
+                'inspectionTime'    => $currentTime
+            ]);
             $mWaterSiteInspection->saveOnlineSiteDetails($request);
             return responseMsgs(true, "Technical Inspection Completed!", "", "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
@@ -1908,7 +1963,7 @@ class NewConnectionController extends Controller
      * | pre conditional Check for the AE online Site inspection
      * | @param
      * | @var mWfRoleUser
-        | Not Working 
+        | Working 
      */
     public function onlineSitePreConditionCheck($request)
     {
@@ -1922,12 +1977,20 @@ class NewConnectionController extends Controller
         ]);
         $readRoles = $mWfRoleUser->getRoleByUserWfId($metaReqs);                      // Model to () get Role By User Id
 
+        # Condition checking
         if ($refApplication['current_role'] != $WaterRoles['AE']) {
-            throw new Exception("Application is not Under the Assistent Engineer!");
+            throw new Exception("Application is not under Assistent Engineer!");
         }
         if ($readRoles->wf_role_id != $WaterRoles['AE']) {
-            throw new Exception("you Are Not Autherised for the process!");
+            throw new Exception("You are not autherised for the process!");
         }
+        if ($refApplication['is_field_verified'] == false) {
+            throw new Exception("Site verification by Junier Engineer is not done!");
+        }
+        return [
+            'refApplication' => $refApplication,
+            'roleDetails' => $readRoles
+        ];
     }
 
 
@@ -1952,16 +2015,76 @@ class NewConnectionController extends Controller
             $refJe = Config::get("waterConstaint.ROLE-LABEL.JE");
             # level logic
             $sheduleDate = $mWaterSiteInspectionsScheduling->getInspectionData($request->applicationId)->first();
-            if ($sheduleDate->site_verify_status == true) {
+            if (!is_null($sheduleDate) && $sheduleDate->site_verify_status == true) {
                 $returnData = $mWaterSiteInspection->getSiteDetails($request->applicationId)
                     ->where('order_officer', $refJe)
                     ->first();
                 $returnData['final_verify'] = true;
                 return responseMsgs(true, "JE Inspection details!", remove_null($returnData), "", "01", ".ms", "POST", $request->deviceId);
             }
-            return responseMsgs(true, "Dat not Found!", remove_null($returnData), "", "01", ".ms", "POST", $request->deviceId);
+            return responseMsgs(true, "Data not Found!", remove_null($returnData), "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", $request->deviceId);
         }
+    }
+
+    /**
+     * | Get AE technical Inspection
+     * | Pick the first details for the respective application 
+     * | @param request
+     * | @var 
+     * | @return 
+        | Working
+     */
+    public function getTechnicalInsDetails(Request $request)
+    {
+        try {
+            $request->validate([
+                'applicationId' => 'required',
+            ]);
+            # variable defining
+            $mWaterSiteInspection = new WaterSiteInspection();
+            $refRole = Config::get("waterConstaint.ROLE-LABEL");
+            # level logic
+            $returnData['aeData'] = $mWaterSiteInspection->getSiteDetails($request->applicationId)
+                ->where('order_officer', $refRole['AE'])
+                ->first();
+            $jeData = $this->jeSiteInspectDetails($request, $refRole);
+            $returnData['jeData'] = $jeData;
+            return responseMsgs(true, "AE Inspection details!", remove_null($returnData), "", "01", ".ms", "POST", $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", $request->deviceId);
+        }
+    }
+
+    /**
+     * | Check and get the je site inspection details
+     * | @param request
+        | Working
+     */
+    public function jeSiteInspectDetails($request, $refRole)
+    {
+        $mWaterApplication = new WaterApplication();
+        $mWaterSiteInspection = new WaterSiteInspection();
+        $applicationId = $request->applicationId;
+
+        $applicationDetails = $mWaterApplication->getApplicationById($applicationId)
+            ->where('is_field_verified', true)
+            ->first();
+        if (!$applicationDetails) {
+            throw new Exception("Application not found!");
+        }
+        $jeData = $mWaterSiteInspection->getSiteDetails($applicationId)
+            ->where('order_officer', $refRole['JE'])
+            ->first();
+        if (!$jeData) {
+            throw new Exception("JE site inspection data not found!");
+        }
+        $returnData = [
+            'pipeline_size' => $jeData->pipeline_size,
+            'pipe_size'     => $jeData->pipe_size,
+            'ferrule_type'  => $jeData->ferrule_type
+        ];
+        return $returnData;
     }
 }

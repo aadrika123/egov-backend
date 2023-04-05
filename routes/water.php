@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\Water\NewConnectionController;
-use App\Http\Controllers\water\WaterApplication;
+use App\Http\Controllers\Water\WaterApplication;
 use App\Http\Controllers\Water\WaterConsumer;
 use App\Http\Controllers\Water\WaterPaymentController;
 use Illuminate\Support\Facades\Route;
@@ -32,7 +32,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      * | ------------------- Water Connection / mobile ------------------------ |
      */
     Route::controller(NewConnectionController::class)->group(function () {
-        # water Workflow
+        # Workflow
         Route::post('inbox', 'waterInbox');                                                             // Workflow
         Route::post('outbox', 'waterOutbox');                                                           // Workflow
         Route::post('post-next-level', 'postNextLevel');                                                // Workflow
@@ -50,6 +50,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('upload-document', 'uploadWaterDoc');                                               // Workflow/Citizen
         Route::post('get-upload-documents', 'getUploadDocuments');                                      // Workflow/Citizen  
 
+        # Admin / Citizen view
         Route::Post('application/delete', 'deleteWaterApplication');                                    // Citizen     
         Route::post('application/get-by-id', 'getApplicationDetails');                                  // Citizen
         Route::post('citizen/get-doc-list', 'getDocToUpload');                                          // Citizen  
@@ -59,16 +60,17 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('admin/application/get-details-by-id', 'getApplicationDetailById');                 // Admin
         Route::post('admin/application/list-details-by-date', 'listApplicationBydate');                 // Admin
         Route::post('search-consumer', 'searchWaterConsumer');                                          // Admin/Consumer   
-        Route::post('consumer/get-listed-details', 'approvedWaterApplications');                        // Consumer
+        Route::post('consumer/get-listed-details', 'approvedWaterApplications');                        // Consumer 
 
         # Site Inspection
         Route::post('admin/search-application', 'searchApplicationByParameter');                        // Admin
         Route::post('admin/site-verification/comparision', 'listComparision');                          // Admin / notused
-        Route::post('admin/application/save-inspection-date', 'saveInspectionDateTime');                // Admin
-        Route::post('admin/application/site-inspection-details', 'getSiteInspectionDetails');           // Admin
-        Route::post('admin/application/cancel-inspection-scheduling', 'cancelSiteInspection');          // Admin
-        Route::post('admin/application/je-site-details', 'getJeSiteDetails');                           // Admin
-        Route::post('admin/application/online-site-inspection', '');     // Admin/Remark
+        Route::post('admin/application/save-inspection-date', 'saveInspectionDateTime');                // Workflow/Admin
+        Route::post('admin/application/site-inspection-details', 'getSiteInspectionDetails');           // Workflow/Admin
+        Route::post('admin/application/cancel-inspection-scheduling', 'cancelSiteInspection');          // Workflow/Admin
+        Route::post('admin/application/je-site-details', 'getJeSiteDetails');                           // Workflow/Admin
+        Route::post('admin/application/online-technical-inspection', 'onlineSiteInspection');           // Workflow
+        Route::post('admin/application/technical-inspection-details', 'getTechnicalInsDetails');        // Workflow
     });
 
     /**
@@ -84,8 +86,9 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('admin/application/generate-payment-receipt', 'generateOfflinePaymentReceipt');     // Consumer
         Route::post('consumer/calculate-month-demand', 'callDemandByMonth');                            // Admin/Consumer
         Route::post('application/payment/get-payment-history', 'getApplicationPaymentHistory');         // Admin/Consumer
-        Route::post('consumer/offline-demand-payment', 'offlineDemandPayment'); // Consumer/Route
+        Route::post('consumer/offline-demand-payment', 'offlineDemandPayment');                         // Consumer
         Route::post('application/payment/offline/pay-connection-charge', 'offlineConnectionPayment');   // Admin
+        Route::post('consumer/demand/generate-payment-receipt', 'generateDemandPaymentReceipt');
 
         # Site inspection 
         Route::post('site-verification/save-site-details', 'saveSitedetails');                          // Admin

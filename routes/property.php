@@ -90,7 +90,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('saf/verifications-comp', 'getVerifications');
     Route::post('saf/IndiVerificationsList', 'getSafVerificationList');
     Route::post('saf/static-saf-dtls', 'getStaticSafDetails');                                          // (27) Static SAf Details
-    Route::post('saf/offline-saf-payment', 'paymentSaf');                                               // SAF Payment(15)
+    Route::post('saf/offline-saf-payment', 'offlinePaymentSaf');                                               // SAF Payment(15)
   });
 
   /**
@@ -124,6 +124,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('deactivationRequest', "deactivatProperty");
     Route::post('inboxDeactivation', "inbox");
     Route::post('outboxDeactivation', "outbox");
+    Route::post('specialDeactivation', "specialInbox");
     Route::post('postNextDeactivation', "postNextLevel");
     Route::post('commentIndependentPrpDeactivation', "commentIndependent");
     Route::post('postEscalateDeactivation', "postEscalate");
@@ -332,8 +333,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('generate-holding-demand', 'generateHoldingDemand');              // (01) Property/Holding Yearly Holding Tax Generation
     Route::post('get-holding-dues', 'getHoldingDues');                            // (02) Property/ Holding Dues
     Route::post('generate-prop-orderid', 'generateOrderId');                      // (03) Generate Property Order ID
-    Route::post('offline-payment-holding', 'paymentHolding');                     // (04) Payment Holding
-    Route::post('prop/get-cluster-holding-due', 'getClusterHoldingDues');                     // (11) Property Cluster Dues
+    Route::post('offline-payment-holding', 'offlinePaymentHolding');                     // (04) Payment Holding
+    Route::post('prop/get-cluster-holding-due', 'getClusterHoldingDues');         // (11) Property Cluster Dues
     Route::post('prop/cluster-payment', 'clusterPayment');                        // (12) Cluster Payment
   });
 
@@ -341,14 +342,14 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     | Serial No : 18
    */
   Route::controller(ActiveSafControllerV2::class)->group(function () {
-    Route::post('saf/delete-citizen-saf', 'deleteCitizenSaf');        // 01
-    Route::post('saf/edit-citizen-saf', 'editCitizenSaf');            // 02
-    Route::post('saf/memo-receipt', 'memoReceipt');                   // 03
-    Route::post('saf/verify-holding', 'verifyHoldingNo');             // 05
-    Route::post('saf/list-apartment', 'getAptList');                  // 05
-    Route::post('saf/pending-geotagging-list', 'pendingGeoTaggingList'); // 06
-    Route::post('saf/get-cluster-saf-due', 'getClusterSafDues');                     // (07) Saf Cluster Dues
-    Route::post('saf/cluster-saf-payment', 'clusterSafPayment');                     // (08) Saf Cluster Dues
+    Route::post('saf/delete-citizen-saf', 'deleteCitizenSaf');                // 01
+    Route::post('saf/edit-citizen-saf', 'editCitizenSaf');                    // 02
+    Route::post('saf/memo-receipt', 'memoReceipt');                           // 03
+    Route::post('saf/verify-holding', 'verifyHoldingNo');                     // 05
+    Route::post('saf/list-apartment', 'getAptList');                          // 05
+    Route::post('saf/pending-geotagging-list', 'pendingGeoTaggingList');      // 06
+    Route::post('saf/get-cluster-saf-due', 'getClusterSafDues');              // (07) Saf Cluster Dues
+    Route::post('saf/cluster-saf-payment', 'clusterSafPayment');              // (08) Saf Cluster Dues
   });
 
   /**
@@ -417,7 +418,7 @@ Route::controller(ActiveSafControllerV2::class)->group(function () {
    | Serial No-16
  */
 Route::controller(HoldingTaxController::class)->group(function () {
-  Route::post('payment-holding', 'paymentHolding');                                         // (04) Payment Holding
+  Route::post('payment-holding', 'paymentHolding');                                         // (04) Payment Holding (For Testing Purpose)
   Route::post('prop-payment-receipt', 'propPaymentReceipt');                                // (05) Generate Property Payment Receipt
   Route::post('independent/get-holding-dues', 'getHoldingDues');                            // (07) Property/ Holding Dues
   Route::post('independent/generate-prop-orderid', 'generateOrderId');                      // (08) Generate Property Order ID
@@ -425,6 +426,7 @@ Route::controller(HoldingTaxController::class)->group(function () {
   Route::post('prop-ulb-receipt', 'proUlbReceipt');                                         // (09) Property Ulb Payment Receipt
   Route::post('prop-comparative-demand', 'comparativeDemand');                              // (10) Property Comparative Demand
   Route::post('cluster/payment-history', 'clusterPaymentHistory');                           // (13) Cluster Payment History
+  Route::post('cluster/payment-receipt', 'clusterPaymentReceipt');                           // (14) Generate Cluster Payment Receipt
 });
 
 

@@ -38,6 +38,7 @@ class MenuMaster extends Model
         $newMenues->serial = $request->serial;
         $newMenues->route = $request->route;
         $newMenues->icon = $request->icon;
+        $newMenues->module_id = $request->moduleId;
         $newMenues->save();
     }
 
@@ -58,7 +59,7 @@ class MenuMaster extends Model
     /**
      * | Get menu by Role Id
      */
-    public function getMenuByRole($roleId)
+    public function getMenuByRole($roleId, $moduleId)
     {
         $a = MenuMaster::select(
             'menu_masters.id',
@@ -67,7 +68,8 @@ class MenuMaster extends Model
             ->join('wf_rolemenus', 'wf_rolemenus.menu_id', '=', 'menu_masters.id')
             ->where('menu_masters.is_deleted', false)
             ->where('wf_rolemenus.status', true)
-            ->where('wf_rolemenus.role_id', $roleId)
+            ->whereIn('wf_rolemenus.role_id', $roleId)
+            ->where('module_id', $moduleId)         //changes by mrinal and sam
             ->orderBy("menu_masters.serial", "Asc")
             ->get();
         return  objToArray($a);
@@ -122,6 +124,7 @@ class MenuMaster extends Model
                     'route'         => $request->route          ?? $refValues->route,
                     'icon'          => $request->icon           ?? $refValues->icon,
                     'is_deleted'    => $request->delete         ?? $refValues->is_deleted,
+                    'module_id'    => $request->moduleId       ?? $refValues->module_id,
                 ]
             );
     }

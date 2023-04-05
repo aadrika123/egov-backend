@@ -129,6 +129,9 @@ class WaterConsumer extends Controller
             $this->checkDemandGeneration($request);
             $consumerDetails = WaterWaterConsumer::findOrFail($request->consumerId);
             $calculatedDemand = $this->Repository->calConsumerDemand($request);
+            if ($calculatedDemand['status'] == false) {
+                return $calculatedDemand;
+            }
             if (isset($calculatedDemand)) {
                 # get the demand
                 DB::beginTransaction();
@@ -147,7 +150,7 @@ class WaterConsumer extends Controller
                         break;
 
                     case ($refMeterConnectionType['3']):
-                        return $this->savingDemand($calculatedDemand, $request, $consumerDetails, $demandDetails['charge_type'], $refMeterConnectionType);
+                        $this->savingDemand($calculatedDemand, $request, $consumerDetails, $demandDetails['charge_type'], $refMeterConnectionType);
                         break;
                 }
                 DB::commit();
@@ -155,7 +158,6 @@ class WaterConsumer extends Controller
             }
         } catch (Exception $e) {
             DB::rollBack();
-            dd($e->getMessage(), $e->getFile(), $e->getLine());
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", "ms", "POST", "");
         }
     }

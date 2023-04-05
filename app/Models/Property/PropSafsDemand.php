@@ -57,7 +57,7 @@ class PropSafsDemand extends Model
     /**
      * | Save SAF Demand
      */
-    public function postDemands($req)
+    public function postDemands(array $req)
     {
         PropSafsDemand::create($req);
     }
@@ -102,6 +102,19 @@ class PropSafsDemand extends Model
     {
         $safDemand = PropSafsDemand::where('saf_id', $safId)
             ->where('status', 1)
+            ->orderBy('due_date')
+            ->get();
+        return $safDemand;
+    }
+
+    /**
+     * | Get Paid Demand by Saf Id
+     */
+    public function getPaidDemandBySafId($safId)
+    {
+        $safDemand = PropSafsDemand::where('saf_id', $safId)
+            ->where('status', 1)
+            ->where('paid_status', 1)
             ->orderBy('due_date')
             ->get();
         return $safDemand;

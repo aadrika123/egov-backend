@@ -58,6 +58,7 @@ class PropProperty extends Model
         return DB::table('prop_properties')
             ->select(
                 'prop_properties.*',
+                'prop_properties.status as active_status',
                 'prop_properties.assessment_type as assessment',
                 'w.ward_name as old_ward_no',
                 'nw.ward_name as new_ward_no',
@@ -72,8 +73,7 @@ class PropProperty extends Model
             ->leftJoin('ref_prop_ownership_types as o', 'o.id', '=', 'prop_properties.ownership_type_mstr_id')
             ->leftJoin('ref_prop_types', 'ref_prop_types.id', '=', 'prop_properties.prop_type_mstr_id')
             ->leftJoin('ref_prop_road_types as r', 'r.id', '=', 'prop_properties.road_type_mstr_id')
-            ->leftJoin('prop_apartment_dtls as a', 'a.id', '=', 'prop_properties.apartment_details_id')
-            ->where('prop_properties.status', 1);
+            ->leftJoin('prop_apartment_dtls as a', 'a.id', '=', 'prop_properties.apartment_details_id');
     }
 
     /**
@@ -233,7 +233,9 @@ class PropProperty extends Model
                 'prop_properties.prop_address AS address',
                 'ref_prop_types.property_type AS propertyType',
                 'prop_properties.cluster_id',
-                'prop_properties.holding_no as holdingNo'
+                'prop_properties.holding_no as holdingNo',
+                'prop_properties.ulb_id',
+                'prop_properties.ward_mstr_id as ward_no'
             )
             ->where('prop_properties.cluster_id', $clusterId)
             ->where('prop_properties.status', 1)
@@ -501,5 +503,14 @@ class PropProperty extends Model
             ->update([
                 'cluster_id' => $clusterId
             ]);
+    }
+
+    /**
+     * | Independent Edit
+     */
+    public function edit($propId, $req)
+    {
+        $property = PropProperty::findOrFail($propId);
+        $property->update($req);
     }
 }

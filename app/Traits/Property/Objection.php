@@ -21,6 +21,7 @@ trait Objection
             ->select(
                 'prop_active_objections.id',
                 'prop_active_objections.workflow_id',
+                'pt_no',
                 'prop_active_objections.objection_no as application_no',
                 'p.ward_mstr_id as old_ward_id',
                 'u.ward_name as old_ward_no',
@@ -52,7 +53,8 @@ trait Objection
                 'p.balance',
                 't.property_type',
                 'p.assessment_type',
-                'objection_for'
+                'objection_for',
+                'pt_no'
             );
     }
 

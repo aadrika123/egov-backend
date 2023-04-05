@@ -50,7 +50,6 @@ class SafCalculation
     private $_petrolPumpQuaterlyRuleSets;
     private $_vacantRentalRates;
     private $_vacantPropertyTypeId;
-    private $_currentQuarterStartDate;
     private $_currentQuarterDate;
     private $_loggedInUserType;
     public $_redis;
@@ -259,6 +258,8 @@ class SafCalculation
     {
         $readRoadWidth = $this->_propertyDetails['roadType'];
 
+        if (!$readRoadWidth)
+            throw new Exception("Road Width Not Available");
         $refRoadType = json_decode(Redis::get('roadType-effective-' . $effectiveDate . 'roadWidth-' . $readRoadWidth));
         if (!$refRoadType) {
             $queryRoadType = "SELECT * FROM m_prop_road_types
@@ -518,8 +519,8 @@ class SafCalculation
             $carbonDateFrom = Carbon::parse($readDateFrom)->format('Y-m-d');
 
             if ($readDateUpto == null) {
-                $readDateUpto = Carbon::now();
-                $readDateUpto = readFinancialDueQuarter($readDateUpto);
+                $readDateUpto = Carbon::now()->endOfYear()->addMonths(3);           // Get The Full Financial Year
+                $readDateUpto = $readDateUpto->format('Y-m-d');
             }
 
             $carbonDateUpto = Carbon::parse($readDateUpto)->format('Y-m-d');
@@ -1078,14 +1079,6 @@ class SafCalculation
 
         $this->_GRID['demand']['lateAssessmentStatus'] = $this->_lateAssessmentStatus;
         $this->_GRID['demand']['lateAssessmentPenalty'] = $fine;
-
-        // For Government Building SAF The total Tax 
-        if (isset($this->_propertyDetails['isGBSaf'])) {
-            if ($this->_propertyDetails['isGBSaf'] == true && $this->_isResidential == true) {
-                $this->_GRID['demand']['isGBSaf'] = true;
-                $this->_GRID['demand']['totalTax'] = roundFigure($this->_GRID['demand']['totalTax'] / 2);
-            }
-        }
 
         $taxes = collect($this->_GRID['demand'])->only(['totalTax', 'totalOnePercPenalty', 'lateAssessmentPenalty']);   // All Penalties are Added
         $totalDemandAmount = $taxes->sum();                                                                             // Total Demand with Penalty

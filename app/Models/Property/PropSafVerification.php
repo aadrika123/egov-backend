@@ -34,7 +34,6 @@ class PropSafVerification extends Model
                 'v.underground_area as under_ground_area',
                 'v.petrol_pump_completion_date',
                 'v.has_water_harvesting as is_water_harvesting',
-                'v.zone_id as zone_mstr_id',
                 'v.created_at',
                 'v.updated_at',
                 'v.status',
@@ -49,12 +48,10 @@ class PropSafVerification extends Model
                 'u.ward_name as old_ward_no',
                 'u.ward_name as new_ward_no',
                 'building_type',
-                'prop_usage_type',
-                'zone'
+                'prop_usage_type'
             )
             ->join('ref_prop_road_types as r', 'r.id', '=', 'v.road_type_id')
             ->join('ulb_ward_masters as u', 'u.id', '=', 'v.ward_id')
-            ->leftJoin('zone_masters', 'zone_masters.id', 'v.zone_id')
             ->leftjoin('ref_prop_types as p', 'p.id', '=', 'v.prop_type_id')
             ->leftJoin('ulb_ward_masters as u1', 'u1.id', '=', 'v.new_ward_id')
             ->leftJoin('ref_prop_gbbuildingusagetypes as gbu', 'gbu.id', 'v.gb_usage_types')
@@ -117,11 +114,9 @@ class PropSafVerification extends Model
      */
     public function getVerificationsBySafId($safId)
     {
-        return DB::table('prop_saf_verifications as v')
-            ->leftJoin('prop_saf_verification_dtls as f', 'f.verification_id', '=', 'v.id')
-            ->where('v.ulb_verification', true)
-            ->where('v.saf_id', $safId)
-            ->where('v.status', 1)
-            ->get();
+        $query = "SELECT * FROM prop_saf_verification_dtls AS v
+                    JOIN (SELECT * FROM prop_saf_verifications WHERE saf_id=$safId AND ulb_verification=TRUE ORDER BY id DESC LIMIT 1) AS p ON p.id=v.verification_id
+                    WHERE v.saf_id=$safId";
+        return DB::select($query);
     }
 }

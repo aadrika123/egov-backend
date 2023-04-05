@@ -212,7 +212,7 @@ class TradeApplication extends Controller
         $refWorkflowId      = $this->_WF_MASTER_Id;
         $mUserType          = $this->_COMMON_FUNCTION->userType($refWorkflowId);
         $refWorkflows       = $this->_COMMON_FUNCTION->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
-        $mApplicationTypeId = $this->_TRADE_CONSTAINT["APPLICATION-TYPE"][$request->applicationType];
+        $mApplicationTypeId = ($this->_TRADE_CONSTAINT["APPLICATION-TYPE"][$request->applicationType]??null);
         try {
             if((!$this->_COMMON_FUNCTION->checkUsersWithtocken("users"))&& (strtoupper($mUserType)=="ONLINE"))
             {
@@ -451,7 +451,7 @@ class TradeApplication extends Controller
     {
         return $this->_REPOSITORY->btcInbox($request);
     }
-    # Serial No : 16
+    # Serial No : 16 App\Http\Requests\Trade\ReqInbox
     public function inbox(ReqInbox $request)
     {
         return $this->_REPOSITORY->inbox($request);

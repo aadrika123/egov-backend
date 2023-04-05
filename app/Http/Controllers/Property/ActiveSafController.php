@@ -2,6 +2,11 @@
 
 namespace App\Http\Controllers\Property;
 
+use App\BLL\Property\CalculateSafById;
+use App\BLL\Property\HandleTcVerification;
+use App\BLL\Property\PostRazorPayPenaltyRebate;
+use App\BLL\Property\RazorpayRequest;
+use App\BLL\Property\TcVerificationDemandAdjust;
 use App\EloquentClass\Property\PenaltyRebateCalculation;
 use App\EloquentClass\Property\SafCalculation;
 use App\Http\Controllers\Controller;
@@ -23,6 +28,9 @@ use App\Models\Property\PropFloor;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropPenaltyrebate;
 use App\Models\Property\PropProperty;
+use App\Models\Property\PropRazorpayPenalrebate;
+use App\Models\Property\PropRazorpayRequest;
+use App\Models\Property\PropRazorpayResponse;
 use App\Models\Property\PropSafGeotagUpload;
 use App\Models\Property\PropSafMemoDtl;
 use App\Models\Property\PropSafsDemand;
@@ -316,8 +324,8 @@ class ActiveSafController extends Controller
 
             $userId = auth()->user()->id;
             $ulbId = auth()->user()->ulb_id;
-            $occupiedWards = $mWfWardUser->getWardsByUserId($userId)->pluck('ward_id');                       // Model () to get Occupied Wards of Current User
 
+            $occupiedWards = $mWfWardUser->getWardsByUserId($userId)->pluck('ward_id');                       // Model () to get Occupied Wards of Current User
             $roleIds = $mWfRoleUser->getRoleIdByUserId($userId)->pluck('wf_role_id');                      // Model to () get Role By User Id
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleIds)->pluck('workflow_id');
 
@@ -812,11 +820,22 @@ class ActiveSafController extends Controller
             $metaReqs['refTableIdValue'] = $request->applicationId;
             $metaReqs['senderRoleId'] = $senderRoleId;
             $metaReqs['user_id'] = $userId;
-
+            $metaReqs['trackDate'] = $this->_todayDate->format('Y-m-d H:i:s');
             $request->request->add($metaReqs);
-
             $track->saveTrack($request);
 
+            // Updation of Received Date
+            $preWorkflowReq = [
+                'workflowId' => $saf->workflow_id,
+                'refTableDotId' => Config::get('PropertyConstaint.SAF_REF_TABLE'),
+                'refTableIdValue' => $request->applicationId,
+                'receiverRoleId' => $senderRoleId
+            ];
+            $previousWorkflowTrack = $track->getWfTrackByRefId($preWorkflowReq);
+            $previousWorkflowTrack->update([
+                'forward_date' => $this->_todayDate->format('Y-m-d'),
+                'forward_time' => $this->_todayDate->format('H:i:s')
+            ]);
             DB::commit();
             return responseMsgs(true, "Successfully Forwarded The Application!!", $samHoldingDtls, "010109", "1.0", "", "POST", $request->deviceId);
         } catch (Exception $e) {
@@ -882,7 +901,8 @@ class ActiveSafController extends Controller
         }
         return [
             'holdingNo' =>  $holdingNo ?? "",
-            'samNo' => $samNo ?? ""
+            'samNo' => $samNo ?? "",
+            'ptNo' => $ptNo ?? "",
         ];
     }
 
@@ -1068,11 +1088,13 @@ class ActiveSafController extends Controller
             $mPropSafMemoDtl = new PropSafMemoDtl();
             $mPropSafDemand = new PropSafsDemand();
             $mPropProperties = new PropProperty();
-            $mPropFloors = new PropFloor();
             $mPropDemand = new PropDemand();
+            $track = new WorkflowTrack();
+            $handleTcVerification = new TcVerificationDemandAdjust;
             $todayDate = Carbon::now()->format('Y-m-d');
             $currentFinYear = calculateFYear($todayDate);
             $famParamId = Config::get('PropertyConstaint.FAM_PARAM_ID');
+            $senderRoleId = $safDetails->current_role;
 
             $userId = authUser()->id;
             $safId = $req->applicationId;
@@ -1102,8 +1124,8 @@ class ActiveSafController extends Controller
 
             $propDtls = $mPropProperties->getPropIdBySafId($req->applicationId);
             $propId = $propDtls->id;
-            $fieldVerifiedSaf = $propSafVerification->getVerificationsBySafId($safId);
-            if ($fieldVerifiedSaf->isEmpty())
+            $fieldVerifiedSaf = $propSafVerification->getVerificationsBySafId($safId);          // Get fields Verified Saf with all Floor Details
+            if (collect($fieldVerifiedSaf)->isEmpty())
                 throw new Exception("Site Verification not Exist");
 
             DB::beginTransaction();
@@ -1133,8 +1155,41 @@ class ActiveSafController extends Controller
                 ]);
                 $memoReqs = new Request($mergedDemand);
                 $mPropSafMemoDtl->postSafMemoDtls($memoReqs);
-                $this->finalApprovalSafReplica($mPropProperties, $propId, $fieldVerifiedSaf, $activeSaf, $ownerDetails, $floorDetails, $mPropFloors, $safId);
+                $this->finalApprovalSafReplica($mPropProperties, $propId, $fieldVerifiedSaf, $activeSaf, $ownerDetails, $floorDetails, $safId);
+                $tcVerifyParams = [
+                    'safId' => $safId,
+                    'fieldVerificationDtls' => $fieldVerifiedSaf,
+                    'assessmentType' => $safDetails->assessment_type,
+                    'ulbId' => $activeSaf->ulb_id,
+                    'activeSafDtls' => $activeSaf,
+                    'propId' => $propId
+                ];
+                // $handleTcVerification->generateTcVerifiedDemand($tcVerifyParams);                // current object function (10.3)
                 $msg = "Application Approved Successfully";
+
+                $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+                $metaReqs['workflowId'] = $safDetails->workflow_id;
+                $metaReqs['refTableDotId'] = Config::get('PropertyConstaint.SAF_REF_TABLE');
+                $metaReqs['refTableIdValue'] = $req->applicationId;
+                $metaReqs['senderRoleId'] = $senderRoleId;
+                $metaReqs['verificationStatus'] = 1;
+                $metaReqs['user_id'] = $userId;
+                $metaReqs['trackDate'] = $this->_todayDate->format('Y-m-d H:i:s');
+                $req->request->add($metaReqs);
+                $track->saveTrack($req);
+
+                // Updation of Received Date
+                $preWorkflowReq = [
+                    'workflowId' => $safDetails->workflow_id,
+                    'refTableDotId' => Config::get('PropertyConstaint.SAF_REF_TABLE'),
+                    'refTableIdValue' => $req->applicationId,
+                    'receiverRoleId' => $senderRoleId
+                ];
+                $previousWorkflowTrack = $track->getWfTrackByRefId($preWorkflowReq);
+                $previousWorkflowTrack->update([
+                    'forward_date' => $this->_todayDate->format('Y-m-d'),
+                    'forward_time' => $this->_todayDate->format('H:i:s')
+                ]);
             }
             // Rejection
             if ($req->status == 0) {
@@ -1155,8 +1210,9 @@ class ActiveSafController extends Controller
     /**
      * | Replication of Final Approval SAf(10.1)
      */
-    public function finalApprovalSafReplica($mPropProperties, $propId, $fieldVerifiedSaf, $activeSaf, $ownerDetails, $floorDetails, $mPropFloors, $safId)
+    public function finalApprovalSafReplica($mPropProperties, $propId, $fieldVerifiedSaf, $activeSaf, $ownerDetails, $floorDetails, $safId)
     {
+        $mPropFloors = new PropFloor();
         $mPropProperties->replicateVerifiedSaf($propId, collect($fieldVerifiedSaf)->first());             // Replicate to Prop Property Table
         $approvedSaf = $activeSaf->replicate();
         $approvedSaf->setTable('prop_safs');
@@ -1185,7 +1241,6 @@ class ActiveSafController extends Controller
 
         foreach ($fieldVerifiedSaf as $key) {
             $ifFloorExist = $mPropFloors->getFloorBySafFloorIdSafId($safId, $key->saf_floor_id);
-
             $floorReqs = new Request([
                 'floor_mstr_id' => $key->floor_mstr_id,
                 'usage_type_mstr_id' => $key->usage_type_id,
@@ -1293,50 +1348,9 @@ class ActiveSafController extends Controller
     public function calculateSafBySafId(Request $req)
     {
         try {
-            $demands = array();
-            $safId = $req->id;
-            $currentFYear = getFY();
-            $mPropSafDemand = new PropSafsDemand();
-            $mPropActiveSafOwner = new PropActiveSafsOwner();
-            $penaltyRebateCalc = new PenaltyRebateCalculation;
-
-            $activeSaf = PropActiveSaf::findOrFail($safId);
-            $loggedInUserType = authUser()->user_type ?? "Citizen";
-            $currentQuarter = calculateQtr($this->_todayDate->format('Y-m-d'));
-            $firstOwner = $mPropActiveSafOwner->getOwnerDtlsBySafId1($safId);
-            $safDemandList = $mPropSafDemand->getDemandBySafId($safId);
-
-            if ($safDemandList->isEmpty())
-                throw new Exception("Demand Not Found");
-
-            $safDemandList = $safDemandList->map(function ($item) {                                // One Perc Penalty Tax
-                return $this->calcOnePercPenalty($item);           // Function Calculation one perc penalty()
-            });
-            $dues = roundFigure($safDemandList->sum('balance'));
-            $onePercTax = roundFigure($safDemandList->sum('onePercPenaltyTax'));
-            $lateAssessementPenalty = $activeSaf->late_assess_penalty ?? 0;
-            $totalDemand = roundFigure($dues + $onePercTax + $lateAssessementPenalty);
-            $mLastQuarterDemand = $safDemandList->where('fyear', $currentFYear)->sum('balance');
-            $dueFrom = "Quarter " . $safDemandList->last()->qtr . "/ Year " . $safDemandList->last()->fyear;
-            $dueTo = "Quarter " . $safDemandList->first()->qtr . "/ Year " . $safDemandList->first()->fyear;
-            $totalDuesList = [
-                'totalTax' => $dues,
-                'totalOnePercPenalty' => $onePercTax,
-                'totalQuarters' => $safDemandList->count(),
-                'duesFrom' => $dueFrom,
-                'duesTo' => $dueTo,
-                'lateAssessmentStatus' => (empty($lateAssessementPenalty)) ? false : true,
-                'lateAssessmentPenalty' => $lateAssessementPenalty,
-                'totalDemand' => $totalDemand,
-            ];
-            $totalDuesList = $penaltyRebateCalc->readRebates($currentQuarter, $loggedInUserType, $mLastQuarterDemand, $firstOwner, $totalDemand, $totalDuesList);
-
-            $finalPayableAmt = $totalDemand - ($totalDuesList['rebateAmt'] + $totalDuesList['specialRebateAmt']);
-            $totalDuesList['payableAmount'] = round($finalPayableAmt);
-
-            $demands['demand'] = $totalDuesList;
-            $demands['details'] = $safDemandList;
-            return responseMsgs(true, "Demand List", remove_null($demands));
+            $calculateSafById = new CalculateSafById;
+            $demand = $calculateSafById->calculateTax($req);
+            return responseMsgs(true, "Demand Details", remove_null($demand));
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "");
         }
@@ -1369,20 +1383,43 @@ class ActiveSafController extends Controller
     {
         $req->validate([
             'id' => 'required|integer',
-            'amount' => 'required|numeric'
         ]);
 
         try {
-            $auth = auth()->user();
+            $ipAddress = getClientIpAddress();
+            $mPropRazorPayRequest = new PropRazorpayRequest();
+            $postRazorPayPenaltyRebate = new PostRazorPayPenaltyRebate;
             $req->merge(['departmentId' => 1]);
             $calculateSafById = $this->calculateSafBySafId($req);
-            $safDemandDetails = $calculateSafById->original['data']['details'];
             $safDetails = PropActiveSaf::find($req->id);
             $demands = $calculateSafById->original['data']['demand'];
+            $details = $calculateSafById->original['data']['details'];
             $totalAmount = $demands['payableAmount'];
-            $req->request->add(['workflowId' => $safDetails->workflow_id, 'ghostUserId' => 0]);
+            $req->request->add(['workflowId' => $safDetails->workflow_id, 'ghostUserId' => 0, 'amount' => $totalAmount]);
             DB::beginTransaction();
             $orderDetails = $this->saveGenerateOrderid($req);                                      //<---------- Generate Order ID Trait
+            $demands = array_merge($demands->toArray(), [
+                'orderId' => $orderDetails['orderId']
+            ]);
+            // Store Razor pay Request
+            $razorPayRequest = [
+                'order_id' => $demands['orderId'],
+                'saf_id' => $req->id,
+                'from_fyear' => $demands['dueFromFyear'],
+                'from_qtr' => $demands['dueFromQtr'],
+                'to_fyear' => $demands['dueToFyear'],
+                'to_qtr' => $demands['dueToQtr'],
+                'demand_amt' => $demands['totalTax'],
+                'ulb_id' => $safDetails->ulb_id,
+                'ip_address' => $ipAddress,
+                'demand_list' => json_encode($details, true),
+                'amount' => $totalAmount
+            ];
+            $storedRazorPayReqs = $mPropRazorPayRequest->store($razorPayRequest);
+            // Store Razor pay penalty Rebates
+            $postRazorPayPenaltyRebate->_safId = $req->id;
+            $postRazorPayPenaltyRebate->_razorPayRequestId = $storedRazorPayReqs['razorPayReqId'];
+            $postRazorPayPenaltyRebate->postRazorPayPenaltyRebates($demands);
             DB::commit();
             return responseMsgs(true, "Order ID Generated", remove_null($orderDetails), "010114", "1.0", "1s", "POST", $req->deviceId);
         } catch (Exception $e) {
@@ -1450,6 +1487,130 @@ class ActiveSafController extends Controller
     public function paymentSaf(ReqPayment $req)
     {
         try {
+            $req->validate([
+                'paymentId' => "required",
+                "transactionNo" => "required"
+            ]);
+            // Variable Assignments
+            $mPropTransactions = new PropTransaction();
+            $mPropSafsDemands = new PropSafsDemand();
+            $mPropRazorPayRequest = new PropRazorpayRequest();
+            $mPropRazorpayPenalRebates = new PropRazorpayPenalrebate();
+            $mPropPenaltyRebates = new PropPenaltyrebate();
+            $mPropRazorpayResponse = new PropRazorpayResponse();
+
+            $userId = $req['userId'];
+            $safId = $req['id'];
+            $orderId = $req['orderId'];
+            $paymentId = $req['paymentId'];
+            $activeSaf = PropActiveSaf::findOrFail($req['id']);
+
+            if ($activeSaf->payment_status == 1)
+                throw new Exception("Payment Already Done");
+            $req['ulbId'] = $activeSaf->ulb_id;
+            $razorPayReqs = new Request([
+                'orderId' => $orderId,
+                'key' => 'saf_id',
+                'keyId' => $req['id']
+            ]);
+            $propRazorPayRequest = $mPropRazorPayRequest->getRazorPayRequests($razorPayReqs);
+            if (collect($propRazorPayRequest)->isEmpty())
+                throw new Exception("No Order Request Found");
+
+            if (!$userId)
+                $userId = 0;                                                        // For Ghost User in case of online payment
+
+            $tranNo = $req['transactionNo'];
+            // Derivative Assignments
+            $demands = json_decode($propRazorPayRequest['demand_list']);
+            $amount = $propRazorPayRequest['amount'];
+
+            if (!$demands || collect($demands)->isEmpty())
+                throw new Exception("Demand Not Available for Payment");
+
+            // Property Transactions
+            $activeSaf->payment_status = 1;             // Paid for Online
+            DB::beginTransaction();
+            $activeSaf->save();
+            // Replication of Prop Transactions
+            $tranReqs = [
+                'saf_id' => $req['id'],
+                'tran_date' => $this->_todayDate->format('Y-m-d'),
+                'tran_no' => $tranNo,
+                'payment_mode' => 'ONLINE',
+                'amount' => $amount,
+                'tran_date' => $this->_todayDate->format('Y-m-d'),
+                'verify_date' => $this->_todayDate->format('Y-m-d'),
+                'user_id' => $userId,
+                'from_fyear' => $propRazorPayRequest->from_fyear,
+                'to_fyear' => $propRazorPayRequest->to_fyear,
+                'from_qtr' => $propRazorPayRequest->from_qtr,
+                'to_qtr' => $propRazorPayRequest->to_qtr,
+                'demand_amt' => $propRazorPayRequest->demand_amt,
+                'ulb_id' => $propRazorPayRequest->ulb_id,
+            ];
+
+            $storedTransaction = $mPropTransactions->storeTrans($tranReqs);
+            $tranId = $storedTransaction['id'];
+            $razorpayPenalRebates = $mPropRazorpayPenalRebates->getPenalRebatesByReqId($propRazorPayRequest->id);
+            // Replication of Razorpay Penalty Rebates to Prop Penal Rebates
+            foreach ($razorpayPenalRebates as $item) {
+                $propPenaltyRebateReqs = [
+                    'tran_id' => $tranId,
+                    'head_name' => $item['head_name'],
+                    'amount' => $item['amount'],
+                    'is_rebate' => $item['is_rebate'],
+                    'tran_date' => $this->_todayDate->format('Y-m-d'),
+                    'saf_id' => $safId,
+                ];
+                $mPropPenaltyRebates->postRebatePenalty($propPenaltyRebateReqs);
+            }
+
+            // Updation of Prop Razor pay Request
+            $propRazorPayRequest->status = 1;
+            $propRazorPayRequest->payment_id = $paymentId;
+            $propRazorPayRequest->save();
+
+            // Update Prop Razorpay Response
+            $razorpayResponseReq = [
+                'razorpay_request_id' => $propRazorPayRequest->id,
+                'order_id' => $orderId,
+                'payment_id' => $paymentId,
+                'saf_id' => $req['id'],
+                'from_fyear' => $propRazorPayRequest->from_fyear,
+                'from_qtr' => $propRazorPayRequest->from_qtr,
+                'to_fyear' => $propRazorPayRequest->to_fyear,
+                'to_qtr' => $propRazorPayRequest->to_qtr,
+                'demand_amt' => $propRazorPayRequest->demand_amt,
+                'ulb_id' => $activeSaf->ulb_id,
+                'ip_address' => getClientIpAddress(),
+            ];
+            $mPropRazorpayResponse->store($razorpayResponseReq);
+
+            foreach ($demands as $demand) {
+                $demand = (array)$demand;
+                unset($demand['ruleSet'], $demand['rwhPenalty'], $demand['onePercPenalty'], $demand['onePercPenaltyTax']);
+                $demand['paid_status'] = 1;
+                $demand['saf_id'] = $safId;
+                $demand['balance'] = 0;
+                $mPropSafsDemands->postDemands($demand);
+            }
+
+            $this->sendToWorkflow($activeSaf);        // Send to Workflow(15.2)
+            DB::commit();
+            return responseMsgs(true, "Payment Successfully Done",  ['TransactionNo' => $tranNo], "010115", "1.0", "567ms", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Offline Saf Payment
+     */
+    public function offlinePaymentSaf(ReqPayment $req)
+    {
+        try {
             // Variable Assignments
             $offlinePaymentModes = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
             $todayDate = Carbon::now();
@@ -1458,14 +1619,14 @@ class ActiveSafController extends Controller
             $mPropSafsDemands = new PropSafsDemand();
             $verifyPaymentModes = Config::get('payment-constants.VERIFICATION_PAYMENT_MODES');
 
-            $userId = $req['userId'];
             $safId = $req['id'];
-            $tranBy = 'ONLINE';
 
             $activeSaf = PropActiveSaf::findOrFail($req['id']);
+            // if ($activeSaf->payment_status == 1)
+            //     throw new Exception("Payment Already Done");
 
-            if (!$userId)
-                $userId = auth()->user()->id ?? 0;                                      // Authenticated user or Ghost User
+            $userId = auth()->user()->id;                                      // Authenticated user or Ghost User
+            $tranBy = authUser()->user_type;
 
             $tranNo = $req['transactionNo'];
             // Derivative Assignments
@@ -1479,12 +1640,6 @@ class ActiveSafController extends Controller
             if (!$demands || collect($demands)->isEmpty())
                 throw new Exception("Demand Not Available for Payment");
 
-            if (in_array($req['paymentMode'], $offlinePaymentModes)) {
-                $userId = auth()->user()->id ?? null;
-                if (!$userId)
-                    throw new Exception("User Should Be Logged In");
-                $tranBy = authUser()->user_type;
-            }
 
             // Property Transactions
             $req->merge([
@@ -1514,16 +1669,12 @@ class ActiveSafController extends Controller
             }
             // Reflect on Prop Tran Details
             foreach ($demands as $demand) {
-                $safDemand = $mPropSafsDemands->getDemandById($demand['id']);
-                $safDemand->balance = 0;
-                $safDemand->paid_status = 1;           // <-------- Update Demand Paid Status 
-                $safDemand->save();
-
-                $propTranDtl = new PropTranDtl();
-                $propTranDtl->tran_id = $propTrans['id'];
-                $propTranDtl->saf_demand_id = $demand['id'];
-                $propTranDtl->total_demand = $demand['amount'];
-                $propTranDtl->save();
+                $demand = $demand->toArray();
+                unset($demand['ruleSet'], $demand['rwhPenalty'], $demand['onePercPenalty'], $demand['onePercPenaltyTax']);
+                $demand['paid_status'] = 1;
+                $demand['saf_id'] = $safId;
+                $demand['balance'] = 0;
+                $mPropSafsDemands->postDemands($demand);
             }
 
             // Replication Prop Rebates Penalties

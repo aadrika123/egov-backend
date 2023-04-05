@@ -19,7 +19,7 @@ trait WaterTrait
      * | Rating : 
      * | Opertation : serch the application for the respective ulb/workflow
      */
-    public function getWaterApplicatioList($workflowIds,$ulbId)
+    public function getWaterApplicatioList($workflowIds, $ulbId)
     {
         return WaterApplication::select(
             'water_applications.id',
@@ -40,9 +40,9 @@ trait WaterTrait
             ->leftjoin('water_connection_through_mstrs', 'water_connection_through_mstrs.id', '=', 'water_applications.connection_through')
             ->leftjoin('water_connection_type_mstrs', 'water_connection_type_mstrs.id', '=', 'water_applications.connection_type_id')
             ->where('water_applications.status', 1)
-            ->where('water_applications.payment_status', true)
+            ->where('water_applications.payment_status', 1)
             ->where('water_applications.ulb_id', $ulbId)
-            ->whereIn('water_applications.workflow_id',$workflowIds)
+            ->whereIn('water_applications.workflow_id', $workflowIds)
             ->orderByDesc('water_applicants.id');
     }
 }

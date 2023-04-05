@@ -2,6 +2,7 @@
 
 namespace App\Repository\Water\Concrete;
 
+use App\MicroServices\IdGenerator\PrefixIdGenerator;
 use App\Models\CustomDetail;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropProperty;
@@ -51,7 +52,6 @@ class NewConnectionRepository implements iNewConnection
     private $_dealingAssistent;
     private $_vacantLand;
     private $_waterWorkflowId;
-    private $_waterWorkId;
     private $_waterModulId;
     private $_juniorEngRoleId;
 
@@ -60,7 +60,6 @@ class NewConnectionRepository implements iNewConnection
         $this->_dealingAssistent = Config::get('workflow-constants.DEALING_ASSISTENT_WF_ID');
         $this->_vacantLand = Config::get('PropertyConstaint.VACANT_LAND');
         $this->_waterWorkflowId = Config::get('workflow-constants.WATER_MASTER_ID');
-        $this->_waterWorkId = Config::get('workflow-constants.WATER_WORKFLOW_ID');
         $this->_waterModulId = Config::get('module-constants.WATER_MODULE_ID');
         $this->_juniorEngRoleId  = Config::get('workflow-constants.WATER_JE_ROLE_ID');
     }
@@ -83,6 +82,7 @@ class NewConnectionRepository implements iNewConnection
      * | Generating the demand amount for the applicant in Water Connection Charges Table 
         | Serila No : 01
         | Check the ulb_id
+        | send it in track
      */
     public function store(Request $req)
     {
@@ -364,7 +364,8 @@ class NewConnectionRepository implements iNewConnection
         $mWfRoleMaps = new WfWorkflowrolemap();
         $wfLevels = Config::get('waterConstaint.ROLE-LABEL');
         $waterApplication = WaterApplication::find($req->applicationId);
-        // Derivative Assignments
+
+        # Derivative Assignments
         $senderRoleId = $waterApplication->current_role;
         $ulbWorkflowId = $waterApplication->workflow_id;
         $ulbWorkflowMaps = $mWfWorkflows->getWfDetails($ulbWorkflowId);
@@ -391,7 +392,7 @@ class NewConnectionRepository implements iNewConnection
 
         $waterApplication->save();
         $metaReqs['moduleId'] =  $this->_waterModulId;
-        $metaReqs['workflowId'] = $this->_waterWorkId;
+        $metaReqs['workflowId'] = $waterApplication->workflow_id;
         $metaReqs['refTableDotId'] = 'water_applications.id';
         $metaReqs['refTableIdValue'] = $req->applicationId;
         $metaReqs['user_id'] = authUser()->id;
@@ -500,6 +501,7 @@ class NewConnectionRepository implements iNewConnection
         | Serial No : 07 
         | Working / Check it / remove the comment ?? for delete / save the Details of the site inspection
         | Use the micrervice for the consumerId 
+        | Save it inthe track 
      */
     public function approvalRejectionWater($request, $roleId)
     {
@@ -534,6 +536,7 @@ class NewConnectionRepository implements iNewConnection
      * | Only for the EO approval
      * | @param request
      * | @param roleId
+        | Working
         | check the field verified status 
      */
     public function preApprovalConditionCheck($request, $roleId)
@@ -548,15 +551,37 @@ class NewConnectionRepository implements iNewConnection
         if ($waterDetails->doc_status == false) {
             throw new Exception("Documet is Not verified!");
         }
-        if ($waterDetails->payment_status == 0) {
+        if ($waterDetails->payment_status != 1) {
             throw new Exception("Payment Not Done!");
         }
         if ($waterDetails->doc_upload_status == false) {
             throw new Exception("Full document is Not Uploaded!");
         }
-        // if ($waterDetails->is_field_verified == false) {
-        //     throw new Exception("Field Verification Not Done!!");
-        // }
+        if ($waterDetails->is_field_verified == 0) {
+            throw new Exception("Field Verification Not Done!!");
+        }
+        $this->checkDataApprovalCondition($request, $roleId, $waterDetails);
+    }
+
+
+    /**
+     * | Check in the database for the final approval of application
+     * | only for EO
+     * | @param request
+     * | @param roleId
+        | working
+        | Check payment,docUpload,docVerify,feild
+     */
+    public function checkDataApprovalCondition($request, $roleId, $waterDetails)
+    {
+        $mWaterConnectionCharge = new WaterConnectionCharge();
+
+        $applicationCharges = $mWaterConnectionCharge->getWaterchargesById($waterDetails->id)->get();
+        $paymentStatus = collect($applicationCharges)->paid_status;
+
+        if (in_array(false, $paymentStatus)) {
+            throw new Exception("full payment for the application is not done!");
+        }
     }
 
 
@@ -911,7 +936,6 @@ class NewConnectionRepository implements iNewConnection
         $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
 
         $waterList = $this->getWaterApplicatioList($workflowIds, $ulbId)
-            ->where('water_applications.current_role', $roleId)
             ->whereIn('water_applications.ward_id', $wardId)
             ->where('is_field_verified', true)
             ->orderByDesc('water_applications.id')

@@ -89,6 +89,9 @@ class SafDocController extends Controller
             $filteredDocs['documents'] = $this->filterDocument($documentList, $refSafs, $refOwners['id']);                                     // function(1.2)
         } else
             $filteredDocs = [];
+
+        $filteredDocs['ownerDetails']['reqDocCount'] = $filteredDocs['documents']->count();
+        $filteredDocs['ownerDetails']['uploadedDocCount'] = $filteredDocs['documents']->whereNotNull('uploadedDoc')->count();
         return $filteredDocs;
     }
 

@@ -17,7 +17,9 @@ class WaterSiteInspection extends Model
      */
     public function storeInspectionDetails($req, $waterFeeId, $waterDetails, $refRoleDetails)
     {
-        $role = WfRole::where('id', $refRoleDetails)->first();
+        $role = WfRole::where('id', $refRoleDetails)
+            ->where('is_suspended', false)
+            ->first();
         $saveSiteVerify = new WaterSiteInspection();
         $saveSiteVerify->apply_connection_id    =   $req->applicationId;
         $saveSiteVerify->property_type_id       =   $req->propertyTypeId;
@@ -107,21 +109,24 @@ class WaterSiteInspection extends Model
      */
     public function saveOnlineSiteDetails($req)
     {
+        $roleName = WfRole::where('id', $req->roleId)
+            ->where('is_suspended', false)
+            ->first();
+            
         $mWaterSiteInspection = new WaterSiteInspection();
-        $mWaterSiteInspection->water_lock_arng  =   $req->waterLockArng;
-        $mWaterSiteInspection->gate_valve       =   $req->gateValve;
-        $mWaterSiteInspection->pipeline_size    =   $req->pipelineSize;
-        $mWaterSiteInspection->pipe_size        =   $req->pipeSize;
-        $mWaterSiteInspection->ferrule_type     =   $req->ferruleType;
+        $mWaterSiteInspection->water_lock_arng      =   $req->waterLockArng;
+        $mWaterSiteInspection->gate_valve           =   $req->gateValve;
+        $mWaterSiteInspection->pipeline_size        =   $req->pipelineSize;
+        $mWaterSiteInspection->pipe_size            =   $req->pipeSize;
+        $mWaterSiteInspection->ferrule_type         =   $req->ferruleType;
 
-        // $mWaterSiteInspection->ward_id              =   $req->ferruleType;
-        // $mWaterSiteInspection->emp_details_id       =   $req->ferruleType;
-        // $mWaterSiteInspection->apply_connection_id  =   $req->ferruleType;
-        // $mWaterSiteInspection->verified_by          =   $req->ferruleType;
-        // $mWaterSiteInspection->order_officer        =   $req->ferruleType;
-        // $mWaterSiteInspection->ferrule_type         =   $req->ferruleType;
-        // $mWaterSiteInspection->ferrule_type         =   $req->ferruleType;
-        // $mWaterSiteInspection->ferrule_type         =   $req->ferruleType;
+        $mWaterSiteInspection->ward_id              =   $req->wardId;
+        $mWaterSiteInspection->emp_details_id       =   $req->userId;
+        $mWaterSiteInspection->apply_connection_id  =   $req->applicationId;
+        $mWaterSiteInspection->verified_by          =   $roleName->role_name;
+        $mWaterSiteInspection->order_officer        =   $req->roleId;
+        $mWaterSiteInspection->inspection_date      =   $req->inspectionDate;
+        $mWaterSiteInspection->inspection_time      =   $req->inspectionTime;
         $mWaterSiteInspection->save();
     }
 }
