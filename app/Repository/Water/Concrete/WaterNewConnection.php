@@ -15,6 +15,7 @@ use App\Models\Water\WaterConnectionCharge;
 use App\Models\Water\WaterParamConnFee;
 use App\Models\Water\WaterParamConnFeeOld;
 use App\Models\Water\WaterParamDocumentType;
+use App\Models\Water\WaterPenaltyInstallment;
 use App\Models\Water\WaterRazorPayRequest;
 use App\Models\Water\WaterRazorPayResponse;
 use App\Models\Water\WaterSiteInspection;
@@ -176,7 +177,8 @@ class WaterNewConnection implements IWaterNewConnection
             }
             #------------ new connection --------------------
             DB::beginTransaction();
-            if ($request->applycationType == "connection") {
+            if ($request->applycationType == "connection") 
+            {
                 $application = WaterApplication::find($request->id);
                 if (!$application) {
                     throw new Exception("Data Not Found!......");
@@ -186,17 +188,37 @@ class WaterNewConnection implements IWaterNewConnection
                     throw new Exception("No Anny Due Amount!......");
                 }
                 $myRequest = new \Illuminate\Http\Request();
-                $myRequest->setMethod('POST');
-                $myRequest->request->add(['amount' => $cahges->amount]);
+                $myRequest->setMethod('POST');  
+                $totalAmount = 0; 
+                $amount = 0;
+                $penalty = 0  ;  
+                $rebat = 0;       
+                switch($request->isInstallment)
+                {
+                    case 1: $amount = $cahges["amount"];
+                            $rebat = $cahges["rabate"];
+                            break;
+                    case 0: $amount = $cahges["conn_fee"];
+                            $penalty = $cahges["balance_amount"]??0;
+                            break;
+                    
+                }
+                $totalAmount = $amount+$penalty-$rebat;
+                if(!$totalAmount)
+                {
+                    throw new Exception("minimum 1 rs to be pay");
+                }
+                $myRequest->request->add(['amount' => $totalAmount]);
                 $myRequest->request->add(['workflowId' => $application->workflow_id]);
                 $myRequest->request->add(['id' => $application->id]);
                 $myRequest->request->add(['departmentId' => 2]);
                 $temp = $this->saveGenerateOrderid($myRequest);
                 $RazorPayRequest = new WaterRazorPayRequest;
                 $RazorPayRequest->related_id   = $application->id;
-                $RazorPayRequest->payment_from = "New Connection";
-                $RazorPayRequest->amount       = $cahges->amount;
-                $RazorPayRequest->demand_from_upto = $cahges->ids;
+                $RazorPayRequest->payment_from = $cahges['charge_for'];
+                $RazorPayRequest->amount       = $totalAmount;
+                $RazorPayRequest->demand_from_upto = $cahges["ids"];
+                $RazorPayRequest->penalty_id = $cahges["ids"];
                 $RazorPayRequest->ip_address   = $request->ip();
                 $RazorPayRequest->order_id        = $temp["orderId"];
                 $RazorPayRequest->department_id = $temp["departmentId"];
@@ -229,7 +251,8 @@ class WaterNewConnection implements IWaterNewConnection
             $cahges         = null;
             $chargeData     = (array)null;
             $application    = null;
-            $mDemands       = (array)null;
+            $mDemands       = (array) null;
+            $mPenalty       = (array) null;
 
             #-----------valication------------------- 
             $RazorPayRequest = WaterRazorPayRequest::select("*")
@@ -240,28 +263,43 @@ class WaterNewConnection implements IWaterNewConnection
             if (!$RazorPayRequest) {
                 throw new Exception("Data Not Found");
             }
-            if (in_array($RazorPayRequest->payment_from, ["New Connection", "Site Inspection"])) {
+            if (in_array($RazorPayRequest->payment_from, ["New Connection", "Site Inspection"])) 
+            {
                 $application = WaterApplication::find($args["id"]);
                 $cahges = 0;
                 $id = explode(",", $RazorPayRequest->demand_from_upto);
-                if ($id) {
+                $penalty_id = explode(",", $RazorPayRequest->penalty_id);
+                if ($id) 
+                {
                     $mDemands = WaterConnectionCharge::select("*")
                         ->whereIn("id", $id)
                         ->get();
-                    $cahges = ($mDemands->sum("amount"));
+                    $cahges = $cahges+($mDemands->sum("amount"));
+                }
+                if($penalty_id)
+                {
+                    
+                    $mPenalty = WaterPenaltyInstallment::select("*")
+                                ->whereIn("id", $penalty_id)
+                                ->get();
+                    $cahges = $cahges+($mDemands->sum("balance_amount"));
                 }
                 $chargeData["total_charge"] = $cahges;
-            } elseif ($RazorPayRequest->payment_from == "Demand Collection") {
+            } 
+            elseif ($RazorPayRequest->payment_from == "Demand Collection") 
+            {
                 $application = null;
             }
-            if (!$application) {
+            if (!$application) 
+            {
                 throw new Exception("Application Not Found!......");
             }
             $applicationId = $args["id"];
             #-----------End valication----------------------------
 
             #-------------Calculation----------------------------- 
-            if (!$chargeData || round($args['amount']) != round($chargeData['total_charge'])) {
+            if (!$chargeData || round($args['amount']) != round($chargeData['total_charge'])) 
+            {
                 throw new Exception("Payble Amount Missmatch!!!");
             }
 
@@ -302,7 +340,8 @@ class WaterNewConnection implements IWaterNewConnection
             $Tradetransaction->tran_no          = $args["transactionNo"];
             $Tradetransaction->update();
 
-            foreach ($mDemands as $val) {
+            foreach ($mDemands as $val) 
+            {
                 $TradeDtl = new WaterTranDetail;
                 $TradeDtl->tran_id        = $transaction_id;
                 $TradeDtl->demand_id      = $val->id;
@@ -314,15 +353,21 @@ class WaterNewConnection implements IWaterNewConnection
                 $val->paid_status = true;
                 $val->update();
             }
+            foreach($mPenalty as $val)
+            {
+                $val->paid_status = true;
+                $val->update();
+            }
 
             $application->payment_status = true;
             $application->update();
             ////////////////////////////////////////
             # Check 
-            WaterApplication::where('id', $applicationId)
-                ->update([
-                    'current_role' => $this->_dealingAssistent
-                ]);
+            if($RazorPayRequest->payment_from == "New Connection")
+            {
+                $application->current_role = !$application->current_role ? $this->_dealingAssistent:$application->current_role;
+                $application->update();
+            }
             /////////////////////////////////////////
             DB::commit();
             #----------End transaction------------------------
@@ -910,10 +955,13 @@ class WaterNewConnection implements IWaterNewConnection
 
     #---------- core function --------------------------------------------------
 
-    public function getWaterConnectionChages($applicationId)
+    public function getWaterConnectionChages($applicationId,$ids="")
     {
         try {
-            $cahges = WaterConnectionCharge::select(DB::raw("SUM(COALESCE(amount,0)) AS amount, STRING_AGG(id::TEXT,',') AS ids"))
+            $conn_fee_charge = WaterConnectionCharge::select(DB::raw("SUM(COALESCE(amount,0)) AS amount,
+                                                            SUM(COALESCE(conn_fee,0))AS conn_fee,
+                                                            STRING_AGG(id::TEXT,',') AS ids
+                                                            "))
                 ->where("application_id", $applicationId)
                 ->Where(function ($where) {
                     $where->orWhere("paid_status", FALSE)
@@ -925,11 +973,65 @@ class WaterNewConnection implements IWaterNewConnection
                 })
                 ->groupBy("application_id")
                 ->first();
+            $charge_for = WaterConnectionCharge::select("charge_category")
+                            ->where("application_id", $applicationId)
+                            ->Where(function ($where) {
+                                $where->orWhere("paid_status", FALSE)
+                                    ->orWhereNull("paid_status");
+                            })
+                            ->Where(function ($where) {
+                                $where->orWhere("status", TRUE)
+                                    ->orWhereNull("status");
+                            })
+                            ->orderBy("id")
+                            ->first();
+
+            $penalty_installment = WaterPenaltyInstallment::select(DB::raw("SUM(COALESCE(balance_amount,0)) AS balance_amount,
+                                                                SUM(COALESCE(installment_amount,0))AS installment_amount,
+                                                                STRING_AGG(id::TEXT,',') AS ids"))
+                    ->where("apply_connection_id", $applicationId)
+                    ->Where(function ($where) {
+                        $where->orWhere("paid_status", 0)
+                            ->orWhereNull("paid_status");
+                    })
+                    ->Where(function ($where) {
+                        $where->orWhere("status", 1)
+                            ->orWhereNull("status");
+                    });
+                    if($ids)
+                    {
+                        $penalty_installment= $penalty_installment->whereIn("id", explode(",",$ids));
+                    }
+                $penalty_installment = $penalty_installment->groupBy("apply_connection_id")
+                    ->first();
+
+                $paid_penalty = WaterPenaltyInstallment::Where("apply_connection_id", $applicationId)
+                                ->Where("paid_status", 1)
+                                ->Where(function ($where) {
+                                    $where->orWhere("status", TRUE)
+                                        ->orWhereNull("status");
+                                })
+                                ->count("id");
+            $cahges =collect([
+                "charge_for"=>$charge_for->charge_category??"New Connection",
+                "amount"=> $conn_fee_charge->amount??0,
+                "amount"=> $conn_fee_charge->amount??0,
+                "conn_fee"=>$conn_fee_charge->conn_fee??0,
+                "ids" =>$conn_fee_charge->ids??"",
+                "balance_amount"=>$penalty_installment->balance_amount??0,
+                "installment_amount"=>$penalty_installment->installment_amount??0,
+                "installment_ids"=>$penalty_installment->ids??"",
+                "is_rebate"=>$paid_penalty>0 ? false : true,
+                "rabate"=> $paid_penalty>0 ? 0.0 : round((($penalty_installment->balance_amount??0)/10),2),
+            ]); 
             return $cahges;
-        } catch (Exception $e) {
+        } 
+        catch (Exception $e) 
+        {
             return [];
         }
     }
+
     public function getDocumentTypeList(WaterApplication $application)
     {
         $return = (array)null;

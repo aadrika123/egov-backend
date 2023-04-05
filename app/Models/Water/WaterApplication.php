@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use Predis\Response\Status;
 
 class WaterApplication extends Model
 {
@@ -506,5 +507,20 @@ class WaterApplication extends Model
     {
         return WaterApplication::where('current_role', $roleId)
             ->where('status', true);
+    }
+
+
+    /**
+     * | Save the application current role as the bo when payament is done offline
+     * | @param 
+     */
+    public function sendApplicationToBo($applicationId)
+    {
+        $refBo = Config::get("waterConstaint.ROLE-LABEL.BO");
+        WaterApplication::where('id', $applicationId)
+            ->where('status', 1)
+            ->update([
+                "current_role" => $refBo
+            ]);
     }
 }

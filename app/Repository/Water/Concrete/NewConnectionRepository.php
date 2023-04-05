@@ -101,6 +101,7 @@ class NewConnectionRepository implements iNewConnection
         $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
         $mWaterConnectionCharge = new WaterConnectionCharge();
         $mWaterTran = new WaterTran();
+        $waterTrack = new WorkflowTrack();
 
         # Connection Type 
         switch ($req->connectionTypeId) {
@@ -169,6 +170,15 @@ class NewConnectionRepository implements iNewConnection
         if ($totalConnectionCharges == 0) {
             $mWaterTran->saveZeroConnectionCharg($totalConnectionCharges, $ulbId, $req, $applicationId, $connectionId, $connectionType);
         }
+        # Save the record in the tracks
+        $metaReqs['moduleId'] =  $this->_waterModulId;
+        $metaReqs['workflowId'] = $ulbWorkflowId;
+        $metaReqs['refTableDotId'] = 'water_applications.id';
+        $metaReqs['refTableIdValue'] = $applicationId;
+        $metaReqs['user_id'] = authUser()->id;
+        $metaReqs['ulb_id'] = $ulbId;
+        $req->request->add($metaReqs);
+        $waterTrack->saveTrack($req);
         DB::commit();
 
         $returnResponse = [
