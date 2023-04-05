@@ -110,6 +110,7 @@ class Cluster extends Model
         )
             ->where('status', 1)
             ->where('ulb_id', auth()->user()->ulb_id)
+            ->orderBy('id')
             ->get();
     }
 
