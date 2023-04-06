@@ -488,7 +488,7 @@ class WaterPaymentController extends Controller
             $paymentstatus = $this->adjustmentInConnection($request, $newConnectionCharges, $waterDetails, $applicationCharge);
 
             # Store the site inspection details
-            $mWaterSiteInspection->storeInspectionDetails($request, $waterFeeId, $waterDetails, $refRoleDetails,$paymentstatus);
+            $mWaterSiteInspection->storeInspectionDetails($request, $waterFeeId, $waterDetails, $refRoleDetails, $paymentstatus);
             $mWaterSiteInspectionsScheduling->saveInspectionStatus($request);
             DB::commit();
             return responseMsgs(true, "Site Inspection Done!", $request->applicationId, "", "01", "ms", "POST", "");
@@ -561,6 +561,7 @@ class WaterPaymentController extends Controller
         $mWaterApplication = new WaterApplication();
         $chargeCatagory = Config::get('waterConstaint.CHARGE_CATAGORY');
         $refInstallment['penalty_head'] = Config::get('waterConstaint.PENALTY_HEAD.1');
+        $refPaymentStatus = 0;
 
         # connection charges
         $request->merge([
@@ -611,6 +612,7 @@ class WaterPaymentController extends Controller
                         $mWaterPenaltyInstallment->saveWaterPenelty($applicationId, $refInstallment, $chargeCatagory['SITE_INSPECTON'], $connectionId);
                     }
                     $mWaterApplication->updatePaymentStatus($applicationId, false);
+                    $refPaymentStatus = 0;
                     break;
                 }
                 # in case of no change in connection charges but the old penalty is unpaid
@@ -628,13 +630,14 @@ class WaterPaymentController extends Controller
                     $newConnectionCharges['conn_fee_charge']['amount'] = $unpaidPenalty;
                     $connectionId = $mWaterConnectionCharge->saveWaterCharge($applicationId, $request, $newConnectionCharges);
                     $mWaterPenaltyInstallment->saveWaterPenelty($applicationId, $refInstallment, $chargeCatagory['SITE_INSPECTON'], $connectionId);
+                    $refPaymentStatus = 0;
                 }
-                $refPaymentStatus = false;
+                $refPaymentStatus = 0;
                 break;
             case ($newCharge == 0):
                 $mWaterPenaltyInstallment->deactivateOldPenalty($request, $applicationId, $chargeCatagory);
                 $mWaterApplication->updatePaymentStatus($applicationId, true);
-                $refPaymentStatus = true;
+                $refPaymentStatus = 1;
                 break;
                 return $refPaymentStatus;
         }
