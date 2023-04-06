@@ -315,7 +315,7 @@ class NewConnectionController extends Controller
             $mWfRoleUsermap = new WfRoleusermap();
             $waterRoles = $this->_waterRoles;
 
-            # check the login user is Eo or not
+            # check the login user is EO or not
             $userId = authUser()->id;
             $workflowId = $waterDetails->workflow_id;
             $getRoleReq = new Request([                                                 // make request to get role id of the user

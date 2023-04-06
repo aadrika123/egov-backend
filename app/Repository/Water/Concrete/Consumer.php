@@ -38,7 +38,7 @@ class Consumer implements IConsumer
             ];                         
             $validator = Validator::make($request->all(), $rules,);                    
             if ($validator->fails()) {                        
-                return responseMsg(false, $validator->errors(),$request->all());
+                throw new Exception ($validator->errors());
             }
             $demandUpto = Carbon::now()->format("Y-m-d");
             if($request->demandUpto)
@@ -312,7 +312,6 @@ class Consumer implements IConsumer
         }
         catch(Exception $e)
         {
-            dd($e->getMessage(),$e->getLine());
             $response["status"] = false;
             $response["errors"] = $e->getMessage();
             return collect($response); 

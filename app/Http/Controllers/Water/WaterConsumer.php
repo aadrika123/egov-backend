@@ -128,9 +128,9 @@ class WaterConsumer extends Controller
             $refMeterConnectionType = Config::get('waterConstaint.METER_CONN_TYPE');
             $this->checkDemandGeneration($request);
             $consumerDetails = WaterWaterConsumer::findOrFail($request->consumerId);
-            $calculatedDemand = $this->Repository->calConsumerDemand($request);
+            $calculatedDemand = collect($this->Repository->calConsumerDemand($request));
             if ($calculatedDemand['status'] == false) {
-                return $calculatedDemand;
+                throw new Exception($calculatedDemand);
             }
             if (isset($calculatedDemand)) {
                 # get the demand
