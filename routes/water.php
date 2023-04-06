@@ -42,7 +42,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('application/approval-rejection', 'approvalRejectionWater');                        // Workflow
         Route::post('comment-independent', 'commentIndependent');                                       // Workflow
         Route::post('field-verified-inbox', 'fieldVerifiedInbox');                                      // Workflow
-        Route::post('site-verification', 'fieldVerification');                                          // Workflow
         Route::post('back-to-citizen', 'backToCitizen');                                                // Workflow
         Route::post('btc-inbox', 'btcInbox');                                                           // Workflow
         Route::post('workflow/get-doc-list', 'getDocList');                                             // Workflow

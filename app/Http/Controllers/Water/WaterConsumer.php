@@ -114,13 +114,14 @@ class WaterConsumer extends Controller
      * | @return 
         | Serial No : 03
         | Not Tested
-        | Work on the valuidation and the saving of the meter details 
+        | Work on the valuidation and the saving of the meter details document
      */
     public function saveGenerateConsumerDemand(Request $request)
     {
         try {
             $request->validate([
                 'consumerId' => "required|digits_between:1,9223372036854775807",
+                'document' => "nullable|"
             ]);
 
             $mWaterConsumerInitialMeter = new WaterConsumerInitialMeter();
@@ -128,9 +129,9 @@ class WaterConsumer extends Controller
             $refMeterConnectionType = Config::get('waterConstaint.METER_CONN_TYPE');
             $this->checkDemandGeneration($request);
             $consumerDetails = WaterWaterConsumer::findOrFail($request->consumerId);
-            $calculatedDemand = $this->Repository->calConsumerDemand($request);
+            $calculatedDemand = collect($this->Repository->calConsumerDemand($request));
             if ($calculatedDemand['status'] == false) {
-                return $calculatedDemand;
+                throw new Exception($calculatedDemand);
             }
             if (isset($calculatedDemand)) {
                 # get the demand
@@ -141,12 +142,14 @@ class WaterConsumer extends Controller
                         $meterId = $mWaterConsumerMeter->saveMeterReading($request);
                         $mWaterConsumerInitialMeter->saveConsumerReading($request, $meterId);
                         $this->savingDemand($calculatedDemand, $request, $consumerDetails, $demandDetails['charge_type'], $refMeterConnectionType);
+                        // $documentPath = $this->saveTheMeterDocument($request);
                         break;
 
                     case ($refMeterConnectionType['2']):
                         $meterId = $mWaterConsumerMeter->saveMeterReading($request);
                         $mWaterConsumerInitialMeter->saveConsumerReading($request, $meterId);
                         $this->savingDemand($calculatedDemand, $request, $consumerDetails, $demandDetails['charge_type'], $refMeterConnectionType);
+                        // $documentPath = $this->saveTheMeterDocument($request);
                         break;
 
                     case ($refMeterConnectionType['3']):

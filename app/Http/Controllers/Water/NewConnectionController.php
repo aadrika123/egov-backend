@@ -315,7 +315,7 @@ class NewConnectionController extends Controller
             $mWfRoleUsermap = new WfRoleusermap();
             $waterRoles = $this->_waterRoles;
 
-            # check the login user is Eo or not
+            # check the login user is EO or not
             $userId = authUser()->id;
             $workflowId = $waterDetails->workflow_id;
             $getRoleReq = new Request([                                                 // make request to get role id of the user
@@ -415,42 +415,6 @@ class NewConnectionController extends Controller
     {
         try {
             return $this->newConnection->fieldVerifiedInbox($request);
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-
-    // Field Verification of water Applications // Recheck
-    /**
-        | Recheck
-        | Not Used
-     */
-    public function fieldVerification(reqSiteVerification $request)
-    {
-        try {
-            $juniorEngRoleId = Config::get('waterConstaint.ROLE-LABEL.JE');
-            $mWaterApplication = new WaterApplication();
-            // $verification = new WaterSiteInspection();
-            $verificationStatus = $request->verificationStatus;                                             // Verification Status true or false
-
-            switch ($request->currentRoleId) {
-                case $juniorEngRoleId;                                                                  // In Case of Agency TAX Collector
-                    if ($verificationStatus == 1) {
-                        $msg = "Site Successfully Verified";
-                    }
-                    if ($verificationStatus == 0) {
-                        $msg = "Site Successfully Rebuted";
-                    }
-                    $mWaterApplication->markSiteVerification($request->id);
-                    break;
-                default:
-                    return responseMsg(false, "Forbidden Access", "");
-            }
-            // DB::beginTransaction();
-            // // Verification Store
-            // $verification->store($request);                                                                          // Model function to store verification and get the id
-            // DB::commit();
-            return responseMsgs(true, $msg, "", "010118", "1.0", "310ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }

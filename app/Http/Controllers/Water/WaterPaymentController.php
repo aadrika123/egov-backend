@@ -456,6 +456,7 @@ class WaterPaymentController extends Controller
     public function saveSitedetails(siteAdjustment $request)
     {
         try {
+            // return "working";
             $mWaterSiteInspection = new WaterSiteInspection();
             $mWaterNewConnection = new WaterNewConnection();
             $mWaterConnectionCharge = new WaterConnectionCharge();
@@ -575,7 +576,7 @@ class WaterPaymentController extends Controller
                 if ($newConnectionCharges['conn_fee_charge']['conn_fee'] > $applicationCharge['conn_fee']) {
                     $adjustedConnFee = $newConnectionCharges['conn_fee_charge']['conn_fee'] - $applicationCharge['conn_fee'];
                     $newConnectionCharges['conn_fee_charge']['conn_fee'] = $adjustedConnFee;
-
+                    $payPenalty = false;
                     # get Water Application Penalty 
                     if ($newConnectionCharges['conn_fee_charge']['penalty'] > $applicationCharge['penalty']) {
                         $unpaidPenalty = $this->checkOldPenalty($applicationId, $chargeCatagory);
@@ -584,7 +585,8 @@ class WaterPaymentController extends Controller
                         $refInstallment['balance_amount'] =  $refInstallment['installment_amount'];
 
                         $mWaterPenaltyInstallment->deactivateOldPenalty($request, $applicationId, $chargeCatagory);
-                        // $mWaterPenaltyInstallment->saveWaterPenelty($applicationId, $refInstallment, $chargeCatagory['SITE_INSPECTON']);
+                        $payPenalty = true;
+                        # if write here penalty  
                     }
                     # for the Case of no extra penalty 
                     $unpaidPenalty = $this->checkOldPenalty($applicationId, $chargeCatagory);
@@ -594,16 +596,20 @@ class WaterPaymentController extends Controller
                         $newConnectionCharges['conn_fee_charge']['penalty'] = $refInstallment['installment_amount'] ?? 0;
 
                         $mWaterPenaltyInstallment->deactivateOldPenalty($request, $applicationId, $chargeCatagory);
-                        // $mWaterPenaltyInstallment->saveWaterPenelty($applicationId, $refInstallment, $chargeCatagory['SITE_INSPECTON']);
+                        $payPenalty = true;
+                        # if write here penalty  
                     }
                     # if there is no old penalty and all penalty is paid
                     if ($newConnectionCharges['conn_fee_charge']['penalty'] == 0) {
                         $mWaterPenaltyInstallment->deactivateOldPenalty($request, $applicationId, $chargeCatagory);
                     }
-
                     $newConnectionCharges['conn_fee_charge']['amount'] = $newConnectionCharges['conn_fee_charge']['penalty'] + $newConnectionCharges['conn_fee_charge']['conn_fee'];
                     $connectionId = $mWaterConnectionCharge->saveWaterCharge($applicationId, $request, $newConnectionCharges);
-                    $mWaterPenaltyInstallment->saveWaterPenelty($applicationId, $refInstallment, $chargeCatagory['SITE_INSPECTON'], $connectionId);
+
+                    # in case of change or payment of penalty
+                    if ($payPenalty == true) {
+                        $mWaterPenaltyInstallment->saveWaterPenelty($applicationId, $refInstallment, $chargeCatagory['SITE_INSPECTON'], $connectionId);
+                    }
                     $mWaterApplication->updatePaymentStatus($applicationId, false);
                     break;
                 }
@@ -615,7 +621,7 @@ class WaterPaymentController extends Controller
                     $newConnectionCharges['conn_fee_charge']['penalty'] = $unpaidPenalty;
 
                     $mWaterPenaltyInstallment->deactivateOldPenalty($request, $applicationId, $chargeCatagory);
-                    // $mWaterPenaltyInstallment->saveWaterPenelty($applicationId, $refInstallment, $chargeCatagory['SITE_INSPECTON']);
+                    # if write here penalty  
 
                     # Static Connection fee
                     $newConnectionCharges['conn_fee_charge']['conn_fee'] = 0;
@@ -995,6 +1001,7 @@ class WaterPaymentController extends Controller
                 $mWaterApplication->updateOnlyPaymentstatus($req['id']);
             }
         }
+        $mWaterApplication->sendApplicationToBo($req['id']);                // <---------- Save current role as Bo
         $charges->save();
 
         $waterTranDetail = new WaterTranDetail();
@@ -1077,16 +1084,24 @@ class WaterPaymentController extends Controller
                             }
                         });
 
-                        $actualPenaltyAmount = (10 / 100 * $actualCharge['penalty']);
-                        if ($req->penaltyAmount != $actualPenaltyAmount) {
-                            throw new Exception("Penalty Amount Not Matched!");
+                        $actualPenaltyAmountRebate = (10 / 100 * $actualCharge['penalty']);
+                        $callAmount = $actualCharge['amount'] - $actualPenaltyAmountRebate;
+                        if ($req->amount != $callAmount) {
+                            throw new Exception("Connection amount Not Matched!");
                         }
-                        $chargeAmount =  $actualCharge['amount'] - $actualPenaltyAmount;
+
+                        $actualPenalty = collect($refPenallty)->sum('balance_amount');
+                        if ($req->penaltyAmount != $actualPenalty) {
+                            throw new Exception("provided Penalty not matched!");
+                        }
+
+                        $chargeAmount =  $req->amount - ($req->penaltyAmount - $actualPenaltyAmountRebate);
                         if ($actualCharge['conn_fee'] != $chargeAmount) {
                             throw new Exception("Connection fee not matched!");
                         }
 
                         # save penalty and rebate details 
+                        # write code to track the rebate and the penalty
 
                         break;
                 }
@@ -1401,63 +1416,63 @@ class WaterPaymentController extends Controller
         | Not Working
         | Recheck 
      */
-    public function initiateOnlineDemandPayment(Request $request)
-    {
-        try {
-            $refUser            = Auth()->user();
-            $refUserId          = $refUser->id;
-            $refUlbId           = $refUser->ulb_id;
-            $rules = [
-                'id'                => 'required|digits_between:1,9223372036854775807',
-                'applycationType'  => 'required|string|in:connection,consumer',
-            ];
-            $validator = Validator::make($request->all(), $rules,);
-            if ($validator->fails()) {
-                return responseMsg(false, $validator->errors(), $request->all());
-            }
-            #------------ new connection --------------------
-            DB::beginTransaction();
-            if ($request->applycationType == "connection") {
-                $application = WaterApplication::find($request->id);
-                if (!$application) {
-                    throw new Exception("Data Not Found!......");
-                }
-                $cahges = $this->getWaterConnectionChages($application->id);
-                if (!$cahges) {
-                    throw new Exception("No Anny Due Amount!......");
-                }
-                $myRequest = new \Illuminate\Http\Request();
-                $myRequest->setMethod('POST');
-                $myRequest->request->add(['amount' => $cahges->amount]);
-                $myRequest->request->add(['workflowId' => $application->workflow_id]);
-                $myRequest->request->add(['id' => $application->id]);
-                $myRequest->request->add(['departmentId' => 2]);
-                $temp = $this->saveGenerateOrderid($myRequest);
-                $RazorPayRequest = new WaterRazorPayRequest;
-                $RazorPayRequest->related_id   = $application->id;
-                $RazorPayRequest->payment_from = "New Connection";
-                $RazorPayRequest->amount       = $cahges->amount;
-                $RazorPayRequest->demand_from_upto = $cahges->ids;
-                $RazorPayRequest->ip_address   = $request->ip();
-                $RazorPayRequest->order_id        = $temp["orderId"];
-                $RazorPayRequest->department_id = $temp["departmentId"];
-                $RazorPayRequest->save();
-            }
-            #--------------------water Consumer----------------------
-            else {
-            }
-            DB::commit();
-            $temp['name']       = $refUser->user_name;
-            $temp['mobile']     = $refUser->mobile;
-            $temp['email']      = $refUser->email;
-            $temp['userId']     = $refUser->id;
-            $temp['ulbId']      = $refUser->ulb_id;
-            $temp["applycationType"] = $request->applycationType;
-            return responseMsg(true, "", $temp);
-        } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "03", ".ms", "POST", $request->deviceId);
-        }
-    }
+    // public function initiateOnlineDemandPayment(Request $request)
+    // {
+    //     try {
+    //         $refUser            = Auth()->user();
+    //         $refUserId          = $refUser->id;
+    //         $refUlbId           = $refUser->ulb_id;
+    //         $rules = [
+    //             'id'                => 'required|digits_between:1,9223372036854775807',
+    //             'applycationType'  => 'required|string|in:connection,consumer',
+    //         ];
+    //         $validator = Validator::make($request->all(), $rules,);
+    //         if ($validator->fails()) {
+    //             return responseMsg(false, $validator->errors(), $request->all());
+    //         }
+    //         #------------ new connection --------------------
+    //         DB::beginTransaction();
+    //         if ($request->applycationType == "connection") {
+    //             $application = WaterApplication::find($request->id);
+    //             if (!$application) {
+    //                 throw new Exception("Data Not Found!......");
+    //             }
+    //             $cahges = $this->getWaterConnectionChages($application->id);
+    //             if (!$cahges) {
+    //                 throw new Exception("No Anny Due Amount!......");
+    //             }
+    //             $myRequest = new \Illuminate\Http\Request();
+    //             $myRequest->setMethod('POST');
+    //             $myRequest->request->add(['amount' => $cahges->amount]);
+    //             $myRequest->request->add(['workflowId' => $application->workflow_id]);
+    //             $myRequest->request->add(['id' => $application->id]);
+    //             $myRequest->request->add(['departmentId' => 2]);
+    //             $temp = $this->saveGenerateOrderid($myRequest);
+    //             $RazorPayRequest = new WaterRazorPayRequest;
+    //             $RazorPayRequest->related_id   = $application->id;
+    //             $RazorPayRequest->payment_from = "New Connection";
+    //             $RazorPayRequest->amount       = $cahges->amount;
+    //             $RazorPayRequest->demand_from_upto = $cahges->ids;
+    //             $RazorPayRequest->ip_address   = $request->ip();
+    //             $RazorPayRequest->order_id        = $temp["orderId"];
+    //             $RazorPayRequest->department_id = $temp["departmentId"];
+    //             $RazorPayRequest->save();
+    //         }
+    //         #--------------------water Consumer----------------------
+    //         else {
+    //         }
+    //         DB::commit();
+    //         $temp['name']       = $refUser->user_name;
+    //         $temp['mobile']     = $refUser->mobile;
+    //         $temp['email']      = $refUser->email;
+    //         $temp['userId']     = $refUser->id;
+    //         $temp['ulbId']      = $refUser->ulb_id;
+    //         $temp["applycationType"] = $request->applycationType;
+    //         return responseMsg(true, "", $temp);
+    //     } catch (Exception $e) {
+    //         return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "03", ".ms", "POST", $request->deviceId);
+    //     }
+    // }
 
 
 
@@ -1469,113 +1484,113 @@ class WaterPaymentController extends Controller
         | Recheck / Not Working
         | clear the concept
      */
-    public function endOnlineDemandPayment($args)
-    {
-        try {
-            $refUser        = Auth()->user();
-            $refUserId      = $refUser->id ?? $args["userId"];
-            $refUlbId       = $refUser->ulb_id ?? $args["ulbId"];
-            $mNowDate       = Carbon::now()->format('Y-m-d');
-            $mTimstamp      = Carbon::now()->format('Y-m-d H:i:s');
-            $cahges         = null;
-            $chargeData     = (array)null;
-            $application    = null;
-            $mDemands       = (array)null;
+    // public function endOnlineDemandPayment($args)
+    // {
+    //     try {
+    //         $refUser        = Auth()->user();
+    //         $refUserId      = $refUser->id ?? $args["userId"];
+    //         $refUlbId       = $refUser->ulb_id ?? $args["ulbId"];
+    //         $mNowDate       = Carbon::now()->format('Y-m-d');
+    //         $mTimstamp      = Carbon::now()->format('Y-m-d H:i:s');
+    //         $cahges         = null;
+    //         $chargeData     = (array)null;
+    //         $application    = null;
+    //         $mDemands       = (array)null;
 
-            #-----------valication------------------- 
-            $RazorPayRequest = WaterRazorPayRequest::select("*")
-                ->where("order_id", $args["orderId"])
-                ->where("related_id", $args["id"])
-                ->where("status", 2)
-                ->first();
-            if (!$RazorPayRequest) {
-                throw new Exception("Data Not Found");
-            }
-            if ($RazorPayRequest->payment_from == "Demand Collection") {
-                $application = WaterConsumer::find($args["id"]);
-                $cahges = 0;
-                $id = explode(",", $RazorPayRequest->demand_from_upto);
-                if ($id) {
-                    $mDemands = WaterConsumerDemand::select("*")
-                        ->whereIn("id", $id)
-                        ->get();
-                    $cahges = ($mDemands->sum("amount"));
-                }
-                $chargeData["total_charge"] = $cahges;
-            } elseif ($RazorPayRequest->payment_from == "Demand Collection") {
-                $application = null;
-            }
-            if (!$application) {
-                throw new Exception("Application Not Found!......");
-            }
-            $applicationId = $args["id"];
-            #-----------End valication----------------------------
+    //         #-----------valication------------------- 
+    //         $RazorPayRequest = WaterRazorPayRequest::select("*")
+    //             ->where("order_id", $args["orderId"])
+    //             ->where("related_id", $args["id"])
+    //             ->where("status", 2)
+    //             ->first();
+    //         if (!$RazorPayRequest) {
+    //             throw new Exception("Data Not Found");
+    //         }
+    //         if ($RazorPayRequest->payment_from == "Demand Collection") {
+    //             $application = WaterConsumer::find($args["id"]);
+    //             $cahges = 0;
+    //             $id = explode(",", $RazorPayRequest->demand_from_upto);
+    //             if ($id) {
+    //                 $mDemands = WaterConsumerDemand::select("*")
+    //                     ->whereIn("id", $id)
+    //                     ->get();
+    //                 $cahges = ($mDemands->sum("amount"));
+    //             }
+    //             $chargeData["total_charge"] = $cahges;
+    //         } elseif ($RazorPayRequest->payment_from == "Demand Collection") {
+    //             $application = null;
+    //         }
+    //         if (!$application) {
+    //             throw new Exception("Application Not Found!......");
+    //         }
+    //         $applicationId = $args["id"];
+    //         #-----------End valication----------------------------
 
-            #-------------Calculation----------------------------- 
-            if (!$chargeData || round($args['amount']) != round($chargeData['total_charge'])) {
-                throw new Exception("Payble Amount Missmatch!!!");
-            }
+    //         #-------------Calculation----------------------------- 
+    //         if (!$chargeData || round($args['amount']) != round($chargeData['total_charge'])) {
+    //             throw new Exception("Payble Amount Missmatch!!!");
+    //         }
 
-            $transactionType = $RazorPayRequest->payment_from;
+    //         $transactionType = $RazorPayRequest->payment_from;
 
-            $totalCharge = $chargeData['total_charge'];
-            #-------------End Calculation-----------------------------
-            #-------- Transection -------------------
-            DB::beginTransaction();
+    //         $totalCharge = $chargeData['total_charge'];
+    //         #-------------End Calculation-----------------------------
+    //         #-------- Transection -------------------
+    //         DB::beginTransaction();
 
-            $RazorPayResponse = new WaterRazorPayResponse();
-            $RazorPayResponse->related_id   = $RazorPayRequest->related_id;
-            $RazorPayResponse->request_id   = $RazorPayRequest->id;
-            $RazorPayResponse->amount       = $args['amount'];
-            $RazorPayResponse->merchant_id  = $args['merchantId'] ?? null;
-            $RazorPayResponse->order_id     = $args["orderId"];
-            $RazorPayResponse->payment_id   = $args["paymentId"];
-            $RazorPayResponse->save();
+    //         $RazorPayResponse = new WaterRazorPayResponse();
+    //         $RazorPayResponse->related_id   = $RazorPayRequest->related_id;
+    //         $RazorPayResponse->request_id   = $RazorPayRequest->id;
+    //         $RazorPayResponse->amount       = $args['amount'];
+    //         $RazorPayResponse->merchant_id  = $args['merchantId'] ?? null;
+    //         $RazorPayResponse->order_id     = $args["orderId"];
+    //         $RazorPayResponse->payment_id   = $args["paymentId"];
+    //         $RazorPayResponse->save();
 
-            $RazorPayRequest->status = 1;
-            $RazorPayRequest->update();
+    //         $RazorPayRequest->status = 1;
+    //         $RazorPayRequest->update();
 
-            $Tradetransaction = new WaterTran;
-            $Tradetransaction->related_id       = $applicationId;
-            $Tradetransaction->ward_id          = $application->ward_id;
-            $Tradetransaction->tran_type        = $transactionType;
-            $Tradetransaction->tran_date        = $mNowDate;
-            $Tradetransaction->payment_mode     = "Online";
-            $Tradetransaction->amount           = $totalCharge;
-            $Tradetransaction->emp_dtl_id       = $refUserId;
-            $Tradetransaction->created_at       = $mTimstamp;
-            $Tradetransaction->ip_address       = '';
-            $Tradetransaction->ulb_id           = $refUlbId;
-            $Tradetransaction->save();
-            $transaction_id                     = $Tradetransaction->id;
-            $Tradetransaction->tran_no          = $args["transactionNo"];
-            $Tradetransaction->update();
+    //         $Tradetransaction = new WaterTran;
+    //         $Tradetransaction->related_id       = $applicationId;
+    //         $Tradetransaction->ward_id          = $application->ward_id;
+    //         $Tradetransaction->tran_type        = $transactionType;
+    //         $Tradetransaction->tran_date        = $mNowDate;
+    //         $Tradetransaction->payment_mode     = "Online";
+    //         $Tradetransaction->amount           = $totalCharge;
+    //         $Tradetransaction->emp_dtl_id       = $refUserId;
+    //         $Tradetransaction->created_at       = $mTimstamp;
+    //         $Tradetransaction->ip_address       = '';
+    //         $Tradetransaction->ulb_id           = $refUlbId;
+    //         $Tradetransaction->save();
+    //         $transaction_id                     = $Tradetransaction->id;
+    //         $Tradetransaction->tran_no          = $args["transactionNo"];
+    //         $Tradetransaction->update();
 
-            foreach ($mDemands as $val) {
-                $TradeDtl = new WaterTranDetail;
-                $TradeDtl->tran_id        = $transaction_id;
-                $TradeDtl->demand_id      = $val->id;
-                $TradeDtl->total_demand   = $val->amount;
-                $TradeDtl->application_id   = $val->application_id;
-                $TradeDtl->created_at     = $mTimstamp;
-                $TradeDtl->save();
+    //         foreach ($mDemands as $val) {
+    //             $TradeDtl = new WaterTranDetail;
+    //             $TradeDtl->tran_id        = $transaction_id;
+    //             $TradeDtl->demand_id      = $val->id;
+    //             $TradeDtl->total_demand   = $val->amount;
+    //             $TradeDtl->application_id   = $val->application_id;
+    //             $TradeDtl->created_at     = $mTimstamp;
+    //             $TradeDtl->save();
 
-                $val->paid_status = true;
-                $val->update();
-            }
+    //             $val->paid_status = true;
+    //             $val->update();
+    //         }
 
-            $application->payment_status = true;
-            $application->update();
+    //         $application->payment_status = true;
+    //         $application->update();
 
-            DB::commit();
-            #----------End transaction------------------------
-            #----------Response------------------------------
-            $res['transactionId'] = $transaction_id;
-            $res['paymentRecipt'] = config('app.url') . "/api/water/paymentRecipt/" . $applicationId . "/" . $transaction_id;
-            return responseMsg(true, "", $res);
-        } catch (Exception $e) {
-            DB::rollBack();
-            return responseMsg(false, $e->getMessage(), $args);
-        }
-    }
+    //         DB::commit();
+    //         #----------End transaction------------------------
+    //         #----------Response------------------------------
+    //         $res['transactionId'] = $transaction_id;
+    //         $res['paymentRecipt'] = config('app.url') . "/api/water/paymentRecipt/" . $applicationId . "/" . $transaction_id;
+    //         return responseMsg(true, "", $res);
+    //     } catch (Exception $e) {
+    //         DB::rollBack();
+    //         return responseMsg(false, $e->getMessage(), $args);
+    //     }
+    // }
 }
