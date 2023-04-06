@@ -175,7 +175,8 @@ class PropDemand extends Model
                 'ward_name',
                 // 'qtr'
             )
-            ->get();
+            ->paginate($req->perPage);
+        // ->get();
     }
 
     /**

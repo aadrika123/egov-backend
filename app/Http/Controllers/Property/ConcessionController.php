@@ -271,12 +271,13 @@ class ConcessionController extends Controller
      * | Rating-3
      * | Status-Closed
      */
-    public function inbox()
+    public function inbox(Request $req)
     {
         try {
             $mWfRoleUser = new WfRoleusermap();
             $mWfWardUser = new WfWardUser();
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
+            $perPage = $req->perPage ?? 10;
 
             $userId = auth()->user()->id;
             $ulbId = auth()->user()->ulb_id;
@@ -290,6 +291,7 @@ class ConcessionController extends Controller
                 ->whereIn('prop_active_concessions.current_role', $roleIds)
                 ->whereIn('a.ward_mstr_id', $occupiedWards)
                 ->orderByDesc('prop_active_concessions.id')
+                // ->paginate($perPage);
                 ->get();
             return responseMsgs(true, "Inbox List", remove_null($concessions), '010703', '01', '326ms-478ms', 'Post', '');
         } catch (Exception $e) {

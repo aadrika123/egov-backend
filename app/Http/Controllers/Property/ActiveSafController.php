@@ -338,6 +338,7 @@ class ActiveSafController extends Controller
                 ->orderByDesc('id')
                 ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name')
                 ->get();
+            // ->paginate($perPage);
 
             return responseMsgs(true, "Data Fetched", remove_null($safInbox->values()), "010103", "1.0", "339ms", "POST", "");
         } catch (Exception $e) {
@@ -1166,36 +1167,37 @@ class ActiveSafController extends Controller
                 ];
                 // $handleTcVerification->generateTcVerifiedDemand($tcVerifyParams);                // current object function (10.3)
                 $msg = "Application Approved Successfully";
-
-                $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
-                $metaReqs['workflowId'] = $safDetails->workflow_id;
-                $metaReqs['refTableDotId'] = Config::get('PropertyConstaint.SAF_REF_TABLE');
-                $metaReqs['refTableIdValue'] = $req->applicationId;
-                $metaReqs['senderRoleId'] = $senderRoleId;
                 $metaReqs['verificationStatus'] = 1;
-                $metaReqs['user_id'] = $userId;
-                $metaReqs['trackDate'] = $this->_todayDate->format('Y-m-d H:i:s');
-                $req->request->add($metaReqs);
-                $track->saveTrack($req);
-
-                // Updation of Received Date
-                $preWorkflowReq = [
-                    'workflowId' => $safDetails->workflow_id,
-                    'refTableDotId' => Config::get('PropertyConstaint.SAF_REF_TABLE'),
-                    'refTableIdValue' => $req->applicationId,
-                    'receiverRoleId' => $senderRoleId
-                ];
-                $previousWorkflowTrack = $track->getWfTrackByRefId($preWorkflowReq);
-                $previousWorkflowTrack->update([
-                    'forward_date' => $this->_todayDate->format('Y-m-d'),
-                    'forward_time' => $this->_todayDate->format('H:i:s')
-                ]);
             }
             // Rejection
             if ($req->status == 0) {
                 $this->finalRejectionSafReplica($activeSaf, $ownerDetails, $floorDetails);
                 $msg = "Application Rejected Successfully";
+                $metaReqs['verificationStatus'] = 0;
             }
+            $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $metaReqs['workflowId'] = $safDetails->workflow_id;
+            $metaReqs['refTableDotId'] = Config::get('PropertyConstaint.SAF_REF_TABLE');
+            $metaReqs['refTableIdValue'] = $req->applicationId;
+            $metaReqs['senderRoleId'] = $senderRoleId;
+            $metaReqs['verificationStatus'] = 1;
+            $metaReqs['user_id'] = $userId;
+            $metaReqs['trackDate'] = $this->_todayDate->format('Y-m-d H:i:s');
+            $req->request->add($metaReqs);
+            $track->saveTrack($req);
+
+            // Updation of Received Date
+            $preWorkflowReq = [
+                'workflowId' => $safDetails->workflow_id,
+                'refTableDotId' => Config::get('PropertyConstaint.SAF_REF_TABLE'),
+                'refTableIdValue' => $req->applicationId,
+                'receiverRoleId' => $senderRoleId
+            ];
+            $previousWorkflowTrack = $track->getWfTrackByRefId($preWorkflowReq);
+            $previousWorkflowTrack->update([
+                'forward_date' => $this->_todayDate->format('Y-m-d'),
+                'forward_time' => $this->_todayDate->format('H:i:s')
+            ]);
 
             $propSafVerification->deactivateVerifications($req->applicationId);                 // Deactivate Verification From Table
             $propSafVerificationDtl->deactivateVerifications($req->applicationId);              // Deactivate Verification from Saf floor Dtls
