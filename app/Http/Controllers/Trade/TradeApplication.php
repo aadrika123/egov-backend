@@ -528,12 +528,18 @@ class TradeApplication extends Controller
             {
                 if($request->action=='forward')
                 {
-                    $request->request->add(["senderRoleId"=>$role->forward_role_id??0]);
+                    $request->request->add(["receiverRoleId"=>$role->forward_role_id??0]);
                 }
                 if($request->action=='backward')
                 {
-                    $request->request->add(["senderRoleId"=>$role->backward_role_id??0]);
+                    $request->request->add(["receiverRoleId"=>$role->backward_role_id??0]);
                 }
+            }
+
+            if(($role->is_finisher??0) && $request->action=='forward')
+            {
+                $request->request->add(["status"=>1]);                
+                return $this->approveReject($request);
             }
             
             if(!$this->_COMMON_FUNCTION->checkUsersWithtocken("users"))
