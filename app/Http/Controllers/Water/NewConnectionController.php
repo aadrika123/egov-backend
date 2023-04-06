@@ -1238,12 +1238,14 @@ class NewConnectionController extends Controller
         });
         if (!empty($documentList)) {
             $ownerPhoto = $mWfActiveDocument->getWaterOwnerPhotograph($application['id'], $application->workflow_id, $moduleId, $refOwners['id']);
+            $path =  $this->readDocumentPath($ownerPhoto->doc_path);
+            $fullDocPath = !empty(trim($ownerPhoto->doc_path)) ? $path : null;
             $ownerDocList['ownerDetails'] = [
                 'ownerId' => $refOwners['id'],
                 'name' => $refOwners['applicant_name'],
                 'mobile' => $refOwners['mobile_no'],
                 'guardian' => $refOwners['guardian_name'],
-                'uploadedDoc' => $ownerPhoto->doc_path ?? "",
+                'uploadedDoc' => $fullDocPath ?? "",
                 'verifyStatus' => $ownerPhoto->verify_status ?? ""
             ];
             return $ownerDocList;

@@ -54,6 +54,7 @@ class NewConnectionRepository implements iNewConnection
     private $_waterWorkflowId;
     private $_waterModulId;
     private $_juniorEngRoleId;
+    private $_waterRoles;
 
     public function __construct()
     {
@@ -62,6 +63,7 @@ class NewConnectionRepository implements iNewConnection
         $this->_waterWorkflowId = Config::get('workflow-constants.WATER_MASTER_ID');
         $this->_waterModulId = Config::get('module-constants.WATER_MODULE_ID');
         $this->_juniorEngRoleId  = Config::get('workflow-constants.WATER_JE_ROLE_ID');
+        $this->_waterRoles = Config::get('waterConstaint.ROLE-LABEL');
     }
 
     /**
@@ -94,6 +96,7 @@ class NewConnectionRepository implements iNewConnection
         $ulbId = $req->ulbId;
         $reftenant = true;
         $user = authUser();
+        $citizenId = null;
 
         $ulbWorkflowObj = new WfWorkflow();
         $mWaterNewConnection = new WaterNewConnection();
@@ -173,15 +176,27 @@ class NewConnectionRepository implements iNewConnection
         }
 
         # Save the record in the tracks
+        if ($user->user_type == "Citizen") {
+            $waterRoles = $this->_waterRoles;
+            $citizenId = $user->id;
+            $receiverRoleId = $waterRoles['DA'];
+        }
+        if ($user->user_type != "Citizen") {
+            $roleDetails = $this->getUserRolesDetails($user, $ulbWorkflowId['id']);
+            $senderRoleId = $roleDetails['wf_role_id'];
+            $receiverRoleId = $roleDetails['forward_role_id'];
+        }
         $metaReqs = new Request(
-            [ 
-                'citizenId' => $user->id,
-                'moduleId' =>  $this->_waterModulId,
-                'workflowId' => $ulbWorkflowId['id'],
-                'refTableDotId' => 'water_applications.id',
-                'refTableIdValue' => $applicationId,
-                'user_id' => $user->id,
-                'ulb_id' => $ulbId
+            [
+                'citizenId'         => $citizenId,
+                'moduleId'          =>  $this->_waterModulId,
+                'workflowId'        => $ulbWorkflowId['id'],
+                'refTableDotId'     => 'water_applications.id',
+                'refTableIdValue'   => $applicationId,
+                'user_id'           => $user->id,
+                'ulb_id'            => $ulbId,
+                'senderRoleId'      => $senderRoleId ?? null,
+                'receiverRoleId'    => $receiverRoleId ?? null
             ]
         );
         $waterTrack->saveTrack($metaReqs);
@@ -278,6 +293,23 @@ class NewConnectionRepository implements iNewConnection
                     }
                 }
         }
+    }
+
+    /**
+     * | Get the user Role details and the details of forword and backword details
+     * | @var
+    | Serial No : 01.03  
+     */
+    public function getUserRolesDetails($user, $ulbWorkflowId)
+    {
+        $mWfRoleUsermap = new WfRoleUsermap();
+        $userId = $user->id;
+        $getRoleReq = new Request([                                                 // make request to get role id of the user
+            'userId' => $userId,
+            'workflowId' => $ulbWorkflowId
+        ]);
+        $readRoleDtls = $mWfRoleUsermap->getRoleByUserWfId($getRoleReq);
+        return $readRoleDtls;
     }
 
 
