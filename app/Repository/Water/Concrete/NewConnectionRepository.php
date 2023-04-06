@@ -491,6 +491,7 @@ class NewConnectionRepository implements iNewConnection
                     throw new Exception("Document Not Fully Uploaded");
                 }
                 $siteDetails = $mWaterSiteInspection->getSiteDetails($application->id)
+                    ->where('payment_status', true)
                     ->first();
                 if (!$siteDetails) {
                     throw new Exception("Site Not Verified!");
