@@ -512,13 +512,36 @@ class TradeApplication extends Controller
         $role = $this->_COMMON_FUNCTION->getUserRoll($user_id,$ulb_id,$refWorkflowId);
        
         $request->validate([
+            "action"        =>'required|in:forward,backward',
             'applicationId' => 'required|integer',
-            'senderRoleId' => 'required|integer',
-            'receiverRoleId' => 'required|integer',
+            'senderRoleId' => 'nullable|integer',
+            'receiverRoleId' => 'nullable|integer',
             'comment' => ($role->is_initiator??false)?"nullable":'required',
         ]);
 
         try {
+            if(!$request->senderRoleId)
+            {
+                $request->request->add(["senderRoleId"=>$role->role_id??0]);
+            }
+            if(!$request->receiverRoleId)
+            {
+                if($request->action=='forward')
+                {
+                    $request->request->add(["receiverRoleId"=>$role->forward_role_id??0]);
+                }
+                if($request->action=='backward')
+                {
+                    $request->request->add(["receiverRoleId"=>$role->backward_role_id??0]);
+                }
+            }
+
+            if(($role->is_finisher??0) && $request->action=='forward')
+            {
+                $request->request->add(["status"=>1]);                
+                return $this->approveReject($request);
+            }
+            
             if(!$this->_COMMON_FUNCTION->checkUsersWithtocken("users"))
             {
                 throw New Exception("Citizen Not Allowed");

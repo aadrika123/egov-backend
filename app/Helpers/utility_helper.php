@@ -193,6 +193,30 @@ if (!function_exists('calculateQuarterStartDate')) {
     }
 }
 
+/**
+ * |
+ */
+if (!function_exists('getFinancialYear')) {
+    function getFinancialYear($date, $startYear = 2015)
+    {
+        $year = date('Y', strtotime($date));
+        $month = date('m', strtotime($date));
+        if ($month <= 3) {
+            return ($year - 1) . '-' . $year;
+        } else {
+            return $year . '-' . ($year + 1);
+        }
+
+        // Calculate the financial year with a start year of 2015
+        if ($year >= $startYear) {
+            $financialYear = ($year - $startYear + 1) . '-' . ($year - $startYear + 2);
+        } else {
+            $financialYear = '';
+        }
+        return $financialYear;
+    }
+}
+
 // get Financual Year by date
 if (!function_exists('calculateQtr')) {
     function calculateQtr(String $date): String
