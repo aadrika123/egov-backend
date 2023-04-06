@@ -662,9 +662,11 @@ class NewConnectionRepository implements iNewConnection
         $mWaterConnectionCharge = new WaterConnectionCharge();
 
         $applicationCharges = $mWaterConnectionCharge->getWaterchargesById($waterDetails->id)->get();
-        $paymentStatus = collect($applicationCharges)->paid_status;
-
-        if (in_array(false, $paymentStatus)) {
+        $paymentStatus = collect($applicationCharges)->map(function($value)
+        {
+            return $value['paid_status'];
+        })->values();
+        if (in_array(false, $paymentStatus->toArray())) {
             throw new Exception("full payment for the application is not done!");
         }
     }
