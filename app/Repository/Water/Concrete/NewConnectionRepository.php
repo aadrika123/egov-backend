@@ -183,13 +183,13 @@ class NewConnectionRepository implements iNewConnection
         }
         if ($user->user_type != "Citizen") {
             $roleDetails = $this->getUserRolesDetails($user, $ulbWorkflowId['id']);
-            $senderRoleId = $roleDetails['wf_role_id'];
-            $receiverRoleId = $roleDetails['forward_role_id'];
+            $senderRoleId = $roleDetails->wf_role_id;
+            $receiverRoleId = collect($initiatorRoleId)->first()->role_id;
         }
         $metaReqs = new Request(
             [
                 'citizenId'         => $citizenId,
-                'moduleId'          =>  $this->_waterModulId,
+                'moduleId'          => $this->_waterModulId,
                 'workflowId'        => $ulbWorkflowId['id'],
                 'refTableDotId'     => 'water_applications.id',
                 'refTableIdValue'   => $applicationId,
