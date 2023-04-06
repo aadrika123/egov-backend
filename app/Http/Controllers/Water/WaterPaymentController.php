@@ -632,15 +632,15 @@ class WaterPaymentController extends Controller
                     $mWaterPenaltyInstallment->saveWaterPenelty($applicationId, $refInstallment, $chargeCatagory['SITE_INSPECTON'], $connectionId);
                     $refPaymentStatus = 0;
                 }
-                $refPaymentStatus = 0;
+                $refPaymentStatus = 1;
                 break;
             case ($newCharge == 0):
                 $mWaterPenaltyInstallment->deactivateOldPenalty($request, $applicationId, $chargeCatagory);
                 $mWaterApplication->updatePaymentStatus($applicationId, true);
                 $refPaymentStatus = 1;
                 break;
-                return $refPaymentStatus;
         }
+        return $refPaymentStatus;
     }
 
 
