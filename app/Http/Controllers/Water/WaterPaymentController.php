@@ -485,10 +485,10 @@ class WaterPaymentController extends Controller
             $waterFeeId = $newConnectionCharges['water_fee_mstr_id'];
 
             # If the Adjustment Hamper
-            $this->adjustmentInConnection($request, $newConnectionCharges, $waterDetails, $applicationCharge);
+            $paymentstatus = $this->adjustmentInConnection($request, $newConnectionCharges, $waterDetails, $applicationCharge);
 
             # Store the site inspection details
-            $mWaterSiteInspection->storeInspectionDetails($request, $waterFeeId, $waterDetails, $refRoleDetails);
+            $mWaterSiteInspection->storeInspectionDetails($request, $waterFeeId, $waterDetails, $refRoleDetails,$paymentstatus);
             $mWaterSiteInspectionsScheduling->saveInspectionStatus($request);
             DB::commit();
             return responseMsgs(true, "Site Inspection Done!", $request->applicationId, "", "01", "ms", "POST", "");
@@ -629,11 +629,14 @@ class WaterPaymentController extends Controller
                     $connectionId = $mWaterConnectionCharge->saveWaterCharge($applicationId, $request, $newConnectionCharges);
                     $mWaterPenaltyInstallment->saveWaterPenelty($applicationId, $refInstallment, $chargeCatagory['SITE_INSPECTON'], $connectionId);
                 }
+                $refPaymentStatus = false;
                 break;
             case ($newCharge == 0):
                 $mWaterPenaltyInstallment->deactivateOldPenalty($request, $applicationId, $chargeCatagory);
                 $mWaterApplication->updatePaymentStatus($applicationId, true);
+                $refPaymentStatus = true;
                 break;
+                return $refPaymentStatus;
         }
     }
 
