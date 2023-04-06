@@ -1420,7 +1420,7 @@ class NewConnectionController extends Controller
 
             $ifFullDocVerifiedV1 = $this->ifFullDocVerified($applicationId);
             if ($ifFullDocVerifiedV1 == 1) {                                        // If The Document Fully Verified Update Verify Status
-                $mWaterApplication->activateUploadStatus($applicationId);
+                $mWaterApplication->updateAppliVerifyStatus($applicationId);
             }
             DB::commit();
             return responseMsgs(true, $req->docStatus . " Successfully", "", "010204", "1.0", "", "POST", $req->deviceId ?? "");

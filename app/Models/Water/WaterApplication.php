@@ -523,4 +523,17 @@ class WaterApplication extends Model
                 "current_role" => $refBo
             ]);
     }
+
+
+    /**
+     * | Update the application Doc Verify status
+     * | @param applicationId
+     */
+    public function updateAppliVerifyStatus($applicationId)
+    {
+        WaterApplication::where('id', $applicationId)
+            ->update([
+                'doc_status' => true
+            ]);
+    }
 }
