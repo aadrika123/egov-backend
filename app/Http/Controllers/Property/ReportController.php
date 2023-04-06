@@ -202,7 +202,8 @@ class ReportController extends Controller
             "fromDate" => $fromDate,
             "toDate" => $toDate,
             "ulbId" => $ulbId,
-            "wardMstrId" => $wardMstrId
+            "wardMstrId" => $wardMstrId,
+            "perPage" => $request->perPage
         ]);
 
         $data = $mPropDemand->wardWiseHolding($mreq);
@@ -217,17 +218,14 @@ class ReportController extends Controller
     public function listFY(Request $request)
     {
         $currentYear = Carbon::now()->year;
-        $financialyear = $currentYear - 8;
-        $financialYears = [];
-        $start = Carbon::create($financialyear, 4, 1);
-        $end = Carbon::now();
+        $financialYears = array();
+        $currentYear = date('Y');
 
-        while ($end >= $start) {
-            // Determine the end of the current financial year
-            $financialYearEnd = $end->month >= 4 ? Carbon::create($end->year, 3, 31) : Carbon::create($end->year - 1, 3, 31);
-            $financialYear = $financialYearEnd->format('Y') . '-' . $end->format('Y');
+        for ($year = 2015; $year <= $currentYear; $year++) {
+            $startOfYear = $year . '-04-01'; // Financial year starts on April 1st
+            $endOfYear = ($year + 1) . '-03-31'; // Financial year ends on March 31st
+            $financialYear = getFinancialYear($startOfYear, 2015); // Calculate financial year and add a label
             $financialYears[] = $financialYear;
-            $end->subYear();
         }
         return responseMsgs(true, "Financial Year List", $financialYears, 'pr11.1', '01', '382ms-547ms', 'Post', '');
     }
@@ -307,6 +305,7 @@ class ReportController extends Controller
         try {
             $fromDate = $req->fromDate;
             $uptoDate = $req->uptoDate;
+            $perPage = $req->perPage ?? 10;
             $tbl1 = 'prop_active_safs';
             $tbl2 = 'prop_safs';
 
@@ -320,19 +319,20 @@ class ReportController extends Controller
             if ($req->paymentMode)
                 $gbsafCollection = $gbsafCollection->where('payment_mode', $req->paymentMode);
 
-            $perPage = $req->perPage ? $req->perPage : 10;
-            $page = $req->page && $req->page > 0 ? $req->page : 1;
-            $paginator = $gbsafCollection->paginate($perPage);
-            $items = $paginator->items();
-            $total = $paginator->total();
-            $numberOfPages = ceil($total / $perPage);
-            $list = [
-                "perPage" => $perPage,
-                "page" => $page,
-                "items" => $items,
-                "total" => $total,
-                "numberOfPages" => $numberOfPages
-            ];
+            $list = $gbsafCollection->paginate($perPage);
+
+            // $page = $req->page && $req->page > 0 ? $req->page : 1;
+            // $paginator = $gbsafCollection->paginate($perPage);
+            // $items = $paginator->items();
+            // $total = $paginator->total();
+            // $numberOfPages = ceil($total / $perPage);
+            // $list = [
+            //     "perPage" => $perPage,
+            //     "page" => $page,
+            //     "items" => $items,
+            //     "total" => $total,
+            //     "numberOfPages" => $numberOfPages
+            // ];
 
             return responseMsgs(true, "GB Saf Collection!", $list, 'pr12.1', '01', '623ms', 'Post', '');
         } catch (Exception $e) {

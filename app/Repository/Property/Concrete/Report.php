@@ -2486,11 +2486,11 @@ class Report implements IReport
                     FROM prop_demands 
                     WHERE status =1 
                     GROUP BY property_id
-                    limit $limit offset $offset
+                    -- limit $limit offset $offset
                 )prop_demands ON prop_demands.property_id = p.id
                 WHERE p.ulb_id = $ulbId
-                " . ($wardMstrId ? " AND p.ward_mstr_id = $wardMstrId" : "") . "
-                limit $limit offset $offset";
+                " . ($wardMstrId ? " AND p.ward_mstr_id = $wardMstrId" : "") . "";
+            // limit $limit offset $offset";
 
             $sql2 = "SELECT count(*) as total
                     FROM prop_properties AS p
@@ -2516,20 +2516,24 @@ class Report implements IReport
                 " . ($wardMstrId ? " AND p.ward_mstr_id = $wardMstrId" : "") . "
                ";
 
-            $data = DB::TABLE(DB::RAW("($sql )AS prop"))->get();
-            $items = $data;
+            // return $list = DB::TABLE(DB::RAW("($sql )AS prop"))->get();
 
-            $total = (collect(DB::SELECT($sql2))->first())->total ?? 0;
-            $numberOfPages = ceil($total / $perPage);
-            $list = [
-                "perPage" => $perPage,
-                "page" => $page,
-                "items" => $items,
-                "total" => $total,
-                "numberOfPages" => $numberOfPages
-            ];
+            $list = DB::table(DB::RAW("($sql )AS prop"))->paginate($request->perPage ?? 5);
 
-            $queryRunTime = (collect(DB::getQueryLog($sql, $sql2, $data))->sum("time"));
+            // return collect($list)->paginate($request->perPage ?? 10);
+            // $items = $data;
+
+            // $total = (collect(DB::SELECT($sql2))->first())->total ?? 0;
+            // $numberOfPages = ceil($total / $perPage);
+            // $list = [
+            //     "perPage" => $perPage,
+            //     "page" => $page,
+            //     "items" => $items,
+            //     "total" => $total,
+            //     "numberOfPages" => $numberOfPages
+            // ];
+
+            $queryRunTime = (collect(DB::getQueryLog($sql, $sql2))->sum("time"));
             return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime, $action, $deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
@@ -2571,8 +2575,8 @@ class Report implements IReport
             )prop_safs_demands ON prop_safs_demands.saf_id = p.id
                 where is_gb_saf =true
                 AND p.ulb_id = $ulbId
-            " . ($wardMstrId ? " AND p.ward_mstr_id = $wardMstrId" : "") . "
-            limit $limit offset $offset";
+            " . ($wardMstrId ? " AND p.ward_mstr_id = $wardMstrId" : "") . "";
+            // limit $limit offset $offset";
 
             $sql2 = "SELECT count(*) as total
             
@@ -2593,20 +2597,20 @@ class Report implements IReport
             " . ($wardMstrId ? " AND p.ward_mstr_id = $wardMstrId" : "") . "
             ";
 
-            $data = DB::TABLE(DB::RAW("($sql )AS prop"))->get();
-            $items = $data;
+            $list = DB::TABLE(DB::RAW("($sql )AS prop"))->paginate($request->perPage ?? 5);
+            // $items = $data;
 
-            $total = (collect(DB::SELECT($sql2))->first())->total ?? 0;
-            $numberOfPages = ceil($total / $perPage);
-            $list = [
-                "perPage" => $perPage,
-                "page" => $page,
-                "items" => $items,
-                "total" => $total,
-                "numberOfPages" => $numberOfPages
-            ];
+            // $total = (collect(DB::SELECT($sql2))->first())->total ?? 0;
+            // $numberOfPages = ceil($total / $perPage);
+            // $list = [
+            //     "perPage" => $perPage,
+            //     "page" => $page,
+            //     "items" => $items,
+            //     "total" => $total,
+            //     "numberOfPages" => $numberOfPages
+            // ];
 
-            $queryRunTime = (collect(DB::getQueryLog($sql, $sql2, $data))->sum("time"));
+            $queryRunTime = (collect(DB::getQueryLog($sql, $sql2))->sum("time"));
             return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime, $action, $deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
@@ -2654,8 +2658,8 @@ class Report implements IReport
                     AND prop_demands.ulb_id = $ulbId
                     GROUP BY prop_demands.property_id,holding_no,new_holding_no,owner_name,mobile_no,
                              prop_address,prop_demands.ward_mstr_id,ward_name
-                    order by prop_demands.property_id
-                    limit $limit offset $offset";
+                    order by prop_demands.property_id";
+            // limit $limit offset $offset";
 
             $sql2 = "SELECT count(DISTINCT prop_demands.property_id) as total
                         FROM prop_demands 
@@ -2675,20 +2679,20 @@ class Report implements IReport
                         AND paid_status = 0
             ";
 
-            $data = DB::TABLE(DB::RAW("($sql )AS prop"))->get();
-            $items = $data;
+            $list = DB::TABLE(DB::RAW("($sql )AS prop"))->paginate($request->perPage ?? 5);
+            // $items = $data;
 
-            $total = (collect(DB::SELECT($sql2))->first())->total ?? 0;
-            $numberOfPages = ceil($total / $perPage);
-            $list = [
-                "perPage" => $perPage,
-                "page" => $page,
-                "items" => $items,
-                "total" => $total,
-                "numberOfPages" => $numberOfPages
-            ];
+            // $total = (collect(DB::SELECT($sql2))->first())->total ?? 0;
+            // $numberOfPages = ceil($total / $perPage);
+            // $list = [
+            //     "perPage" => $perPage,
+            //     "page" => $page,
+            //     "items" => $items,
+            //     "total" => $total,
+            //     "numberOfPages" => $numberOfPages
+            // ];
 
-            $queryRunTime = (collect(DB::getQueryLog($sql, $sql2, $data))->sum("time"));
+            $queryRunTime = (collect(DB::getQueryLog($sql, $sql2))->sum("time"));
             return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime, $action, $deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
@@ -2751,7 +2755,8 @@ class Report implements IReport
                         AND fyear = '$currentFinancialYear' 
                         AND paid_status = 0
                         GROUP BY prop_demands.property_id,new_holding_no,new_holding_no,pt_no,prop_address,ward_name,owner_name,mobile_no
-                    limit $limit offset $offset";
+                   ";
+            // limit $limit offset $offset";
 
             $sql2 = "SELECT count(distinct prop_demands.property_id) as total
                         FROM prop_demands
@@ -2779,20 +2784,20 @@ class Report implements IReport
                         AND fyear = '2022-2023' 
                         AND paid_status = 0";
 
-            $data = DB::TABLE(DB::RAW("($sql )AS prop"))->get();
-            $items = $data;
+            $list = DB::TABLE(DB::RAW("($sql )AS prop"))->paginate($request->perPage ?? 5);
+            // $items = $data;
 
-            $total = (collect(DB::SELECT($sql2))->first()->total) ?? 0;
-            $numberOfPages = ceil($total / $perPage);
-            $list = [
-                "perPage" => $perPage,
-                "page" => $page,
-                "items" => $items,
-                "total" => $total,
-                "numberOfPages" => $numberOfPages
-            ];
+            // $total = (collect(DB::SELECT($sql2))->first()->total) ?? 0;
+            // $numberOfPages = ceil($total / $perPage);
+            // $list = [
+            //     "perPage" => $perPage,
+            //     "page" => $page,
+            //     "items" => $items,
+            //     "total" => $total,
+            //     "numberOfPages" => $numberOfPages
+            // ];
 
-            $queryRunTime = (collect(DB::getQueryLog($sql, $sql2, $data))->sum("time"));
+            $queryRunTime = (collect(DB::getQueryLog($sql, $sql2))->sum("time"));
             return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime, $action, $deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
