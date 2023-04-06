@@ -444,29 +444,29 @@ class NewConnectionRepository implements iNewConnection
     {
         switch ($senderRoleId) {
             case $wfLevels['BO']:                       // Back Office Condition
-                if ($application->doc_upload_status == false || $application->payment_status == 1)
+                if ($application->doc_upload_status == false || $application->payment_status != 1)
                     throw new Exception("Document Not Fully Uploaded or Payment in not Done!");
                 break;
             case $wfLevels['DA']:                       // DA Condition
-                if ($application->doc_status == 0 || $application->payment_status == 1)
+                if ($application->doc_status == false || $application->payment_status != 1)
                     throw new Exception("Document Not Fully Verified");
                 break;
             case $wfLevels['JE']:                       // JE Coditon in case of site adjustment
-                if ($application->doc_status == 0 || $application->payment_status == 0)
+                if ($application->doc_status == false || $application->payment_status != 1)
                     throw new Exception("Document Not Fully Verified or Payment in not Done!");
                 if ($application->doc_upload_status == false) {
                     throw new Exception("Document Not Fully Uploaded");
                 }
                 break;
             case $wfLevels['SH']:                       // SH conditional checking
-                if ($application->doc_status == 0 || $application->payment_status == 0)
+                if ($application->doc_status == false || $application->payment_status != 0)
                     throw new Exception("Document Not Fully Verified or Payment in not Done!");
                 if ($application->doc_upload_status == false || $application->is_field_verified == false) {
                     throw new Exception("Document Not Fully Uploaded or site inspection not done!");
                 }
                 break;
             case $wfLevels['AE']:                       // AE conditional checking
-                if ($application->doc_status == 0 || $application->payment_status == 0)
+                if ($application->doc_status == false || $application->payment_status != 0)
                     throw new Exception("Document Not Fully Verified or Payment in not Done!");
                 if ($application->doc_upload_status == false || $application->is_field_verified == false) {
                     throw new Exception("Document Not Fully Uploaded or site inspection not done!");
