@@ -306,7 +306,8 @@ class WaterNewConnection implements IWaterNewConnection
             $transactionType = $RazorPayRequest->payment_from;
 
             $totalCharge = $chargeData['total_charge'];
-            $refUserDetails = ActiveCitizen::where('id', $refUserId);
+            $refUserDetails = ActiveCitizen::where('id', $refUserId)
+            ->first();
             #-------------End Calculation-----------------------------
             #-------- Transection -------------------
             DB::beginTransaction();
