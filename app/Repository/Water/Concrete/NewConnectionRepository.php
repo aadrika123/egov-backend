@@ -498,14 +498,14 @@ class NewConnectionRepository implements iNewConnection
                 }
                 break;
             case $wfLevels['SH']:                       // SH conditional checking
-                if ($application->doc_status == false || $application->payment_status != 0)
+                if ($application->doc_status == false || $application->payment_status != 1)
                     throw new Exception("Document Not Fully Verified or Payment in not Done!");
                 if ($application->doc_upload_status == false || $application->is_field_verified == false) {
                     throw new Exception("Document Not Fully Uploaded or site inspection not done!");
                 }
                 break;
             case $wfLevels['AE']:                       // AE conditional checking
-                if ($application->doc_status == false || $application->payment_status != 0)
+                if ($application->doc_status == false || $application->payment_status != 1)
                     throw new Exception("Document Not Fully Verified or Payment in not Done!");
                 if ($application->doc_upload_status == false || $application->is_field_verified == false) {
                     throw new Exception("Document Not Fully Uploaded or site inspection not done!");
