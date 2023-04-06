@@ -360,7 +360,7 @@ class WaterNewConnection implements IWaterNewConnection
                 $val->update();
             }
 
-            $application->payment_status = true;
+            $application->payment_status = 1;
             $application->update();
             ////////////////////////////////////////
             # Check 
@@ -846,7 +846,7 @@ class WaterNewConnection implements IWaterNewConnection
                 $waterConFee = WaterParamConnFee::select("*")
                     ->where("property_type_id", $request->propertyTypeId)
                     ->where("effective_date", "<=", $mNowDate);
-                if (in_array($request->propertyTypeId, [1, 7])) {
+                if (in_array($request->propertyTypeId, [1, 7, 8])) {
                     $waterConFee = $waterConFee->where(function ($where) use ($request) {
                         $where->where("area_from_sqft", "<=", ceil($request->areaSqft))
                             ->where("area_upto_sqft", ">=", ceil($request->areaSqft));

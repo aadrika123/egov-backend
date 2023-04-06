@@ -431,7 +431,6 @@ class NewConnectionRepository implements iNewConnection
             'forward_time' => $current->format('H:i:s')
         ]);
         DB::commit();
-
         return responseMsgs(true, "Successfully Forwarded The Application!!", "", "", "", '01', '.ms', 'Post', '');
     }
 

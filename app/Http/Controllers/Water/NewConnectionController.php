@@ -1409,20 +1409,17 @@ class NewConnectionController extends Controller
                 $waterApplicationDtl->doc_status = 0;
                 $waterApplicationDtl->save();
             }
-
             $reqs = [
                 'remarks' => $req->docRemarks,
                 'verify_status' => $status,
                 'action_taken_by' => $userId
             ];
             $mWfDocument->docVerifyReject($wfDocId, $reqs);
+
             $ifFullDocVerifiedV1 = $this->ifFullDocVerified($applicationId);
-
             if ($ifFullDocVerifiedV1 == 1) {                                        // If The Document Fully Verified Update Verify Status
-                $waterApplicationDtl->doc_status = 1;
-                $waterApplicationDtl->save();
+                $mWaterApplication->activateUploadStatus($applicationId);
             }
-
             DB::commit();
             return responseMsgs(true, $req->docStatus . " Successfully", "", "010204", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
