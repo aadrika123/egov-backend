@@ -474,6 +474,7 @@ class NewConnectionRepository implements iNewConnection
      */
     public function checkPostCondition($senderRoleId, $wfLevels, $application)
     {
+        $mWaterSiteInspection = new WaterSiteInspection();
         switch ($senderRoleId) {
             case $wfLevels['BO']:                       // Back Office Condition
                 if ($application->doc_upload_status == false || $application->payment_status != 1)
@@ -488,6 +489,12 @@ class NewConnectionRepository implements iNewConnection
                     throw new Exception("Document Not Fully Verified or Payment in not Done!");
                 if ($application->doc_upload_status == false) {
                     throw new Exception("Document Not Fully Uploaded");
+                }
+                $siteDetails = $mWaterSiteInspection->getSiteDetails($application->id)
+                    ->where('payment_status', 1)
+                    ->first();
+                if (!$siteDetails) {
+                    throw new Exception("Site Not Verified!");
                 }
                 break;
             case $wfLevels['SH']:                       // SH conditional checking
