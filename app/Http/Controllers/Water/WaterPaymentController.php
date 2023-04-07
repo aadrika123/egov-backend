@@ -1193,7 +1193,7 @@ class WaterPaymentController extends Controller
             'tran_date'         => $req['todayDate'],
             'user_id'           => $req['userId'],
             'ulb_id'            => $req['ulbId'],
-            'ward_id'           => $req['ward_id']
+            'ward_no'           => $req['ward_no']
         ];
         $mTempTransaction->tempTransaction($tranReqs);
     }
