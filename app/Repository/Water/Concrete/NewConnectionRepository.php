@@ -450,13 +450,15 @@ class NewConnectionRepository implements iNewConnection
         $waterTrack = new WorkflowTrack();
         $waterTrack->saveTrack($req);
 
+         # check in all the cases the data if entered in the track table 
         // Updation of Received Date
-        $preWorkflowReq = [
-            'workflowId' => $waterApplication->workflow_id,
-            'refTableDotId' => "water_applications.id",
-            'refTableIdValue' => $req->applicationId,
-            'receiverRoleId' => $senderRoleId
-        ];
+        // $preWorkflowReq = [
+        //     'workflowId' => $waterApplication->workflow_id,
+        //     'refTableDotId' => "water_applications.id",
+        //     'refTableIdValue' => $req->applicationId,
+        //     'receiverRoleId' => $senderRoleId
+        // ];
+       
         // $previousWorkflowTrack = $waterTrack->getWfTrackByRefId($preWorkflowReq);
         // $previousWorkflowTrack->update([
         //     'forward_date' => $current->format('Y-m-d'),
@@ -662,8 +664,7 @@ class NewConnectionRepository implements iNewConnection
         $mWaterConnectionCharge = new WaterConnectionCharge();
 
         $applicationCharges = $mWaterConnectionCharge->getWaterchargesById($waterDetails->id)->get();
-        $paymentStatus = collect($applicationCharges)->map(function($value)
-        {
+        $paymentStatus = collect($applicationCharges)->map(function ($value) {
             return $value['paid_status'];
         })->values();
         if (in_array(false, $paymentStatus->toArray())) {
