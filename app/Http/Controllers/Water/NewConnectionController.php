@@ -1095,9 +1095,11 @@ class NewConnectionController extends Controller
             $waterTypeDocs['listDocs'] = collect($documentList)->map(function ($value, $key) use ($refWaterApplication) {
                 return $filteredDocs = $this->filterDocument($value, $refWaterApplication)->first();
             });
+            
             $waterOwnerDocs['ownerDocs'] = collect($refWaterApplicant)->map(function ($owner) use ($refWaterApplication) {
                 return $this->getOwnerDocLists($owner, $refWaterApplication);
             });
+            $waterOwnerDocs;
 
             $totalDocLists = collect($waterTypeDocs)->merge($waterOwnerDocs);
             $totalDocLists['docUploadStatus'] = $refWaterApplication->doc_upload_status;
@@ -1238,17 +1240,20 @@ class NewConnectionController extends Controller
         });
         if (!empty($documentList)) {
             $ownerPhoto = $mWfActiveDocument->getWaterOwnerPhotograph($application['id'], $application->workflow_id, $moduleId, $refOwners['id']);
-            $path =  $this->readDocumentPath($ownerPhoto->doc_path);
-            $fullDocPath = !empty(trim($ownerPhoto->doc_path)) ? $path : null;
-            $ownerDocList['ownerDetails'] = [
-                'ownerId' => $refOwners['id'],
-                'name' => $refOwners['applicant_name'],
-                'mobile' => $refOwners['mobile_no'],
-                'guardian' => $refOwners['guardian_name'],
-                'uploadedDoc' => $fullDocPath ?? "",
-                'verifyStatus' => $ownerPhoto->verify_status ?? ""
-            ];
-            return $ownerDocList;
+            if($ownerPhoto)
+                {
+                    $path =  $this->readDocumentPath($ownerPhoto->doc_path);    
+                    $fullDocPath = !empty(trim($ownerPhoto->doc_path)) ? $path : null;
+                }
+                    $ownerDocList['ownerDetails'] = [
+                        'ownerId' => $refOwners['id'],
+                        'name' => $refOwners['applicant_name'],
+                        'mobile' => $refOwners['mobile_no'],
+                        'guardian' => $refOwners['guardian_name'],
+                        'uploadedDoc' => $fullDocPath ?? "",
+                        'verifyStatus' => $ownerPhoto->verify_status ?? ""
+                    ];
+                    return $ownerDocList;
         }
     }
 
