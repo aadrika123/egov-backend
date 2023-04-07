@@ -6,6 +6,8 @@ use App\MicroServices\IdGenerator\PrefixIdGenerator;
 use App\Models\CustomDetail;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropProperty;
+use App\Models\Ulb\UlbNewWardmap;
+use App\Models\UlbWardMaster;
 use App\Models\Water\WaterApplicant;
 use App\Models\Water\WaterApplication;
 use App\Models\Water\WaterApprovalApplicationDetail;
@@ -450,7 +452,7 @@ class NewConnectionRepository implements iNewConnection
         $waterTrack = new WorkflowTrack();
         $waterTrack->saveTrack($req);
 
-         # check in all the cases the data if entered in the track table 
+        # check in all the cases the data if entered in the track table 
         // Updation of Received Date
         // $preWorkflowReq = [
         //     'workflowId' => $waterApplication->workflow_id,
@@ -458,7 +460,7 @@ class NewConnectionRepository implements iNewConnection
         //     'refTableIdValue' => $req->applicationId,
         //     'receiverRoleId' => $senderRoleId
         // ];
-       
+
         // $previousWorkflowTrack = $waterTrack->getWfTrackByRefId($preWorkflowReq);
         // $previousWorkflowTrack->update([
         //     'forward_date' => $current->format('Y-m-d'),
@@ -799,9 +801,11 @@ class NewConnectionRepository implements iNewConnection
      */
     public function getBasicDetails($applicationDetails)
     {
+        $mUlbNewWardmap = new UlbWardMaster();
         $collectionApplications = collect($applicationDetails)->first();
+        $wardDetails = $mUlbNewWardmap->getWard($collectionApplications->ward_id);
         return new Collection([
-            ['displayString' => 'Ward No',            'key' => 'WardNo',              'value' => $collectionApplications->ward_id],
+            ['displayString' => 'Ward No',            'key' => 'WardNo',              'value' => $wardDetails->ward_name],
             ['displayString' => 'Type of Connection', 'key' => 'TypeOfConnection',    'value' => $collectionApplications->connection_type],
             ['displayString' => 'Property Type',      'key' => 'PropertyType',        'value' => $collectionApplications->property_type],
             ['displayString' => 'Connection Through', 'key' => 'ConnectionThrough',   'value' => $collectionApplications->connection_through],
