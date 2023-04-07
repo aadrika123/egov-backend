@@ -282,12 +282,22 @@ class TradeCitizenController extends Controller
             } elseif (in_array($refLecenceData->payment_status, [1, 2])) {
                 throw new Exception("Payment Already Done Of This Application");
             }
-            if ($refLecenceData->tobacco_status == 1 && $request->licenseFor > 1) {
+            if ($refLecenceData->tobacco_status == 1 && $request->licenseFor > 1) 
+            {
                 throw new Exception("Tobaco Application Not Take Licence More Than One Year");
             }
-            if ($refNoticeDetails = $this->_REPOSITORY_TRADE->readNotisDtl($refLecenceData->id)) {
+            $request->request->add(['applicationId'=>$request->licenceId]);
+            $doc = $this->_REPOSITORY_TRADE->getLicenseDocLists($request);
+            if($doc->original['status'] && !$doc->original['data']['docUploadStatus'])
+            {
+                throw new Exception("Upload Document First");
+            }
+            
+            if ($refNoticeDetails = $this->_REPOSITORY_TRADE->readNotisDtl($refLecenceData->id)) 
+            {
                 $mNoticeDate = date('Y-m-d', strtotime($refNoticeDetails['created_on'])); //notice date 
             }
+            
 
             #-----------End validation-------------------
             #-------------Calculation-----------------------------                
