@@ -43,7 +43,11 @@ class WfRoleusermap extends Model
     public function getRoleByUserWfId($req)
     {
         return DB::table('wf_roleusermaps as r')
-            ->select('r.wf_role_id')
+            ->select(
+                'r.wf_role_id',
+                'w.forward_role_id',
+                'w.backward_role_id'
+                )
             ->join('wf_workflowrolemaps as w', 'w.wf_role_id', '=', 'r.wf_role_id')
             ->where('r.user_id', $req->userId)
             ->where('w.workflow_id', $req->workflowId)
