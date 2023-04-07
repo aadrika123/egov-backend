@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Predis\Response\Status;
+use Razorpay\Api\Request;
 
 class WaterApplication extends Model
 {
@@ -234,7 +235,7 @@ class WaterApplication extends Model
             ->where('order_officer', $refJe)
             ->first();
         if (isset($siteDetails)) {
-            $approvedWaterRep = [
+            $refData = [
                 'connection_type_id'    => $siteDetails['connection_type_id'],
                 'connection_through'    => $siteDetails['connection_through'],
                 'pipeline_type_id'      => $siteDetails['pipeline_type_id'],
@@ -243,10 +244,11 @@ class WaterApplication extends Model
                 'area_sqft'             => $siteDetails['area_sqft'],
                 'area_asmt'             => sqFtToSqMt($siteDetails['area_sqft'])
             ];
+            $approvedWater = collect($approvedWater)->merge($refData);
         }
 
         $mWaterConsumer = new WaterConsumer();
-        $consumerId = $mWaterConsumer->saveWaterConsumer($approvedWaterRep, $consumerNo);
+        $consumerId = $mWaterConsumer->saveWaterConsumer($approvedWater, $consumerNo);
         $approvedWater->delete();
         return $consumerId;
     }
