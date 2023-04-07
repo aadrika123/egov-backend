@@ -27,5 +27,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('state/ulb-wise-collection', 'ulbWiseCollection');              // 01
         Route::post('state/count-online-payment', 'onlinePaymentCount');
         Route::post('state/collectionPercentage', 'stateWiseCollectionPercentage');
+        Route::post('state/ulb-wise-data', 'ulbWiseData');
     });
 });

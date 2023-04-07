@@ -154,17 +154,18 @@ class Report implements IReport
             $perPage = $request->perPage ? $request->perPage : 10;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
             $paginator = $data->paginate($perPage);
-            $items = $paginator->items();
-            $total = $paginator->total();
-            $numberOfPages = ceil($total / $perPage);
+            return $paginator->current_page;
+            // $items = $paginator->items();
+            // $total = $paginator->total();
+            // $numberOfPages = ceil($total / $perPage);
             $list = [
-                "perPage" => $perPage,
-                "page" => $page,
+                "current_page" => $paginator->current_page,
+                "last_page" => $paginator->last_page,
                 "totalHolding" => $totalHolding,
                 "totalAmount" => $totalAmount,
-                "items" => $items,
-                "total" => $total,
-                "numberOfPages" => $numberOfPages
+                "data" => $paginator->data,
+                "total" => $paginator->total,
+                // "numberOfPages" => $numberOfPages
             ];
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime, $action, $deviceId);
