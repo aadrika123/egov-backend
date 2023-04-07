@@ -54,6 +54,7 @@ class NewConnectionRepository implements iNewConnection
     private $_waterWorkflowId;
     private $_waterModulId;
     private $_juniorEngRoleId;
+    private $_waterRoles;
 
     public function __construct()
     {
@@ -62,6 +63,7 @@ class NewConnectionRepository implements iNewConnection
         $this->_waterWorkflowId = Config::get('workflow-constants.WATER_MASTER_ID');
         $this->_waterModulId = Config::get('module-constants.WATER_MODULE_ID');
         $this->_juniorEngRoleId  = Config::get('workflow-constants.WATER_JE_ROLE_ID');
+        $this->_waterRoles = Config::get('waterConstaint.ROLE-LABEL');
     }
 
     /**
@@ -94,6 +96,7 @@ class NewConnectionRepository implements iNewConnection
         $ulbId = $req->ulbId;
         $reftenant = true;
         $user = authUser();
+        $citizenId = null;
 
         $ulbWorkflowObj = new WfWorkflow();
         $mWaterNewConnection = new WaterNewConnection();
@@ -173,15 +176,27 @@ class NewConnectionRepository implements iNewConnection
         }
 
         # Save the record in the tracks
+        if ($user->user_type == "Citizen") {
+            $waterRoles = $this->_waterRoles;
+            $citizenId = $user->id;
+            $receiverRoleId = $waterRoles['DA'];
+        }
+        if ($user->user_type != "Citizen") {
+            $roleDetails = $this->getUserRolesDetails($user, $ulbWorkflowId['id']);
+            $senderRoleId = $roleDetails->wf_role_id;
+            $receiverRoleId = collect($initiatorRoleId)->first()->role_id;
+        }
         $metaReqs = new Request(
-            [ 
-                'citizenId' => $user->id,
-                'moduleId' =>  $this->_waterModulId,
-                'workflowId' => $ulbWorkflowId['id'],
-                'refTableDotId' => 'water_applications.id',
-                'refTableIdValue' => $applicationId,
-                'user_id' => $user->id,
-                'ulb_id' => $ulbId
+            [
+                'citizenId'         => $citizenId,
+                'moduleId'          => $this->_waterModulId,
+                'workflowId'        => $ulbWorkflowId['id'],
+                'refTableDotId'     => 'water_applications.id',
+                'refTableIdValue'   => $applicationId,
+                'user_id'           => $user->id,
+                'ulb_id'            => $ulbId,
+                'senderRoleId'      => $senderRoleId ?? null,
+                'receiverRoleId'    => $receiverRoleId ?? null
             ]
         );
         $waterTrack->saveTrack($metaReqs);
@@ -278,6 +293,23 @@ class NewConnectionRepository implements iNewConnection
                     }
                 }
         }
+    }
+
+    /**
+     * | Get the user Role details and the details of forword and backword details
+     * | @var
+    | Serial No : 01.03  
+     */
+    public function getUserRolesDetails($user, $ulbWorkflowId)
+    {
+        $mWfRoleUsermap = new WfRoleUsermap();
+        $userId = $user->id;
+        $getRoleReq = new Request([                                                 // make request to get role id of the user
+            'userId' => $userId,
+            'workflowId' => $ulbWorkflowId
+        ]);
+        $readRoleDtls = $mWfRoleUsermap->getRoleByUserWfId($getRoleReq);
+        return $readRoleDtls;
     }
 
 
@@ -425,13 +457,12 @@ class NewConnectionRepository implements iNewConnection
             'refTableIdValue' => $req->applicationId,
             'receiverRoleId' => $senderRoleId
         ];
-        $previousWorkflowTrack = $waterTrack->getWfTrackByRefId($preWorkflowReq);
-        $previousWorkflowTrack->update([
-            'forward_date' => $current->format('Y-m-d'),
-            'forward_time' => $current->format('H:i:s')
-        ]);
+        // $previousWorkflowTrack = $waterTrack->getWfTrackByRefId($preWorkflowReq);
+        // $previousWorkflowTrack->update([
+        //     'forward_date' => $current->format('Y-m-d'),
+        //     'forward_time' => $current->format('H:i:s')
+        // ]);
         DB::commit();
-
         return responseMsgs(true, "Successfully Forwarded The Application!!", "", "", "", '01', '.ms', 'Post', '');
     }
 
@@ -443,31 +474,38 @@ class NewConnectionRepository implements iNewConnection
      */
     public function checkPostCondition($senderRoleId, $wfLevels, $application)
     {
+        $mWaterSiteInspection = new WaterSiteInspection();
         switch ($senderRoleId) {
             case $wfLevels['BO']:                       // Back Office Condition
-                if ($application->doc_upload_status == false || $application->payment_status == 1)
+                if ($application->doc_upload_status == false || $application->payment_status != 1)
                     throw new Exception("Document Not Fully Uploaded or Payment in not Done!");
                 break;
             case $wfLevels['DA']:                       // DA Condition
-                if ($application->doc_status == 0 || $application->payment_status == 1)
+                if ($application->doc_status == false || $application->payment_status != 1)
                     throw new Exception("Document Not Fully Verified");
                 break;
             case $wfLevels['JE']:                       // JE Coditon in case of site adjustment
-                if ($application->doc_status == 0 || $application->payment_status == 0)
+                if ($application->doc_status == false || $application->payment_status != 1)
                     throw new Exception("Document Not Fully Verified or Payment in not Done!");
                 if ($application->doc_upload_status == false) {
                     throw new Exception("Document Not Fully Uploaded");
                 }
+                $siteDetails = $mWaterSiteInspection->getSiteDetails($application->id)
+                    ->where('payment_status', 1)
+                    ->first();
+                if (!$siteDetails) {
+                    throw new Exception("Site Not Verified!");
+                }
                 break;
             case $wfLevels['SH']:                       // SH conditional checking
-                if ($application->doc_status == 0 || $application->payment_status == 0)
+                if ($application->doc_status == false || $application->payment_status != 1)
                     throw new Exception("Document Not Fully Verified or Payment in not Done!");
                 if ($application->doc_upload_status == false || $application->is_field_verified == false) {
                     throw new Exception("Document Not Fully Uploaded or site inspection not done!");
                 }
                 break;
             case $wfLevels['AE']:                       // AE conditional checking
-                if ($application->doc_status == 0 || $application->payment_status == 0)
+                if ($application->doc_status == false || $application->payment_status != 1)
                     throw new Exception("Document Not Fully Verified or Payment in not Done!");
                 if ($application->doc_upload_status == false || $application->is_field_verified == false) {
                     throw new Exception("Document Not Fully Uploaded or site inspection not done!");
@@ -624,9 +662,11 @@ class NewConnectionRepository implements iNewConnection
         $mWaterConnectionCharge = new WaterConnectionCharge();
 
         $applicationCharges = $mWaterConnectionCharge->getWaterchargesById($waterDetails->id)->get();
-        $paymentStatus = collect($applicationCharges)->paid_status;
-
-        if (in_array(false, $paymentStatus)) {
+        $paymentStatus = collect($applicationCharges)->map(function($value)
+        {
+            return $value['paid_status'];
+        })->values();
+        if (in_array(false, $paymentStatus->toArray())) {
             throw new Exception("full payment for the application is not done!");
         }
     }

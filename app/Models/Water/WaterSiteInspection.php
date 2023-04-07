@@ -15,7 +15,7 @@ class WaterSiteInspection extends Model
      * |-------------------- save site inspecton -----------------------\
      * | @param req
      */
-    public function storeInspectionDetails($req, $waterFeeId, $waterDetails, $refRoleDetails)
+    public function storeInspectionDetails($req, $waterFeeId, $waterDetails, $refRoleDetails,$paymentstatus)
     {
         $role = WfRole::where('id', $refRoleDetails)
             ->where('is_suspended', false)
@@ -43,6 +43,7 @@ class WaterSiteInspection extends Model
         $saveSiteVerify->ts_map                 =   $req->tsMap;
         $saveSiteVerify->order_officer          =   $refRoleDetails;
         $saveSiteVerify->pipe_type              =   $req->pipeQuality;
+        $saveSiteVerify->payment_status         =   $paymentstatus;
         $saveSiteVerify->save();
     }
 

@@ -1238,12 +1238,14 @@ class NewConnectionController extends Controller
         });
         if (!empty($documentList)) {
             $ownerPhoto = $mWfActiveDocument->getWaterOwnerPhotograph($application['id'], $application->workflow_id, $moduleId, $refOwners['id']);
+            $path =  $this->readDocumentPath($ownerPhoto->doc_path);
+            $fullDocPath = !empty(trim($ownerPhoto->doc_path)) ? $path : null;
             $ownerDocList['ownerDetails'] = [
                 'ownerId' => $refOwners['id'],
                 'name' => $refOwners['applicant_name'],
                 'mobile' => $refOwners['mobile_no'],
                 'guardian' => $refOwners['guardian_name'],
-                'uploadedDoc' => $ownerPhoto->doc_path ?? "",
+                'uploadedDoc' => $fullDocPath ?? "",
                 'verifyStatus' => $ownerPhoto->verify_status ?? ""
             ];
             return $ownerDocList;
@@ -1409,20 +1411,17 @@ class NewConnectionController extends Controller
                 $waterApplicationDtl->doc_status = 0;
                 $waterApplicationDtl->save();
             }
-
             $reqs = [
                 'remarks' => $req->docRemarks,
                 'verify_status' => $status,
                 'action_taken_by' => $userId
             ];
             $mWfDocument->docVerifyReject($wfDocId, $reqs);
+
             $ifFullDocVerifiedV1 = $this->ifFullDocVerified($applicationId);
-
             if ($ifFullDocVerifiedV1 == 1) {                                        // If The Document Fully Verified Update Verify Status
-                $waterApplicationDtl->doc_status = 1;
-                $waterApplicationDtl->save();
+                $mWaterApplication->updateAppliVerifyStatus($applicationId);
             }
-
             DB::commit();
             return responseMsgs(true, $req->docStatus . " Successfully", "", "010204", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
