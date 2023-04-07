@@ -109,7 +109,7 @@ class WaterNewConnection implements IWaterNewConnection
                                             ON water_applications.id = water_connection_charges.application_id 
                                             AND ( 
                                                 water_connection_charges.paid_status ISNULL  
-                                                OR water_connection_charges.paid_status=FALSE 
+                                                OR water_connection_charges.paid_status= 0 
                                             )  
                                             AND( 
                                                     water_connection_charges.status = TRUE
