@@ -457,11 +457,11 @@ class NewConnectionRepository implements iNewConnection
             'refTableIdValue' => $req->applicationId,
             'receiverRoleId' => $senderRoleId
         ];
-        $previousWorkflowTrack = $waterTrack->getWfTrackByRefId($preWorkflowReq);
-        $previousWorkflowTrack->update([
-            'forward_date' => $current->format('Y-m-d'),
-            'forward_time' => $current->format('H:i:s')
-        ]);
+        // $previousWorkflowTrack = $waterTrack->getWfTrackByRefId($preWorkflowReq);
+        // $previousWorkflowTrack->update([
+        //     'forward_date' => $current->format('Y-m-d'),
+        //     'forward_time' => $current->format('H:i:s')
+        // ]);
         DB::commit();
         return responseMsgs(true, "Successfully Forwarded The Application!!", "", "", "", '01', '.ms', 'Post', '');
     }
