@@ -102,4 +102,44 @@ class StateDashboardController extends Controller
     public function stateWiseCollectionPercentage(Request $req)
     {
     }
+
+    /**
+     * | Ulb wise Data
+     */
+    public function ulbWiseData(Request $req)
+    {
+
+        $ulbIds = [1, 2, 3, 4, 5];
+        $collection = collect();
+        $data = collect();
+
+        foreach ($ulbIds as $ulbId) {
+
+            $sql = "SELECT gbsaf,mix_commercial,pure_commercial,pure_residential,total_properties
+                FROM
+                    ( select count(*) as gbsaf from prop_properties 
+                        where is_gb_saf = 'true' and  ulb_id = $ulbId and status =1 ) as gbsaf,
+                    ( select count(*) as mix_commercial from prop_properties
+                        where holding_type = 'MIX_COMMERCIAL' and  ulb_id = $ulbId and status =1) as mix_commercial,
+                    (select count(*) as pure_commercial from prop_properties
+                        where holding_type = 'PURE_COMMERCIAL'and  ulb_id = $ulbId and status =1) as pure_commercial,
+                    (select count(*) as pure_residential from prop_properties
+                        where holding_type = 'PURE_RESIDENTIAL'and  ulb_id = $ulbId and status =1) as pure_residential,
+                    (select count(*) as total_properties from prop_properties where ulb_id = $ulbId and status =1) as total_properties";
+
+            $a = DB::select($sql);
+
+
+            $data['data'] = collect($a)->first();
+            $data = json_decode(json_encode($data), true);
+            $data['data']['ulb'] = $ulbId;
+
+            // $data->push(['ulb' => $ulbId]);
+            // $data['ulb'] = $ulbId;
+            // $data['data']->merge($data['ulb']);
+            $collection->push($data);
+        }
+        // $collection;
+        return  $data = (array_values(objtoarray($collection)));
+    }
 }

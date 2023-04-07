@@ -118,6 +118,7 @@ class PropertyDetailsController extends Controller
                         'prop_properties.id',
                         'prop_properties.holding_no',
                         'prop_properties.new_holding_no',
+                        'prop_properties.pt_no',
                         'ward_name',
                         'prop_address',
                         'prop_properties.status as active_status',
@@ -132,11 +133,31 @@ class PropertyDetailsController extends Controller
                         ->get();
                     break;
 
+                case ("ptn"):
+                    $data = PropProperty::select(
+                        'prop_properties.id',
+                        'prop_properties.holding_no',
+                        'prop_properties.new_holding_no',
+                        'prop_properties.pt_no',
+                        'ward_name',
+                        'prop_address',
+                        'prop_properties.status as active_status',
+                        DB::raw("string_agg(prop_owners.mobile_no::VARCHAR,',') as mobile_no"),
+                        DB::raw("string_agg(prop_owners.owner_name,',') as owner_name"),
+                    )
+                        ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
+                        ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
+                        ->where('prop_properties.pt_no', 'LIKE', '%' . $parameter . '%')
+                        ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name')
+                        ->get();
+                    break;
+
                 case ("ownerName"):
                     $data = PropProperty::select(
                         'prop_properties.id',
                         'prop_properties.holding_no',
                         'prop_properties.new_holding_no',
+                        'prop_properties.pt_no',
                         'prop_properties.status as active_status',
                         'ward_name',
                         'prop_address',
@@ -155,6 +176,7 @@ class PropertyDetailsController extends Controller
                         'prop_properties.id',
                         'prop_properties.holding_no',
                         'prop_properties.new_holding_no',
+                        'prop_properties.pt_no',
                         'prop_properties.status as active_status',
                         'ward_name',
                         'prop_address',
@@ -173,6 +195,7 @@ class PropertyDetailsController extends Controller
                         'prop_properties.id',
                         'prop_properties.holding_no',
                         'prop_properties.new_holding_no',
+                        'prop_properties.pt_no',
                         'prop_properties.status as active_status',
                         DB::raw("string_agg(prop_owners.mobile_no::VARCHAR,',') as mobile_no"),
                         DB::raw("string_agg(prop_owners.owner_name,',') as owner_name"),
