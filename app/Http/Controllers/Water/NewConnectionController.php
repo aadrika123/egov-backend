@@ -795,7 +795,7 @@ class NewConnectionController extends Controller
         $waterRoles = $this->_waterRoles;
         $mWaterApplication->activateUploadStatus($req->applicationId);
         if ($application->payment_status == 1) {
-            $mWaterApplication->updateCurrentRoleForDa($$req->applicationId, $waterRoles);
+            $mWaterApplication->updateCurrentRoleForDa($req->applicationId, $waterRoles);
         }
     }
 
