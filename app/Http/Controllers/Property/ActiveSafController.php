@@ -2203,7 +2203,7 @@ class ActiveSafController extends Controller
         ]);
         try {
             $safDetails = $this->details($req);
-            return $safTaxes = $this->calculateSafBySafId($req);
+            $safTaxes = $this->calculateSafBySafId($req);
             $req = $safDetails;
             $demand['basicDetails'] = [
                 "ulb_id" => $req['ulb_id'],
