@@ -466,7 +466,7 @@ class WaterPaymentController extends Controller
             $mWaterSiteInspectionsScheduling = new WaterSiteInspectionsScheduling();
 
             $connectionCatagory = Config::get('waterConstaint.CHARGE_CATAGORY');
-            $waterDetails = WaterApplication::find($request->applicationId);
+            $waterDetails = WaterApplication::findOrFail($request->applicationId);
 
             # Check Related Condition
             $refRoleDetails = $this->CheckInspectionCondition($request, $waterDetails);

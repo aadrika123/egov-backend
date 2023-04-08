@@ -314,7 +314,6 @@ class NewConnectionController extends Controller
             ]);
             $waterDetails = WaterApplication::findOrFail($request->applicationId);
             $mWfRoleUsermap = new WfRoleusermap();
-            $waterRoles = $this->_waterRoles;
 
             # check the login user is EO or not
             $userId = authUser()->id;
