@@ -27,9 +27,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::controller(StateDashboardController::class)->group(function () {
         Route::post('state/ulb-wise-collection', 'ulbWiseCollection');              // 01
         Route::post('state/count-online-payment', 'onlinePaymentCount');
-        Route::post('state/collectionPercentage', 'stateWiseCollectionPercentage');
         Route::post('state/ulb-wise-data', 'ulbWiseData');
-        Route::post('state/collection-percentage','stateWiseCollectionPercentage');
+        Route::post('state/collection-percentage', 'stateWiseCollectionPercentage');
         Route::post('state/district-wise-data', 'districtWiseData');
     });
 
