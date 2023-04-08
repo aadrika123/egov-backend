@@ -1627,8 +1627,8 @@ class ActiveSafController extends Controller
             $safId = $req['id'];
 
             $activeSaf = PropActiveSaf::findOrFail($req['id']);
-            // if ($activeSaf->payment_status == 1)
-            //     throw new Exception("Payment Already Done");
+            if ($activeSaf->payment_status == 1)
+                throw new Exception("Payment Already Done");
 
             $userId = auth()->user()->id;                                      // Authenticated user or Ghost User
             $tranBy = authUser()->user_type;
