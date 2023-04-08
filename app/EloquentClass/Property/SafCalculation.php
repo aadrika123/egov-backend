@@ -422,7 +422,7 @@ class SafCalculation
             $floors = $this->_floors;
             $usageTypes = collect($floors)->pluck('useType');
             $this->_isTrust = $usageTypes->contains($trustUsageType) ? true : false;
-            $this->_trustType = $this->_propertyDetails['trustType'];
+            $this->_trustType = $this->_propertyDetails['trustType'] ?? "";
         }
     }
 
