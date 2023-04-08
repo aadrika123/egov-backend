@@ -979,6 +979,9 @@ class ConcessionController extends Controller
 
             $metaReqs = new Request($metaReqs);
             $mWfActiveDocument->postDocuments($metaReqs);
+
+            $getConcessionDtls->doc_upload_status = 1;                                             // Doc Upload Status Update
+            $getConcessionDtls->save();
             return responseMsgs(true, "Document Uploadation Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $req->deviceId ?? "");

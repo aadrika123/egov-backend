@@ -1653,7 +1653,8 @@ class ActiveSafController extends Controller
                 'tranNo' => $tranNo,
                 'workflowId' => $activeSaf->workflow_id,
                 'amount' => $amount,
-                'tranBy' => $tranBy
+                'tranBy' => $tranBy,
+                'ulbId' => $activeSaf->ulb_id
             ]);
             $activeSaf->payment_status = 1; // Paid for Online or Cash
             if (in_array($req['paymentMode'], $verifyPaymentModes)) {
@@ -1676,6 +1677,8 @@ class ActiveSafController extends Controller
             foreach ($demands as $demand) {
                 $demand = $demand->toArray();
                 unset($demand['ruleSet'], $demand['rwhPenalty'], $demand['onePercPenalty'], $demand['onePercPenaltyTax']);
+                if (isset($demand['status']))
+                    unset($demand['status']);
                 $demand['paid_status'] = 1;
                 $demand['saf_id'] = $safId;
                 $demand['balance'] = 0;
