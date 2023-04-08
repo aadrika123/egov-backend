@@ -28,6 +28,7 @@ class reqApplySaf extends FormRequest
         $userType = auth()->user()->user_type;
         $mNowDate     = Carbon::now()->format("Y-m-d");
         $mNowDateYm   = Carbon::now()->format("Y-m");
+        $religiousTrustUsageType = "42";
 
         if ($userType == 'Citizen')
             $rules['ulbId'] = "required|int";
@@ -96,6 +97,13 @@ class reqApplySaf extends FormRequest
                 $rules["floor.*.dateUpto"]          =   "nullable|date|date_format:Y-m-d|before_or_equal:$mNowDate";
             }
         }
+        // Condition for the Organizational Institutes running by trust
+        if (isset($this->floor)) {
+            $usageTypes = collect($this->floor)->pluck('useType');
+            if ($usageTypes->contains($religiousTrustUsageType))            // Condition for the usage type for Religious Trust
+                $rules["trustType"] = "required|In:1,2";
+        }
+
         $rules['isWaterHarvesting'] = "required|bool";
         if (isset($this->assessmentType) && $this->assessmentType != 1 && $this->assessmentType != 5) {           // Holding No Required for Reassess,Mutation,Bifurcation,Amalgamation
             $rules['holdingNo']         = "required|string";

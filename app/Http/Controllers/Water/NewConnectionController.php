@@ -393,11 +393,13 @@ class NewConnectionController extends Controller
                     }
                     $consumerDemand['meterDetails'] = $refMeterData;
                     $consumerDemand['connectionName'] = $connectionName;
+                    $consumerDetails = $consumerDetails->merge($consumerDemand);
                 }
-                $consumerDetails = $consumerDetails->merge($documentDetails)->merge($consumerDemand);
+                $consumerDetails = $consumerDetails->merge($documentDetails);
                 return responseMsgs(true, "Consumer Details!", remove_null($consumerDetails), "", "01", ".ms", "POST", $request->deviceId);
             }
 
+            # Get all consumer details 
             $mWaterConsumer = new WaterConsumer();
             $approvedWater = $mWaterConsumer->getConsumerDetails();
             $checkExist = $approvedWater->first();
@@ -1097,7 +1099,7 @@ class NewConnectionController extends Controller
             $waterTypeDocs['listDocs'] = collect($documentList)->map(function ($value, $key) use ($refWaterApplication) {
                 return $filteredDocs = $this->filterDocument($value, $refWaterApplication)->first();
             });
-            
+
             $waterOwnerDocs['ownerDocs'] = collect($refWaterApplicant)->map(function ($owner) use ($refWaterApplication) {
                 return $this->getOwnerDocLists($owner, $refWaterApplication);
             });
@@ -1242,20 +1244,19 @@ class NewConnectionController extends Controller
         });
         if (!empty($documentList)) {
             $ownerPhoto = $mWfActiveDocument->getWaterOwnerPhotograph($application['id'], $application->workflow_id, $moduleId, $refOwners['id']);
-            if($ownerPhoto)
-                {
-                    $path =  $this->readDocumentPath($ownerPhoto->doc_path);    
-                    $fullDocPath = !empty(trim($ownerPhoto->doc_path)) ? $path : null;
-                }
-                    $ownerDocList['ownerDetails'] = [
-                        'ownerId' => $refOwners['id'],
-                        'name' => $refOwners['applicant_name'],
-                        'mobile' => $refOwners['mobile_no'],
-                        'guardian' => $refOwners['guardian_name'],
-                        'uploadedDoc' => $fullDocPath ?? "",
-                        'verifyStatus' => $ownerPhoto->verify_status ?? ""
-                    ];
-                    return $ownerDocList;
+            if ($ownerPhoto) {
+                $path =  $this->readDocumentPath($ownerPhoto->doc_path);
+                $fullDocPath = !empty(trim($ownerPhoto->doc_path)) ? $path : null;
+            }
+            $ownerDocList['ownerDetails'] = [
+                'ownerId' => $refOwners['id'],
+                'name' => $refOwners['applicant_name'],
+                'mobile' => $refOwners['mobile_no'],
+                'guardian' => $refOwners['guardian_name'],
+                'uploadedDoc' => $fullDocPath ?? "",
+                'verifyStatus' => $ownerPhoto->verify_status ?? ""
+            ];
+            return $ownerDocList;
         }
     }
 

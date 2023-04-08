@@ -39,6 +39,14 @@ class PropSafsDemand extends Model
             ->first();
     }
 
+    // Get Demand by Saf Id
+    public function getDemandsBySafId($safId)
+    {
+        return PropSafsDemand::where('saf_id', $safId)
+            ->orderByDesc('due_date')
+            ->get();
+    }
+
     // Get Demand By ID
     public function getDemandById($id)
     {

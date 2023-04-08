@@ -70,6 +70,9 @@ class SafCalculation
     public $_areaOfPlotInSqft;
     public $_point20TaxedUsageTypes;
     public $_lateAssessmentStatus;
+    public $_isTrust;
+    public $_trustType;
+    public $_isTrustVerified;
 
     /** 
      * | For Building
@@ -200,6 +203,13 @@ class SafCalculation
         $this->_speciallyAbledRebateID = Config::get('PropertyConstaint.REBATES.SPECIALLY_ABLED.ID');   // 5
         $this->_seniorCitizenRebateID = Config::get('PropertyConstaint.REBATES.SERIOR_CITIZEN.ID');     // 5
         $this->_point20TaxedUsageTypes = Config::get('PropertyConstaint.POINT20-TAXED-COMM-USAGE-TYPES'); // The Type of Commercial Usage Types which have taxes 0.20 Perc
+
+        $this->isPropertyTrust();            // Check If the Property is Religious or Educational Trust(1.1.6)
+
+        if (isset($this->_propertyDetails['isTrustVerified']))
+            $this->_isTrustVerified = ($this->_propertyDetails['isTrustVerified'] == 0) ? 0 : 1;
+        else
+            $this->_isTrustVerified = $this->_propertyDetails['isTrustVerified'] = 1;
     }
 
     /**
@@ -401,6 +411,22 @@ class SafCalculation
         }
         return $rentalRate;
     }
+
+    /**
+     * | Check if the Property is Religious or Educational Trust(1.1.6)
+     */
+    public function isPropertyTrust()
+    {
+        $trustUsageType = "42";
+        if ($this->_propertyDetails['propertyType'] != 4) {
+            $floors = $this->_floors;
+            $usageTypes = collect($floors)->pluck('useType');
+            $this->_isTrust = $usageTypes->contains($trustUsageType) ? true : false;
+            $this->_trustType = $this->_propertyDetails['trustType'];
+        }
+    }
+
+    //--------------------------------------- Calculation Algorithms Starts Here -----------------------------------------------
 
     /**
      * | Calculate Mobile Tower (1.2)
@@ -999,6 +1025,14 @@ class SafCalculation
                 $readMatrixFactor = $rentalRates->rate;                                                     // (Matrix Factor as Rental Rate)
             } else
                 $readMatrixFactor = 1;                      // (Matrix Factor for the Type of Floors which is not Residential)
+        }
+
+        // Condition for the Institutional or Educational Trust 
+        if (isset($this->_isTrust) && $this->_isTrust == true && $this->_isTrustVerified == 1) {
+            $paramOccupancyFactor = 1;
+            $taxPerc = 0.15;
+            $readCalculationFactor = ($this->_trustType == 1) ? 0.25 : 0.50;
+            $readMatrixFactor = 1;
         }
 
         $calculatePropertyTax = ($readCircleRate * $readBuildupArea * $paramOccupancyFactor * $taxPerc * (float)$readCalculationFactor) / 100;

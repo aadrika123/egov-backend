@@ -145,9 +145,11 @@ class WaterApplication extends Model
             'water_applicants.mobile_no',
             'water_applicants.email',
             'water_applicants.status',
-            'water_applicants.district'
+            'water_applicants.district',
+            'ulb_ward_masters.ward_name'
 
         )
+            ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'water_applications.ward_id')
             ->join('water_applicants', 'water_applicants.application_id', '=', 'water_applications.id')
             ->where('water_applications.id', $applicationId)
             ->firstOrFail();
@@ -244,7 +246,7 @@ class WaterApplication extends Model
                 'area_sqft'             => $siteDetails['area_sqft'],
                 'area_asmt'             => sqFtToSqMt($siteDetails['area_sqft'])
             ];
-            $approvedWater = collect($approvedWater)->merge($refData);
+            $approvedWaterRep = collect($approvedWater)->merge($refData);
         }
 
         $mWaterConsumer = new WaterConsumer();

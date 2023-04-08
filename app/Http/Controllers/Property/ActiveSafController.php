@@ -786,6 +786,9 @@ class ActiveSafController extends Controller
 
             // Derivative Assignments
             $senderRoleId = $saf->current_role;
+            if (!$senderRoleId)
+                throw new Exception("Current Role Not Available");
+
             $request->validate([
                 'comment' => $senderRoleId == $wfLevels['BO'] ? 'nullable' : 'required',
 
@@ -861,9 +864,6 @@ class ActiveSafController extends Controller
         $samParamId = Config::get('PropertyConstaint.SAM_PARAM_ID');
 
         // Derivative Assignments
-        $demand = $mPropSafDemand->getFirstDemandByFyearSafId($saf->id, $fYear);
-        if (collect($demand)->isEmpty())
-            throw new Exception("Demand Not Available for the Current Year to Generate SAM");
         switch ($senderRoleId) {
             case $wfLevels['BO']:                        // Back Office Condition
                 if ($saf->doc_upload_status == 0)
@@ -871,6 +871,9 @@ class ActiveSafController extends Controller
                 break;
 
             case $wfLevels['DA']:                       // DA Condition
+                $demand = $mPropSafDemand->getDemandsBySafId($saf->id)->groupBy('fyear')->first()->last();
+                if (collect($demand)->isEmpty())
+                    throw new Exception("Demand Not Available for the to Generate SAM");
                 if ($saf->doc_verify_status == 0)
                     throw new Exception("Document Not Fully Verified");
                 $idGeneration = new PrefixIdGenerator($ptParamId, $saf->ulb_id);
@@ -2203,7 +2206,7 @@ class ActiveSafController extends Controller
         ]);
         try {
             $safDetails = $this->details($req);
-            return $safTaxes = $this->calculateSafBySafId($req);
+            $safTaxes = $this->calculateSafBySafId($req);
             $req = $safDetails;
             $demand['basicDetails'] = [
                 "ulb_id" => $req['ulb_id'],
