@@ -676,7 +676,7 @@ class ConcessionController extends Controller
 
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs['workflowId'] = $activeConcession->workflow_id;
-            $metaReqs['refTableDotId'] = Config::get('PropertyConstaint.SAF_REF_TABLE');
+            $metaReqs['refTableDotId'] = 'prop_active_concessions.id';
             $metaReqs['refTableIdValue'] = $req->applicationId;
             $metaReqs['senderRoleId'] = $senderRoleId;
             $metaReqs['verificationStatus'] = 1;
@@ -688,7 +688,7 @@ class ConcessionController extends Controller
             // Updation of Received Date
             $preWorkflowReq = [
                 'workflowId' => $activeConcession->workflow_id,
-                'refTableDotId' => Config::get('PropertyConstaint.SAF_REF_TABLE'),
+                'refTableDotId' => 'prop_active_concessions.id',
                 'refTableIdValue' => $req->applicationId,
                 'receiverRoleId' => $senderRoleId
             ];
