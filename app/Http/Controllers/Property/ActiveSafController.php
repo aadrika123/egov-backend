@@ -861,9 +861,6 @@ class ActiveSafController extends Controller
         $samParamId = Config::get('PropertyConstaint.SAM_PARAM_ID');
 
         // Derivative Assignments
-        $demand = $mPropSafDemand->getFirstDemandByFyearSafId($saf->id, $fYear);
-        if (collect($demand)->isEmpty())
-            throw new Exception("Demand Not Available for the Current Year to Generate SAM");
         switch ($senderRoleId) {
             case $wfLevels['BO']:                        // Back Office Condition
                 if ($saf->doc_upload_status == 0)
@@ -871,6 +868,9 @@ class ActiveSafController extends Controller
                 break;
 
             case $wfLevels['DA']:                       // DA Condition
+                $demand = $mPropSafDemand->getFirstDemandByFyearSafId($saf->id, $fYear);
+                if (collect($demand)->isEmpty())
+                    throw new Exception("Demand Not Available for the Current Year to Generate SAM");
                 if ($saf->doc_verify_status == 0)
                     throw new Exception("Document Not Fully Verified");
                 $idGeneration = new PrefixIdGenerator($ptParamId, $saf->ulb_id);
