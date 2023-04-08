@@ -1133,12 +1133,14 @@ class SafCalculation
             $floorDetails = collect($this->_floors);
             $lateAssementFloors = $floorDetails->filter(function ($value, $key) {                           // Collection of floors which have late Assessment
                 if (!isset($value['propFloorDetailId'])) {                                                  // For This Floor Which is Not Existing Case of Reassessment
-                    $currentDate = Carbon::now()->floorMonth();
-                    $dateFrom = Carbon::createFromFormat('Y-m-d', $value['dateFrom'])->floorMonth();
+                    $currentDate = Carbon::now()->format('Y-m-d');
+                    $toDate = Carbon::parse($currentDate);
+                    $dateFrom = Carbon::createFromFormat('Y-m-d', $value['dateFrom']);
+                    $fromDate = Carbon::parse($dateFrom->format('Y-m-d'));
                     $usageType = $value['useType'];
                     if ($usageType != 10) {                                                                     // Late Assessment Not Applicable for the Religious Floors
-                        $diffInMonths = $currentDate->diffInMonths($dateFrom);
-                        return $diffInMonths > 3;
+                        $diffInDays = $toDate->diffInDays($fromDate);
+                        return $diffInDays > 90;
                     }
                 }
             });

@@ -309,11 +309,11 @@ class NewConnectionController extends Controller
         try {
             $request->validate([
                 "applicationId" => "required",
-                "status" => "required"
+                "status" => "required",
+                "comment" => "required"
             ]);
             $waterDetails = WaterApplication::findOrFail($request->applicationId);
             $mWfRoleUsermap = new WfRoleusermap();
-            $waterRoles = $this->_waterRoles;
 
             # check the login user is EO or not
             $userId = authUser()->id;

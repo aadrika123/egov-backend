@@ -641,7 +641,7 @@ class NewConnectionRepository implements iNewConnection
             throw new Exception("Documet is Not verified!");
         }
         if ($waterDetails->payment_status != 1) {
-            throw new Exception("Payment Not Done!");
+            throw new Exception("Payment Not Done or not verefied!");
         }
         if ($waterDetails->doc_upload_status == false) {
             throw new Exception("Full document is Not Uploaded!");
@@ -669,7 +669,13 @@ class NewConnectionRepository implements iNewConnection
         $paymentStatus = collect($applicationCharges)->map(function ($value) {
             return $value['paid_status'];
         })->values();
-        if (in_array(false, $paymentStatus->toArray())) {
+        $uniqueArray = array_unique($paymentStatus->toArray());
+
+        if (count($uniqueArray) === 1 && $uniqueArray[0] === 1) {
+            // array contains only the value 1
+            $payment = true;
+        } else {
+            // array contains other values as well
             throw new Exception("full payment for the application is not done!");
         }
     }

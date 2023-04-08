@@ -351,12 +351,12 @@ class WaterNewConnection implements IWaterNewConnection
                 $TradeDtl->created_at     = $mTimstamp;
                 $TradeDtl->save();
 
-                $val->paid_status = true;
+                $val->paid_status = 1;
                 $val->update();
             }
             foreach($mPenalty as $val)
             {
-                $val->paid_status = true;
+                $val->paid_status = 1;
                 $val->update();
             }
 
@@ -965,7 +965,7 @@ class WaterNewConnection implements IWaterNewConnection
                                                             "))
                 ->where("application_id", $applicationId)
                 ->Where(function ($where) {
-                    $where->orWhere("paid_status", FALSE)
+                    $where->orWhere("paid_status", 0)
                         ->orWhereNull("paid_status");
                 })
                 ->Where(function ($where) {
@@ -977,7 +977,7 @@ class WaterNewConnection implements IWaterNewConnection
             $charge_for = WaterConnectionCharge::select("charge_category")
                             ->where("application_id", $applicationId)
                             ->Where(function ($where) {
-                                $where->orWhere("paid_status", FALSE)
+                                $where->orWhere("paid_status", 0)
                                     ->orWhereNull("paid_status");
                             })
                             ->Where(function ($where) {

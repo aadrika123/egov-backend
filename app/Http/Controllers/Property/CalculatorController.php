@@ -100,14 +100,14 @@ class CalculatorController extends Controller
                                     'key' => $key,
                                     'effectingFrom' => $floors->first()['quarterYear'],
                                     'qtr' => $floors->first()['qtr'],
-                                    'arv' => roundFigure($floors->sum('arv')),
+                                    'arv' => roundFigure($floors->sum('arv') + $quaterlyTaxes->sum('arv')),
                                     'holdingTax' => roundFigure($floors->sum('holdingTax') + $quaterlyTaxes->sum('holdingTax')),
                                     'waterTax' => roundFigure($floors->sum('waterTax') + $quaterlyTaxes->sum('waterTax')),
                                     'latrineTax' => roundFigure($floors->sum('latrineTax') + $quaterlyTaxes->sum('latrineTax')),
                                     'educationTax' => roundFigure($floors->sum('educationTax') + $quaterlyTaxes->sum('educationTax')),
                                     'healthTax' => roundFigure($floors->sum('healthTax') + $quaterlyTaxes->sum('healthTax')),
                                     'rwhPenalty' => roundFigure($floors->sum('rwhPenalty') + $quaterlyTaxes->sum('rwhPenalty')),
-                                    'quaterlyTax' => roundFigure($floors->sum('totalTax') + $quaterlyTaxes->sum('totalTax')),
+                                    'quaterlyTax' => roundFigure($floors->sum('totalTax') + $quaterlyTaxes->sum('quaterlyTax')),
                                 ];
                                 $quaterlyTaxes->push($taxes);
                             });
