@@ -118,7 +118,6 @@ class StateDashboardController extends Controller
         $propTran = PropTransaction::select('id')
             ->where('payment_mode', 'ONLINE')
             ->whereBetween('tran_date', [$fromDate, $toDate]);
-
         $tradeTran = TradeTransaction::select('id')
             ->where('payment_mode', 'Online')
             ->whereBetween('tran_date', [$fromDate, $toDate]);
@@ -127,10 +126,10 @@ class StateDashboardController extends Controller
             ->where('payment_mode', 'Online')
             ->whereBetween('tran_date', [$fromDate, $toDate]);
 
+            $totalCount['propCount'] = $propTran->count();
+            $totalCount['tradeCount'] = $tradeTran->count();
+            $totalCount['waterCount'] = $waterTran->count();
         $totalCount['totalCount'] =  $propTran->union($tradeTran)->union($waterTran)->count();
-        $totalCount['propCount'] = $propTran->count();
-        $totalCount['tradeCount'] = $tradeTran->count();
-        $totalCount['waterCount'] = $waterTran->count();
 
         return responseMsgs(true, "Online Payment Count", remove_null($totalCount), "", '', '01', '314ms-451ms', 'Post', '');
     }
