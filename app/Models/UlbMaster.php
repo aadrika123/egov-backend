@@ -11,11 +11,6 @@ class UlbMaster extends Model
     use HasFactory;
     use SoftDeletes;
 
-    public function districtWiseUlb($req)
-    {
-        return UlbMaster::select('*')
-            ->where('district_code', $req->districtCode)
-
     /**
      * | Get Ulbs by district code
      */
