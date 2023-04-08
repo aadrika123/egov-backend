@@ -138,7 +138,7 @@ class ReportController extends Controller
         $roles = ($this->_common->getUserRoll($request->userId, $ulbId, $safWorkFlow));
         $respons = json_decode(json_encode($respons), true);
         if ($respons["original"]["status"]) {
-            $respons["original"]["data"]["items"] = collect($respons["original"]["data"]["items"])->map(function ($val) use ($roles) {
+            $respons["original"]["data"]["data"] = collect($respons["original"]["data"]["data"])->map(function ($val) use ($roles) {
                 $val["role_name"] = $roles->role_name ?? "";
                 $val["role_id"] = $roles->role_id ?? 0;
                 return $val;
