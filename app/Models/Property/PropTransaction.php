@@ -169,10 +169,10 @@ class PropTransaction extends Model
         $propTrans->payment_mode = $req['paymentMode'];
         $propTrans->user_id = $req['userId'];
         $propTrans->ulb_id = $req['ulbId'];
-        $propTrans->from_fyear = collect($demands)->last()['fyear'];
-        $propTrans->to_fyear = collect($demands)->first()['fyear'];
-        $propTrans->from_qtr = collect($demands)->last()['qtr'];
-        $propTrans->to_qtr = collect($demands)->first()['qtr'];
+        $propTrans->from_fyear = collect($demands)->first()['fyear'];
+        $propTrans->to_fyear = collect($demands)->last()['fyear'];
+        $propTrans->from_qtr = collect($demands)->first()['qtr'];
+        $propTrans->to_qtr = collect($demands)->last()['qtr'];
         $propTrans->demand_amt = collect($demands)->sum('amount');
         $propTrans->tran_by_type = $req['tranBy'];
         $propTrans->verify_status = $req['verifyStatus'];
