@@ -28,26 +28,36 @@ class StateDashboardController extends Controller
      */
     public function ulbWiseCollection(Request $req)
     {
-        $currentYear = Carbon::now()->year;
-        $financialYearStart = $currentYear;
-        if (Carbon::now()->month < 4) {
-            $financialYearStart--;
+        try {
+            $ulbs = UlbMaster::all();
+            $year = Carbon::now()->year;
+
+            if (isset($req->fyear))
+                $year = substr($req->fyear, 0, 4);
+
+            $financialYearStart = $year;
+            if (Carbon::now()->month < 4) {
+                $financialYearStart--;
+            }
+            $financialYear = $financialYearStart . '-' . ($financialYearStart + 1);
+
+            $fromDate = '01-04-' . $financialYearStart;
+            $toDate   = '31-03-' . $financialYearStart + 1;
+            $collection = collect();
+
+            $ulbIds = $ulbs->pluck('id');
+
+            foreach ($ulbIds as $ulbId) {
+                $data['ulbId'] = $ulbId;
+                $data['ulb'] = $ulbs->where('id', $ulbId)->firstOrFail()->ulb_name;
+                $data['collection'] = $this->collection($ulbId, $fromDate, $toDate);
+                $collection->push($data);
+            }
+            $collection = $collection->sortBy('ulbId')->values();
+            return responseMsgs(true, "Ulb Wise Collection", remove_null($collection), "", '', '01', '314ms-451ms', 'Post', '');
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "", '', '01', '314ms-451ms', 'Post', '');
         }
-        $financialYear = $financialYearStart . '-' . ($financialYearStart + 1);
-
-        $fromDate = '01-04-' . $financialYearStart;
-        $toDate   = '31-03-' . $financialYearStart + 1;
-        $collection = collect();
-
-        $ulbIds = [1, 2, 3, 4, 5];
-        $ulbName = ['Adityapur', 'Ranchi'];
-
-        foreach ($ulbIds as $ulbId) {
-            $data['ulbId'] = $ulbId;
-            $data['collection'] = $this->collection($ulbId, $fromDate, $toDate);
-            $collection->push($data);
-        }
-        return responseMsgs(true, "Ulb Wise Collection", remove_null($collection), "", '', '01', '314ms-451ms', 'Post', '');
     }
 
     public function collection($ulbId, $fromDate, $toDate)
