@@ -180,6 +180,9 @@ class StateDashboardController extends Controller
         $collectiveData['propPercent'] = round((collect($prop->get())->sum('propAmount') / $collectiveData['totalAount']) * 100, 2);
         $collectiveData['waterPercent'] = round((collect($water->get())->sum('waterAmount') / $collectiveData['totalAount']) * 100, 2);
         $collectiveData['tradePercent'] = round((collect($trade->get())->sum('tradeAmount') / $collectiveData['totalAount']) * 100, 2);
+        $collectiveData['propAmount'] = round((collect($prop->get())->sum('propAmount')), 2);
+        $collectiveData['waterAmount'] = round((collect($water->get())->sum('waterAmount')), 2);
+        $collectiveData['tradeAmount'] = round((collect($trade->get())->sum('tradeAmount')), 2);
         $collectiveData['totalCount'] = $prop->union($water)->union($trade)->count();
         return $collectiveData;
     }
@@ -204,6 +207,9 @@ class StateDashboardController extends Controller
         $collectiveData['propPercent'] = round((collect($prop->get())->sum('propAmount') / $collectiveData['totalAount']) * 100, 2);
         $collectiveData['waterPercent'] = round((collect($water->get())->sum('waterAmount') / $collectiveData['totalAount']) * 100, 2);
         $collectiveData['tradePercent'] = round((collect($trade->get())->sum('tradeAmount') / $collectiveData['totalAount']) * 100, 2);
+        $collectiveData['propAmount'] = round((collect($prop->get())->sum('propAmount')), 2);
+        $collectiveData['waterAmount'] = round((collect($water->get())->sum('waterAmount')), 2);
+        $collectiveData['tradeAmount'] = round((collect($trade->get())->sum('tradeAmount')), 2);
         $collectiveData['totalCount'] = $prop->union($water)->union($trade)->count();
         return $collectiveData;
     }
@@ -230,6 +236,9 @@ class StateDashboardController extends Controller
         $collectiveData['propPercent'] = round((collect($prop->get())->sum('propAmount') / $collectiveData['totalAount']) * 100, 2);
         $collectiveData['waterPercent'] = round((collect($water->get())->sum('waterAmount') / $collectiveData['totalAount']) * 100, 2);
         $collectiveData['tradePercent'] = round((collect($trade->get())->sum('tradeAmount') / $collectiveData['totalAount']) * 100, 2);
+        $collectiveData['propAmount'] = round((collect($prop->get())->sum('propAmount')), 2);
+        $collectiveData['waterAmount'] = round((collect($water->get())->sum('waterAmount')), 2);
+        $collectiveData['tradeAmount'] = round((collect($trade->get())->sum('tradeAmount')), 2);
         $collectiveData['totalCount'] = $prop->union($water)->union($trade)->count();
         return $collectiveData;
     }
@@ -256,6 +265,9 @@ class StateDashboardController extends Controller
         $collectiveData['propPercent'] = round((collect($prop->get())->sum('propAmount') / $collectiveData['totalAount']) * 100, 2);
         $collectiveData['waterPercent'] = round((collect($water->get())->sum('waterAmount') / $collectiveData['totalAount']) * 100, 2);
         $collectiveData['tradePercent'] = round((collect($trade->get())->sum('tradeAmount') / $collectiveData['totalAount']) * 100, 2);
+        $collectiveData['propAmount'] = round((collect($prop->get())->sum('propAmount')), 2);
+        $collectiveData['waterAmount'] = round((collect($water->get())->sum('waterAmount')), 2);
+        $collectiveData['tradeAmount'] = round((collect($trade->get())->sum('tradeAmount')), 2);
         $collectiveData['totalCount'] = $prop->union($water)->union($trade)->count();
         return $collectiveData;
     }
