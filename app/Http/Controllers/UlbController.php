@@ -82,7 +82,7 @@ class UlbController extends Controller
             'districtCode' => 'required'
         ]);
         $mUlbMaster = new UlbMaster();
-        $ulbList = $mUlbMaster->districtWiseUlb($req);
+        $ulbList = $mUlbMaster->getUlbsByDistrictCode($req->districtCode);
         return responseMsgs(true, "", remove_null($ulbList));
     }
 
