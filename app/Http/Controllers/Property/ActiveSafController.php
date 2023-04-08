@@ -786,6 +786,9 @@ class ActiveSafController extends Controller
 
             // Derivative Assignments
             $senderRoleId = $saf->current_role;
+            if (!$senderRoleId)
+                throw new Exception("Current Role Not Available");
+
             $request->validate([
                 'comment' => $senderRoleId == $wfLevels['BO'] ? 'nullable' : 'required',
 
@@ -868,9 +871,9 @@ class ActiveSafController extends Controller
                 break;
 
             case $wfLevels['DA']:                       // DA Condition
-                $demand = $mPropSafDemand->getFirstDemandByFyearSafId($saf->id, $fYear);
+                $demand = $mPropSafDemand->getDemandsBySafId($saf->id)->groupBy('fyear')->first()->last();
                 if (collect($demand)->isEmpty())
-                    throw new Exception("Demand Not Available for the Current Year to Generate SAM");
+                    throw new Exception("Demand Not Available for the to Generate SAM");
                 if ($saf->doc_verify_status == 0)
                     throw new Exception("Document Not Fully Verified");
                 $idGeneration = new PrefixIdGenerator($ptParamId, $saf->ulb_id);
