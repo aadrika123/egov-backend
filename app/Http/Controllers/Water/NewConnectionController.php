@@ -788,15 +788,17 @@ class NewConnectionController extends Controller
      * | @param req
      * | @param application
         | Up 
+        | Check the concept of auto forward
      */
     public function updateWaterStatus($req, $application)
     {
         $mWaterApplication = new WaterApplication();
         $waterRoles = $this->_waterRoles;
         $mWaterApplication->activateUploadStatus($req->applicationId);
-        if ($application->payment_status == 1) {
-            $mWaterApplication->updateCurrentRoleForDa($req->applicationId, $waterRoles);
-        }
+        # Auto forward to Bo 
+        // if ($application->payment_status == 1) {
+        //     $mWaterApplication->updateCurrentRoleForDa($req->applicationId, $waterRoles);
+        // }
     }
 
 

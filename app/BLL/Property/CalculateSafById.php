@@ -19,7 +19,7 @@ use Illuminate\Http\Request;
  * | Calculate Saf By Saf Id Service
  * | Created By-Anshu Kumar
  * | Created On-29-03-2023 
- * | Status-Open
+ * | Status-Closed
  */
 
 class CalculateSafById
@@ -79,6 +79,8 @@ class CalculateSafById
         $this->_calculatedDemand = $calculation->original['data'];
 
         $this->generateSafDemand();   // (1.2)
+
+        $this->generateTaxDtls();        // (1.3)
 
         return $this->_generatedDemand;
     }
@@ -163,7 +165,8 @@ class CalculateSafById
             "isWaterHarvesting" => $safDetails['is_water_harvesting'],
             "zone" => $safDetails['zone_mstr_id'],
             "floor" => $this->_safFloorDetails,
-            "isGBSaf" => $safDetails['is_gb_saf']
+            "isGBSaf" => $safDetails['is_gb_saf'],
+            "apartmentId" => $safDetails['apartment_details_id']
         ];
         $this->_safCalculationReq = new Request($calculationReq);
     }
@@ -319,5 +322,26 @@ class CalculateSafById
             $totalDemand,
             $totalDuesList
         );
+    }
+
+    /**
+     * | Generation of Tax Details
+     */
+    public function generateTaxDtls()
+    {
+        $taxDetails = collect();
+        $demandDetails = $this->_generatedDemand['details'];
+        $groupByDemands = collect($demandDetails)->groupBy('arv');
+        $currentArv = $groupByDemands->last()->first()['arv'];
+        foreach ($groupByDemands as $key => $item) {
+            $firstTax = collect($item)->first();
+            if ($key == $currentArv)
+                $firstTax['status'] = "Current";
+            else
+                $firstTax['status'] = "Old";
+
+            $taxDetails->push($firstTax);
+        }
+        $this->_generatedDemand['taxDetails'] = $taxDetails;
     }
 }
