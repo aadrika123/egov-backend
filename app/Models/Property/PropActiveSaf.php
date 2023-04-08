@@ -271,7 +271,7 @@ class  PropActiveSaf extends Model
     public function getSafDtlsBySafNo($safNo)
     {
         return DB::table('prop_active_safs as s')
-            ->where('s.saf_no', $safNo)
+            ->where('s.saf_no', strtoupper($safNo))
             ->select(
                 's.id',
                 's.saf_no',
@@ -699,7 +699,7 @@ class  PropActiveSaf extends Model
     public function getGbSafDtlsBySafNo($safNo)
     {
         return DB::table('prop_active_safs as s')
-            ->where('s.saf_no', $safNo)
+            ->where('s.saf_no', strtoupper($safNo))
             ->select(
                 's.id',
                 's.saf_no',

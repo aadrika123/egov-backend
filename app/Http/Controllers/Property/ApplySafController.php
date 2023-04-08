@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Property;
 
+use App\BLL\Property\CalculateSafById;
 use App\EloquentClass\Property\InsertTax;
 use App\EloquentClass\Property\PenaltyRebateCalculation;
 use App\EloquentClass\Property\SafCalculation;
@@ -100,12 +101,12 @@ class ApplySafController extends Controller
             $saf = new PropActiveSaf();
             $mOwner = new PropActiveSafsOwner();
             $safCalculation = new SafCalculation();
+            $calculateSafById = new CalculateSafById;
             // Derivative Assignments
             $ulbWorkflowId = $this->readAssessUlbWfId($request, $ulb_id);           // (2.1)
             $roadWidthType = $this->readRoadWidthType($request->roadType);          // Read Road Width Type
 
             $request->request->add(['road_type_mstr_id' => $roadWidthType]);
-            $safTaxes = $safCalculation->calculateTax($request);
 
             $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);                                // Get Current Initiator ID
             $initiatorRoleId = DB::select($refInitiatorRoleId);
@@ -124,6 +125,18 @@ class ApplySafController extends Controller
                 $metaReqs['citizenId'] = $user_id;
             }
             $metaReqs['finisherRoleId'] = collect($finisherRoleId)->first()->role_id;
+            $safTaxes = $safCalculation->calculateTax($request);
+
+            // Generate Calculation
+            // $calculateSafById->_calculatedDemand = $safTaxes->original['data'];
+            // $calculateSafById->_safDetails['assessment_type'] = $assessmentId;
+
+            // if (isset($request->holdingNo))
+            //     $calculateSafById->_holdingNo = $request->holdingNo;
+
+            // $calculateSafById->generateSafDemand();
+            // return $calculateSafById->_generatedDemand;
+
             $lateAssessmentPenalty = $safTaxes->original['data']['demand']['lateAssessmentPenalty'];
             $metaReqs['lateAssessmentPenalty'] = ($lateAssessmentPenalty > 0) ? $lateAssessmentPenalty : null;
             $request->merge($metaReqs);

@@ -211,7 +211,7 @@ class WorkflowRoleMapController extends Controller
                     // Concession
                 case ($propConcessionMstrId):
                     $inbox = $this->_concession;
-                    $ab = $inbox->inbox();
+                    $ab = $inbox->inbox($req);
                     collect($ab)['original']['data'];
                     $data['inbox'] = collect($ab)['original']['data'];
                     break;

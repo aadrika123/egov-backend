@@ -578,6 +578,19 @@ class ConcessionController extends Controller
             $req->request->add($metaReqs);
             $track->saveTrack($req);
 
+            // Updation of Received Date
+            $preWorkflowReq = [
+                'workflowId' => $concession->workflow_id,
+                'refTableDotId' => Config::get('PropertyConstaint.SAF_REF_TABLE'),
+                'refTableIdValue' => $req->applicationId,
+                'receiverRoleId' => $senderRoleId
+            ];
+            $previousWorkflowTrack = $track->getWfTrackByRefId($preWorkflowReq);
+            $previousWorkflowTrack->update([
+                'forward_date' => $this->_todayDate->format('Y-m-d'),
+                'forward_time' => $this->_todayDate->format('H:i:s')
+            ]);
+
             DB::commit();
             return responseMsgs(true, "Successfully Forwarded The Application!!", "", "", '010708', '01', '', 'Post', '');
         } catch (Exception $e) {
@@ -604,6 +617,7 @@ class ConcessionController extends Controller
             // Check if the Current User is Finisher or Not
             $mWfRoleUsermap = new WfRoleusermap();
             $mActiveConcession = new PropActiveConcession();
+            $track = new WorkflowTrack();
 
             $activeConcession = $mActiveConcession->getConcessionById($req->applicationId);
             $propOwners = PropOwner::where('id', $activeConcession->prop_owner_id)
@@ -613,6 +627,7 @@ class ConcessionController extends Controller
             $refGetFinisher = collect(DB::select($getFinisherQuery))->first();
 
             $workflowId = $activeConcession->workflow_id;
+            $senderRoleId = $activeConcession->current_role;
             $getRoleReq = new Request([                                                 // make request to get role id of the user
                 'userId' => $userId,
                 'workflowId' => $workflowId
@@ -658,6 +673,30 @@ class ConcessionController extends Controller
                 $activeConcession->delete();
                 $msg =  "Application Successfully Rejected !!";
             }
+
+            $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $metaReqs['workflowId'] = $activeConcession->workflow_id;
+            $metaReqs['refTableDotId'] = Config::get('PropertyConstaint.SAF_REF_TABLE');
+            $metaReqs['refTableIdValue'] = $req->applicationId;
+            $metaReqs['senderRoleId'] = $senderRoleId;
+            $metaReqs['verificationStatus'] = 1;
+            $metaReqs['user_id'] = $userId;
+            $metaReqs['trackDate'] = $this->_todayDate->format('Y-m-d H:i:s');
+            $req->request->add($metaReqs);
+            $track->saveTrack($req);
+
+            // Updation of Received Date
+            $preWorkflowReq = [
+                'workflowId' => $activeConcession->workflow_id,
+                'refTableDotId' => Config::get('PropertyConstaint.SAF_REF_TABLE'),
+                'refTableIdValue' => $req->applicationId,
+                'receiverRoleId' => $senderRoleId
+            ];
+            $previousWorkflowTrack = $track->getWfTrackByRefId($preWorkflowReq);
+            $previousWorkflowTrack->update([
+                'forward_date' => $this->_todayDate->format('Y-m-d'),
+                'forward_time' => $this->_todayDate->format('H:i:s')
+            ]);
 
             DB::commit();
             return responseMsgs(true, $msg, "", "", '010709', '01', '376ms', 'Post', '');
@@ -940,6 +979,9 @@ class ConcessionController extends Controller
 
             $metaReqs = new Request($metaReqs);
             $mWfActiveDocument->postDocuments($metaReqs);
+
+            $getConcessionDtls->doc_upload_status = 1;                                             // Doc Upload Status Update
+            $getConcessionDtls->save();
             return responseMsgs(true, "Document Uploadation Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
