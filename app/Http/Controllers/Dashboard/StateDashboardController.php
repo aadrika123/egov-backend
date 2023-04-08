@@ -118,7 +118,6 @@ class StateDashboardController extends Controller
         try {
             $districtCode = $req->districtCode;
             $mUlbWardMstrs = new UlbMaster();
-            $ulbIds = [1, 2, 3, 4, 5];
             $collection = collect();
             $data = collect();
 
