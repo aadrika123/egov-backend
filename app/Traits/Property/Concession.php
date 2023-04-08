@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\DB;
 trait Concession
 {
     // Get Concession List
-    public function getConcessionList($ulbId)
+    public function getConcessionList($worklowIds)
     {
         return DB::table('prop_active_concessions')
             ->select(
@@ -31,8 +31,9 @@ trait Concession
                 'prop_active_concessions.current_role as role_id'
             )
             ->leftJoin('prop_properties as a', 'a.id', '=', 'prop_active_concessions.property_id')
-            ->join('ref_prop_types as p', 'p.id', '=', 'a.prop_type_mstr_id')
+            ->leftjoin('ref_prop_types as p', 'p.id', '=', 'a.prop_type_mstr_id')
             ->join('ulb_ward_masters as u', 'u.id', '=', 'a.ward_mstr_id')
+            ->whereIn('workflow_id', $worklowIds)
             ->where('prop_active_concessions.status', 1);
     }
 

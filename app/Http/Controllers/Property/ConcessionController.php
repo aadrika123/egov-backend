@@ -579,17 +579,17 @@ class ConcessionController extends Controller
             $track->saveTrack($req);
 
             // Updation of Received Date
-            // $preWorkflowReq = [
-            //     'workflowId' => $concession->workflow_id,
-            //     'refTableDotId' => Config::get('PropertyConstaint.SAF_REF_TABLE'),
-            //     'refTableIdValue' => $req->applicationId,
-            //     'receiverRoleId' => $senderRoleId
-            // ];
-            // $previousWorkflowTrack = $track->getWfTrackByRefId($preWorkflowReq);
-            // $previousWorkflowTrack->update([
-            //     'forward_date' => $this->_todayDate->format('Y-m-d'),
-            //     'forward_time' => $this->_todayDate->format('H:i:s')
-            // ]);
+            $preWorkflowReq = [
+                'workflowId' => $concession->workflow_id,
+                'refTableDotId' => Config::get('PropertyConstaint.SAF_REF_TABLE'),
+                'refTableIdValue' => $req->applicationId,
+                'receiverRoleId' => $senderRoleId
+            ];
+            $previousWorkflowTrack = $track->getWfTrackByRefId($preWorkflowReq);
+            $previousWorkflowTrack->update([
+                'forward_date' => $this->_todayDate->format('Y-m-d'),
+                'forward_time' => $this->_todayDate->format('H:i:s')
+            ]);
 
             DB::commit();
             return responseMsgs(true, "Successfully Forwarded The Application!!", "", "", '010708', '01', '', 'Post', '');
@@ -617,6 +617,7 @@ class ConcessionController extends Controller
             // Check if the Current User is Finisher or Not
             $mWfRoleUsermap = new WfRoleusermap();
             $mActiveConcession = new PropActiveConcession();
+            $track = new WorkflowTrack();
 
             $activeConcession = $mActiveConcession->getConcessionById($req->applicationId);
             $propOwners = PropOwner::where('id', $activeConcession->prop_owner_id)
@@ -626,6 +627,7 @@ class ConcessionController extends Controller
             $refGetFinisher = collect(DB::select($getFinisherQuery))->first();
 
             $workflowId = $activeConcession->workflow_id;
+            $senderRoleId = $activeConcession->current_role;
             $getRoleReq = new Request([                                                 // make request to get role id of the user
                 'userId' => $userId,
                 'workflowId' => $workflowId
@@ -671,6 +673,30 @@ class ConcessionController extends Controller
                 $activeConcession->delete();
                 $msg =  "Application Successfully Rejected !!";
             }
+
+            $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $metaReqs['workflowId'] = $activeConcession->workflow_id;
+            $metaReqs['refTableDotId'] = Config::get('PropertyConstaint.SAF_REF_TABLE');
+            $metaReqs['refTableIdValue'] = $req->applicationId;
+            $metaReqs['senderRoleId'] = $senderRoleId;
+            $metaReqs['verificationStatus'] = 1;
+            $metaReqs['user_id'] = $userId;
+            $metaReqs['trackDate'] = $this->_todayDate->format('Y-m-d H:i:s');
+            $req->request->add($metaReqs);
+            $track->saveTrack($req);
+
+            // Updation of Received Date
+            $preWorkflowReq = [
+                'workflowId' => $activeConcession->workflow_id,
+                'refTableDotId' => Config::get('PropertyConstaint.SAF_REF_TABLE'),
+                'refTableIdValue' => $req->applicationId,
+                'receiverRoleId' => $senderRoleId
+            ];
+            $previousWorkflowTrack = $track->getWfTrackByRefId($preWorkflowReq);
+            $previousWorkflowTrack->update([
+                'forward_date' => $this->_todayDate->format('Y-m-d'),
+                'forward_time' => $this->_todayDate->format('H:i:s')
+            ]);
 
             DB::commit();
             return responseMsgs(true, $msg, "", "", '010709', '01', '376ms', 'Post', '');
