@@ -94,20 +94,45 @@ class StateDashboardController extends Controller
      */
     public function onlinePaymentCount(Request $req)
     {
-        $today = Carbon::now()->format('y-m-d');
-        $data = PropTransaction::where('payment_mode', 'ONLINE')
-            ->where('tran_date', $today)
-            ->get();
+        $year = Carbon::now()->year;
 
-        $data = TradeTransaction::where('payment_mode', 'Online')
-            ->where('tran_date', $today)
-            ->get();
+        if (isset($req->fyear))
+            $year = substr($req->fyear, 0, 4);
 
-        return $data = WaterTran::where('payment_mode', 'Online')
-            ->where('tran_date', $today)
-            ->get();
+        $financialYearStart = $year;
+        if (Carbon::now()->month < 4) {
+            $financialYearStart--;
+        }
 
-        return $data->count();
+        $fromDate = '01-04-' . $financialYearStart;
+        $toDate   = '31-03-' . $financialYearStart + 1;
+
+        if ($req->financialYear) {
+            $fy = explode('-', $req->financialYear);
+            $strtYr = collect($fy)->first();
+            $endYr = collect($fy)->last();
+            $fromDate = '01-04-' . $strtYr;
+            $toDate   = '31-03-' . $endYr;
+        }
+
+        $propTran = PropTransaction::select('id')
+            ->where('payment_mode', 'ONLINE')
+            ->whereBetween('tran_date', [$fromDate, $toDate]);
+
+        $tradeTran = TradeTransaction::select('id')
+            ->where('payment_mode', 'Online')
+            ->whereBetween('tran_date', [$fromDate, $toDate]);
+
+        $waterTran = WaterTran::select('id')
+            ->where('payment_mode', 'Online')
+            ->whereBetween('tran_date', [$fromDate, $toDate]);
+
+        $totalCount['totalCount'] =  $propTran->union($tradeTran)->union($waterTran)->count();
+        $totalCount['propCount'] = $propTran->count();
+        $totalCount['tradeCount'] = $tradeTran->count();
+        $totalCount['waterCount'] = $waterTran->count();
+
+        return responseMsgs(true, "Online Payment Count", remove_null($totalCount), "", '', '01', '314ms-451ms', 'Post', '');
     }
 
     /**
@@ -155,10 +180,10 @@ class StateDashboardController extends Controller
             ->where("status", 1);
 
         $collectiveData['totalCount'] = $prop->union($water)->union($trade)->count();
-        $collectiveData['totalAount'] = round(collect($prop->get())->sum('propAmount') + collect($water->get())->sum('waterAmount') + collect($trade->get())->sum('tradeAmount'),2);
-        $collectiveData['propPercent'] = round((collect($prop->get())->sum('propAmount') / $collectiveData['totalAount']) * 100,2);
-        $collectiveData['waterPercent'] = round((collect($water->get())->sum('waterAmount') / $collectiveData['totalAount']) * 100,2);
-        $collectiveData['tradePercent'] = round((collect($trade->get())->sum('tradeAmount') / $collectiveData['totalAount']) * 100,2);
+        $collectiveData['totalAount'] = round(collect($prop->get())->sum('propAmount') + collect($water->get())->sum('waterAmount') + collect($trade->get())->sum('tradeAmount'), 2);
+        $collectiveData['propPercent'] = round((collect($prop->get())->sum('propAmount') / $collectiveData['totalAount']) * 100, 2);
+        $collectiveData['waterPercent'] = round((collect($water->get())->sum('waterAmount') / $collectiveData['totalAount']) * 100, 2);
+        $collectiveData['tradePercent'] = round((collect($trade->get())->sum('tradeAmount') / $collectiveData['totalAount']) * 100, 2);
         return $collectiveData;
     }
 
@@ -176,10 +201,10 @@ class StateDashboardController extends Controller
             ->where("status", 1);
 
         $collectiveData['totalCount'] = $prop->union($water)->union($trade)->count();
-        $collectiveData['totalAount'] = round(collect($prop->get())->sum('amount') + collect($water->get())->sum('amount') + collect($trade->get())->sum('paid_amount'),2);
-        $collectiveData['propPercent'] = round((collect($prop->get())->sum('amount') / $collectiveData['totalAount']) * 100,2);
-        $collectiveData['waterPercent'] = round((collect($water->get())->sum('amount') / $collectiveData['totalAount']) * 100,2);
-        $collectiveData['tradePercent'] = round((collect($trade->get())->sum('paid_amount') / $collectiveData['totalAount']) * 100,2);
+        $collectiveData['totalAount'] = round(collect($prop->get())->sum('amount') + collect($water->get())->sum('amount') + collect($trade->get())->sum('paid_amount'), 2);
+        $collectiveData['propPercent'] = round((collect($prop->get())->sum('amount') / $collectiveData['totalAount']) * 100, 2);
+        $collectiveData['waterPercent'] = round((collect($water->get())->sum('amount') / $collectiveData['totalAount']) * 100, 2);
+        $collectiveData['tradePercent'] = round((collect($trade->get())->sum('paid_amount') / $collectiveData['totalAount']) * 100, 2);
         return $collectiveData;
     }
 
@@ -199,10 +224,10 @@ class StateDashboardController extends Controller
             ->where("status", 1);
 
         $collectiveData['totalCount'] = $prop->union($water)->union($trade)->count();
-        $collectiveData['totalAount'] = round(collect($prop->get())->sum('amount') + collect($water->get())->sum('amount') + collect($trade->get())->sum('paid_amount'),2);
-        $collectiveData['propPercent'] = round((collect($prop->get())->sum('amount') / $collectiveData['totalAount']) * 100,2);
-        $collectiveData['waterPercent'] = round((collect($water->get())->sum('amount') / $collectiveData['totalAount']) * 100,2);
-        $collectiveData['tradePercent'] = round((collect($trade->get())->sum('paid_amount') / $collectiveData['totalAount']) * 100,2);
+        $collectiveData['totalAount'] = round(collect($prop->get())->sum('amount') + collect($water->get())->sum('amount') + collect($trade->get())->sum('paid_amount'), 2);
+        $collectiveData['propPercent'] = round((collect($prop->get())->sum('amount') / $collectiveData['totalAount']) * 100, 2);
+        $collectiveData['waterPercent'] = round((collect($water->get())->sum('amount') / $collectiveData['totalAount']) * 100, 2);
+        $collectiveData['tradePercent'] = round((collect($trade->get())->sum('paid_amount') / $collectiveData['totalAount']) * 100, 2);
         return $collectiveData;
     }
 
@@ -222,10 +247,10 @@ class StateDashboardController extends Controller
             ->where("status", 1);
 
         $collectiveData['totalCount'] = $prop->union($water)->union($trade)->count();
-        $collectiveData['totalAount'] = round(collect($prop->get())->sum('amount') + collect($water->get())->sum('amount') + collect($trade->get())->sum('paid_amount'),2);
-        $collectiveData['propPercent'] = round((collect($prop->get())->sum('amount') / $collectiveData['totalAount']) * 100,2);
-        $collectiveData['waterPercent'] = round((collect($water->get())->sum('amount') / $collectiveData['totalAount']) * 100,2);
-        $collectiveData['tradePercent'] = round((collect($trade->get())->sum('paid_amount') / $collectiveData['totalAount']) * 100,2);
+        $collectiveData['totalAount'] = round(collect($prop->get())->sum('amount') + collect($water->get())->sum('amount') + collect($trade->get())->sum('paid_amount'), 2);
+        $collectiveData['propPercent'] = round((collect($prop->get())->sum('amount') / $collectiveData['totalAount']) * 100, 2);
+        $collectiveData['waterPercent'] = round((collect($water->get())->sum('amount') / $collectiveData['totalAount']) * 100, 2);
+        $collectiveData['tradePercent'] = round((collect($trade->get())->sum('paid_amount') / $collectiveData['totalAount']) * 100, 2);
         return $collectiveData;
     }
 
