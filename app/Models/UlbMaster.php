@@ -10,4 +10,13 @@ class UlbMaster extends Model
 {
     use HasFactory;
     use SoftDeletes;
+
+    /**
+     * | Get Ulbs by district code
+     */
+    public function getUlbsByDistrictCode($districtCode)
+    {
+        return UlbMaster::where('district_code', $districtCode)
+            ->get();
+    }
 }

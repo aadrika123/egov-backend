@@ -100,6 +100,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
     Route::controller(UlbController::class)->group(function () {
         Route::post('city/state/auth/ulb-id', 'getCityStateByUlb');
+        Route::post('list-ulb-by-district', 'districtWiseUlb');
+        Route::post('list-district', 'districtList');
     });
 
     Route::controller(UserController::class)->group(function () {

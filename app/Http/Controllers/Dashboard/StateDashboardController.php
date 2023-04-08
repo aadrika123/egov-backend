@@ -7,6 +7,8 @@ use App\Http\Requests\DashboardRequest\RequestCollectionPercentage;
 use App\Models\Property\PropTranDtl;
 use App\Models\Property\PropTransaction;
 use App\Models\Trade\TradeTransaction;
+use App\Models\UlbMaster;
+use App\Models\UlbWardMaster;
 use App\Models\Water\WaterTran;
 use Carbon\Carbon;
 use Exception;
@@ -28,26 +30,35 @@ class StateDashboardController extends Controller
      */
     public function ulbWiseCollection(Request $req)
     {
-        $currentYear = Carbon::now()->year;
-        $financialYearStart = $currentYear;
-        if (Carbon::now()->month < 4) {
-            $financialYearStart--;
+        try {
+            $ulbs = UlbMaster::all();
+            $year = Carbon::now()->year;
+
+            if (isset($req->fyear))
+                $year = substr($req->fyear, 0, 4);
+
+            $financialYearStart = $year;
+            if (Carbon::now()->month < 4) {
+                $financialYearStart--;
+            }
+
+            $fromDate = '01-04-' . $financialYearStart;
+            $toDate   = '31-03-' . $financialYearStart + 1;
+            $collection = collect();
+
+            $ulbIds = $ulbs->pluck('id');
+
+            foreach ($ulbIds as $ulbId) {
+                $data['ulbId'] = $ulbId;
+                $data['ulb'] = $ulbs->where('id', $ulbId)->firstOrFail()->ulb_name;
+                $data['collection'] = $this->collection($ulbId, $fromDate, $toDate);
+                $collection->push($data);
+            }
+            $collection = $collection->sortBy('ulbId')->values();
+            return responseMsgs(true, "Ulb Wise Collection", remove_null($collection), "", '', '01', '314ms-451ms', 'Post', '');
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "", '', '01', '314ms-451ms', 'Post', '');
         }
-        $financialYear = $financialYearStart . '-' . ($financialYearStart + 1);
-
-        $fromDate = '01-04-' . $financialYearStart;
-        $toDate   = '31-03-' . $financialYearStart + 1;
-        $collection = collect();
-
-        $ulbIds = [1, 2, 3, 4, 5];
-        $ulbName = ['Adityapur', 'Ranchi'];
-
-        foreach ($ulbIds as $ulbId) {
-            $data['ulbId'] = $ulbId;
-            $data['collection'] = $this->collection($ulbId, $fromDate, $toDate);
-            $collection->push($data);
-        }
-        return responseMsgs(true, "Ulb Wise Collection", remove_null($collection), "", '', '01', '314ms-451ms', 'Post', '');
     }
 
     public function collection($ulbId, $fromDate, $toDate)
@@ -223,16 +234,27 @@ class StateDashboardController extends Controller
     /**
      * | Ulb wise Data
      */
-    public function ulbWiseData(Request $req)
+    public function districtWiseData(Request $req)
     {
+        $req->validate([
+            'districtCode' => 'required|integer'
+        ]);
 
-        $ulbIds = [1, 2, 3, 4, 5];
-        $collection = collect();
-        $data = collect();
+        try {
+            $districtCode = $req->districtCode;
+            $mUlbWardMstrs = new UlbMaster();
+            $collection = collect();
+            $data = collect();
 
-        foreach ($ulbIds as $ulbId) {
+            // Derivative Assignments
+            $ulbs = $mUlbWardMstrs->getUlbsByDistrictCode($districtCode);
+            if ($ulbs->isEmpty())
+                throw new Exception("Ulbs Not Available for this district");
 
-            $sql = "SELECT gbsaf,mix_commercial,pure_commercial,pure_residential,total_properties
+            $ulbIds = $ulbs->pluck('id');
+            foreach ($ulbIds as $ulbId) {
+
+                $sql = "SELECT gbsaf,mix_commercial,pure_commercial,pure_residential,total_properties
                 FROM
                     ( select count(*) as gbsaf from prop_properties 
                         where is_gb_saf = 'true' and  ulb_id = $ulbId and status =1 ) as gbsaf,
@@ -244,19 +266,18 @@ class StateDashboardController extends Controller
                         where holding_type = 'PURE_RESIDENTIAL'and  ulb_id = $ulbId and status =1) as pure_residential,
                     (select count(*) as total_properties from prop_properties where ulb_id = $ulbId and status =1) as total_properties";
 
-            $a = DB::select($sql);
+                $a = DB::select($sql);
 
+                $data = collect($a)->first();
+                $data = json_decode(json_encode($data), true);
+                $data['ulb'] = $ulbs->where('id', $ulbId)->firstOrFail()->ulb_name;
 
-            $data['data'] = collect($a)->first();
-            $data = json_decode(json_encode($data), true);
-            $data['data']['ulb'] = $ulbId;
-
-            // $data->push(['ulb' => $ulbId]);
-            // $data['ulb'] = $ulbId;
-            // $data['data']->merge($data['ulb']);
-            $collection->push($data);
+                $collection->push($data);
+            }
+            $data = (array_values(objtoarray($collection)));
+            return responseMsgs(true, "District Wise Collection", remove_null($data));
+        } catch (Exception $e) {
+            return responseMsgs(true, $e->getMessage(), remove_null($data));
         }
-        // $collection;
-        return  $data = (array_values(objtoarray($collection)));
     }
 }
