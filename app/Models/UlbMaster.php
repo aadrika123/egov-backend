@@ -15,6 +15,13 @@ class UlbMaster extends Model
     {
         return UlbMaster::select('*')
             ->where('district_code', $req->districtCode)
+
+    /**
+     * | Get Ulbs by district code
+     */
+    public function getUlbsByDistrictCode($districtCode)
+    {
+        return UlbMaster::where('district_code', $districtCode)
             ->get();
     }
 }
