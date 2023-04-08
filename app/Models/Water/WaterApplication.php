@@ -244,7 +244,7 @@ class WaterApplication extends Model
                 'area_sqft'             => $siteDetails['area_sqft'],
                 'area_asmt'             => sqFtToSqMt($siteDetails['area_sqft'])
             ];
-            $approvedWater = collect($approvedWater)->merge($refData);
+            $approvedWaterRep = collect($approvedWater)->merge($refData);
         }
 
         $mWaterConsumer = new WaterConsumer();
