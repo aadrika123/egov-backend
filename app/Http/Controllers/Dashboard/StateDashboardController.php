@@ -39,7 +39,6 @@ class StateDashboardController extends Controller
             if (Carbon::now()->month < 4) {
                 $financialYearStart--;
             }
-            $financialYear = $financialYearStart . '-' . ($financialYearStart + 1);
 
             $fromDate = '01-04-' . $financialYearStart;
             $toDate   = '31-03-' . $financialYearStart + 1;
