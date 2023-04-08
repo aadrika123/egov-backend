@@ -138,7 +138,7 @@ class PropActiveHarvesting extends Model
             ->leftjoin('ref_prop_types as pt', 'pt.id', '=', 'p.prop_type_mstr_id')
             ->join('ulb_ward_masters as u', 'p.ward_mstr_id', '=', 'u.id')
             ->leftJoin('ulb_ward_masters as u1', 'p.new_ward_mstr_id', '=', 'u1.id')
-            ->where('application_no', $harvestingNo)
+            ->where('application_no', strtoupper($harvestingNo))
             ->first();
     }
 

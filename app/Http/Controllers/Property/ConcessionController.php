@@ -578,6 +578,19 @@ class ConcessionController extends Controller
             $req->request->add($metaReqs);
             $track->saveTrack($req);
 
+            // Updation of Received Date
+            // $preWorkflowReq = [
+            //     'workflowId' => $concession->workflow_id,
+            //     'refTableDotId' => Config::get('PropertyConstaint.SAF_REF_TABLE'),
+            //     'refTableIdValue' => $req->applicationId,
+            //     'receiverRoleId' => $senderRoleId
+            // ];
+            // $previousWorkflowTrack = $track->getWfTrackByRefId($preWorkflowReq);
+            // $previousWorkflowTrack->update([
+            //     'forward_date' => $this->_todayDate->format('Y-m-d'),
+            //     'forward_time' => $this->_todayDate->format('H:i:s')
+            // ]);
+
             DB::commit();
             return responseMsgs(true, "Successfully Forwarded The Application!!", "", "", '010708', '01', '', 'Post', '');
         } catch (Exception $e) {
