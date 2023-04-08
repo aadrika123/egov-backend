@@ -641,7 +641,7 @@ class NewConnectionRepository implements iNewConnection
             throw new Exception("Documet is Not verified!");
         }
         if ($waterDetails->payment_status != 1) {
-            throw new Exception("Payment Not Done!");
+            throw new Exception("Payment Not Done or not verefied!");
         }
         if ($waterDetails->doc_upload_status == false) {
             throw new Exception("Full document is Not Uploaded!");

@@ -4,6 +4,7 @@ namespace App\Models\Water;
 
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropProperty;
+use App\Models\WorkflowTrack;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -251,6 +252,18 @@ class WaterApplication extends Model
 
         $mWaterConsumer = new WaterConsumer();
         $consumerId = $mWaterConsumer->saveWaterConsumer($approvedWater, $consumerNo);
+        
+        $metaReqs['moduleId'] =  Config::get("module-constants.WATER_MODULE_ID");
+        $metaReqs['workflowId'] = $approvedWater->workflow_id;
+        $metaReqs['refTableDotId'] = 'water_applications.id';
+        $metaReqs['refTableIdValue'] = $approvedWater->id;
+        $metaReqs['user_id'] = authUser()->id;
+        $request->request->add($metaReqs);
+
+        $waterTrack = new WorkflowTrack();
+        $waterTrack->saveTrack($request);
+
+        # final delete
         $approvedWater->delete();
         return $consumerId;
     }
@@ -269,6 +282,18 @@ class WaterApplication extends Model
         $rejectedWaterRep->setTable('water_rejection_application_details');
         $rejectedWaterRep->id = $rejectedWater->id;
         $rejectedWaterRep->save();
+
+        
+        $metaReqs['moduleId'] =  Config::get("module-constants.WATER_MODULE_ID");
+        $metaReqs['workflowId'] = $rejectedWater->workflow_id;
+        $metaReqs['refTableDotId'] = 'water_applications.id';
+        $metaReqs['refTableIdValue'] = $rejectedWater->id;
+        $metaReqs['user_id'] = authUser()->id;
+        $request->request->add($metaReqs);
+
+        $waterTrack = new WorkflowTrack();
+        $waterTrack->saveTrack($request);
+
         $rejectedWater->delete();
     }
 

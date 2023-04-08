@@ -309,7 +309,8 @@ class NewConnectionController extends Controller
         try {
             $request->validate([
                 "applicationId" => "required",
-                "status" => "required"
+                "status" => "required",
+                "comment" => "required"
             ]);
             $waterDetails = WaterApplication::findOrFail($request->applicationId);
             $mWfRoleUsermap = new WfRoleusermap();
