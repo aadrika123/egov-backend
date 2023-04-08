@@ -82,7 +82,7 @@ class WaterApplication extends Controller
     {
         try {
             $user = authUser();
-            if (!in_array("$user->user_type", ['JSK', 'TC'])) {
+            if (!in_array($user->user_type, ['JSK', 'TC'])) {
                 $canView = false;
             }
             $mWaterApplication = new WaterWaterApplication();
@@ -172,7 +172,7 @@ class WaterApplication extends Controller
     {
         try {
             $user = authUser();
-            if (in_array("$user->user_type", ['JSK', 'TC'])) {
+            if (in_array($user->user_type, ['JSK', 'TC'])) {
                 $canView = false;
             }
             $ulbId = $user->ulb_id;
@@ -191,7 +191,7 @@ class WaterApplication extends Controller
             $roleDetails = $this->getRole($metaRequest);
             if (!collect($roleDetails)->first()) {
                 $returnData['canView'] = $canView;
-                return responseMsgs(false, "Daccess Denied! No Role", $returnData, "", "01", ".ms", "POST", "");
+                return responseMsgs(false, "Access Denied! No Role", $returnData, "", "01", ".ms", "POST", "");
             }
             $roleId = $roleDetails['wf_role_id'];
 
