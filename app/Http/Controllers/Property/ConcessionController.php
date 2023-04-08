@@ -581,7 +581,7 @@ class ConcessionController extends Controller
             // Updation of Received Date
             $preWorkflowReq = [
                 'workflowId' => $concession->workflow_id,
-                'refTableDotId' => Config::get('PropertyConstaint.SAF_REF_TABLE'),
+                'refTableDotId' => 'prop_active_concessions.id',
                 'refTableIdValue' => $req->applicationId,
                 'receiverRoleId' => $senderRoleId
             ];
