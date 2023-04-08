@@ -127,7 +127,7 @@ class PropActiveConcession extends Model
      */
     public function recentApplication($userId)
     {
-        return PropActiveConcession::select(
+        $data = PropActiveConcession::select(
             'application_no as applicationNo',
             'date as applyDate',
             'applied_for as assessmentType',
@@ -137,6 +137,12 @@ class PropActiveConcession extends Model
             ->orderBydesc('prop_active_concessions.id')
             ->take(10)
             ->get();
+
+        $application = collect($data)->map(function ($value) {
+            $value['applyDate'] = (Carbon::parse($value['applyDate']))->format('d-m-Y');
+            return $value;
+        });
+        return $application;
     }
 
     /**

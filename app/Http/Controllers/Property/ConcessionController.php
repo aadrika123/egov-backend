@@ -166,6 +166,9 @@ class ConcessionController extends Controller
 
                 $metaReqs = new Request($metaReqs);
                 $mWfActiveDocument->postDocuments($metaReqs);
+
+                PropActiveConcession::where('id', $concession->id)
+                    ->update(['doc_upload_status' => 1]);
             }
 
             // dob Doc
@@ -189,6 +192,9 @@ class ConcessionController extends Controller
 
                 $docReqs = new Request($docReqs);
                 $mWfActiveDocument->postDocuments($docReqs);
+
+                PropActiveConcession::where('id', $concession->id)
+                    ->update(['doc_upload_status' => 1]);
             }
 
             // specially abled Doc
@@ -212,6 +218,9 @@ class ConcessionController extends Controller
 
                 $speciallyAbledReqs = new Request($speciallyAbledReqs);
                 $mWfActiveDocument->postDocuments($speciallyAbledReqs);
+
+                PropActiveConcession::where('id', $concession->id)
+                    ->update(['doc_upload_status' => 1]);
             }
 
             // Armed force Doc
@@ -235,6 +244,9 @@ class ConcessionController extends Controller
 
                 $armedForceReqs = new Request($armedForceReqs);
                 $mWfActiveDocument->postDocuments($armedForceReqs);
+
+                PropActiveConcession::where('id', $concession->id)
+                    ->update(['doc_upload_status' => 1]);
             }
 
             DB::commit();
@@ -658,6 +670,7 @@ class ConcessionController extends Controller
                 $this->updateOwner($propOwners, $activeConcession);
 
                 $msg =  "Application Successfully Approved !!";
+                $metaReqs['verificationStatus'] = 1;
             }
             // Rejection
             if ($req->status == 0) {
@@ -672,6 +685,7 @@ class ConcessionController extends Controller
                 $approvedConcession->save();
                 $activeConcession->delete();
                 $msg =  "Application Successfully Rejected !!";
+                $metaReqs['verificationStatus'] = 0;
             }
 
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
@@ -679,7 +693,6 @@ class ConcessionController extends Controller
             $metaReqs['refTableDotId'] = 'prop_active_concessions.id';
             $metaReqs['refTableIdValue'] = $req->applicationId;
             $metaReqs['senderRoleId'] = $senderRoleId;
-            $metaReqs['verificationStatus'] = 1;
             $metaReqs['user_id'] = $userId;
             $metaReqs['trackDate'] = $this->_todayDate->format('Y-m-d H:i:s');
             $req->request->add($metaReqs);

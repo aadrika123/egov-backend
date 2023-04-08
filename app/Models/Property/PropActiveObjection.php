@@ -138,7 +138,7 @@ class PropActiveObjection extends Model
      */
     public function recentApplication($userId)
     {
-        return PropActiveObjection::select(
+        $data = PropActiveObjection::select(
             'objection_no as applicationNo',
             'date as applyDate',
             'objection_for as assessmentType',
@@ -150,6 +150,12 @@ class PropActiveObjection extends Model
             ->groupBy('objection_no', 'date', 'prop_active_objections.id', 'prop_active_objections.objection_for')
             ->take(10)
             ->get();
+
+        $application = collect($data)->map(function ($value) {
+            $value['applyDate'] = (Carbon::parse($value['applyDate']))->format('d-m-Y');
+            return $value;
+        });
+        return $application;
     }
 
     /**
