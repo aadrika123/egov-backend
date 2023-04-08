@@ -44,7 +44,7 @@ class calculatorController extends Controller
                 $req->merge(['isGBSaf' => $req->isGBSaf]);
             } else
                 $req->merge(['isGBSaf' => false]);
-            return $response = $calculation->calculateTax($req);
+            $response = $calculation->calculateTax($req);
             $finalResponse['demand'] = $response->original['data']['demand'];
             $reviewDetails = collect($response->original['data']['details'])->groupBy(['ruleSet', 'mFloorNo', 'mUsageType']);
             $finalTaxReview = collect();
