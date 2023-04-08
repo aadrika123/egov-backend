@@ -37,6 +37,9 @@ class Report implements IReport
         $this->_modelWard = new ModelWard();
         $this->_Saf = new SafRepository();
     }
+    /**
+     * | Property Collection
+     */
     public function collectionReport(Request $request)
     {
         $metaData = collect($request->metaData)->all();
@@ -147,24 +150,26 @@ class Report implements IReport
             if ($ulbId) {
                 $data = $data->where("prop_transactions.ulb_id", $ulbId);
             }
+            $paginator = collect();
 
             $data2 = $data;
             $totalHolding = $data2->count("prop_properties.id");
             $totalAmount = $data2->sum("prop_transactions.amount");
             $perPage = $request->perPage ? $request->perPage : 10;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
+
             $paginator = $data->paginate($perPage);
-            return $paginator->current_page;
+
             // $items = $paginator->items();
             // $total = $paginator->total();
             // $numberOfPages = ceil($total / $perPage);
             $list = [
-                "current_page" => $paginator->current_page,
-                "last_page" => $paginator->last_page,
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
                 "totalHolding" => $totalHolding,
                 "totalAmount" => $totalAmount,
-                "data" => $paginator->data,
-                "total" => $paginator->total,
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
                 // "numberOfPages" => $numberOfPages
             ];
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
@@ -173,6 +178,10 @@ class Report implements IReport
             return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
         }
     }
+
+    /**
+     * | Saf collection
+     */
     public function safCollection(Request $request)
     {
         $metaData = collect($request->metaData)->all();
@@ -438,17 +447,24 @@ class Report implements IReport
             $perPage = $request->perPage ? $request->perPage : 10;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
             $paginator = $data->paginate($perPage);
-            $items = $paginator->items();
-            $total = $paginator->total();
-            $numberOfPages = ceil($total / $perPage);
+            // $items = $paginator->items();
+            // $total = $paginator->total();
+            // $numberOfPages = ceil($total / $perPage);
             $list = [
-                "perPage" => $perPage,
-                "page" => $page,
+                // "perPage" => $perPage,
+                // "page" => $page,
+                // "totalSaf" => $totalSaf,
+                // "totalAmount" => $totalAmount,
+                // "items" => $items,
+                // "total" => $total,
+                // "numberOfPages" => $numberOfPages
+
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
                 "totalSaf" => $totalSaf,
                 "totalAmount" => $totalAmount,
-                "items" => $items,
-                "total" => $total,
-                "numberOfPages" => $numberOfPages
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
             ];
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime, $action, $deviceId);
@@ -669,15 +685,20 @@ class Report implements IReport
             $perPage = $request->perPage ? $request->perPage : 10;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
             $paginator = $data->paginate($perPage);
-            $items = $paginator->items();
-            $total = $paginator->total();
-            $numberOfPages = ceil($total / $perPage);
+            // $items = $paginator->items();
+            // $total = $paginator->total();
+            // $numberOfPages = ceil($total / $perPage);
             $list = [
-                "perPage" => $perPage,
-                "page" => $page,
-                "items" => $items,
-                "total" => $total,
-                "numberOfPages" => $numberOfPages
+                // "perPage" => $perPage,
+                // "page" => $page,
+                // "items" => $items,
+                // "total" => $total,
+                // "numberOfPages" => $numberOfPages
+
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
             ];
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime, $action, $deviceId);

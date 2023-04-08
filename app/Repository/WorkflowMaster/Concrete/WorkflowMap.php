@@ -130,6 +130,7 @@ class WorkflowMap implements iWorkflowMapRepository
             'old_ward_name'
         )
             ->where('ulb_id', $request->ulbId)
+            ->where('status', 1)
             ->orderby('id')
             ->get();
 
