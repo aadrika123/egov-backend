@@ -173,16 +173,7 @@ class StateDashboard
             ";
             $data = DB::select($select . $from);
             $data = collect($data);            
-            // $monthWise["demand"] = $data->map(function($val)
-            // {
-            //     return[
-            //         "quater"        =>  ($val->quater),
-            //         "propertyCount" =>  ($val->current_hh),
-            //         "arrearDemand"   =>  round(($val->arrear_demand),2), 
-            //         "currentDemand"  =>  round(($val->current_demand),2),
-            //         "totalDemand"   =>  round(($val->current_demand + $val->arrear_demand),2),
-            //     ];
-            // });
+           
             $monthWise["demand"]["quater"] = $data->map(function($val)
             {
                 return($val->quater);
@@ -226,19 +217,6 @@ class StateDashboard
                 return round(($val->arrear_collection + $val->current_collection),2);
             });
 
-
-
-            // $monthWise["collection"] = $data->map(function($val)
-            // {
-            //     return[
-            //         "quater"            =>  ($val->quater),
-            //         "propertyCount"     =>  ($val->collection_from_hh),
-            //         "arrearCollection"   =>  round(($val->arrear_collection),2), 
-            //         "currentCollection"  =>  round(($val->current_collection),2),
-            //         "totalCollection"   =>  round(($val->arrear_collection + $val->current_collection),2),
-            //     ];
-            // });
-            
             #-------------------------------------------
             $monthWise["balance"]["quater"] = $data->map(function($val)
             {
@@ -260,17 +238,6 @@ class StateDashboard
             {
                 return round((($val->current_demand + $val->arrear_demand)- ($val->arrear_collection + $val->current_collection)),2);
             });
-
-            // $monthWise["balance"] = $data->map(function($val)
-            // {
-            //     return[
-            //         "quater"            =>  ($val->quater),
-            //         "propertyCount"     =>  ($val->current_hh - $val->collection_from_hh),
-            //         "arrearBalance"   =>  round(($val->arrear_demand - $val->arrear_collection),2), 
-            //         "currentBalance"  =>  round(($val->current_demand - $val->current_collection),2),
-            //         "totalBalance"   =>  round((($val->current_demand + $val->arrear_demand)- ($val->arrear_collection + $val->current_collection)),2) ,
-            //     ];
-            // });
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true, "", $monthWise, $apiId, $version, $queryRunTime, $action, $deviceId);
         } 

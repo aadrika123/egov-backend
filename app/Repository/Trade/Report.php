@@ -1350,10 +1350,8 @@ class Report implements IReport
                 ->LEFTJOIN("active_trade_licences", function ($join) use ($ulbId) {
                     $join->ON("active_trade_licences.current_role", "roles.wf_role_id")
                         ->WHERE("active_trade_licences.ulb_id", $ulbId)
-                        ->WHERE(function ($where) {
-                            $where->ORWHERE("active_trade_licences.payment_status", "<>", 0)
-                                ->ORWHERENOTNULL("active_trade_licences.payment_status");
-                        });
+                        ->WHERE("active_trade_licences.is_parked", FALSE)
+                        ->WHEREIN("active_trade_licences.payment_status", [1,2]);                        
                 })
                 ->GROUPBY(["wf_roles.id", "wf_roles.role_name"])
                 ->UNION(
@@ -1362,7 +1360,7 @@ class Report implements IReport
                                 COUNT(active_trade_licences.id)")
                     )
                         ->WHERE("active_trade_licences.ulb_id", $ulbId)
-                        ->WHERENOTNULL("active_trade_licences.user_id")
+                        ->WHERE("active_trade_licences.is_parked", FALSE)
                         ->WHERE(function ($where) {
                             $where->WHERE("active_trade_licences.payment_status", "=", 0)
                                 ->ORWHERENULL("active_trade_licences.payment_status");
@@ -1449,8 +1447,20 @@ class Report implements IReport
                         }
                     }
                 )
+                ->WHERE("active_trade_licences.is_parked", FALSE)
                 ->WHERE("active_trade_licences.ulb_id", $ulbId)
                 ->groupBy(["users_role.user_id", "users_role.user_name", "users_role.wf_role_id", "users_role.role_name"]);
+                if (!in_array($roleId, [8])) 
+                {
+                    $data  = $data->WHEREIN("active_trade_licences.payment_status", [1,2]);
+                }
+                if (in_array($roleId, [8])) 
+                {
+                    $data  = $data->WHERE(function ($where) {
+                                $where->WHERE("active_trade_licences.payment_status", "=", 0)
+                                    ->ORWHERENULL("active_trade_licences.payment_status");
+                            });
+                }
 
             $perPage = $request->perPage ? $request->perPage : 10;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
@@ -1527,11 +1537,13 @@ class Report implements IReport
                 $data = $data->JOIN("wf_roles", "wf_roles.id", "active_trade_licences.current_role")
                     ->WHERE("wf_roles.id", $roleId);
             }
+
             if (!in_array($roleId, [11, 8]) && $userId) 
             {
                 $data = $data->WHEREIN("active_trade_licences.ward_id", $mWardIds);
             }
-            $data = $data->WHERE("active_trade_licences.ulb_id", $ulbId);
+            $data = $data->WHERE("active_trade_licences.ulb_id", $ulbId)
+                    ->WHERE("active_trade_licences.is_parked", FALSE);
             $data = $data->groupBy(["ward_name"]);
 
             $perPage = $request->perPage ? $request->perPage : 10;
@@ -1627,7 +1639,8 @@ class Report implements IReport
                 $data = $data->JOIN("wf_roles", "wf_roles.id", "active_trade_licences.current_role")
                     ->WHERE("wf_roles.id", $roleId);
             }
-            $data = $data->WHERE("active_trade_licences.ulb_id", $ulbId);
+            $data = $data->WHERE("active_trade_licences.ulb_id", $ulbId)
+                    ->WHERE("active_trade_licences.is_parked", FALSE);
             if (!in_array($roleId, [11, 8]) && $userId) 
             {
                 $data = $data->WHEREIN("active_trade_licences.ward_id", $mWardIds);

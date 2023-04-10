@@ -2672,7 +2672,7 @@ class Trade implements ITrade
                 ->whereIn('active_trade_licences.ward_id', $mWardIds)
                 // ->limit(100)
                 ->get();
-            // dd($licence);            
+            // dd(DB::getQueryLog());            
             return responseMsg(true, "", $licence);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
