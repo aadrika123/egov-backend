@@ -107,6 +107,15 @@ class MenuMaster extends Model
             ->orderBy("menu_masters.serial", "Asc");
     }
 
+ /**
+     * | Get Menues By Id
+     */
+    public function checkgetMenuById($id)
+    {
+        return MenuMaster::where('id', $id)
+            ->where('is_deleted', false)
+            ->first();
+    }
 
     /**
      * | Update the menu master details

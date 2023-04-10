@@ -338,7 +338,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      * | Menu Permissions
      */
     Route::controller(MenuController::class)->group(function () {
-        Route::get('crud/menu/get-all-menues', 'getAllMenues');                     // Get All the Menu List
+        Route::post('crud/menu/get-all-menues', 'getAllMenues');                     // Get All the Menu List
         Route::post('crud/menu/delete-menues', 'deleteMenuesDetails');              // Soft Delition of the menus
         Route::post('crud/menu/add-new-menues', 'addNewMenues');                    // adding the details of the menues in the menue table
         Route::post('crud/menu/update-menues', 'updateMenuMaster');                 // Update the menu master 
