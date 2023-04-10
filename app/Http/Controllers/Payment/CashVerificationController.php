@@ -111,7 +111,7 @@ class CashVerificationController extends Controller
 
             $revDailycollection =  RevDailycollection::select('users.id', 'user_name', 'deposit_amount', 'module_id')
                 ->join('rev_dailycollectiondetails as rdc', 'rdc.collection_id', 'rev_dailycollections.id')
-                ->join('users', 'users.id', 'rev_dailycollections.user_id')
+                ->join('users', 'users.id', 'rev_dailycollections.tc_id')
                 ->groupBy('users.id', 'user_name', 'rdc.deposit_amount', 'module_id')
                 ->where('deposit_date', $date)
                 ->get();
@@ -298,18 +298,18 @@ class CashVerificationController extends Controller
                 'rev_dailycollections.id',
                 'user_name',
                 'tran_no',
-                'deposit_amount',
+                'deposit_amount as amount',
                 'module_id',
-                'deposit_date',
-                'deposit_mode',
+                'deposit_date as tran_date',
+                'deposit_mode as payment_mode',
                 'cheq_dd_no',
                 'bank_name',
                 'application_no'
             )
                 ->join('rev_dailycollectiondetails as rdc', 'rdc.collection_id', 'rev_dailycollections.id')
-                ->join('users', 'users.id', 'rev_dailycollections.user_id')
+                ->join('users', 'users.id', 'rev_dailycollections.tc_id')
                 ->where('deposit_date', $date)
-                ->where('user_id', $userId)
+                ->where('tc_id', $userId)
                 ->where('rev_dailycollections.ulb_id', $ulbId)
                 ->get();
 
@@ -763,6 +763,7 @@ class CashVerificationController extends Controller
         $mRevDailycollection->deposit_date = Carbon::now();
         $mRevDailycollection->ulb_id = $ulbId;
         $mRevDailycollection->user_id = $userId;
+        $mRevDailycollection->tc_id = $tranDtl['tc_id'];
         $mRevDailycollection->save();
 
         $RevDailycollectiondetail = new RevDailycollectiondetail();
