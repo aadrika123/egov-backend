@@ -23,15 +23,9 @@ class RequestCollectionPercentage extends FormRequest
      */
     public function rules()
     {
-        $rules['parameter'] = "required|in:year,month";
-        if (isset($this['parameter']) && $this['parameter'] == "year") {
-            $rules['year'] = "nullable|digits:4";
-        }
-        if(isset($this['parameter']) && $this['parameter'] == "month")
-        {
-            $rules['month'] = "required|in:1,2,3,4,5,6,7,8,9,10,11,12";
-            $rules['year'] = "nullable|digits:4";
-        }
+
+        $rules['month'] = "nullable|in:1,2,3,4,5,6,7,8,9,10,11,12";
+        $rules['year'] = "nullable|";
         return $rules;
     }
 }

@@ -184,6 +184,7 @@ trait TradeTrait
                 break;
         }
         $documentList = $this->filterDocument($documentList,$refApplication);
+        // dd($refApplication,$documentList);
         return $documentList;
     }
     /**

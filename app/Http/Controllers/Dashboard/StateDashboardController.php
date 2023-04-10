@@ -141,24 +141,46 @@ class StateDashboardController extends Controller
     {
         try {
             $currentYear = Carbon::now()->format('Y');
-            switch ($req->parameter) {
-                case ("month"):
-                    if (isset($req->year)) {
-                        $returnData = $this->getDataByMonth($req);
-                    } else {
-                        $returnData = $this->getDataByCurrentMonth($req, $currentYear);
-                    }
-                    break;
-                case ("year"):
-                    if (isset($req->year)) {
-                        $returnData = $this->getDataByYear($req);
-                    } else {
-                        $returnData = $this->getDataByCurrentYear($req, $currentYear);
-                    }
-                    break;
+            if (isset($req->month)) {
+                $month = str_pad($req->month, 2, '0', STR_PAD_LEFT);
+                $firstDate = date("Y-m-01", strtotime("$currentYear-$month-01"));
+                $lastDate = date("Y-m-t", strtotime("$currentYear-$month-01"));
+                $fromDate = $firstDate;
+                $toDate   = $lastDate;
+                $returnData = $this->getDataByCurrentMonth($req, $fromDate, $toDate);
+                return responseMsgs(true, "state wise collection percentage!", remove_null($returnData), "", "01", ".ms", "POST", $req->deviceId);
             }
-            return responseMsgs(true, $req->parameter . "  state wise collection percentage!", remove_null($returnData), "", "01", ".ms", "POST", $req->deviceId);
+            if (isset($req->month) && $req->year) {
+                $fy = explode('-', $req->year);
+                $strtYr = collect($fy)->first();
+                $month = str_pad($req->month, 2, '0', STR_PAD_LEFT);
+                $firstDate = date("Y-m-01", strtotime("$req->year-$month-01"));
+                $lastDate = date("Y-m-t", strtotime("$req->year-$month-01"));
+                $fromDate = $firstDate;
+                $toDate   = $lastDate;
+                $returnData = $this->getDataByMonthYear($req, $fromDate, $toDate);
+                return responseMsgs(true, "state wise collection percentage!", remove_null($returnData), "", "01", ".ms", "POST", $req->deviceId);
+            }
+            if (isset($req->year)) {
+                $fy = explode('-', $req->year);
+                $strtYr = collect($fy)->first();
+                $endYr = collect($fy)->last();
+                $fromDate = '01-04-' . $strtYr;
+                $toDate   = '31-03-' . $endYr;
+                $returnData = $this->getDataByYear($fromDate, $toDate);
+                return responseMsgs(true, "  state wise collection percentage!", remove_null($returnData), "", "01", ".ms", "POST", $req->deviceId);
+            } else {
+                $financialYearStart = $currentYear;
+                if (Carbon::now()->month < 4) {
+                    $financialYearStart--;
+                }
+                $fromDate = '01-04-' . $financialYearStart;
+                $toDate   = '31-03-' . $financialYearStart + 1;
+                $returnData = $this->getDataByCurrentYear($fromDate, $toDate);
+            }
+            return responseMsgs(true, "state wise collection percentage!", remove_null($returnData), "", "01", ".ms", "POST", $req->deviceId);
         } catch (Exception $e) {
+            dd($e->getLine());
             return responseMsgs(false, $e->getMessage(), "", "", "01", ".ms", "POST", $req->deviceId);
         }
     }
@@ -166,93 +188,184 @@ class StateDashboardController extends Controller
     /**
      * | Get Details by Year
      */
-    public function getDataByYear($req)
+    public function getDataByYear($fromDate, $toDate)
     {
         $prop = PropTransaction::select('amount as propAmount')
-            ->whereYear('tran_date', $req->year)
+            ->whereBetween('tran_date', [$fromDate, $toDate])
             ->where("status", 1);
         $water = WaterTran::select('amount as waterAmount')
-            ->whereYear('tran_date', $req->year)
+            ->whereBetween('tran_date', [$fromDate, $toDate])
             ->where("status", 1);
         $trade = TradeTransaction::select('paid_amount as tradeAmount')
-            ->whereYear('tran_date', $req->year)
+            ->whereBetween('tran_date', [$fromDate, $toDate])
             ->where("status", 1);
 
-        $collectiveData['totalCount'] = $prop->union($water)->union($trade)->count();
+        $collectiveData['propAmount'] = (collect($prop->get())->sum('propAmount'));
+        $collectiveData['waterAmount'] = (collect($water->get())->sum('waterAmount'));
+        $collectiveData['tradeAmount'] = (collect($trade->get())->sum('tradeAmount'));
+
         $collectiveData['totalAount'] = round(collect($prop->get())->sum('propAmount') + collect($water->get())->sum('waterAmount') + collect($trade->get())->sum('tradeAmount'), 2);
-        $collectiveData['propPercent'] = round((collect($prop->get())->sum('propAmount') / $collectiveData['totalAount']) * 100, 2);
-        $collectiveData['waterPercent'] = round((collect($water->get())->sum('waterAmount') / $collectiveData['totalAount']) * 100, 2);
-        $collectiveData['tradePercent'] = round((collect($trade->get())->sum('tradeAmount') / $collectiveData['totalAount']) * 100, 2);
-        return $collectiveData;
+        $collectiveData['propPercent'] = round(($collectiveData['propAmount'] / $collectiveData['totalAount']) * 100, 2);
+        $collectiveData['waterPercent'] = round(($collectiveData['waterAmount'] / $collectiveData['totalAount']) * 100, 2);
+        $collectiveData['tradePercent'] = round(($collectiveData['tradeAmount'] / $collectiveData['totalAount']) * 100, 2);
+        $collectiveData['totalCount'] = $prop->union($water)->union($trade)->count();
+
+        # Formating the data for returning
+        $returData = [
+            "totalCount" =>  $collectiveData['totalCount'],
+            "totalAmount" => $collectiveData['totalAount'],
+            "property" => [
+                "propAmount" => round($collectiveData['propAmount'], 2),
+                "propPercent" => $collectiveData['propPercent']
+            ],
+            "water" => [
+                "waterAmount" => round($collectiveData['waterAmount'], 2),
+                "waterPercent" => $collectiveData['waterPercent']
+            ],
+            "trade" => [
+                "tradeAmount" => round($collectiveData['tradeAmount'], 2),
+                "tradePercent" => $collectiveData['tradePercent']
+            ]
+        ];
+        return $returData;
     }
 
     /**
      * | state wise collection data as per month
      * | @param 
      */
-    public function getDataByCurrentYear($currentYear)
+    public function getDataByCurrentYear($fromDate, $toDate)
     {
-        $prop = PropTransaction::whereYear('tran_date', $currentYear)
+        $prop = PropTransaction::select('amount as propAmount')
+            ->whereBetween('tran_date', [$fromDate, $toDate])
             ->where("status", 1);
-        $water = WaterTran::whereYear('tran_date', $currentYear)
+        $water = WaterTran::select('amount as waterAmount')
+            ->whereBetween('tran_date', [$fromDate, $toDate])
             ->where("status", 1);
-        $trade = TradeTransaction::whereYear('tran_date', $currentYear)
+        $trade = TradeTransaction::select('paid_amount as tradeAmount')
+            ->whereBetween('tran_date', [$fromDate, $toDate])
             ->where("status", 1);
 
+        $collectiveData['propAmount'] = (collect($prop->get())->sum('propAmount'));
+        $collectiveData['waterAmount'] = (collect($water->get())->sum('waterAmount'));
+        $collectiveData['tradeAmount'] = (collect($trade->get())->sum('tradeAmount'));
+
+        $collectiveData['totalAount'] = round(collect($prop->get())->sum('propAmount') + collect($water->get())->sum('waterAmount') + collect($trade->get())->sum('tradeAmount'), 2);
+        $collectiveData['propPercent'] = round(($collectiveData['propAmount'] / $collectiveData['totalAount']) * 100, 2);
+        $collectiveData['waterPercent'] = round(($collectiveData['waterAmount'] / $collectiveData['totalAount']) * 100, 2);
+        $collectiveData['tradePercent'] = round(($collectiveData['tradeAmount'] / $collectiveData['totalAount']) * 100, 2);
         $collectiveData['totalCount'] = $prop->union($water)->union($trade)->count();
-        $collectiveData['totalAount'] = round(collect($prop->get())->sum('amount') + collect($water->get())->sum('amount') + collect($trade->get())->sum('paid_amount'), 2);
-        $collectiveData['propPercent'] = round((collect($prop->get())->sum('amount') / $collectiveData['totalAount']) * 100, 2);
-        $collectiveData['waterPercent'] = round((collect($water->get())->sum('amount') / $collectiveData['totalAount']) * 100, 2);
-        $collectiveData['tradePercent'] = round((collect($trade->get())->sum('paid_amount') / $collectiveData['totalAount']) * 100, 2);
-        return $collectiveData;
+
+        # Formating the data for returning
+        $returData = [
+            "totalCount" =>  $collectiveData['totalCount'],
+            "totalAmount" => $collectiveData['totalAount'],
+            "property" => [
+                "propAmount" => round($collectiveData['propAmount'], 2),
+                "propPercent" => $collectiveData['propPercent']
+            ],
+            "water" => [
+                "waterAmount" => round($collectiveData['waterAmount'], 2),
+                "waterPercent" => $collectiveData['waterPercent']
+            ],
+            "trade" => [
+                "tradeAmount" => round($collectiveData['tradeAmount'], 2),
+                "tradePercent" => $collectiveData['tradePercent']
+            ]
+        ];
+        return $returData;
     }
 
     /**
-     * | Get the data of the online payment 
+     * | get data by month and current year 
      */
-    public function getDataByMonth($req)
+    public function getDataByCurrentMonth($req, $fromDate, $toDate)
     {
-        $prop = PropTransaction::whereYear('tran_date', $req->year)
-            ->whereMonth('date_column', $req->month)
+        $prop = PropTransaction::select('amount as propAmount')
+            ->whereBetween('tran_date', [$fromDate, $toDate])
             ->where("status", 1);
-        $water = WaterTran::whereYear('tran_date', $req->year)
-            ->whereMonth('date_column', $req->month)
+        $water = WaterTran::select('amount as waterAmount')
+            ->whereBetween('tran_date', [$fromDate, $toDate])
             ->where("status", 1);
-        $trade = TradeTransaction::whereYear('tran_date', $req->year)
-            ->whereMonth('date_column', $req->month)
+        $trade = TradeTransaction::select('paid_amount as tradeAmount')
+            ->whereBetween('tran_date', [$fromDate, $toDate])
             ->where("status", 1);
 
+        $collectiveData['propAmount'] = (collect($prop->get())->sum('propAmount'));
+        $collectiveData['waterAmount'] = (collect($water->get())->sum('waterAmount'));
+        $collectiveData['tradeAmount'] = (collect($trade->get())->sum('tradeAmount'));
+
+        $collectiveData['totalAount'] = round(collect($prop->get())->sum('propAmount') + collect($water->get())->sum('waterAmount') + collect($trade->get())->sum('tradeAmount'), 2);
+        $collectiveData['propPercent'] = round(($collectiveData['propAmount'] / $collectiveData['totalAount']) * 100, 2);
+        $collectiveData['waterPercent'] = round(($collectiveData['waterAmount'] / $collectiveData['totalAount']) * 100, 2);
+        $collectiveData['tradePercent'] = round(($collectiveData['tradeAmount'] / $collectiveData['totalAount']) * 100, 2);
         $collectiveData['totalCount'] = $prop->union($water)->union($trade)->count();
-        $collectiveData['totalAount'] = round(collect($prop->get())->sum('amount') + collect($water->get())->sum('amount') + collect($trade->get())->sum('paid_amount'), 2);
-        $collectiveData['propPercent'] = round((collect($prop->get())->sum('amount') / $collectiveData['totalAount']) * 100, 2);
-        $collectiveData['waterPercent'] = round((collect($water->get())->sum('amount') / $collectiveData['totalAount']) * 100, 2);
-        $collectiveData['tradePercent'] = round((collect($trade->get())->sum('paid_amount') / $collectiveData['totalAount']) * 100, 2);
-        return $collectiveData;
+
+        # Formating the data for returning
+        $returData = [
+            "totalCount" =>  $collectiveData['totalCount'],
+            "totalAmount" => $collectiveData['totalAount'],
+            "property" => [
+                "propAmount" => round($collectiveData['propAmount'], 2),
+                "propPercent" => $collectiveData['propPercent']
+            ],
+            "water" => [
+                "waterAmount" => round($collectiveData['waterAmount'], 2),
+                "waterPercent" => $collectiveData['waterPercent']
+            ],
+            "trade" => [
+                "tradeAmount" => round($collectiveData['tradeAmount'], 2),
+                "tradePercent" => $collectiveData['tradePercent']
+            ]
+        ];
+        return $returData;
     }
+
 
     /**
      * | get data by month and year 
      */
-    public function getDataByCurrentMonth($req, $currentYear)
+    public function getDataByMonthYear($req, $fromDate, $toDate)
     {
-        $prop = PropTransaction::whereYear('tran_date', $currentYear)
-            ->whereMonth('date_column', $req->month)
+        $prop = PropTransaction::select('amount as propAmount')
+            ->whereBetween('tran_date', [$fromDate, $toDate])
             ->where("status", 1);
-        $water = WaterTran::whereYear('tran_date', $currentYear)
-            ->whereMonth('date_column', $req->month)
+        $water = WaterTran::select('amount as waterAmount')
+            ->whereBetween('tran_date', [$fromDate, $toDate])
             ->where("status", 1);
-        $trade = TradeTransaction::whereYear('tran_date', $currentYear)
-            ->whereMonth('date_column', $req->month)
+        $trade = TradeTransaction::select('paid_amount as tradeAmount')
+            ->whereBetween('tran_date', [$fromDate, $toDate])
             ->where("status", 1);
 
+        $collectiveData['propAmount'] = (collect($prop->get())->sum('propAmount'));
+        $collectiveData['waterAmount'] = (collect($water->get())->sum('waterAmount'));
+        $collectiveData['tradeAmount'] = (collect($trade->get())->sum('tradeAmount'));
+
+        $collectiveData['totalAount'] = round(collect($prop->get())->sum('propAmount') + collect($water->get())->sum('waterAmount') + collect($trade->get())->sum('tradeAmount'), 2);
+        $collectiveData['propPercent'] = round(($collectiveData['propAmount'] / $collectiveData['totalAount']) * 100, 2);
+        $collectiveData['waterPercent'] = round(($collectiveData['waterAmount'] / $collectiveData['totalAount']) * 100, 2);
+        $collectiveData['tradePercent'] = round(($collectiveData['tradeAmount'] / $collectiveData['totalAount']) * 100, 2);
         $collectiveData['totalCount'] = $prop->union($water)->union($trade)->count();
-        $collectiveData['totalAount'] = round(collect($prop->get())->sum('amount') + collect($water->get())->sum('amount') + collect($trade->get())->sum('paid_amount'), 2);
-        $collectiveData['propPercent'] = round((collect($prop->get())->sum('amount') / $collectiveData['totalAount']) * 100, 2);
-        $collectiveData['waterPercent'] = round((collect($water->get())->sum('amount') / $collectiveData['totalAount']) * 100, 2);
-        $collectiveData['tradePercent'] = round((collect($trade->get())->sum('paid_amount') / $collectiveData['totalAount']) * 100, 2);
-        return $collectiveData;
-    }
 
+        # Formating the data for returning
+        $returData = [
+            "totalCount" =>  $collectiveData['totalCount'],
+            "totalAmount" => $collectiveData['totalAount'],
+            "property" => [
+                "propAmount" => round($collectiveData['propAmount'], 2),
+                "propPercent" => $collectiveData['propPercent']
+            ],
+            "water" => [
+                "waterAmount" => round($collectiveData['waterAmount'], 2),
+                "waterPercent" => $collectiveData['waterPercent']
+            ],
+            "trade" => [
+                "tradeAmount" => round($collectiveData['tradeAmount'], 2),
+                "tradePercent" => $collectiveData['tradePercent']
+            ]
+        ];
+        return $returData;
+    }
 
 
     /**
