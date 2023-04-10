@@ -51,8 +51,8 @@ class StateDashboardController extends Controller
                 $financialYearStart--;
             }
 
-            $fromDate = '01-04-' . $financialYearStart;
-            $toDate   = '31-03-' . $financialYearStart + 1;
+            $fromDate = $financialYearStart . '-04-01';
+            $toDate   = $financialYearStart + 1 . '-03-31';
             $collection = collect();
 
             $ulbIds = $ulbs->pluck('id');
@@ -174,8 +174,8 @@ class StateDashboardController extends Controller
                 $fy = explode('-', $req->year);
                 $strtYr = collect($fy)->first();
                 $endYr = collect($fy)->last();
-                $fromDate = '01-04-' . $strtYr;
-                $toDate   = '31-03-' . $endYr;
+                $fromDate = $strtYr . '-04-01';
+                $toDate   =  $endYr . '-03-31';
                 $returnData = $this->getDataByYear($fromDate, $toDate);
                 return responseMsgs(true, "  state wise collection percentage!", remove_null($returnData), "", "01", ".ms", "POST", $req->deviceId);
             } else {
@@ -183,8 +183,8 @@ class StateDashboardController extends Controller
                 if (Carbon::now()->month < 4) {
                     $financialYearStart--;
                 }
-                $fromDate = '01-04-' . $financialYearStart;
-                $toDate   = '31-03-' . $financialYearStart + 1;
+                $fromDate =  $financialYearStart  . '-04-01';
+                $toDate   =  $financialYearStart + 1 . '-03-31';
                 $returnData = $this->getDataByCurrentYear($fromDate, $toDate);
             }
             return responseMsgs(true, "state wise collection percentage!", remove_null($returnData), "", "01", ".ms", "POST", $req->deviceId);
