@@ -354,11 +354,11 @@ class CitizenController extends Controller
                 $citizen->save();
 
                 Redis::del('user:' . auth()->user()->id);   //DELETING REDIS KEY
-                return response()->json(['Status' => 'True', 'Message' => 'Successfully Changed the Password'], 200);
+                return responseMsgs(true, 'Successfully Changed the Password', "", "", "02", ".ms", "POST", $request->deviceId);
             }
             throw new Exception("Old Password dosen't Match!");
         } catch (Exception $e) {
-            return response()->json(["status" => false, "message" => $e->getMessage(), "data" => $request->password], 400);
+            return responseMsgs(false, $e->getMessage(), "", "", "02", ".ms", "POST", $request->deviceId);
         }
     }
 

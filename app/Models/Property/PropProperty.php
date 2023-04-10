@@ -379,7 +379,7 @@ class PropProperty extends Model
      */
     public function editPropBySaf($propId, $safDtls)
     {
-        $property = PropProperty::find($propId);
+        $property = PropProperty::findOrFail($propId);
         $reqs = $this->reqProp($safDtls);
         $property->update($reqs);
     }

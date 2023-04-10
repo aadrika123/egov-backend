@@ -449,23 +449,23 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('reports/saf/leveluserpending', 'levelUserPending'); //done
     Route::post('reports/saf/userwiselevelpending', 'userWiseLevelPending');
     Route::post('reports/saf/userWiseWardWireLevelPending', 'userWiseWardWireLevelPending'); //done
-    Route::post('reports/saf/saf-sam-fam-geotagging', 'safSamFamGeotagging');
+    Route::post('reports/saf/saf-sam-fam-geotagging', 'safSamFamGeotagging');                 //done
 
     Route::post('reports/ward-wise-holding', 'wardWiseHoldingReport'); //done
     Route::post('reports/list-fy', 'listFY');                          //done
     Route::post('reports/print-bulk-receipt', 'bulkReceipt');         //done
     Route::post('reports/property/gbsaf-collection', 'gbSafCollection');    //done
     Route::post('reports/property/individual-demand-collection', 'propIndividualDemandCollection'); //done
-    Route::post('reports/property/gbsaf-individual-demand-collection', 'gbsafIndividualDemandCollection');
+    Route::post('reports/property/gbsaf-individual-demand-collection', 'gbsafIndividualDemandCollection'); //done
     Route::post('reports/not-paid-from-2016', 'notPaidFrom2016');       //done
-    Route::post('reports/previous-year-paid-not-current-year', 'previousYearPaidButnotCurrentYear');
+    Route::post('reports/previous-year-paid-not-current-year', 'previousYearPaidButnotCurrentYear'); //done
 
     Route::post('reports/property/payment-mode-wise-summery', 'PropPaymentModeWiseSummery'); //done
     Route::post('reports/saf/payment-mode-wise-summery', 'SafPaymentModeWiseSummery');       //done
-    Route::post('reports/property/dcb', 'PropDcb');                                         //done
+    Route::post('reports/property/dcb', 'PropDCB');                                         //done
     Route::post('reports/property/ward-wise-dcb', 'PropWardWiseDCB');                       //done
-    Route::post('reports/property/holding-wise-fine-rebate', 'PropFineRebate');
-    Route::post('reports/property/deactivated-list', 'PropDeactedList');
+    Route::post('reports/property/holding-wise-fine-rebate', 'PropFineRebate');             //done
+    Route::post('reports/property/deactivated-list', 'PropDeactedList');                    //done
   });
 });
 

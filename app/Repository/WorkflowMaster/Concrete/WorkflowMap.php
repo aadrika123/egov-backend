@@ -122,7 +122,7 @@ class WorkflowMap implements iWorkflowMapRepository
         $request->validate([
             'ulbId' => 'required|int'
         ]);
-
+        $wards = collect();
         $workkFlow = UlbWardMaster::select(
             'id',
             'ulb_id',
@@ -130,8 +130,16 @@ class WorkflowMap implements iWorkflowMapRepository
             'old_ward_name'
         )
             ->where('ulb_id', $request->ulbId)
+            ->where('status', 1)
+            ->orderby('id')
             ->get();
-        return responseMsg(true, "Data Retrived", remove_null($workkFlow));
+
+        $groupByWards = $workkFlow->groupBy('ward_name');
+        foreach ($groupByWards as $ward) {
+            $wards->push(collect($ward)->first());
+        }
+        $wards->sortBy('ward_name')->values();
+        return responseMsg(true, "Data Retrived", remove_null($wards));
     }
 
     // table = 6 & 7

@@ -309,11 +309,11 @@ class NewConnectionController extends Controller
         try {
             $request->validate([
                 "applicationId" => "required",
-                "status" => "required"
+                "status" => "required",
+                "comment" => "required"
             ]);
             $waterDetails = WaterApplication::findOrFail($request->applicationId);
             $mWfRoleUsermap = new WfRoleusermap();
-            $waterRoles = $this->_waterRoles;
 
             # check the login user is EO or not
             $userId = authUser()->id;
@@ -393,11 +393,13 @@ class NewConnectionController extends Controller
                     }
                     $consumerDemand['meterDetails'] = $refMeterData;
                     $consumerDemand['connectionName'] = $connectionName;
+                    $consumerDetails = $consumerDetails->merge($consumerDemand);
                 }
-                $consumerDetails = $consumerDetails->merge($documentDetails)->merge($consumerDemand);
+                $consumerDetails = $consumerDetails->merge($documentDetails);
                 return responseMsgs(true, "Consumer Details!", remove_null($consumerDetails), "", "01", ".ms", "POST", $request->deviceId);
             }
 
+            # Get all consumer details 
             $mWaterConsumer = new WaterConsumer();
             $approvedWater = $mWaterConsumer->getConsumerDetails();
             $checkExist = $approvedWater->first();
@@ -576,6 +578,7 @@ class NewConnectionController extends Controller
      * | Check the Water parameter 
      * | @param req
         | 01<- 
+        | Not used
      */
     public function checkEditParameters($request, $refApplication)
     {
@@ -600,6 +603,7 @@ class NewConnectionController extends Controller
      * | @param req
      * | @param refApplication
     | 01<-
+    | Not used
      */
     public function boApplicationEdit($req, $refApplication, $mWaterApplication)
     {
@@ -619,6 +623,7 @@ class NewConnectionController extends Controller
      * | @param
      * | @param
         | 01 <-
+        | Not used
      */
     public function deactivateAndUpdateWater($refWaterApplicationId)
     {
@@ -788,15 +793,17 @@ class NewConnectionController extends Controller
      * | @param req
      * | @param application
         | Up 
+        | Check the concept of auto forward
      */
     public function updateWaterStatus($req, $application)
     {
         $mWaterApplication = new WaterApplication();
         $waterRoles = $this->_waterRoles;
         $mWaterApplication->activateUploadStatus($req->applicationId);
-        if ($application->payment_status == 1) {
-            $mWaterApplication->updateCurrentRoleForDa($$req->applicationId, $waterRoles);
-        }
+        # Auto forward to Bo 
+        // if ($application->payment_status == 1) {
+        //     $mWaterApplication->updateCurrentRoleForDa($req->applicationId, $waterRoles);
+        // }
     }
 
 
@@ -1095,9 +1102,11 @@ class NewConnectionController extends Controller
             $waterTypeDocs['listDocs'] = collect($documentList)->map(function ($value, $key) use ($refWaterApplication) {
                 return $filteredDocs = $this->filterDocument($value, $refWaterApplication)->first();
             });
+
             $waterOwnerDocs['ownerDocs'] = collect($refWaterApplicant)->map(function ($owner) use ($refWaterApplication) {
                 return $this->getOwnerDocLists($owner, $refWaterApplication);
             });
+            $waterOwnerDocs;
 
             $totalDocLists = collect($waterTypeDocs)->merge($waterOwnerDocs);
             $totalDocLists['docUploadStatus'] = $refWaterApplication->doc_upload_status;
@@ -1238,8 +1247,10 @@ class NewConnectionController extends Controller
         });
         if (!empty($documentList)) {
             $ownerPhoto = $mWfActiveDocument->getWaterOwnerPhotograph($application['id'], $application->workflow_id, $moduleId, $refOwners['id']);
-            $path =  $this->readDocumentPath($ownerPhoto->doc_path);
-            $fullDocPath = !empty(trim($ownerPhoto->doc_path)) ? $path : null;
+            if ($ownerPhoto) {
+                $path =  $this->readDocumentPath($ownerPhoto->doc_path);
+                $fullDocPath = !empty(trim($ownerPhoto->doc_path)) ? $path : null;
+            }
             $ownerDocList['ownerDetails'] = [
                 'ownerId' => $refOwners['id'],
                 'name' => $refOwners['applicant_name'],

@@ -106,7 +106,7 @@ class WaterConsumerDemand extends Model
             $currend_date = Carbon::now()->format("Y-m-d");
             $meter_demand_sql = "SELECT * FROM  water_consumer_demands 
                                     where consumer_id=$consumerId 
-                                    and paid_status= false
+                                    and paid_status= 0
                                     and status=true 
                                     and connection_type in ('Metered', 'Meter')";
 
@@ -144,7 +144,7 @@ class WaterConsumerDemand extends Model
             #fixed Demand
             $fixed_demand_sql = "SELECT * FROM water_consumer_demands  
                                     where consumer_id=$consumerId 
-                                    and paid_status=false 
+                                    and paid_status=0 
                                     and status=true 
                                     and connection_type='Fixed'";
             $fixed_demand = DB::select($fixed_demand_sql);
@@ -204,10 +204,10 @@ class WaterConsumerDemand extends Model
             "water_consumer_taxes.final_reading",
             'water_consumer_demands.*'
         )
-            ->leftjoin('water_consumer_taxes', function($join){
-                $join->on('water_consumer_taxes.id', 'water_consumer_demands.consumer_tax_id')                
-                ->where('water_consumer_taxes.status', 1)
-                ->where('water_consumer_taxes.charge_type', 'Meter');
+            ->leftjoin('water_consumer_taxes', function ($join) {
+                $join->on('water_consumer_taxes.id', 'water_consumer_demands.consumer_tax_id')
+                    ->where('water_consumer_taxes.status', 1)
+                    ->where('water_consumer_taxes.charge_type', 'Meter');
             })
             ->whereIn('water_consumer_demands.id', $demandIds)
             ->where('water_consumer_demands.status', 1)

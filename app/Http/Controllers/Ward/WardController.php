@@ -49,6 +49,9 @@ class WardController extends Controller
     // Get All Ulb Wards
     public function getNewWardByOldWard(Request $req)
     {
+        $req->validate([
+            'oldWardMstrId' => 'required',
+        ]);
         $mulbNewWardMap = new UlbNewWardmap();
         $newWard = $mulbNewWardMap->getNewWardByOldWard($req);
 

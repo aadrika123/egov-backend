@@ -786,6 +786,9 @@ class ActiveSafController extends Controller
 
             // Derivative Assignments
             $senderRoleId = $saf->current_role;
+            if (!$senderRoleId)
+                throw new Exception("Current Role Not Available");
+
             $request->validate([
                 'comment' => $senderRoleId == $wfLevels['BO'] ? 'nullable' : 'required',
 
@@ -861,9 +864,6 @@ class ActiveSafController extends Controller
         $samParamId = Config::get('PropertyConstaint.SAM_PARAM_ID');
 
         // Derivative Assignments
-        $demand = $mPropSafDemand->getFirstDemandByFyearSafId($saf->id, $fYear);
-        if (collect($demand)->isEmpty())
-            throw new Exception("Demand Not Available for the Current Year to Generate SAM");
         switch ($senderRoleId) {
             case $wfLevels['BO']:                        // Back Office Condition
                 if ($saf->doc_upload_status == 0)
@@ -871,6 +871,9 @@ class ActiveSafController extends Controller
                 break;
 
             case $wfLevels['DA']:                       // DA Condition
+                $demand = $mPropSafDemand->getDemandsBySafId($saf->id)->groupBy('fyear')->first()->last();
+                if (collect($demand)->isEmpty())
+                    throw new Exception("Demand Not Available for the to Generate SAM");
                 if ($saf->doc_verify_status == 0)
                     throw new Exception("Document Not Fully Verified");
                 $idGeneration = new PrefixIdGenerator($ptParamId, $saf->ulb_id);
@@ -1624,8 +1627,8 @@ class ActiveSafController extends Controller
             $safId = $req['id'];
 
             $activeSaf = PropActiveSaf::findOrFail($req['id']);
-            // if ($activeSaf->payment_status == 1)
-            //     throw new Exception("Payment Already Done");
+            if ($activeSaf->payment_status == 1)
+                throw new Exception("Payment Already Done");
 
             $userId = auth()->user()->id;                                      // Authenticated user or Ghost User
             $tranBy = authUser()->user_type;
@@ -1650,7 +1653,8 @@ class ActiveSafController extends Controller
                 'tranNo' => $tranNo,
                 'workflowId' => $activeSaf->workflow_id,
                 'amount' => $amount,
-                'tranBy' => $tranBy
+                'tranBy' => $tranBy,
+                'ulbId' => $activeSaf->ulb_id
             ]);
             $activeSaf->payment_status = 1; // Paid for Online or Cash
             if (in_array($req['paymentMode'], $verifyPaymentModes)) {
@@ -1673,6 +1677,8 @@ class ActiveSafController extends Controller
             foreach ($demands as $demand) {
                 $demand = $demand->toArray();
                 unset($demand['ruleSet'], $demand['rwhPenalty'], $demand['onePercPenalty'], $demand['onePercPenaltyTax']);
+                if (isset($demand['status']))
+                    unset($demand['status']);
                 $demand['paid_status'] = 1;
                 $demand['saf_id'] = $safId;
                 $demand['balance'] = 0;

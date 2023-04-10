@@ -70,30 +70,34 @@ class WaterConsumer extends Controller
             $refConsumerId = $request->ConsumerId;
 
             $consumerDemand['consumerDemands'] = $mWaterConsumerDemand->getConsumerDemand($refConsumerId);
-            $consumerDemand['totalSumDemand'] = collect($consumerDemand['consumerDemands'])->map(function ($value, $key) {
-                return $value['balance_amount'];
-            })->sum();
-            $consumerDemand['totalPenalty'] = collect($consumerDemand['consumerDemands'])->map(function ($value, $key) {
-                return $value['penalty'];
-            })->sum();
+            $checkParam = collect($consumerDemand['consumerDemands'])->first();
+            if (isset($checkParam)) {
+                $consumerDemand['totalSumDemand'] = collect($consumerDemand['consumerDemands'])->map(function ($value, $key) {
+                    return $value['balance_amount'];
+                })->sum();
+                $consumerDemand['totalPenalty'] = collect($consumerDemand['consumerDemands'])->map(function ($value, $key) {
+                    return $value['penalty'];
+                })->sum();
 
-            # meter Details 
-            $refMeterData = $mWaterConsumerMeter->getMeterDetailsByConsumerId($refConsumerId)->first();
-            switch ($refMeterData['connection_type']) {
-                case (1):
-                    $connectionName = $refConnectionName['1'];
-                    break;
-                case (2):
-                    $connectionName = $refConnectionName['2'];
-                    break;
-                case (3):
-                    $connectionName = $refConnectionName['3'];
-                    break;
+                # meter Details 
+                $refMeterData = $mWaterConsumerMeter->getMeterDetailsByConsumerId($refConsumerId)->first();
+                switch ($refMeterData['connection_type']) {
+                    case (1):
+                        $connectionName = $refConnectionName['1'];
+                        break;
+                    case (2):
+                        $connectionName = $refConnectionName['2'];
+                        break;
+                    case (3):
+                        $connectionName = $refConnectionName['3'];
+                        break;
+                }
+                $refMeterData['connectionName'] = $connectionName;
+                $consumerDemand['meterDetails'] = $refMeterData;
+
+                return responseMsgs(true, "List of Consumer Demand!", $consumerDemand, "", "01", "ms", "POST", "");
             }
-            $refMeterData['connectionName'] = $connectionName;
-            $consumerDemand['meterDetails'] = $refMeterData;
-
-            return responseMsgs(true, "List of Consumer Demand!", $consumerDemand, "", "01", "ms", "POST", "");
+            throw new Exception("there is no demand!");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", "ms", "POST", "");
         }

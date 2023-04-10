@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 use App\Repository\Property\Interfaces\iCalculatorRepository;
 use Exception;
 
-class calculatorController extends Controller
+class CalculatorController extends Controller
 {
     protected $Repository;
     public function __construct(iCalculatorRepository $iCalculatorRepository)
@@ -100,14 +100,14 @@ class calculatorController extends Controller
                                     'key' => $key,
                                     'effectingFrom' => $floors->first()['quarterYear'],
                                     'qtr' => $floors->first()['qtr'],
-                                    'arv' => roundFigure($floors->sum('arv')),
-                                    'holdingTax' => roundFigure($floors->sum('holdingTax')),
-                                    'waterTax' => roundFigure($floors->sum('waterTax')),
-                                    'latrineTax' => roundFigure($floors->sum('latrineTax')),
-                                    'educationTax' => roundFigure($floors->sum('educationTax')),
-                                    'healthTax' => roundFigure($floors->sum('healthTax')),
-                                    'rwhPenalty' => roundFigure($floors->sum('rwhPenalty')),
-                                    'quaterlyTax' => roundFigure($floors->sum('totalTax')),
+                                    'arv' => roundFigure($floors->sum('arv') + $quaterlyTaxes->sum('arv')),
+                                    'holdingTax' => roundFigure($floors->sum('holdingTax') + $quaterlyTaxes->sum('holdingTax')),
+                                    'waterTax' => roundFigure($floors->sum('waterTax') + $quaterlyTaxes->sum('waterTax')),
+                                    'latrineTax' => roundFigure($floors->sum('latrineTax') + $quaterlyTaxes->sum('latrineTax')),
+                                    'educationTax' => roundFigure($floors->sum('educationTax') + $quaterlyTaxes->sum('educationTax')),
+                                    'healthTax' => roundFigure($floors->sum('healthTax') + $quaterlyTaxes->sum('healthTax')),
+                                    'rwhPenalty' => roundFigure($floors->sum('rwhPenalty') + $quaterlyTaxes->sum('rwhPenalty')),
+                                    'quaterlyTax' => roundFigure($floors->sum('totalTax') + $quaterlyTaxes->sum('quaterlyTax')),
                                 ];
                                 $quaterlyTaxes->push($taxes);
                             });

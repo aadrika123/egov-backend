@@ -2,6 +2,7 @@
 
 namespace App\Models\Property;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -39,7 +40,7 @@ class PropActiveDeactivationRequest extends Model
      */
     public function recentApplication($userId)
     {
-        return PropActiveDeactivationRequest::select(
+        $data = PropActiveDeactivationRequest::select(
             'holding_no as holdingNo',
             'apply_date as applyDate',
             DB::raw(" 'Deactivation' as assessmentType"),
@@ -49,5 +50,11 @@ class PropActiveDeactivationRequest extends Model
             ->orderBydesc('prop_active_deactivation_requests.id')
             ->take(10)
             ->get();
+
+        $application = collect($data)->map(function ($value) {
+            $value['applyDate'] = (Carbon::parse($value['applyDate']))->format('d-m-Y');
+            return $value;
+        });
+        return $application;
     }
 }

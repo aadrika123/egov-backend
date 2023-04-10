@@ -29,4 +29,14 @@ class UlbWardMaster extends Model
             ->where('ulb_id', $ulbId)
             ->get();
     }
+
+    /**
+     * | get the ward by Id
+     * | @param id
+     */
+    public function getWard($id)
+    {
+        return UlbWardMaster::where('id',$id)
+        ->firstOrFail();
+    }
 }

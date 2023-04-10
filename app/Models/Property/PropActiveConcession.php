@@ -66,7 +66,7 @@ class PropActiveConcession extends Model
             ->join('prop_properties as p', 'p.id', '=', 'c.property_id')
             ->join('ulb_ward_masters as u', 'p.ward_mstr_id', '=', 'u.id')
             ->leftJoin('ulb_ward_masters as u1', 'p.new_ward_mstr_id', '=', 'u1.id')
-            ->where('c.application_no', $concessionNo)
+            ->where('c.application_no', strtoupper($concessionNo))
             ->first();
     }
 
@@ -127,7 +127,7 @@ class PropActiveConcession extends Model
      */
     public function recentApplication($userId)
     {
-        return PropActiveConcession::select(
+        $data = PropActiveConcession::select(
             'application_no as applicationNo',
             'date as applyDate',
             'applied_for as assessmentType',
@@ -137,6 +137,12 @@ class PropActiveConcession extends Model
             ->orderBydesc('prop_active_concessions.id')
             ->take(10)
             ->get();
+
+        $application = collect($data)->map(function ($value) {
+            $value['applyDate'] = (Carbon::parse($value['applyDate']))->format('d-m-Y');
+            return $value;
+        });
+        return $application;
     }
 
     /**

@@ -49,7 +49,7 @@ class JskController extends Controller
 
             // if (in_array($userType, $rUserType)) {
 
-            $data['recentApplications']  = $propActiveSaf->recentApplication($userId);
+            $data['recentApplications'] = $propActiveSaf->recentApplication($userId);
 
             switch ($applicationType) {
                     //Concession

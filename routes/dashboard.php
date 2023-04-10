@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Dashboard\DistrictWiseDataController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Dashboard\JskController;
 use App\Http\Controllers\Dashboard\StateDashboardController;
@@ -26,6 +27,15 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::controller(StateDashboardController::class)->group(function () {
         Route::post('state/ulb-wise-collection', 'ulbWiseCollection');              // 01
         Route::post('state/count-online-payment', 'onlinePaymentCount');
-        Route::post('state/collectionPercentage', 'stateWiseCollectionPercentage');
+        Route::post('state/ulb-wise-data', 'ulbWiseData');
+        Route::post('state/collection-percentage', 'stateWiseCollectionPercentage');
+        Route::post('state/district-wise-data', 'districtWiseData');
+    });
+
+    /**
+     * | District Wise Data (03)
+     */
+    Route::controller(DistrictWiseDataController::class)->group(function () {
+        Route::post('district/district-wise-collection', 'districtWiseCollection'); //
     });
 });

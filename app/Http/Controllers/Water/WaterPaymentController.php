@@ -310,8 +310,9 @@ class WaterPaymentController extends Controller
                 "connectionFee" => $fee->conn_fee ?? $webhookDetails->payment_amount,
                 "connectionPenalty" => $fee->penalty ?? "0.0",
                 "ulbId" => $webhookDetails->ulb_id,
-                "WardNo" => $applicationDetails->ward_id,
+                "WardNo" => $applicationDetails->ward_name,
                 "towards" => $mTowards,
+                "rebate" => 0,
                 "description" => $waterTrans->tran_type,
                 "totalPaidAmount" => $webhookDetails->payment_amount,
                 "paidAmtInWords" => getIndianCurrency($webhookDetails->payment_amount),
@@ -421,6 +422,8 @@ class WaterPaymentController extends Controller
                 "WardNo" => $applicationDetails['ward_name'],
                 "towards" => $mTowards,
                 "description" => $mAccDescription,
+                "rebate" => 0,
+                "connectionFee" => $connectionCharges['conn_fee'],
                 "totalPaidAmount" => $transactionDetails->amount,
                 "penaltyAmount" => $totalPenaltyAmount,
                 "paidAmtInWords" => getIndianCurrency($transactionDetails->amount),
@@ -463,7 +466,7 @@ class WaterPaymentController extends Controller
             $mWaterSiteInspectionsScheduling = new WaterSiteInspectionsScheduling();
 
             $connectionCatagory = Config::get('waterConstaint.CHARGE_CATAGORY');
-            $waterDetails = WaterApplication::find($request->applicationId);
+            $waterDetails = WaterApplication::findOrFail($request->applicationId);
 
             # Check Related Condition
             $refRoleDetails = $this->CheckInspectionCondition($request, $waterDetails);
@@ -1193,7 +1196,7 @@ class WaterPaymentController extends Controller
             'tran_date'         => $req['todayDate'],
             'user_id'           => $req['userId'],
             'ulb_id'            => $req['ulbId'],
-            'ward_id'           => $req['ward_id']
+            'ward_no'           => $req['ward_no']
         ];
         $mTempTransaction->tempTransaction($tranReqs);
     }

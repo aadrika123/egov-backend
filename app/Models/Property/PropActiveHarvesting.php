@@ -138,7 +138,7 @@ class PropActiveHarvesting extends Model
             ->leftjoin('ref_prop_types as pt', 'pt.id', '=', 'p.prop_type_mstr_id')
             ->join('ulb_ward_masters as u', 'p.ward_mstr_id', '=', 'u.id')
             ->leftJoin('ulb_ward_masters as u1', 'p.new_ward_mstr_id', '=', 'u1.id')
-            ->where('application_no', $harvestingNo)
+            ->where('application_no', strtoupper($harvestingNo))
             ->first();
     }
 
@@ -195,7 +195,7 @@ class PropActiveHarvesting extends Model
      */
     public function recentApplication($userId)
     {
-        return PropActiveHarvesting::select(
+        $data = PropActiveHarvesting::select(
             'application_no as applicationNo',
             'date as applyDate',
             // "'Rain Water Harvesting' as 'assessmentType'",
@@ -209,6 +209,12 @@ class PropActiveHarvesting extends Model
             ->groupBy('application_no', 'date', 'prop_active_harvestings.id')
             ->take(10)
             ->get();
+
+        $application = collect($data)->map(function ($value) {
+            $value['applyDate'] = (Carbon::parse($value['applyDate']))->format('d-m-Y');
+            return $value;
+        });
+        return $application;
     }
 
     /**

@@ -12,10 +12,11 @@ class waterAudit extends Model
     /**
      * | Save the related details of the edited details of water
      * | Save the related id's
-     * | @param
-     * | @param
-     * | @param
-     * | @param
+     * | @param refWaterApplications
+     * | @param refWaterowner
+     * | @param refConnectionCharges
+     * | @param refPenaltyInstallment
+        | Not used 
      */
     public function saveUpdatedDetailsId($refWaterApplications,$refWaterowner,$refConnectionCharges,$refPenaltyInstallment)
     {

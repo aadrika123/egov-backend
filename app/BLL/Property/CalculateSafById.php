@@ -19,7 +19,7 @@ use Illuminate\Http\Request;
  * | Calculate Saf By Saf Id Service
  * | Created By-Anshu Kumar
  * | Created On-29-03-2023 
- * | Status-Open
+ * | Status-Closed
  */
 
 class CalculateSafById
@@ -30,12 +30,12 @@ class CalculateSafById
     private $_mPropActiveSafOwner;
     private $_penaltyRebateCalc;
     private $_safId;
-    private $_safDetails;
+    public $_safDetails;
     private $_safFloorDetails;
     private $_safCalculation;
     public $_safCalculationReq;
     public $_calculatedDemand;
-    private $_generatedDemand = array();
+    public $_generatedDemand = array();
     private $_demandDetails;
     private $_todayDate;
     private $_currentQuarter;
@@ -163,7 +163,8 @@ class CalculateSafById
             "isWaterHarvesting" => $safDetails['is_water_harvesting'],
             "zone" => $safDetails['zone_mstr_id'],
             "floor" => $this->_safFloorDetails,
-            "isGBSaf" => $safDetails['is_gb_saf']
+            "isGBSaf" => $safDetails['is_gb_saf'],
+            "apartmentId" => $safDetails['apartment_details_id']
         ];
         $this->_safCalculationReq = new Request($calculationReq);
     }
@@ -210,7 +211,7 @@ class CalculateSafById
 
         $this->_demandDetails = $demandDetails;
 
-        if (in_array($this->_safDetails['assessment_type'], ['Re Assessment', 'ReAssessment', 'Mutation']))     // In Case of Reassessment Adjust the Amount
+        if (in_array($this->_safDetails['assessment_type'], ['Re Assessment', 'ReAssessment', 'Mutation', '2', '3']))     // In Case of Reassessment Adjust the Amount
             $this->adjustAmount();         // (1.2.1)
 
         $this->calculateOnePercPenalty();   // (1.2.2)
@@ -243,6 +244,8 @@ class CalculateSafById
 
         $payableAmount = $totalDemand - ($this->_generatedDemand['demand']['rebateAmt'] + $this->_generatedDemand['demand']['specialRebateAmt']);   // Final Payable Amount Calculation
         $this->_generatedDemand['demand']['payableAmount'] = round($payableAmount);
+
+        $this->generateTaxDtls();        // (1.2.3)
     }
 
 
@@ -319,5 +322,26 @@ class CalculateSafById
             $totalDemand,
             $totalDuesList
         );
+    }
+
+    /**
+     * | Generation of Tax Details(1.2.3)
+     */
+    public function generateTaxDtls()
+    {
+        $taxDetails = collect();
+        $demandDetails = $this->_generatedDemand['details'];
+        $groupByDemands = collect($demandDetails)->groupBy('arv');
+        $currentArv = $groupByDemands->last()->first()['arv'];          // Get Current Demand Arv Rate
+        foreach ($groupByDemands as $key => $item) {
+            $firstTax = collect($item)->first();
+            if ($key == $currentArv)
+                $firstTax['status'] = "Current";
+            else
+                $firstTax['status'] = "Old";
+
+            $taxDetails->push($firstTax);
+        }
+        $this->_generatedDemand['taxDetails'] = $taxDetails;
     }
 }

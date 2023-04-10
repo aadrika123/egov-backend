@@ -3,9 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Masters\MCity;
+use App\Models\UlbMaster;
 use Illuminate\Http\Request;
 use App\Repository\Ulbs\EloquentUlbRepository;
 use Exception;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 
 /**
  * Created On-02-07-2022 
@@ -68,5 +71,28 @@ class UlbController extends Controller
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "");
         }
+    }
+
+    /**
+     * | list of ulb by district code
+     */
+    public function districtWiseUlb(Request $req)
+    {
+        $req->validate([
+            'districtCode' => 'required'
+        ]);
+        $mUlbMaster = new UlbMaster();
+        $ulbList = $mUlbMaster->getUlbsByDistrictCode($req->districtCode);
+        return responseMsgs(true, "", remove_null($ulbList));
+    }
+
+    /**
+     * | District List
+     */
+    public function districtList(Request $req)
+    {
+        return DB::table('district_masters')
+            ->orderBy('district_code')
+            ->get();
     }
 }

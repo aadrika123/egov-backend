@@ -106,7 +106,7 @@ class PropActiveObjection extends Model
             ->join('prop_properties as p', 'p.id', '=', 'o.property_id')
             ->join('ulb_ward_masters as u', 'p.ward_mstr_id', '=', 'u.id')
             ->leftJoin('ulb_ward_masters as u1', 'p.new_ward_mstr_id', '=', 'u1.id')
-            ->where('o.objection_no', $objectionNo)
+            ->where('o.objection_no', strtoupper($objectionNo))
             ->first();
     }
 
@@ -138,7 +138,7 @@ class PropActiveObjection extends Model
      */
     public function recentApplication($userId)
     {
-        return PropActiveObjection::select(
+        $data = PropActiveObjection::select(
             'objection_no as applicationNo',
             'date as applyDate',
             'objection_for as assessmentType',
@@ -150,6 +150,12 @@ class PropActiveObjection extends Model
             ->groupBy('objection_no', 'date', 'prop_active_objections.id', 'prop_active_objections.objection_for')
             ->take(10)
             ->get();
+
+        $application = collect($data)->map(function ($value) {
+            $value['applyDate'] = (Carbon::parse($value['applyDate']))->format('d-m-Y');
+            return $value;
+        });
+        return $application;
     }
 
     /**
