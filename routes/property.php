@@ -466,8 +466,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('reports/property/ward-wise-dcb', 'PropWardWiseDCB');                       //done
     Route::post('reports/property/holding-wise-fine-rebate', 'PropFineRebate');             //done
     Route::post('reports/property/deactivated-list', 'PropDeactedList');                    //done
-
-    Route::post('reports/property/dashbord-DCB', 'stateDashboardDCB');                    //done
   });
 });
 
