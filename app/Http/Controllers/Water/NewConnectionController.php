@@ -578,6 +578,7 @@ class NewConnectionController extends Controller
      * | Check the Water parameter 
      * | @param req
         | 01<- 
+        | Not used
      */
     public function checkEditParameters($request, $refApplication)
     {
@@ -602,6 +603,7 @@ class NewConnectionController extends Controller
      * | @param req
      * | @param refApplication
     | 01<-
+    | Not used
      */
     public function boApplicationEdit($req, $refApplication, $mWaterApplication)
     {
@@ -621,6 +623,7 @@ class NewConnectionController extends Controller
      * | @param
      * | @param
         | 01 <-
+        | Not used
      */
     public function deactivateAndUpdateWater($refWaterApplicationId)
     {
