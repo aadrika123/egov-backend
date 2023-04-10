@@ -24,4 +24,5 @@ interface IReport
     public function gbsafIndividualDemandCollection($request);
     public function notPaidFrom2016($request);
     public function previousYearPaidButnotCurrentYear($request);
+    public function stateDashboardDCB(Request $request);
 }
