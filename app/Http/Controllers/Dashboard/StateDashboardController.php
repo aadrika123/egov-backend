@@ -142,21 +142,22 @@ class StateDashboardController extends Controller
         try {
             $currentYear = Carbon::now()->format('Y');
             if (isset($req->month)) {
-                $financialYearStart = $currentYear;
-                if (Carbon::now()->month < 4) {
-                    $financialYearStart--;
-                }
-                $fromDate = '01-04-' . $financialYearStart;
-                $toDate   = '31-03-' . $financialYearStart + 1;
+                $month = str_pad($req->month, 2, '0', STR_PAD_LEFT);
+                $firstDate = date("Y-m-01", strtotime("$currentYear-$month-01"));
+                $lastDate = date("Y-m-t", strtotime("$currentYear-$month-01"));
+                $fromDate = $firstDate;
+                $toDate   = $lastDate;
                 $returnData = $this->getDataByCurrentMonth($req, $fromDate, $toDate);
                 return responseMsgs(true, "state wise collection percentage!", remove_null($returnData), "", "01", ".ms", "POST", $req->deviceId);
             }
             if (isset($req->month) && $req->year) {
                 $fy = explode('-', $req->year);
                 $strtYr = collect($fy)->first();
-                $endYr = collect($fy)->last();
-                $fromDate = '01-04-' . $strtYr;
-                $toDate   = '31-03-' . $endYr;
+                $month = str_pad($req->month, 2, '0', STR_PAD_LEFT);
+                $firstDate = date("Y-m-01", strtotime("$req->year-$month-01"));
+                $lastDate = date("Y-m-t", strtotime("$req->year-$month-01"));
+                $fromDate = $firstDate;
+                $toDate   = $lastDate;
                 $returnData = $this->getDataByMonthYear($req, $fromDate, $toDate);
                 return responseMsgs(true, "state wise collection percentage!", remove_null($returnData), "", "01", ".ms", "POST", $req->deviceId);
             }
@@ -282,15 +283,12 @@ class StateDashboardController extends Controller
     {
         $prop = PropTransaction::select('amount as propAmount')
             ->whereBetween('tran_date', [$fromDate, $toDate])
-            ->whereMonth('tran_date', $req->month)
             ->where("status", 1);
         $water = WaterTran::select('amount as waterAmount')
             ->whereBetween('tran_date', [$fromDate, $toDate])
-            ->whereMonth('tran_date', $req->month)
             ->where("status", 1);
         $trade = TradeTransaction::select('paid_amount as tradeAmount')
             ->whereBetween('tran_date', [$fromDate, $toDate])
-            ->whereMonth('tran_date', $req->month)
             ->where("status", 1);
 
         $collectiveData['propAmount'] = (collect($prop->get())->sum('propAmount'));
@@ -331,15 +329,12 @@ class StateDashboardController extends Controller
     {
         $prop = PropTransaction::select('amount as propAmount')
             ->whereBetween('tran_date', [$fromDate, $toDate])
-            ->whereMonth('tran_date', $req->month)
             ->where("status", 1);
         $water = WaterTran::select('amount as waterAmount')
             ->whereBetween('tran_date', [$fromDate, $toDate])
-            ->whereMonth('tran_date', $req->month)
             ->where("status", 1);
         $trade = TradeTransaction::select('paid_amount as tradeAmount')
             ->whereBetween('tran_date', [$fromDate, $toDate])
-            ->whereMonth('tran_date', $req->month)
             ->where("status", 1);
 
         $collectiveData['propAmount'] = (collect($prop->get())->sum('propAmount'));
