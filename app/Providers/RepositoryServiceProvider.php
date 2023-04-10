@@ -7,7 +7,8 @@ use App\Repository\Citizen\iCitizenRepository;
 
 use App\Repository\Cluster\Concrete\ClusterRepository;
 use App\Repository\Cluster\Interfaces\iCluster;
-
+use App\Repository\Dashboard\IStateDashboard;
+use App\Repository\Dashboard\StateDashboard;
 use App\Repository\Grievance\Concrete\NewGrievanceRepository;
 use App\Repository\Grievance\Interfaces\iGrievance;
 
@@ -152,8 +153,11 @@ class RepositoryServiceProvider extends ServiceProvider
         //traits
         $this->app->bind(iWorkflowRepository::class, WorkflowRepository::class);
 
-         #------Notice module----------
-         $this->app->bind(INotice::class, Notice::class);
+        #------Notice module----------
+        $this->app->bind(INotice::class, Notice::class);
+
+        #-------State Dashboard-------
+        $this->app->bind(IStateDashboard::class, StateDashboard::class);
     }
 
     /**

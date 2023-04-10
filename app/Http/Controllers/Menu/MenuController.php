@@ -42,7 +42,7 @@ class MenuController extends Controller
         | Serial No : 01
         | Closed
      */
-    public function getAllMenues()
+    public function getAllMenues(Request $request)
     {
         try {
             $mMenuMaster = new MenuMaster();

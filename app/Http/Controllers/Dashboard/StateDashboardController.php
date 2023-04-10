@@ -10,6 +10,10 @@ use App\Models\Trade\TradeTransaction;
 use App\Models\UlbMaster;
 use App\Models\UlbWardMaster;
 use App\Models\Water\WaterTran;
+use App\Repository\Common\CommonFunction;
+use App\Repository\Dashboard\IStateDashboard;
+use App\Repository\Dashboard\StateDashboard;
+use App\Traits\Auth;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
@@ -25,6 +29,11 @@ use stdClass;
 
 class StateDashboardController extends Controller
 {
+    use Auth;
+
+    private $Repository;
+    private $_common;
+    
     /**
      * | Ulb Wise Collection
      */
@@ -42,8 +51,8 @@ class StateDashboardController extends Controller
                 $financialYearStart--;
             }
 
-            $fromDate = '01-04-' . $financialYearStart;
-            $toDate   = '31-03-' . $financialYearStart + 1;
+            $fromDate = $financialYearStart . '-04-01';
+            $toDate   = $financialYearStart + 1 . '-03-31';
             $collection = collect();
 
             $ulbIds = $ulbs->pluck('id');
@@ -165,8 +174,8 @@ class StateDashboardController extends Controller
                 $fy = explode('-', $req->year);
                 $strtYr = collect($fy)->first();
                 $endYr = collect($fy)->last();
-                $fromDate = '01-04-' . $strtYr;
-                $toDate   = '31-03-' . $endYr;
+                $fromDate = $strtYr . '-04-01';
+                $toDate   =  $endYr . '-03-31';
                 $returnData = $this->getDataByYear($fromDate, $toDate);
                 return responseMsgs(true, "  state wise collection percentage!", remove_null($returnData), "", "01", ".ms", "POST", $req->deviceId);
             } else {
@@ -174,8 +183,8 @@ class StateDashboardController extends Controller
                 if (Carbon::now()->month < 4) {
                     $financialYearStart--;
                 }
-                $fromDate = '01-04-' . $financialYearStart;
-                $toDate   = '31-03-' . $financialYearStart + 1;
+                $fromDate =  $financialYearStart  . '-04-01';
+                $toDate   =  $financialYearStart + 1 . '-03-31';
                 $returnData = $this->getDataByCurrentYear($fromDate, $toDate);
             }
             return responseMsgs(true, "state wise collection percentage!", remove_null($returnData), "", "01", ".ms", "POST", $req->deviceId);
@@ -416,5 +425,19 @@ class StateDashboardController extends Controller
         } catch (Exception $e) {
             return responseMsgs(true, $e->getMessage(), remove_null($data));
         }
+    }
+
+    # dashboard repots
+    public function stateDashboardDCB(Request $request,StateDashboard $Repository)
+    {
+        $request->validate(
+            [
+                "fiYear" => "nullable|regex:/^\d{4}-\d{4}$/",
+                "ulbId" => "nullable|digits_between:1,9223372036854775807",
+                "wardId" => "nullable|digits_between:1,9223372036854775807",
+            ]
+        );
+        $request->request->add(["metaData" => ["ds11.1", 1.1, null, $request->getMethod(), null,]]);
+        return $Repository->stateDashboardDCB($request);
     }
 }

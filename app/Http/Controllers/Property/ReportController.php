@@ -497,4 +497,5 @@ class ReportController extends Controller
         $request->request->add(["metaData" => ["pr10.1", 1.1, null, $request->getMethod(), null,]]);
         return $this->Repository->PropDeactedList($request);
     }
+    
 }

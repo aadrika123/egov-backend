@@ -30,6 +30,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('state/ulb-wise-data', 'ulbWiseData');
         Route::post('state/collection-percentage', 'stateWiseCollectionPercentage');
         Route::post('state/district-wise-data', 'districtWiseData');
+        
+        Route::post('state/property/DCB', 'stateDashboardDCB');                    //done
     });
 
     /**
