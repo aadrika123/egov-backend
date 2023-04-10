@@ -104,15 +104,15 @@ class StateDashboardController extends Controller
             $financialYearStart--;
         }
 
-        $fromDate = '01-04-' . $financialYearStart;
-        $toDate   = '31-03-' . $financialYearStart + 1;
+        $fromDate =  $financialYearStart . '-04-01';
+        $toDate   =  $financialYearStart + 1 . '-03-31';
 
         if ($req->financialYear) {
             $fy = explode('-', $req->financialYear);
             $strtYr = collect($fy)->first();
             $endYr = collect($fy)->last();
-            $fromDate = '01-04-' . $strtYr;
-            $toDate   = '31-03-' . $endYr;
+            $fromDate =  $strtYr . '-04-01';
+            $toDate   =  $endYr . '-03-31';;
         }
 
         $propTran = PropTransaction::select('id')
@@ -126,9 +126,9 @@ class StateDashboardController extends Controller
             ->where('payment_mode', 'Online')
             ->whereBetween('tran_date', [$fromDate, $toDate]);
 
-            $totalCount['propCount'] = $propTran->count();
-            $totalCount['tradeCount'] = $tradeTran->count();
-            $totalCount['waterCount'] = $waterTran->count();
+        $totalCount['propCount'] = $propTran->count();
+        $totalCount['tradeCount'] = $tradeTran->count();
+        $totalCount['waterCount'] = $waterTran->count();
         $totalCount['totalCount'] =  $propTran->union($tradeTran)->union($waterTran)->count();
 
         return responseMsgs(true, "Online Payment Count", remove_null($totalCount), "", '', '01', '314ms-451ms', 'Post', '');
