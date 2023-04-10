@@ -136,7 +136,7 @@ trait SafDetailsTrait
             ['displayString' => 'Assessment Type', 'key' => 'assessmentType', 'value' => $req->assessment_type],
             ['displayString' => 'Ownership Type', 'key' => 'ownershipType', 'value' => $req->ownership_type],
             ['displayString' => 'Apply-Date', 'key' => 'applyDate', 'value' => $req->application_date],
-            ['displayString' => 'Plot-Area(sqt)', 'key' => 'plotArea', 'value' => $req->area_of_plot],
+            ['displayString' => 'Plot-Area(In Decimal)', 'key' => 'plotArea', 'value' => $req->area_of_plot],
             ['displayString' => 'Is-Water-Harvesting', 'key' => 'isWaterHarvesting', 'value' => ($req->is_water_harvesting == true) ? 'Yes' : 'No'],
             ['displayString' => 'Is-Hoarding-Board', 'key' => 'isHoardingBoard', 'value' => ($req->is_hoarding_board == true) ? 'Yes' : 'No']
         ]);
