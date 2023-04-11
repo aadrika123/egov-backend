@@ -30,7 +30,8 @@ class TempTransaction extends Model
             'ward_no as ward_name',
             'application_no',
             'tran_date',
-            'user_name'
+            'user_name',
+            'users.id as tc_id'
         )
             ->join('users', 'users.id', 'temp_transactions.user_id')
             ->where('payment_mode', '!=', 'ONLINE')
