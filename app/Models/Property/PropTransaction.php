@@ -222,6 +222,10 @@ class PropTransaction extends Model
         return PropTransaction::select(
             'prop_cheque_dtls.*',
             DB::raw("1 as module_id"),
+            DB::raw(
+                "case when prop_transactions.property_id is not null then 'Property' when 
+                prop_transactions.saf_id is not null then 'Saf' end as tran_type"
+            ),
             'tran_date',
             'tran_no',
             'payment_mode',

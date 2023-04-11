@@ -25,6 +25,7 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 /**
@@ -214,12 +215,14 @@ class BankReconcillationController extends Controller
             // }
 
             $ulbId = authUser()->ulb_id;
-            $userId = authUser()->user_id;
+            $userId = authUser()->id;
             $moduleId = $request->moduleId;
             $propertyModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
             $waterModuleId = Config::get('module-constants.WATER_MODULE_ID');
             $tradeModuleId = Config::get('module-constants.TRADE_MODULE_ID');
             $mPaymentReconciliation = new PaymentReconciliation();
+
+            DB::beginTransaction();
 
             if ($moduleId == $propertyModuleId) {
                 $mChequeDtl =  PropChequeDtl::find($request->chequeId);
@@ -306,15 +309,15 @@ class BankReconcillationController extends Controller
                 $request->merge([
                     'id' => $mChequeDtl->id,
                     'paymentMode' => $transaction->payment_mode,
-                    'transactionNo' => $transaction->transaction_no,
-                    'transactionAmount' => $transaction->transaction_amount,
-                    'transactionDate' => $transaction->transaction_date,
+                    'transactionNo' => $transaction->tran_no,
+                    'transactionAmount' => $transaction->amount,
+                    'transactionDate' => $transaction->tran_date,
                     'wardNo' => $request->wardNo,
                     'chequeNo' => $mChequeDtl->cheque_no,
                     'branchName' => $mChequeDtl->branch_name,
                     'bankName' => $mChequeDtl->bank_name,
-                    'clearanceDate' => $mChequeDtl->clearanceDate,
-                    'bounceReason' => $mChequeDtl->bounce_reason,
+                    'clearanceDate' => $mChequeDtl->clear_bounce_date,
+                    'bounceReason' => $mChequeDtl->remarks,
                     'chequeDate' => $mChequeDtl->cheque_date,
                     'moduleId' => $propertyModuleId,
                     'ulbId' => $ulbId,
@@ -407,15 +410,15 @@ class BankReconcillationController extends Controller
                 $request->merge([
                     'id' => $mChequeDtl->id,
                     'paymentMode' => $transaction->payment_mode,
-                    'transactionNo' => $transaction->transaction_no,
-                    'transactionAmount' => $transaction->transaction_amount,
-                    'transactionDate' => $transaction->transaction_date,
+                    'transactionNo' => $transaction->tran_no,
+                    'transactionAmount' => $transaction->amount,
+                    'transactionDate' => $transaction->tran_date,
                     'wardNo' => $request->wardNo,
                     'chequeNo' => $mChequeDtl->cheque_no,
                     'branchName' => $mChequeDtl->branch_name,
                     'bankName' => $mChequeDtl->bank_name,
-                    'clearanceDate' => $mChequeDtl->clearanceDate,
-                    'bounceReason' => $mChequeDtl->bounce_reason,
+                    'clearanceDate' => $mChequeDtl->clear_bounce_date,
+                    'bounceReason' => $mChequeDtl->remarks,
                     'chequeDate' => $mChequeDtl->cheque_date,
                     'moduleId' => $waterModuleId,
                     'ulbId' => $ulbId,
@@ -437,7 +440,7 @@ class BankReconcillationController extends Controller
                 $mChequeDtl->clear_bounce_date = $request->clearanceDate;
                 $mChequeDtl->bounce_amount = $request->cancellationCharge;
                 $mChequeDtl->remarks = $request->remarks;
-                // $mChequeDtl->save();
+                $mChequeDtl->save();
 
                 $transaction = TradeTransaction::where('id', $mChequeDtl->tran_id)
                     ->first();
@@ -483,7 +486,7 @@ class BankReconcillationController extends Controller
                     'chequeNo' => $mChequeDtl->cheque_no,
                     'branchName' => $mChequeDtl->branch_name,
                     'bankName' => $mChequeDtl->bank_name,
-                    'clearanceDate' => $mChequeDtl->clearanceDate,
+                    'clearanceDate' => $mChequeDtl->clear_bounce_date,
                     'chequeDate' => $mChequeDtl->cheque_date,
                     'moduleId' => $tradeModuleId,
                     'ulbId' => $ulbId,
@@ -493,8 +496,10 @@ class BankReconcillationController extends Controller
                 // return $request;
                 $mPaymentReconciliation->addReconcilation($request);
             }
+            DB::commit();
             return responseMsg(true, "Data Updated!", '');
         } catch (Exception $error) {
+            DB::rollBack();
             return responseMsg(false, "ERROR!", $error->getMessage());
         }
     }
