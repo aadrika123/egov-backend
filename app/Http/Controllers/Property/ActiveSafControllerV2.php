@@ -496,6 +496,7 @@ class ActiveSafControllerV2 extends Controller
             $mPropSafsDemand = new PropSafsDemand();
             $activeSafController = new ActiveSafController($iSafRepository);
             $offlinePaymentModes = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
+            $mPropTranDtl = new PropTranDtl();
 
             $dues1 = $this->getClusterSafDues($dueReq, $iSafRepository);
 
@@ -544,7 +545,6 @@ class ActiveSafControllerV2 extends Controller
                 $demand['balance'] = 0;
                 $storedSafDemand = $mPropSafsDemand->postDemands($demand);
 
-                $mPropTranDtl = new PropTranDtl();
                 $tranReq = [
                     'tran_id' => $propTrans['id'],
                     'saf_cluster_demand_id' => $storedSafDemand['demandId'],
