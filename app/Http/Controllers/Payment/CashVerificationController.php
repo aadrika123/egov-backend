@@ -302,7 +302,7 @@ class CashVerificationController extends Controller
                 'module_id',
                 'deposit_date as tran_date',
                 'deposit_mode as payment_mode',
-                'cheque_dd_no',
+                'cheq_dd_no as cheque_dd_no',
                 'bank_name',
                 'application_no'
             )
