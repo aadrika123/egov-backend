@@ -17,6 +17,7 @@ use App\Models\Trade\TradeTransaction;
 use App\Models\Water\WaterApplication;
 use App\Models\Water\WaterChequeDtl;
 use App\Models\Water\WaterConnectionCharge;
+use App\Models\Water\WaterConsumer;
 use App\Models\Water\WaterConsumerDemand;
 use App\Models\Water\WaterPenaltyInstallment;
 use App\Models\Water\WaterTran;
@@ -242,6 +243,12 @@ class BankReconcillationController extends Controller
                 $propId = $transaction->property_id;
                 $safId = $transaction->saf_id;
 
+                if ($propId)
+                    $wardId = PropProperty::findorFail($propId)->ward_mstr_id;
+
+                if ($safId)
+                    $wardId = PropActiveSaf::findorFail($safId)->ward_mstr_id;
+
                 if ($request->status == 'clear') {
 
                     PropTransaction::where('id', $mChequeDtl->transaction_id)
@@ -312,7 +319,7 @@ class BankReconcillationController extends Controller
                     'transactionNo' => $transaction->tran_no,
                     'transactionAmount' => $transaction->amount,
                     'transactionDate' => $transaction->tran_date,
-                    'wardNo' => $request->wardNo,
+                    'wardId' => $wardId,
                     'chequeNo' => $mChequeDtl->cheque_no,
                     'branchName' => $mChequeDtl->branch_name,
                     'bankName' => $mChequeDtl->bank_name,
@@ -355,6 +362,13 @@ class BankReconcillationController extends Controller
                                 'verified_by' => $userId
                             ]
                         );
+
+                    WaterApplication::where('id', $mChequeDtl->application_id)
+                        ->update(
+                            [
+                                'payment_status' => 1
+                            ]
+                        );
                 }
 
                 if ($request->status == 'bounce') {
@@ -378,6 +392,8 @@ class BankReconcillationController extends Controller
                                     'paid_status' => 0
                                 ]
                             );
+
+                        $wardId = WaterConsumer::find($transaction->related_id)->ward_mstr_id;
                     }
 
                     if ($transaction->tran_type != 'Demand Collection') {
@@ -392,7 +408,8 @@ class BankReconcillationController extends Controller
                         WaterApplication::where('id', $connectionChargeDtl->application_id)
                             ->update(
                                 [
-                                    'payment_status' => 0
+                                    'payment_status' => 0,
+
                                 ]
                             );
 
@@ -400,9 +417,11 @@ class BankReconcillationController extends Controller
                         WaterPenaltyInstallment::where('related_demand_id', $demandId)
                             ->update(
                                 [
-                                    'payment_status' => 0
+                                    'paid_status' => 0
                                 ]
                             );
+
+                        $wardId = WaterApplication::find($transaction->related_id)->ward_id;
                     }
                 }
 
@@ -413,7 +432,7 @@ class BankReconcillationController extends Controller
                     'transactionNo' => $transaction->tran_no,
                     'transactionAmount' => $transaction->amount,
                     'transactionDate' => $transaction->tran_date,
-                    'wardNo' => $request->wardNo,
+                    'wardId' => $wardId,
                     'chequeNo' => $mChequeDtl->cheque_no,
                     'branchName' => $mChequeDtl->branch_name,
                     'bankName' => $mChequeDtl->bank_name,
@@ -474,7 +493,7 @@ class BankReconcillationController extends Controller
                     ->update(
                         ['payment_status' => 0]
                     );
-
+                $wardId = ActiveTradeLicence::find($mChequeDtl->temp_id)->ward_id;
 
                 $request->merge([
                     'id' => $mChequeDtl->id,
@@ -482,7 +501,7 @@ class BankReconcillationController extends Controller
                     'transactionNo' => $transaction->tran_no,
                     'transactionAmount' => $transaction->paid_amount,
                     'transactionDate' => $transaction->tran_date,
-                    'wardNo' => $request->wardNo,
+                    'wardId' => $wardId,
                     'chequeNo' => $mChequeDtl->cheque_no,
                     'branchName' => $mChequeDtl->branch_name,
                     'bankName' => $mChequeDtl->bank_name,
