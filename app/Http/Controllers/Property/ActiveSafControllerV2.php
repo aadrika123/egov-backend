@@ -556,7 +556,7 @@ class ActiveSafControllerV2 extends Controller
             // Replication Prop Rebates Penalties
             $activeSafController->postPenaltyRebates($dues1, null, $propTrans['id'], $clusterId);
             DB::commit();
-            return responseMsgs(true, "Payment Successfully Done", "", "011612", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true, "Payment Successfully Done", ["tranNo" => $tranNo], "011612", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsgs(false, $e->getMessage(), "", "011612", "1.0", "", "POST", $req->deviceId ?? "");
