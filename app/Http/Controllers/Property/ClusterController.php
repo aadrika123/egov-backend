@@ -61,11 +61,22 @@ class ClusterController extends Controller
             $mPropProperty = new PropProperty();
             $mPropActiveSaf = new PropActiveSaf();
 
-            $clusterList['Cluster'] = $mCluster->checkActiveCluster($refCluster);
-            $checkcluster = collect($clusterList['Cluster'])->first();
+            $refClusterList = $mCluster->checkActiveCluster($refCluster);
+            $checkcluster = collect($refClusterList)->first();
             if (!$checkcluster) {
                 throw new Exception("Cluster Not exist!");
             }
+            # maping cluster
+            $ward_no = $mUlbWardMaster->getExistWard($refClusterList->ward_id);
+            $new_ward_no = $mUlbWardMaster->getExistWard($refClusterList->new_ward_id);
+
+            $ward_no = $ward_no->ward_name ?? null;
+            $new_ward_no = $new_ward_no->ward_name ?? null;
+
+            $clusterList['cluster'] = $refClusterList;
+            $clusterList['cluster']['ward_no'] = $ward_no;
+            $clusterList['cluster']['new_ward_no'] = $new_ward_no;
+
             # property details 
             $porpList = $mPropProperty->searchPropByCluster($refCluster);
             $returnData['Property'] = collect($porpList)->map(function ($values)
@@ -305,16 +316,11 @@ class ClusterController extends Controller
 
 
 
-
-
-
-
-
-
     /**
      * |----------------------------------- Common functions ----------------------------------------|
      * |date : 21-11-22
      */
+
 
     /**
      * | ----------------- Common funtion for the return component in failer ------------------------------- |
