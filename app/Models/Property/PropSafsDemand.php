@@ -67,7 +67,10 @@ class PropSafsDemand extends Model
      */
     public function postDemands(array $req)
     {
-        PropSafsDemand::create($req);
+        $stored = PropSafsDemand::create($req);
+        return [
+            'demandId' => $stored->id
+        ];
     }
 
     /**

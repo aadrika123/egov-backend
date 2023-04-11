@@ -10,6 +10,7 @@ use App\Models\Property\PropDemand;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropSafsDemand;
+use App\Models\UlbWardMaster;
 use App\Repository\Cluster\Interfaces\iCluster;
 use Exception;
 use Illuminate\Database\Eloquent\Collection;
@@ -55,6 +56,7 @@ class ClusterController extends Controller
         ]);
         try {
             $refCluster = $request->clusterId;
+            $mUlbWardMaster = new UlbWardMaster();
             $mCluster = new Cluster();
             $mPropProperty = new PropProperty();
             $mPropActiveSaf = new PropActiveSaf();
@@ -64,9 +66,30 @@ class ClusterController extends Controller
             if (!$checkcluster) {
                 throw new Exception("Cluster Not exist!");
             }
-            $porpList['Property'] =  $mPropProperty->searchPropByCluster($refCluster);
-            $safList['Saf'] = $mPropActiveSaf->safByCluster($refCluster);
-            $returnValues = array_merge($clusterList, $porpList, $safList);
+            # property details 
+            $porpList = $mPropProperty->searchPropByCluster($refCluster);
+            $returnData['Property'] = collect($porpList)->map(function ($values)
+            use ($mUlbWardMaster) {
+                $ward_no = $mUlbWardMaster->getExistWard($values->ward_id);
+                $new_ward_no = $mUlbWardMaster->getExistWard($values->new_ward_id);
+
+                $values->ward_no = $ward_no->ward_name ?? null;
+                $values->new_ward_no = $new_ward_no->ward_name ?? null;
+                return $values;
+            });
+
+            # saf details 
+            $safList = $mPropActiveSaf->safByCluster($refCluster);
+            $returnData['Saf'] = collect($safList)->map(function ($value)
+            use ($mUlbWardMaster) {
+                $ward_no = $mUlbWardMaster->getExistWard($value->ward_id);
+                $new_ward_no = $mUlbWardMaster->getExistWard($value->new_ward_id);
+
+                $value->ward_no = $ward_no->ward_name ?? null;
+                $value->new_ward_no = $new_ward_no->ward_name ?? null;
+                return $value;
+            });
+            $returnValues = collect($clusterList)->merge($returnData);
             return responseMsgs(true, "List Of Data!", $returnValues, "", "", "", "POST", "");
         } catch (Exception $error) {
             return responseMsg(false, $error->getMessage(), "");

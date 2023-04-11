@@ -302,7 +302,7 @@ class CashVerificationController extends Controller
                 'module_id',
                 'deposit_date as tran_date',
                 'deposit_mode as payment_mode',
-                'cheq_dd_no',
+                'cheq_dd_no as cheque_dd_no',
                 'bank_name',
                 'application_no'
             )
@@ -320,11 +320,11 @@ class CashVerificationController extends Controller
             $data['water'] = collect($details)->where('module_id', $waterModuleId)->values();
             $data['trade'] = collect($details)->where('module_id', $tradeModuleId)->values();
 
-            $data['Cash'] = collect($details)->where('deposit_mode', 'CASH')->sum('deposit_amount');
-            $data['Cheque'] = collect($details)->where('deposit_mode', 'CHEQUE')->sum('deposit_amount');
-            $data['DD'] = collect($details)->where('deposit_mode', 'DD')->sum('deposit_amount');
+            $data['Cash'] = collect($details)->where('payment_mode', 'CASH')->sum('amount');
+            $data['Cheque'] = collect($details)->where('payment_mode', 'CHEQUE')->sum('amount');
+            $data['DD'] = collect($details)->where('payment_mode', 'DD')->sum('amount');
 
-            $data['totalAmount'] =  $details->sum('deposit_amount');
+            $data['totalAmount'] =  $details->sum('amount');
             $data['numberOfTransaction'] =  $details->count();
             $data['collectorName'] =  collect($details)[0]->user_name;
             $data['date'] = $date;

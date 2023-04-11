@@ -1503,6 +1503,7 @@ class ActiveSafController extends Controller
             $mPropRazorpayPenalRebates = new PropRazorpayPenalrebate();
             $mPropPenaltyRebates = new PropPenaltyrebate();
             $mPropRazorpayResponse = new PropRazorpayResponse();
+            $mPropTranDtl = new PropTranDtl();
 
             $userId = $req['userId'];
             $safId = $req['id'];
@@ -1598,7 +1599,15 @@ class ActiveSafController extends Controller
                 $demand['paid_status'] = 1;
                 $demand['saf_id'] = $safId;
                 $demand['balance'] = 0;
-                $mPropSafsDemands->postDemands($demand);
+                $storedSafDemand = $mPropSafsDemands->postDemands($demand);
+
+                $tranReq = [
+                    'tran_id' => $tranId,
+                    'saf_demand_id' => $storedSafDemand['demandId'],
+                    'total_demand' => $demand['amount'],
+                    'ulb_id' => $req['ulbId'],
+                ];
+                $mPropTranDtl->store($tranReq);
             }
 
             $this->sendToWorkflow($activeSaf);        // Send to Workflow(15.2)
@@ -1623,6 +1632,7 @@ class ActiveSafController extends Controller
             $propTrans = new PropTransaction();
             $mPropSafsDemands = new PropSafsDemand();
             $verifyPaymentModes = Config::get('payment-constants.VERIFICATION_PAYMENT_MODES');
+            $mPropTranDtl = new PropTranDtl();
 
             $safId = $req['id'];
 
@@ -1682,7 +1692,15 @@ class ActiveSafController extends Controller
                 $demand['paid_status'] = 1;
                 $demand['saf_id'] = $safId;
                 $demand['balance'] = 0;
-                $mPropSafsDemands->postDemands($demand);
+                $storedSafDemand = $mPropSafsDemands->postDemands($demand);
+
+                $tranReq = [
+                    'tran_id' => $propTrans['id'],
+                    'saf_demand_id' => $storedSafDemand['demandId'],
+                    'total_demand' => $demand['amount'],
+                    'ulb_id' => $req['ulbId'],
+                ];
+                $mPropTranDtl->store($tranReq);
             }
 
             // Replication Prop Rebates Penalties
@@ -2210,6 +2228,8 @@ class ActiveSafController extends Controller
         try {
             $safDetails = $this->details($req);
             $safTaxes = $this->calculateSafBySafId($req);
+            if ($safTaxes->original['status'] == false)
+                throw new Exception($safTaxes->original['message']);
             $req = $safDetails;
             $demand['basicDetails'] = [
                 "ulb_id" => $req['ulb_id'],

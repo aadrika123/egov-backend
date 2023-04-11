@@ -39,4 +39,14 @@ class UlbWardMaster extends Model
         return UlbWardMaster::where('id',$id)
         ->firstOrFail();
     }
+
+     /**
+     * | get the ward by Id
+     * | @param id
+     */
+    public function getExistWard($id)
+    {
+        return UlbWardMaster::where('id',$id)
+        ->first();
+    }
 }

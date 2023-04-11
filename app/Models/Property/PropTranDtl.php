@@ -11,13 +11,8 @@ class PropTranDtl extends Model
     protected $guarded = [];
 
     // Store Prop Tran Dtls
-    public function store($req)
+    public function store(array $req)
     {
-        $metaReq = [
-            'tran_id' => $req->tranId,
-            'saf_demand_id' => $req->safDemandId,
-            'total_demand' => $req->totalDemand
-        ];
-        PropTranDtl::create($metaReq);
+        PropTranDtl::create($req);
     }
 }
