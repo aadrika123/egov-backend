@@ -95,7 +95,9 @@ class  PropActiveSaf extends Model
             'location' => $req->location,
             'landmark' => $req->landmark,
             'is_gb_saf' => isset($req->isGBSaf) ? $req->isGBSaf : false,
-            'late_assess_penalty' => $req->lateAssessmentPenalty
+            'late_assess_penalty' => $req->lateAssessmentPenalty,
+            'is_trust' => $req->isTrust ?? false,
+            'trust_type' => $req->trustType ?? null
         ];
         $propActiveSafs = PropActiveSaf::create($reqs);
         return response()->json([

@@ -450,4 +450,17 @@ trait SAF
 
         return $data;
     }
+
+    /**
+     * | Read if the Floor is Trust or Not
+     * | @param floors
+     */
+    public function isPropTrust($floors)
+    {
+        $trustId = 42;
+        $floors = collect($floors);
+        $floorUsageTypeIds = $floors->pluck('useType');
+        $isTrust = $floorUsageTypeIds->contains($trustId) ? true : false;
+        return $isTrust;
+    }
 }

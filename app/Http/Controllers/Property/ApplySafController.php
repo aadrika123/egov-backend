@@ -139,6 +139,7 @@ class ApplySafController extends Controller
 
             $lateAssessmentPenalty = $safTaxes->original['data']['demand']['lateAssessmentPenalty'];
             $metaReqs['lateAssessmentPenalty'] = ($lateAssessmentPenalty > 0) ? $lateAssessmentPenalty : null;
+            $metaReqs['isTrust'] = $this->isPropTrust($request['floor']);
             $request->merge($metaReqs);
             $this->_REQUEST = $request;
             $this->mergeAssessedExtraFields();                                          // Merge Extra Fields for Property Reassessment,Mutation,Bifurcation & Amalgamation(2.2)
@@ -374,6 +375,8 @@ class ApplySafController extends Controller
             $lateAssessmentPenalty = ($lateAssessmentPenalty > 0) ? $lateAssessmentPenalty : null;
             // Send to Workflow
             $currentRole = ($userType == $this->_citizenUserType) ? $initiatorRoleId->role_id : $initiatorRoleId->role_id;
+            $isTrust = $this->isPropTrust($req['floor']);
+
             $safReq = [
                 'assessment_type' => $req->assessmentType,
                 'ulb_id' => $req->ulbId,
@@ -407,7 +410,9 @@ class ApplySafController extends Controller
                 'current_role' => $currentRole,
                 'finisher_role_id' => $finisherRoleId->role_id,
                 'workflow_id' => $ulbWfId->wf_master_id,
-                'late_assess_penalty' => $lateAssessmentPenalty
+                'late_assess_penalty' => $lateAssessmentPenalty,
+                'is_trust' => $isTrust,
+                'trust_type' => $req->trustType ?? null
             ];
             DB::beginTransaction();
             $createSaf = $propActiveSafs->storeGBSaf($safReq);           // Store Saf

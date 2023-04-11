@@ -132,7 +132,7 @@ class SafDocController extends Controller
             });
             $reqDoc['docType'] = $key;
             $reqDoc['docName'] = substr($label, 1, -1);
-            $reqDoc['uploadedDoc'] = $documents->first();
+            $reqDoc['uploadedDoc'] = $documents->last();
 
             $reqDoc['masters'] = collect($document)->map(function ($doc) use ($uploadedDocs) {
                 $uploadedDoc = $uploadedDocs->where('doc_code', $doc)->first();
@@ -202,8 +202,13 @@ class SafDocController extends Controller
             $metaReqs = new Request($metaReqs);
             if (collect($ifDocExist)->isEmpty())
                 $mWfActiveDocument->postDocuments($metaReqs);
-            else
-                $mWfActiveDocument->editDocuments($ifDocExist, $metaReqs);
+
+            if (collect($ifDocExist)->isNotEmpty()) {
+                $mWfActiveDocument->postDocuments($metaReqs);
+                $mWfActiveDocument->editDocuments($ifDocExist, [
+                    'status' => 0
+                ]);
+            }
 
             $docUploadStatus = $this->checkFullDocUpload($req->applicationId);
             if ($docUploadStatus == 1) {
