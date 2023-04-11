@@ -441,7 +441,7 @@ class ActiveSafControllerV2 extends Controller
                     'amount' => roundFigure($item->sum('amount')),
                     'balance' => $balance,
                     'fyear' => $item->first()['fyear'],
-                    'adjust_amt' => roundFigure($item->sum('adjust_amt')),
+                    'adjust_amount' => roundFigure($item->sum('adjust_amt')),
                     'due_date' => $quarterDueDate,
                     'onePercPenalty' => $onePercPenaltyPerc,
                     'onePercPenaltyTax' => $onePercPenaltyTax,
@@ -533,22 +533,25 @@ class ActiveSafControllerV2 extends Controller
                 ]);
                 $activeSafController->postOtherPaymentModes($req, $clusterId);
             }
-            $clusterDemand = $mPropSafsDemand->getDemandsByClusterId($clusterId);
-            if ($clusterDemand->isEmpty())
-                throw new Exception("Demand Not Available");
             // Reflect on Prop Tran Details
-            foreach ($clusterDemand as $demand) {
-                $propDemand = $mPropSafsDemand->getDemandById($demand['id']);
-                $propDemand->balance = 0;
-                $propDemand->paid_status = 1;           // <-------- Update Demand Paid Status 
-                $propDemand->save();
+            foreach ($demands as $demand) {
+                $demand = $demand->toArray();
+                unset($demand['ruleSet'], $demand['rwhPenalty'], $demand['onePercPenalty'], $demand['onePercPenaltyTax'], $demand['quarterYear']);
+                if (isset($demand['status']))
+                    unset($demand['status']);
+                $demand['paid_status'] = 1;
+                $demand['cluster_id'] = $clusterId;
+                $demand['balance'] = 0;
+                $storedSafDemand = $mPropSafsDemand->postDemands($demand);
 
-                $propTranDtl = new PropTranDtl();
-                $propTranDtl->tran_id = $propTrans['id'];
-                $propTranDtl->saf_demand_id = $demand['id'];
-                $propTranDtl->total_demand = $demand['amount'];
-                $propTranDtl->ulb_id = $req['ulbId'];
-                $propTranDtl->save();
+                $mPropTranDtl = new PropTranDtl();
+                $tranReq = [
+                    'tran_id' => $propTrans['id'],
+                    'saf_cluster_demand_id' => $storedSafDemand['demandId'],
+                    'total_demand' => $demand['amount'],
+                    'ulb_id' => $req['ulbId'],
+                ];
+                $mPropTranDtl->store($tranReq);
             }
             // Replication Prop Rebates Penalties
             $activeSafController->postPenaltyRebates($dues1, null, $propTrans['id'], $clusterId);

@@ -2210,6 +2210,8 @@ class ActiveSafController extends Controller
         try {
             $safDetails = $this->details($req);
             $safTaxes = $this->calculateSafBySafId($req);
+            if ($safTaxes->original['status'] == false)
+                throw new Exception($safTaxes->original['message']);
             $req = $safDetails;
             $demand['basicDetails'] = [
                 "ulb_id" => $req['ulb_id'],
