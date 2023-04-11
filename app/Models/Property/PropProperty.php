@@ -227,7 +227,7 @@ class PropProperty extends Model
             ->join('ref_prop_types', 'ref_prop_types.id', '=', 'prop_properties.prop_type_mstr_id')
             ->select(
                 'prop_properties.id',
-                'prop_properties.new_ward_mstr_id AS wardId',
+                'prop_properties.new_ward_mstr_id AS new_ward_id',
                 DB::raw("string_agg(prop_owners.owner_name,',') as ownerName"),
                 DB::raw("string_agg(prop_owners.mobile_no::VARCHAR,',') as mobileNo"),
                 'prop_properties.prop_address AS address',
@@ -235,7 +235,7 @@ class PropProperty extends Model
                 'prop_properties.cluster_id',
                 'prop_properties.holding_no as holdingNo',
                 'prop_properties.ulb_id',
-                'prop_properties.ward_mstr_id as ward_no'
+                'prop_properties.ward_mstr_id as ward_id'
             )
             ->where('prop_properties.cluster_id', $clusterId)
             ->where('prop_properties.status', 1)
