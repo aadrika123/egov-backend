@@ -357,7 +357,9 @@ class SafDocController extends Controller
             $userId = authUser()->id;
             $applicationId = $req->applicationId;
             $wfLevel = FacadesConfig::get('PropertyConstaint.SAF-LABEL');
+            $trustDocCode = FacadesConfig::get('PropertyConstaint.TRUST_DOC_CODE');
             // Derivative Assigments
+            $activeDocument = $mWfDocument::findOrFail($wfDocId);
             $safDtls = $mActiveSafs->getSafNo($applicationId);
             $safReq = new Request([
                 'userId' => $userId,
@@ -389,6 +391,10 @@ class SafDocController extends Controller
                 // For Rejection Doc Upload Status and Verify Status will disabled
                 $safDtls->doc_upload_status = 0;
                 $safDtls->doc_verify_status = 0;
+
+                if ($activeDocument->doc_code == $trustDocCode)
+                    $safDtls->is_trust_verified = false;
+
                 $safDtls->save();
             }
 
