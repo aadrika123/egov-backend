@@ -461,14 +461,14 @@ class  PropActiveSaf extends Model
             ->select(
                 'prop_active_safs.saf_no',
                 'prop_active_safs.id',
-                'prop_active_safs.ward_mstr_id as wardId',
+                'prop_active_safs.ward_mstr_id as ward_id',
                 DB::raw("string_agg(o.mobile_no::VARCHAR,',') as mobileNo"),
                 DB::raw("string_agg(o.owner_name,',') as ownerName"),
                 'ref_prop_types.property_type as propertyType',
                 'prop_active_safs.cluster_id',
                 'prop_active_safs.prop_address as address',
                 'prop_active_safs.ulb_id',
-                'prop_active_safs.ward_mstr_id as ward_no'
+                'prop_active_safs.new_ward_mstr_id as new_ward_id'
             )
             ->where('prop_active_safs.cluster_id', $clusterId)
             ->where('ref_prop_types.status', 1)
