@@ -1401,7 +1401,7 @@ class Report implements IReport
             {                
                 throw new Exception("Invalid RoleId Pass");
             }
-            if (in_array($roleId, [11, 8])) 
+            if (in_array($roleId, [8])) 
             {
                 $joins = "leftjoin";
             }
@@ -1434,14 +1434,18 @@ class Report implements IReport
                         )role_user_ward
                     ) users_role
                     "),
-                    function ($join) use ($joins) 
+                    function ($join) use ($roleId) 
                     {
-                        if ($joins == "join") 
+                        if (!in_array($roleId, [11, 8])) 
                         {
                             $join->on("users_role.wf_role_id", "=", "active_trade_licences.current_role")
                                 ->where("active_trade_licences.ward_id", DB::raw("ANY (ward_ids::int[])"));
                         } 
-                        else 
+                        if(in_array($roleId, [11]))
+                        {
+                            $join->on("users_role.wf_role_id", "=", "active_trade_licences.current_role");
+                        }
+                        if(in_array($roleId, [8]))
                         {
                             $join->on(DB::raw("1"), DB::raw("1"));
                         }
@@ -1465,7 +1469,7 @@ class Report implements IReport
             $perPage = $request->perPage ? $request->perPage : 10;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
             $paginator = $data->paginate($perPage);
-            $items = $paginator->items();
+            $items = $paginator->items();//dd(DB::getQueryLog());
             $total = $paginator->total();
             $numberOfPages = ceil($total / $perPage);
             $list = [
