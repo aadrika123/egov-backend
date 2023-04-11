@@ -203,17 +203,17 @@ class BankReconcillationController extends Controller
     public function chequeClearance(Request $request)
     {
         try {
-            // $validator = Validator::make($request->all(), [
-            //     'moduleId' => 'required',
-            //     'chequeId' => 'required',
-            //     'status' => 'required',
-            //     // 'remarks' => 'required',
-            //     'clearanceDate' => 'required' | 'date'
-            // ]);
+            $validator = Validator::make($request->all(), [
+                'moduleId' => 'required',
+                'chequeId' => 'required',
+                'status' => 'required',
+                // 'remarks' => 'required',
+                'clearanceDate' => 'required'
+            ]);
 
-            // if ($validator->fails()) {
-            //     return response()->json(['status' => False, 'msg' => $validator()->errors()]);
-            // }
+            if ($validator->fails()) {
+                return response()->json(['status' => False, 'msg' => $validator()->errors()]);
+            }
 
             $ulbId = authUser()->ulb_id;
             $userId = authUser()->id;
