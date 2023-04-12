@@ -989,7 +989,10 @@ class ActiveSafController extends Controller
                 'is_gb_saf',
                 'gb_office_name',
                 'gb_usage_types',
-                'gb_prop_usage_types'
+                'gb_prop_usage_types',
+                'is_trust',
+                'trust_type',
+                'is_trust_verified'
             )->first();
 
         $assessmentType = $activeSaf->assessment_type;
@@ -1169,9 +1172,6 @@ class ActiveSafController extends Controller
                     'propId' => $propId
                 ];
                 $handleTcVerification->generateTcVerifiedDemand($tcVerifyParams);                // current object function (10.3)
-
-                if ($safDetails->is_trust && $safDetails->is_trust_verified == false)
-                    $this->adjustTrustDemand();
 
                 $msg = "Application Approved Successfully";
                 $metaReqs['verificationStatus'] = 1;
