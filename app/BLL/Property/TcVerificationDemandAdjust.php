@@ -112,6 +112,9 @@ class TcVerificationDemandAdjust
             "isWaterHarvesting" => $fieldVerifiedSaf->has_water_harvesting,
             "zone" => $activeSafDtls->zone_mstr_id,
             "floor" => $floors,
+            "isTrust" => $activeSafDtls->is_trust,
+            "trustType" => $activeSafDtls->trust_type,
+            "isTrustVerified" => $activeSafDtls->is_trust_verified
         ];
         $calculationReq = new Request($calculationReq);
         $calculation = $this->_safCalculation->calculateTax($calculationReq);

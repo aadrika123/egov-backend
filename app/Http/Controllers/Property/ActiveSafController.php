@@ -1170,9 +1170,6 @@ class ActiveSafController extends Controller
                 ];
                 $handleTcVerification->generateTcVerifiedDemand($tcVerifyParams);                // current object function (10.3)
 
-                if ($safDetails->is_trust && $safDetails->is_trust_verified == false)
-                    $this->adjustTrustDemand();
-
                 $msg = "Application Approved Successfully";
                 $metaReqs['verificationStatus'] = 1;
             }
