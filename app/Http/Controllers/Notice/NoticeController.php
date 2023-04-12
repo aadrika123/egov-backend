@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Notice;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Property\PropertyDetailsController;
+use App\Http\Controllers\Trade\TradeApplication;
+use App\Http\Controllers\Water\NewConnectionController;
 use App\Http\Requests\Notice\Add;
 use App\Models\ModuleMaster;
 use App\Models\Notice\NoticeApplication;
@@ -11,6 +14,9 @@ use App\Models\Workflows\WfWorkflow;
 use App\Models\WorkflowTrack;
 use App\Repository\Common\CommonFunction;
 use App\Repository\Notice\INotice;
+use App\Repository\Property\Interfaces\iPropertyDetailsRepo;
+use App\Repository\Trade\ITrade;
+use App\Repository\Water\Interfaces\iNewConnection;
 use Illuminate\Http\Request;
 use App\Traits\Auth;
 use Carbon\Carbon;
@@ -30,6 +36,9 @@ class NoticeController extends Controller
      use Auth;    
     
     private $_REPOSITORY;
+    private $_PROPERTY_REPOSITORY;
+    private $_WATER__REPOSITORY;
+    private $_TRADE_REPOSITORY;
     private $_COMMON_FUNCTION;
     protected $_GENERAL_NOTICE_WF_MASTER_Id;
     protected $_PAYMENT_NOTICE_WF_MASTER_Id;
@@ -39,10 +48,14 @@ class NoticeController extends Controller
     protected $_NOTICE_CONSTAINT;
     protected $_MODULE_CONSTAINT;
     protected $_NOTICE_TYPE;
-    public function __construct(INotice $Repository)
+    public function __construct(INotice $Repository,iPropertyDetailsRepo $propertyRepository,iNewConnection $waterRepository,ITrade $tradeRepository)
     {
         DB::enableQueryLog();
         $this->_REPOSITORY = $Repository;
+        $this->_PROPERTY_REPOSITORY = new PropertyDetailsController($propertyRepository);
+        $this->_WATER__REPOSITORY = new NewConnectionController($waterRepository);
+        $this->_TRADE_REPOSITORY = new TradeApplication($tradeRepository);
+
         $this->_COMMON_FUNCTION = new CommonFunction();
         $this->_GENERAL_NOTICE_WF_MASTER_Id = Config::get('workflow-constants.GENERAL_NOTICE_MASTER_ID');
         $this->_PAYMENT_NOTICE_WF_MASTER_Id = Config::get('workflow-constants.PAYMENT_NOTICE_MASTER_ID');
@@ -180,7 +193,23 @@ class NoticeController extends Controller
             // {
             //     $url=("http://127.0.0.1:8001/api/property/searchByHoldingNo");
             // }
-            $response =  $data->post($url,$request->all());
+            switch($request->moduleId)
+            {
+                case 1 : $response =  $this->_PROPERTY_REPOSITORY->propertyListByKey($request);
+                         break;
+                case 2 : $response =  $this->_WATER__REPOSITORY->searchWaterConsumer($request);
+                         break;
+                case 3 : $response =  $this->_TRADE_REPOSITORY->readApplication($request);
+                         break;
+                // case 4 : $response =  $this->_PROPERTY_REPOSITORY->propertyListByKey($request);
+                //          break;
+                // case 5 : $response =  $this->_PROPERTY_REPOSITORY->propertyListByKey($request);
+                //          break;
+                // case 6 : $response =  $this->_PROPERTY_REPOSITORY->propertyListByKey($request);
+                //          break;
+                default: throw new Exception ("Invalid Module");
+            }
+            // $response =  $data->post($url,$request->all());
             $responseBody = json_decode($response->getBody());
             foreach($responseBody->data as $key=>$val)
             {
