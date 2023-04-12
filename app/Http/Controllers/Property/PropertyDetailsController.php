@@ -10,8 +10,11 @@ use App\Models\Property\PropActiveHarvesting;
 use App\Models\Property\PropActiveObjection;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsOwner;
+use App\Models\Property\PropDemand;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
+use App\Models\Property\PropSaf;
+use App\Models\Property\PropSafsOwner;
 use App\Repository\Property\Interfaces\iPropertyDetailsRepo;
 use Exception;
 use Illuminate\Database\Eloquent\Collection;
@@ -49,8 +52,16 @@ class PropertyDetailsController extends Controller
             switch ($key) {
                 case ("saf"):
                     $mPropActiveSaf = new PropActiveSaf();
+                    $mPropSafs = new PropSaf();
                     $mPropActiveSafOwners = new PropActiveSafsOwner();
+                    $mPropSafOwners = new PropSafsOwner();
                     $application = collect($mPropActiveSaf->getSafDtlsBySafNo($applicationNo));
+                    if ($application->isEmpty()) {
+                        $application = collect($mPropSafs->getSafDtlsBySafNo($applicationNo));
+                        $owners = collect($mPropSafOwners->getOwnerDtlsBySafId1($application['id']));
+                        $details = $application->merge($owners);
+                        break;
+                    }
                     $owners = collect($mPropActiveSafOwners->getOwnerDtlsBySafId1($application['id']));
                     $details = $application->merge($owners);
                     break;
