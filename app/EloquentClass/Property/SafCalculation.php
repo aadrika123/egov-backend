@@ -173,13 +173,13 @@ class SafCalculation
 
         $this->_rentalRates = $this->calculateRentalRates();
 
-        if($this->_propertyDetails['propertyType']!=4)
-            {
-                $this->_capitalValueRate = $this->readCapitalvalueRate();        // Calculate Capital Value Rate 
-                if (!$this->_capitalValueRate)
-                    throw new Exception("CV Rate Not Available for this ward");
-            }
-            
+        if ($this->_propertyDetails['propertyType'] != 4)                     // Property Should not be Vacant Land for Reading Capital Value Rate
+        {
+            $this->_capitalValueRate = $this->readCapitalvalueRate();        // Calculate Capital Value Rate 
+            if (!$this->_capitalValueRate)
+                throw new Exception("CV Rate Not Available for this ward");
+        }
+
         if ($propertyDetails['isMobileTower'] == 1 || $propertyDetails['isHoardingBoard'] == 1 || $propertyDetails['isPetrolPump'] == 1) {
             $this->_capitalValueRateMPH = $this->readCapitalValueRateMHP();                                         // Capital Value Rate for MobileTower, PetrolPump,HoardingBoard
         }

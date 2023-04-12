@@ -138,10 +138,12 @@ class TcVerificationDemandAdjust
         $newDemand = collect();
         $collectAdvanceAmt = collect();
         $mPropSafsDemands = $this->_mPropSafsDemands;
+        $mPropDemands = $this->_mPropDemands;
         $quaterlyTax = $this->_quaterlyTax;
         $propSafsDemands = $mPropSafsDemands->getPaidDemandBySafId($this->_activeSafDtls['id']);
         foreach ($quaterlyTax as $tax) {
             $safQtrDemand = $propSafsDemands->where('due_date', $tax['dueDate'])->first();
+            // For Saf
             if ($tax['totalTax'] > $safQtrDemand->amount) {                                         // Case IF The Demand is Increasing
                 $adjustAmt = roundFigure($safQtrDemand->amount - $safQtrDemand->adjust_amount);
                 $balance = roundFigure($tax['balance'] - $adjustAmt);
@@ -171,6 +173,7 @@ class TcVerificationDemandAdjust
                 $collectAdvanceAmt->push($advanceAmt);
             }
         }
+
         $this->_propNewDemand = $newDemand;
         if ($newDemand->isNotEmpty())
             $this->storeDemand();               // (Function Store Demand) 1.2.1
