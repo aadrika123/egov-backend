@@ -1371,7 +1371,7 @@ class HoldingTaxController extends Controller
     }
 
     /**
-     * | Generate Cluster Payment Receipt (011613)
+     * | Generate Cluster Payment Receipt For cluster saf and Holding (011613)
      */
     public function clusterPaymentReceipt(Request $req)
     {

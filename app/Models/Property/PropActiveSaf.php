@@ -95,7 +95,9 @@ class  PropActiveSaf extends Model
             'location' => $req->location,
             'landmark' => $req->landmark,
             'is_gb_saf' => isset($req->isGBSaf) ? $req->isGBSaf : false,
-            'late_assess_penalty' => $req->lateAssessmentPenalty
+            'late_assess_penalty' => $req->lateAssessmentPenalty,
+            'is_trust' => $req->isTrust ?? false,
+            'trust_type' => $req->trustType ?? null
         ];
         $propActiveSafs = PropActiveSaf::create($reqs);
         return response()->json([
@@ -304,7 +306,7 @@ class  PropActiveSaf extends Model
                 "
                 ),
             )
-            ->join('wf_roles', 'wf_roles.id', 's.current_role')
+            ->leftjoin('wf_roles', 'wf_roles.id', 's.current_role')
             ->join('ulb_ward_masters as u', 's.ward_mstr_id', '=', 'u.id')
             ->join('ref_prop_types as p', 'p.id', '=', 's.prop_type_mstr_id')
             ->leftJoin('ulb_ward_masters as u1', 's.new_ward_mstr_id', '=', 'u1.id')

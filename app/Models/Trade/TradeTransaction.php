@@ -24,6 +24,7 @@ class TradeTransaction extends Model
         return  TradeTransaction::select(
             'trade_cheque_dtls.*',
             'tran_date',
+            'tran_type',
             DB::raw("3 as module_id"),
             'tran_no',
             'payment_mode',

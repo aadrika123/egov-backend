@@ -21,7 +21,6 @@ trait SafDoc
         $propTypes = Config::get('PropertyConstaint.PROPERTY-TYPE');
         $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
         $propType = $refSafs->prop_type_mstr_id;
-        $transferType = $refSafs->transfer_mode_mstr_id;
 
         $flip = flipConstants($propTypes);
         switch ($propType) {
@@ -38,6 +37,8 @@ trait SafDoc
                 $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PROP_VACANT_LAND")->requirements;     // Function (1.1)
                 break;
         }
+        if ($refSafs->is_trust == true)
+            $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "PROP_TRUST")->requirements;
 
         return $documentList;
     }

@@ -421,7 +421,10 @@ class SafCalculation
         if ($this->_propertyDetails['propertyType'] != 4) {
             $floors = $this->_floors;
             $usageTypes = collect($floors)->pluck('useType');
-            $this->_isTrust = $usageTypes->contains($trustUsageType) ? true : false;
+            if (isset($this->_propertyDetails['isTrust']))
+                $this->_isTrust = $this->_propertyDetails['isTrust'];
+            else
+                $this->_isTrust = $usageTypes->contains($trustUsageType) ? true : false;
             $this->_trustType = $this->_propertyDetails['trustType'] ?? "";
         }
     }
@@ -1028,7 +1031,7 @@ class SafCalculation
         }
 
         // Condition for the Institutional or Educational Trust 
-        if (isset($this->_isTrust) && $this->_isTrust == true && $this->_isTrustVerified == 1) {
+        if (isset($this->_isTrust) && $this->_isTrust == true && $this->_isTrustVerified == true) {
             $paramOccupancyFactor = 1;
             $taxPerc = 0.15;
             $readCalculationFactor = ($this->_trustType == 1) ? 0.25 : 0.50;

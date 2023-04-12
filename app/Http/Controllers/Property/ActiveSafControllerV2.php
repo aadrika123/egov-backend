@@ -28,7 +28,6 @@ use Illuminate\Support\Facades\DB;
 use App\Repository\Property\Interfaces\iSafRepository;
 use Carbon\Carbon;
 
-use function PHPUnit\Framework\isEmpty;
 
 /**
  * | Created On-10-02-2023 

@@ -36,7 +36,7 @@ class CalculateSafById
     public $_safCalculationReq;
     public $_calculatedDemand;
     public $_generatedDemand = array();
-    private $_demandDetails;
+    public $_demandDetails;
     private $_todayDate;
     private $_currentQuarter;
     public $_holdingNo;
@@ -164,7 +164,10 @@ class CalculateSafById
             "zone" => $safDetails['zone_mstr_id'],
             "floor" => $this->_safFloorDetails,
             "isGBSaf" => $safDetails['is_gb_saf'],
-            "apartmentId" => $safDetails['apartment_details_id']
+            "apartmentId" => $safDetails['apartment_details_id'],
+            "isTrust" => $safDetails['is_trust'],
+            "trustType" => $safDetails['trust_type'],
+            "isTrustVerified" => $safDetails['is_trust_verified']
         ];
         $this->_safCalculationReq = new Request($calculationReq);
     }
@@ -277,6 +280,8 @@ class CalculateSafById
                 $item['adjustAmount'] = 0;
             else
                 $item['adjustAmount'] = $demand->amount - $demand->balance;
+
+            $item['adjust_amount'] = $item['adjustAmount'];
             $item['balance'] = roundFigure($item['amount'] - $item['adjust_amount']);
             if ($item['balance'] == 0)
                 $item['onePercPenaltyTax'] = 0;

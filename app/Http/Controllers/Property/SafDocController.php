@@ -132,7 +132,7 @@ class SafDocController extends Controller
             });
             $reqDoc['docType'] = $key;
             $reqDoc['docName'] = substr($label, 1, -1);
-            $reqDoc['uploadedDoc'] = $documents->first();
+            $reqDoc['uploadedDoc'] = $documents->last();
 
             $reqDoc['masters'] = collect($document)->map(function ($doc) use ($uploadedDocs) {
                 $uploadedDoc = $uploadedDocs->where('doc_code', $doc)->first();
@@ -202,8 +202,13 @@ class SafDocController extends Controller
             $metaReqs = new Request($metaReqs);
             if (collect($ifDocExist)->isEmpty())
                 $mWfActiveDocument->postDocuments($metaReqs);
-            else
-                $mWfActiveDocument->editDocuments($ifDocExist, $metaReqs);
+
+            if (collect($ifDocExist)->isNotEmpty()) {
+                $mWfActiveDocument->postDocuments($metaReqs);
+                $mWfActiveDocument->editDocuments($ifDocExist, [
+                    'status' => 0
+                ]);
+            }
 
             $docUploadStatus = $this->checkFullDocUpload($req->applicationId);
             if ($docUploadStatus == 1) {
@@ -352,7 +357,9 @@ class SafDocController extends Controller
             $userId = authUser()->id;
             $applicationId = $req->applicationId;
             $wfLevel = FacadesConfig::get('PropertyConstaint.SAF-LABEL');
+            $trustDocCode = FacadesConfig::get('PropertyConstaint.TRUST_DOC_CODE');
             // Derivative Assigments
+            $activeDocument = $mWfDocument::findOrFail($wfDocId);
             $safDtls = $mActiveSafs->getSafNo($applicationId);
             $safReq = new Request([
                 'userId' => $userId,
@@ -384,6 +391,10 @@ class SafDocController extends Controller
                 // For Rejection Doc Upload Status and Verify Status will disabled
                 $safDtls->doc_upload_status = 0;
                 $safDtls->doc_verify_status = 0;
+
+                if ($activeDocument->doc_code == $trustDocCode)
+                    $safDtls->is_trust_verified = false;
+
                 $safDtls->save();
             }
 
