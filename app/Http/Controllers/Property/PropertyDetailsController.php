@@ -11,6 +11,7 @@ use App\Models\Property\PropActiveObjection;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Property\PropDemand;
+use App\Models\Property\PropGbofficer;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropSaf;
@@ -67,8 +68,16 @@ class PropertyDetailsController extends Controller
                     break;
                 case ("gbsaf"):
                     $mPropActiveSaf = new PropActiveSaf();
+                    $mPropSafs = new PropSaf();
                     $mPropActiveGbOfficer = new PropActiveGbOfficer();
+                    $mPropGbofficer = new PropGbofficer();
                     $application = collect($mPropActiveSaf->getGbSafDtlsBySafNo($applicationNo));
+                    if ($application->isEmpty()) {
+                        $application = collect($mPropSafs->getGbSafDtlsBySafNo($applicationNo));
+                        $owners = collect($mPropGbofficer->getOfficerBySafId($application['id']));
+                        $details = $application->merge($owners);
+                        break;
+                    }
                     $owners = collect($mPropActiveGbOfficer->getOfficerBySafId($application['id']));
                     $details = $application->merge($owners);
                     break;

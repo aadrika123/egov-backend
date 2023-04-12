@@ -4,6 +4,7 @@ namespace App\Models\Property;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class PropGbofficer extends Model
 {
@@ -55,5 +56,19 @@ class PropGbofficer extends Model
             'ulb_id' => $req->ulb_id,
             'user_id' => $req->user_id,
         ];
+    }
+
+    /**
+     * | Get Officer by SAF Id
+     */
+    public function getOfficerBySafId($safId)
+    {
+        return PropActiveGbOfficer::select(
+            'officer_name',
+            'designation',
+            'mobile_no'
+        )
+            ->where('saf_id', $safId)
+            ->first();
     }
 }
