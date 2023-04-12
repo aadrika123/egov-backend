@@ -214,11 +214,15 @@ class WaterApplication extends Model
      */
     public function finalApproval($request, $consumerNo, $refJe)
     {
+        # object creation
         $mWaterSiteInspection = new WaterSiteInspection();
+        $mWaterConsumer = new WaterConsumer();
+        $waterTrack = new WorkflowTrack();
+
+        # checking if consumer already exist 
         $approvedWater = WaterApplication::query()
             ->where('id', $request->applicationId)
             ->first();
-
         $checkExist = WaterApprovalApplicationDetail::where('id', $approvedWater->id)->first();
         if ($checkExist) {
             throw new Exception("Access Denied ! Consumer Already Exist!");
@@ -228,11 +232,13 @@ class WaterApplication extends Model
             throw new Exception("Access Denied ! Consumer Already Exist!");
         }
 
+        # saving the data in the approved application table
         $approvedWaterRep = $approvedWater->replicate();
         $approvedWaterRep->setTable('water_approval_application_details');
         $approvedWaterRep->id = $approvedWater->id;
         $approvedWaterRep->save();
 
+        # data formating for save the consumer details 
         $siteDetails = $mWaterSiteInspection->getSiteDetails($request->applicationId)
             ->where('payment_status', 1)
             ->where('order_officer', $refJe)
@@ -249,18 +255,17 @@ class WaterApplication extends Model
             ];
             $approvedWaterRep = collect($approvedWater)->merge($refData);
         }
-
-        $mWaterConsumer = new WaterConsumer();
-        $consumerId = $mWaterConsumer->saveWaterConsumer($approvedWater, $consumerNo);
+        $consumerId = $mWaterConsumer->saveWaterConsumer($approvedWaterRep, $consumerNo);
         
-        $metaReqs['moduleId'] =  Config::get("module-constants.WATER_MODULE_ID");
-        $metaReqs['workflowId'] = $approvedWater->workflow_id;
-        $metaReqs['refTableDotId'] = 'water_applications.id';
-        $metaReqs['refTableIdValue'] = $approvedWater->id;
-        $metaReqs['user_id'] = authUser()->id;
+        # dend record in the track table 
+        $metaReqs = [
+            'moduleId'          =>  Config::get("module-constants.WATER_MODULE_ID"),
+            'workflowId'        => $approvedWater->workflow_id,
+            'refTableDotId'     => 'water_applications.id',
+            'refTableIdValue'   => $approvedWater->id,
+            'user_id'           => authUser()->id,
+        ];
         $request->request->add($metaReqs);
-
-        $waterTrack = new WorkflowTrack();
         $waterTrack->saveTrack($request);
 
         # final delete
@@ -278,22 +283,23 @@ class WaterApplication extends Model
             ->where('id', $request->applicationId)
             ->first();
 
+        # replication in the rejected application table 
         $rejectedWaterRep = $rejectedWater->replicate();
         $rejectedWaterRep->setTable('water_rejection_application_details');
         $rejectedWaterRep->id = $rejectedWater->id;
         $rejectedWaterRep->save();
 
-        
+        # save record in track table 
+        $waterTrack = new WorkflowTrack();
         $metaReqs['moduleId'] =  Config::get("module-constants.WATER_MODULE_ID");
         $metaReqs['workflowId'] = $rejectedWater->workflow_id;
         $metaReqs['refTableDotId'] = 'water_applications.id';
         $metaReqs['refTableIdValue'] = $rejectedWater->id;
         $metaReqs['user_id'] = authUser()->id;
         $request->request->add($metaReqs);
-
-        $waterTrack = new WorkflowTrack();
         $waterTrack->saveTrack($request);
 
+        # final delete 
         $rejectedWater->delete();
     }
 

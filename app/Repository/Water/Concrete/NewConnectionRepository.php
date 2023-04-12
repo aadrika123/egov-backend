@@ -129,7 +129,7 @@ class NewConnectionRepository implements iNewConnection
         # get initiater and finisher
         $ulbWorkflowId = $ulbWorkflowObj->getulbWorkflowId($workflowID, $ulbId);
         if (!$ulbWorkflowId) {
-            throw new Exception("The respective Ulb is not maped to Water Workflow!");
+            throw new Exception("Respective Ulb is not maped to Water Workflow!");
         }
         $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);
         $refFinisherRoleId = $this->getFinisherId($ulbWorkflowId->id);
@@ -378,12 +378,12 @@ class NewConnectionRepository implements iNewConnection
         $ulbId = auth()->user()->ulb_id;
 
         $workflowRoles = $this->getRoleIdByUserId($userId);
-        $roleId = $workflowRoles->map(function ($value, $key) {                         // Get user Workflow Roles
+        $roleId = $workflowRoles->map(function ($value) {                         // Get user Workflow Roles
             return $value->wf_role_id;
         });
 
         $refWard = $mWfWardUser->getWardsByUserId($userId);
-        $wardId = $refWard->map(function ($value, $key) {
+        $wardId = $refWard->map(function ($value) {
             return $value->ward_id;
         });
 
@@ -407,6 +407,7 @@ class NewConnectionRepository implements iNewConnection
      * | @var waterApplication
         | Serial No : 04
         | Working 
+        | Check for the commented code 
      */
     public function postNextLevel($req)
     {
@@ -480,15 +481,15 @@ class NewConnectionRepository implements iNewConnection
     {
         $mWaterSiteInspection = new WaterSiteInspection();
         switch ($senderRoleId) {
-            case $wfLevels['BO']:                       // Back Office Condition
+            case $wfLevels['BO']:                                                                       // Back Office Condition
                 if ($application->doc_upload_status == false || $application->payment_status != 1)
                     throw new Exception("Document Not Fully Uploaded or Payment in not Done!");
                 break;
-            case $wfLevels['DA']:                       // DA Condition
+            case $wfLevels['DA']:                                                                       // DA Condition
                 if ($application->doc_status == false || $application->payment_status != 1)
                     throw new Exception("Document Not Fully Verified");
                 break;
-            case $wfLevels['JE']:                       // JE Coditon in case of site adjustment
+            case $wfLevels['JE']:                                                                       // JE Coditon in case of site adjustment
                 if ($application->doc_status == false || $application->payment_status != 1)
                     throw new Exception("Document Not Fully Verified or Payment in not Done!");
                 if ($application->doc_upload_status == false) {
@@ -501,14 +502,14 @@ class NewConnectionRepository implements iNewConnection
                     throw new Exception("Site Not Verified!");
                 }
                 break;
-            case $wfLevels['SH']:                       // SH conditional checking
+            case $wfLevels['SH']:                                                                       // SH conditional checking
                 if ($application->doc_status == false || $application->payment_status != 1)
                     throw new Exception("Document Not Fully Verified or Payment in not Done!");
                 if ($application->doc_upload_status == false || $application->is_field_verified == false) {
                     throw new Exception("Document Not Fully Uploaded or site inspection not done!");
                 }
                 break;
-            case $wfLevels['AE']:                       // AE conditional checking
+            case $wfLevels['AE']:                                                                       // AE conditional checking
                 if ($application->doc_status == false || $application->payment_status != 1)
                     throw new Exception("Document Not Fully Verified or Payment in not Done!");
                 if ($application->doc_upload_status == false || $application->is_field_verified == false) {
@@ -672,10 +673,8 @@ class NewConnectionRepository implements iNewConnection
         $uniqueArray = array_unique($paymentStatus->toArray());
 
         if (count($uniqueArray) === 1 && $uniqueArray[0] === 1) {
-            // array contains only the value 1
             $payment = true;
         } else {
-            // array contains other values as well
             throw new Exception("full payment for the application is not done!");
         }
     }

@@ -96,12 +96,12 @@ class WaterApplicant extends Model
         $approvedWaterApplicant = WaterApplicant::query()
             ->where('application_id', $request->applicationId)
             ->get();
-
         $checkOwner = WaterConsumerOwner::where('consumer_id', $request->applicationId)->first();
         if ($checkOwner) {
             throw new Exception("Water Owner Already Exist!");
         }
 
+        # data storing in approved applicant table 
         collect($approvedWaterApplicant)->map(function ($value) use ($consumerId) {
             $approvedWaterOwners = $value->replicate();
             $approvedWaterOwners->setTable('water_approval_applicants');
@@ -113,6 +113,8 @@ class WaterApplicant extends Model
             $approvedWaterOwners->consumer_id = $consumerId;
             $approvedWaterOwners->save();
         });
+
+        # final delete 
         WaterApplicant::where('application_id', $request->applicationId)
             ->delete();
     }

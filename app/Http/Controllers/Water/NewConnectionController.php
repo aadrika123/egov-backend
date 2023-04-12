@@ -1164,7 +1164,7 @@ class NewConnectionController extends Controller
                 }
             });
             $reqDoc['docType'] = $key;
-            $reqDoc['uploadedDoc'] = $documents->first();
+            $reqDoc['uploadedDoc'] = $documents->last();
             $reqDoc['docName'] = substr($label, 1, -1);
 
             $reqDoc['masters'] = collect($document)->map(function ($doc) use ($uploadedDocs) {
@@ -1371,10 +1371,10 @@ class NewConnectionController extends Controller
     public function docVerifyRejects(Request $req)
     {
         $req->validate([
-            'id' => 'required|digits_between:1,9223372036854775807',
+            'id'            => 'required|digits_between:1,9223372036854775807',
             'applicationId' => 'required|digits_between:1,9223372036854775807',
-            'docRemarks' =>  $req->docStatus == "Rejected" ? 'required|regex:/^[a-zA-Z1-9][a-zA-Z1-9\. \s]+$/' : "nullable",
-            'docStatus' => 'required|in:Verified,Rejected'
+            'docRemarks'    =>  $req->docStatus == "Rejected" ? 'required|regex:/^[a-zA-Z1-9][a-zA-Z1-9\. \s]+$/' : "nullable",
+            'docStatus'     => 'required|in:Verified,Rejected'
         ]);
 
         try {
@@ -1386,28 +1386,29 @@ class NewConnectionController extends Controller
             $userId = authUser()->id;
             $applicationId = $req->applicationId;
             $wfLevel = Config::get('waterConstaint.ROLE-LABEL');
-            # Derivative Assigments
+
+            # validating application
             $waterApplicationDtl = $mWaterApplication->getApplicationById($applicationId)
                 ->firstOrFail();
-
             if (!$waterApplicationDtl || collect($waterApplicationDtl)->isEmpty())
                 throw new Exception("Application Details Not Found");
 
+            # validating roles
             $waterReq = new Request([
-                'userId' => $userId,
-                'workflowId' => $waterApplicationDtl['workflow_id']
+                'userId'        => $userId,
+                'workflowId'    => $waterApplicationDtl['workflow_id']
             ]);
             $senderRoleDtls = $mWfRoleusermap->getRoleByUserWfId($waterReq);
             if (!$senderRoleDtls || collect($senderRoleDtls)->isEmpty())
                 throw new Exception("Role Not Available");
 
+            # validating role for DA
             $senderRoleId = $senderRoleDtls->wf_role_id;
-
             if ($senderRoleId != $wfLevel['DA'])                                    // Authorization for Dealing Assistant Only
                 throw new Exception("You are not Authorized");
 
+            # validating if full documet is uploaded
             $ifFullDocVerified = $this->ifFullDocVerified($applicationId);          // (Current Object Derivative Function 0.1)
-
             if ($ifFullDocVerified == 1)
                 throw new Exception("Document Fully Verified");
 
@@ -1416,19 +1417,18 @@ class NewConnectionController extends Controller
                 $status = 1;
             }
             if ($req->docStatus == "Rejected") {
-                $status = 2;
                 # For Rejection Doc Upload Status and Verify Status will disabled
+                $status = 2;
                 $waterApplicationDtl->doc_upload_status = 0;
                 $waterApplicationDtl->doc_status = 0;
                 $waterApplicationDtl->save();
             }
             $reqs = [
-                'remarks' => $req->docRemarks,
-                'verify_status' => $status,
-                'action_taken_by' => $userId
+                'remarks'           => $req->docRemarks,
+                'verify_status'     => $status,
+                'action_taken_by'   => $userId
             ];
             $mWfDocument->docVerifyReject($wfDocId, $reqs);
-
             $ifFullDocVerifiedV1 = $this->ifFullDocVerified($applicationId);
             if ($ifFullDocVerifiedV1 == 1) {                                        // If The Document Fully Verified Update Verify Status
                 $mWaterApplication->updateAppliVerifyStatus($applicationId);
@@ -1456,14 +1456,13 @@ class NewConnectionController extends Controller
             ->firstOrFail();
 
         $refReq = [
-            'activeId' => $applicationId,
-            'workflowId' => $refapplication['workflow_id'],
-            'moduleId' => Config::get('module-constants.WATER_MODULE_ID')
+            'activeId'      => $applicationId,
+            'workflowId'    => $refapplication['workflow_id'],
+            'moduleId'      => Config::get('module-constants.WATER_MODULE_ID')
         ];
 
         $req = new Request($refReq);
         $refDocList = $mWfActiveDocument->getDocsByActiveId($req);
-        // Water List Documents
         $ifPropDocUnverified = $refDocList->contains('verify_status', 0);
         if ($ifPropDocUnverified == true)
             return 0;
@@ -1505,11 +1504,11 @@ class NewConnectionController extends Controller
 
             if ($charges['paid_status'] == 0) {
                 $calculation['calculation'] = [
-                    'connectionFee' => $charges['conn_fee'],
-                    'penalty' => $charges['penalty'],
-                    'totalAmount' => $charges['amount'],
-                    'chargeCatagory' => $charges['charge_category'],
-                    'paidStatus' => $charges['paid_status']
+                    'connectionFee'     => $charges['conn_fee'],
+                    'penalty'           => $charges['penalty'],
+                    'totalAmount'       => $charges['amount'],
+                    'chargeCatagory'    => $charges['charge_category'],
+                    'paidStatus'        => $charges['paid_status']
                 ];
                 $waterTransDetail = array_merge($calculation, $waterTransDetail);
             } else {
@@ -1523,11 +1522,11 @@ class NewConnectionController extends Controller
                     })->sum();
 
                     $calculation['calculation'] = [
-                        'connectionFee' => 0.00,           # Static
-                        'penalty' => $penaltyAmount,
-                        'totalAmount' => $penaltyAmount,
-                        'chargeCatagory' => $charges['charge_category'],
-                        'paidStatus' => $charges['paid_status']
+                        'connectionFee'     => 0.00,           # Static
+                        'penalty'           => $penaltyAmount,
+                        'totalAmount'       => $penaltyAmount,
+                        'chargeCatagory'    => $charges['charge_category'],
+                        'paidStatus'        => $charges['paid_status']
                     ];
                     $waterTransDetail = array_merge($calculation, $waterTransDetail);
                 }
