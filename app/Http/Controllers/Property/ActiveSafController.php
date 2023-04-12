@@ -989,7 +989,10 @@ class ActiveSafController extends Controller
                 'is_gb_saf',
                 'gb_office_name',
                 'gb_usage_types',
-                'gb_prop_usage_types'
+                'gb_prop_usage_types',
+                'is_trust',
+                'trust_type',
+                'is_trust_verified'
             )->first();
 
         $assessmentType = $activeSaf->assessment_type;

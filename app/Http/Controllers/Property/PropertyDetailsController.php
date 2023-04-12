@@ -10,8 +10,11 @@ use App\Models\Property\PropActiveHarvesting;
 use App\Models\Property\PropActiveObjection;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsOwner;
+use App\Models\Property\PropConcession;
 use App\Models\Property\PropDemand;
 use App\Models\Property\PropGbofficer;
+use App\Models\Property\PropHarvesting;
+use App\Models\Property\PropObjection;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropSaf;
@@ -82,20 +85,29 @@ class PropertyDetailsController extends Controller
                     $details = $application->merge($owners);
                     break;
                 case ("concession"):
-                    $mPropConcessions = new PropActiveConcession();
-                    $details = $mPropConcessions->getDtlsByConcessionNo($applicationNo);
+                    $mPropActiveConcessions = new PropActiveConcession();
+                    $mPropConcessions = new PropConcession();
+                    $details = $mPropActiveConcessions->getDtlsByConcessionNo($applicationNo);
+                    if (!$details)
+                        $details =  $mPropConcessions->getDtlsByConcessionNo($applicationNo);
                     break;
                 case ("objection"):
-                    $mPropObjections = new PropActiveObjection();
+                    $mPropActiveObjection = new PropActiveObjection();
+                    $mPropObjection = new PropObjection();
                     $mPropOwners = new PropOwner();
-                    $application = collect($mPropObjections->getObjByObjNo($applicationNo));
-                    $owners = collect($mPropOwners->getOwnerByPropId($application['property_id']));
+                    $application = collect($mPropActiveObjection->getObjByObjNo($applicationNo));
+                    if ($application->isEmpty())
+                        $application = collect($mPropObjection->getObjByObjNo($applicationNo));
+                    $owners = collect($mPropOwners->getfirstOwner($application['property_id']));
                     $details = $application->merge($owners);
                     break;
                 case ("harvesting"):
-                    $mPropHarvesting = new PropActiveHarvesting();
+                    $mPropActiveHarvesting = new PropActiveHarvesting();
+                    $mPropHarvesting = new PropHarvesting();
                     $mPropOwners = new PropOwner();
-                    $application = collect($mPropHarvesting->getDtlsByHarvestingNo($applicationNo));
+                    $application = collect($mPropActiveHarvesting->getDtlsByHarvestingNo($applicationNo));
+                    if ($application->isEmpty())
+                        $application = collect($mPropHarvesting->getDtlsByHarvestingNo($applicationNo));
                     $owners = collect($mPropOwners->getfirstOwner($application['property_id']));
                     $details = $application->merge($owners);
                     break;
