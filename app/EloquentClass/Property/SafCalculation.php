@@ -72,6 +72,7 @@ class SafCalculation
     public $_lateAssessmentStatus;
     public $_isTrust;
     public $_trustType;
+    public $_isTrustVerified;
 
     /** 
      * | For Building
@@ -204,6 +205,11 @@ class SafCalculation
         $this->_point20TaxedUsageTypes = Config::get('PropertyConstaint.POINT20-TAXED-COMM-USAGE-TYPES'); // The Type of Commercial Usage Types which have taxes 0.20 Perc
 
         $this->isPropertyTrust();            // Check If the Property is Religious or Educational Trust(1.1.6)
+
+        if (isset($this->_propertyDetails['isTrustVerified']))
+            $this->_isTrustVerified = ($this->_propertyDetails['isTrustVerified'] == 0) ? 0 : 1;
+        else
+            $this->_isTrustVerified = $this->_propertyDetails['isTrustVerified'] = 1;
     }
 
     /**
@@ -1025,7 +1031,7 @@ class SafCalculation
         }
 
         // Condition for the Institutional or Educational Trust 
-        if (isset($this->_isTrust) && $this->_isTrust == true) {
+        if (isset($this->_isTrust) && $this->_isTrust == true && $this->_isTrustVerified == true) {
             $paramOccupancyFactor = 1;
             $taxPerc = 0.15;
             $readCalculationFactor = ($this->_trustType == 1) ? 0.25 : 0.50;

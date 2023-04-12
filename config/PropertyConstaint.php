@@ -447,7 +447,7 @@ return [
     "CON_PARAM_ID"  => 7,
     "OBJ_PARAM_ID"  => 8,
     "HAR_PARAM_ID"  => 9,
-    "DEACTIV_PARAM_ID"  =>24,
+    "DEACTIV_PARAM_ID"  => 24,
 
 
     /**
@@ -493,7 +493,8 @@ return [
     // Adjustment Types
     "ADJUSTMENT_TYPES" => [
         "ULB_ADJUSTMENT" => "Demand Adjustment"
-    ]
+    ],
 
-
+    // Doc Codes
+    "TRUST_DOC_CODE" => "TRUST_DOCUMENT"
 ];

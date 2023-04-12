@@ -295,6 +295,7 @@ class ApplySafController extends Controller
 
     /**
      * | Demand Adjustment In Case of Reassessment
+     * | This function has been also used in Tc Verified Verification Adjust Demand
      */
     public function adjustDemand()
     {
