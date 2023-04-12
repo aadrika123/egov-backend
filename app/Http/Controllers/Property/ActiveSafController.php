@@ -1172,7 +1172,6 @@ class ActiveSafController extends Controller
                     'propId' => $propId
                 ];
                 $handleTcVerification->generateTcVerifiedDemand($tcVerifyParams);                // current object function (10.3)
-
                 $msg = "Application Approved Successfully";
                 $metaReqs['verificationStatus'] = 1;
             }
@@ -1208,7 +1207,7 @@ class ActiveSafController extends Controller
 
             $propSafVerification->deactivateVerifications($req->applicationId);                 // Deactivate Verification From Table
             $propSafVerificationDtl->deactivateVerifications($req->applicationId);              // Deactivate Verification from Saf floor Dtls
-            DB::commit();
+            // DB::commit();
             return responseMsgs(true, $msg, ['holdingNo' => $safDetails->holding_no, 'ptNo' => $safDetails->pt_no], "010110", "1.0", "410ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
@@ -2510,12 +2509,10 @@ class ActiveSafController extends Controller
                     $safTaxes2 = $safCalculation->calculateTax($request2);
                     // $safTaxes2 = json_decode(json_encode($safTaxes2), true);
                     // dd($safTaxes,$array);
-                    if(!$safTaxes->original["status"])
-                    {
+                    if (!$safTaxes->original["status"]) {
                         throw new Exception($safTaxes->original["message"]);
                     }
-                    if(!$safTaxes2->original["status"])
-                    {
+                    if (!$safTaxes2->original["status"]) {
                         throw new Exception($safTaxes2->original["message"]);
                     }
                     $safTaxes3 = $this->reviewTaxCalculation($safTaxes);
