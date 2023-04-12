@@ -167,7 +167,7 @@ class ClusterController extends Controller
                     'clusterAddress'        => 'required',
                     'clusterAuthPersonName' => 'required',
                     'clusterMobileNo'       => ['required', 'min:10', 'max:10'],
-                    'ulbId'                => 'required',
+                    'ulbId'                 => 'required',
                     'wardNo'                => 'required',
                     'newWardNo'             => 'required'
                 ]
