@@ -1524,7 +1524,7 @@ class Report implements IReport
             $mWardIds = explode(',', ($mWardIds ? $mWardIds : "0"));
             // DB::enableQueryLog();
             $data = UlbWardMaster::SELECT(
-                DB::RAW(" DISTINCT(ward_name) as ward_no, COUNT(active_trade_licences.id) AS total")
+                DB::RAW(" DISTINCT(ward_name) as ward_no,ulb_ward_masters.id AS ward_id, COUNT(active_trade_licences.id) AS total")
             )
                 ->LEFTJOIN("active_trade_licences", "ulb_ward_masters.id", "active_trade_licences.ward_id");
             if ($roleId == 8) 
@@ -1548,7 +1548,7 @@ class Report implements IReport
             }
             $data = $data->WHERE("active_trade_licences.ulb_id", $ulbId)
                     ->WHERE("active_trade_licences.is_parked", FALSE);
-            $data = $data->groupBy(["ward_name"]);
+            $data = $data->groupBy(["ward_name","ulb_ward_masters.id"]);
 
             $perPage = $request->perPage ? $request->perPage : 10000;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
