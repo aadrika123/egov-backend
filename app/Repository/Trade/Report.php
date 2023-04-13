@@ -1608,7 +1608,7 @@ class Report implements IReport
             $mWardIds = $mWardPermission->implode("ward_id", ",");
             if($request->wardId)
             {
-                $mWardIds = implode($request->wardId); 
+                $mWardIds = $request->wardId; 
             }
             $mWardIds = explode(',', ($mWardIds ? $mWardIds : "0"));
             
