@@ -1606,8 +1606,12 @@ class Report implements IReport
                 $mWardPermission = $mWfWardUser->getWardsByUserId($userId);
             }
             $mWardIds = $mWardPermission->implode("ward_id", ",");
+            if($request->wardId)
+            {
+                $mWardIds = implode($request->wardId); 
+            }
             $mWardIds = explode(',', ($mWardIds ? $mWardIds : "0"));
-           
+            
             // DB::enableQueryLog();
             $data = ActiveTradeLicence::SELECT(
                     DB::RAW("wf_roles.id AS role_id, wf_roles.role_name,
@@ -1645,6 +1649,10 @@ class Report implements IReport
             $data = $data->WHERE("active_trade_licences.ulb_id", $ulbId)
                     ->WHERE("active_trade_licences.is_parked", FALSE);
             if (!in_array($roleId, [11, 8]) && $userId) 
+            {
+                $data = $data->WHEREIN("active_trade_licences.ward_id", $mWardIds);
+            }
+            if($request->wardId)
             {
                 $data = $data->WHEREIN("active_trade_licences.ward_id", $mWardIds);
             }
