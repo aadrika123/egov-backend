@@ -1522,7 +1522,6 @@ class Report implements IReport
             
             $mWardIds = $mWardPermission->implode("ward_id", ",");
             $mWardIds = explode(',', ($mWardIds ? $mWardIds : "0"));
-            // DB::enableQueryLog();
             $data = UlbWardMaster::SELECT(
                 DB::RAW(" DISTINCT(ward_name) as ward_no,ulb_ward_masters.id AS ward_id, COUNT(active_trade_licences.id) AS total")
             )
