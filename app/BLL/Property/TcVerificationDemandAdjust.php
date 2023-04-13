@@ -58,7 +58,7 @@ class TcVerificationDemandAdjust
         $this->_activeSafDtls = $req['activeSafDtls'];
         $this->_tcId = collect($req['fieldVerificationDtls'])->first()->user_id;
         $this->_quaterlyTax = $this->calculateQuaterlyTax();           // (1.1)
-        $this->adjustVerifiedDemand();
+        return $this->adjustVerifiedDemand();
     }
 
     /**
@@ -112,6 +112,9 @@ class TcVerificationDemandAdjust
             "isWaterHarvesting" => $fieldVerifiedSaf->has_water_harvesting,
             "zone" => $activeSafDtls->zone_mstr_id,
             "floor" => $floors,
+            "isTrust" => $activeSafDtls->is_trust,
+            "trustType" => $activeSafDtls->trust_type,
+            "isTrustVerified" => $activeSafDtls->is_trust_verified
         ];
         $calculationReq = new Request($calculationReq);
         $calculation = $this->_safCalculation->calculateTax($calculationReq);
@@ -135,39 +138,48 @@ class TcVerificationDemandAdjust
         $newDemand = collect();
         $collectAdvanceAmt = collect();
         $mPropSafsDemands = $this->_mPropSafsDemands;
+        $mPropDemands = $this->_mPropDemands;
         $quaterlyTax = $this->_quaterlyTax;
         $propSafsDemands = $mPropSafsDemands->getPaidDemandBySafId($this->_activeSafDtls['id']);
+        $propDemands = $mPropDemands->getFullDemandsByPropId($this->_reqs['propId']);
+
         foreach ($quaterlyTax as $tax) {
             $safQtrDemand = $propSafsDemands->where('due_date', $tax['dueDate'])->first();
-            if ($tax['totalTax'] > $safQtrDemand->amount) {                                         // Case IF The Demand is Increasing
-                $adjustAmt = roundFigure($safQtrDemand->amount - $safQtrDemand->adjust_amount);
-                $balance = roundFigure($tax['balance'] - $adjustAmt);
-                $taxes = [
-                    'property_id' => $this->_reqs['propId'],
-                    'qtr' => $tax['qtr'],
-                    'holding_tax' => $tax['holdingTax'],
-                    'water_tax' => $tax['waterTax'],
-                    'education_cess' => $tax['educationTax'],
-                    'health_cess' => $tax['healthCess'],
-                    'latrine_tax' => $tax['latrineTax'],
-                    'additional_tax' => $tax['additionTax'],
-                    'fyear' => $tax['quarterYear'],
-                    'due_date' => $tax['dueDate'],
-                    'amount' => $tax['totalTax'],
-                    'arv' => $tax['arv'],
-                    'adjust_amt' => $adjustAmt,
-                    'balance' => $balance,
-                    'adjust_type' => $this->_adjustmentType,
-                    'ulb_id' => $this->_reqs['ulbId'],
-                    'user_id' => $this->_tcId
-                ];
-                $newDemand->push($taxes);
+            $propQtrDemand = $propDemands->where('due_date', $tax['dueDate'])->first();
+
+            // For Saf
+            if (collect($safQtrDemand)->isNotEmpty()) {
+                if ($tax['totalTax'] > $safQtrDemand->amount) {                                         // Case IF The Demand is Increasing
+                    $adjustAmt = roundFigure($safQtrDemand->amount - $safQtrDemand->adjust_amount);
+                    $balance = roundFigure($tax['balance'] - $adjustAmt);
+                    $taxes = $this->generatePropDemandTax($tax, $adjustAmt, $balance);                  // Saf Demand details generation to be saved on table (1.2.3)
+                    $newDemand->push($taxes);
+                }
+                if ($tax['totalTax'] < $safQtrDemand->amount) {                                       // Case if the Demand is Decreasing
+                    $advanceAmt = roundFigure($safQtrDemand->amount - $tax['totalTax']);
+                    $collectAdvanceAmt->push($advanceAmt);
+                }
             }
-            if ($tax['totalTax'] < $safQtrDemand->amount) {                                       // Case if the Demand is Decreasing
-                $advanceAmt = roundFigure($safQtrDemand->amount - $tax['totalTax']);
-                $collectAdvanceAmt->push($advanceAmt);
+
+            // For Property Demand
+            if (collect($propQtrDemand)->isNotEmpty()) {
+                if ($tax['totalTax'] > $propQtrDemand->amount) {
+                    if ($propQtrDemand->paid_status == 0) {                         // Deactivate the unpaid Demand for Creating New
+                        $propQtrDemand->status = 0;
+                        $propQtrDemand->save();
+                    }
+                    $adjustAmt = roundFigure($propQtrDemand->balance - $propQtrDemand->adjust_amount);
+                    $balance = roundFigure($tax['balance'] - $adjustAmt);
+                    $taxes = $this->generatePropDemandTax($tax, $adjustAmt, $balance);              // Saf Demand details generation to be saved on table (1.2.3)
+                    $newDemand->push($taxes);
+                }
+                if ($tax['totalTax'] < $propQtrDemand->amount) {                                       // Case if the Demand is Decreasing
+                    $advanceAmt = roundFigure($propQtrDemand->amount - $tax['totalTax']);
+                    $collectAdvanceAmt->push($advanceAmt);
+                }
             }
         }
+
         $this->_propNewDemand = $newDemand;
         if ($newDemand->isNotEmpty())
             $this->storeDemand();               // (Function Store Demand) 1.2.1
@@ -175,6 +187,7 @@ class TcVerificationDemandAdjust
         $this->_propAdvDemand = $collectAdvanceAmt;
         if ($collectAdvanceAmt->isNotEmpty())
             $this->storeAdvance();              // (Function Advance Demand Store)  1.2.2
+
     }
 
 
@@ -212,5 +225,31 @@ class TcVerificationDemandAdjust
             ];
             $mPropAdvance->store($advReq);
         }
+    }
+
+    /**
+     * | Generate Property Demands Tax (1.2.3)
+     */
+    public function generatePropDemandTax($tax, $adjustAmt, $balance)
+    {
+        return [
+            'property_id' => $this->_reqs['propId'],
+            'qtr' => $tax['qtr'],
+            'holding_tax' => $tax['holdingTax'],
+            'water_tax' => $tax['waterTax'],
+            'education_cess' => $tax['educationTax'],
+            'health_cess' => $tax['healthCess'],
+            'latrine_tax' => $tax['latrineTax'],
+            'additional_tax' => $tax['additionTax'],
+            'fyear' => $tax['quarterYear'],
+            'due_date' => $tax['dueDate'],
+            'amount' => $tax['totalTax'],
+            'arv' => $tax['arv'],
+            'adjust_amt' => $adjustAmt,
+            'balance' => $balance,
+            'adjust_type' => $this->_adjustmentType,
+            'ulb_id' => $this->_reqs['ulbId'],
+            'user_id' => $this->_tcId
+        ];
     }
 }

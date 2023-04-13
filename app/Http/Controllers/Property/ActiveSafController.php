@@ -989,7 +989,10 @@ class ActiveSafController extends Controller
                 'is_gb_saf',
                 'gb_office_name',
                 'gb_usage_types',
-                'gb_prop_usage_types'
+                'gb_prop_usage_types',
+                'is_trust',
+                'trust_type',
+                'is_trust_verified'
             )->first();
 
         $assessmentType = $activeSaf->assessment_type;
@@ -1169,10 +1172,6 @@ class ActiveSafController extends Controller
                     'propId' => $propId
                 ];
                 $handleTcVerification->generateTcVerifiedDemand($tcVerifyParams);                // current object function (10.3)
-
-                if ($safDetails->is_trust && $safDetails->is_trust_verified == false)
-                    $this->adjustTrustDemand();
-
                 $msg = "Application Approved Successfully";
                 $metaReqs['verificationStatus'] = 1;
             }
@@ -2463,7 +2462,7 @@ class ActiveSafController extends Controller
                     $safCalculation = new SafCalculation();
                     $request = new Request($array);
                     $safTaxes = $safCalculation->calculateTax($request);
-
+                    // dd($array);
                     // $safTaxes = json_decode(json_encode($safTaxes), true);
 
                     $safDetails2 = json_decode(json_encode($verifications), true);
@@ -2509,8 +2508,14 @@ class ActiveSafController extends Controller
                     $request2 = new Request($array2);
                     $safTaxes2 = $safCalculation->calculateTax($request2);
                     // $safTaxes2 = json_decode(json_encode($safTaxes2), true);
+                    // dd($safTaxes,$array);
+                    if (!$safTaxes->original["status"]) {
+                        throw new Exception($safTaxes->original["message"]);
+                    }
+                    if (!$safTaxes2->original["status"]) {
+                        throw new Exception($safTaxes2->original["message"]);
+                    }
                     $safTaxes3 = $this->reviewTaxCalculation($safTaxes);
-                    // dd($safTaxes2);
                     $safTaxes4 = $this->reviewTaxCalculation($safTaxes2);
                     // dd(json_decode(json_encode($safTaxes), true));
                     $compairTax = $this->reviewTaxCalculationCom($safTaxes, $safTaxes2);

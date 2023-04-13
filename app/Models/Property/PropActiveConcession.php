@@ -57,6 +57,7 @@ class PropActiveConcession extends Model
                 'c.application_no',
                 'c.applicant_name as owner_name',
                 'p.new_holding_no',
+                'pt_no',
                 'p.ward_mstr_id',
                 'p.new_ward_mstr_id',
                 'u.ward_name as old_ward_no',

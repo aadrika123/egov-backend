@@ -73,7 +73,7 @@ class PenaltyRebateCalculation
                 "rebateTypeId" => $firstQtrRebate['id'],
                 "rebateType" => $firstQtrRebate['key'],
                 "rebatePerc" => $firstQtrRebate['perc'],
-                "rebateAmount" =>  $rebateAmount,
+                "rebateAmount" =>  roundFigure($rebateAmount),
                 "keyString" => $firstQtrRebate['value']
             ]);
         }
@@ -86,7 +86,7 @@ class PenaltyRebateCalculation
                 "rebateTypeId" => $citizenRebate['id'],
                 "rebateType" => $citizenRebate['key'],
                 "rebatePerc" => $citizenRebate['perc'],
-                "rebateAmount" => $rebateValue,
+                "rebateAmount" => roundFigure($rebateValue),
                 "keyString" => $citizenRebate['value']
             ]);
         }
@@ -98,7 +98,7 @@ class PenaltyRebateCalculation
                 "rebateTypeId" => $jskRebate['id'],
                 "rebateType" => $jskRebate['key'],
                 "rebatePerc" => $jskRebate['perc'],
-                "rebateAmount" => $rebateAmount,
+                "rebateAmount" => roundFigure($rebateValue),
                 "keyString" => $jskRebate['value']
             ]);
         }
@@ -114,7 +114,7 @@ class PenaltyRebateCalculation
                 array_push($rebates, [
                     "rebateType" => $speciallyAbledRebate['key'],
                     "rebatePerc" => $speciallyAbledRebate['perc'],
-                    "rebateAmount" => $specialRebateAmt,
+                    "rebateAmount" => roundFigure($specialRebateAmt),
                     "keyString" => $speciallyAbledRebate['value']
                 ]);
             }
@@ -122,9 +122,9 @@ class PenaltyRebateCalculation
 
         $totalDuesList['rebates'] = $rebates;
         $totalDuesList['rebatePerc'] = $rebate1;
-        $totalDuesList['rebateAmt'] = $rebateAmount;
+        $totalDuesList['rebateAmt'] = roundFigure($rebateAmount);
         $totalDuesList['specialRebatePerc'] = $rebate;
-        $totalDuesList['specialRebateAmt'] = $specialRebateAmt;
+        $totalDuesList['specialRebateAmt'] = roundFigure($specialRebateAmt);
 
         return $totalDuesList;
     }

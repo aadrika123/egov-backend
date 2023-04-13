@@ -385,6 +385,9 @@ class SafDocController extends Controller
             DB::beginTransaction();
             if ($req->docStatus == "Verified") {
                 $status = 1;
+                // trust verification in case of trust upload
+                if ($activeDocument->doc_code == $trustDocCode)
+                    $safDtls->is_trust_verified = true;
             }
             if ($req->docStatus == "Rejected") {
                 $status = 2;
