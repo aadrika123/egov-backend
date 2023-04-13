@@ -516,7 +516,7 @@ class PropProperty extends Model
     }
 
 
-     /**
+    /**
      * | Property Basic Edit the water connection
      */
     public function updateWaterConnection($propId, $consumerNo)
@@ -527,5 +527,16 @@ class PropProperty extends Model
             "water_conn_date" => Carbon::now(),
         ];
         $property->update($reqs);
+    }
+
+    /**
+     * | deactivate holding by ids
+     */
+    public function deactivateHoldingByIds($propertyIds)
+    {
+        PropProperty::whereIn('id', $propertyIds)
+            ->update([
+                'status' => 0
+            ]);
     }
 }
