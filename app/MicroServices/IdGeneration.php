@@ -26,7 +26,8 @@ class IdGeneration
      */
     public function generateOtp()
     {
-        $otp = Carbon::createFromDate()->milli . random_int(100, 999);
+        // $otp = Carbon::createFromDate()->milli . random_int(100, 999);
+        $otp = 123123;
         return $otp;
     }
 }
