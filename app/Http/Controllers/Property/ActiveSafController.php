@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Property;
 use App\BLL\Property\CalculateSafById;
 use App\BLL\Property\HandleTcVerification;
 use App\BLL\Property\PostRazorPayPenaltyRebate;
+use App\BLL\Property\PreviousHoldingDeactivation;
 use App\BLL\Property\RazorpayRequest;
 use App\BLL\Property\TcVerificationDemandAdjust;
 use App\EloquentClass\Property\PenaltyRebateCalculation;
@@ -1088,7 +1089,6 @@ class ActiveSafController extends Controller
 
         try {
             // Check if the Current User is Finisher or Not (Variable Assignments)
-            $safDetails = PropActiveSaf::findOrFail($req->applicationId);
             $mWfRoleUsermap = new WfRoleusermap();
             $propSafVerification = new PropSafVerification();
             $propSafVerificationDtl = new PropSafVerificationDtl();
@@ -1101,11 +1101,13 @@ class ActiveSafController extends Controller
             $todayDate = Carbon::now()->format('Y-m-d');
             $currentFinYear = calculateFYear($todayDate);
             $famParamId = Config::get('PropertyConstaint.FAM_PARAM_ID');
-            $senderRoleId = $safDetails->current_role;
+            $previousHoldingDeactivation = new PreviousHoldingDeactivation;
 
             $userId = authUser()->id;
             $safId = $req->applicationId;
             // Derivative Assignments
+            $safDetails = PropActiveSaf::findOrFail($req->applicationId);
+            $senderRoleId = $safDetails->current_role;
             $workflowId = $safDetails->workflow_id;
             $getRoleReq = new Request([                                                 // make request to get role id of the user
                 'userId' => $userId,
@@ -1174,7 +1176,10 @@ class ActiveSafController extends Controller
                 $handleTcVerification->generateTcVerifiedDemand($tcVerifyParams);                // current object function (10.3)
                 $msg = "Application Approved Successfully";
                 $metaReqs['verificationStatus'] = 1;
+
+                $previousHoldingDeactivation->deactivatePreviousHoldings($safDetails);  // Previous holding deactivation in case of Mutation, Amalgamation, Bifurcation
             }
+
             // Rejection
             if ($req->status == 0) {
                 $this->finalRejectionSafReplica($activeSaf, $ownerDetails, $floorDetails);
@@ -2251,6 +2256,7 @@ class ActiveSafController extends Controller
             ];
             $demand['amounts'] = $safTaxes->original['data']['demand'];
             $demand['details'] = collect($safTaxes->original['data']['details']);
+            $demand['taxDetails'] = collect($safTaxes->original['data']['taxDetails']);
             $demand['paymentStatus'] = $safDetails['payment_status'];
             $demand['applicationNo'] = $safDetails['saf_no'];
             return responseMsgs(true, "Demand Details", remove_null($demand), "", "1.0", "", "POST", $req->deviceId ?? "");
