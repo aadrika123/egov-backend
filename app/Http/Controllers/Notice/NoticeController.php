@@ -210,13 +210,21 @@ class NoticeController extends Controller
                 default: throw new Exception ("Invalid Module");
             }
             // $response =  $data->post($url,$request->all());
-            $responseBody = json_decode($response->getBody());
-            foreach($responseBody->data as $key=>$val)
+            // $responseBody = json_decode($response->getBody());
+            // foreach($responseBody->data as $key=>$val)
+            // {
+            //     $responseBody->data[$key]->moduleId = $moduleId;
+            //     $responseBody->data[$key]->moduleType = $moduleType;
+            // }
+            
+            // return($responseBody);    
+            foreach($response->original["data"] as $key=>$val)
             {
-                $responseBody->data[$key]->moduleId = $moduleId;
-                $responseBody->data[$key]->moduleType = $moduleType;
+                $response->original["data"][$key]["moduleId"] = $moduleId;
+                $response->original["data"][$key]["moduleType"] = $moduleType;
+                
             }
-            return($responseBody);            
+            return responseMsgs($response->original["status"],$response->original["message"],$response->original["data"]);           
         }
         catch (Exception $e) 
         {
