@@ -838,7 +838,7 @@ class Trade implements ITrade
         if ($sms["status"]) {
             $owners = $this->getAllOwnereDtlByLId($refApplication->id);
             foreach ($owners as $val) {
-                $respons = send_sms($val["mobile_no"], $sms["sms"], $sms["temp_id"]);
+                // $respons = send_sms($val["mobile_no"], $sms["sms"], $sms["temp_id"]);
             }
         }
     }
