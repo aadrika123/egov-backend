@@ -2,6 +2,7 @@
 
 namespace App\Models\Property;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -512,5 +513,19 @@ class PropProperty extends Model
     {
         $property = PropProperty::findOrFail($propId);
         $property->update($req);
+    }
+
+
+     /**
+     * | Property Basic Edit the water connection
+     */
+    public function updateWaterConnection($propId, $consumerNo)
+    {
+        $property = PropProperty::find($propId);
+        $reqs = [
+            "water_conn_no" => $consumerNo,
+            "water_conn_date" => Carbon::now(),
+        ];
+        $property->update($reqs);
     }
 }

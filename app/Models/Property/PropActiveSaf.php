@@ -746,4 +746,17 @@ class  PropActiveSaf extends Model
                 'cluster_id' => $clusterId
             ]);
     }
+
+    /**
+     * | saf Basic Edit the water connection
+     */
+    public function updateWaterConnection($safId, $consumerNo)
+    {
+        $nPropActiveSaf = PropActiveSaf::find($safId);
+        $reqs = [
+            "water_conn_no" => $consumerNo,
+            "water_conn_date" => Carbon::now(),
+        ];
+        $nPropActiveSaf->update($reqs);
+    }
 }

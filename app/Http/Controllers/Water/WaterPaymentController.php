@@ -965,7 +965,6 @@ class WaterPaymentController extends Controller
                 $req->merge([
                     'chequeDate'    => $req['chequeDate'],
                     'tranId'        => $waterTrans['id'],
-                    'id'            => $req->applicationId,
                     'applicationNo' => $refWaterApplication['application_no'],
                     'workflowId'    => $refWaterApplication['workflow_id'],
                     'ward_no'       => $refWaterApplication['ward_id']
@@ -1166,19 +1165,30 @@ class WaterPaymentController extends Controller
         $cash = Config::get('payment-constants.PAYMENT_MODE.3');
         $moduleId = Config::get('module-constants.WATER_MODULE_ID');
         $mTempTransaction = new TempTransaction();
+        $mPropChequeDtl = new WaterChequeDtl();
 
         if ($req['paymentMode'] != $cash) {
-            $mPropChequeDtl = new WaterChequeDtl();
-            $chequeReqs = [
-                'user_id'           => $req['userId'],
-                'application_id'    => $req['id'],
-                'transaction_id'    => $req['tranId'],
-                'cheque_date'       => $req['chequeDate'],
-                'bank_name'         => $req['bankName'],
-                'branch_name'       => $req['branchName'],
-                'cheque_no'         => $req['chequeNo']
-            ];
-
+            if ($req->chargeCategory == "Demand Collection") {
+                $chequeReqs = [
+                    'user_id'           => $req['userId'],
+                    'consumer_id'       => $req['id'],
+                    'transaction_id'    => $req['tranId'],
+                    'cheque_date'       => $req['chequeDate'],
+                    'bank_name'         => $req['bankName'],
+                    'branch_name'       => $req['branchName'],
+                    'cheque_no'         => $req['chequeNo']
+                ];
+            } else {
+                $chequeReqs = [
+                    'user_id'           => $req['userId'],
+                    'application_id'    => $req['id'],
+                    'transaction_id'    => $req['tranId'],
+                    'cheque_date'       => $req['chequeDate'],
+                    'bank_name'         => $req['bankName'],
+                    'branch_name'       => $req['branchName'],
+                    'cheque_no'         => $req['chequeNo']
+                ];
+            }
             $mPropChequeDtl->postChequeDtl($chequeReqs);
         }
 
