@@ -115,4 +115,8 @@ return [
         "2" => "Waiver Committee",
         "3" => "No Connection"
     ],
+    "ADVANCE_FOR" => [
+        "1" => "consumer",
+        "2" => "connection"
+    ],
 ];
