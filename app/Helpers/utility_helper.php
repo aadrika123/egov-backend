@@ -197,7 +197,7 @@ if (!function_exists('calculateQuarterStartDate')) {
  * |
  */
 if (!function_exists('getFinancialYear')) {
-    function getFinancialYear($date, $startYear = 2015)
+    function getFinancialYear($date)
     {
         $year = date('Y', strtotime($date));
         $month = date('m', strtotime($date));
@@ -206,14 +206,6 @@ if (!function_exists('getFinancialYear')) {
         } else {
             return $year . '-' . ($year + 1);
         }
-
-        // Calculate the financial year with a start year of 2015
-        if ($year >= $startYear) {
-            $financialYear = ($year - $startYear + 1) . '-' . ($year - $startYear + 2);
-        } else {
-            $financialYear = '';
-        }
-        return $financialYear;
     }
 }
 

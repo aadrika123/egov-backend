@@ -30,6 +30,7 @@ class PropSaf extends Model
             ->where('s.saf_no', strtoupper($safNo))
             ->select(
                 's.id',
+                DB::raw("'approved' as status"),
                 's.saf_no',
                 's.ward_mstr_id',
                 's.new_ward_mstr_id',
@@ -77,6 +78,7 @@ class PropSaf extends Model
             ->where('s.saf_no', strtoupper($safNo))
             ->select(
                 's.id',
+                DB::raw("'approved' as status"),
                 's.saf_no',
                 's.ward_mstr_id',
                 's.new_ward_mstr_id',
@@ -108,5 +110,49 @@ class PropSaf extends Model
             ->join('ulb_ward_masters as u', 's.ward_mstr_id', '=', 'u.id')
             ->leftJoin('ulb_ward_masters as u1', 's.new_ward_mstr_id', '=', 'u1.id')
             ->first();
+    }
+
+    /**
+     * | Search safs
+     */
+    public function searchSafs()
+    {
+        return PropSaf::select(
+            'prop_safs.id',
+            DB::raw("'approved' as status"),
+            'prop_safs.saf_no',
+            'prop_safs.assessment_type',
+            'prop_safs.current_role',
+            'role_name as currentRole',
+            'ward_name',
+            'prop_address',
+            DB::raw("string_agg(so.mobile_no::VARCHAR,',') as mobile_no"),
+            DB::raw("string_agg(so.owner_name,',') as owner_name"),
+        )
+            ->leftjoin('wf_roles', 'wf_roles.id', 'prop_safs.current_role')
+            ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_safs.ward_mstr_id')
+            ->join('prop_safs_owners as so', 'so.saf_id', 'prop_safs.id');
+    }
+
+    /**
+     * | Search Gb Saf
+     */
+    public function searchGbSafs()
+    {
+        return PropSaf::select(
+            'prop_safs.id',
+            DB::raw("'approved' as status"),
+            'prop_safs.saf_no',
+            'prop_safs.assessment_type',
+            'prop_safs.current_role',
+            'role_name as currentRole',
+            'ward_name',
+            'prop_address',
+            'gbo.officer_name',
+            'gbo.mobile_no'
+        )
+            ->leftjoin('wf_roles', 'wf_roles.id', 'prop_safs.current_role')
+            ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_safs.ward_mstr_id')
+            ->join('prop_gbofficers as gbo', 'gbo.saf_id', 'prop_safs.id');
     }
 }

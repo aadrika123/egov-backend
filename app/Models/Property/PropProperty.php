@@ -515,8 +515,27 @@ class PropProperty extends Model
         $property->update($req);
     }
 
+    /**
+     * | Search Property
+     */
+    public function searchProperty()
+    {
+        return PropProperty::select(
+            'prop_properties.id',
+            'prop_properties.holding_no',
+            'prop_properties.new_holding_no',
+            'prop_properties.pt_no',
+            'ward_name',
+            'prop_address',
+            'prop_properties.status as active_status',
+            DB::raw("string_agg(prop_owners.mobile_no::VARCHAR,',') as mobile_no"),
+            DB::raw("string_agg(prop_owners.owner_name,',') as owner_name"),
+        )
+            ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
+            ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id');
+    }
 
-     /**
+    /**
      * | Property Basic Edit the water connection
      */
     public function updateWaterConnection($propId, $consumerNo)
@@ -527,5 +546,16 @@ class PropProperty extends Model
             "water_conn_date" => Carbon::now(),
         ];
         $property->update($reqs);
+    }
+
+    /**
+     * | deactivate holding by ids
+     */
+    public function deactivateHoldingByIds($propertyIds)
+    {
+        PropProperty::whereIn('id', $propertyIds)
+            ->update([
+                'status' => 0
+            ]);
     }
 }
