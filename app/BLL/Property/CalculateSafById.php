@@ -38,7 +38,7 @@ class CalculateSafById
     public $_generatedDemand = array();
     public $_demandDetails;
     private $_todayDate;
-    private $_currentQuarter;
+    public $_currentQuarter;
     public $_holdingNo;
     public $_firstOwner;
     public $_mPropActiveSafOwners;
@@ -238,7 +238,7 @@ class CalculateSafById
             'duesTo' => $dueTo,
             'lateAssessmentStatus' => $this->_calculatedDemand['demand']['lateAssessmentStatus'],
             'lateAssessmentPenalty' => $this->_calculatedDemand['demand']['lateAssessmentPenalty'],
-            'totalDemand' => $totalDemand
+            'totalDemand' => roundFigure($totalDemand)
         ];
 
         $this->_generatedDemand['details'] = $this->_demandDetails;

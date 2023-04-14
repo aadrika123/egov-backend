@@ -792,4 +792,17 @@ class  PropActiveSaf extends Model
             ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_active_safs.ward_mstr_id')
             ->join('prop_active_safgbofficers as gbo', 'gbo.saf_id', 'prop_active_safs.id');
     }
+
+    /**
+     * | saf Basic Edit the water connection
+     */
+    public function updateWaterConnection($safId, $consumerNo)
+    {
+        $nPropActiveSaf = PropActiveSaf::find($safId);
+        $reqs = [
+            "water_conn_no" => $consumerNo,
+            "water_conn_date" => Carbon::now(),
+        ];
+        $nPropActiveSaf->update($reqs);
+    }
 }

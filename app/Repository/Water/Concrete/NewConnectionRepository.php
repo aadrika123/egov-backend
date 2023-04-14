@@ -599,13 +599,14 @@ class NewConnectionRepository implements iNewConnection
         $mWaterApplication = new WaterApplication();
         $mWaterApplicant = new WaterApplicant();
         $refJe = Config::get("waterConstaint.ROLE-LABEL.JE");
-        $this->preApprovalConditionCheck($request, $roleId);
+        $refWaterDetails = $this->preApprovalConditionCheck($request, $roleId);
 
         DB::beginTransaction();
         # Approval of water application 
         if ($request->status == 1) {
             $now = Carbon::now();
             $consumerNo = 'CON' . $now->getTimeStamp();
+            $this->saveWaterConnInProperty($refWaterDetails, $consumerNo);
             $consumerId = $mWaterApplication->finalApproval($request, $consumerNo, $refJe);
             $mWaterApplicant->finalApplicantApproval($request, $consumerId);
             $msg = "Application Successfully Approved !!";
@@ -651,6 +652,7 @@ class NewConnectionRepository implements iNewConnection
             throw new Exception("Field Verification Not Done!!");
         }
         $this->checkDataApprovalCondition($request, $roleId, $waterDetails);
+        return $waterDetails;
     }
 
 
@@ -678,6 +680,34 @@ class NewConnectionRepository implements iNewConnection
             throw new Exception("full payment for the application is not done!");
         }
     }
+
+
+    /**
+     * | save the water details in property or saf data
+     * | save water connection no in prop or saf table
+     * | @param 
+        | Not Tested
+     */
+    public function saveWaterConnInProperty($refWaterDetails, $consumerNo)
+    {
+        $mPropProperty = new PropProperty();
+        $mPropActiveSaf = new PropActiveSaf();
+
+        switch ($refWaterDetails) {
+                # For holding
+            case ($refWaterDetails->connection_through == 1):
+                $propDetails = PropProperty::findOrFail($refWaterDetails->propId);
+                $mPropProperty->updateWaterConnection($refWaterDetails->propId, $consumerNo);
+                break;
+                # For Saf
+            case ($refWaterDetails->connection_through == 2):
+                $safDetails = PropActiveSaf::findOrFail($refWaterDetails->saf_id);
+                $mPropActiveSaf->updateWaterConnection($refWaterDetails->saf_id, $consumerNo);
+                break;
+        }
+    }
+
+
 
 
     /**

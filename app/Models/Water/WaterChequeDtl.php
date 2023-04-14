@@ -33,13 +33,14 @@ class WaterChequeDtl extends Model
     public function postChequeDtl($req)
     {
         $mPropChequeDtl = new WaterChequeDtl();
-        $mPropChequeDtl->application_id    =  $req['application_id'];
-        $mPropChequeDtl->transaction_id    =  $req['transaction_id'];
-        $mPropChequeDtl->cheque_date       =  $req['cheque_date'];
-        $mPropChequeDtl->bank_name         =  $req['bank_name'];
-        $mPropChequeDtl->branch_name       =  $req['branch_name'];
-        $mPropChequeDtl->cheque_no         =  $req['cheque_no'];
-        $mPropChequeDtl->user_id           =  $req['user_id'];
+        $mPropChequeDtl->consumer_id        =  $req['consumer_id'] ?? null;
+        $mPropChequeDtl->application_id     =  $req['application_id'] ?? null;
+        $mPropChequeDtl->transaction_id     =  $req['transaction_id'];
+        $mPropChequeDtl->cheque_date        =  $req['cheque_date'];
+        $mPropChequeDtl->bank_name          =  $req['bank_name'];
+        $mPropChequeDtl->branch_name        =  $req['branch_name'];
+        $mPropChequeDtl->cheque_no          =  $req['cheque_no'];
+        $mPropChequeDtl->user_id            =  $req['user_id'];
         $mPropChequeDtl->save();
     }
 }

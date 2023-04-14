@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Water\reqDeactivate;
 use App\Http\Requests\Water\reqMeterEntry;
 use App\MicroServices\DocUpload;
+use App\MicroServices\IdGeneration;
+use App\Models\Payment\TempTransaction;
+use App\Models\Water\WaterChequeDtl;
 use App\Models\Water\WaterConsumer as WaterWaterConsumer;
 use App\Models\Water\WaterConsumerDemand;
 use App\Models\Water\WaterConsumerDisconnection;
@@ -13,9 +16,12 @@ use App\Models\Water\WaterConsumerInitialMeter;
 use App\Models\Water\WaterConsumerMeter;
 use App\Models\Water\WaterConsumerTax;
 use App\Models\Water\WaterDisconnection;
+use App\Models\Water\WaterTran;
 use App\Models\Workflows\WfRoleusermap;
+use App\Models\Workflows\WfWorkflowrolemap;
 use App\Repository\Water\Concrete\WaterNewConnection;
 use App\Repository\Water\Interfaces\IConsumer;
+use App\Traits\Workflow\Workflow;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
@@ -25,6 +31,8 @@ use Symfony\Component\CssSelector\Node\FunctionNode;
 
 class WaterConsumer extends Controller
 {
+    use Workflow;
+
     private $Repository;
     public function __construct(IConsumer $Repository)
     {
@@ -364,7 +372,7 @@ class WaterConsumer extends Controller
     /**
      * | Get the Fixed Rate According to the Rate Chart
      * | Only in Case of Meter Connection Type Fixed
-        | Serial No : 
+        | Serial No : 04.03
         | Not Working
         | find the fixed rate for the fixed charges from the table
      */
@@ -378,7 +386,7 @@ class WaterConsumer extends Controller
      * | @param request
      * | @var 
      * | @return 
-        | Serial No : 
+        | Serial No : 05
         | Not Working
      */
     public function getMeterList(Request $request)
@@ -426,19 +434,55 @@ class WaterConsumer extends Controller
      * | @param request
      * | @var 
         | Not Working
-        | Serial No : 
+        | Serial No : 06
      */
     public function applyDeactivation(Request $request)
     {
         try {
             $request->validate([
-                'consumerId' => "required|digits_between:1,9223372036854775807",
+                'consumerId'    => "required|digits_between:1,9223372036854775807",
+                'amount'        => "required",
+                'paymentMode'   => "required|in:Cash,Cheque,DD",
+                'ulbId'         => "nullable",
+                'document'      => "required|mimes:pdf,jpg,jpeg,png|max:2048",
+                'reason'        => "required|in:1,2,3",
+                'remarks'       => "required"
             ]);
 
+            $user = authUser();
+            $currentDate = Carbon::now();
+            $mWaterWaterConsumer = new WaterWaterConsumer();
             $mWaterConsumerDisconnection = new WaterConsumerDisconnection();
-            $this->PreConsumerDeactivationCheck($request);
-            $mWaterConsumerDisconnection->saveDissconnection($request);
+            $refIdGeneration = new IdGeneration();
+            $refWorkflow = Config::get('workflow-constants.WATER_MASTER_ID');
+
+            $request->request->add(['workflowId' => $refWorkflow]);
+            $roleId = $this->getRole($request)->pluck('wf_role_id');
+            $request->request->add(['roleId' => $roleId]);
+
+            $consumerDetails = $this->PreConsumerDeactivationCheck($request);
+
+            DB::beginTransaction();
+            $document = $this->saveDeactivationDoc($request);
+            $transactionNo = $refIdGeneration->generateTransactionNo();
+            $mWaterWaterConsumer->dissconnetConsumer($request);
+            $deactivatedDetails = $mWaterConsumerDisconnection->saveDeactivationDetails($request, $currentDate, $document, $consumerDetails);
+            $metaRequest = [
+                'id'                => $deactivatedDetails['id'],
+                'amount'            => $request->amount,
+                'chargeCategory'    => "Demand Deactivation",
+                'todayDate'         => $currentDate->format('Y-m-d'),
+                'tranNo'            => $transactionNo,
+                'paymentMode'       => $request->paymentMode,
+                'userId'            => $user->id,
+                'userType'          => $user->user_type,
+                'ulbId'             => $request->ulbId ?? $user->ulb_id,
+            ];
+            $this->makeDeactivationTransaction($metaRequest, $request, $consumerDetails);
+            DB::commit();
+            return responseMsgs(true, "Respective Consumer Deactivated!", "", "", "02", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
+            DB::rollBack();
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", "");
         }
     }
@@ -448,33 +492,185 @@ class WaterConsumer extends Controller
      * | @param
      * | @var 
         | Not Working
-        | Serial No : 
+        | Serial No : 06.01
         | Recheck
      */
     public function PreConsumerDeactivationCheck($request)
     {
+        $consumerId = $request->consumerId;
         $mWaterWaterConsumer = new WaterWaterConsumer();
-        // $m = new ;
-        $refConsumerDetails = $mWaterWaterConsumer->getConsumerDetailById($request->consumerId);
+        $mWaterConsumerDemand = new WaterConsumerDemand();
+        $refConsumerDetails = $mWaterWaterConsumer->getConsumerDetailById($consumerId);
         if (isset($refConsumerDetails)) {
-            throw new Exception("Consumer Not Exist!");
+            throw new Exception("Consumer Don't Exist!");
         }
 
-        // $mWfRoleUser = new WfRoleusermap();
-        // $refApplication = WaterApplication::findOrFail($request->applicationId);
-        // $WaterRoles = Config::get('waterConstaint.ROLE-LABEL');
-        // $workflowId = Config::get('workflow-constants.WATER_WORKFLOW_ID');
-        // $metaReqs =  new Request([
-        //     'userId'        => authUser()->id,
-        //     'workflowId'    => $workflowId
-        // ]);
-        // $readRoles = $mWfRoleUser->getRoleByUserWfId($metaReqs);                      // Model to () get Role By User Id
+        $pendingDemand = $mWaterConsumerDemand->getConsumerDemand($consumerId);
+        $firstPendingDemand = collect($pendingDemand)->first();
+        if (isset($firstPendingDemand)) {
+            throw new Exception("There are unpaid pending demand!");
+        }
 
-        // if ($refApplication['current_role'] != $WaterRoles['AE']) {
-        //     throw new Exception("Application is not Under the Assistent Engineer!");
-        // }
-        // if ($readRoles->wf_role_id != $WaterRoles['AE']) {
-        //     throw new Exception("you Are Not Autherised for the process!");
-        // }
+        if ($request->amount != 450) {
+            throw new Exception("Amount not matched!");
+        }
+        return $refConsumerDetails;
+    }
+
+
+    /**
+     * | Save document for deactivating the consumer 
+     * | @param request
+        | Not Working
+        | Serial No: 06.02
+     */
+    public function saveDeactivationDoc($request)
+    {
+        $docUpload = new DocUpload;
+        $relativePath = Config::get('waterConstaint.WATER_RELATIVE_PATH');
+        $refImageName = config::get('waterConstaint.WATER_CONSUMER_DEACTIVATION');
+        $document = $request->document;
+        $imageName = $docUpload->upload($refImageName, $document, $relativePath);
+        $doc = [
+            "document" => $imageName,
+            "relaivePath" => $relativePath
+        ];
+        return $doc;
+    }
+
+    /**
+     * | Payment for demand deactivation
+     * | @param metaRequest
+     * | @param request
+     * | @param consumerDetails
+        | Not Working
+        | Serial No : 06.03
+        | check for the transaction 
+     */
+    public function makeDeactivationTransaction($metaRequest, $request, $consumerDetails)
+    {
+        $mWaterTran = new WaterTran();
+        $offlinePaymentModes = Config::get('payment-constants.VERIFICATION_PAYMENT_MODE');
+        $transactionId = $mWaterTran->waterTransaction($metaRequest, $consumerDetails);
+
+        if (in_array($request['paymentMode'], $offlinePaymentModes)) {
+            $request->merge([
+                'chequeDate'    => $request['chequeDate'],
+                'tranId'        => $transactionId['id'],
+                'id'            => $request->consumerId,
+                'applicationNo' => $consumerDetails->consumer_no,
+                'workflowId'    => null,
+                'ward_no'       => $consumerDetails->ward_mstr_id
+            ]);
+            $this->postOtherPaymentModes($request);
+        }
+    }
+
+
+    /**
+     * | Post Other Payment Modes for Cheque,DD,Neft
+     * | @param req
+        | Serial No : 06.03.01
+        | Not Working
+     */
+    public function postOtherPaymentModes($req)
+    {
+        $cash = Config::get('payment-constants.PAYMENT_MODE.3');
+        $moduleId = Config::get('module-constants.WATER_MODULE_ID');
+        $mTempTransaction = new TempTransaction();
+
+        if ($req['paymentMode'] != $cash) {
+            $mPropChequeDtl = new WaterChequeDtl();
+            $chequeReqs = [
+                'user_id'           => $req['userId'],
+                'consumer_id'       => $req['id'],
+                'transaction_id'    => $req['tranId'],
+                'cheque_date'       => $req['chequeDate'],
+                'bank_name'         => $req['bankName'],
+                'branch_name'       => $req['branchName'],
+                'cheque_no'         => $req['chequeNo']
+            ];
+
+            $mPropChequeDtl->postChequeDtl($chequeReqs);
+        }
+
+        $tranReqs = [
+            'transaction_id'    => $req['tranId'],
+            'application_id'    => $req['id'],
+            'module_id'         => $moduleId,
+            'workflow_id'       => $req['workflowId'] ?? 0,
+            'transaction_no'    => $req['tranNo'],
+            'application_no'    => $req['applicationNo'],
+            'amount'            => $req['amount'],
+            'payment_mode'      => strtoupper($req['paymentMode']),
+            'cheque_dd_no'      => $req['chequeNo'],
+            'bank_name'         => $req['bankName'],
+            'tran_date'         => $req['todayDate'],
+            'user_id'           => $req['userId'],
+            'ulb_id'            => $req['ulbId'],
+            'ward_no'           => $req['ward_no']
+        ];
+        $mTempTransaction->tempTransaction($tranReqs);
+    }
+
+
+
+    /**
+     * | Demand deactivation process
+     * | @param 
+     * | @var 
+     * | @return 
+        | Not Working
+        | Serial No :
+        | Not Build
+     */
+    public function consumerDemandDeactivation(Request $request)
+    {
+        try {
+            $request->validate([
+                'consumerId'    => "required|digits_between:1,9223372036854775807",
+                'demandId'      => "required|array|unique:water_consumer_demands,id'",
+                'paymentMode'   => "required|in:Cash,Cheque,DD",
+                'amount'        => "required",
+                'reason'        => "required"
+            ]);
+            $mWaterWaterConsumer = new WaterWaterConsumer();
+            $mWaterConsumerDemand = new WaterConsumerDemand();
+
+            $this->checkDeactivationDemand($request);
+            $this->checkForPayment($request);
+        } catch (Exception $e) {
+            return responseMsgs(true, $e->getMessage(), "", "", "01", ".ms", "POST", $request->deviceId);
+        }
+    }
+
+    /**
+     * | check if the following conditon if fullfilled for demand deactivation
+     * | check for valid user
+     * | @param request
+     * | @var 
+     * | @return 
+        | Not Working
+        | Serial No: 
+        | Not Build
+        | Get Concept for deactivation 
+     */
+    public function checkDeactivationDemand($request)
+    {
+        return true;
+    }
+
+    /**
+     * | Check the concept for payment and amount
+     * | @param request
+     * | @var 
+     * | @return 
+        | Not Working
+        | Serial No:
+        | Get Concept Notes
+     */
+    public function checkForPayment($request)
+    {
+        $mWaterTran = new WaterTran();
     }
 }

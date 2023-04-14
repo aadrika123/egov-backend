@@ -762,7 +762,7 @@ class WaterPaymentController extends Controller
             ->where('demand_upto', '<=', $endDate)
             ->get();
         $checkCharges = collect($allCharges)->last();
-        if (!$checkCharges->id) {
+        if (!$checkCharges->id || is_null($checkCharges)) {
             throw new Exception("Charges for respective date don't exist!......");
         }
         $totalPaymentAmount = collect($allCharges)->sum('balance_amount');
@@ -965,7 +965,6 @@ class WaterPaymentController extends Controller
                 $req->merge([
                     'chequeDate'    => $req['chequeDate'],
                     'tranId'        => $waterTrans['id'],
-                    'id'            => $req->applicationId,
                     'applicationNo' => $refWaterApplication['application_no'],
                     'workflowId'    => $refWaterApplication['workflow_id'],
                     'ward_no'       => $refWaterApplication['ward_id']
@@ -1166,19 +1165,30 @@ class WaterPaymentController extends Controller
         $cash = Config::get('payment-constants.PAYMENT_MODE.3');
         $moduleId = Config::get('module-constants.WATER_MODULE_ID');
         $mTempTransaction = new TempTransaction();
+        $mPropChequeDtl = new WaterChequeDtl();
 
         if ($req['paymentMode'] != $cash) {
-            $mPropChequeDtl = new WaterChequeDtl();
-            $chequeReqs = [
-                'user_id'           => $req['userId'],
-                'application_id'    => $req['id'],
-                'transaction_id'    => $req['tranId'],
-                'cheque_date'       => $req['chequeDate'],
-                'bank_name'         => $req['bankName'],
-                'branch_name'       => $req['branchName'],
-                'cheque_no'         => $req['chequeNo']
-            ];
-
+            if ($req->chargeCategory == "Demand Collection") {
+                $chequeReqs = [
+                    'user_id'           => $req['userId'],
+                    'consumer_id'       => $req['id'],
+                    'transaction_id'    => $req['tranId'],
+                    'cheque_date'       => $req['chequeDate'],
+                    'bank_name'         => $req['bankName'],
+                    'branch_name'       => $req['branchName'],
+                    'cheque_no'         => $req['chequeNo']
+                ];
+            } else {
+                $chequeReqs = [
+                    'user_id'           => $req['userId'],
+                    'application_id'    => $req['id'],
+                    'transaction_id'    => $req['tranId'],
+                    'cheque_date'       => $req['chequeDate'],
+                    'bank_name'         => $req['bankName'],
+                    'branch_name'       => $req['branchName'],
+                    'cheque_no'         => $req['chequeNo']
+                ];
+            }
             $mPropChequeDtl->postChequeDtl($chequeReqs);
         }
 
@@ -1425,31 +1435,18 @@ class WaterPaymentController extends Controller
         | Not Working
         | Recheck 
      */
-    // public function initiateOnlineDemandPayment(Request $request)
+    // public function initiateOnlineDemandPayment(reqDemandPayment $request)
     // {
     //     try {
     //         $refUser            = Auth()->user();
     //         $refUserId          = $refUser->id;
     //         $refUlbId           = $refUser->ulb_id;
-    //         $rules = [
-    //             'id'                => 'required|digits_between:1,9223372036854775807',
-    //             'applycationType'  => 'required|string|in:connection,consumer',
-    //         ];
-    //         $validator = Validator::make($request->all(), $rules,);
-    //         if ($validator->fails()) {
-    //             return responseMsg(false, $validator->errors(), $request->all());
-    //         }
+
     //         #------------ new connection --------------------
     //         DB::beginTransaction();
-    //         if ($request->applycationType == "connection") {
-    //             $application = WaterApplication::find($request->id);
-    //             if (!$application) {
-    //                 throw new Exception("Data Not Found!......");
-    //             }
-    //             $cahges = $this->getWaterConnectionChages($application->id);
-    //             if (!$cahges) {
-    //                 throw new Exception("No Anny Due Amount!......");
-    //             }
+    //         if ($request->applycationType == "consumer") {
+    //             $this->check
+
     //             $myRequest = new \Illuminate\Http\Request();
     //             $myRequest->setMethod('POST');
     //             $myRequest->request->add(['amount' => $cahges->amount]);

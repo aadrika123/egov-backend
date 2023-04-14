@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Property;
 
 use App\BLL\Property\CalculateSafById;
+use App\BLL\Property\GenerateSafApplyDemandResponse;
 use App\EloquentClass\Property\InsertTax;
 use App\EloquentClass\Property\PenaltyRebateCalculation;
 use App\EloquentClass\Property\SafCalculation;
@@ -96,12 +97,12 @@ class ApplySafController extends Controller
             $user_id = auth()->user()->id;
             $ulb_id = $request->ulbId ?? auth()->user()->ulb_id;
             $userType = auth()->user()->user_type;
-            $demand = array();
             $metaReqs = array();
             $saf = new PropActiveSaf();
             $mOwner = new PropActiveSafsOwner();
             $safCalculation = new SafCalculation();
             $calculateSafById = new CalculateSafById;
+            $generateSafApplyDemandResponse = new GenerateSafApplyDemandResponse;
             // Derivative Assignments
             $ulbWorkflowId = $this->readAssessUlbWfId($request, $ulb_id);           // (2.1)
             $roadWidthType = $this->readRoadWidthType($request->roadType);          // Read Road Width Type
@@ -128,14 +129,23 @@ class ApplySafController extends Controller
             $safTaxes = $safCalculation->calculateTax($request);
 
             // Generate Calculation
-            // $calculateSafById->_calculatedDemand = $safTaxes->original['data'];
-            // $calculateSafById->_safDetails['assessment_type'] = $assessmentId;
+            $calculateSafById->_calculatedDemand = $safTaxes->original['data'];
+            $calculateSafById->_safDetails['assessment_type'] = $assessmentId;
 
-            // if (isset($request->holdingNo))
-            //     $calculateSafById->_holdingNo = $request->holdingNo;
-
-            // $calculateSafById->generateSafDemand();
-            // return $calculateSafById->_generatedDemand;
+            if (isset($request->holdingNo))
+                $calculateSafById->_holdingNo = $request->holdingNo;
+            $calculateSafById->_currentQuarter = calculateQtr($mApplyDate);
+            $firstOwner = collect($request['owner'])->first();
+            $calculateSafById->_firstOwner = [
+                'gender' => $firstOwner['gender'],
+                'dob' => $firstOwner['dob'],
+                'is_armed_force' => $firstOwner['isArmedForce'],
+                'is_specially_abled' => $firstOwner['isSpeciallyAbled'],
+            ];
+            $calculateSafById->generateSafDemand();
+            $generatedDemand = $calculateSafById->_generatedDemand;
+            $isResidential = $safTaxes->original['data']['demand']['isResidential'];
+            $demandResponse = $generateSafApplyDemandResponse->generateResponse($generatedDemand, $isResidential);
 
             $lateAssessmentPenalty = $safTaxes->original['data']['demand']['lateAssessmentPenalty'];
             $metaReqs['lateAssessmentPenalty'] = ($lateAssessmentPenalty > 0) ? $lateAssessmentPenalty : null;
@@ -164,37 +174,7 @@ class ApplySafController extends Controller
                     $floor->addfloor($floor_details, $safId, $user_id);
                 }
             }
-            // Insert Tax
-            $demand['amounts'] = $safTaxes->original['data']['demand'];
-            $generatedDemandDtls = $this->generateSafDemand($safTaxes->original['data']['details']);
-            $demand['details'] = $generatedDemandDtls;
-            $this->_generatedDemand = $generatedDemandDtls;
-            $totalBalance = $generatedDemandDtls->sum('balance');
-            $totalOnePercPenalty = $generatedDemandDtls->sum('onePercPenaltyTax');
-            $totalDemand = $totalBalance + $totalOnePercPenalty + $lateAssessmentPenalty;
 
-            if ($assessmentId == 2 || $assessmentId == 3) {                                    // In Case Of Reassessment,Mutation Amount Adjustment
-                $this->_holdingNo = $request->holdingNo;
-                $generatedDemandDtls = $this->adjustDemand();            // (2.3)
-
-                $totalBalance = $generatedDemandDtls->sum('balance');
-                $totalOnePercPenalty = $generatedDemandDtls->sum('onePercPenaltyTax');
-                $totalDemand = $totalBalance + $totalOnePercPenalty + $lateAssessmentPenalty;
-
-                $safTaxes->original['data']['demand']['totalTax'] = roundFigure($totalBalance);
-                $safTaxes->original['data']['demand']['totalOnePercPenalty'] = roundFigure($totalOnePercPenalty);
-                $safTaxes->original['data']['demand']['totalDemand'] = roundFigure($totalDemand);
-            }
-
-            $mLastQuarterDemand = collect($generatedDemandDtls)->where('quarterYear', $this->_currentFYear)->sum('balance');
-            $firstOwner = $mOwner->getFirstOwnerBySafId($safId);
-
-            $this->_penaltyRebateCalc->readRebates($this->_currentQuarter, $userType, $mLastQuarterDemand, $firstOwner, $totalDemand, $safTaxes->original['data']['demand']);
-            $totalRebate = $safTaxes->original['data']['demand']['rebateAmt'] + $safTaxes->original['data']['demand']['specialRebateAmt'];
-            $payableAmount = $totalDemand - $totalRebate;
-            $safTaxes->original['data']['demand']['payableAmount'] = round($payableAmount);
-            $demandResponse['amounts'] = $safTaxes->original['data']['demand'];
-            $demandResponse['details'] =  $generatedDemandDtls->groupBy('ruleSet');
             DB::commit();
             return responseMsgs(true, "Successfully Submitted Your Application Your SAF No. $safNo", [
                 "safNo" => $safNo,
@@ -343,11 +323,12 @@ class ApplySafController extends Controller
             $safCalculation = new SafCalculation;
             $mPropFloors = new PropActiveSafsFloor();
             $mPropGbOfficer = new PropActiveGbOfficer();
-            $demand = array();
             $safReq = array();
             $reqFloors = $req->floors;
             $applicationDate = $this->_todayDate->format('Y-m-d');
             $assessmentId = $req->assessmentType;
+            $calculateSafById = new CalculateSafById;
+            $generateSafApplyDemandResponse = new GenerateSafApplyDemandResponse;
 
             // Derivative Assignments
             $ulbWfId = $this->readGbAssessUlbWfId($req, $ulbId);
@@ -369,10 +350,19 @@ class ApplySafController extends Controller
             );
 
             $safTaxes = $safCalculation->calculateTax($req);
-            $demand['amounts'] = $safTaxes->original['data']['demand'];
-            $generatedDemandDtls = $this->generateSafDemand($safTaxes->original['data']['details']);
-            $demand['details'] = $generatedDemandDtls;
-            $lateAssessmentPenalty = $demand['amounts']['lateAssessmentPenalty'];
+            // Generate Calculation
+            $calculateSafById->_calculatedDemand = $safTaxes->original['data'];
+            $calculateSafById->_safDetails['assessment_type'] = $assessmentId;
+
+            if (isset($req->holdingNo))
+                $calculateSafById->_holdingNo = $req->holdingNo;
+            $calculateSafById->_currentQuarter = calculateQtr($applicationDate);
+            $calculateSafById->generateSafDemand();
+            $generatedDemand = $calculateSafById->_generatedDemand;
+            $isResidential = $safTaxes->original['data']['demand']['isResidential'];
+            $demandResponse = $generateSafApplyDemandResponse->generateResponse($generatedDemand, $isResidential);
+
+            $lateAssessmentPenalty = $demandResponse['amounts']['lateAssessmentPenalty'];
             $lateAssessmentPenalty = ($lateAssessmentPenalty > 0) ? $lateAssessmentPenalty : null;
             // Send to Workflow
             $currentRole = ($userType == $this->_citizenUserType) ? $initiatorRoleId->role_id : $initiatorRoleId->role_id;
@@ -425,29 +415,6 @@ class ApplySafController extends Controller
                 $mPropFloors->addfloor($floor, $safId, $userId);
             }
 
-            $this->_generatedDemand = $generatedDemandDtls;
-            $lateAssessmentPenalty = $safTaxes->original['data']['demand']['lateAssessmentPenalty'];
-            $totalBalance = $safTaxes->original['data']['demand']['totalTax'];  // In case of New Assessment the total Tax will be calculated total Tax which is 50% of Total Balance in case or Residential Building
-            $totalOnePercPenalty = $generatedDemandDtls->sum('onePercPenaltyTax');
-            $totalDemand = $totalBalance + $totalOnePercPenalty + $lateAssessmentPenalty;
-            if ($assessmentId == 2) {                                    // In Case Of Reassessment Amount Adjustment
-                $this->_holdingNo = $req->holdingNo;
-                $generatedDemandDtls = $this->adjustDemand();            // (2.3)
-
-                $totalBalance = $generatedDemandDtls->sum('balance');
-                $totalOnePercPenalty = $generatedDemandDtls->sum('onePercPenaltyTax');
-                $totalDemand = $totalBalance + $totalOnePercPenalty + $lateAssessmentPenalty;
-
-                $safTaxes->original['data']['demand']['totalTax'] = roundFigure($totalBalance);
-                $safTaxes->original['data']['demand']['totalOnePercPenalty'] = roundFigure($totalOnePercPenalty);
-                $safTaxes->original['data']['demand']['totalDemand'] = roundFigure($totalDemand);
-            }
-            $mLastQuarterDemand = collect($generatedDemandDtls)->where('quarterYear', $this->_currentFYear)->sum('balance');
-
-            $this->_penaltyRebateCalc->readRebates($this->_currentQuarter, $userType, $mLastQuarterDemand, null, $totalDemand, $safTaxes->original['data']['demand']);
-            $totalRebate = $safTaxes->original['data']['demand']['rebateAmt'] + $safTaxes->original['data']['demand']['specialRebateAmt'];
-            $payableAmount = $totalDemand - $totalRebate;
-            $safTaxes->original['data']['demand']['payableAmount'] = round($payableAmount);
 
             // Insert Officer Details
             $gbOfficerReq = [
@@ -461,14 +428,12 @@ class ApplySafController extends Controller
             ];
             $mPropGbOfficer->store($gbOfficerReq);
             $this->sendToWorkflow($createSaf, $userId);
-
-            $demand['details'] = $demand['details']->groupBy('ruleSet');
             DB::commit();
             return responseMsgs(true, "Successfully Submitted Your Application Your SAF No. $safNo", [
                 "safNo" => $safNo,
                 "applyDate" => $applicationDate,
                 "safId" => $safId,
-                "demand" => $demand
+                "demand" => $demandResponse
             ], "010102", "1.0", "1s", "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();

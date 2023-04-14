@@ -326,7 +326,7 @@ class Report implements IReport
             $data = $active->union($approved)
                             ->union($rejected)
                             ->union($old);
-            $perPage = $request->perPage ? $request->perPage : 10;
+            $perPage = $request->perPage ? $request->perPage : 10000;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
             $paginator = $data->paginate($perPage);
             $items = $paginator->items();
@@ -417,7 +417,7 @@ class Report implements IReport
             }
             $data=$data->groupBy(["users.id", "users.user_name"]);
             
-            $perPage = $request->perPage ? $request->perPage : 10;
+            $perPage = $request->perPage ? $request->perPage : 10000;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
             $paginator = $data->paginate($perPage);
             $items = $paginator->items();
@@ -518,7 +518,7 @@ class Report implements IReport
                     $data= $data->union($old);
                     
             }
-            $perPage = $request->perPage ? $request->perPage : 10;
+            $perPage = $request->perPage ? $request->perPage :  10000;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
 
             $paginator = $data->paginate($perPage);
@@ -929,7 +929,7 @@ class Report implements IReport
                     ->union($rejected)
                     ->union($approved)
                     ->union($old);
-            $perPage = $request->perPage ? $request->perPage : 10;
+            $perPage = $request->perPage ? $request->perPage : 10000;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
 
             $paginator = $data->paginate($perPage);
@@ -1241,7 +1241,7 @@ class Report implements IReport
                     ->union($approved)
                     ->union($old);
 
-            $perPage = $request->perPage ? $request->perPage : 10;
+            $perPage = $request->perPage ? $request->perPage :10000;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
 
             $paginator = $data->paginate($perPage);
@@ -1466,7 +1466,7 @@ class Report implements IReport
                             });
                 }
 
-            $perPage = $request->perPage ? $request->perPage : 10;
+            $perPage = $request->perPage ? $request->perPage : 10000;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
             $paginator = $data->paginate($perPage);
             $items = $paginator->items();//dd(DB::getQueryLog());
@@ -1522,9 +1522,8 @@ class Report implements IReport
             
             $mWardIds = $mWardPermission->implode("ward_id", ",");
             $mWardIds = explode(',', ($mWardIds ? $mWardIds : "0"));
-            // DB::enableQueryLog();
             $data = UlbWardMaster::SELECT(
-                DB::RAW(" DISTINCT(ward_name) as ward_no, COUNT(active_trade_licences.id) AS total")
+                DB::RAW(" DISTINCT(ward_name) as ward_no,ulb_ward_masters.id AS ward_id, COUNT(active_trade_licences.id) AS total")
             )
                 ->LEFTJOIN("active_trade_licences", "ulb_ward_masters.id", "active_trade_licences.ward_id");
             if ($roleId == 8) 
@@ -1548,9 +1547,9 @@ class Report implements IReport
             }
             $data = $data->WHERE("active_trade_licences.ulb_id", $ulbId)
                     ->WHERE("active_trade_licences.is_parked", FALSE);
-            $data = $data->groupBy(["ward_name"]);
+            $data = $data->groupBy(["ward_name","ulb_ward_masters.id"]);
 
-            $perPage = $request->perPage ? $request->perPage : 10;
+            $perPage = $request->perPage ? $request->perPage : 10000;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
             $paginator = $data->paginate($perPage);
             $items = $paginator->items();
@@ -1607,8 +1606,12 @@ class Report implements IReport
                 $mWardPermission = $mWfWardUser->getWardsByUserId($userId);
             }
             $mWardIds = $mWardPermission->implode("ward_id", ",");
+            if($request->wardId)
+            {
+                $mWardIds = $request->wardId; 
+            }
             $mWardIds = explode(',', ($mWardIds ? $mWardIds : "0"));
-           
+            
             // DB::enableQueryLog();
             $data = ActiveTradeLicence::SELECT(
                     DB::RAW("wf_roles.id AS role_id, wf_roles.role_name,
@@ -1649,7 +1652,11 @@ class Report implements IReport
             {
                 $data = $data->WHEREIN("active_trade_licences.ward_id", $mWardIds);
             }
-            $perPage = $request->perPage ? $request->perPage : 10;
+            if($request->wardId)
+            {
+                $data = $data->WHEREIN("active_trade_licences.ward_id", $mWardIds);
+            }
+            $perPage = $request->perPage ? $request->perPage : 10000;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
             $paginator = $data->paginate($perPage);
             $items = $paginator->items();

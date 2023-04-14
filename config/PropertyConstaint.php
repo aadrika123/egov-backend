@@ -496,5 +496,15 @@ return [
     ],
 
     // Doc Codes
-    "TRUST_DOC_CODE" => "TRUST_DOCUMENT"
+    "TRUST_DOC_CODE" => "TRUST_DOCUMENT",
+
+    // Property Assessment Types for kind of properties in which old prop id required
+    "REASSESSMENT_TYPES" =>
+    [
+        "Reassessment",
+        "Re Assessment",
+        "Mutation",
+        "Bifurcation",
+        "Amalgamation"
+    ],
 ];

@@ -68,10 +68,10 @@ if(!function_exists('send_sms'))
 {
     function send_sms($mobile,$message, $templateid)
     {
-        $res=SMSJHGOVT("7050180186", $message, $templateid);
+        // $res=SMSJHGOVT("7050180186", $message, $templateid);
         //print_var($message);
         // $res=SMSJHGOVT($mobile, $message, $templateid);
-        return $res;
+        return [];//$res;
     }
 }
 if(!function_exists('Trade'))

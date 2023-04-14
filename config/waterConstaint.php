@@ -108,5 +108,11 @@ return [
         'Tax_Collector' => 'TC',
         'Jsk'           => 'JSK',
         'Citizen'       => 'Citizen'
-    ]
+    ],
+    "WATER_CONSUMER_DEACTIVATION" => "consumerDeactivation",
+    "DEACTIVATION_REASON" => [
+        "1" => "Duble Connection",
+        "2" => "Waiver Committee",
+        "3" => "No Connection"
+    ],
 ];
