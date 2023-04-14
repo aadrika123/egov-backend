@@ -46,11 +46,13 @@ class ObjectionController extends Controller
     use Objection;
     use SafDetailsTrait;
 
+    private $_todayDate;
     protected $objection;
     protected $Repository;
     public function __construct(iObjectionRepository $objection)
     {
         $this->Repository = $objection;
+        $this->_todayDate = Carbon::now();
     }
 
     //Objection for Clerical Mistake
@@ -467,6 +469,7 @@ class ObjectionController extends Controller
             $mPropActiveObjectionOwner = new PropActiveObjectionOwner();
             $mPropActiveObjectionDtl = new PropActiveObjectionDtl();
             $mPropActiveObjectionFloor = new PropActiveObjectionFloor();
+            $track = new WorkflowTrack();
             $userId = authUser()->id;
             $activeObjection = PropActiveObjection::where('id', $req->applicationId)
                 ->first();
@@ -479,6 +482,7 @@ class ObjectionController extends Controller
             $refGetFinisher = collect(DB::select($getFinisherQuery))->first();
 
             $workflowId = $activeObjection->workflow_id;
+            $senderRoleId = $activeObjection->current_role;
             $getRoleReq = new Request([                                                 // make request to get role id of the user
                 'userId' => $userId,
                 'workflowId' => $workflowId
@@ -596,6 +600,7 @@ class ObjectionController extends Controller
                     }
                 }
                 $msg =  "Application Successfully Approved !!";
+                $metaReqs['verificationStatus'] = 1;
             }
 
             // Rejection
@@ -607,7 +612,32 @@ class ObjectionController extends Controller
                 $approvedObjection->save();
                 $activeObjection->delete();
                 $msg = "Application Successfully Rejected !!";
+                $metaReqs['verificationStatus'] = 0;
             }
+
+            $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $metaReqs['workflowId'] = $activeObjection->workflow_id;
+            $metaReqs['refTableDotId'] = 'prop_active_concessions.id';
+            $metaReqs['refTableIdValue'] = $req->applicationId;
+            $metaReqs['senderRoleId'] = $senderRoleId;
+            $metaReqs['user_id'] = $userId;
+            $metaReqs['trackDate'] = $this->_todayDate->format('Y-m-d H:i:s');
+            $req->request->add($metaReqs);
+            $track->saveTrack($req);
+
+            // Updation of Received Date
+            $preWorkflowReq = [
+                'workflowId' => $activeObjection->workflow_id,
+                'refTableDotId' => 'prop_active_concessions.id',
+                'refTableIdValue' => $req->applicationId,
+                'receiverRoleId' => $senderRoleId
+            ];
+            $previousWorkflowTrack = $track->getWfTrackByRefId($preWorkflowReq);
+            $previousWorkflowTrack->update([
+                'forward_date' => $this->_todayDate->format('Y-m-d'),
+                'forward_time' => $this->_todayDate->format('H:i:s')
+            ]);
+
             DB::commit();
 
             return responseMsgs(true, $msg, "", '010811', '01', '474ms-573', 'Post', '');
