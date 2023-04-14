@@ -243,24 +243,19 @@ trait Auth
      */
     public function getUserDetails($emailInfo)
     {
-        $citizen = "Citizen";
         $userInfo = User::where('email', $emailInfo)
             ->select(
                 'id',
                 'user_name AS name',
-                'user_type AS userType'
+                'user_type AS userType',
+                'ulb_id as ulbId'
             )
-            ->get();
+            ->first();
 
-        $collection['userName'] = collect($userInfo)->first()->name;
-        $collection['userType'] = collect($userInfo)->first()->userType;
-        $userId = collect($userInfo)->first()->id;
-
-        if ($collection['userType'] == $citizen) {
-            $collection['userName'];
-            $collection['userType'];
-            return $collection;
-        }
+        $collection['userName'] = $userInfo->name;
+        $collection['userType'] = $userInfo->userType;
+        $collection['ulbId'] = $userInfo->ulbId;
+        $userId = $userInfo->id;
 
         # collecting the roles for respective user
         $mWfRoleusermap = new WfRoleusermap();

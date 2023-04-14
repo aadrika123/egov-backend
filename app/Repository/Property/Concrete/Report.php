@@ -2101,40 +2101,62 @@ class Report implements IReport
                 FROM ulb_ward_masters 
                 LEFT JOIN(
                     SELECT prop_properties.ward_mstr_id,
-                        COUNT(DISTINCT(prop_properties.id)) AS current_hh,
+                    COUNT
+                        (DISTINCT (
+                            CASE WHEN prop_demands.due_date BETWEEN  '$fromDate' AND '$uptoDate'  then prop_demands.property_id
+                            END)
+                        ) as current_demand_hh,
                         SUM(
                                 CASE WHEN prop_demands.due_date BETWEEN '$fromDate' AND '$uptoDate' then prop_demands.amount
                                     ELSE 0
                                     END
                         ) AS current_demand,
+                        COUNT
+                            (DISTINCT (
+                                CASE WHEN prop_demands.due_date<'$fromDate' then prop_demands.property_id
+                                END)
+                            ) as arrear_demand_hh,
                         SUM(
                             CASE WHEN prop_demands.due_date<'$fromDate' then prop_demands.amount
                                 ELSE 0
                                 END
                             ) AS arrear_demand,
-                    SUM(prop_demands.amount) AS total_demand
+                    SUM(prop_demands.amount - prop_demands.adjust_amt) AS total_demand
                     FROM prop_demands
                     JOIN prop_properties ON prop_properties.id = prop_demands.property_id
                     WHERE prop_demands.status =1 
                         AND prop_demands.ulb_id =$ulbId
                         " . ($wardId ? " AND prop_properties.ward_mstr_id = $wardId" : "") . "
                         AND prop_demands.due_date<='$uptoDate'
-                    GROUP BY prop_properties.ward_mstr_id    
-                )demands ON demands.ward_mstr_id = ulb_ward_masters.id 
+                    GROUP BY prop_properties.ward_mstr_id
+                )demands ON demands.ward_mstr_id = ulb_ward_masters.id
                 LEFT JOIN (
                     SELECT prop_properties.ward_mstr_id,
+                    COUNT
+                        (DISTINCT (
+                            CASE WHEN prop_demands.due_date BETWEEN  '$fromDate' AND '$uptoDate'  then prop_demands.property_id
+                            END)
+                        ) as current_collection_hh,
+
                         COUNT(DISTINCT(prop_properties.id)) AS collection_from_no_of_hh,
                         SUM(
                                 CASE WHEN prop_demands.due_date BETWEEN '$fromDate' AND '$uptoDate' then prop_demands.amount
                                     ELSE 0
                                     END
                         ) AS current_collection,
+
+                        COUNT
+                            (DISTINCT (
+                                CASE WHEN prop_demands.due_date<'$fromDate' then prop_demands.property_id
+                                END)
+                            ) as arrear_collection_hh,
+
                         SUM(
-                            cASe when prop_demands.due_date <'$fromDate' then prop_demands.amount
+                            CASE when prop_demands.due_date <'$fromDate' then prop_demands.amount
                                 ELSE 0
                                 END
                             ) AS arrear_collection,
-                    SUM(prop_demands.amount) AS total_collection
+                    SUM(prop_demands.amount - prop_demands.adjust_amt) AS total_collection
                     FROM prop_demands
                     JOIN prop_properties ON prop_properties.id = prop_demands.property_id
                     JOIN prop_tran_dtls ON prop_tran_dtls.prop_demand_id = prop_demands.id 
@@ -2150,7 +2172,7 @@ class Report implements IReport
                 )collection ON collection.ward_mstr_id = ulb_ward_masters.id
                 LEFT JOIN ( 
                     SELECT prop_properties.ward_mstr_id,
-                    SUM(prop_demands.amount) AS total_prev_collection
+                    SUM(prop_demands.amount - prop_demands.adjust_amt) AS total_prev_collection
                     FROM prop_demands
                     JOIN prop_properties ON prop_properties.id = prop_demands.property_id
                     JOIN prop_tran_dtls ON prop_tran_dtls.prop_demand_id = prop_demands.id 
@@ -2164,37 +2186,44 @@ class Report implements IReport
                     GROUP BY prop_properties.ward_mstr_id
                 )prev_collection ON prev_collection.ward_mstr_id = ulb_ward_masters.id                 
                 WHERE  ulb_ward_masters.ulb_id = $ulbId  
-                    " . ($wardId ? " AND ulb_ward_masters.id = $wardId" : "") . "           
+                    " . ($wardId ? " AND ulb_ward_masters.id = $wardId" : "") . "
+                GROUP BY ulb_ward_masters.ward_name           
             ";
-            $select = "SELECT CASE WHEN ulb_ward_masters.old_ward_name IS NOT NULL THEN ulb_ward_masters.old_ward_name
-                                ELSE  ulb_ward_masters.ward_name ::text
-                                END AS ward_no, 
-                            ulb_ward_masters.id, 
-                            COALESCE(demands.current_hh, 0::numeric) AS current_hh,   
-                            COALESCE(collection.collection_from_no_of_hh, 0::numeric) AS collection_from_hh,
-                            COALESCE(
-                                COALESCE(demands.current_hh, 0::numeric) 
+            $select = "SELECT ulb_ward_masters.ward_name AS ward_no, 
+                            SUM(COALESCE(demands.current_demand_hh, 0::numeric)) AS current_demand_hh,   
+                            SUM(COALESCE(demands.arrear_demand_hh, 0::numeric)) AS arrear_demand_hh,
+
+                            SUM(COALESCE(collection.current_collection_hh, 0::numeric)) AS current_collection_hh,   
+                            SUM(COALESCE(collection.arrear_collection_hh, 0::numeric)) AS arrear_collection_hh,
+
+                            SUM(COALESCE(collection.collection_from_no_of_hh, 0::numeric)) AS collection_from_hh,
+                            SUM(COALESCE(
+                                COALESCE(demands.current_demand_hh, 0::numeric) 
                                 - COALESCE(collection.collection_from_no_of_hh, 0::numeric), 0::numeric
-                            ) AS balance_hh,                       
-                            COALESCE(
+                            )) AS balance_hh,                       
+                            SUM(COALESCE(
                                 COALESCE(demands.arrear_demand, 0::numeric) 
                                 - COALESCE(prev_collection.total_prev_collection, 0::numeric), 0::numeric
-                            ) AS arrear_demand,
+                            )) AS arrear_demand,
                     
-                            COALESCE(prev_collection.total_prev_collection, 0::numeric) AS previous_collection,
-                            COALESCE(demands.current_demand, 0::numeric) AS current_demand,
-                            COALESCE(collection.arrear_collection, 0::numeric) AS arrear_collection,
-                            COALESCE(collection.current_collection, 0::numeric) AS current_collection,
+                            SUM(COALESCE(prev_collection.total_prev_collection, 0::numeric)) AS previous_collection,
+                            SUM(COALESCE(demands.current_demand, 0::numeric)) AS current_demand,
+                            SUM(COALESCE(collection.arrear_collection, 0::numeric)) AS arrear_collection,
+                            SUM(COALESCE(collection.current_collection, 0::numeric)) AS current_collection,
                     
-                            (COALESCE(
+                            SUM((COALESCE(
                                     COALESCE(demands.arrear_demand, 0::numeric) 
                                     - COALESCE(prev_collection.total_prev_collection, 0::numeric), 0::numeric
                                 ) 
-                                - COALESCE(collection.arrear_collection, 0::numeric) )AS old_due,
+                                - COALESCE(collection.arrear_collection, 0::numeric) 
+                                ))AS old_due,
                     
-                            (COALESCE(demands.current_demand, 0::numeric) - COALESCE(collection.current_collection, 0::numeric)) AS current_due,
+                            SUM((COALESCE(demands.current_demand, 0::numeric) - COALESCE(collection.current_collection, 0::numeric))) AS current_due,
+
+                            SUM((COALESCE(demands.current_demand_hh, 0::numeric) - COALESCE(collection.current_collection_hh, 0::numeric))) AS current_balance_hh,
+                            SUM((COALESCE(demands.arrear_demand_hh, 0::numeric) - COALESCE(collection.arrear_collection_hh, 0::numeric))) AS arrear_balance_hh,
                     
-                            (
+                            SUM((
                                 COALESCE(
                                     COALESCE(demands.current_demand, 0::numeric) 
                                     + (
@@ -2206,9 +2235,24 @@ class Report implements IReport
                                     COALESCE(collection.current_collection, 0::numeric) 
                                     + COALESCE(collection.arrear_collection, 0::numeric), 0::numeric
                                 )
-                            ) AS outstanding                                 
+                            )) AS outstanding                                 
             ";
-            $data = DB::select($select . $from);
+            $dcb = DB::select($select . $from);
+
+            $data['total_arrear_demand'] = round(collect($dcb)->sum('arrear_demand'), 2);
+            $data['total_current_demand'] = round(collect($dcb)->sum('current_demand'), 2);
+            $data['total_arrear_collection'] = round(collect($dcb)->sum('arrear_collection'), 2);
+            $data['total_current_collection'] = round(collect($dcb)->sum('current_collection'), 2);
+            $data['total_old_due'] = round(collect($dcb)->sum('old_due'), 2);
+            $data['total_current_due'] = round(collect($dcb)->sum('current_due'), 2);
+            $data['total_arrear_demand_hh'] = collect($dcb)->sum('arrear_demand_hh');
+            $data['total_current_demand_hh'] = collect($dcb)->sum('current_demand_hh');
+            $data['total_arrear_collection_hh'] = collect($dcb)->sum('arrear_collection_hh');
+            $data['total_current_collection_hh'] = collect($dcb)->sum('current_collection_hh');
+            $data['total_arrear_balance_hh'] = collect($dcb)->sum('arrear_balance_hh');
+            $data['total_current_balance_hh'] = collect($dcb)->sum('current_balance_hh');
+            $data['dcb'] = $dcb;
+
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true, "", $data, $apiId, $version, $queryRunTime, $action, $deviceId);
         } catch (Exception $e) {
@@ -2836,4 +2880,61 @@ class Report implements IReport
         }
     }
 
+    /**
+     * | DCB Pie Chart
+     */
+    public function dcbPieChart($request)
+    {
+        $ulbId = $request->ulbId ?? authUser()->ulb_id;
+        $currentDate = Carbon::now()->format('Y-m-d');
+        $currentYear = Carbon::now()->year;
+        $currentFyear = getFinancialYear($currentDate);
+        $startOfCurrentYear = Carbon::createFromDate($currentYear, 4, 1); // Start date of current financial year
+        $startOfPreviousYear = $startOfCurrentYear->copy()->subYear(); // Start date of previous financial year
+        $previousFinancialYear = getFinancialYear($startOfPreviousYear);
+        $startOfprePreviousYear = $startOfCurrentYear->copy()->subYear()->subYear();
+        $prePreviousFinancialYear = getFinancialYear($startOfprePreviousYear);
+
+        $sql1 = "SELECT     
+                    '$currentFyear' as fyear,    
+                    SUM (amount-adjust_amt) AS totalDemand,
+                    SUM(CASE WHEN paid_status =1 THEN amount ELSE 0 END )AS totalCollection,
+                    sum (amount-adjust_amt - CASE WHEN paid_status =1 THEN amount ELSE 0 END) as totalBalance
+                FROM prop_demands 
+                WHERE prop_demands.status =1 
+                AND  fyear = '$currentFyear'
+                AND  ulb_id = '$ulbId'";
+
+        $sql2 = "SELECT     
+                    '$previousFinancialYear' as fyear,    
+                    SUM (amount-adjust_amt) AS totalDemand,
+                    SUM(CASE WHEN paid_status =1 THEN amount ELSE 0 END )AS totalCollection,
+                    sum (amount-adjust_amt - CASE WHEN paid_status =1 THEN amount ELSE 0 END) as totalBalance
+                FROM prop_demands 
+                WHERE prop_demands.status =1 
+                AND fyear = '$previousFinancialYear'
+                AND ulb_id = '$ulbId'";
+
+        $sql3 = "SELECT     
+                    '$prePreviousFinancialYear' as fyear,    
+                    SUM (amount-adjust_amt) AS totalDemand,
+                    SUM(CASE WHEN paid_status =1 THEN amount ELSE 0 END )AS totalCollection,
+                    sum (amount-adjust_amt - CASE WHEN paid_status =1 THEN amount ELSE 0 END) as totalBalance
+                FROM prop_demands 
+                WHERE prop_demands.status =1 
+                AND  fyear = '$prePreviousFinancialYear'
+                AND  ulb_id = '$ulbId'";
+
+        $currentYearDcb =  DB::select($sql1);
+        $previousYearDcb = DB::select($sql2);
+        $prePreviousYearDcb = DB::select($sql3);
+
+        $data = [
+            collect($currentYearDcb)->first(),
+            collect($previousYearDcb)->first(),
+            collect($prePreviousYearDcb)->first()
+        ];
+
+        return responseMsgs(true, "", remove_null($data), "010203", "", "", 'POST', "");
+    }
 }

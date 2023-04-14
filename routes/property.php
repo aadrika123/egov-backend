@@ -459,6 +459,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('reports/property/gbsaf-individual-demand-collection', 'gbsafIndividualDemandCollection'); //done
     Route::post('reports/not-paid-from-2016', 'notPaidFrom2016');       //done
     Route::post('reports/previous-year-paid-not-current-year', 'previousYearPaidButnotCurrentYear'); //done
+    Route::post('reports/dcb-piechart', 'dcbPieChart');
 
     Route::post('reports/property/payment-mode-wise-summery', 'PropPaymentModeWiseSummery'); //done
     Route::post('reports/saf/payment-mode-wise-summery', 'SafPaymentModeWiseSummery');       //done

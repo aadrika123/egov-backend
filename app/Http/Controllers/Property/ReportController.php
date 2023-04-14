@@ -15,6 +15,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 
 class ReportController extends Controller
 {
@@ -401,6 +402,14 @@ class ReportController extends Controller
         return $this->Repository->previousYearPaidButnotCurrentYear($request);
     }
 
+    /**
+     * | Dcb Pie Chart
+     */
+    public function dcbPieChart(Request $request)
+    {
+        return $this->Repository->dcbPieChart($request);
+    }
+
 
 
     #------------date 13/03/2023 -------------------------------------------------------------------------
@@ -497,5 +506,4 @@ class ReportController extends Controller
         $request->request->add(["metaData" => ["pr10.1", 1.1, null, $request->getMethod(), null,]]);
         return $this->Repository->PropDeactedList($request);
     }
-    
 }

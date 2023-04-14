@@ -452,7 +452,7 @@ class ApplySafController extends Controller
             // Insert Officer Details
             $gbOfficerReq = [
                 'saf_id' => $safId,
-                'officer_name' => $req->officerName,
+                'officer_name' => strtoupper($req->officerName),
                 'designation' => $req->designation,
                 'mobile_no' => $req->officerMobile,
                 'email' => $req->officerEmail,

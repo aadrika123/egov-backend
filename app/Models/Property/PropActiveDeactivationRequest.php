@@ -19,6 +19,7 @@ class PropActiveDeactivationRequest extends Model
     {
         return PropActiveDeactivationRequest::select(
             'prop_active_deactivation_requests.id',
+            DB::raw("'active' as status"),
             // 'application_no' == null,
             'prop_properties.new_holding_no',
             'prop_active_deactivation_requests.property_id',
