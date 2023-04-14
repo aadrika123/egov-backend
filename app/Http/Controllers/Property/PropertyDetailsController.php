@@ -206,7 +206,8 @@ class PropertyDetailsController extends Controller
                             ->where('so.mobile_no', 'LIKE', '%' . $mobileNo . '%')
                             ->groupby('prop_active_safs.id', 'ulb_ward_masters.ward_name', 'wf_roles.role_name');
 
-                        $details =  $propSaf->union($activeSaf)->get();
+                        $details = ($propSaf->union($activeSaf)->get());
+                        $details = (object)$details;
                         break;
                     case ("gbsaf"):
                         $propGbSaf =  $mPropSafs->searchGbSafs()
@@ -369,7 +370,7 @@ class PropertyDetailsController extends Controller
                         break;
                 }
             }
-            return responseMsgs(true, "Application Details", [remove_null($details)], "010501", "1.0", "", "POST", $request->deviceId ?? "");
+            return responseMsgs(true, "Application Details", remove_null($details), "010501", "1.0", "", "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010501", "1.0", "", "POST", $request->deviceId ?? "");
         }
