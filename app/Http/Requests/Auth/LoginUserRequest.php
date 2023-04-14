@@ -40,7 +40,8 @@ class LoginUserRequest extends FormRequest
             'email' => ['required', 'string', 'email'],
             'password' => [
                 'required'
-            ]
+            ],
+            'type' => "nullable|in:mobile"
         ];
     }
 

@@ -156,7 +156,7 @@ class EloquentAuthRepository implements AuthRepository
                     $this->redisStore($redis, $emailInfo, $request, $token);   // Trait for update Redis
 
                     Redis::expire('user:' . $emailInfo->id, 18000);         // EXPIRE KEY AFTER 5 HOURS
-                    $message = $this->tResponseSuccess($token, $email);     // Response Message Using Trait
+                    $message = $this->tResponseSuccess($token, $email,$request);     // Response Message Using Trait
                     return response()->json($message, 200);
                 }
                 // AUTHENTICATING PASSWORD IN HASH
@@ -182,7 +182,7 @@ class EloquentAuthRepository implements AuthRepository
                     $this->redisStore($redis, $emailInfo, $request, $token);   // Trait for update Redis
 
                     Redis::expire('user:' . $emailInfo->id, 18000);     //EXPIRE KEY IN AFTER 5 HOURS
-                    $message = $this->tResponseSuccess($token, $email);           // Response Message Using Trait
+                    $message = $this->tResponseSuccess($token, $email,$request);           // Response Message Using Trait
                     return response()->json($message, 200);
                 } else {
                     $msg = "Incorrect Password";
@@ -193,7 +193,7 @@ class EloquentAuthRepository implements AuthRepository
         }
         // Authentication Using Sql Database
         catch (Exception $e) {
-            return $e;
+            return responseMsg(false, $e->getMessage(), "");
         }
     }
 

@@ -42,4 +42,9 @@ return [
     ],
 
     "baseUrl" => "192.168.0.16:8000",
+
+    "ROLES" =>[
+        "ULB_Tax_Collector" => 7,
+        "Tax_Collector" => 5
+    ],
 ];
