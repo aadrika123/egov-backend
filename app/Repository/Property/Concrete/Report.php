@@ -2192,11 +2192,13 @@ class Report implements IReport
             $select = "SELECT ulb_ward_masters.ward_name AS ward_no, 
                             SUM(COALESCE(demands.current_demand_hh, 0::numeric)) AS current_demand_hh,   
                             SUM(COALESCE(demands.arrear_demand_hh, 0::numeric)) AS arrear_demand_hh,
-
                             SUM(COALESCE(collection.current_collection_hh, 0::numeric)) AS current_collection_hh,   
                             SUM(COALESCE(collection.arrear_collection_hh, 0::numeric)) AS arrear_collection_hh,
-
                             SUM(COALESCE(collection.collection_from_no_of_hh, 0::numeric)) AS collection_from_hh,
+                            
+                            SUM(((collection.arrear_collection_hh ::numeric) / (case when demands.arrear_demand_hh > 0 then demands.arrear_demand_hh else 1 end))*100) AS arrear_hh_eff,
+                            SUM(((collection.current_collection_hh ::numeric) / (case when demands.current_demand_hh > 0 then demands.current_demand_hh else 1 end))*100) AS current_hh_eff,
+
                             SUM(COALESCE(
                                 COALESCE(demands.current_demand_hh, 0::numeric) 
                                 - COALESCE(collection.collection_from_no_of_hh, 0::numeric), 0::numeric
@@ -2222,7 +2224,10 @@ class Report implements IReport
 
                             SUM((COALESCE(demands.current_demand_hh, 0::numeric) - COALESCE(collection.current_collection_hh, 0::numeric))) AS current_balance_hh,
                             SUM((COALESCE(demands.arrear_demand_hh, 0::numeric) - COALESCE(collection.arrear_collection_hh, 0::numeric))) AS arrear_balance_hh,
-                    
+
+                            SUM(((collection.arrear_collection ::numeric) / (case when demands.arrear_demand > 0 then demands.arrear_demand else 1 end))*100) AS arrear_eff,
+                            SUM(((collection.current_collection ::numeric) / (case when demands.current_demand > 0 then demands.current_demand else 1 end))*100) AS current_eff,
+
                             SUM((
                                 COALESCE(
                                     COALESCE(demands.current_demand, 0::numeric) 
@@ -2251,6 +2256,11 @@ class Report implements IReport
             $data['total_current_collection_hh'] = collect($dcb)->sum('current_collection_hh');
             $data['total_arrear_balance_hh'] = collect($dcb)->sum('arrear_balance_hh');
             $data['total_current_balance_hh'] = collect($dcb)->sum('current_balance_hh');
+            $data['total_current_eff'] = ($data['total_current_collection_hh'] / $data['total_current_demand']) * 100;
+            $data['total_arrear_hh_eff'] = ($data['total_arrear_collection_hh'] /  $data['total_arrear_demand_hh']) * 100;
+            $data['total_current_hh_eff'] = ($data['total_current_collection_hh']) / ($data['total_current_demand_hh']) * 100;
+            $data['total_arrear_eff'] = ($data['total_arrear_collection']) / ($data['total_arrear_demand']) * 100;
+            $data['total_eff'] = (($data['total_arrear_collection'] + $data['total_current_collection']) / ($data['total_arrear_demand'] + $data['total_current_demand'])) * 100;
             $data['dcb'] = $dcb;
 
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
