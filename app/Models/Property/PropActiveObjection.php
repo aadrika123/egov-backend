@@ -95,14 +95,17 @@ class PropActiveObjection extends Model
         return DB::table('prop_active_objections as o')
             ->select(
                 'o.id',
+                DB::raw("'active' as status"),
                 'o.objection_no as application_no',
                 'p.new_holding_no',
                 'p.id as property_id',
                 'p.ward_mstr_id',
                 'p.new_ward_mstr_id',
+                'role_name as currentRole',
                 'u.ward_name as old_ward_no',
                 'u1.ward_name as new_ward_no'
             )
+            ->leftjoin('wf_roles', 'wf_roles.id', 'o.current_role')
             ->join('prop_properties as p', 'p.id', '=', 'o.property_id')
             ->join('ulb_ward_masters as u', 'p.ward_mstr_id', '=', 'u.id')
             ->leftJoin('ulb_ward_masters as u1', 'p.new_ward_mstr_id', '=', 'u1.id')
@@ -178,5 +181,28 @@ class PropActiveObjection extends Model
             ->whereRaw("date(track_date) = '$date'")
             ->orderBydesc('prop_active_objections.id')
             ->get();
+    }
+
+    /**
+     * | Search Objection
+     */
+    public function searchObjections()
+    {
+        return PropActiveObjection::select(
+            'prop_active_objections.id',
+            DB::raw("'active' as status"),
+            'prop_active_objections.objection_no',
+            'prop_active_objections.current_role',
+            'role_name as currentRole',
+            'ward_name',
+            'prop_address',
+            // DB::raw("string_agg(prop_owners.mobile_no::VARCHAR,',') as mobile_no"),
+            // DB::raw("string_agg(prop_owners.owner_name,',') as owner_name"),
+        )
+
+            ->join('wf_roles', 'wf_roles.id', 'prop_active_objections.current_role')
+            ->join('prop_properties as pp', 'pp.id', 'prop_active_objections.property_id')
+            ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'pp.ward_mstr_id')
+            ->join('prop_owners', 'prop_owners.property_id', 'pp.id');
     }
 }

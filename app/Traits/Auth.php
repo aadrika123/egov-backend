@@ -8,6 +8,8 @@ use App\Models\Workflows\WfRoleusermap;
 use App\Repository\Menu\Concrete\MenuRepo;
 use Illuminate\Http\Request;
 use App\MicroServices\DocUpload;
+use Exception;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Razorpay\Api\Collection;
@@ -108,9 +110,9 @@ trait Auth
      * | @param BearerToken $token
      * | @return Response
      */
-    public function tResponseSuccess($token, $emailInfo)
+    public function tResponseSuccess($token, $emailInfo, $request)
     {
-        $userDetails = $this->getUserDetails($emailInfo);                           //<------------ calling user details
+        $userDetails = $this->getUserDetails($emailInfo, $request);                           //<------------ calling user details
         $response = ['status' => true, 'message' => 'You Have Logged In!!', 'data' => ["token" => $token, 'userDetails' => $userDetails]];
         return $response;
     }
@@ -241,26 +243,21 @@ trait Auth
          |line-(248,253) Working
      * | Remark : use collect in place of foreach.
      */
-    public function getUserDetails($emailInfo)
+    public function getUserDetails($emailInfo, $request)
     {
-        $citizen = "Citizen";
         $userInfo = User::where('email', $emailInfo)
             ->select(
                 'id',
                 'user_name AS name',
-                'user_type AS userType'
+                'user_type AS userType',
+                'ulb_id as ulbId'
             )
-            ->get();
+            ->first();
 
-        $collection['userName'] = collect($userInfo)->first()->name;
-        $collection['userType'] = collect($userInfo)->first()->userType;
-        $userId = collect($userInfo)->first()->id;
-
-        if ($collection['userType'] == $citizen) {
-            $collection['userName'];
-            $collection['userType'];
-            return $collection;
-        }
+        $collection['userName'] = $userInfo->name;
+        $collection['userType'] = $userInfo->userType;
+        $collection['ulbId'] = $userInfo->ulbId;
+        $userId = $userInfo->id;
 
         # collecting the roles for respective user
         $mWfRoleusermap = new WfRoleusermap();
@@ -275,6 +272,7 @@ trait Auth
             return $values;
         });
 
+        $this->checkForMobileView($menuRoleDetails, $request);
         // $roleId = $menuRoleDetails['roleId'] = collect($menuRoleDetails)->map(function ($value, $key) {
         //     $values = $value['roleId'];
         //     return $values;
@@ -299,5 +297,34 @@ trait Auth
         // $collection['menuPermission'] = collect($treeStructure)['original']['data'];
 
         return $collection;
+    }
+
+
+    /**
+     * | Check for the mobile View
+     * | @param 
+     * | @var
+     * | @return
+     */
+    public function checkForMobileView($menuRoleDetails, $request)
+    {
+        $roleIds = collect($menuRoleDetails)->pluck("roleId")->toArray();
+        $refRoleIds = Config::get("workflow-constants.ROLES");
+        switch ($request->type) {
+            case ("mobile"):
+                if (in_array($refRoleIds['ULB_Tax_Collector'], $roleIds) || in_array($refRoleIds['Tax_Collector'], $roleIds)) {
+                    true;
+                } else {
+                    throw new Exception("You are not authorised for mobile View!");
+                }
+                break;
+            case (""):
+                if (in_array($refRoleIds['ULB_Tax_Collector'], $roleIds) || in_array($refRoleIds['Tax_Collector'], $roleIds)) {
+                    throw new Exception("You are not authorised for web View!");
+                } else {
+                    true;
+                }
+                break;
+        }
     }
 }

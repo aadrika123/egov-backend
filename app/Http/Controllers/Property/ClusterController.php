@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\property;
+namespace App\Http\Controllers\Property;
 
 use App\Http\Controllers\Controller;
 use App\Models\Cluster\Cluster;

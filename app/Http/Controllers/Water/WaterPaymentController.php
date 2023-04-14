@@ -12,7 +12,10 @@ use App\MicroServices\IdGeneration;
 use App\Models\Payment\TempTransaction;
 use App\Models\Payment\WebhookPaymentData;
 use App\Models\Property\PropTransaction;
+use App\Models\Water\WaterAdjustment;
+use App\Models\Water\WaterAdvance;
 use App\Models\Water\WaterApplication;
+use App\Models\Water\WaterApprovalApplicationDetail;
 use App\Models\Water\WaterChequeDtl;
 use App\Models\Water\WaterConnectionCharge;
 use App\Models\Water\WaterConnectionThroughMstr;
@@ -33,6 +36,7 @@ use App\Models\Water\WaterTran;
 use App\Models\Water\WaterTranDetail;
 use App\Models\Workflows\WfRoleusermap;
 use App\Repository\Water\Concrete\WaterNewConnection;
+use App\Traits\Payment\Razorpay;
 use App\Traits\Ward;
 use App\Traits\Workflow\Workflow;
 use Carbon\Carbon;
@@ -56,6 +60,7 @@ class WaterPaymentController extends Controller
 {
     use Ward;
     use Workflow;
+    use Razorpay;
 
     // water Constant
     private $_waterRoles;
@@ -356,6 +361,7 @@ class WaterPaymentController extends Controller
             $mWaterConnectionCharge = new WaterConnectionCharge();
             $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
             $mWaterApplication = new WaterApplication();
+            $mWaterApprovalApplicationDetail = new WaterApprovalApplicationDetail();
             $mWaterChequeDtl = new WaterChequeDtl();
             $mWaterTran = new WaterTran();
 
@@ -366,15 +372,17 @@ class WaterPaymentController extends Controller
 
             # transaction Deatils
             $transactionDetails = $mWaterTran->getTransactionByTransactionNo($refTransactionNo)
-                ->firstOrFail();
+                ->first();
 
             #  Data not equal to Cash
             if (!in_array($transactionDetails['payment_mode'], [$mPaymentModes['1'], $mPaymentModes['5']])) {
                 $chequeDetails = $mWaterChequeDtl->getChequeDtlsByTransId($transactionDetails['id'])->first();
             }
             # Application Deatils
-            $applicationDetails = $mWaterApplication->getDetailsByApplicationId($transactionDetails->related_id)->firstOrFail();
-
+            $applicationDetails = $mWaterApplication->getDetailsByApplicationId($transactionDetails->related_id)->first();
+            if (is_null($applicationDetails)) {
+                $applicationDetails = $mWaterApprovalApplicationDetail->getApprovedApplicationById($transactionDetails->related_id)->first();
+            }
             # Connection Charges
             $connectionCharges = $mWaterConnectionCharge->getChargesById($transactionDetails->demand_id)
                 ->firstOrFail();
@@ -682,18 +690,22 @@ class WaterPaymentController extends Controller
      * | @return 
         | Serial No : 05
         | Working
+        | Check for Advance adjustment
      */
     public function offlineDemandPayment(reqDemandPayment $request)
     {
         try {
             $user = authUser();
             $midGeneration = new IdGeneration;
+            $mWaterAdjustment = new WaterAdjustment();
             $mwaterTran = new waterTran();
-            $offlinePaymentModes = Config::get('payment-constants.VERIFICATION_PAYMENT_MODE');
             $todayDate = Carbon::now();
+            $offlinePaymentModes = Config::get('payment-constants.VERIFICATION_PAYMENT_MODE');
+            $adjustmentFor = Config::get("waterConstaint.ADVANCE_FOR");
+
             $startingDate = Carbon::createFromFormat('Y-m-d',  $request->demandFrom)->startOfMonth();
-            $startingDate = $startingDate->toDateString();
             $endDate = Carbon::createFromFormat('Y-m-d',  $request->demandUpto)->endOfMonth();
+            $startingDate = $startingDate->toDateString();
             $endDate = $endDate->toDateString();
 
             $finalCharges = $this->preOfflinePaymentParams($request, $startingDate, $endDate);
@@ -706,7 +718,8 @@ class WaterPaymentController extends Controller
                 'id'                => $request->consumerId,
                 'ulbId'             => $user->ulb_id,
                 'chargeCategory'    => "Demand Collection",
-                'leftDemandAmount'  => $finalCharges['leftDemandAmount']
+                'leftDemandAmount'  => $finalCharges['leftDemandAmount'],
+                'adjustedAmount'    => $finalCharges['adjustedAmount']
             ]);
 
             DB::beginTransaction();
@@ -726,6 +739,11 @@ class WaterPaymentController extends Controller
                 $this->postOtherPaymentModes($request);
             }
 
+            # adjustment data saving
+            if ($finalCharges['adjustedAmount'] > 0) {
+                $mWaterAdjustment->saveAdjustment($waterTrans, $request, $adjustmentFor);
+            }
+
             # Reflect on water Tran Details
             $consumercharges = collect($finalCharges['consumerChages']);
             foreach ($consumercharges as $charges) {
@@ -743,6 +761,8 @@ class WaterPaymentController extends Controller
      * | Check the Condition before payment
         | Serial No : 05:01
         | Not Working
+        | Make Adjustment for advance payment 
+        | Subtract the advance amount from the payable amount
      */
     public function preOfflinePaymentParams($request, $startingDate, $endDate)
     {
@@ -763,9 +783,11 @@ class WaterPaymentController extends Controller
             ->get();
         $checkCharges = collect($allCharges)->last();
         if (!$checkCharges->id || is_null($checkCharges)) {
-            throw new Exception("Charges for respective date don't exist!......");
+            throw new Exception("Charges for respective date doesn't exist!......");
         }
-        $totalPaymentAmount = collect($allCharges)->sum('balance_amount');
+        # Call Part
+        $refadvanceAmount = $this->checkAdvance($request);
+        $totalPaymentAmount = (collect($allCharges)->sum('balance_amount')) - $refadvanceAmount['advanceAmount'];
         if ($totalPaymentAmount != $refAmount) {
             throw new Exception("amount Not Matched!");
         }
@@ -775,6 +797,8 @@ class WaterPaymentController extends Controller
         if ($refgeneratedDemand != $totalgeneratedDemand) {
             throw new Exception("penally Not matched!");
         }
+        # checking the advance anount 
+
         $allLeftCharges = $mWaterConsumerDemand->getFirstConsumerDemand($consumerId)
             ->where('demand_from', '<', $startingDate)
             ->where('demand_upto', '>', $endDate)
@@ -784,7 +808,8 @@ class WaterPaymentController extends Controller
         return [
             "consumer"          => $refConsumer,
             "consumerChages"    => $allCharges,
-            "leftDemandAmount"  => $leftAmount
+            "leftDemandAmount"  => $leftAmount,
+            "adjustedAmount"    => $refadvanceAmount['advanceAmount']
         ];
     }
 
@@ -821,7 +846,8 @@ class WaterPaymentController extends Controller
      * | @var collectiveCharges
      * | @var returnData
         | Working
-        | Serial No : 
+        | Serial No : 06
+        | Check the advance concept
      */
     public function callDemandByMonth(Request $request)
     {
@@ -840,18 +866,16 @@ class WaterPaymentController extends Controller
 
             # when advance is collected
             // update the penalty used status after its use
-            // $advanceAmount = $this->checkAdvance($request);
-            $advanceAmount = 0;
+            $refadvanceAmount = $this->checkAdvance($request);
+            $advanceAmount = $refadvanceAmount['advanceAmount'];
             $totalPaymentAmount  = collect($collectiveCharges)->pluck('balance_amount')->sum();
             $actualCallAmount = $totalPaymentAmount - $advanceAmount;
             if ($actualCallAmount < 0) {
                 $totalPayAmount = 0;
                 $renmaningAmount = $actualCallAmount * -1;
-                // $this->updateAdvanceStatus();
             } else {
                 $totalPayAmount = $actualCallAmount;
                 $renmaningAmount = 0;
-                // $this->updateAdvanceStatus();
             }
 
             $returnData = [
@@ -876,7 +900,7 @@ class WaterPaymentController extends Controller
      * | @var allCharges
      * | @var checkDemand
      * | @return allCharges
-        | Serial No :
+        | Serial No : 06.01
         | Working  
      */
     public function checkCallParams($request, $startingDate, $endDate)
@@ -900,6 +924,38 @@ class WaterPaymentController extends Controller
         }
         return $allCharges;
     }
+
+
+    /**
+     * | Check the Advance and the exist
+        | Serial No :
+        | Not Working
+     */
+    public function checkAdvance($request)
+    {
+        $mWaterAdvance = new WaterAdvance();
+        $mWaterAdjustment = new WaterAdjustment();
+        $consumerId = $request->consumerId;
+        $refAdvanceFor = Config::get("waterConstaint.ADVANCE_FOR");
+        $advanceFor = $refAdvanceFor['1'];
+
+        $refAdvance = $mWaterAdvance->getAdvanceByRespectiveId($consumerId, $advanceFor)->get();
+        $refAdjustment = $mWaterAdjustment->getAdjustedDetails($consumerId)->get();
+
+        $totalAdvance = (collect($refAdvance)->pluck("amount")->sum()) ?? 0;
+        $totalAdjustment = (collect($refAdjustment)->pluck("amount")->sum()) ?? 0;
+        $advanceAmount = $totalAdvance - $totalAdjustment;
+        if ($advanceAmount <= 0) {
+            $advanceAmount = 0;
+        }
+
+        return $returnData = [
+            "totaladvanceAmount" => $totalAdvance,
+            "advanceAmount" => $advanceAmount,
+            "adjustedAmount" => $totalAdjustment
+        ];
+    }
+
 
 
     /**
@@ -1435,51 +1491,109 @@ class WaterPaymentController extends Controller
         | Not Working
         | Recheck 
      */
-    // public function initiateOnlineDemandPayment(reqDemandPayment $request)
-    // {
-    //     try {
-    //         $refUser            = Auth()->user();
-    //         $refUserId          = $refUser->id;
-    //         $refUlbId           = $refUser->ulb_id;
+    public function initiateOnlineDemandPayment(reqDemandPayment $request)
+    {
+        try {
+            $refUser = Auth()->user();
+            $waterModuleId = config::get('module-constants.WATER_MODULE_ID');
 
-    //         #------------ new connection --------------------
-    //         DB::beginTransaction();
-    //         if ($request->applycationType == "consumer") {
-    //             $this->check
+            #-------------------- Demand Collection --------------------#
+            DB::beginTransaction();
+            $verifiedData = $this->checkOnlineDemandPayParam($request);
 
-    //             $myRequest = new \Illuminate\Http\Request();
-    //             $myRequest->setMethod('POST');
-    //             $myRequest->request->add(['amount' => $cahges->amount]);
-    //             $myRequest->request->add(['workflowId' => $application->workflow_id]);
-    //             $myRequest->request->add(['id' => $application->id]);
-    //             $myRequest->request->add(['departmentId' => 2]);
-    //             $temp = $this->saveGenerateOrderid($myRequest);
-    //             $RazorPayRequest = new WaterRazorPayRequest;
-    //             $RazorPayRequest->related_id   = $application->id;
-    //             $RazorPayRequest->payment_from = "New Connection";
-    //             $RazorPayRequest->amount       = $cahges->amount;
-    //             $RazorPayRequest->demand_from_upto = $cahges->ids;
-    //             $RazorPayRequest->ip_address   = $request->ip();
-    //             $RazorPayRequest->order_id        = $temp["orderId"];
-    //             $RazorPayRequest->department_id = $temp["departmentId"];
-    //             $RazorPayRequest->save();
-    //         }
-    //         #--------------------water Consumer----------------------
-    //         else {
-    //         }
-    //         DB::commit();
-    //         $temp['name']       = $refUser->user_name;
-    //         $temp['mobile']     = $refUser->mobile;
-    //         $temp['email']      = $refUser->email;
-    //         $temp['userId']     = $refUser->id;
-    //         $temp['ulbId']      = $refUser->ulb_id;
-    //         $temp["applycationType"] = $request->applycationType;
-    //         return responseMsg(true, "", $temp);
-    //     } catch (Exception $e) {
-    //         return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "03", ".ms", "POST", $request->deviceId);
-    //     }
-    // }
+            $myRequest = new \Illuminate\Http\Request();
+            $myRequest->setMethod('POST');
+            $myRequest->request->add(['amount' => $request->amount]);
+            $myRequest->request->add(['workflowId' => 0]);
+            $myRequest->request->add(['id' => $request->consumerId]);
+            $myRequest->request->add(['departmentId' => $waterModuleId]);
+            $temp = $this->saveGenerateOrderid($myRequest);
 
+            $RazorPayRequest = new WaterRazorPayRequest;
+            $RazorPayRequest->related_id        = $request->consumerId;
+            $RazorPayRequest->payment_from      = "Demand Collection";
+            $RazorPayRequest->amount            = $request->amount;
+            $RazorPayRequest->demand_from_upto  = $request->demandFrom . "," . $request->demandUpto;
+            $RazorPayRequest->ip_address        = $request->ip();
+            $RazorPayRequest->order_id          = $temp["orderId"];
+            $RazorPayRequest->department_id     = $temp["departmentId"];
+            $RazorPayRequest->save();
+
+            DB::commit();
+
+            $temp['name']       = $refUser->user_name;
+            $temp['mobile']     = $refUser->mobile;
+            $temp['email']      = $refUser->email;
+            $temp['userId']     = $refUser->id;
+            $temp['ulbId']      = $refUser->ulb_id;
+            $temp["applycationType"] = $request->applycationType;
+            return responseMsg(true, "", $temp);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "03", ".ms", "POST", $request->deviceId);
+        }
+    }
+
+
+    /**
+     * | Check the params before online payment
+     * | @param
+     * | @var
+     * | @return
+        | Serial No :
+        | Not Working
+     */
+    public function checkOnlineDemandPayParam($request)
+    {
+        $consumerId = $request->consumerId;
+        $refAmount = $request->amount;
+        $mWaterConsumerDemand = new WaterConsumerDemand();
+        $mWaterConsumer = new WaterConsumer();
+        $startingDate = Carbon::createFromFormat('Y-m-d',  $request->demandFrom)->startOfMonth();
+        $endDate = Carbon::createFromFormat('Y-m-d',  $request->demandUpto)->endOfMonth();
+        $startingDate = $startingDate->toDateString();
+        $endDate = $endDate->toDateString();
+
+        if ($startingDate > $endDate) {
+            throw new Exception("demandFrom Date should not be grater than demandUpto date!");
+        }
+        $refConsumer = $mWaterConsumer->getConsumerDetailById($consumerId);
+        if (!$refConsumer) {
+            throw new Exception("Consumer Not Found!");
+        }
+        $allCharges = $mWaterConsumerDemand->getFirstConsumerDemand($consumerId)
+            ->where('demand_from', '>=', $startingDate)
+            ->where('demand_upto', '<=', $endDate)
+            ->get();
+        $checkCharges = collect($allCharges)->last();
+        if (!$checkCharges->id || is_null($checkCharges)) {
+            throw new Exception("Charges for respective date doesn't exist!......");
+        }
+        # Call Part
+        $totalPaymentAmount = (collect($allCharges)->sum('balance_amount'));
+        if ($totalPaymentAmount != $refAmount) {
+            throw new Exception("amount Not Matched!");
+        }
+        $totalgeneratedDemand = collect($allCharges)->sum('amount');
+        $totalPenalty = collect($allCharges)->sum('penalty');
+        $refgeneratedDemand = $refAmount - $totalPenalty;
+        if ($refgeneratedDemand != $totalgeneratedDemand) {
+            throw new Exception("penally Not matched!");
+        }
+        # checking the advance anount 
+
+        $allLeftCharges = $mWaterConsumerDemand->getFirstConsumerDemand($consumerId)
+            ->where('demand_from', '<', $startingDate)
+            ->where('demand_upto', '>', $endDate)
+            ->get();
+        $leftAmount = collect($allLeftCharges)->sum('balance_amount');
+
+        $returnData = [
+            "consumer"          => $refConsumer,
+            "consumerChages"    => $allCharges,
+            "leftDemandAmount"  => $leftAmount,
+        ];
+        return $returnData;
+    }
 
 
     /**

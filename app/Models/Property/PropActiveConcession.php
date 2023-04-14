@@ -54,16 +54,19 @@ class PropActiveConcession extends Model
         return DB::table('prop_active_concessions as c')
             ->select(
                 'c.id',
+                DB::raw("'active' as status"),
                 'c.application_no',
                 'c.applicant_name as owner_name',
                 'p.new_holding_no',
                 'pt_no',
                 'p.ward_mstr_id',
                 'p.new_ward_mstr_id',
+                'role_name as currentRole',
                 'u.ward_name as old_ward_no',
                 'u1.ward_name as new_ward_no',
                 'c.mobile_no'
             )
+            ->leftjoin('wf_roles', 'wf_roles.id', 'c.current_role')
             ->join('prop_properties as p', 'p.id', '=', 'c.property_id')
             ->join('ulb_ward_masters as u', 'p.ward_mstr_id', '=', 'u.id')
             ->leftJoin('ulb_ward_masters as u1', 'p.new_ward_mstr_id', '=', 'u1.id')
@@ -164,5 +167,28 @@ class PropActiveConcession extends Model
             ->whereRaw("date(track_date) = '$date'")
             ->orderBydesc('prop_active_concessions.id')
             ->get();
+    }
+
+    /**
+     * | Search Concessions
+     */
+    public function searchConcessions()
+    {
+        return PropActiveConcession::select(
+            'prop_active_concessions.id',
+            DB::raw("'active' as status"),
+            'prop_active_concessions.application_no',
+            'prop_active_concessions.current_role',
+            'role_name as currentRole',
+            'ward_name',
+            'prop_address',
+            // DB::raw("string_agg(prop_owners.mobile_no::VARCHAR,',') as mobile_no"),
+            // DB::raw("string_agg(prop_owners.owner_name,',') as owner_name"),
+        )
+
+            ->leftjoin('wf_roles', 'wf_roles.id', 'prop_active_concessions.current_role')
+            ->join('prop_properties as pp', 'pp.id', 'prop_active_concessions.property_id')
+            ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'pp.ward_mstr_id')
+            ->join('prop_owners', 'prop_owners.property_id', 'pp.id');
     }
 }

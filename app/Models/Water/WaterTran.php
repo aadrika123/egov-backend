@@ -106,17 +106,18 @@ class WaterTran extends Model
     public function waterTransaction($req, $consumer)
     {
         $waterTrans = new WaterTran();
-        $waterTrans->related_id     = $req['id'];
-        $waterTrans->amount         = $req['amount'];
-        $waterTrans->tran_type      = $req['chargeCategory'];
-        $waterTrans->tran_date      = $req['todayDate'];
-        $waterTrans->tran_no        = $req['tranNo'];
-        $waterTrans->payment_mode   = $req['paymentMode'];
-        $waterTrans->emp_dtl_id     = $req['userId'];
-        $waterTrans->user_type      = $req['userType'];
-        $waterTrans->ulb_id         = $req['ulbId'];
-        $waterTrans->ward_id        = $consumer['ward_mstr_id'];
-        $waterTrans->due_amount     = $req['leftDemandAmount'] ?? 0;
+        $waterTrans->related_id         = $req['id'];
+        $waterTrans->amount             = $req['amount'];
+        $waterTrans->tran_type          = $req['chargeCategory'];
+        $waterTrans->tran_date          = $req['todayDate'];
+        $waterTrans->tran_no            = $req['tranNo'];
+        $waterTrans->payment_mode       = $req['paymentMode'];
+        $waterTrans->emp_dtl_id         = $req['userId'];
+        $waterTrans->user_type          = $req['userType'];
+        $waterTrans->ulb_id             = $req['ulbId'];
+        $waterTrans->ward_id            = $consumer['ward_mstr_id'];
+        $waterTrans->due_amount         = $req['leftDemandAmount'] ?? 0;
+        $waterTrans->adjustment_amount  = $req['adjustedAmount'] ?? 0;
         $waterTrans->save();
 
         return [
