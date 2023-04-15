@@ -155,7 +155,7 @@ class Report implements IReport
             $data2 = $data;
             $totalHolding = $data2->count("prop_properties.id");
             $totalAmount = $data2->sum("prop_transactions.amount");
-            $perPage = $request->perPage ? $request->perPage : 10;
+            $perPage = $request->perPage ? $request->perPage : 5;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
 
             $paginator = $data->paginate($perPage);
@@ -444,7 +444,7 @@ class Report implements IReport
             $data2 = $data;
             $totalSaf = $data2->count("id");
             $totalAmount = $data2->sum("amount");
-            $perPage = $request->perPage ? $request->perPage : 10;
+            $perPage = $request->perPage ? $request->perPage : 5;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
             $paginator = $data->paginate($perPage);
             // $items = $paginator->items();

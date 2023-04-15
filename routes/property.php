@@ -461,6 +461,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('reports/previous-year-paid-not-current-year', 'previousYearPaidButnotCurrentYear'); //done
     Route::post('reports/dcb-piechart', 'dcbPieChart');                                             //done
     Route::post('reports/prop/saf/collection', 'propSafCollection');                                             //done
+    Route::post('reports/prop/saf/collection/dtls', 'propSafCollectionDtls');                                             //done
 
     Route::post('reports/property/payment-mode-wise-summery', 'PropPaymentModeWiseSummery'); //done
     Route::post('reports/saf/payment-mode-wise-summery', 'SafPaymentModeWiseSummery');       //done

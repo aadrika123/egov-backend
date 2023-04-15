@@ -407,7 +407,7 @@ class ReportController extends Controller
         try {
             $fromDate = $req->fromDate;
             $uptoDate = $req->uptoDate;
-            $perPage = $req->perPage ?? 10;
+            $perPage = $req->perPage ?? 5;
             $tbl1 = 'prop_active_safs';
             $tbl2 = 'prop_safs';
 
@@ -421,7 +421,7 @@ class ReportController extends Controller
             if ($req->paymentMode)
                 $gbsafCollection = $gbsafCollection->where('payment_mode', $req->paymentMode);
 
-            $list = $gbsafCollection->paginate($perPage);
+            return $list = $gbsafCollection->paginate($perPage);
 
             // $page = $req->page && $req->page > 0 ? $req->page : 1;
             // $paginator = $gbsafCollection->paginate($perPage);
@@ -519,25 +519,101 @@ class ReportController extends Controller
         $propCollection = null;
         $safCollection = null;
         $gbsafCollection = null;
+        $proptotalData = 0;
+        $proptotal = 0;
+        $saftotal = 0;
+        $saftotalData = 0;
+        $gbsaftotalData = 0;
         $collectionTypes = $request->collectionType;
+        $perPage = $request->perPage ?? 5;
+        $arrayCount = count($collectionTypes);
 
         foreach ($collectionTypes as $collectionType) {
             if ($collectionType == 'property') {
                 $propCollection =   $this->collectionReport($request);
+                $proptotal = $propCollection->original['data']['totalAmount'];
+                $proptotalData = $propCollection->original['data']['total'];
                 $propCollection = $propCollection->original['data']['data'];
             }
 
             if ($collectionType == 'saf') {
                 $safCollection = $this->safCollection($request);
+                $saftotal = $safCollection->original['data']['totalAmount'];
+                $saftotalData = $safCollection->original['data']['total'];
                 $safCollection = $safCollection->original['data']['data'];
             }
 
             if ($collectionType == 'gbsaf') {
                 $gbsafCollection = $this->gbSafCollection($request);
-                $gbsafCollection = $gbsafCollection->original['data']['data'];
+                $gbsaftotalData = $gbsafCollection->toarray()['total'];
+                $gbsafCollection = $gbsafCollection->toarray()['data'];
             }
         }
+        $currentPage = $request->page ?? 1;
         $details = collect($propCollection)->merge($safCollection)->merge($gbsafCollection);
-        return $details;
+
+        $a = round($proptotalData / $perPage);
+        $b = round($saftotalData / $perPage);
+        $c = round($gbsaftotalData / $perPage);
+        $data['current_page'] = $currentPage;
+        $data['total'] = $proptotalData + $saftotalData + $gbsaftotalData;
+        $data['totalAmt'] = round($proptotal + $saftotal);
+        $data['last_page'] = max($a, $b, $c);
+        $data['data'] = $details;
+
+        return responseMsgs(true, "", $data, "", "", "", "post", $request->deviceId);
+    }
+
+    /**
+     * |
+     */
+    public function propSafCollectionDtls(Request $request)
+    {
+        $propCollection = null;
+        $safCollection = null;
+        $gbsafCollection = null;
+        $proptotalData = 0;
+        $proptotal = 0;
+        $saftotal = 0;
+        $saftotalData = 0;
+        $gbsaftotalData = 0;
+        $collectionTypes = $request->collectionType;
+        $perPage = $request->perPage ?? 5;
+        $arrayCount = count($collectionTypes);
+
+        foreach ($collectionTypes as $collectionType) {
+            if ($collectionType == 'property') {
+                $propCollection =   $this->collectionReport($request);
+                $proptotal = $propCollection->original['data']['totalAmount'];
+                $proptotalData = $propCollection->original['data']['total'];
+                $propCollection = $propCollection->original['data']['data'];
+            }
+
+            if ($collectionType == 'saf') {
+                $safCollection = $this->safCollection($request);
+                $saftotal = $safCollection->original['data']['totalAmount'];
+                $saftotalData = $safCollection->original['data']['total'];
+                $safCollection = $safCollection->original['data']['data'];
+            }
+
+            if ($collectionType == 'gbsaf') {
+                $gbsafCollection = $this->gbSafCollection($request);
+                $gbsaftotalData = $gbsafCollection->toarray()['total'];
+                $gbsafCollection = $gbsafCollection->toarray()['data'];
+            }
+        }
+        $currentPage = $request->page ?? 1;
+        $details = collect($propCollection)->merge($safCollection)->merge($gbsafCollection);
+
+        $a = round($proptotalData / $perPage);
+        $b = round($saftotalData / $perPage);
+        $c = round($gbsaftotalData / $perPage);
+        $data['current_page'] = $currentPage;
+        $data['total'] = $proptotalData + $saftotalData + $gbsaftotalData;
+        $data['totalAmt'] = round($proptotal + $saftotal);
+        $data['last_page'] = max($a, $b, $c);
+        $data['data'] = $details;
+
+        return responseMsgs(true, "", $data, "", "", "", "post", $request->deviceId);
     }
 }
