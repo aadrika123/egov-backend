@@ -88,7 +88,7 @@ class RainWaterHarvestingController extends Controller
     {
         try {
             $request->validate([
-                'isWaterHarvestingBefore' => 'required',
+                // 'isWaterHarvestingBefore' => 'required',
                 'dateOfCompletion' => 'required|date',
                 'propertyId' => 'required',
                 'ulbId' => 'required'
@@ -100,6 +100,14 @@ class RainWaterHarvestingController extends Controller
             $track = new WorkflowTrack();
             $harParamId = Config::get('PropertyConstaint.HAR_PARAM_ID');
 
+            $propId = PropActiveHarvesting::where('property_id', $request->propertyId)
+                ->where('status', 1)
+                ->orderByDesc('id')
+                ->first();
+
+            if ($propId)
+                throw new Exception('Your Application is already in workflow');
+
             $ulbWorkflowId = WfWorkflow::where('wf_master_id', $this->_workflowId)
                 ->where('ulb_id', $ulbId)
                 ->first();
@@ -109,6 +117,7 @@ class RainWaterHarvestingController extends Controller
             $finisherRoleId = DB::select($refFinisherRoleId);
             $initiatorRoleId = DB::select($refInitiatorRoleId);
 
+            DB::beginTransaction();
             $mPropActiveHarvesting = new PropActiveHarvesting();
             $waterHaravesting  = $mPropActiveHarvesting->saves($request, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId,  $userId);
 
@@ -165,9 +174,10 @@ class RainWaterHarvestingController extends Controller
             $wfReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
             $request->request->add($wfReqs);
             $track->saveTrack($request);
-
+            DB::commit();
             return responseMsg(true, "Application applied!", $harvestingNo);
         } catch (Exception $error) {
+            DB::rollBack();
             return responseMsg(false, "Error!", $error->getMessage());
         }
     }
@@ -559,12 +569,14 @@ class RainWaterHarvestingController extends Controller
             ]);
             // Check if the Current User is Finisher or Not    
             $mWfRoleUsermap = new WfRoleusermap();
+            $track = new WorkflowTrack();
             $userId = authUser()->id;
             $activeHarvesting = PropActiveHarvesting::find($req->applicationId);
             $propProperties = PropProperty::where('id', $activeHarvesting->property_id)
                 ->first();
 
             $workflowId = $activeHarvesting->workflow_id;
+            $senderRoleId = $activeHarvesting->current_role;
             $getRoleReq = new Request([                                                 // make request to get role id of the user
                 'userId' => $userId,
                 'workflowId' => $workflowId
@@ -598,6 +610,7 @@ class RainWaterHarvestingController extends Controller
                 $propProperties->save();
 
                 $msg = "Application Successfully Approved !!";
+                $metaReqs['verificationStatus'] = 1;
             }
             // Rejection
             if ($req->status == 0) {
@@ -608,9 +621,31 @@ class RainWaterHarvestingController extends Controller
                 $rejectedHarvesting->save();
                 $activeHarvesting->delete();
                 $msg = "Application Successfully Rejected !!";
+                $metaReqs['verificationStatus'] = 0;
             }
 
+            $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $metaReqs['workflowId'] = $activeHarvesting->workflow_id;
+            $metaReqs['refTableDotId'] = 'prop_active_harvestings.id';
+            $metaReqs['refTableIdValue'] = $req->applicationId;
+            $metaReqs['senderRoleId'] = $senderRoleId;
+            $metaReqs['user_id'] = $userId;
+            $metaReqs['trackDate'] = $this->_todayDate->format('Y-m-d H:i:s');
+            $req->request->add($metaReqs);
+            $track->saveTrack($req);
 
+            // Updation of Received Date
+            $preWorkflowReq = [
+                'workflowId' => $activeHarvesting->workflow_id,
+                'refTableDotId' => 'prop_active_harvestings.id',
+                'refTableIdValue' => $req->applicationId,
+                'receiverRoleId' => $senderRoleId
+            ];
+            $previousWorkflowTrack = $track->getWfTrackByRefId($preWorkflowReq);
+            $previousWorkflowTrack->update([
+                'forward_date' => $this->_todayDate->format('Y-m-d'),
+                'forward_time' => $this->_todayDate->format('H:i:s')
+            ]);
 
             DB::commit();
             return responseMsgs(true, $msg, "", '011111', 01, '391ms', 'Post', $req->deviceId);

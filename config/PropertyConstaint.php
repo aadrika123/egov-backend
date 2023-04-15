@@ -490,7 +490,7 @@ return [
         ],
     ],
 
-    // Adjustment Types
+    // Adjustment Types 
     "ADJUSTMENT_TYPES" => [
         "ULB_ADJUSTMENT" => "Demand Adjustment"
     ],
@@ -506,5 +506,15 @@ return [
         "Mutation",
         "Bifurcation",
         "Amalgamation"
+    ],
+
+    // Property Payment Receipts Rebate Penalty Key Strings
+    "PENALTY_REBATE_KEY_STRINGS" => [
+        "lateAssessmentPenalty" => "Late Assessment Fine(Rule 14.1)",
+        "onePercPenalty" => "1% Interest On Monthly Penalty(Notification No-641)",
+        "rebate" => "Rebate",
+        "onlineOrJskRebate" => "Rebate From Jsk/Online Payment",
+        "specialRebate" => "Special Rebate",
+        "firstQtrRebate" => "First Qtr Rebate",
     ],
 ];

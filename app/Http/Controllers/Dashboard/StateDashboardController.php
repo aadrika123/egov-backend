@@ -33,7 +33,7 @@ class StateDashboardController extends Controller
 
     private $Repository;
     private $_common;
-    
+
     /**
      * | Ulb Wise Collection
      */
@@ -103,6 +103,7 @@ class StateDashboardController extends Controller
      */
     public function onlinePaymentCount(Request $req)
     {
+        $starttime = microtime(true);
         $year = Carbon::now()->year;
 
         if (isset($req->fyear))
@@ -139,8 +140,9 @@ class StateDashboardController extends Controller
         $totalCount['tradeCount'] = $tradeTran->count();
         $totalCount['waterCount'] = $waterTran->count();
         $totalCount['totalCount'] =  $propTran->union($tradeTran)->union($waterTran)->count();
-
-        return responseMsgs(true, "Online Payment Count", remove_null($totalCount), "", '', '01', '314ms-451ms', 'Post', '');
+        $endtime = microtime(true);
+        $exeTime = ($endtime - $starttime) * 1000;
+        return responseMsgs(true, "Online Payment Count", remove_null($totalCount), "", '', '01', "$exeTime ms", 'Post', '');
     }
 
     /**
@@ -428,7 +430,7 @@ class StateDashboardController extends Controller
     }
 
     # dashboard repots
-    public function stateDashboardDCB(Request $request,StateDashboard $Repository)
+    public function stateDashboardDCB(Request $request, StateDashboard $Repository)
     {
         $request->validate(
             [

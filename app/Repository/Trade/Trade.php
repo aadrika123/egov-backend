@@ -214,14 +214,9 @@ class Trade implements ITrade
                         $mProprtyId = $property['property']['id'];
                     else
                         throw new Exception("Property Details Not Found");
-                }
-                if ($mApplicationTypeId == 1) {
-                    $mnaturOfBusiness = array_map(function ($val) {
-                        return $val['id'];
-                    }, $request->firmDetails['natureOfBusiness']);
-                    $mnaturOfBusiness = implode(',', $mnaturOfBusiness);
-                }
-                if ($mApplicationTypeId != 1) {
+                }                
+                if ($mApplicationTypeId != 1) 
+                {
                     $mOldLicenceId = $request->licenseId;
                     $nextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
                     $refOldLicece = TradeLicence::find($mOldLicenceId);
@@ -255,6 +250,13 @@ class Trade implements ITrade
                     $mWardNo = array_values($mWardNo)[0]['ward_no'] ?? "";
                     $refOldowners = TradeOwner::where('temp_id', $mOldLicenceId)
                         ->get();
+                }
+                if (in_array($mApplicationTypeId,[1,3])) 
+                {
+                    $mnaturOfBusiness = array_map(function ($val) {
+                        return $val['id'];
+                    }, $request->firmDetails['natureOfBusiness']);
+                    $mnaturOfBusiness = implode(',', $mnaturOfBusiness);
                 }
 
                 DB::beginTransaction();
@@ -295,21 +297,24 @@ class Trade implements ITrade
                     $licence->valid_from    = date('Y-m-d');
                     $licence->save();
                     $licenceId = $licence->id;
-                    foreach ($refOldowners as $owners) {
+                    foreach ($refOldowners as $owners) 
+                    {
                         $owner = new ActiveTradeOwner();
                         $owner->temp_id      = $licenceId;
                         $this->transerOldOwneres($owner, $owners);
                         $owner->user_id  = $refUserId;
                         $owner->save();
                     }
-                    foreach ($request->ownerDetails as $owners) {
+                    foreach ($request->ownerDetails as $owners) 
+                    {
                         $owner = new ActiveTradeOwner();
                         $owner->temp_id      = $licenceId;
                         $this->addNewOwners($owner, $owners);
                         $owner->user_id  = $refUserId;
                         $owner->save();
                     }
-                } elseif ($mApplicationTypeId == 1) # code for New License
+                } 
+                elseif ($mApplicationTypeId == 1) # code for New License
                 {
                     $wardId = $request->firmDetails['wardNo'];
                     $mWardNo = array_filter($data['wardList'], function ($val) use ($wardId) {
@@ -479,7 +484,7 @@ class Trade implements ITrade
         $refActiveLicense->firm_name           = $refOldLicece->firm_name;
         $refActiveLicense->premises_owner_name = $refOldLicece->premises_owner_name;
         $refActiveLicense->brief_firm_desc     = $refOldLicece->brief_firm_desc;
-        $refActiveLicense->area_in_sqft        = $refOldLicece->area_in_sqft;
+        $refActiveLicense->area_in_sqft        = $request->firmDetails['areaSqft'] ? $request->firmDetails['areaSqft']: $refOldLicece->area_in_sqft;
 
         $refActiveLicense->k_no                = $refOldLicece->k_no;
         $refActiveLicense->bind_book_no        = $refOldLicece->bind_book_no;
@@ -701,8 +706,8 @@ class Trade implements ITrade
             $args['licenseFor']          = $request->licenseFor;
             $args['nature_of_business']  = $refLecenceData->nature_of_bussiness;
             $args['noticeDate']          = $mNoticeDate;
+            // dd($args);
             $chargeData = $this->cltCharge($args);
-
             if ($chargeData['response'] == false || $chargeData['total_charge'] != $request->totalCharge) {
                 throw new Exception("Payble Amount Missmatch!!!");
             }
@@ -3134,8 +3139,8 @@ class Trade implements ITrade
             if ($application->payment_status == 0) {
                 throw new Exception("Please Payment Of This Application");
             }
-            $vUpto = $application->apply_date;
-            $application->valid_upto = date('Y-m-d', strtotime(date("$vUpto", mktime(time())) . " + 20 day"));
+            $vUpto = $application->application_date;
+            $application->valid_upto = date('Y-m-d', strtotime(date("$vUpto", mktime(time())) . " + 20 day"));            
             $transaction = TradeTransaction::select(
                 "trade_transactions.id",
                 "tran_no",
@@ -3201,6 +3206,8 @@ class Trade implements ITrade
                 "establishment_date",
                 "nature_of_bussiness",
                 "firm_description",
+                "brief_firm_desc",
+                "premises_owner_name",
                 "pending_status",
                 "owner.owner_name",
                 "owner.guardian_name",
@@ -3244,6 +3251,8 @@ class Trade implements ITrade
                     "establishment_date",
                     "nature_of_bussiness",
                     "firm_description",
+                    "brief_firm_desc",
+                    "premises_owner_name",
                     "pending_status",
                     "owner.owner_name",
                     "owner.guardian_name",
@@ -3651,6 +3660,9 @@ class Trade implements ITrade
                 "trade_licences.firm_name",
                 "trade_licences.application_date",
                 "trade_licences.apply_from",
+                "trade_licences.valid_from",
+                "trade_licences.valid_upto",
+                "trade_licences.licence_for_years",
                 "owner.owner_name",
                 "owner.guardian_name",
                 "owner.mobile_no",
@@ -3760,25 +3772,31 @@ class Trade implements ITrade
             $count = $this->getrate($data);
             $rate = $count->rate * $data['timeforlicense'];
             $notice_amount = 0;
-            if (isset($inputs['noticeDate']) && $inputs['noticeDate']) {
+            if (isset($inputs['noticeDate']) && $inputs['noticeDate']) 
+            {
                 $notice_amount = $this->getDenialAmountTrade($inputs['noticeDate']);
             }
             $pre_app_amount = 0;
-            if (isset($data['application_type_id']) && in_array($data['application_type_id'], [1, 2])) {
+            if (isset($data['application_type_id']) && in_array($data['application_type_id'], [1, 2])) 
+            {
                 $nob = array();
                 $data['nature_of_business'] = null;
                 if (isset($inputs['nature_of_business']))
                     $nob = explode(',', $inputs['nature_of_business']);
-                if (sizeof($nob) == 1) {
+                if (sizeof($nob) == 1) 
+                {
                     $data['nature_of_business'] = $nob[0];
                 }
 
                 $temp = $data['firm_date'];
                 $temp2 = $data['firm_date'];
-                if ($data['nature_of_business'] == 198 && strtotime($temp) <= strtotime('2021-10-30')) {
+                if ($data['nature_of_business'] == 198 && strtotime($temp) <= strtotime('2021-10-30')) 
+                {
                     $temp = '2021-10-30';
                     $temp2 = $temp;
-                } elseif ($data['nature_of_business'] != 198 && strtotime($temp) <= strtotime('2020-01-01')) {
+                } 
+                elseif ($data['nature_of_business'] != 198 && strtotime($temp) <= strtotime('2020-01-01')) 
+                {
                     $temp = '2020-01-01';
                 }
                 $data['firm_date'] = $temp;
@@ -3789,29 +3807,37 @@ class Trade implements ITrade
             $vDiff = abs(strtotime($data['curdate']) - strtotime($data['firm_date'])); // here abs in case theres a mix in the dates
             $vMonths = ceil($vDiff / (30 * 60 * 60 * 24)); // number of seconds in a month of 30 days
 
-            if ($vMonths > 0 && strtotime($data['firm_date']) < strtotime($data['curdate'])) {
+            if ($vMonths > 0 && strtotime($data['firm_date']) < strtotime($data['curdate'])) 
+            {
                 $denial_amount_month = 100 + (($vMonths) * 20);
             }
             # In case of ammendment no denial amount
-            if ($data['application_type_id'] == 3) {
+            if ($data['application_type_id'] == 3)
+            {
                 $denial_amount_month = 0;
             }
             $total_denial_amount = $denial_amount_month + $rate + $pre_app_amount + $notice_amount;
 
             # Check If Any cheque bounce charges
-            if (isset($inputs['apply_licence_id'], $inputs['apply_licence_id'])) {
+            if (isset($inputs['apply_licence_id'], $inputs['apply_licence_id'])) 
+            {
                 $penalty = $this->getChequeBouncePenalty($inputs['apply_licence_id']);
                 $denial_amount_month += $penalty;
                 $total_denial_amount += $penalty;
             }
 
-            if ($count) {
+            if ($count) 
+            {
                 $response = ['response' => true, 'rate' => $rate, 'penalty' => $denial_amount_month, 'total_charge' => $total_denial_amount, 'rate_id' => $count['id'], 'arear_amount' => $pre_app_amount, "notice_amount" => $notice_amount];
-            } else {
+            } 
+            else 
+            {
                 $response = ['response' => false];
             }
             return $response;
-        } catch (Exception $e) {
+        } 
+        catch (Exception $e) 
+        {            
             return $response;
         }
     }
@@ -3875,6 +3901,7 @@ class Trade implements ITrade
     public function getrate(array $input) //stdcl object array
     {
         try {
+            DB::enableQueryLog();
             $builder = TradeParamLicenceRate::select('id', 'rate')
                 ->where('application_type_id', $input['application_type_id'])
                 ->where('range_from', '<=', ceil($input['area_in_sqft']))

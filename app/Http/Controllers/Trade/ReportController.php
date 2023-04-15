@@ -75,7 +75,7 @@ class ReportController extends Controller
             [      
                 "uptoDate" => "nullable|date|date_format:Y-m-d",
                 "licenseNo"=>"nullable|regex:/^[^<>{};:.,~!?@#$%^=&*\"]*$/i",
-                "licenseStatus"=>"nullable|in:EXPIRED,VALID",     
+                "licenseStatus"=>"nullable|in:EXPIRED,VALID,TO BE EXPIRED",     
                 "wardId" => "nullable|digits_between:1,9223372036854775807",
                 "ulbId" => "nullable|digits_between:1,9223372036854775807",
                 "page" => "nullable|digits_between:1,9223372036854775807",

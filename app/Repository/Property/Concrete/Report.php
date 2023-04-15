@@ -155,7 +155,7 @@ class Report implements IReport
             $data2 = $data;
             $totalHolding = $data2->count("prop_properties.id");
             $totalAmount = $data2->sum("prop_transactions.amount");
-            $perPage = $request->perPage ? $request->perPage : 10;
+            $perPage = $request->perPage ? $request->perPage : 5;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
 
             $paginator = $data->paginate($perPage);
@@ -444,7 +444,7 @@ class Report implements IReport
             $data2 = $data;
             $totalSaf = $data2->count("id");
             $totalAmount = $data2->sum("amount");
-            $perPage = $request->perPage ? $request->perPage : 10;
+            $perPage = $request->perPage ? $request->perPage : 5;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
             $paginator = $data->paginate($perPage);
             // $items = $paginator->items();
@@ -2196,39 +2196,39 @@ class Report implements IReport
                             SUM(COALESCE(collection.arrear_collection_hh, 0::numeric)) AS arrear_collection_hh,
                             SUM(COALESCE(collection.collection_from_no_of_hh, 0::numeric)) AS collection_from_hh,
                             
-                            SUM(((collection.arrear_collection_hh ::numeric) / (case when demands.arrear_demand_hh > 0 then demands.arrear_demand_hh else 1 end))*100) AS arrear_hh_eff,
-                            SUM(((collection.current_collection_hh ::numeric) / (case when demands.current_demand_hh > 0 then demands.current_demand_hh else 1 end))*100) AS current_hh_eff,
+                            round(SUM(((collection.arrear_collection_hh ::numeric) / (case when demands.arrear_demand_hh > 0 then demands.arrear_demand_hh else 1 end))*100)) AS arrear_hh_eff,
+                            round(SUM(((collection.current_collection_hh ::numeric) / (case when demands.current_demand_hh > 0 then demands.current_demand_hh else 1 end))*100)) AS current_hh_eff,
 
-                            SUM(COALESCE(
+                            round(SUM(COALESCE(
                                 COALESCE(demands.current_demand_hh, 0::numeric) 
                                 - COALESCE(collection.collection_from_no_of_hh, 0::numeric), 0::numeric
-                            )) AS balance_hh,                       
-                            SUM(COALESCE(
+                            ))) AS balance_hh,                       
+                            round(SUM(COALESCE(
                                 COALESCE(demands.arrear_demand, 0::numeric) 
                                 - COALESCE(prev_collection.total_prev_collection, 0::numeric), 0::numeric
-                            )) AS arrear_demand,
+                            ))) AS arrear_demand,
                     
-                            SUM(COALESCE(prev_collection.total_prev_collection, 0::numeric)) AS previous_collection,
-                            SUM(COALESCE(demands.current_demand, 0::numeric)) AS current_demand,
-                            SUM(COALESCE(collection.arrear_collection, 0::numeric)) AS arrear_collection,
-                            SUM(COALESCE(collection.current_collection, 0::numeric)) AS current_collection,
+                            round(SUM(COALESCE(prev_collection.total_prev_collection, 0::numeric))) AS previous_collection,
+                            round(SUM(COALESCE(demands.current_demand, 0::numeric))) AS current_demand,
+                            round(SUM(COALESCE(collection.arrear_collection, 0::numeric))) AS arrear_collection,
+                            round(SUM(COALESCE(collection.current_collection, 0::numeric))) AS current_collection,
                     
-                            SUM((COALESCE(
+                            round(SUM((COALESCE(
                                     COALESCE(demands.arrear_demand, 0::numeric) 
                                     - COALESCE(prev_collection.total_prev_collection, 0::numeric), 0::numeric
                                 ) 
                                 - COALESCE(collection.arrear_collection, 0::numeric) 
-                                ))AS old_due,
+                                )))AS old_due,
                     
-                            SUM((COALESCE(demands.current_demand, 0::numeric) - COALESCE(collection.current_collection, 0::numeric))) AS current_due,
+                            round(SUM((COALESCE(demands.current_demand, 0::numeric) - COALESCE(collection.current_collection, 0::numeric)))) AS current_due,
 
-                            SUM((COALESCE(demands.current_demand_hh, 0::numeric) - COALESCE(collection.current_collection_hh, 0::numeric))) AS current_balance_hh,
-                            SUM((COALESCE(demands.arrear_demand_hh, 0::numeric) - COALESCE(collection.arrear_collection_hh, 0::numeric))) AS arrear_balance_hh,
+                            round(SUM((COALESCE(demands.current_demand_hh, 0::numeric) - COALESCE(collection.current_collection_hh, 0::numeric)))) AS current_balance_hh,
+                            round(SUM((COALESCE(demands.arrear_demand_hh, 0::numeric) - COALESCE(collection.arrear_collection_hh, 0::numeric)))) AS arrear_balance_hh,
 
-                            SUM(((collection.arrear_collection ::numeric) / (case when demands.arrear_demand > 0 then demands.arrear_demand else 1 end))*100) AS arrear_eff,
-                            SUM(((collection.current_collection ::numeric) / (case when demands.current_demand > 0 then demands.current_demand else 1 end))*100) AS current_eff,
+                            round(SUM(((collection.arrear_collection ::numeric) / (case when demands.arrear_demand > 0 then demands.arrear_demand else 1 end))*100)) AS arrear_eff,
+                            round(SUM(((collection.current_collection ::numeric) / (case when demands.current_demand > 0 then demands.current_demand else 1 end))*100)) AS current_eff,
 
-                            SUM((
+                            round(SUM((
                                 COALESCE(
                                     COALESCE(demands.current_demand, 0::numeric) 
                                     + (
@@ -2240,27 +2240,27 @@ class Report implements IReport
                                     COALESCE(collection.current_collection, 0::numeric) 
                                     + COALESCE(collection.arrear_collection, 0::numeric), 0::numeric
                                 )
-                            )) AS outstanding                                 
+                            ))) AS outstanding                                 
             ";
             $dcb = DB::select($select . $from);
 
-            $data['total_arrear_demand'] = round(collect($dcb)->sum('arrear_demand'), 2);
-            $data['total_current_demand'] = round(collect($dcb)->sum('current_demand'), 2);
-            $data['total_arrear_collection'] = round(collect($dcb)->sum('arrear_collection'), 2);
-            $data['total_current_collection'] = round(collect($dcb)->sum('current_collection'), 2);
-            $data['total_old_due'] = round(collect($dcb)->sum('old_due'), 2);
-            $data['total_current_due'] = round(collect($dcb)->sum('current_due'), 2);
-            $data['total_arrear_demand_hh'] = collect($dcb)->sum('arrear_demand_hh');
-            $data['total_current_demand_hh'] = collect($dcb)->sum('current_demand_hh');
-            $data['total_arrear_collection_hh'] = collect($dcb)->sum('arrear_collection_hh');
-            $data['total_current_collection_hh'] = collect($dcb)->sum('current_collection_hh');
-            $data['total_arrear_balance_hh'] = collect($dcb)->sum('arrear_balance_hh');
-            $data['total_current_balance_hh'] = collect($dcb)->sum('current_balance_hh');
-            $data['total_current_eff'] = ($data['total_current_collection_hh'] / $data['total_current_demand']) * 100;
-            $data['total_arrear_hh_eff'] = ($data['total_arrear_collection_hh'] /  $data['total_arrear_demand_hh']) * 100;
-            $data['total_current_hh_eff'] = ($data['total_current_collection_hh']) / ($data['total_current_demand_hh']) * 100;
-            $data['total_arrear_eff'] = ($data['total_arrear_collection']) / ($data['total_arrear_demand']) * 100;
-            $data['total_eff'] = (($data['total_arrear_collection'] + $data['total_current_collection']) / ($data['total_arrear_demand'] + $data['total_current_demand'])) * 100;
+            $data['total_arrear_demand'] = round(collect($dcb)->sum('arrear_demand'), 0);
+            $data['total_current_demand'] = round(collect($dcb)->sum('current_demand'), 0);
+            $data['total_arrear_collection'] = round(collect($dcb)->sum('arrear_collection'), 0);
+            $data['total_current_collection'] = round(collect($dcb)->sum('current_collection'), 0);
+            $data['total_old_due'] = round(collect($dcb)->sum('old_due'), 0);
+            $data['total_current_due'] = round(collect($dcb)->sum('current_due'), 0);
+            $data['total_arrear_demand_hh'] = round(collect($dcb)->sum('arrear_demand_hh'), 0);
+            $data['total_current_demand_hh'] = round(collect($dcb)->sum('current_demand_hh'), 0);
+            $data['total_arrear_collection_hh'] = round(collect($dcb)->sum('arrear_collection_hh'), 0);
+            $data['total_current_collection_hh'] = round(collect($dcb)->sum('current_collection_hh'), 0);
+            $data['total_arrear_balance_hh'] = round(collect($dcb)->sum('arrear_balance_hh'));
+            $data['total_current_balance_hh'] = round(collect($dcb)->sum('current_balance_hh'));
+            $data['total_current_eff'] = round(($data['total_current_collection_hh'] / $data['total_current_demand']) * 100);
+            $data['total_arrear_hh_eff'] = round(($data['total_arrear_collection_hh'] /  $data['total_arrear_demand_hh']) * 100);
+            $data['total_current_hh_eff'] = round(($data['total_current_collection_hh']) / ($data['total_current_demand_hh']) * 100);
+            $data['total_arrear_eff'] = round(($data['total_arrear_collection']) / ($data['total_arrear_demand']) * 100);
+            $data['total_eff'] = round((($data['total_arrear_collection'] + $data['total_current_collection']) / ($data['total_arrear_demand'] + $data['total_current_demand'])) * 100);
             $data['dcb'] = $dcb;
 
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
