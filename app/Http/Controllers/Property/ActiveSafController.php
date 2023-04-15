@@ -1945,7 +1945,6 @@ class ActiveSafController extends Controller
             $propertyDtl = [];
             if ($req->holdingNo) {
                 $properties = $mProperties->getPropDtls()
-                    ->where('prop_properties.ward_mstr_id', $req->wardId)
                     ->where('prop_properties.holding_no', $req->holdingNo)
                     ->first();
             }

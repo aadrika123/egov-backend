@@ -176,7 +176,6 @@ class ApplySafController extends Controller
                     $floor->addfloor($floor_details, $safId, $user_id);
                 }
             }
-
             DB::commit();
             return responseMsgs(true, "Successfully Submitted Your Application Your SAF No. $safNo", [
                 "safNo" => $safNo,
