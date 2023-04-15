@@ -100,6 +100,14 @@ class RainWaterHarvestingController extends Controller
             $track = new WorkflowTrack();
             $harParamId = Config::get('PropertyConstaint.HAR_PARAM_ID');
 
+            $propId = PropActiveHarvesting::where('property_id', $request->propertyId)
+                ->where('status', 1)
+                ->orderByDesc('id')
+                ->first();
+
+            if ($propId)
+                throw new Exception('Your Application is already in workflow');
+
             $ulbWorkflowId = WfWorkflow::where('wf_master_id', $this->_workflowId)
                 ->where('ulb_id', $ulbId)
                 ->first();
@@ -109,6 +117,7 @@ class RainWaterHarvestingController extends Controller
             $finisherRoleId = DB::select($refFinisherRoleId);
             $initiatorRoleId = DB::select($refInitiatorRoleId);
 
+            DB::beginTransaction();
             $mPropActiveHarvesting = new PropActiveHarvesting();
             $waterHaravesting  = $mPropActiveHarvesting->saves($request, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId,  $userId);
 
@@ -165,9 +174,10 @@ class RainWaterHarvestingController extends Controller
             $wfReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
             $request->request->add($wfReqs);
             $track->saveTrack($request);
-
+            DB::commit();
             return responseMsg(true, "Application applied!", $harvestingNo);
         } catch (Exception $error) {
+            DB::rollBack();
             return responseMsg(false, "Error!", $error->getMessage());
         }
     }
@@ -616,7 +626,7 @@ class RainWaterHarvestingController extends Controller
 
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs['workflowId'] = $activeHarvesting->workflow_id;
-            $metaReqs['refTableDotId'] = 'prop_active_concessions.id';
+            $metaReqs['refTableDotId'] = 'prop_active_harvestings.id';
             $metaReqs['refTableIdValue'] = $req->applicationId;
             $metaReqs['senderRoleId'] = $senderRoleId;
             $metaReqs['user_id'] = $userId;
@@ -627,7 +637,7 @@ class RainWaterHarvestingController extends Controller
             // Updation of Received Date
             $preWorkflowReq = [
                 'workflowId' => $activeHarvesting->workflow_id,
-                'refTableDotId' => 'prop_active_concessions.id',
+                'refTableDotId' => 'prop_active_harvestings.id',
                 'refTableIdValue' => $req->applicationId,
                 'receiverRoleId' => $senderRoleId
             ];
@@ -636,7 +646,6 @@ class RainWaterHarvestingController extends Controller
                 'forward_date' => $this->_todayDate->format('Y-m-d'),
                 'forward_time' => $this->_todayDate->format('H:i:s')
             ]);
-
 
             DB::commit();
             return responseMsgs(true, $msg, "", '011111', 01, '391ms', 'Post', $req->deviceId);

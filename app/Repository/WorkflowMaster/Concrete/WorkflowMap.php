@@ -120,8 +120,9 @@ class WorkflowMap implements iWorkflowMapRepository
     {
         //validating
         $request->validate([
-            'ulbId' => 'required|int'
+            'ulbId' => 'required|nullable'
         ]);
+        $ulbId = $request->ulbId ?? authUser()->ulb_id;
         $wards = collect();
         $workkFlow = UlbWardMaster::select(
             'id',
@@ -129,7 +130,7 @@ class WorkflowMap implements iWorkflowMapRepository
             'ward_name',
             'old_ward_name'
         )
-            ->where('ulb_id', $request->ulbId)
+            ->where('ulb_id', $ulbId)
             ->where('status', 1)
             ->orderby('id')
             ->get();

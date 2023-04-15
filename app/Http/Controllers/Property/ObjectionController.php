@@ -617,7 +617,7 @@ class ObjectionController extends Controller
 
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs['workflowId'] = $activeObjection->workflow_id;
-            $metaReqs['refTableDotId'] = 'prop_active_concessions.id';
+            $metaReqs['refTableDotId'] = 'prop_active_objections.id';
             $metaReqs['refTableIdValue'] = $req->applicationId;
             $metaReqs['senderRoleId'] = $senderRoleId;
             $metaReqs['user_id'] = $userId;
@@ -628,7 +628,7 @@ class ObjectionController extends Controller
             // Updation of Received Date
             $preWorkflowReq = [
                 'workflowId' => $activeObjection->workflow_id,
-                'refTableDotId' => 'prop_active_concessions.id',
+                'refTableDotId' => 'prop_active_objections.id',
                 'refTableIdValue' => $req->applicationId,
                 'receiverRoleId' => $senderRoleId
             ];
@@ -803,7 +803,7 @@ class ObjectionController extends Controller
             $mPropActiveObjectionOwner = new PropActiveObjectionOwner();
 
             $refApplication = $mPropActiveObjection->getObjectionNo($req->applicationId);
-            $ownerDetails = $mPropActiveObjectionOwner->getOwnerDetail($req->applicationId);                      // Get Saf Details
+            $ownerDetails = $mPropActiveObjectionOwner->getOwnerDetail($req->applicationId);      // Get Owner Details
             if (!$refApplication)
                 throw new Exception("Application Not Found for this id");
             $objectionDoc['listDocs'] = $this->getDocList($refApplication, $ownerDetails);
