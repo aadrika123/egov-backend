@@ -405,4 +405,5 @@ trait TradeTrait
         $refTradeLicense->forceDelete();
 
     }
+    
 }

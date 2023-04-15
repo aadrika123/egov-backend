@@ -33,6 +33,8 @@ use App\Models\Trade\TradeParamCategoryType;
 use App\Http\Requests\Trade\ReqPostNextLevel;
 use App\Models\Trade\TradeParamOwnershipType;
 use App\Http\Requests\Trade\ReqUpdateBasicDtl;
+use App\Models\Trade\ActiveTradeOwner;
+use App\Models\Trade\RejectedTradeOwner;
 use App\Models\Workflows\WfRoleusermap;
 use App\Traits\Trade\TradeTrait;
 
@@ -677,6 +679,17 @@ class TradeApplication extends Controller
                     throw new Exception("Some Error Occurs");
                 }
                 $approvedLicence->save();
+                $owneres = ActiveTradeOwner::select("*")
+                            ->where("temp_id",$activeLicence->id)
+                            ->get();
+                foreach($owneres as $val)
+                {                 
+                    $refOwners = $val->replicate();
+                    $refOwners->id = $val->id;
+                    $refOwners->setTable('trade_owners');
+                    $refOwners->save();
+                    $val->delete();
+                }
                 $activeLicence->delete();
                 $licenseNo = $approvedLicence->license_no;
                 $msg =  "Application Successfully Approved !!. Your License No Is ".$licenseNo;
@@ -692,6 +705,17 @@ class TradeApplication extends Controller
                 $approvedLicence->id = $activeLicence->id;
                 $approvedLicence->pending_status =4;
                 $approvedLicence->save();
+                $owneres = ActiveTradeOwner::select("*")
+                            ->where("temp_id",$activeLicence->id)
+                            ->get();
+                foreach($owneres as $val)
+                {
+                    $refOwners = $val->replicate();
+                    $refOwners->id = $val->id;
+                    $refOwners->setTable('rejected_trade_owners');
+                    $refOwners->save();
+                    $val->delete();
+                }
                 $activeLicence->delete();
                 $msg = "Application Successfully Rejected !!";
                 // $sms = trade(["application_no"=>$approvedLicence->application_no,"licence_no"=>$approvedLicence->license_no,"ulb_name"=>$refUlbDtl->ulb_name??""],"Application Approved");
