@@ -99,6 +99,7 @@ class PropDemand extends Model
 
     /**
      * | Get Full Demands By Property ID
+     * | Used in Generating Fam Receipt
      */
     public function getFullDemandsByPropId($propId)
     {
