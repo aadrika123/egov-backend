@@ -244,6 +244,7 @@ class HoldingTaxController extends Controller
 
             $total = roundFigure($dues - $advanceAmt);
             $totalPayable = round($total + $onePercTax);
+            $totalPayable = roundFigure($totalPayable);
 
             $demand['dueReceipt'] = [
                 'holdingNo' => $basicDtls['holding_no'],
@@ -809,7 +810,6 @@ class HoldingTaxController extends Controller
         try {
             $mTransaction = new PropTransaction();
             $propTrans = $mTransaction->getPropTransFullDtlsByTranNo($req->tranNo);
-
             $responseData = $this->propPaymentReceipt($req);
             $responseData = $responseData->original['data'];                                              // Function propPaymentReceipt(9.1)
             $totalRebate = $responseData['totalRebate'];
@@ -836,10 +836,10 @@ class HoldingTaxController extends Controller
         $arrearToQtr = $arrearTaxes->last()->qtr ?? "";
         $arrearToFyear = $arrearTaxes->last()->fyear ?? "";
 
-        $currentFromQtr = $currentTaxes->first()->qtr;
-        $currentFromFyear = $currentTaxes->first()->fyear;
-        $currentToQtr = $currentTaxes->last()->qtr;
-        $currentToFyear = $currentTaxes->last()->fyear;
+        $currentFromQtr = $currentTaxes->first()->qtr ?? "";
+        $currentFromFyear = $currentTaxes->first()->fyear ?? "";
+        $currentToQtr = $currentTaxes->last()->qtr ?? "";
+        $currentToFyear = $currentTaxes->last()->fyear ?? "";
 
         $arrearPeriod = $arrearFromQtr . '/' . $arrearFromFyear . '-' . $arrearToQtr . '/' . $arrearToFyear;
         $currentPeriod = $currentFromQtr . '/' . $currentFromFyear . '-' . $currentToQtr . '/' . $currentToFyear;
