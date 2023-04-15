@@ -1513,6 +1513,7 @@ class ActiveSafController extends Controller
             $mPropPenaltyRebates = new PropPenaltyrebate();
             $mPropRazorpayResponse = new PropRazorpayResponse();
             $mPropTranDtl = new PropTranDtl();
+            $previousHoldingDeactivation = new PreviousHoldingDeactivation;
 
             $userId = $req['userId'];
             $safId = $req['id'];
@@ -1618,7 +1619,7 @@ class ActiveSafController extends Controller
                 ];
                 $mPropTranDtl->store($tranReq);
             }
-
+            $previousHoldingDeactivation->deactivateHoldingDemands($activeSaf);  // Deactivate Property Holding
             $this->sendToWorkflow($activeSaf);        // Send to Workflow(15.2)
             DB::commit();
             return responseMsgs(true, "Payment Successfully Done",  ['TransactionNo' => $tranNo], "010115", "1.0", "567ms", "POST", $req->deviceId);
@@ -1642,10 +1643,12 @@ class ActiveSafController extends Controller
             $mPropSafsDemands = new PropSafsDemand();
             $verifyPaymentModes = Config::get('payment-constants.VERIFICATION_PAYMENT_MODES');
             $mPropTranDtl = new PropTranDtl();
+            $previousHoldingDeactivation = new PreviousHoldingDeactivation;
 
             $safId = $req['id'];
 
             $activeSaf = PropActiveSaf::findOrFail($req['id']);
+
             if ($activeSaf->payment_status == 1)
                 throw new Exception("Payment Already Done");
 
@@ -1714,6 +1717,10 @@ class ActiveSafController extends Controller
 
             // Replication Prop Rebates Penalties
             $this->postPenaltyRebates($safCalculation, $safId, $propTrans['id']);
+
+            // Deactivate Property Holdings
+            $previousHoldingDeactivation->deactivateHoldingDemands($activeSaf);
+
             // Update SAF Payment Status
             $activeSaf->save();
             $this->sendToWorkflow($activeSaf);        // Send to Workflow(15.2)

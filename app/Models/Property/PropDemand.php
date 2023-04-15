@@ -203,4 +203,17 @@ class PropDemand extends Model
                 'cluster_id' => $clusterId
             ]);
     }
+
+    /**
+     * | Demand Deactivation
+     */
+    public function deactivateDemand($propId)
+    {
+        PropDemand::where('property_id', $propId)
+            ->where('paid_status', 0)
+            ->where('status', 1)
+            ->update([
+                'status' => 2
+            ]);
+    }
 }

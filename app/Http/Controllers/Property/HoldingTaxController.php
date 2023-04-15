@@ -1073,13 +1073,13 @@ class HoldingTaxController extends Controller
         return [
             "floor" => $rule['floor'],
             "buildupArea" => $rule['buildupArea'],
-            "usageFactor" => $rule['usageFactor'] ?? 'N/A',
+            "usageFactor" => $rule['usageFactor'] ?? null,
             "occupancyFactor" => $rule['occupancyFactor'],
-            "carpetArea" => $rule['carpetArea'] ?? "N/A",
+            "carpetArea" => $rule['carpetArea'] ?? null,
             "rentalRate" => $rule['rentalRate'],
-            "taxPerc" => $rule['taxPerc'] ?? "N/A",
-            "calculationFactor" => $rule['calculationFactor'] ?? "N/A",
-            "arvPsf" => $rule['arvPsf'] ?? "N/A",
+            "taxPerc" => $rule['taxPerc'] ?? null,
+            "calculationFactor" => $rule['calculationFactor'] ?? null,
+            "arvPsf" => $rule['arvPsf'] ?? null,
             "circleRate" => $rule['circleRate'] ?? "",
             "arvTotalPropTax" => $rule['arvTotalPropTax'] ?? 0,
             "cvArvPropTax" => $rule['cvArvPropTax'] ?? 0
