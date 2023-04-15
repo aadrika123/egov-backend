@@ -34,6 +34,7 @@ use App\Models\Water\WaterSiteInspection;
 use App\Models\Water\WaterSiteInspectionsScheduling;
 use App\Models\Water\WaterTran;
 use App\Models\Water\WaterTranDetail;
+use App\Models\Water\WaterTranFineRebate;
 use App\Models\Workflows\WfRoleusermap;
 use App\Repository\Water\Concrete\WaterNewConnection;
 use App\Traits\Payment\Razorpay;
@@ -797,13 +798,10 @@ class WaterPaymentController extends Controller
         if ($refgeneratedDemand != $totalgeneratedDemand) {
             throw new Exception("penally Not matched!");
         }
-        # checking the advance anount 
-
-        $allLeftCharges = $mWaterConsumerDemand->getFirstConsumerDemand($consumerId)
-            ->where('demand_from', '<', $startingDate)
-            ->where('demand_upto', '>', $endDate)
+        # checking the advance amount 
+        $allunpaidCharges = $mWaterConsumerDemand->getFirstConsumerDemand($consumerId)
             ->get();
-        $leftAmount = collect($allLeftCharges)->sum('balance_amount');
+        $leftAmount = (collect($allunpaidCharges)->sum('balance_amount') - collect($allCharges)->sum('balance_amount'));
 
         return [
             "consumer"          => $refConsumer,
@@ -918,7 +916,7 @@ class WaterPaymentController extends Controller
             ->where('demand_upto', '<=', $endDate)
             ->get();
 
-        $checkDemand = collect($allCharges)->first()->id;
+        $checkDemand = collect($allCharges)->first();
         if (!$checkDemand) {
             throw new Exception("Demand according to date not found!");
         }
@@ -980,14 +978,16 @@ class WaterPaymentController extends Controller
     {
         try {
             # Variable Assignments
-            $offlinePaymentModes = Config::get('payment-constants.VERIFICATION_PAYMENT_MODE');
+            $userId = auth()->user()->id;
+            $userType = authUser()->user_type;
             $todayDate = Carbon::now();
+            $waterTran = new WaterTran();
+            $idGeneration = new IdGeneration;
             $mWaterApplication = new WaterApplication();
             $mWaterConnectionCharge = new WaterConnectionCharge();
-            $idGeneration = new IdGeneration;
-            $waterTran = new WaterTran();
-            $userId = auth()->user()->id;
-            $userType = authUser()->user_type;                                                         # Authenticated user or Ghost User
+            $mWaterSiteInspection = new WaterSiteInspection();
+            $offlinePaymentModes = Config::get('payment-constants.VERIFICATION_PAYMENT_MODE');
+            $paramChargeCatagory = Config::get('waterConstaint.CHARGE_CATAGORY');                                                      # Authenticated user or Ghost User
             $refWaterApplication = $mWaterApplication->getApplicationById($req->applicationId)
                 ->firstOrFail();
 
@@ -1011,10 +1011,20 @@ class WaterPaymentController extends Controller
                 'id'        => $req->applicationId,
                 'ulbId'     => authUser()->ulb_id,
             ]);
+
             DB::beginTransaction();
             # Save the Details of the transaction
             $wardId['ward_mstr_id'] = $refWaterApplication['ward_id'];
             $waterTrans = $waterTran->waterTransaction($req, $wardId);
+
+
+            /**
+             * | save the rebate in table
+               | Work here 
+             */
+            if ($req->chargeCategory == $paramChargeCatagory['REGULAIZATION'] && $req->isInstallment == "no") {
+                $this->saveRebateForTran($req, $charges, $waterTrans);
+            }
 
             # Save the Details for the Cheque,DD,nfet
             if (in_array($req['paymentMode'], $offlinePaymentModes)) {
@@ -1032,9 +1042,12 @@ class WaterPaymentController extends Controller
             foreach ($charges as $charges) {
                 $this->savePaymentStatus($req, $offlinePaymentModes, $charges, $refWaterApplication, $waterTrans);
             }
-
             # Readjust Water Penalties
             $this->updatePenaltyPaymentStatus($req);
+            # if payment is for site inspection
+            if ($req->chargeCategory == $paramChargeCatagory['SITE_INSPECTON']) {
+                $mWaterSiteInspection->saveSitePaymentStatus($req->applicationId);
+            }
             DB::commit();
             return responseMsgs(true, "Payment Successfully Done",  ['TransactionNo' => $tranNo], "", "1.0", "ms", "POST", $req->deviceId);
         } catch (Exception $e) {
@@ -1042,6 +1055,47 @@ class WaterPaymentController extends Controller
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+
+
+    /**
+     * | Save Rebate details for water connection
+     * | only in terms of regulisation
+        | Serial No : 07.05
+        | Not Tested
+        | Check the code 
+     */
+    public function saveRebateForTran($req, $charges, $waterTrans)
+    {
+        $transactionId = $waterTrans['id'];
+        $mWaterTranFineRebate = new WaterTranFineRebate();
+        $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
+        $refWaterHeadName = Config::get("waterConstaint.WATER_HEAD_NAME");
+
+        $connectionChargeId = collect($charges)->pluck('id')->first();
+        $penaltyDetails = $mWaterPenaltyInstallment->getPenaltyByChargeId($connectionChargeId)->get();
+
+        collect($penaltyDetails)->map(function ($value)
+        use ($mWaterTranFineRebate, $req, $transactionId) {
+            $metaRequest = new Request([
+                "headName"      => $value['penalty_head'],
+                "amount"        => $value['balance_amount'],
+                "applicationId" => $req->applicationId,
+                "valueAddMinus" => "+"
+            ]);
+            $mWaterTranFineRebate->saveRebateDetails($metaRequest, $transactionId);
+        });
+        $refPenalty = collect($charges)->pluck('penalty')->first();
+        $actualPenaltyAmountRebate = (10 / 100 * $refPenalty);
+        $metaRequest = new Request([
+            "headName"      => $refWaterHeadName['1'],
+            "amount"        => $actualPenaltyAmountRebate,
+            "applicationId" => $req->applicationId,
+            "valueAddMinus" => "-"
+        ]);
+        $mWaterTranFineRebate->saveRebateDetails($metaRequest, $transactionId);
+    }
+
+
 
 
     /**
@@ -1166,7 +1220,6 @@ class WaterPaymentController extends Controller
 
                         # save penalty and rebate details 
                         # write code to track the rebate and the penalty
-
                         break;
                 }
                 break;
@@ -1513,7 +1566,7 @@ class WaterPaymentController extends Controller
             $RazorPayRequest->related_id        = $request->consumerId;
             $RazorPayRequest->payment_from      = "Demand Collection";
             $RazorPayRequest->amount            = $request->amount;
-            $RazorPayRequest->demand_from_upto  = $request->demandFrom . "," . $request->demandUpto;
+            $RazorPayRequest->demand_from_upto  = $request->demandFrom . "--" . $request->demandUpto;
             $RazorPayRequest->ip_address        = $request->ip();
             $RazorPayRequest->order_id          = $temp["orderId"];
             $RazorPayRequest->department_id     = $temp["departmentId"];
@@ -1580,12 +1633,9 @@ class WaterPaymentController extends Controller
             throw new Exception("penally Not matched!");
         }
         # checking the advance anount 
-
-        $allLeftCharges = $mWaterConsumerDemand->getFirstConsumerDemand($consumerId)
-            ->where('demand_from', '<', $startingDate)
-            ->where('demand_upto', '>', $endDate)
+        $allunpaidCharges = $mWaterConsumerDemand->getFirstConsumerDemand($consumerId)
             ->get();
-        $leftAmount = collect($allLeftCharges)->sum('balance_amount');
+        $leftAmount = (collect($allunpaidCharges)->sum('balance_amount') - collect($allCharges)->sum('balance_amount'));
 
         $returnData = [
             "consumer"          => $refConsumer,
