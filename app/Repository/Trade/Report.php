@@ -491,6 +491,10 @@ class Report implements IReport
             {
                 $data = $data->where("trade_licences.valid_upto",$oprater,$uptoDate);
             }
+            if(strtoupper($request->licenseStatus)=="TO BE EXPIRED")
+            {
+                $data = $data->whereBetween("trade_licences.valid_upto",[$uptoDate,(new Carbon($uptoDate))->addDays(30)->format("Y-m-d")]);
+            }
             if($wardId)
             {
                 $data = $data->where("trade_licences.ward_id",$wardId);
