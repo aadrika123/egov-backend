@@ -88,7 +88,7 @@ class RainWaterHarvestingController extends Controller
     {
         try {
             $request->validate([
-                'isWaterHarvestingBefore' => 'required',
+                // 'isWaterHarvestingBefore' => 'required',
                 'dateOfCompletion' => 'required|date',
                 'propertyId' => 'required',
                 'ulbId' => 'required'
