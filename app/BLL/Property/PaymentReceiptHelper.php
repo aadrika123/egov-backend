@@ -58,27 +58,27 @@ class PaymentReceiptHelper
     {
         $amount = [
             [
-                "keyString" => "Late Assessment Fine(Rule 14.1)",
+                "keyString" => $this->_penaltyRebateKeyStrings['lateAssessmentPenalty'],
                 "value" => $lateAssessPenalty
             ],
             [
-                "keyString" => "1% Interest On Monthly Penalty(Notification No-641)",
+                "keyString" => $this->_penaltyRebateKeyStrings['onePercPenalty'],
                 "value" => roundFigure((float)$onePercPenalty)
             ],
             [
-                "keyString" => "Rebate",
+                "keyString" => $this->_penaltyRebateKeyStrings['rebate'],
                 "value" => roundFigure((float)$rebate)
             ],
             [
-                "keyString" => "Rebate From Jsk/Online Payment",
+                "keyString" => $this->_penaltyRebateKeyStrings['onlineOrJskRebate'],
                 "value" => roundFigure((float)$onlineRebate)
             ],
             [
-                "keyString" => "Special Rebate",
+                "keyString" => $this->_penaltyRebateKeyStrings['specialRebate'],
                 "value" => roundFigure((float)$specialRebate)
             ],
             [
-                "keyString" => "First Qtr Rebate",
+                "keyString" => $this->_penaltyRebateKeyStrings['firstQtrRebate'],
                 "value" => roundFigure((float)$firstQtrRebate)
             ],
             [

@@ -160,9 +160,11 @@ class ApplySafController extends Controller
 
             // SAF Owner Details
             if ($request['owner']) {
-                $owner_detail = $request['owner'];
-                foreach ($owner_detail as $owner_details) {
-                    $mOwner->addOwner($owner_details, $safId, $user_id);
+                $ownerDetail = $request['owner'];
+                if ($request->assessmentType == 'Mutation')                             // In Case of Mutation Avert Existing Owner Detail
+                    $ownerDetail = collect($ownerDetail)->where('propOwnerDetailId', null);
+                foreach ($ownerDetail as $ownerDetails) {
+                    $mOwner->addOwner($ownerDetails, $safId, $user_id);
                 }
             }
 
