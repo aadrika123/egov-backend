@@ -160,9 +160,11 @@ class ApplySafController extends Controller
 
             // SAF Owner Details
             if ($request['owner']) {
-                $owner_detail = $request['owner'];
-                foreach ($owner_detail as $owner_details) {
-                    $mOwner->addOwner($owner_details, $safId, $user_id);
+                $ownerDetail = $request['owner'];
+                if ($request->assessmentType == 'Mutation')                             // In Case of Mutation Avert Existing Owner Detail
+                    $ownerDetail = collect($ownerDetail)->where('propOwnerDetailId', null);
+                foreach ($ownerDetail as $ownerDetails) {
+                    $mOwner->addOwner($ownerDetails, $safId, $user_id);
                 }
             }
 
@@ -174,7 +176,6 @@ class ApplySafController extends Controller
                     $floor->addfloor($floor_details, $safId, $user_id);
                 }
             }
-
             DB::commit();
             return responseMsgs(true, "Successfully Submitted Your Application Your SAF No. $safNo", [
                 "safNo" => $safNo,

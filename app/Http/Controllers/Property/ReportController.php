@@ -17,6 +17,10 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 
+#------------date 13/03/2023 -------------------------------------------------------------------------
+#   Code By Sandeep Bara
+#   Payment Mode Wise Collection Report
+
 class ReportController extends Controller
 {
     use Auth;
@@ -64,6 +68,7 @@ class ReportController extends Controller
         $request->request->add(["metaData" => ["pr2.1", 1.1, null, $request->getMethod(), null,]]);
         return $this->Repository->safCollection($request);
     }
+
     public function safPropIndividualDemandAndCollection(Request $request)
     {
         $request->validate(
@@ -78,11 +83,13 @@ class ReportController extends Controller
         $request->request->add(["metaData" => ["pr3.1", 1.1, null, $request->getMethod(), null,]]);
         return $this->Repository->safPropIndividualDemandAndCollection($request);
     }
+
     public function levelwisependingform(Request $request)
     {
         $request->request->add(["metaData" => ["pr4.1", 1.1, null, $request->getMethod(), null,]]);
         return $this->Repository->levelwisependingform($request);
     }
+
     public function levelformdetail(Request $request)
     {
         $request->validate(
@@ -175,6 +182,100 @@ class ReportController extends Controller
         $request->request->add(["metaData" => ["pr5.1", 1.1, null, $request->getMethod(), null,]]);
         return $this->Repository->safSamFamGeotagging($request);
     }
+
+    public function PropPaymentModeWiseSummery(Request $request)
+    {
+        $request->validate(
+            [
+                "fromDate" => "required|date|date_format:Y-m-d",
+                "uptoDate" => "required|date|date_format:Y-m-d",
+                "ulbId" => "nullable|digits_between:1,9223372036854775807",
+                "wardId" => "nullable|digits_between:1,9223372036854775807",
+                "paymentMode" => "nullable",
+                "userId" => "nullable|digits_between:1,9223372036854775807",
+            ]
+        );
+        $request->request->add(["metaData" => ["pr1.2", 1.1, null, $request->getMethod(), null,]]);
+        return $this->Repository->PropPaymentModeWiseSummery($request);
+    }
+
+    public function SafPaymentModeWiseSummery(Request $request)
+    {
+        $request->validate(
+            [
+                "fromDate" => "required|date|date_format:Y-m-d",
+                "uptoDate" => "required|date|date_format:Y-m-d",
+                "ulbId" => "nullable|digits_between:1,9223372036854775807",
+                "wardId" => "nullable|digits_between:1,9223372036854775807",
+                "paymentMode" => "nullable",
+                "userId" => "nullable|digits_between:1,9223372036854775807",
+            ]
+        );
+        $request->request->add(["metaData" => ["pr2.2", 1.1, null, $request->getMethod(), null,]]);
+        return $this->Repository->SafPaymentModeWiseSummery($request);
+    }
+
+    public function PropDCB(Request $request)
+    {
+        $request->validate(
+            [
+                "fiYear" => "nullable|regex:/^\d{4}-\d{4}$/",
+                "ulbId" => "nullable|digits_between:1,9223372036854775807",
+                "wardId" => "nullable|digits_between:1,9223372036854775807",
+                "page" => "nullable|digits_between:1,9223372036854775807",
+                "perPage" => "nullable|digits_between:1,9223372036854775807",
+            ]
+        );
+        $request->request->add(["metaData" => ["pr7.1", 1.1, null, $request->getMethod(), null,]]);
+        return $this->Repository->PropDCB($request);
+    }
+
+    public function PropWardWiseDCB(Request $request)
+    {
+        $request->validate(
+            [
+                "fiYear" => "nullable|regex:/^\d{4}-\d{4}$/",
+                "ulbId" => "nullable|digits_between:1,9223372036854775807",
+                "wardId" => "nullable|digits_between:1,9223372036854775807",
+                // "page" => "nullable|digits_between:1,9223372036854775807",
+                // "perPage" => "nullable|digits_between:1,9223372036854775807",
+            ]
+        );
+        $request->request->add(["metaData" => ["pr8.1", 1.1, null, $request->getMethod(), null,]]);
+        return $this->Repository->PropWardWiseDCB($request);
+    }
+
+    public function PropFineRebate(Request $request)
+    {
+        $request->validate(
+            [
+                "fiYear" => "nullable|regex:/^\d{4}-\d{4}$/",
+                "ulbId" => "nullable|digits_between:1,9223372036854775807",
+                "wardId" => "nullable|digits_between:1,9223372036854775807",
+                "page" => "nullable|digits_between:1,9223372036854775807",
+                "perPage" => "nullable|digits_between:1,9223372036854775807",
+            ]
+        );
+        $request->request->add(["metaData" => ["pr9.1", 1.1, null, $request->getMethod(), null,]]);
+        return $this->Repository->PropFineRebate($request);
+    }
+
+    public function PropDeactedList(Request $request)
+    {
+        $request->validate(
+            [
+                "fromDate" => "nullable|date|date_format:Y-m-d",
+                "uptoDate" => "nullable|date|date_format:Y-m-d",
+                "ulbId" => "nullable|digits_between:1,9223372036854775807",
+                "wardId" => "nullable|digits_between:1,9223372036854775807",
+                "page" => "nullable|digits_between:1,9223372036854775807",
+                "perPage" => "nullable|digits_between:1,9223372036854775807",
+            ]
+        );
+        $request->request->add(["metaData" => ["pr10.1", 1.1, null, $request->getMethod(), null,]]);
+        return $this->Repository->PropDeactedList($request);
+    }
+
 
     //========================================================================================================
     // Modification By : Mrinal Kumar
@@ -410,100 +511,33 @@ class ReportController extends Controller
         return $this->Repository->dcbPieChart($request);
     }
 
-
-
-    #------------date 13/03/2023 -------------------------------------------------------------------------
-    #   Code By Sandeep Bara
-    #   Payment Mode Wise Collection Report
-    public function PropPaymentModeWiseSummery(Request $request)
+    /**
+     * | 
+     */
+    public function propSafCollection(Request $request)
     {
-        $request->validate(
-            [
-                "fromDate" => "required|date|date_format:Y-m-d",
-                "uptoDate" => "required|date|date_format:Y-m-d",
-                "ulbId" => "nullable|digits_between:1,9223372036854775807",
-                "wardId" => "nullable|digits_between:1,9223372036854775807",
-                "paymentMode" => "nullable",
-                "userId" => "nullable|digits_between:1,9223372036854775807",
-            ]
-        );
-        $request->request->add(["metaData" => ["pr1.2", 1.1, null, $request->getMethod(), null,]]);
-        return $this->Repository->PropPaymentModeWiseSummery($request);
-    }
-    public function SafPaymentModeWiseSummery(Request $request)
-    {
-        $request->validate(
-            [
-                "fromDate" => "required|date|date_format:Y-m-d",
-                "uptoDate" => "required|date|date_format:Y-m-d",
-                "ulbId" => "nullable|digits_between:1,9223372036854775807",
-                "wardId" => "nullable|digits_between:1,9223372036854775807",
-                "paymentMode" => "nullable",
-                "userId" => "nullable|digits_between:1,9223372036854775807",
-            ]
-        );
-        $request->request->add(["metaData" => ["pr2.2", 1.1, null, $request->getMethod(), null,]]);
-        return $this->Repository->SafPaymentModeWiseSummery($request);
-    }
+        $propCollection = null;
+        $safCollection = null;
+        $gbsafCollection = null;
+        $collectionTypes = $request->collectionType;
 
-    public function PropDCB(Request $request)
-    {
-        $request->validate(
-            [
-                "fiYear" => "nullable|regex:/^\d{4}-\d{4}$/",
-                "ulbId" => "nullable|digits_between:1,9223372036854775807",
-                "wardId" => "nullable|digits_between:1,9223372036854775807",
-                "page" => "nullable|digits_between:1,9223372036854775807",
-                "perPage" => "nullable|digits_between:1,9223372036854775807",
-            ]
-        );
-        $request->request->add(["metaData" => ["pr7.1", 1.1, null, $request->getMethod(), null,]]);
-        return $this->Repository->PropDCB($request);
-    }
+        foreach ($collectionTypes as $collectionType) {
+            if ($collectionType == 'property') {
+                $propCollection =   $this->collectionReport($request);
+                $propCollection = $propCollection->original['data']['data'];
+            }
 
-    public function PropWardWiseDCB(Request $request)
-    {
-        $request->validate(
-            [
-                "fiYear" => "nullable|regex:/^\d{4}-\d{4}$/",
-                "ulbId" => "nullable|digits_between:1,9223372036854775807",
-                "wardId" => "nullable|digits_between:1,9223372036854775807",
-                // "page" => "nullable|digits_between:1,9223372036854775807",
-                // "perPage" => "nullable|digits_between:1,9223372036854775807",
-            ]
-        );
-        $request->request->add(["metaData" => ["pr8.1", 1.1, null, $request->getMethod(), null,]]);
-        return $this->Repository->PropWardWiseDCB($request);
-    }
+            if ($collectionType == 'saf') {
+                $safCollection = $this->safCollection($request);
+                $safCollection = $safCollection->original['data']['data'];
+            }
 
-    public function PropFineRebate(Request $request)
-    {
-        $request->validate(
-            [
-                "fiYear" => "nullable|regex:/^\d{4}-\d{4}$/",
-                "ulbId" => "nullable|digits_between:1,9223372036854775807",
-                "wardId" => "nullable|digits_between:1,9223372036854775807",
-                "page" => "nullable|digits_between:1,9223372036854775807",
-                "perPage" => "nullable|digits_between:1,9223372036854775807",
-            ]
-        );
-        $request->request->add(["metaData" => ["pr9.1", 1.1, null, $request->getMethod(), null,]]);
-        return $this->Repository->PropFineRebate($request);
-    }
-
-    public function PropDeactedList(Request $request)
-    {
-        $request->validate(
-            [
-                "fromDate" => "nullable|date|date_format:Y-m-d",
-                "uptoDate" => "nullable|date|date_format:Y-m-d",
-                "ulbId" => "nullable|digits_between:1,9223372036854775807",
-                "wardId" => "nullable|digits_between:1,9223372036854775807",
-                "page" => "nullable|digits_between:1,9223372036854775807",
-                "perPage" => "nullable|digits_between:1,9223372036854775807",
-            ]
-        );
-        $request->request->add(["metaData" => ["pr10.1", 1.1, null, $request->getMethod(), null,]]);
-        return $this->Repository->PropDeactedList($request);
+            if ($collectionType == 'gbsaf') {
+                $gbsafCollection = $this->gbSafCollection($request);
+                $gbsafCollection = $gbsafCollection->original['data']['data'];
+            }
+        }
+        $details = collect($propCollection)->merge($safCollection)->merge($gbsafCollection);
+        return $details;
     }
 }
