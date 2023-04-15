@@ -3139,8 +3139,8 @@ class Trade implements ITrade
             if ($application->payment_status == 0) {
                 throw new Exception("Please Payment Of This Application");
             }
-            $vUpto = $application->apply_date;
-            $application->valid_upto = date('Y-m-d', strtotime(date("$vUpto", mktime(time())) . " + 20 day"));
+            $vUpto = $application->application_date;
+            $application->valid_upto = date('Y-m-d', strtotime(date("$vUpto", mktime(time())) . " + 20 day"));            
             $transaction = TradeTransaction::select(
                 "trade_transactions.id",
                 "tran_no",
@@ -3207,6 +3207,7 @@ class Trade implements ITrade
                 "nature_of_bussiness",
                 "firm_description",
                 "brief_firm_desc",
+                "premises_owner_name",
                 "pending_status",
                 "owner.owner_name",
                 "owner.guardian_name",
@@ -3251,6 +3252,7 @@ class Trade implements ITrade
                     "nature_of_bussiness",
                     "firm_description",
                     "brief_firm_desc",
+                    "premises_owner_name",
                     "pending_status",
                     "owner.owner_name",
                     "owner.guardian_name",
