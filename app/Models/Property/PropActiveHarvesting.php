@@ -56,7 +56,7 @@ class PropActiveHarvesting extends Model
 
         $waterHaravesting = new PropActiveHarvesting();
         $waterHaravesting->property_id = $request->propertyId;
-        $waterHaravesting->harvesting_status = $request->isWaterHarvestingBefore;
+        // $waterHaravesting->harvesting_status = $request->isWaterHarvestingBefore;
         $waterHaravesting->date_of_completion  =  $request->dateOfCompletion;
         $waterHaravesting->workflow_id = $ulbWorkflowId->id;
         $waterHaravesting->current_role = collect($initiatorRoleId)->first()->role_id;
@@ -67,16 +67,6 @@ class PropActiveHarvesting extends Model
         $waterHaravesting->date = Carbon::now();
         $waterHaravesting->ulb_id = $request->ulbId;
         return $waterHaravesting;
-        // $waterHaravesting->save();
-
-        // $harvestingNo = $this->harvestingNo($waterHaravesting->id);
-
-        // PropActiveHarvesting::where('id', $waterHaravesting->id)
-        //     ->update(['application_no' => $harvestingNo]);
-
-        // $waterHaravestingDtl = PropActiveHarvesting::where('id', $waterHaravesting->id)
-        //     ->first();
-        // return $waterHaravestingDtl;
     }
 
     /**
