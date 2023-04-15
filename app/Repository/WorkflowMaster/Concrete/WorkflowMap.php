@@ -120,7 +120,7 @@ class WorkflowMap implements iWorkflowMapRepository
     {
         //validating
         $request->validate([
-            'ulbId' => 'required|nullable'
+            'ulbId' => 'nullable'
         ]);
         $ulbId = $request->ulbId ?? authUser()->ulb_id;
         $wards = collect();
