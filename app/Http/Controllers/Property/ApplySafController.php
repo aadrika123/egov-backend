@@ -170,10 +170,10 @@ class ApplySafController extends Controller
 
             // Floor Details
             if ($request['floor']) {
-                $floor_detail = $request['floor'];
-                foreach ($floor_detail as $floor_details) {
+                $floorDetail = $request['floor'];
+                foreach ($floorDetail as $floorDetails) {
                     $floor = new PropActiveSafsFloor();
-                    $floor->addfloor($floor_details, $safId, $user_id);
+                    $floor->addfloor($floorDetails, $safId, $user_id);
                 }
             }
             DB::commit();
@@ -292,7 +292,7 @@ class ApplySafController extends Controller
         if ($safDemandList->isEmpty())
             throw new Exception("Previous Saf Demand is Not Available");
 
-        $propDemandList = $mPropDemands->getFullDemandsByPropId($propertyId);
+        $propDemandList = $mPropDemands->getPaidDemandByPropId($propertyId);
         $fullDemandList = $safDemandList->merge($propDemandList);
         $generatedDemand = $generatedDemand->sortBy('due_date');
 
