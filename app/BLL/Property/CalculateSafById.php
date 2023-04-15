@@ -269,7 +269,7 @@ class CalculateSafById
         if ($safDemandList->isEmpty())
             throw new Exception("Previous Saf Demand is Not Available");
 
-        $propDemandList = $mPropDemands->getFullDemandsByPropId($propertyId);
+        $propDemandList = $mPropDemands->getPaidDemandByPropId($propertyId);            // Get Full Demand which is paid by Property id
         $fullDemandList = $safDemandList->merge($propDemandList);
         $generatedDemand = $generatedDemand->sortBy('due_date');
 
