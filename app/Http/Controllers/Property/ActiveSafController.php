@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Property;
 
 use App\BLL\Property\CalculateSafById;
 use App\BLL\Property\HandleTcVerification;
+use App\BLL\Property\PaymentReceiptHelper;
 use App\BLL\Property\PostRazorPayPenaltyRebate;
 use App\BLL\Property\PreviousHoldingDeactivation;
 use App\BLL\Property\RazorpayRequest;
@@ -1804,6 +1805,7 @@ class ActiveSafController extends Controller
             $propSafsDemand = new PropSafsDemand();
             $transaction = new PropTransaction();
             $propPenalties = new PropPenaltyrebate();
+            $paymentReceiptHelper = new PaymentReceiptHelper;
 
             $mTowards = Config::get('PropertyConstaint.SAF_TOWARDS');
             $mAccDescription = Config::get('PropertyConstaint.ACCOUNT_DESCRIPTION');
@@ -1824,7 +1826,7 @@ class ActiveSafController extends Controller
             $calDemandAmt = $safTrans->demand_amt;
             $checkOtherTaxes =  $propSafsDemand->getFirstDemandBySafId($safId);
 
-            $mDescriptions = $this->readDescriptions($checkOtherTaxes);      // Check the Taxes are Only Holding or Not
+            $mDescriptions = $paymentReceiptHelper->readDescriptions($checkOtherTaxes);      // Check the Taxes are Only Holding or Not
 
             $fromFinYear = $safTrans->from_fyear;
             $fromFinQtr = $safTrans->from_qtr;
@@ -1840,7 +1842,9 @@ class ActiveSafController extends Controller
             $lateAssessPenalty = $penalRebates->where('head_name', $lateAssessKey)->first()['amount'] ?? "";
             $jskOrOnlineRebate = collect($penalRebates)->where('head_name', $onlineRebate)->first()->amount ?? 0;
 
-            $taxDetails = $this->readPenalyPmtAmts($lateAssessPenalty, $onePercPanalAmt, $rebateAmt,  $specialRebateAmt, $firstQtrRebate, $safTrans->amount, $jskOrOnlineRebate);   // Get Holding Tax Dtls
+            $taxDetails = $paymentReceiptHelper->readPenalyPmtAmts($lateAssessPenalty, $onePercPanalAmt, $rebateAmt,  $specialRebateAmt, $firstQtrRebate, $safTrans->amount, $jskOrOnlineRebate);   // Get Holding Tax Dtls
+            $totalRebatePenals = $paymentReceiptHelper->calculateTotalRebatePenals($taxDetails);
+
             // Response Return Data
             $responseData = [
                 "departmentSection" => $mDepartmentSection,
@@ -1863,6 +1867,8 @@ class ActiveSafController extends Controller
                 "chequeDate" => $safTrans->cheque_date,
                 "demandAmount" => roundFigure((float)$calDemandAmt),
                 "taxDetails" => $taxDetails,
+                "totalRebate" => $totalRebatePenals['totalRebate'],
+                "totalPenalty" => $totalRebatePenals['totalPenalty'],
                 "ulbId" => $activeSafDetails['ulb_id'],
                 "oldWardNo" => $activeSafDetails['old_ward_no'],
                 "newWardNo" => $activeSafDetails['new_ward_no'],
@@ -1870,90 +1876,13 @@ class ActiveSafController extends Controller
                 "description" => $mDescriptions,
                 "totalPaidAmount" => $safTrans->amount,
                 "paidAmtInWords" => getIndianCurrency($safTrans->amount),
+                "tcName" => $safTrans->tc_name,
+                "tcMobile" => $safTrans->tc_mobile,
             ];
             return responseMsgs(true, "Payment Receipt", remove_null($responseData), "010116", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "", "010116", "1.0", "", "POST", $req->deviceId ?? "");
         }
-    }
-
-    /**
-     * | Read Taxes Descriptions(1.1)
-     * | @param checkOtherTaxes first collection from the details
-     */
-    public function readDescriptions($checkOtherTaxes)
-    {
-        $taxes = [
-            [
-                "keyString" => "Holding Tax",
-                "value" => $checkOtherTaxes->holding_tax
-            ],
-            [
-                "keyString" => "Water Tax",
-                "value" => $checkOtherTaxes->water_tax
-            ],
-            [
-                "keyString" => "Education Cess",
-                "value" => $checkOtherTaxes->education_cess
-            ],
-            [
-                "keyString" => "Latrine Tax",
-                "value" => $checkOtherTaxes->latrine_tax
-            ]
-        ];
-        $filtered = collect($taxes)->filter(function ($tax, $key) {
-            if ($tax['value'] > 0) {
-                return $tax['keyString'];
-            }
-        });
-
-        return $filtered;
-    }
-    /**
-     * | Read Penalty Tax Details with Penalties and final payable amount(1.2)
-     */
-    public function readPenalyPmtAmts($lateAssessPenalty = 0, $onePercPenalty = 0, $rebate = 0, $specialRebate = 0, $firstQtrRebate = 0, $amount, $onlineRebate = 0)
-    {
-        $amount = [
-            [
-                "keyString" => "Late Assessment Fine(Rule 14.1)",
-                "value" => $lateAssessPenalty
-            ],
-            [
-                "keyString" => "1% Interest On Monthly Penalty(Notification No-641)",
-                "value" => roundFigure((float)$onePercPenalty)
-            ],
-            [
-                "keyString" => "Rebate",
-                "value" => roundFigure((float)$rebate)
-            ],
-            [
-                "keyString" => "Rebate From Jsk/Online Payment",
-                "value" => roundFigure((float)$onlineRebate)
-            ],
-            [
-                "keyString" => "Special Rebate",
-                "value" => roundFigure((float)$specialRebate)
-            ],
-            [
-                "keyString" => "First Qtr Rebate",
-                "value" => roundFigure((float)$firstQtrRebate)
-            ],
-            [
-                "keyString" => "Total Paid Amount",
-                "value" => roundFigure((float)$amount)
-            ],
-            [
-                "keyString" => "Remaining Amount",
-                "value" => 0
-            ]
-        ];
-
-        $tax = collect($amount)->filter(function ($value, $key) {
-            return $value['value'] > 0;
-        });
-
-        return $tax->values();
     }
 
     /**

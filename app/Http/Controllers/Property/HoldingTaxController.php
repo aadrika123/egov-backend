@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Property;
 
+use App\BLL\Property\PaymentReceiptHelper;
 use App\BLL\Property\PostRazorPayPenaltyRebate;
 use App\EloquentClass\Property\PenaltyRebateCalculation;
 use App\EloquentClass\Property\SafCalculation;
@@ -680,6 +681,7 @@ class HoldingTaxController extends Controller
             $mTransaction = new PropTransaction();
             $mPropPenalties = new PropPenaltyrebate();
             $safController = new ActiveSafController($this->_safRepo);
+            $paymentReceiptHelper = new PaymentReceiptHelper;
 
             $mTowards = Config::get('PropertyConstaint.SAF_TOWARDS');
             $mAccDescription = Config::get('PropertyConstaint.ACCOUNT_DESCRIPTION');
@@ -710,7 +712,9 @@ class HoldingTaxController extends Controller
             $jskOrOnlineRebate = collect($penalRebates)->where('head_name', $onlineRebate)->first()->amount ?? 0;
             $lateAssessmentPenalty = 0;
 
-            $taxDetails = $safController->readPenalyPmtAmts($lateAssessmentPenalty, $onePercPenalty, $rebate, $specialRebate, $firstQtrRebate, $propTrans->amount, $jskOrOnlineRebate);
+            $taxDetails = $paymentReceiptHelper->readPenalyPmtAmts($lateAssessmentPenalty, $onePercPenalty, $rebate, $specialRebate, $firstQtrRebate, $propTrans->amount, $jskOrOnlineRebate);
+            $totalRebatePenals = $paymentReceiptHelper->calculateTotalRebatePenals($taxDetails);
+
             $responseData = [
                 "departmentSection" => $mDepartmentSection,
                 "accountDescription" => $mAccDescription,
@@ -733,6 +737,8 @@ class HoldingTaxController extends Controller
                 "chequeDate" => $propTrans->cheque_date,
                 "demandAmount" => $propTrans->demand_amt,
                 "taxDetails" => $taxDetails,
+                "totalRebate" => $totalRebatePenals['totalRebate'],
+                "totalPenalty" => $totalRebatePenals['totalPenalty'],
                 "ulbId" => $propProperty['ulb_id'],
                 "oldWardNo" => $propProperty['old_ward_no'],
                 "newWardNo" => $propProperty['new_ward_no'],
@@ -742,6 +748,8 @@ class HoldingTaxController extends Controller
                 ],
                 "totalPaidAmount" => $propTrans->amount,
                 "paidAmtInWords" => getIndianCurrency($propTrans->amount),
+                "tcName" => $propTrans->tc_name,
+                "tcMobile" => $propTrans->tc_mobile,
             ];
 
             return responseMsgs(true, "Payment Receipt", remove_null($responseData), "011605", "1.0", "", "POST", $req->deviceId ?? "");
@@ -1382,8 +1390,8 @@ class HoldingTaxController extends Controller
         try {
             $mTransaction = new PropTransaction();
             $mPropPenalties = new PropPenaltyrebate();
-            $safController = new ActiveSafController($this->_safRepo);
             $mClusters = new Cluster();
+            $paymentReceiptHelper = new PaymentReceiptHelper;
 
             $mTowards = Config::get('PropertyConstaint.SAF_TOWARDS');
             $mAccDescription = Config::get('PropertyConstaint.ACCOUNT_DESCRIPTION');
@@ -1410,7 +1418,7 @@ class HoldingTaxController extends Controller
             $jskOrOnlineRebate = collect($penalRebates)->where('head_name', $onlineRebate)->first()->amount ?? 0;
             $lateAssessmentPenalty = 0;
 
-            $taxDetails = $safController->readPenalyPmtAmts($lateAssessmentPenalty, $onePercPenalty, $rebate, $specialRebate, $firstQtrRebate, $propTrans->amount, $jskOrOnlineRebate);
+            $taxDetails = $paymentReceiptHelper->readPenalyPmtAmts($lateAssessmentPenalty, $onePercPenalty, $rebate, $specialRebate, $firstQtrRebate, $propTrans->amount, $jskOrOnlineRebate);
             $responseData = [
                 "departmentSection" => $mDepartmentSection,
                 "accountDescription" => $mAccDescription,
