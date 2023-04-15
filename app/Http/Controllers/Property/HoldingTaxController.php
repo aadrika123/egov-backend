@@ -782,13 +782,11 @@ class HoldingTaxController extends Controller
                 throw new Exception("No Transaction Found");
 
             $propSafId = $propertyDtls->saf_id;
-            if (!$propSafId)
-                throw new Exception("This Property has not Saf Id");
 
-            $safTrans = $mPropTrans->getPropTransactions($propSafId, 'saf_id');                 // Saf payment History
-
-            if (!$safTrans)
-                throw new Exception("Saf Tran Details not Found");
+            if (is_null($propSafId))
+                $safTrans = array();
+            else
+                $safTrans = $mPropTrans->getPropTransactions($propSafId, 'saf_id');                 // Saf payment History
 
             $transactions['Holding'] = collect($propTrans)->sortByDesc('id')->values();
             $transactions['Saf'] = collect($safTrans)->sortByDesc('id')->values();
@@ -814,7 +812,8 @@ class HoldingTaxController extends Controller
 
             $responseData = $this->propPaymentReceipt($req);
             $responseData = $responseData->original['data'];                                              // Function propPaymentReceipt(9.1)
-            $responseData['holdingTaxDetails'] = $this->holdingTaxDetails($propTrans);                    // (9.2)
+            $totalRebate = $responseData['totalRebate'];
+            $responseData['holdingTaxDetails'] = $this->holdingTaxDetails($propTrans, $totalRebate);                    // (9.2)
             return responseMsgs(true, "Payment Receipt", remove_null($responseData), "011609", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011609", "1.0", "", "POST", $req->deviceId);
@@ -824,7 +823,7 @@ class HoldingTaxController extends Controller
     /**
      * | Get Holding Tax Details On RMC Receipt (9.2)
      */
-    public function holdingTaxDetails($propTrans)
+    public function holdingTaxDetails($propTrans, $totalRebate)
     {
         $transactions = collect($propTrans);
         $tranDate = $transactions->first()->tran_date;
@@ -910,7 +909,13 @@ class HoldingTaxController extends Controller
                 'description' => 'Interest on Holding Tax Recievable',
                 'period' => '',
                 'amount' => $this->_holdingTaxInterest,
-            ]
+            ],
+            [
+                'codeOfAmount' => '',
+                'description' => 'Rebate on Holding Tax Recievable',
+                'period' => '',
+                'amount' => $totalRebate,
+            ],
         ];
     }
 
@@ -1066,13 +1071,13 @@ class HoldingTaxController extends Controller
         return [
             "floor" => $rule['floor'],
             "buildupArea" => $rule['buildupArea'],
-            "usageFactor" => $rule['usageFactor'] ?? 'N/A',
+            "usageFactor" => $rule['usageFactor'] ?? null,
             "occupancyFactor" => $rule['occupancyFactor'],
-            "carpetArea" => $rule['carpetArea'] ?? "N/A",
+            "carpetArea" => $rule['carpetArea'] ?? null,
             "rentalRate" => $rule['rentalRate'],
-            "taxPerc" => $rule['taxPerc'] ?? "N/A",
-            "calculationFactor" => $rule['calculationFactor'] ?? "N/A",
-            "arvPsf" => $rule['arvPsf'] ?? "N/A",
+            "taxPerc" => $rule['taxPerc'] ?? null,
+            "calculationFactor" => $rule['calculationFactor'] ?? null,
+            "arvPsf" => $rule['arvPsf'] ?? null,
             "circleRate" => $rule['circleRate'] ?? "",
             "arvTotalPropTax" => $rule['arvTotalPropTax'] ?? 0,
             "cvArvPropTax" => $rule['cvArvPropTax'] ?? 0

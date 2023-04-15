@@ -110,6 +110,19 @@ class PropDemand extends Model
         return $propDemand;
     }
 
+    /**
+     * | Get Paid Demand By PropId
+     */
+    public function getPaidDemandByPropId($propId)
+    {
+        $propDemand = PropDemand::where('property_id', $propId)
+            ->where('paid_status', 1)
+            ->where('status', 1)
+            ->orderBy('due_date')
+            ->get();
+        return $propDemand;
+    }
+
     // Get Saf First Demand
     public function getFirstDemandByFyearPropId($propId, $fyear)
     {
@@ -188,6 +201,19 @@ class PropDemand extends Model
         PropDemand::whereIn('property_id', $refPropId)
             ->update([
                 'cluster_id' => $clusterId
+            ]);
+    }
+
+    /**
+     * | Demand Deactivation
+     */
+    public function deactivateDemand($propId)
+    {
+        PropDemand::where('property_id', $propId)
+            ->where('paid_status', 0)
+            ->where('status', 1)
+            ->update([
+                'status' => 2
             ]);
     }
 }
