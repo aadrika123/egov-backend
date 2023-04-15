@@ -165,8 +165,8 @@ class ActiveSafControllerV2 extends Controller
 
             if (collect($details)->isEmpty())
                 throw new Exception("Memo Details Not Available");
-            $details = collect($details)->first();
 
+            $details = collect($details)->first();
             // Fam Receipt
             if ($details->memo_type == 'FAM') {
                 $memoFyear = $details->from_fyear;
@@ -182,10 +182,8 @@ class ActiveSafControllerV2 extends Controller
                 if (collect($holdingTax2Perc)->isEmpty())
                     throw new Exception("Demand Not Available");
 
-                $groupedPropTaxDiff = $propDemands->where('due_date', '>=', $holdingTax2Perc->first()->due_date)->values();
-                $groupedSafTaxDiff = $safDemands->where('due_date', '>=', $holdingTax2Perc->first()->due_date)->values();
-                $merged = $groupedSafTaxDiff->merge($groupedPropTaxDiff);
-                $taxDiffs = $merged->groupBy('arv');
+                $mergedDemands = $safDemands->merge($propDemands);
+                $taxDiffs = $mergedDemands->groupBy('arv');
                 $qtrParam = 5;                                                                                                      // For Calculating Qtr
                 $holdingTaxes = collect($taxDiffs)->map(function ($taxDiff) use ($qtrParam) {
                     $totalFirstQtrs = $qtrParam - $taxDiff->first()->qtr;
@@ -193,7 +191,7 @@ class ActiveSafControllerV2 extends Controller
                     $ulbAssessAmt = ($taxDiff->first()->amount - $taxDiff->first()->additional_tax) * $totalFirstQtrs;                // Holding Tax Amount Without Panalty
                     $diffAmt = $ulbAssessAmt - $selfAssessAmt;
                     return [
-                        'Particulars' => $taxDiff->first()->fyear == '2016-2017' ? "Holding Tax @ 2%" : "Holding Tax @ 0.075% or 0.15% or 0.2%",
+                        'Particulars' => $taxDiff->first()->due_date <= '2021-03-31' ? "Holding Tax @ 2%" : "Holding Tax @ 0.075% or 0.15% or 0.2%",
                         'quarterFinancialYear' => 'Quarter' . $taxDiff->first()->qtr . '/' . $taxDiff->first()->fyear,
                         'basedOnSelfAssess' => roundFigure($selfAssessAmt),
                         'basedOnUlbCalc' => roundFigure($ulbAssessAmt),
