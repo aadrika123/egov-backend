@@ -20,8 +20,8 @@ class PropActiveSafsOwner extends Model
         $owner = PropActiveSafsOwner::find($req->safOwnerId);
 
         $reqs = [
-            'owner_name' => $req->ownerName,
-            'guardian_name' => $req->guardianName,
+            'owner_name' => strtoupper($req->ownerName),
+            'guardian_name' => strtoupper($req->guardianName),
             'relation_type' => $req->relation,
             'mobile_no' => $req->mobileNo,
             'aadhar_no' => $req->aadhar,
@@ -97,8 +97,8 @@ class PropActiveSafsOwner extends Model
         $owner = PropActiveSafsOwner::find($req->ownerId);
 
         $reqs = [
-            'owner_name' => $req->ownerName,
-            'guardian_name' => $req->guardianName,
+            'owner_name' => strtoupper($req->ownerName),
+            'guardian_name' => strtoupper($req->guardianName),
             'relation_type' => $req->relation,
             'mobile_no' => $req->mobileNo,
             'aadhar_no' => $req->aadhar,
@@ -119,8 +119,8 @@ class PropActiveSafsOwner extends Model
 
         $owner = new  PropActiveSafsOwner();
         $owner->saf_id = $safId;
-        $owner->owner_name = $req['ownerName'];
-        $owner->guardian_name = $req['guardianName'] ?? null;
+        $owner->owner_name = strtoupper($req['ownerName']);
+        $owner->guardian_name = strtoupper($req['guardianName'])  ?? null;
         $owner->relation_type = $req['relation'] ?? null;
         $owner->mobile_no = $req['mobileNo'] ?? null;
         $owner->aadhar_no = $req['aadhar'] ??  null;
