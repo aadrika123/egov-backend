@@ -212,6 +212,7 @@ class Report implements IReport
                             ulb_ward_masters.ward_name AS ward_no,
                             prop_active_safs.id,
                             'saf' as type,
+                            assessment_type,
                             prop_transactions.id AS tran_id,
                             CONCAT('', prop_active_safs.holding_no, '') AS holding_no,
                             (
@@ -269,6 +270,7 @@ class Report implements IReport
                             ulb_ward_masters.ward_name AS ward_no,
                             prop_rejected_safs.id,
                             'saf' as type,
+                            assessment_type,
                             prop_transactions.id AS tran_id,
                             CONCAT('', prop_rejected_safs.holding_no, '') AS holding_no,
                             (
@@ -337,6 +339,7 @@ class Report implements IReport
                             ulb_ward_masters.ward_name AS ward_no,
                             prop_safs.id,
                             'saf' as type,
+                            assessment_type,
                             prop_transactions.id AS tran_id,
                             CONCAT('', prop_safs.holding_no, '') AS holding_no,
                             (
