@@ -261,7 +261,7 @@ class SafCalculation
         $refParamRentalRate = json_decode(Redis::get('propMBuildingRentalConst:' . $this->_ulbId));         // Get Building Rental Constant From Redis
 
         if (!$refParamRentalRate) {                                                                         // Get Building Rental Constant From Database
-            $refParamRentalRate = MPropBuildingRentalconst::where('ulb_id', $this->_ulbId)->first();
+            $refParamRentalRate = MPropBuildingRentalconst::where('ulb_id', $this->_ulbId)->firstOrFail();
             $this->_redis->set('propMBuildingRentalConst:' . $this->_ulbId, json_encode($refParamRentalRate));
         }
         $this->_paramRentalRate = $refParamRentalRate->x;
@@ -298,7 +298,7 @@ class SafCalculation
      */
     public function getAptRoadType()
     {
-        $ulbId = $this->_propertyDetails['ulbId'];
+        $ulbId = $this->_ulbId;
         $aptId = $this->_propertyDetails['apartmentId'];
 
         $aptDtls = json_decode(Redis::get('apt-dtl-ulb-' . $ulbId . '-apt-' . $aptId));

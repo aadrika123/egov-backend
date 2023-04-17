@@ -453,7 +453,7 @@ class WaterReportController extends Controller
                             CASE WHEN water_consumer_demands.demand_from >= '$fromDate' 
                                 AND water_consumer_demands.demand_upto <= '$uptoDate'  then water_consumer_demands.consumer_id
                             END)
-                        ) as current_demand_hh,
+                        ) as current_demand_consumer,
                         SUM(
                                 CASE WHEN  water_consumer_demands.demand_from >= '$fromDate' 
                                         AND water_consumer_demands.demand_upto <= '$uptoDate'  then water_consumer_demands.amount
@@ -464,7 +464,7 @@ class WaterReportController extends Controller
                         (DISTINCT (
                             CASE WHEN water_consumer_demands.demand_from < '$fromDate'  then water_consumer_demands.consumer_id
                             END)
-                        ) as arrear_demand_hh,
+                        ) as arrear_demand_consumer,
                         SUM(
                             CASE WHEN water_consumer_demands.demand_from < '$fromDate'  then water_consumer_demands.amount
                                 ELSE 0
@@ -475,6 +475,7 @@ class WaterReportController extends Controller
                 JOIN water_consumers ON water_consumers.id = water_consumer_demands.consumer_id
                 WHERE water_consumer_demands.status = true
                     AND water_consumer_demands.ulb_id = $ulbId
+                    " . ($wardId ? " AND water_consumers.ward_mstr_id = $wardId" : "") . "
                     AND water_consumer_demands.demand_upto <='$uptoDate'
                 GROUP BY water_consumers.ward_mstr_id
                 )demands ON demands.ward_mstr_id = ulb_ward_masters.id
@@ -485,9 +486,9 @@ class WaterReportController extends Controller
                             CASE WHEN water_consumer_demands.demand_from >= '$fromDate' 
                                 AND water_consumer_demands.demand_upto <= '$uptoDate'  then water_consumer_demands.consumer_id
                             END)
-                        ) as current_collection_hh,
+                        ) as current_collection_consumer,
 
-                        COUNT(DISTINCT(water_consumers.id)) AS collection_from_no_of_hh,
+                        COUNT(DISTINCT(water_consumers.id)) AS collection_from_no_of_consumer,
                         SUM(
                                 CASE WHEN water_consumer_demands.demand_from >= '$fromDate' 
                                 AND water_consumer_demands.demand_upto <= '$uptoDate'  then water_consumer_demands.amount
@@ -499,7 +500,7 @@ class WaterReportController extends Controller
                             (DISTINCT (
                                 CASE WHEN water_consumer_demands.demand_from < '$fromDate' then water_consumer_demands.consumer_id
                                 END)
-                            ) as arrear_collection_hh,
+                            ) as arrear_collection_consumer,
 
                         SUM(
                             CASE when water_consumer_demands.demand_from < '$fromDate' then water_consumer_demands.amount
@@ -518,6 +519,7 @@ class WaterReportController extends Controller
 								AND water_trans.tran_type = 'Demand Collection'
                     WHERE water_consumer_demands.status = true 
                         AND water_consumer_demands.ulb_id = $ulbId
+                        " . ($wardId ? " AND water_consumers.ward_mstr_id = $wardId" : "") . "
                         AND water_trans.tran_date  BETWEEN '$fromDate' AND '$uptoDate'
                         AND water_consumer_demands.demand_from <='$fromDate'
                     GROUP BY (water_consumers.ward_mstr_id)
@@ -545,19 +547,19 @@ class WaterReportController extends Controller
                 GROUP BY ulb_ward_masters.ward_name           
             ";
             $select = "SELECT ulb_ward_masters.ward_name AS ward_no, 
-                            SUM(COALESCE(demands.current_demand_hh, 0::numeric)) AS current_demand_hh,   
-                            SUM(COALESCE(demands.arrear_demand_hh, 0::numeric)) AS arrear_demand_hh,
-                            SUM(COALESCE(collection.current_collection_hh, 0::numeric)) AS current_collection_hh,   
-                            SUM(COALESCE(collection.arrear_collection_hh, 0::numeric)) AS arrear_collection_hh,
-                            SUM(COALESCE(collection.collection_from_no_of_hh, 0::numeric)) AS collection_from_hh,
+                            SUM(COALESCE(demands.current_demand_consumer, 0::numeric)) AS current_demand_consumer,   
+                            SUM(COALESCE(demands.arrear_demand_consumer, 0::numeric)) AS arrear_demand_consumer,
+                            SUM(COALESCE(collection.current_collection_consumer, 0::numeric)) AS current_collection_consumer,   
+                            SUM(COALESCE(collection.arrear_collection_consumer, 0::numeric)) AS arrear_collection_consumer,
+                            SUM(COALESCE(collection.collection_from_no_of_consumer, 0::numeric)) AS collection_from_consumer,
                             
-                            round(SUM(((collection.arrear_collection_hh ::numeric) / (case when demands.arrear_demand_hh > 0 then demands.arrear_demand_hh else 1 end))*100)) AS arrear_hh_eff,
-                            round(SUM(((collection.current_collection_hh ::numeric) / (case when demands.current_demand_hh > 0 then demands.current_demand_hh else 1 end))*100)) AS current_hh_eff,
+                            round(SUM(((collection.arrear_collection_consumer ::numeric) / (case when demands.arrear_demand_consumer > 0 then demands.arrear_demand_consumer else 1 end))*100)) AS arrear_consumer_eff,
+                            round(SUM(((collection.current_collection_consumer ::numeric) / (case when demands.current_demand_consumer > 0 then demands.current_demand_consumer else 1 end))*100)) AS current_consumer_eff,
 
                             round(SUM(COALESCE(
-                                COALESCE(demands.current_demand_hh, 0::numeric) 
-                                - COALESCE(collection.collection_from_no_of_hh, 0::numeric), 0::numeric
-                            ))) AS balance_hh,                       
+                                COALESCE(demands.current_demand_consumer, 0::numeric) 
+                                - COALESCE(collection.collection_from_no_of_consumer, 0::numeric), 0::numeric
+                            ))) AS balance_consumer,                       
                             round(SUM(COALESCE(
                                 COALESCE(demands.arrear_demand, 0::numeric) 
                                 - COALESCE(prev_collection.total_prev_collection, 0::numeric), 0::numeric
@@ -577,8 +579,8 @@ class WaterReportController extends Controller
                     
                             round(SUM((COALESCE(demands.current_demand, 0::numeric) - COALESCE(collection.current_collection, 0::numeric)))) AS current_due,
 
-                            round(SUM((COALESCE(demands.current_demand_hh, 0::numeric) - COALESCE(collection.current_collection_hh, 0::numeric)))) AS current_balance_hh,
-                            round(SUM((COALESCE(demands.arrear_demand_hh, 0::numeric) - COALESCE(collection.arrear_collection_hh, 0::numeric)))) AS arrear_balance_hh,
+                            round(SUM((COALESCE(demands.current_demand_consumer, 0::numeric) - COALESCE(collection.current_collection_consumer, 0::numeric)))) AS current_balance_consumer,
+                            round(SUM((COALESCE(demands.arrear_demand_consumer, 0::numeric) - COALESCE(collection.arrear_collection_consumer, 0::numeric)))) AS arrear_balance_consumer,
 
                             round(SUM(((collection.arrear_collection ::numeric) / (case when demands.arrear_demand > 0 then demands.arrear_demand else 1 end))*100)) AS arrear_eff,
                             round(SUM(((collection.current_collection ::numeric) / (case when demands.current_demand > 0 then demands.current_demand else 1 end))*100)) AS current_eff,
@@ -605,15 +607,15 @@ class WaterReportController extends Controller
             $data['total_current_collection'] = round(collect($dcb)->sum('current_collection'), 0);
             $data['total_old_due'] = round(collect($dcb)->sum('old_due'), 0);
             $data['total_current_due'] = round(collect($dcb)->sum('current_due'), 0);
-            $data['total_arrear_demand_hh'] = round(collect($dcb)->sum('arrear_demand_hh'), 0);
-            $data['total_current_demand_hh'] = round(collect($dcb)->sum('current_demand_hh'), 0);
-            $data['total_arrear_collection_hh'] = round(collect($dcb)->sum('arrear_collection_hh'), 0);
-            $data['total_current_collection_hh'] = round(collect($dcb)->sum('current_collection_hh'), 0);
-            $data['total_arrear_balance_hh'] = round(collect($dcb)->sum('arrear_balance_hh'));
-            $data['total_current_balance_hh'] = round(collect($dcb)->sum('current_balance_hh'));
-            $data['total_current_eff'] = ($data['total_current_collection_hh'] == 0) ? 0 : round(($data['total_current_collection_hh'] / $data['total_current_demand']) * 100);
-            $data['total_arrear_hh_eff'] = ($data['total_arrear_demand_hh'] == 0) ? 0 : round(($data['total_arrear_collection_hh'] /  $data['total_arrear_demand_hh']) * 100);
-            $data['total_current_hh_eff'] = ($data['total_current_demand_hh'] == 0) ? 0 : round(($data['total_current_collection_hh']) / ($data['total_current_demand_hh']) * 100);
+            $data['total_arrear_demand_consumer'] = round(collect($dcb)->sum('arrear_demand_consumer'), 0);
+            $data['total_current_demand_consumer'] = round(collect($dcb)->sum('current_demand_consumer'), 0);
+            $data['total_arrear_collection_consumer'] = round(collect($dcb)->sum('arrear_collection_consumer'), 0);
+            $data['total_current_collection_consumer'] = round(collect($dcb)->sum('current_collection_consumer'), 0);
+            $data['total_arrear_balance_consumer'] = round(collect($dcb)->sum('arrear_balance_consumer'));
+            $data['total_current_balance_consumer'] = round(collect($dcb)->sum('current_balance_consumer'));
+            $data['total_current_eff'] = ($data['total_current_collection_consumer'] == 0) ? 0 : round(($data['total_current_collection_consumer'] / $data['total_current_demand']) * 100);
+            $data['total_arrear_consumer_eff'] = ($data['total_arrear_demand_consumer'] == 0) ? 0 : round(($data['total_arrear_collection_consumer'] /  $data['total_arrear_demand_consumer']) * 100);
+            $data['total_current_consumer_eff'] = ($data['total_current_demand_consumer'] == 0) ? 0 : round(($data['total_current_collection_consumer']) / ($data['total_current_demand_consumer']) * 100);
             $data['total_arrear_eff'] = ($data['total_arrear_collection'] == 0) ? 0 : round(($data['total_arrear_collection']) / ($data['total_arrear_demand']) * 100);
             $data['total_eff'] = round((($data['total_arrear_collection'] + $data['total_current_collection']) / ($data['total_arrear_demand'] + $data['total_current_demand'])) * 100);
             $data['dcb'] = $dcb;
