@@ -51,7 +51,8 @@ class PropDemand extends Model
             'balance',
             'fyear',
             'adjust_amt',
-            'due_date'
+            'due_date',
+            'paid_status'
         )
             ->where('property_id', $propId)
             ->where('paid_status', 0)
