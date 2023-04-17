@@ -215,6 +215,8 @@ class SafCalculation
             $this->_isTrustVerified = ($this->_propertyDetails['isTrustVerified'] == 0) ? 0 : 1;
         else
             $this->_isTrustVerified = $this->_propertyDetails['isTrustVerified'] = 1;
+
+        $this->ifPropPoint20Taxed();   // Check if the Property consists 0.20 % Tax Percentage or Not      // (1.1.7)
     }
 
     /**
@@ -431,6 +433,16 @@ class SafCalculation
             else
                 $this->_isTrust = $usageTypes->contains($trustUsageType) ? true : false;
             $this->_trustType = $this->_propertyDetails['trustType'] ?? "";
+        }
+    }
+
+
+    /**
+     * | Check If the Property Contains 0.20 % Tax Or Not
+     */
+    public function ifPropPoint20Taxed()
+    {
+        if ($this->_propertyDetails['propertyType'] != 4) {                 // The Property Should not be Vacant Land
         }
     }
 
