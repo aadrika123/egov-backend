@@ -71,6 +71,7 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 
+use function PHPUnit\Framework\throwException;
 
 class ActiveSafController extends Controller
 {
@@ -122,12 +123,18 @@ class ActiveSafController extends Controller
      * | Query Costing-369ms 
      * | Rating-3
      */
-    public function masterSaf()
+    public function masterSaf(Request $req)
     {
         try {
+            $method = $req->getMethod();
             $redisConn = Redis::connection();
             $data = [];
-            $ulbId = auth()->user()->ulb_id;
+            if ($method == 'GET')
+                $ulbId = auth()->user()->ulb_id;
+            else
+                $ulbId = $req->ulbId;
+            if (!$ulbId)
+                throw new Exception('ulbId field is required');
             $ulbWardMaster = new UlbWardMaster();
             $refPropOwnershipType = new RefPropOwnershipType();
             $refPropType = new RefPropType();

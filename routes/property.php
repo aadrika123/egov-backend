@@ -400,6 +400,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
  */
 
 Route::controller(ActiveSafController::class)->group(function () {
+  Route::post('saf/master-saf', 'masterSaf');                                                          // Get all master data in Saf(1)
   Route::post('saf/saf-payment', 'paymentSaf');                                                       // SAF Payment(15)
   Route::post('saf/calculate-by-saf-id', 'calculateSafBySafId');                                      // Calculate SAF By SAF ID From Citizen(13)
   Route::post('saf/independent/generate-order-id', 'generateOrderId');                                // Generate Order ID(14)
