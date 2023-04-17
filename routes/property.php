@@ -47,14 +47,7 @@ use App\Http\Controllers\Property\ZoneController;
 // Inside Middleware Routes with API Authenticate 
 Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {
 
-  /**
-   * | Route Outside the Middleware
-   | Serial No : 
-   */
-  Route::controller(CalculatorController::class)->group(function () {
-    Route::post('calculatePropertyTax', 'calculator');
-    Route::post('review-calculation', 'reviewCalculation');       // Review for the Calculation
-  });
+
 
   /**
    * | SAF
@@ -405,6 +398,15 @@ Route::controller(ActiveSafController::class)->group(function () {
   Route::post('saf/calculate-by-saf-id', 'calculateSafBySafId');                                      // Calculate SAF By SAF ID From Citizen(13)
   Route::post('saf/independent/generate-order-id', 'generateOrderId');                                // Generate Order ID(14)
   Route::post('saf/payment-receipt', 'generatePaymentReceipt');                                       // Generate payment Receipt(16)
+});
+
+/**
+ * | Route Outside the Middleware
+   | Serial No : 
+ */
+Route::controller(CalculatorController::class)->group(function () {
+  Route::post('calculatePropertyTax', 'calculator');
+  Route::post('review-calculation', 'reviewCalculation');       // Review for the Calculation
 });
 
 /**
