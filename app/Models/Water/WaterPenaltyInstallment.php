@@ -119,4 +119,17 @@ class WaterPenaltyInstallment extends Model
                 'status' => false
             ]);
     }
+
+
+    /**
+     * | Get penalty details accordin to charge Id
+     * | @param chargeId
+     */
+    public function getPenaltyByChargeId($chargeId)
+    {
+        return WaterPenaltyInstallment::where('related_demand_id',$chargeId)
+        ->where('paid_status',0)
+        ->where('status',1)
+        ->orderByDesc('id');
+    }
 }

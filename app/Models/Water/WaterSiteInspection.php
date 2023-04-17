@@ -15,7 +15,7 @@ class WaterSiteInspection extends Model
      * |-------------------- save site inspecton -----------------------\
      * | @param req
      */
-    public function storeInspectionDetails($req, $waterFeeId, $waterDetails, $refRoleDetails,$paymentstatus)
+    public function storeInspectionDetails($req, $waterFeeId, $waterDetails, $refRoleDetails, $paymentstatus)
     {
         $role = WfRole::where('id', $refRoleDetails)
             ->where('is_suspended', false)
@@ -113,7 +113,7 @@ class WaterSiteInspection extends Model
         $roleName = WfRole::where('id', $req->roleId)
             ->where('is_suspended', false)
             ->first();
-            
+
         $mWaterSiteInspection = new WaterSiteInspection();
         $mWaterSiteInspection->water_lock_arng      =   $req->waterLockArng;
         $mWaterSiteInspection->gate_valve           =   $req->gateValve;
@@ -129,5 +129,23 @@ class WaterSiteInspection extends Model
         $mWaterSiteInspection->inspection_date      =   $req->inspectionDate;
         $mWaterSiteInspection->inspection_time      =   $req->inspectionTime;
         $mWaterSiteInspection->save();
+    }
+
+
+    /**
+     * | Save Payment Status after payment 
+     * | updating payment status true or false
+     * | @param 
+     * | @param
+     */
+    public function saveSitePaymentStatus($applicationId)
+    {
+        $siteDetails =  WaterApplication::where('apply_connection_id', $applicationId)
+            ->where('status', 1)
+            ->where('payment_status', 0)
+            ->orderByDesc('id')
+            ->first();
+        $siteDetails->payment_status = 1;
+        $siteDetails->save();
     }
 }

@@ -119,4 +119,9 @@ return [
         "1" => "consumer",
         "2" => "connection"
     ],
+    "WATER_HEAD_NAME" =>[
+        "1" => "Installment Rebate",
+        "2" => "1.5% Penalty",
+        "3" => "10% Rebate"
+    ],
 ];
