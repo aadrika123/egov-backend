@@ -143,3 +143,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('get-ulb-workflow', 'getWorkflow');
     });
 });
+
+// for unautheticated citizen
+Route::controller(WorkflowMap::class)->group(function () {
+    Route::post('wardByUlb', 'getWardByUlb');
+});
