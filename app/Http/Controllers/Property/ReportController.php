@@ -417,8 +417,8 @@ class ReportController extends Controller
             $gbsafCollection = $this->gbSafCollectionQuery($tbl2, $fromDate, $uptoDate, $officerTbl2)
                 ->union($first_query);
 
-            if ($req->wardMstrId)
-                $gbsafCollection = $gbsafCollection->where('ward_mstr_id', $req->wardMstrId);
+            if ($req->wardId)
+                $gbsafCollection = $gbsafCollection->where('ward_mstr_id', $req->wardId);
 
             if ($req->paymentMode)
                 $gbsafCollection = $gbsafCollection->where('payment_mode', $req->paymentMode);

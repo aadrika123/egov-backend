@@ -12,6 +12,7 @@ use App\Models\WorkflowTrack;
 use App\Repository\Property\Concrete\PropertyBifurcation;
 use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
@@ -440,7 +441,8 @@ trait SAF
                 ->first();
         }
         $data = json_decode(json_encode($data), true);
-        // $data['applicationDetails'] = $data;
+        if (collect($data)->isEmpty())
+            throw new Exception("Saf Data Not Available");
 
         $ownerDetails = $mPropActiveSafOwner->getOwnersBySafId($data['id']);    // Model function to get Owner Details
         $data['owners'] = $ownerDetails;
