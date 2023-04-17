@@ -4,6 +4,7 @@ use App\Http\Controllers\Water\NewConnectionController;
 use App\Http\Controllers\Water\WaterApplication;
 use App\Http\Controllers\Water\WaterConsumer;
 use App\Http\Controllers\Water\WaterPaymentController;
+use App\Http\Controllers\Water\WaterReportController;
 use Illuminate\Support\Facades\Route;
 
 /**
@@ -108,6 +109,16 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         # Deactivation
         Route::post('admin/consumer/apply-deactivation', 'applyDeactivation');                          // Admin / Not Used
         Route::post('admin/consumer/demand-deactivation', 'consumerDemandDeactivation');
+    });
+
+
+    /**
+     * | Created On : 17-04-2023
+     * | Created By : Sam kerketta
+     * |------------- Water Reports -------------|
+     */
+    Route::controller(WaterReportController::class)->group(function () {
+        Route::post('consumer/report/list-ward-dcb', 'wardWiseDCB');
     });
 });
 

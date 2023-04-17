@@ -410,8 +410,19 @@ class WaterReportController extends Controller
      */
     public function wardWiseDCB(Request $request)
     {
+        $request->validate(
+            [
+                "fiYear" => "nullable|regex:/^\d{4}-\d{4}$/",
+                "ulbId" => "nullable|digits_between:1,9223372036854775807",
+                "wardId" => "nullable|digits_between:1,9223372036854775807",
+                // "page" => "nullable|digits_between:1,9223372036854775807",
+                // "perPage" => "nullable|digits_between:1,9223372036854775807",
+            ]
+        );
+        $request->request->add(["metaData" => ["pr8.1", 1.1, null, $request->getMethod(), null,]]);
         $metaData = collect($request->metaData)->all();
         list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
+
         try {
             $refUser        = Auth()->user();
             $refUserId      = $refUser->id;
@@ -468,62 +479,66 @@ class WaterReportController extends Controller
                 GROUP BY water_consumers.ward_mstr_id
                 )demands ON demands.ward_mstr_id = ulb_ward_masters.id
                 LEFT JOIN (
-
-                    SELECT prop_properties.ward_mstr_id,
+                    SELECT water_consumers.ward_mstr_id,
                     COUNT
                         (DISTINCT (
-                            CASE WHEN prop_demands.due_date BETWEEN  '$fromDate' AND '$uptoDate'  then prop_demands.property_id
+                            CASE WHEN water_consumer_demands.demand_from >= '$fromDate' 
+                                AND water_consumer_demands.demand_upto <= '$uptoDate'  then water_consumer_demands.consumer_id
                             END)
                         ) as current_collection_hh,
 
-                        COUNT(DISTINCT(prop_properties.id)) AS collection_from_no_of_hh,
+                        COUNT(DISTINCT(water_consumers.id)) AS collection_from_no_of_hh,
                         SUM(
-                                CASE WHEN prop_demands.due_date BETWEEN '$fromDate' AND '$uptoDate' then prop_demands.amount
+                                CASE WHEN water_consumer_demands.demand_from >= '$fromDate' 
+                                AND water_consumer_demands.demand_upto <= '$uptoDate'  then water_consumer_demands.amount
                                     ELSE 0
                                     END
                         ) AS current_collection,
 
                         COUNT
                             (DISTINCT (
-                                CASE WHEN prop_demands.due_date<'$fromDate' then prop_demands.property_id
+                                CASE WHEN water_consumer_demands.demand_from < '$fromDate' then water_consumer_demands.consumer_id
                                 END)
                             ) as arrear_collection_hh,
 
                         SUM(
-                            CASE when prop_demands.due_date <'$fromDate' then prop_demands.amount
+                            CASE when water_consumer_demands.demand_from < '$fromDate' then water_consumer_demands.amount
                                 ELSE 0
                                 END
                             ) AS arrear_collection,
-                    SUM(prop_demands.amount - prop_demands.adjust_amt) AS total_collection
-                    FROM prop_demands
-                    JOIN prop_properties ON prop_properties.id = prop_demands.property_id
-                    JOIN prop_tran_dtls ON prop_tran_dtls.prop_demand_id = prop_demands.id 
-                        AND prop_tran_dtls.prop_demand_id is not null 
-                    JOIN prop_transactions ON prop_transactions.id = prop_tran_dtls.tran_id 
-                        AND prop_transactions.status in (1,2) AND prop_transactions.property_id is not null
-                    WHERE prop_demands.status =1 
-                        AND prop_demands.ulb_id =$ulbId
-                        " . ($wardId ? " AND prop_properties.ward_mstr_id = $wardId" : "") . "
-                        AND prop_transactions.tran_date  BETWEEN '$fromDate' AND '$uptoDate'
-                        AND prop_demands.due_date<='$uptoDate'
-                    GROUP BY prop_properties.ward_mstr_id
-
-                    
+                            
+                    SUM(water_consumer_demands.amount) AS total_collection
+                    FROM water_consumer_demands
+                    JOIN water_consumers ON water_consumers.id = water_consumer_demands.consumer_id
+                    JOIN water_tran_details ON water_tran_details.demand_id = water_consumer_demands.id 
+                        AND water_tran_details.demand_id is not null 
+                    JOIN water_trans ON water_trans.id = water_tran_details.tran_id 
+                        AND water_trans.status in (1,2) 
+								AND water_trans.related_id is not null
+								AND water_trans.tran_type = 'Demand Collection'
+                    WHERE water_consumer_demands.status = true 
+                        AND water_consumer_demands.ulb_id = $ulbId
+                        AND water_trans.tran_date  BETWEEN '$fromDate' AND '$uptoDate'
+                        AND water_consumer_demands.demand_from <='$fromDate'
+                    GROUP BY (water_consumers.ward_mstr_id)
                 )collection ON collection.ward_mstr_id = ulb_ward_masters.id
                 LEFT JOIN ( 
-                    SELECT prop_properties.ward_mstr_id,
-                    SUM(prop_demands.amount - prop_demands.adjust_amt) AS total_prev_collection
-                    FROM prop_demands
-                    JOIN prop_properties ON prop_properties.id = prop_demands.property_id
-                    JOIN prop_tran_dtls ON prop_tran_dtls.prop_demand_id = prop_demands.id 
-                        AND prop_tran_dtls.prop_demand_id is not null 
-                    JOIN prop_transactions ON prop_transactions.id = prop_tran_dtls.tran_id 
-                        AND prop_transactions.status in (1,2) AND prop_transactions.property_id is not null
-                    WHERE prop_demands.status =1 
-                        AND prop_demands.ulb_id =$ulbId
-                        " . ($wardId ? " AND prop_properties.ward_mstr_id = $wardId" : "") . "
-                        AND prop_transactions.tran_date<'$fromDate'
-                    GROUP BY prop_properties.ward_mstr_id
+                    SELECT water_consumers.ward_mstr_id, 
+                        SUM(water_consumer_demands.amount) 
+                                AS total_prev_collection
+                                FROM water_consumer_demands
+                        JOIN water_consumers ON water_consumers.id = water_consumer_demands.consumer_id
+                        JOIN water_tran_details ON water_tran_details.demand_id = water_consumer_demands.id
+                            AND water_tran_details.demand_id IS NOT NULL
+                        JOIN water_trans ON water_trans.id = water_tran_details.tran_id 
+                            AND water_trans.status in (1,2) 
+                            AND water_trans.related_id IS NOT NULL
+                            AND water_trans.tran_type = 'Demand Collection'
+                    WHERE water_consumer_demands.status = true 
+                        AND water_consumer_demands.ulb_id = $ulbId
+                    -- AND water_consumers.ward_mstr_id is not null 
+                       AND water_trans.tran_date <'$fromDate'
+                    GROUP BY water_consumers.ward_mstr_id  
                 )prev_collection ON prev_collection.ward_mstr_id = ulb_ward_masters.id                 
                 WHERE  ulb_ward_masters.ulb_id = $ulbId  
                     " . ($wardId ? " AND ulb_ward_masters.id = $wardId" : "") . "
@@ -596,10 +611,10 @@ class WaterReportController extends Controller
             $data['total_current_collection_hh'] = round(collect($dcb)->sum('current_collection_hh'), 0);
             $data['total_arrear_balance_hh'] = round(collect($dcb)->sum('arrear_balance_hh'));
             $data['total_current_balance_hh'] = round(collect($dcb)->sum('current_balance_hh'));
-            $data['total_current_eff'] = round(($data['total_current_collection_hh'] / $data['total_current_demand']) * 100);
-            $data['total_arrear_hh_eff'] = round(($data['total_arrear_collection_hh'] /  $data['total_arrear_demand_hh']) * 100);
-            $data['total_current_hh_eff'] = round(($data['total_current_collection_hh']) / ($data['total_current_demand_hh']) * 100);
-            $data['total_arrear_eff'] = round(($data['total_arrear_collection']) / ($data['total_arrear_demand']) * 100);
+            $data['total_current_eff'] = ($data['total_current_collection_hh'] == 0) ? 0 : round(($data['total_current_collection_hh'] / $data['total_current_demand']) * 100);
+            $data['total_arrear_hh_eff'] = ($data['total_arrear_demand_hh'] == 0) ? 0 : round(($data['total_arrear_collection_hh'] /  $data['total_arrear_demand_hh']) * 100);
+            $data['total_current_hh_eff'] = ($data['total_current_demand_hh'] == 0) ? 0 : round(($data['total_current_collection_hh']) / ($data['total_current_demand_hh']) * 100);
+            $data['total_arrear_eff'] = ($data['total_arrear_collection'] == 0) ? 0 : round(($data['total_arrear_collection']) / ($data['total_arrear_demand']) * 100);
             $data['total_eff'] = round((($data['total_arrear_collection'] + $data['total_current_collection']) / ($data['total_arrear_demand'] + $data['total_current_demand'])) * 100);
             $data['dcb'] = $dcb;
 
