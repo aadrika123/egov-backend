@@ -20,14 +20,8 @@ class CalculatorController extends Controller
     public function calculator(reqApplySaf $request)
     {
         try {
-            $calculation = new SafCalculation;
-            $response = $calculation->calculateTax($request);
-            if ($response->original['status'] == false)
-                return $response->original;
-            $fetchDetails = collect($response->original['data']['details'])->groupBy('ruleSet');
-            $finalResponse['demand'] = $response->original['data']['demand'];
-            $finalResponse['details']['description'] = $fetchDetails;
-            return responseMsg(true, "", $finalResponse);
+            $calculation = $this->reviewCalculation($request);
+            return $calculation->original;
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
