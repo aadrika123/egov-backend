@@ -171,4 +171,15 @@ class WaterTran extends Model
                 'verify_status' => 2
             ]);
     }
+
+    /**
+     * |
+     */
+    public function getOnlineTrans($fromDate, $toDate)
+    {
+        return WaterTran::select('id','amount')
+            ->where('payment_mode', 'Online')
+            ->where('status', 1)
+            ->whereBetween('tran_date', [$fromDate, $toDate]);
+    }
 }

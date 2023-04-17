@@ -81,7 +81,7 @@ class ThirdPartyController extends Controller
                 return responseMsgs(false, $msg, "", "", "01", ".ms", "POST", "");
             }
             $token = $mActiveCitizen->changeToken($request);
-            $checkOtp->delete();
+            // $checkOtp->delete();
             DB::commit();
             return responseMsgs(true, "OTP Validated!", remove_null($token), "", "01", ".ms", "POST", "");
         } catch (Exception $e) {

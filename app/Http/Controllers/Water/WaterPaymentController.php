@@ -829,7 +829,7 @@ class WaterPaymentController extends Controller
         }
         $charges->save();
         $waterTranDetail->saveDefaultTrans(
-            $request->amount,
+            $charges->amount,
             $request->consumerId,
             $waterTrans['id'],
             $charges['id'],
@@ -1017,11 +1017,7 @@ class WaterPaymentController extends Controller
             $wardId['ward_mstr_id'] = $refWaterApplication['ward_id'];
             $waterTrans = $waterTran->waterTransaction($req, $wardId);
 
-
-            /**
-             * | save the rebate in table
-               | Work here 
-             */
+            # Save rebate details in table in case of 10% penalty rebate
             if ($req->chargeCategory == $paramChargeCatagory['REGULAIZATION'] && $req->isInstallment == "no") {
                 $this->saveRebateForTran($req, $charges, $waterTrans);
             }
@@ -1107,6 +1103,7 @@ class WaterPaymentController extends Controller
     public function savePaymentStatus($req, $offlinePaymentModes, $charges, $refWaterApplication, $waterTrans)
     {
         $mWaterApplication = new WaterApplication();
+        $waterTranDetail = new WaterTranDetail();
         $mWaterTran = new WaterTran();
         if (in_array($req['paymentMode'], $offlinePaymentModes)) {
             $charges->paid_status = 2;
@@ -1121,10 +1118,9 @@ class WaterPaymentController extends Controller
         }
         $mWaterApplication->sendApplicationToBo($req['id']);                // <---------- Save current role as Bo
         $charges->save();
-
-        $waterTranDetail = new WaterTranDetail();
+        # Save the trans details 
         $waterTranDetail->saveDefaultTrans(
-            $req->amount,
+            $charges->conn_fee,
             $req->applicationId,
             $waterTrans['id'],
             $charges['id'],
