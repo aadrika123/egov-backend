@@ -71,6 +71,7 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 
+use function PHPUnit\Framework\throwException;
 
 class ActiveSafController extends Controller
 {
@@ -122,12 +123,18 @@ class ActiveSafController extends Controller
      * | Query Costing-369ms 
      * | Rating-3
      */
-    public function masterSaf()
+    public function masterSaf(Request $req)
     {
         try {
+            $method = $req->getMethod();
             $redisConn = Redis::connection();
             $data = [];
-            $ulbId = auth()->user()->ulb_id;
+            if ($method == 'GET')
+                $ulbId = auth()->user()->ulb_id;
+            else
+                $ulbId = $req->ulbId;
+            if (!$ulbId)
+                throw new Exception('ulbId field is required');
             $ulbWardMaster = new UlbWardMaster();
             $refPropOwnershipType = new RefPropOwnershipType();
             $refPropType = new RefPropType();
@@ -1361,7 +1368,15 @@ class ActiveSafController extends Controller
      */
     public function calculateSafBySafId(Request $req)
     {
+        $req->validate([
+            'id' => 'required|digits_between:1,9223372036854775807'
+        ]);
         try {
+            $safDtls = PropActiveSaf::findOrFail($req->id);
+
+            if (in_array($safDtls->assessment_type, ['New Assessment', 'Reassessment', 'Re Assessment']))
+                $req = $req->merge(['holdingNo' => $safDtls->holding_no]);
+
             $calculateSafById = new CalculateSafById;
             $demand = $calculateSafById->calculateTax($req);
             return responseMsgs(true, "Demand Details", remove_null($demand));
@@ -2171,6 +2186,7 @@ class ActiveSafController extends Controller
         try {
             $safDetails = $this->details($req);
             $safTaxes = $this->calculateSafBySafId($req);
+            return $safTaxes;
             if ($safTaxes->original['status'] == false)
                 throw new Exception($safTaxes->original['message']);
             $req = $safDetails;

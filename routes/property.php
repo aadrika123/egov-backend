@@ -400,6 +400,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
  */
 
 Route::controller(ActiveSafController::class)->group(function () {
+  Route::post('saf/master-saf', 'masterSaf');                                                          // Get all master data in Saf(1)
   Route::post('saf/saf-payment', 'paymentSaf');                                                       // SAF Payment(15)
   Route::post('saf/calculate-by-saf-id', 'calculateSafBySafId');                                      // Calculate SAF By SAF ID From Citizen(13)
   Route::post('saf/independent/generate-order-id', 'generateOrderId');                                // Generate Order ID(14)
@@ -461,7 +462,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('reports/previous-year-paid-not-current-year', 'previousYearPaidButnotCurrentYear'); //done
     Route::post('reports/dcb-piechart', 'dcbPieChart');                                             //done
     Route::post('reports/prop/saf/collection', 'propSafCollection');                                             //done
-    Route::post('reports/prop/saf/collection/dtls', 'propSafCollectionDtls');                                             //done
 
     Route::post('reports/property/payment-mode-wise-summery', 'PropPaymentModeWiseSummery'); //done
     Route::post('reports/saf/payment-mode-wise-summery', 'SafPaymentModeWiseSummery');       //done

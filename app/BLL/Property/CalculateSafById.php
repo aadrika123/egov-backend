@@ -263,9 +263,19 @@ class CalculateSafById
         $mPropDemands = new PropDemand();
         $generatedDemand = $this->_demandDetails;
         $holdingNo = $this->_holdingNo;
+
+        if (is_null($holdingNo))
+            throw new Exception("Previous Holding No Not Available");
+
         $propDtls = $propProperty->getSafIdByHoldingNo($holdingNo);
         $propertyId = $propDtls->id;
-        $safDemandList = $mSafDemand->getFullDemandsBySafId($propDtls->saf_id);
+        $safId = $propDtls->saf_id;
+
+        if (is_null($safId))
+            throw new Exception("Previous Saf Id Not Available");
+
+        $safDemandList = $mSafDemand->getFullDemandsBySafId($safId);
+
         if ($safDemandList->isEmpty())
             throw new Exception("Previous Saf Demand is Not Available");
 
@@ -277,16 +287,15 @@ class CalculateSafById
         foreach ($generatedDemand as $item) {
             $demand = $fullDemandList->where('due_date', $item['due_date'])->first();
             if (collect($demand)->isEmpty())
-                $item['adjustAmount'] = 0;
+                $item['adjust_amount'] = 0;
             else
-                $item['adjustAmount'] = $demand->amount - $demand->balance;
+                $item['adjust_amount'] = $demand->amount - $demand->balance;
 
-            $item['adjust_amount'] = $item['adjustAmount'];
             $item['balance'] = roundFigure($item['amount'] - $item['adjust_amount']);
             if ($item['balance'] == 0)
                 $item['onePercPenaltyTax'] = 0;
         }
-        $this->_demandDetails = $generatedDemand;
+        return $this->_demandDetails = $generatedDemand;
     }
 
     /**

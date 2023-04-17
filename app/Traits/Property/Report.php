@@ -11,15 +11,19 @@ use Illuminate\Support\Facades\DB;
  */
 trait Report
 {
-    public function gbSafCollectionQuery($table, $fromDate, $uptoDate)
+    public function gbSafCollectionQuery($table, $fromDate, $uptoDate, $officerTbl)
     {
         return DB::table($table)
             ->select(
                 't.id',
+                'pp.id as property_id',
+                'pp.holding_no',
+                'gbo.officer_name as owner_name',
+                'mobile_no',
                 'ward_name as ward_no',
-                'saf_no as application_no',
-                'ward_mstr_id',
-                'prop_address',
+                $table . '.saf_no',
+                $table . '.ward_mstr_id',
+                $table . '.prop_address',
                 'tran_date',
                 'payment_mode as transaction_mode',
                 't.user_id as tc_id',
@@ -29,13 +33,15 @@ trait Report
                 'bank_name',
                 'branch_name',
                 'amount',
-                DB::raw("CONCAT (from_fyear,'(',from_qtr,')','/',to_fyear,'(',to_qtr,')') AS payment_year"),
+                DB::raw("CONCAT (from_fyear,'(',from_qtr,')','/',to_fyear,'(',to_qtr,')') AS from_upto_fy_qtr"),
             )
             ->join('prop_transactions as t', 't.saf_id', $table . '.id')
+            ->join($officerTbl . ' as gbo', 'gbo.saf_id', $table . '.id')
+            ->leftjoin('prop_properties as pp', 'pp.id', 't.property_id')
             ->join('users', 'users.id', 't.user_id')
             ->join('ulb_ward_masters', 'ulb_ward_masters.id', $table . '.ward_mstr_id')
             ->leftJoin('prop_cheque_dtls', 'prop_cheque_dtls.transaction_id', 't.id')
-            ->where('is_gb_saf', true)
+            ->where($table . '.is_gb_saf', true)
             ->whereBetween('tran_date', [$fromDate, $uptoDate]);
     }
 }
