@@ -263,9 +263,19 @@ class CalculateSafById
         $mPropDemands = new PropDemand();
         $generatedDemand = $this->_demandDetails;
         $holdingNo = $this->_holdingNo;
+
+        if (is_null($holdingNo))
+            throw new Exception("Previous Holding No Not Available");
+
         $propDtls = $propProperty->getSafIdByHoldingNo($holdingNo);
         $propertyId = $propDtls->id;
-        $safDemandList = $mSafDemand->getFullDemandsBySafId($propDtls->saf_id);
+        $safId = $propDtls->saf_id;
+
+        if (is_null($safId))
+            throw new Exception("Previous Saf Id Not Available");
+
+        $safDemandList = $mSafDemand->getFullDemandsBySafId($safId);
+
         if ($safDemandList->isEmpty())
             throw new Exception("Previous Saf Demand is Not Available");
 
@@ -285,7 +295,7 @@ class CalculateSafById
             if ($item['balance'] == 0)
                 $item['onePercPenaltyTax'] = 0;
         }
-        $this->_demandDetails = $generatedDemand;
+        return $this->_demandDetails = $generatedDemand;
     }
 
     /**
