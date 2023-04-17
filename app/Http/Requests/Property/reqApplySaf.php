@@ -110,7 +110,11 @@ class reqApplySaf extends FormRequest
         }
         $rules['zone']           = "required|int|in:1,2";
         if (isset($this->assessmentType) && $this->assessmentType == 1 || ($this->assessmentType == 3 && $this->isOwnerChanged)) {
-            $rules['owner']        = "required|array";
+            if ($this->formType != 'taxCalculator')
+                $rules['owner']        = "required|array";
+            else
+                $rules['owner'] = "nullable|array";
+
             if (isset($this->owner) && $this->owner) {
                 $rules["owner.*.ownerName"]           =   "required|regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9]+)*$/";
                 $rules["owner.*.gender"]              =   "required|string";
