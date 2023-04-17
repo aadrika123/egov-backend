@@ -11,13 +11,15 @@ use Illuminate\Support\Facades\DB;
  */
 trait Report
 {
-    public function gbSafCollectionQuery($table, $fromDate, $uptoDate)
+    public function gbSafCollectionQuery($table, $fromDate, $uptoDate, $officerTbl)
     {
         return DB::table($table)
             ->select(
                 't.id',
                 'pp.id as property_id',
                 'pp.holding_no',
+                'gbo.officer_name as owner_name',
+                'mobile_no',
                 'ward_name as ward_no',
                 $table . '.saf_no',
                 $table . '.ward_mstr_id',
@@ -34,7 +36,7 @@ trait Report
                 DB::raw("CONCAT (from_fyear,'(',from_qtr,')','/',to_fyear,'(',to_qtr,')') AS from_upto_fy_qtr"),
             )
             ->join('prop_transactions as t', 't.saf_id', $table . '.id')
-            // ->join('prop_gbofficers')
+            ->join($officerTbl . ' as gbo', 'gbo.saf_id', $table . '.id')
             ->leftjoin('prop_properties as pp', 'pp.id', 't.property_id')
             ->join('users', 'users.id', 't.user_id')
             ->join('ulb_ward_masters', 'ulb_ward_masters.id', $table . '.ward_mstr_id')
