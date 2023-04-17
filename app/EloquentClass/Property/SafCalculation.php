@@ -73,6 +73,7 @@ class SafCalculation
     public $_isTrust;
     public $_trustType;
     public $_isTrustVerified;
+    private $_isPropPoint20Taxed = false;
 
     /** 
      * | For Building
@@ -442,7 +443,18 @@ class SafCalculation
      */
     public function ifPropPoint20Taxed()
     {
+        $point20TaxedUseTypes = $this->_point20TaxedUsageTypes;
         if ($this->_propertyDetails['propertyType'] != 4) {                 // The Property Should not be Vacant Land
+            $usageTypes = collect($this->_floors)->pluck('useType');
+            foreach ($usageTypes as $usageType) {
+                if (in_array($usageType, $point20TaxedUseTypes)) {             // If The Property Usage types lies between these usage types
+                    $totalBuildupArea = collect($this->_floors)->sum('buildupArea');
+                    if ($totalBuildupArea >= 25000) {
+                        $this->_isPropPoint20Taxed = true;
+                        break;
+                    }
+                }
+            }
         }
     }
 
@@ -1028,7 +1040,7 @@ class SafCalculation
             $readUsageType = $this->_floors[$key]['useType'];
             $taxPerc = ($readUsageType == 1) ? 0.075 : 0.15;                                                // 0.075 for Residential and 0.15 for Commercial
 
-            if ($readBuildupArea >= 25000 && in_array($readFloorUsageType, $this->_point20TaxedUsageTypes))
+            if ($this->_isPropPoint20Taxed == true)
                 $taxPerc = 0.20;                                                                            // Tax Perc for the type of Property whose Sqft is > 250000
 
             $readMultiFactor = collect($this->_multiFactors)->where('usage_type_id', $readFloorUsageType)
