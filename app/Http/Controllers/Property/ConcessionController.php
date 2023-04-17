@@ -132,6 +132,7 @@ class ConcessionController extends Controller
             if ($userType == 'Citizen') {
                 $wfReqs['citizenId'] = $userId;
                 $wfReqs['user_id'] = NULL;
+                $wfReqs['ulb_id'] = $concession->ulb_id;
             }
             $wfReqs['receiverRoleId'] = $concession->current_role;
             $wfReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
