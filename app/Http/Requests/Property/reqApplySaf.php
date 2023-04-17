@@ -25,7 +25,7 @@ class reqApplySaf extends FormRequest
      */
     public function rules()
     {
-        $userType = auth()->user()->user_type;
+        $userType = auth()->user()->user_type ?? 'Citizen';
         $mNowDate     = Carbon::now()->format("Y-m-d");
         $mNowDateYm   = Carbon::now()->format("Y-m");
         $religiousTrustUsageType = "42";

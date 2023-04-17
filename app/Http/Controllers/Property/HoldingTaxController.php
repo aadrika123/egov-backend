@@ -903,19 +903,7 @@ class HoldingTaxController extends Controller
                 'description' => 'Health Cess Current',
                 'period' => $currentPeriod,
                 'amount' => $currentTaxes->sum('health_cess'),
-            ],
-            [
-                // 'codeOfAmount' => '1718002',
-                'description' => 'Interest on Holding Tax Recievable',
-                'period' => '',
-                'amount' => $this->_holdingTaxInterest,
-            ],
-            [
-                // 'codeOfAmount' => '',
-                'description' => 'Rebate on Holding Tax Recievable',
-                'period' => '',
-                'amount' => $totalRebate,
-            ],
+            ]
         ];
     }
 
