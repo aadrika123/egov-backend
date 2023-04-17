@@ -407,7 +407,6 @@ Route::controller(ActiveSafController::class)->group(function () {
  */
 Route::controller(CalculatorController::class)->group(function () {
   Route::post('calculatePropertyTax', 'calculator');
-  Route::post('review-calculation', 'reviewCalculation');       // Review for the Calculation
 });
 
 /**
