@@ -239,13 +239,16 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::put('edit-ulb-ward/{id}', 'editUlbWard');         // Edit Ulb Ward
         Route::get('get-ulb-ward/{id}', 'getUlbWardByID');       // Get Ulb Ward Details by ID
         Route::get('get-all-ulb-wards', 'getAllUlbWards'); //not for use      // Get All Ulb Wards
-        Route::post('get-newward-by-oldward', 'getNewWardByOldWard');
     });
 });
 
 
 // Routes used where authentication not required
 Route::group(['middleware' => ['json.response', 'request_logger']], function () {
+
+    Route::controller(WardController::class)->group(function () {
+        Route::post('get-newward-by-oldward', 'getNewWardByOldWard');
+    });
 });
 
 

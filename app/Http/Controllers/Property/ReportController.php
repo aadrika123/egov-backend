@@ -409,7 +409,9 @@ class ReportController extends Controller
             $uptoDate = $req->uptoDate;
             $perPage = $req->perPage ?? 5;
             $tbl1 = 'prop_active_safs';
+            $officerTbl1 = 'prop_active_safgbofficers';
             $tbl2 = 'prop_safs';
+            $officerTbl2 = 'prop_gbofficers';
 
             $first_query =  $this->gbSafCollectionQuery($tbl1, $fromDate, $uptoDate);
             $gbsafCollection = $this->gbSafCollectionQuery($tbl2, $fromDate, $uptoDate)
