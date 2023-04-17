@@ -16,6 +16,7 @@ trait Report
         return DB::table($table)
             ->select(
                 't.id',
+                DB::raw("'gbsaf' as type"),
                 'pp.id as property_id',
                 'pp.holding_no',
                 'gbo.officer_name as owner_name',

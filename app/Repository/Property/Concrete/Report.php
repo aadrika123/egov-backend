@@ -78,12 +78,12 @@ class Report implements IReport
                 DB::raw("
                             ulb_ward_masters.ward_name AS ward_no,
                             prop_properties.id,
+                            'property' as type,
+                            prop_properties.saf_no,
+                            prop_properties.assessment_type,
+                            new_holding_no,
                             prop_transactions.id AS tran_id,
                             CONCAT('', prop_properties.holding_no, '') AS holding_no,
-                            (
-                                CASE WHEN prop_properties.new_holding_no='' OR prop_properties.new_holding_no IS NULL THEN 'N/A' 
-                                ELSE prop_properties.new_holding_no END
-                            ) AS new_holding_no,
                             prop_owner_detail.owner_name,
                             prop_owner_detail.mobile_no,
                             CONCAT(
@@ -97,19 +97,8 @@ class Report implements IReport
                                 CASE WHEN users.user_name IS NOT NULL THEN users.user_name 
                                 ELSE 'N/A' END
                             ) AS emp_name,
-                            prop_transactions.tran_no,
-                            (
-                                CASE WHEN prop_cheque_dtls.cheque_no IS NULL THEN 'N/A' 
-                                ELSE prop_cheque_dtls.cheque_no END
-                            ) AS cheque_no,
-                            (
-                                CASE WHEN prop_cheque_dtls.bank_name IS NULL THEN 'N/A' 
-                                ELSE prop_cheque_dtls.bank_name END
-                            ) AS bank_name,
-                            (
-                                CASE WHEN prop_cheque_dtls.branch_name IS NULL THEN 'N/A' 
-                                ELSE prop_cheque_dtls.branch_name END
-                            ) AS branch_name
+                            prop_transactions.tran_no,prop_cheque_dtls.cheque_no,
+                            prop_cheque_dtls.bank_name,prop_cheque_dtls.branch_name
                 "),
             )
                 ->JOIN("prop_properties", "prop_properties.id", "prop_transactions.property_id")
@@ -222,6 +211,8 @@ class Report implements IReport
                 DB::raw("
                             ulb_ward_masters.ward_name AS ward_no,
                             prop_active_safs.id,
+                            'saf' as type,
+                            assessment_type,
                             prop_transactions.id AS tran_id,
                             CONCAT('', prop_active_safs.holding_no, '') AS holding_no,
                             (
@@ -241,19 +232,8 @@ class Report implements IReport
                                 CASE WHEN users.user_name IS NOT NULL THEN users.user_name 
                                 ELSE 'N/A' END
                             ) AS emp_name,
-                            prop_transactions.tran_no,
-                            (
-                                CASE WHEN prop_cheque_dtls.cheque_no IS NULL THEN 'N/A' 
-                                ELSE prop_cheque_dtls.cheque_no END
-                            ) AS cheque_no,
-                            (
-                                CASE WHEN prop_cheque_dtls.bank_name IS NULL THEN 'N/A' 
-                                ELSE prop_cheque_dtls.bank_name END
-                            ) AS bank_name,
-                            (
-                                CASE WHEN prop_cheque_dtls.branch_name IS NULL THEN 'N/A' 
-                                ELSE prop_cheque_dtls.branch_name END
-                            ) AS branch_name
+                            prop_transactions.tran_no,prop_cheque_dtls.cheque_no,
+                            prop_cheque_dtls.bank_name,prop_cheque_dtls.branch_name
                 "),
             )
                 ->JOIN("prop_active_safs", "prop_active_safs.id", "prop_transactions.saf_id")
@@ -289,6 +269,8 @@ class Report implements IReport
                 DB::raw("
                             ulb_ward_masters.ward_name AS ward_no,
                             prop_rejected_safs.id,
+                            'saf' as type,
+                            assessment_type,
                             prop_transactions.id AS tran_id,
                             CONCAT('', prop_rejected_safs.holding_no, '') AS holding_no,
                             (
@@ -356,6 +338,8 @@ class Report implements IReport
                 DB::raw("
                             ulb_ward_masters.ward_name AS ward_no,
                             prop_safs.id,
+                            'saf' as type,
+                            assessment_type,
                             prop_transactions.id AS tran_id,
                             CONCAT('', prop_safs.holding_no, '') AS holding_no,
                             (
