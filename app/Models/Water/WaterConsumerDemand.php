@@ -61,6 +61,7 @@ class WaterConsumerDemand extends Model
         $mWaterConsumerDemand = new WaterConsumerDemand();
         $mWaterConsumerDemand->consumer_id              =  $consumerDetails->id;
         $mWaterConsumerDemand->ward_id                  =  $consumerDetails->ward_mstr_id;
+        $mWaterConsumerDemand->ulb_id                   =  $consumerDetails->ulb_id;
         $mWaterConsumerDemand->generation_date          =  $demands['generation_date'];
         $mWaterConsumerDemand->amount                   =  $demands['amount'];
         $mWaterConsumerDemand->paid_status              =  0;
