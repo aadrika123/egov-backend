@@ -168,8 +168,7 @@ class SafDocController extends Controller
         try {
             // Variable Assignments
             $preCondition = $this->checkFullDocUpload($req->applicationId);                         // Pre Condition to Upload Document
-            if ($preCondition == 1)
-                throw new Exception("Document Has Fully Uploaded");
+
             $metaReqs = array();
             $docUpload = new DocUpload;
             $mWfActiveDocument = new WfActiveDocument();
