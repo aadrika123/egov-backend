@@ -45,4 +45,26 @@ trait WaterTrait
             ->whereIn('water_applications.workflow_id', $workflowIds)
             ->orderByDesc('water_applicants.id');
     }
+
+    /**
+     * | Details for the dcb according to the perticular year
+     * | @param
+     * | @param
+        | Serial No :
+        | Working
+     */
+    public function demandByFyear($fyear, $fromDate, $uptoDate, $ulbId)
+    {
+        $raw = "SELECT     
+                    '$fyear' as fyear,    
+                    SUM (amount) AS totalDemand,
+                    SUM(CASE WHEN paid_status =1 THEN amount ELSE 0 END )AS totalCollection,
+                    sum (amount - CASE WHEN paid_status =1 THEN amount ELSE 0 END) as totalBalance
+                FROM water_consumer_demands 
+                WHERE water_consumer_demands.status = true
+                AND water_consumer_demands.demand_from >= '$fromDate' 
+                AND water_consumer_demands.demand_upto <= '$uptoDate'
+                AND  ulb_id = '$ulbId'";
+        return $raw;
+    }
 }
