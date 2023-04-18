@@ -44,7 +44,7 @@ class ThirdPartyController extends Controller
                     throw new Exception("Mobile no $request->mobileNo is registered to An existing account!");
                 }
             }
-            if ($request->type == "forgot") {
+            if ($request->type == "Forgot") {
                 $userDetails = ActiveCitizen::where('mobile', $request->mobileNo)
                     ->first();
                 if (!$userDetails) {
