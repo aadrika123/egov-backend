@@ -38,7 +38,7 @@ class CalculatorController extends Controller
                 $req->merge(['isGBSaf' => $req->isGBSaf]);
             } else
                 $req->merge(['isGBSaf' => false]);
-            $response = $calculation->calculateTax($req);
+            return $response = $calculation->calculateTax($req);
             if ($response->original['status'] == false)
                 throw new Exception($response->original['message']);
             $finalResponse['demand'] = $response->original['data']['demand'];

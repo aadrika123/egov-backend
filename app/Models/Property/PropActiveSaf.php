@@ -67,6 +67,7 @@ class  PropActiveSaf extends Model
             'petrol_pump_completion_date' => $req->petrolPump['dateFrom'] ?? null,
 
             'is_water_harvesting' => $req->isWaterHarvesting,
+            'rwh_date_from' => ($req->isWaterHarvesting == 1) ? $req->rwhDateFrom : null,
             'land_occupation_date' => $req->landOccupationDate,
             'doc_verify_cancel_remarks' => $req->docVerifyCancelRemark,
             'application_date' =>  Carbon::now()->format('Y-m-d'),
