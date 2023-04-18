@@ -64,6 +64,8 @@ class WaterReportController extends Controller
 
     /**
      * | Water DCB
+        | Serial No : 02
+        | Not Working
      */
     public function waterDcb(Request $request)
     {
@@ -406,7 +408,10 @@ class WaterReportController extends Controller
     }
 
     /**
-     * | Water DCB
+     * | Ward Wise Dcb 
+        | Serial No : 03
+        | Working
+        | Not Verified
      */
     public function wardWiseDCB(Request $request)
     {
@@ -624,6 +629,99 @@ class WaterReportController extends Controller
             return responseMsgs(true, "", $data, $apiId, $version, $queryRunTime, $action, $deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
+        }
+    }
+
+
+    /**
+     * | DCB Pie Chart
+        | Serial No : 04
+        | Not Working
+     */
+    public function dcbPieChart(Request $request)
+    {
+        try {
+            $ulbId = $request->ulbId ?? authUser()->ulb_id;
+            $currentDate = Carbon::now()->format('Y-m-d');
+            $currentYear = Carbon::now()->year;
+            $currentFyear = getFinancialYear($currentDate);
+
+            # common function
+            list($fromYear, $toYear) = explode("-", $currentFyear);
+            if ($toYear - $fromYear != 1) {
+                throw new Exception("Enter Valide Financial Year");
+            }
+            $fromDate = $fromYear . "-04-01";
+            $uptoDate = $toYear . "-03-31";
+
+            $startOfCurrentYear = Carbon::createFromDate($currentYear, 4, 1); // Start date of current financial year
+            $startOfPreviousYear = $startOfCurrentYear->copy()->subYear(); // Start date of previous financial year
+            $previousFinancialYear = getFinancialYear($startOfPreviousYear);
+
+            # common function
+            list($fromYear, $toYear) = explode("-", $previousFinancialYear);
+            if ($toYear - $fromYear != 1) {
+                throw new Exception("Enter Valide Financial Year");
+            }
+            $previousFromDate = $fromYear . "-04-01";
+            $previousUptoDate = $toYear . "-03-31";
+
+            $startOfprePreviousYear = $startOfCurrentYear->copy()->subYear()->subYear();
+            $prePreviousFinancialYear = getFinancialYear($startOfprePreviousYear);
+
+            # common function
+            list($fromYear, $toYear) = explode("-", $prePreviousFinancialYear);
+            if ($toYear - $fromYear != 1) {
+                throw new Exception("Enter Valide Financial Year");
+            }
+            $prePreviousFromDate = $fromYear . "-04-01";
+            $prePreviousUptoDate = $toYear . "-03-31";
+
+            $sql1 = "SELECT     
+                    '$currentFyear' as fyear,    
+                    SUM (amount) AS totalDemand,
+                    SUM(CASE WHEN paid_status =1 THEN amount ELSE 0 END )AS totalCollection,
+                    sum (amount - CASE WHEN paid_status =1 THEN amount ELSE 0 END) as totalBalance
+                FROM water_consumer_demands 
+                WHERE water_consumer_demands.status = true
+                AND water_consumer_demands.demand_from >= '$fromDate' 
+                AND water_consumer_demands.demand_upto <= '$uptoDate'
+                AND  ulb_id = '$ulbId'";
+
+            $sql2 = "SELECT     
+                    '$previousFinancialYear' as fyear,    
+                    SUM (amount) AS totalDemand,
+                    SUM(CASE WHEN paid_status = 1 THEN amount ELSE 0 END )AS totalCollection,
+                    sum (amount - CASE WHEN paid_status = 1 THEN amount ELSE 0 END) as totalBalance
+                FROM water_consumer_demands 
+                WHERE water_consumer_demands.status = true 
+                AND water_consumer_demands.demand_from >= '$previousFromDate' 
+                AND water_consumer_demands.demand_upto <= '$previousUptoDate'
+                AND ulb_id = '$ulbId'";
+
+            $sql3 = "SELECT     
+                    '$prePreviousFinancialYear' as fyear,    
+                    SUM (amount) AS totalDemand,
+                    SUM(CASE WHEN paid_status =1 THEN amount ELSE 0 END )AS totalCollection,
+                    sum (amount - CASE WHEN paid_status =1 THEN amount ELSE 0 END) as totalBalance
+                FROM water_consumer_demands 
+                WHERE water_consumer_demands.status = true 
+                AND water_consumer_demands.demand_from >= '$prePreviousFromDate' 
+                AND water_consumer_demands.demand_upto <= '$prePreviousUptoDate'
+                AND  ulb_id = '$ulbId'";
+
+            $currentYearDcb     = DB::select($sql1);
+            $previousYearDcb    = DB::select($sql2);
+            $prePreviousYearDcb = DB::select($sql3);
+
+            $data = [
+                collect($currentYearDcb)->first(),
+                collect($previousYearDcb)->first(),
+                collect($prePreviousYearDcb)->first()
+            ];
+            return responseMsgs(true, "", remove_null($data), "", "", "", 'POST', "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "", "01", ".ms", "POST", $request->deviceId);
         }
     }
 }

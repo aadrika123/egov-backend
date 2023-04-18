@@ -33,7 +33,7 @@ class ThirdPartyController extends Controller
         try {
             $request->validate([
                 'mobileNo' => "required|digits:10|regex:/[0-9]{10}/", #exists:active_citizens,mobile|
-                'type' => "nullable|in:Register",
+                'type' => "nullable|in:Register,forgot",
             ]);
             $refIdGeneration = new IdGeneration();
             $mOtpRequest = new OtpRequest();
@@ -42,6 +42,13 @@ class ThirdPartyController extends Controller
                     ->first();
                 if ($userDetails) {
                     throw new Exception("Mobile no $request->mobileNo is registered to An existing account!");
+                }
+            }
+            if ($request->type == "forgot") {
+                $userDetails = ActiveCitizen::where('mobile', $request->mobileNo)
+                    ->first();
+                if (!$userDetails) {
+                    throw new Exception("Mobile no $request->mobileNo don't exist!");
                 }
             }
             $generateOtp = $refIdGeneration->generateOtp();

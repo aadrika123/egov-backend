@@ -119,6 +119,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      */
     Route::controller(WaterReportController::class)->group(function () {
         Route::post('consumer/report/list-ward-dcb', 'wardWiseDCB');
+        Route::post('consumer/report/dcb-pie-chart', 'dcbPieChart');
     });
 });
 
