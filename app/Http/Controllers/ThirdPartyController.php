@@ -33,7 +33,7 @@ class ThirdPartyController extends Controller
         try {
             $request->validate([
                 'mobileNo' => "required|digits:10|regex:/[0-9]{10}/", #exists:active_citizens,mobile|
-                'type' => "nullable|in:Register,forgot",
+                'type' => "nullable|in:Register,Forgot",
             ]);
             $refIdGeneration = new IdGeneration();
             $mOtpRequest = new OtpRequest();
