@@ -421,7 +421,7 @@ class ApplySafController extends Controller
             $gbOfficerReq = [
                 'saf_id' => $safId,
                 'officer_name' => strtoupper($req->officerName),
-                'designation' => $req->designation,
+                'designation' => strtoupper($req->designation),
                 'mobile_no' => $req->officerMobile,
                 'email' => $req->officerEmail,
                 'address' => $req->address,

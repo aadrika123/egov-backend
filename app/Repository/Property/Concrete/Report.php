@@ -414,9 +414,9 @@ class Report implements IReport
                 $saf = $saf->where("prop_transactions.user_id", $userId);
             }
             if ($paymentMode) {
-                $activSaf = $activSaf->where(DB::row("prop_transactions.upper(payment_mode)"), $paymentMode);
-                $rejectedSaf = $rejectedSaf->where(DB::row("prop_transactions.upper(payment_mode)"), $paymentMode);
-                $saf = $saf->where(DB::row("prop_transactions.upper(payment_mode)"), $paymentMode);
+                $activSaf = $activSaf->where(DB::raw("prop_transactions.payment_mode"), $paymentMode);
+                $rejectedSaf = $rejectedSaf->where(DB::raw("prop_transactions.payment_mode"), $paymentMode);
+                $saf = $saf->where(DB::raw("prop_transactions.payment_mode"), $paymentMode);
             }
             if ($ulbId) {
                 $activSaf = $activSaf->where("prop_transactions.ulb_id", $ulbId);
