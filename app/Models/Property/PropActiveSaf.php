@@ -125,7 +125,7 @@ class  PropActiveSaf extends Model
     // Update
     public function edit($req)
     {
-        $saf = PropActiveSaf::find($req->id);
+        $saf = PropActiveSaf::findOrFail($req->id);
 
         $reqs = [
             'previous_ward_mstr_id' => $req->previousWard,
