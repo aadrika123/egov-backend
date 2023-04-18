@@ -48,7 +48,7 @@ class ThirdPartyController extends Controller
                 $userDetails = ActiveCitizen::where('mobile', $request->mobileNo)
                     ->first();
                 if (!$userDetails) {
-                    throw new Exception("Mobile no $request->mobileNo don't exist!");
+                    throw new Exception("Account with this mobile no don't exist!");
                 }
             }
             $generateOtp = $refIdGeneration->generateOtp();
@@ -88,7 +88,7 @@ class ThirdPartyController extends Controller
                 return responseMsgs(false, $msg, "", "", "01", ".ms", "POST", "");
             }
             $token = $mActiveCitizen->changeToken($request);
-            // $checkOtp->delete();
+            $checkOtp->delete();
             DB::commit();
             return responseMsgs(true, "OTP Validated!", remove_null($token), "", "01", ".ms", "POST", "");
         } catch (Exception $e) {
