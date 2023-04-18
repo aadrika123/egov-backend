@@ -58,8 +58,8 @@ trait WaterTrait
         $raw = "SELECT     
                     '$fyear' as fyear,    
                     SUM (amount) AS totalDemand,
-                    SUM(CASE WHEN paid_status =1 THEN amount ELSE 0 END )AS totalCollection,
-                    sum (amount - CASE WHEN paid_status =1 THEN amount ELSE 0 END) as totalBalance
+                    SUM(CASE WHEN paid_status = 1 THEN amount ELSE 0 END )AS totalCollection,
+                    sum (amount - CASE WHEN paid_status = 1 THEN amount ELSE 0 END) as totalBalance
                 FROM water_consumer_demands 
                 WHERE water_consumer_demands.status = true
                 AND water_consumer_demands.demand_from >= '$fromDate' 

@@ -52,13 +52,13 @@ class WaterReportController extends Controller
                 $toDate   =  $endYr . '-03-31';;
             }
 
-            $waterTran = $mWaterTran->getOnlineTrans($fromDate, $toDate);
-            $totalCount = [
+            $waterTran = $mWaterTran->getOnlineTrans($fromDate, $toDate)->get();
+            $returnData = [
                 'waterCount' => $waterTran->count(),
                 'totaAmount' => collect($waterTran)->sum('amount')
             ];
 
-            return responseMsgs(true, "Online Payment Count", remove_null($totalCount), "", '', '01', '.ms', 'Post', $req->deviceId);
+            return responseMsgs(true, "Online Payment Count", remove_null($returnData), "", '', '01', '.ms', 'Post', $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "", "01", ".ms", "POST", $req->deviceId);
         }
@@ -638,7 +638,7 @@ class WaterReportController extends Controller
     /**
      * | DCB Pie Chart
         | Serial No : 04
-        | Not Working
+        | Working
      */
     public function dcbPieChart(Request $request)
     {
@@ -693,7 +693,8 @@ class WaterReportController extends Controller
      * | for collecting finantial year's starting date and end date
      * | common functon
      * | @param fyear
-        | Serial No :  
+        | Serial No : 04.01
+        | Working
      */
     public function getFyearDate($fyear)
     {

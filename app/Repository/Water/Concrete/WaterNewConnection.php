@@ -315,22 +315,23 @@ class WaterNewConnection implements IWaterNewConnection
             $RazorPayRequest->status = 1;
             $RazorPayRequest->update();
 
-            $Tradetransaction = new WaterTran;
-            $Tradetransaction->related_id       = $applicationId;
-            $Tradetransaction->ward_id          = $application->ward_id;
-            $Tradetransaction->tran_type        = $transactionType;
-            $Tradetransaction->tran_date        = $mNowDate;
-            $Tradetransaction->payment_mode     = "Online";
-            $Tradetransaction->amount           = $totalCharge;
-            $Tradetransaction->emp_dtl_id       = $refUserId;
-            $Tradetransaction->created_at       = $mTimstamp;
-            $Tradetransaction->ip_address       = '';
-            $Tradetransaction->ulb_id           = $refUlbId;
-            $Tradetransaction->user_type        = $refUserDetails->user_type;
-            $Tradetransaction->save();
-            $transaction_id                     = $Tradetransaction->id;
-            $Tradetransaction->tran_no          = $args["transactionNo"];
-            $Tradetransaction->update();
+            $watertransaction = new WaterTran;
+            $watertransaction->related_id       = $applicationId;
+            $watertransaction->ward_id          = $application->ward_id;
+            $watertransaction->tran_type        = $transactionType;
+            $watertransaction->tran_date        = $mNowDate;
+            $watertransaction->payment_mode     = "Online";
+            $watertransaction->amount           = $totalCharge;
+            $watertransaction->citizen_id       = $refUserId;
+            $watertransaction->is_jsk           = false;
+            $watertransaction->created_at       = $mTimstamp;
+            $watertransaction->ip_address       = '';
+            $watertransaction->ulb_id           = $refUlbId;
+            $watertransaction->user_type        = $refUserDetails->user_type;
+            $watertransaction->save();
+            $transaction_id                     = $watertransaction->id;
+            $watertransaction->tran_no          = $args["transactionNo"];
+            $watertransaction->update();
 
             foreach ($mDemands as $val) {
                 $TradeDtl = new WaterTranDetail;

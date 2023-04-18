@@ -720,7 +720,8 @@ class WaterPaymentController extends Controller
                 'ulbId'             => $user->ulb_id,
                 'chargeCategory'    => "Demand Collection",
                 'leftDemandAmount'  => $finalCharges['leftDemandAmount'],
-                'adjustedAmount'    => $finalCharges['adjustedAmount']
+                'adjustedAmount'    => $finalCharges['adjustedAmount'],
+                'isJsk'             => true
             ]);
 
             DB::beginTransaction();
@@ -1010,6 +1011,7 @@ class WaterPaymentController extends Controller
                 'tranNo'    => $tranNo,
                 'id'        => $req->applicationId,
                 'ulbId'     => authUser()->ulb_id,
+                'isJsk'     => true
             ]);
 
             DB::beginTransaction();
