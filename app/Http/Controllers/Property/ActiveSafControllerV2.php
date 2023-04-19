@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Property;
 
+use App\BLL\Property\CalculationByUlbTc;
 use App\EloquentClass\Property\PenaltyRebateCalculation;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Property\reqApplySaf;
@@ -14,8 +15,10 @@ use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Property\PropApartmentDtl;
 use App\Models\Property\PropDemand;
 use App\Models\Property\PropProperty;
+use App\Models\Property\PropSaf;
 use App\Models\Property\PropSafMemoDtl;
 use App\Models\Property\PropSafsDemand;
+use App\Models\Property\PropSafVerification;
 use App\Models\Property\PropTranDtl;
 use App\Models\Property\PropTransaction;
 use App\Models\Workflows\WfRoleusermap;
@@ -158,6 +161,8 @@ class ActiveSafControllerV2 extends Controller
             $mPropSafMemoDtl = new PropSafMemoDtl();
             $mPropDemands = new PropDemand();
             $mPropSafDemands = new PropSafsDemand();
+            $mPropSafVerification = new PropSafVerification();
+            $calculationByUlbTc = new CalculationByUlbTc;
 
             $details = $mPropSafMemoDtl->getMemoDtlsByMemoId($req->memoId);
             if (collect($details)->isEmpty())
@@ -174,8 +179,24 @@ class ActiveSafControllerV2 extends Controller
                 $safId = $details->saf_id;
                 $propDemands = $mPropDemands->getFullDemandsByPropId($propId);
                 $safDemands = $mPropSafDemands->getFullDemandsBySafId($safId);
-
                 $holdingTax2Perc = $propDemands->where('fyear', $memoFyear);
+
+                // Tc Verified List
+                $fieldVerifiedSaf = $mPropSafVerification->getVerificationsBySafId($safId);          // Get fields Verified Saf with all Floor Details
+                if (collect($fieldVerifiedSaf)->isEmpty())
+                    throw new Exception("Site Verification not Exist");
+
+                // $saf = PropSaf::findOrFail($safId);
+                // $tcVerifyParams = [
+                //     'safId' => $safId,
+                //     'fieldVerificationDtls' => $fieldVerifiedSaf,
+                //     'assessmentType' => $saf->assessment_type,
+                //     'ulbId' => $saf->ulb_id,
+                //     'activeSafDtls' => $saf,
+                //     'propId' => $propId
+                // ];
+                // return $calculationByUlbTc->calculateTax($tcVerifyParams);
+
                 if (collect($holdingTax2Perc)->isEmpty())
                     $holdingTax2Perc = $safDemands->where('fyear', $memoFyear);
 

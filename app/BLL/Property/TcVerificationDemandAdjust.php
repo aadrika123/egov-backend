@@ -58,7 +58,8 @@ class TcVerificationDemandAdjust
         $this->_activeSafDtls = $req['activeSafDtls'];
         $this->_tcId = collect($req['fieldVerificationDtls'])->first()->user_id;
         $this->_quaterlyTax = $this->calculateQuaterlyTax();           // (1.1)
-        return $this->adjustVerifiedDemand();
+        $this->adjustVerifiedDemand();
+        $this->tblUpdateDemandAdjust();
     }
 
     /**
@@ -181,13 +182,19 @@ class TcVerificationDemandAdjust
         }
 
         $this->_propNewDemand = $newDemand;
-        if ($newDemand->isNotEmpty())
+        $this->_propAdvDemand = $collectAdvanceAmt;
+    }
+
+    /**
+     * | tblUpdDemandAdvance
+     */
+    public function tblUpdateDemandAdjust()
+    {
+        if ($this->_propNewDemand->isNotEmpty())
             $this->storeDemand();               // (Function Store Demand) 1.2.1
 
-        $this->_propAdvDemand = $collectAdvanceAmt;
-        if ($collectAdvanceAmt->isNotEmpty())
+        if ($this->_propAdvDemand->isNotEmpty())
             $this->storeAdvance();              // (Function Advance Demand Store)  1.2.2
-
     }
 
 
