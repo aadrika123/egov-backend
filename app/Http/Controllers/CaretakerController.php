@@ -42,7 +42,7 @@ class CaretakerController extends Controller
             $data['otp'] = $response['original']['data'];
             $data['mobileNo'] = $applicantMobile;
 
-            return responseMsgs(true, "OTP send successfully", $data, '010801', '01', '623ms', 'Post', '');
+            return responseMsgs(true, "OTP send successfully", $data, '', '01', '623ms', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -75,7 +75,7 @@ class CaretakerController extends Controller
             $activeCitizenUndecare->citizen_id = $userId;
             $activeCitizenUndecare->save();
 
-            return responseMsgs(true, "Property Tagged!", '', '010801', '01', '623ms', 'Post', '');
+            return responseMsgs(true, "Cosumer Succesfully Attached!", '', '', '01', '623ms', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
