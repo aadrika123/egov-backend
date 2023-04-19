@@ -1001,7 +1001,8 @@ class ActiveSafController extends Controller
                 'gb_prop_usage_types',
                 'is_trust',
                 'trust_type',
-                'is_trust_verified'
+                'is_trust_verified',
+                'rwh_date_from'
             )->first();
 
         $assessmentType = $activeSaf->assessment_type;
@@ -1572,7 +1573,8 @@ class ActiveSafController extends Controller
                 'amount' => $amount,
                 'tran_date' => $this->_todayDate->format('Y-m-d'),
                 'verify_date' => $this->_todayDate->format('Y-m-d'),
-                'user_id' => $userId,
+                'citizen_id' => $userId,
+                'is_citizen' => true,
                 'from_fyear' => $propRazorPayRequest->from_fyear,
                 'to_fyear' => $propRazorPayRequest->to_fyear,
                 'from_qtr' => $propRazorPayRequest->from_qtr,
@@ -1686,6 +1688,7 @@ class ActiveSafController extends Controller
             // Property Transactions
             $req->merge([
                 'userId' => $userId,
+                'is_citizen' => false,
                 'todayDate' => $todayDate->format('Y-m-d'),
                 'tranNo' => $tranNo,
                 'workflowId' => $activeSaf->workflow_id,
