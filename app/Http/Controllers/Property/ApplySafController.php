@@ -147,8 +147,6 @@ class ApplySafController extends Controller
             $isResidential = $safTaxes->original['data']['demand']['isResidential'];
             $demandResponse = $generateSafApplyDemandResponse->generateResponse($generatedDemand, $isResidential);
 
-            $lateAssessmentPenalty = $safTaxes->original['data']['demand']['lateAssessmentPenalty'];
-            $metaReqs['lateAssessmentPenalty'] = ($lateAssessmentPenalty > 0) ? $lateAssessmentPenalty : null;
             $metaReqs['isTrust'] = $this->isPropTrust($request['floor']);
             $request->merge($metaReqs);
             $this->_REQUEST = $request;
