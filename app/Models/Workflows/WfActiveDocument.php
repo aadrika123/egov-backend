@@ -77,12 +77,13 @@ class WfActiveDocument extends Model
     /**
      * | Check if the document is already existing or not
      */
-    public function ifDocExists($activeId, $workflowId, $moduleId, $docCode, $ownerId = null)
+    public function ifDocExists($activeId, $workflowId, $moduleId, $docCode, $docCategory, $ownerId = null)
     {
         return WfActiveDocument::where('active_id', $activeId)
             ->where('workflow_id', $workflowId)
             ->where('module_id', $moduleId)
             ->where('doc_code', $docCode)
+            ->where('doc_category', $docCategory)
             ->where('owner_dtl_id', $ownerId)
             ->where('verify_status', 0)
             ->where('status', 1)

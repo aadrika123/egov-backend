@@ -72,6 +72,7 @@ class WaterApplication extends Model
                 }
                 break;
             case ('JSK'):
+                $saveNewApplication->apply_from = "JSK";
                 if ($newConnectionCharges['conn_fee_charge']['amount'] == 0) {
                     $saveNewApplication->payment_status = 1;
                 }

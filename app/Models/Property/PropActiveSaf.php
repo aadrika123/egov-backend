@@ -693,6 +693,7 @@ class  PropActiveSaf extends Model
         return PropActiveSaf::select('id', 'saf_no', 'citizen_id')
             ->where('citizen_id', $citizenId)
             ->where('ulb_id', $ulbId)
+            ->orderByDesc('id')
             ->get();
     }
 
