@@ -201,9 +201,8 @@ class SafDocController extends Controller
             if (collect($ifDocCategoryExist)->isEmpty())
                 $mWfActiveDocument->store($metaReqs);           // Store New Document
 
-            if (collect($ifDocCategoryExist)->isNotEmpty()) {
+            if (collect($ifDocCategoryExist)->isNotEmpty())
                 $mWfActiveDocument->edit($ifDocCategoryExist, $metaReqs);       // Update Existing Document
-            }
 
             $docUploadStatus = $this->checkFullDocUpload($req->applicationId);
             if ($docUploadStatus == 1) {
