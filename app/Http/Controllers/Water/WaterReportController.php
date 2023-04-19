@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Water;
 
 use App\Http\Controllers\Controller;
 use App\Models\Water\WaterTran;
+use App\Traits\Water\WaterTrait;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
@@ -20,6 +21,7 @@ use Illuminate\Support\Facades\DB;
 
 class WaterReportController extends Controller
 {
+    use WaterTrait;
     /**
      * | Water count of online payment
         | Serial No : 01
@@ -50,13 +52,13 @@ class WaterReportController extends Controller
                 $toDate   =  $endYr . '-03-31';;
             }
 
-            $waterTran = $mWaterTran->getOnlineTrans($fromDate, $toDate);
-            $totalCount = [
+            $waterTran = $mWaterTran->getOnlineTrans($fromDate, $toDate)->get();
+            $returnData = [
                 'waterCount' => $waterTran->count(),
                 'totaAmount' => collect($waterTran)->sum('amount')
             ];
 
-            return responseMsgs(true, "Online Payment Count", remove_null($totalCount), "", '', '01', '.ms', 'Post', $req->deviceId);
+            return responseMsgs(true, "Online Payment Count", remove_null($returnData), "", '', '01', '.ms', 'Post', $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "", "01", ".ms", "POST", $req->deviceId);
         }
@@ -424,7 +426,7 @@ class WaterReportController extends Controller
                 // "perPage" => "nullable|digits_between:1,9223372036854775807",
             ]
         );
-        $request->request->add(["metaData" => ["pr8.1", 1.1, null, $request->getMethod(), null,]]);
+        $request->request->add(["metaData" => ["", 1.1, "", $request->getMethod(), $request->deviceId,]]);
         $metaData = collect($request->metaData)->all();
         list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
 
@@ -606,24 +608,24 @@ class WaterReportController extends Controller
             ";
             $dcb = DB::select($select . $from);
 
-            $data['total_arrear_demand'] = round(collect($dcb)->sum('arrear_demand'), 0);
-            $data['total_current_demand'] = round(collect($dcb)->sum('current_demand'), 0);
-            $data['total_arrear_collection'] = round(collect($dcb)->sum('arrear_collection'), 0);
-            $data['total_current_collection'] = round(collect($dcb)->sum('current_collection'), 0);
-            $data['total_old_due'] = round(collect($dcb)->sum('old_due'), 0);
-            $data['total_current_due'] = round(collect($dcb)->sum('current_due'), 0);
-            $data['total_arrear_demand_consumer'] = round(collect($dcb)->sum('arrear_demand_consumer'), 0);
-            $data['total_current_demand_consumer'] = round(collect($dcb)->sum('current_demand_consumer'), 0);
-            $data['total_arrear_collection_consumer'] = round(collect($dcb)->sum('arrear_collection_consumer'), 0);
-            $data['total_current_collection_consumer'] = round(collect($dcb)->sum('current_collection_consumer'), 0);
-            $data['total_arrear_balance_consumer'] = round(collect($dcb)->sum('arrear_balance_consumer'));
-            $data['total_current_balance_consumer'] = round(collect($dcb)->sum('current_balance_consumer'));
-            $data['total_current_eff'] = ($data['total_current_collection_consumer'] == 0) ? 0 : round(($data['total_current_collection_consumer'] / $data['total_current_demand']) * 100);
-            $data['total_arrear_consumer_eff'] = ($data['total_arrear_demand_consumer'] == 0) ? 0 : round(($data['total_arrear_collection_consumer'] /  $data['total_arrear_demand_consumer']) * 100);
-            $data['total_current_consumer_eff'] = ($data['total_current_demand_consumer'] == 0) ? 0 : round(($data['total_current_collection_consumer']) / ($data['total_current_demand_consumer']) * 100);
-            $data['total_arrear_eff'] = ($data['total_arrear_collection'] == 0) ? 0 : round(($data['total_arrear_collection']) / ($data['total_arrear_demand']) * 100);
-            $data['total_eff'] = round((($data['total_arrear_collection'] + $data['total_current_collection']) / ($data['total_arrear_demand'] + $data['total_current_demand'])) * 100);
-            $data['dcb'] = $dcb;
+            $data['total_arrear_demand']                = round(collect($dcb)->sum('arrear_demand'), 0);
+            $data['total_current_demand']               = round(collect($dcb)->sum('current_demand'), 0);
+            $data['total_arrear_collection']            = round(collect($dcb)->sum('arrear_collection'), 0);
+            $data['total_current_collection']           = round(collect($dcb)->sum('current_collection'), 0);
+            $data['total_old_due']                      = round(collect($dcb)->sum('old_due'), 0);
+            $data['total_current_due']                  = round(collect($dcb)->sum('current_due'), 0);
+            $data['total_arrear_demand_consumer']       = round(collect($dcb)->sum('arrear_demand_consumer'), 0);
+            $data['total_current_demand_consumer']      = round(collect($dcb)->sum('current_demand_consumer'), 0);
+            $data['total_arrear_collection_consumer']   = round(collect($dcb)->sum('arrear_collection_consumer'), 0);
+            $data['total_current_collection_consumer']  = round(collect($dcb)->sum('current_collection_consumer'), 0);
+            $data['total_arrear_balance_consumer']      = round(collect($dcb)->sum('arrear_balance_consumer'));
+            $data['total_current_balance_consumer']     = round(collect($dcb)->sum('current_balance_consumer'));
+            $data['total_current_eff']                  = ($data['total_current_collection_consumer'] == 0) ? 0 : round(($data['total_current_collection_consumer'] / $data['total_current_demand']) * 100);
+            $data['total_arrear_consumer_eff']          = ($data['total_arrear_demand_consumer'] == 0) ? 0 : round(($data['total_arrear_collection_consumer'] /  $data['total_arrear_demand_consumer']) * 100);
+            $data['total_current_consumer_eff']         = ($data['total_current_demand_consumer'] == 0) ? 0 : round(($data['total_current_collection_consumer']) / ($data['total_current_demand_consumer']) * 100);
+            $data['total_arrear_eff']                   = ($data['total_arrear_collection'] == 0) ? 0 : round(($data['total_arrear_collection']) / ($data['total_arrear_demand']) * 100);
+            $data['total_eff']                          = round((($data['total_arrear_collection'] + $data['total_current_collection']) / ($data['total_arrear_demand'] + $data['total_current_demand'])) * 100);
+            $data['dcb']                                = $dcb;
 
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true, "", $data, $apiId, $version, $queryRunTime, $action, $deviceId);
@@ -636,7 +638,7 @@ class WaterReportController extends Controller
     /**
      * | DCB Pie Chart
         | Serial No : 04
-        | Not Working
+        | Working
      */
     public function dcbPieChart(Request $request)
     {
@@ -645,70 +647,32 @@ class WaterReportController extends Controller
             $currentDate = Carbon::now()->format('Y-m-d');
             $currentYear = Carbon::now()->year;
             $currentFyear = getFinancialYear($currentDate);
-
-            # common function
-            list($fromYear, $toYear) = explode("-", $currentFyear);
-            if ($toYear - $fromYear != 1) {
-                throw new Exception("Enter Valide Financial Year");
-            }
-            $fromDate = $fromYear . "-04-01";
-            $uptoDate = $toYear . "-03-31";
-
-            $startOfCurrentYear = Carbon::createFromDate($currentYear, 4, 1); // Start date of current financial year
-            $startOfPreviousYear = $startOfCurrentYear->copy()->subYear(); // Start date of previous financial year
+            $startOfCurrentYear = Carbon::createFromDate($currentYear, 4, 1);   // Start date of current financial year
+            $startOfPreviousYear = $startOfCurrentYear->copy()->subYear();      // Start date of previous financial year
             $previousFinancialYear = getFinancialYear($startOfPreviousYear);
-
-            # common function
-            list($fromYear, $toYear) = explode("-", $previousFinancialYear);
-            if ($toYear - $fromYear != 1) {
-                throw new Exception("Enter Valide Financial Year");
-            }
-            $previousFromDate = $fromYear . "-04-01";
-            $previousUptoDate = $toYear . "-03-31";
-
             $startOfprePreviousYear = $startOfCurrentYear->copy()->subYear()->subYear();
             $prePreviousFinancialYear = getFinancialYear($startOfprePreviousYear);
 
+
             # common function
-            list($fromYear, $toYear) = explode("-", $prePreviousFinancialYear);
-            if ($toYear - $fromYear != 1) {
-                throw new Exception("Enter Valide Financial Year");
-            }
-            $prePreviousFromDate = $fromYear . "-04-01";
-            $prePreviousUptoDate = $toYear . "-03-31";
+            $refDate = $this->getFyearDate($currentFyear);
+            $fromDate = $refDate['fromDate'];
+            $uptoDate = $refDate['uptoDate'];
 
-            $sql1 = "SELECT     
-                    '$currentFyear' as fyear,    
-                    SUM (amount) AS totalDemand,
-                    SUM(CASE WHEN paid_status =1 THEN amount ELSE 0 END )AS totalCollection,
-                    sum (amount - CASE WHEN paid_status =1 THEN amount ELSE 0 END) as totalBalance
-                FROM water_consumer_demands 
-                WHERE water_consumer_demands.status = true
-                AND water_consumer_demands.demand_from >= '$fromDate' 
-                AND water_consumer_demands.demand_upto <= '$uptoDate'
-                AND  ulb_id = '$ulbId'";
+            # common function
+            $refDate = $this->getFyearDate($previousFinancialYear);
+            $previousFromDate = $refDate['fromDate'];
+            $previousUptoDate = $refDate['uptoDate'];
 
-            $sql2 = "SELECT     
-                    '$previousFinancialYear' as fyear,    
-                    SUM (amount) AS totalDemand,
-                    SUM(CASE WHEN paid_status = 1 THEN amount ELSE 0 END )AS totalCollection,
-                    sum (amount - CASE WHEN paid_status = 1 THEN amount ELSE 0 END) as totalBalance
-                FROM water_consumer_demands 
-                WHERE water_consumer_demands.status = true 
-                AND water_consumer_demands.demand_from >= '$previousFromDate' 
-                AND water_consumer_demands.demand_upto <= '$previousUptoDate'
-                AND ulb_id = '$ulbId'";
+            # common function
+            $refDate = $this->getFyearDate($prePreviousFinancialYear);
+            $prePreviousFromDate = $refDate['fromDate'];
+            $prePreviousUptoDate = $refDate['uptoDate'];
 
-            $sql3 = "SELECT     
-                    '$prePreviousFinancialYear' as fyear,    
-                    SUM (amount) AS totalDemand,
-                    SUM(CASE WHEN paid_status =1 THEN amount ELSE 0 END )AS totalCollection,
-                    sum (amount - CASE WHEN paid_status =1 THEN amount ELSE 0 END) as totalBalance
-                FROM water_consumer_demands 
-                WHERE water_consumer_demands.status = true 
-                AND water_consumer_demands.demand_from >= '$prePreviousFromDate' 
-                AND water_consumer_demands.demand_upto <= '$prePreviousUptoDate'
-                AND  ulb_id = '$ulbId'";
+
+            $sql1 = $this->demandByFyear($currentFyear, $fromDate, $uptoDate, $ulbId);
+            $sql2 = $this->demandByFyear($previousFinancialYear, $previousFromDate, $previousUptoDate, $ulbId);
+            $sql3 = $this->demandByFyear($prePreviousFinancialYear, $prePreviousFromDate, $prePreviousUptoDate, $ulbId);
 
             $currentYearDcb     = DB::select($sql1);
             $previousYearDcb    = DB::select($sql2);
@@ -723,5 +687,26 @@ class WaterReportController extends Controller
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "", "01", ".ms", "POST", $request->deviceId);
         }
+    }
+
+    /**
+     * | for collecting finantial year's starting date and end date
+     * | common functon
+     * | @param fyear
+        | Serial No : 04.01
+        | Working
+     */
+    public function getFyearDate($fyear)
+    {
+        list($fromYear, $toYear) = explode("-", $fyear);
+        if ($toYear - $fromYear != 1) {
+            throw new Exception("Enter Valide Financial Year");
+        }
+        $fromDate = $fromYear . "-04-01";
+        $uptoDate = $toYear . "-03-31";
+        return [
+            "fromDate" => $fromDate,
+            "uptoDate" => $uptoDate
+        ];
     }
 }

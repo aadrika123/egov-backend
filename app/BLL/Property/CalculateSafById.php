@@ -167,7 +167,8 @@ class CalculateSafById
             "apartmentId" => $safDetails['apartment_details_id'],
             "isTrust" => $safDetails['is_trust'],
             "trustType" => $safDetails['trust_type'],
-            "isTrustVerified" => $safDetails['is_trust_verified']
+            "isTrustVerified" => $safDetails['is_trust_verified'],
+            "rwhDateFrom" => $safDetails['rwh_date_from']
         ];
         $this->_safCalculationReq = new Request($calculationReq);
     }
