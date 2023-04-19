@@ -22,6 +22,7 @@ use App\Http\Controllers\WorkflowMaster\RoleController;
 use App\Http\Controllers\Workflows\UlbWorkflowRolesController;
 use App\Http\Controllers\WorkflowMaster\WorkflowRoleController;
 use App\Http\Controllers\WorkflowMaster\WorkflowRoleUserMapController;
+use App\Http\Controllers\CaretakerController;
 
 /*
 |--------------------------------------------------------------------------
@@ -330,6 +331,14 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      */
     Route::controller(IdGeneratorController::class)->group(function () {
         Route::post('id-generator', 'idGenerator');
+    });
+
+    /**
+     * | Caretaker Property , Water , Trade 
+     */
+    Route::controller(CaretakerController::class)->group(function () {
+        Route::post('water/caretaker-otp', 'waterCaretakerOtp');
+        Route::post('water/caretaker-consumer-tagging', 'caretakerConsumerTag');
     });
 });
 

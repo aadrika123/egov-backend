@@ -571,6 +571,17 @@ class ReportController extends Controller
      */
     public function rebateNpenalty(Request $request)
     {
+        $propCollection = null;
+        $safCollection = null;
+        $gbsafCollection = null;
+        $proptotalData = 0;
+        $proptotal = 0;
+        $saftotal = 0;
+        $saftotalData = 0;
+        $gbsaftotalData = 0;
+        $collectionTypes = $request->collectionType;
+        $perPage = $request->perPage ?? 5;
+        // $arrayCount = count($collectionTypes);
         // if ($request->type == 'property') {
         //     $sql = "select 
         //         property_id,prop_transactions.amount,payment_mode,demand_amt,
@@ -589,13 +600,13 @@ class ReportController extends Controller
         //         limit 100";
         //     return DB::select($sql);
         // }
-        $reportTypes = $request->reportType;
+        $reportType = $request->reportType;
 
 
-        foreach ($reportTypes as $reportType) {
-            if ($reportType == 'property') {
+        // foreach ($reportTypes as $reportType) {
+        if ($reportType == 'property') {
 
-                $sql = "select t.property_id,payment_mode,
+            $sql = "select t.property_id,payment_mode,
                         tran_id,t.amount as paid_amount,
                         demand_amount as demand_amt,
                         CASE WHEN  t.property_id is not null THEN t.property_id END AS property_id,
@@ -627,13 +638,13 @@ class ReportController extends Controller
                         and t.status = 1
                         limit 100";
 
-                $propData =  DB::select($sql);
-                $propCollection = $propData;
-            }
+            $propData =  DB::select($sql);
+            $propCollection = $propData;
+        }
 
-            if ($reportType == 'saf') {
+        if ($reportType == 'saf') {
 
-                $sql2 = "select
+            $sql2 = "select
                 payment_mode,
                 tran_id,saf_no,
                 sum(t.amount) as paid_amount,pr.demand_amt,
@@ -659,13 +670,13 @@ class ReportController extends Controller
                 and t.status = 1
                 group by tran_id,payment_mode,pr.demand_amt,saf_no";
 
-                $safData =  DB::select($sql2);
-                $safCollection = $safData;
-            }
+            $safData =  DB::select($sql2);
+            $safCollection = $safData;
+        }
 
-            if ($reportType == 'gbsaf') {
+        if ($reportType == 'gbsaf') {
 
-                $sql3 = "select
+            $sql3 = "select
                             payment_mode,
                             tran_id,saf_no,
                             sum(t.amount) as paid_amount,pr.demand_amt,
@@ -691,9 +702,13 @@ class ReportController extends Controller
                     and is_gb_saf = true
                     and t.status = 1
                     group by tran_id,payment_mode,pr.demand_amt,saf_no";
-                $gbsafData =  DB::select($sql3);
-                $gbsafCollection = $gbsafData;
-            }
+            $gbsafData =  DB::select($sql3);
+            $gbsafCollection = $gbsafData;
         }
+        // }
+
+        $details = collect($propCollection)->merge($safCollection)->merge($gbsafCollection);
+        $data['data'] = $details;
+        return responseMsgs(true, "", $data, "", "", "", "post", $request->deviceId);
     }
 }
