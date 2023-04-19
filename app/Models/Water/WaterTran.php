@@ -63,24 +63,34 @@ class WaterTran extends Model
      */
     public function saveZeroConnectionCharg($totalConnectionCharges, $ulbId, $req, $applicationId, $connectionId, $connectionType)
     {
+        $user = authUser();
         $refIdGeneration = new IdGeneration();
         $transactionNo = $refIdGeneration->generateTransactionNo();
+        if ($user->user_type == 'Citizen') {
+            $isJsk = false;
+            $citizenId = $user->id;
+        }
+        if ($user->user_type != 'Citizen') {
+            $empId = $user->id;
+        }
 
-        $Tradetransaction = new WaterTran;
-        $Tradetransaction->related_id       = $applicationId;
-        $Tradetransaction->ward_id          = $req->ward_id;
-        $Tradetransaction->tran_type        = $connectionType;
-        $Tradetransaction->tran_date        = Carbon::now();
-        $Tradetransaction->payment_mode     = "Other";
-        $Tradetransaction->amount           = $totalConnectionCharges;
-        $Tradetransaction->emp_dtl_id       = authUser()->id;
-        $Tradetransaction->user_type        = authUser()->user_type;
-        $Tradetransaction->created_at       = Carbon::now();
-        $Tradetransaction->ip_address       = getClientIpAddress();
-        $Tradetransaction->ulb_id           = $ulbId;
-        $Tradetransaction->tran_no          = $transactionNo;
-        $Tradetransaction->save();
-        $transactionId = $Tradetransaction->id;
+        $watertransaction = new WaterTran;
+        $watertransaction->related_id       = $applicationId;
+        $watertransaction->ward_id          = $req->ward_id;
+        $watertransaction->tran_type        = $connectionType;
+        $watertransaction->tran_date        = Carbon::now();
+        $watertransaction->payment_mode     = "Cash";
+        $watertransaction->amount           = $totalConnectionCharges;
+        $watertransaction->emp_dtl_id       = $empId ?? null;
+        $watertransaction->citizen_id       = $citizenId ?? null;
+        $watertransaction->user_type        = $user->user_type;
+        $watertransaction->is_jsk           = $isJsk ?? true;
+        $watertransaction->created_at       = Carbon::now();
+        $watertransaction->ip_address       = getClientIpAddress();
+        $watertransaction->ulb_id           = $ulbId;
+        $watertransaction->tran_no          = $transactionNo;
+        $watertransaction->save();
+        $transactionId = $watertransaction->id;
 
         $mWaterTranDetail = new WaterTranDetail();
         $mWaterTranDetail->saveDefaultTrans($totalConnectionCharges, $applicationId, $transactionId, $connectionId);
@@ -112,7 +122,9 @@ class WaterTran extends Model
         $waterTrans->tran_date          = $req['todayDate'];
         $waterTrans->tran_no            = $req['tranNo'];
         $waterTrans->payment_mode       = $req['paymentMode'];
-        $waterTrans->emp_dtl_id         = $req['userId'];
+        $waterTrans->emp_dtl_id         = $req['userId'] ?? null;
+        $waterTrans->citizen_id         = $req['citizenId'] ?? null;
+        $waterTrans->is_jsk             = $req['isJsk'] ?? false;
         $waterTrans->user_type          = $req['userType'];
         $waterTrans->ulb_id             = $req['ulbId'];
         $waterTrans->ward_id            = $consumer['ward_mstr_id'];
@@ -127,6 +139,7 @@ class WaterTran extends Model
 
     /**
      * | Water Transaction Details by date
+        | Not Used
      */
     public function tranDetail($date, $ulbId)
     {
@@ -173,13 +186,17 @@ class WaterTran extends Model
     }
 
     /**
-     * |
+     * | Get details of online transactions
+     * | According to Fyear
+     * | @param fromDate
+     * | @param toDate
      */
     public function getOnlineTrans($fromDate, $toDate)
     {
-        return WaterTran::select('id','amount')
+        return WaterTran::select('id', 'amount')
             ->where('payment_mode', 'Online')
             ->where('status', 1)
-            ->whereBetween('tran_date', [$fromDate, $toDate]);
+            ->whereBetween('tran_date', [$fromDate, $toDate])
+            ->orderByDesc('id');
     }
 }

@@ -325,12 +325,12 @@ class ActiveSafControllerV2 extends Controller
             $data = $mPropApartmentDtl->apartmentList($req);
 
             if (($data->isEmpty())) {
-                throw new Exception("Enter Valid wardMstrId");
+                throw new Exception("Apartment List Not Available");
             }
 
             return responseMsgs(true, "Apartment List", $data, 010124, 1.0, "308ms", "POST", $req->deviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", 010124, 1.0, "308ms", "POST", $req->deviceId);
+            return responseMsgs(false, $e->getMessage(), [], 010124, 1.0, "308ms", "POST", $req->deviceId);
         }
     }
 

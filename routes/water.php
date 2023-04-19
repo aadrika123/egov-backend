@@ -89,6 +89,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('consumer/offline-demand-payment', 'offlineDemandPayment');                         // Consumer
         Route::post('application/payment/offline/pay-connection-charge', 'offlineConnectionPayment');   // Admin
         Route::post('consumer/demand/generate-payment-receipt', 'generateDemandPaymentReceipt');
+        Route::post('consumer/online-demand-payment', 'initiateOnlineDemandPayment');
 
         # Site inspection 
         Route::post('site-verification/save-site-details', 'saveSitedetails');                          // Admin
@@ -119,6 +120,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      */
     Route::controller(WaterReportController::class)->group(function () {
         Route::post('consumer/report/list-ward-dcb', 'wardWiseDCB');
+        Route::post('consumer/report/dcb-pie-chart', 'dcbPieChart');
     });
 });
 

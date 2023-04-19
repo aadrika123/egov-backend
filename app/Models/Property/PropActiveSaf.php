@@ -67,6 +67,7 @@ class  PropActiveSaf extends Model
             'petrol_pump_completion_date' => $req->petrolPump['dateFrom'] ?? null,
 
             'is_water_harvesting' => $req->isWaterHarvesting,
+            'rwh_date_from' => ($req->isWaterHarvesting == 1) ? $req->rwhDateFrom : null,
             'land_occupation_date' => $req->landOccupationDate,
             'doc_verify_cancel_remarks' => $req->docVerifyCancelRemark,
             'application_date' =>  Carbon::now()->format('Y-m-d'),
@@ -95,7 +96,6 @@ class  PropActiveSaf extends Model
             'location' => $req->location,
             'landmark' => $req->landmark,
             'is_gb_saf' => isset($req->isGBSaf) ? $req->isGBSaf : false,
-            'late_assess_penalty' => $req->lateAssessmentPenalty,
             'is_trust' => $req->isTrust ?? false,
             'trust_type' => $req->trustType ?? null
         ];
@@ -124,7 +124,7 @@ class  PropActiveSaf extends Model
     // Update
     public function edit($req)
     {
-        $saf = PropActiveSaf::find($req->id);
+        $saf = PropActiveSaf::findOrFail($req->id);
 
         $reqs = [
             'previous_ward_mstr_id' => $req->previousWard,
@@ -693,6 +693,7 @@ class  PropActiveSaf extends Model
         return PropActiveSaf::select('id', 'saf_no', 'citizen_id')
             ->where('citizen_id', $citizenId)
             ->where('ulb_id', $ulbId)
+            ->orderByDesc('id')
             ->get();
     }
 

@@ -878,15 +878,15 @@ class TradeApplication extends Controller
      */
     public function uploadDocument(Request $req)
     {
-        $req->validate([
-            "applicationId" => "required|digits_between:1,9223372036854775807",
-            "document" => "required|mimes:pdf,jpeg,png,jpg,gif",
-            "docName" => "required",
-            "docCode" => "required",
-            "ownerId" => "nullable|digits_between:1,9223372036854775807"
-        ]);
-
+        
         try {
+            $req->validate([
+                "applicationId" => "required|digits_between:1,9223372036854775807",
+                "document" => "required|mimes:pdf,jpeg,png,jpg,gif",
+                "docName" => "required",
+                "docCode" => "required",
+                "ownerId" => "nullable|digits_between:1,9223372036854775807"
+            ]);
             $tradC = new Trade();
             $docUpload = new DocUpload;
             $mWfActiveDocument = new WfActiveDocument();
@@ -997,7 +997,6 @@ class TradeApplication extends Controller
         } 
         catch (Exception $e) 
         {
-            // dd($e->getMessage(),$e->getFile(),$e->getLine());
             return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }

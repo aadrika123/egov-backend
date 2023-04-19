@@ -18,6 +18,7 @@ return [
     "SAF_CONCESSION_REF_TABLE" => "prop_active_concessions.id",
     "SAF_OBJECTION_REF_TABLE" => "prop_active_objections.id",
     "SAF_HARVESTING_REF_TABLE" => "prop_active_harvestings.id",
+    "RWH_AREA_OF_PLOT" => 3228,
 
     "OBJECTION" => [
         "2"     => "RainHarvesting",

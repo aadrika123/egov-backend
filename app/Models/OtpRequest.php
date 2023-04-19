@@ -42,6 +42,7 @@ class OtpRequest extends Model
     {
         return OtpRequest::where('otp', $request->otp)
             ->where('mobile_no', $request->mobileNo)
+            ->orderByDesc('id')
             ->first();
     }
 }

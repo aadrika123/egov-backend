@@ -10,6 +10,7 @@ use App\Models\Property\MPropMultiFactor;
 use App\Models\Property\MPropRentalValue;
 use App\Models\Property\MPropVacantRentalrate;
 use App\Models\Property\PropApartmentDtl;
+use App\Models\UlbMaster;
 use App\Models\UlbWardMaster;
 use Carbon\Carbon;
 use Exception;
@@ -74,6 +75,8 @@ class SafCalculation
     public $_trustType;
     public $_isTrustVerified;
     private $_isPropPoint20Taxed = false;
+    private $_rwhAreaOfPlot;
+    private $_ulbType;
 
     /** 
      * | For Building
@@ -124,11 +127,15 @@ class SafCalculation
 
         $this->_effectiveDateRule2 = Config::get("PropertyConstaint.EFFECTIVE_DATE_RULE2");
         $this->_effectiveDateRule3 = Config::get("PropertyConstaint.EFFECTIVE_DATE_RULE3");
+        $this->_rwhAreaOfPlot = Config::get('PropertyConstaint.RWH_AREA_OF_PLOT');
 
         $todayDate = Carbon::now();
         $this->_virtualDate = $todayDate->subYears(12)->format('Y-m-d');
         $this->_floors = $propertyDetails['floor'] ?? [];
         $this->_ulbId = ($propertyDetails['ulbId']) ?? auth()->user()->ulb_id;
+
+        $ulbMstrs = UlbMaster::findOrFail($this->_ulbId);
+        $this->_ulbType = $ulbMstrs->category;
 
         $this->_vacantPropertyTypeId = Config::get("PropertyConstaint.VACANT_PROPERTY_TYPE");               // Vacant Property Type Id
 
@@ -142,7 +149,8 @@ class SafCalculation
         // Rain Water Harvesting Penalty If The Plot Area is Greater than 3228 sqft. and Rain Water Harvesting is none
         $readAreaOfPlot =  decimalToSqFt($this->_propertyDetails['areaOfPlot']);                              // (In Decimal To SqFt)
         $this->_areaOfPlotInSqft = $readAreaOfPlot;
-        if ($propertyDetails['propertyType'] != $this->_vacantPropertyTypeId && $propertyDetails['isWaterHarvesting'] == 0 && $readAreaOfPlot > 3228) {
+        // Check Rain Water Harvesting Status
+        if ($propertyDetails['propertyType'] != $this->_vacantPropertyTypeId && $propertyDetails['isWaterHarvesting'] == 0 && $readAreaOfPlot > $this->_rwhAreaOfPlot) {
             $this->_rwhPenaltyStatus = true;
         }
 
@@ -692,7 +700,7 @@ class SafCalculation
                 "qtr" => calculateQtr($dateFrom),
                 "dueDate" => $quarterDueDate
             ];
-            $tax = $this->calculateRuleSet2($key, $onePercPenalty);
+            $tax = $this->calculateRuleSet2($key, $onePercPenalty, $dateFrom);
             $ruleSetsWithTaxes = array_merge($readFloorDetail, $ruleSets[0], $tax);
             return $ruleSetsWithTaxes;
         }
@@ -707,7 +715,7 @@ class SafCalculation
                 "qtr" => calculateQtr($dateFrom),
                 "dueDate" => calculateQuaterDueDate($dateFrom)
             ];
-            $tax = $this->calculateRuleSet3($key, $onePercPenalty);
+            $tax = $this->calculateRuleSet3($key, $onePercPenalty, $dateFrom);
             $ruleSetsWithTaxes = array_merge($readFloorDetail, $ruleSets[0], $tax);
             return $ruleSetsWithTaxes;
         }
@@ -823,6 +831,7 @@ class SafCalculation
      * | RuleSet 2 Calculation (1.2.1.2)
      * ---------------------- Initialization -------------------
      * | @param key array key index
+     * | dateFrom
      * | @var readFloorUsageType Floor Usage Type(Residential or Other)
      * | @var readFloorBuildupArea Floor Buildup Area(SqFt)
      * | @var readFloorOccupancyType Floor Occupancy Type (Self or Tenant)
@@ -842,7 +851,7 @@ class SafCalculation
      * | $rwhPenalty = $arv/2
      * | $totalTax = $arv + $rwhPenalty;
      */
-    public function calculateRuleSet2($key, $onePercPenalty)
+    public function calculateRuleSet2($key, $onePercPenalty, $dateFrom)
     {
         $paramRentalRate = $this->_paramRentalRate;
         // Vacant Land RuleSet2
@@ -855,7 +864,7 @@ class SafCalculation
                 $area = decimalToSqMt($plotArea);
 
             $rentalRate = collect($this->_vacantRentalRates)->where('prop_road_type_id', $this->_readRoadType[$this->_effectiveDateRule2])
-                ->where('ulb_type_id', 1)
+                ->where('ulb_type_id', $this->_ulbType)
                 ->where('effective_date', $this->_effectiveDateRule2)
                 ->first();
 
@@ -937,9 +946,12 @@ class SafCalculation
         $arv = ($tempArv * 2) / 100;
 
         // Rain Water Harvesting Penalty If The Plot Area is Greater than 3228 sqft. and Rain Water Harvesting is none
-        if ($this->_rwhPenaltyStatus == true) {
+        if ($this->_rwhPenaltyStatus == true && $dateFrom > '2017-03-31') {                 // RWH Applicable from 2017-2018
             $rwhPenalty = $arv / 2;
         }
+
+        if ($this->_rwhPenaltyStatus == false && $dateFrom > '2017-03-31' && $dateFrom < $this->_propertyDetails['rwhDateFrom'] && $this->_areaOfPlotInSqft > $this->_rwhAreaOfPlot)
+            $rwhPenalty = $arv / 2;
 
         $totalTax = $arv + $rwhPenalty;
         $onePercPenaltyTax = ($totalTax * $onePercPenalty) / 100;
@@ -971,7 +983,7 @@ class SafCalculation
      * | RuleSet 3 Calculation (1.2.1.3)
      * | @param key arrayKey value
      */
-    public function calculateRuleSet3($key, $onePercPenalty)
+    public function calculateRuleSet3($key, $onePercPenalty, $dateFrom)
     {
         // Vacant Land RuleSet3
         if ($key == "vacantLand") {
@@ -982,7 +994,7 @@ class SafCalculation
             else
                 $area = decimalToSqMt($plotArea);
             $rentalRate = collect($this->_vacantRentalRates)->where('prop_road_type_id', $this->_readRoadType[$this->_effectiveDateRule3])
-                ->where('ulb_type_id', 1)
+                ->where('ulb_type_id', $this->_ulbType)
                 ->where('effective_date', $this->_effectiveDateRule3)
                 ->first();
 
@@ -1071,9 +1083,12 @@ class SafCalculation
         $calculatePropertyTax = $calculatePropertyTax * $readMatrixFactor;                                  // As Holding Tax
         $rwhPenalty = 0;
 
-        if ($this->_rwhPenaltyStatus == true) {
+        // Rain Water Harvesting Penalty
+        if ($this->_rwhPenaltyStatus == true)                                                               // RWH Applicable from 2017-2018
             $rwhPenalty = $calculatePropertyTax / 2;
-        }
+
+        if ($this->_rwhPenaltyStatus == false && $dateFrom < $this->_propertyDetails['rwhDateFrom'] && $this->_areaOfPlotInSqft > $this->_rwhAreaOfPlot)
+            $rwhPenalty = $calculatePropertyTax / 2;
 
         $totalTax = $calculatePropertyTax + $rwhPenalty;
         $onePercPenaltyTax = ($totalTax * $onePercPenalty) / 100;                                           // One Percent Penalty
@@ -1151,7 +1166,7 @@ class SafCalculation
         $this->_GRID['demand']['adjustAmount'] = 0;
         $this->_GRID['demand']['totalDemand'] = roundFigure($totalDemandAmount);
         $totalDemand = $this->_GRID['demand']['totalDemand'];
-        $this->_GRID['demand']['payableAmount'] = round($totalDemand);
+        $this->_GRID['demand']['payableAmount'] = round($totalDemand, 2);
     }
 
     /**

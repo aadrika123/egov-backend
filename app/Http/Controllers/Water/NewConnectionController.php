@@ -701,6 +701,7 @@ class NewConnectionController extends Controller
             "applicationId" => "required|numeric",
             "document" => "required|mimes:pdf,jpeg,png,jpg,gif",
             "docCode" => "required",
+            "docCategory" => "required|string",  # here
             "ownerId" => "nullable|numeric"
         ]);
 
@@ -719,17 +720,18 @@ class NewConnectionController extends Controller
             $imageName = $docUpload->upload($refImageName, $document, $relativePath);
 
             $metaReqs = [
-                'moduleId' => $refmoduleId,
-                'activeId' => $getWaterDetails->id,
-                'workflowId' => $getWaterDetails->workflow_id,
-                'ulbId' => $getWaterDetails->ulb_id,
-                'relativePath' => $relativePath,
-                'document' => $imageName,
-                'docCode' => $req->docCode,
-                'ownerDtlId' => $req->ownerId,
+                'module_id'     => $refmoduleId,
+                'active_id'     => $getWaterDetails->id,
+                'workflow_id'   => $getWaterDetails->workflow_id,
+                'ulb_id'        => $getWaterDetails->ulb_id,
+                'relative_path' => $relativePath,
+                'document'      => $imageName,
+                'doc_code'      => $req->docCode,
+                'owner_dtl_id'  => $req->ownerId,
+                'doc_category'  => $req->docCategory
             ];
 
-            $ifDocExist = $mWfActiveDocument->ifDocExists($getWaterDetails->id, $getWaterDetails->workflow_id, $refmoduleId, $req->docCode, $req->ownerId);   // Checking if the document is already existing or not
+            $ifDocExist = $mWfActiveDocument->ifDocExists($getWaterDetails->id, $getWaterDetails->workflow_id, $refmoduleId, $req->docCode, $req->docCategory, $req->ownerId);   // Checking if the document is already existing or not
             $metaReqs = new Request($metaReqs);
             if (collect($ifDocExist)->isEmpty())
                 $mWfActiveDocument->postDocuments($metaReqs);
