@@ -162,13 +162,12 @@ class SafDocController extends Controller
             "applicationId" => "required|numeric",
             "document" => "required|mimes:pdf,jpeg,png,jpg,gif",
             "docCode" => "required",
+            "docCategory" => "required|string",
             "ownerId" => "nullable|numeric"
         ]);
 
         try {
             // Variable Assignments
-            $preCondition = $this->checkFullDocUpload($req->applicationId);                         // Pre Condition to Upload Document
-
             $metaReqs = array();
             $docUpload = new DocUpload;
             $mWfActiveDocument = new WfActiveDocument();
@@ -183,30 +182,27 @@ class SafDocController extends Controller
             $document = $req->document;
             $imageName = $docUpload->upload($refImageName, $document, $relativePath);
 
-            $metaReqs['moduleId'] = $propModuleId;
-            $metaReqs['activeId'] = $getSafDtls->id;
-            $metaReqs['workflowId'] = $getSafDtls->workflow_id;
-            $metaReqs['ulbId'] = $getSafDtls->ulb_id;
-            $metaReqs['relativePath'] = $relativePath;
+            $metaReqs['module_id'] = $propModuleId;
+            $metaReqs['active_id'] = $getSafDtls->id;
+            $metaReqs['workflow_id'] = $getSafDtls->workflow_id;
+            $metaReqs['ulb_id'] = $getSafDtls->ulb_id;
+            $metaReqs['relative_path'] = $relativePath;
             $metaReqs['document'] = $imageName;
-            $metaReqs['docCode'] = $req->docCode;
+            $metaReqs['doc_code'] = $req->docCode;
+            $metaReqs['doc_category'] = $req->docCategory;
 
             if ($req->docCode == 'PHOTOGRAPH') {
-                $metaReqs['verifyStatus'] = 1;
+                $metaReqs['verify_status'] = 1;
             }
 
-            $metaReqs['ownerDtlId'] = $req->ownerId;
-            $ifDocExist = $mWfActiveDocument->ifDocExists($getSafDtls->id, $getSafDtls->workflow_id, $propModuleId, $req->docCode, $req->ownerId);   // Checking if the document is already existing or not
+            $metaReqs['owner_dtl_id'] = $req->ownerId;
+            $ifDocCategoryExist = $mWfActiveDocument->isDocCategoryExists($getSafDtls->id, $getSafDtls->workflow_id, $propModuleId, $req->docCategory, $req->ownerId);   // Checking if the document is already existing or not
+            DB::beginTransaction();
+            if (collect($ifDocCategoryExist)->isEmpty())
+                $mWfActiveDocument->store($metaReqs);           // Store New Document
 
-            $metaReqs = new Request($metaReqs);
-            if (collect($ifDocExist)->isEmpty())
-                $mWfActiveDocument->postDocuments($metaReqs);
-
-            if (collect($ifDocExist)->isNotEmpty()) {
-                $mWfActiveDocument->postDocuments($metaReqs);
-                $mWfActiveDocument->editDocuments($ifDocExist, [
-                    'status' => 0
-                ]);
+            if (collect($ifDocCategoryExist)->isNotEmpty()) {
+                $mWfActiveDocument->edit($ifDocCategoryExist, $metaReqs);       // Update Existing Document
             }
 
             $docUploadStatus = $this->checkFullDocUpload($req->applicationId);
@@ -214,8 +210,10 @@ class SafDocController extends Controller
                 $getSafDtls->doc_upload_status = 1;                                             // Doc Upload Status Update
                 $getSafDtls->save();
             }
+            DB::commit();
             return responseMsgs(true, "Document Uploadation Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
+            DB::rollBack();
             return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
