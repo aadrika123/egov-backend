@@ -18,6 +18,7 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Pipeline\Pipeline;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
@@ -37,6 +38,11 @@ class PropertyController extends Controller
         try {
             $mPropOwner = new PropOwner();
             $ThirdPartyController = new ThirdPartyController();
+            $propertyModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $waterModuleId = Config::get('module-constants.WATER_MODULE_ID');
+            $tradeModuleId = Config::get('module-constants.TRADE_MODULE_ID');
+            if ($req->moduleId == $propertyModuleId) {
+            }
             $propDtl = app(Pipeline::class)
                 ->send(PropProperty::query()->where('status', 1))
                 ->through([
