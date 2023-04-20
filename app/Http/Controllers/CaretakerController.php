@@ -9,6 +9,7 @@ use App\Models\Water\WaterConsumer;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 /**
  * | Created On-19-04-2022 
@@ -25,22 +26,25 @@ class CaretakerController extends Controller
         try {
             $mWaterApprovalApplicant = new WaterApprovalApplicant();
             $ThirdPartyController = new ThirdPartyController();
-            $waterDtl = WaterConsumer::where('consumer_no', $req->consumerNo)
-                ->first();
+            $mWaterConsumer = new WaterConsumer();
 
+            $waterDtl = $mWaterConsumer->getConsumerByNo($req->consumerNo);
             if (!isset($waterDtl))
-                throw new Exception('No Water Connection Not Found');
+                throw new Exception('Water Connection Not Found!');
+
             $approveApplicant = $mWaterApprovalApplicant->getOwnerDtlById($waterDtl->apply_connection_id);
             $applicantMobile = $approveApplicant->mobile_no;
 
             $myRequest = new \Illuminate\Http\Request();
             $myRequest->setMethod('POST');
             $myRequest->request->add(['mobileNo' => $applicantMobile]);
-            $response = $ThirdPartyController->sendOtp($myRequest);
+            $otpResponse = $ThirdPartyController->sendOtp($myRequest);
 
-            $response = collect($response)->toArray();
-            $data['otp'] = $response['original']['data'];
-            $data['mobileNo'] = $applicantMobile;
+            $response = collect($otpResponse)->toArray();
+            $data = [
+                'otp' => $response['original']['data'],
+                'mobileNo' => $applicantMobile
+            ];
 
             return responseMsgs(true, "OTP send successfully", $data, '', '01', '623ms', 'Post', '');
         } catch (Exception $e) {
@@ -55,28 +59,39 @@ class CaretakerController extends Controller
     {
         $req->validate([
             'consumerNo' => 'required|max:255',
+            'otp' => 'required|digits:6'
         ]);
         try {
             $userId = authUser()->id;
             $mWaterApprovalApplicant = new WaterApprovalApplicant();
-            $activeCitizenUndecare = new ActiveCitizenUndercare();
-            $activeCitizen = ActiveCitizen::find($userId);
+            $mActiveCitizenUndercare = new ActiveCitizenUndercare();
+            $mWaterConsumer = new WaterConsumer();
+            $ThirdPartyController = new ThirdPartyController();
 
-            $waterDtl = WaterConsumer::where('consumer_no', $req->consumerNo)
-                ->first();
-
+            DB::beginTransaction();
+            $waterDtl = $mWaterConsumer->getConsumerByNo($req->consumerNo);
             if (!isset($waterDtl))
-                throw new Exception('No Water Connection Not Found');
+                throw new Exception('Water Connection Not Found!');
             $approveApplicant = $mWaterApprovalApplicant->getOwnerDtlById($waterDtl->apply_connection_id);
 
-            $activeCitizenUndecare->consumer_id = $waterDtl->id;
-            $activeCitizenUndecare->date_of_attachment = Carbon::now();
-            $activeCitizenUndecare->mobile_no = $approveApplicant->mobile_no;
-            $activeCitizenUndecare->citizen_id = $userId;
-            $activeCitizenUndecare->save();
+            $myRequest = new \Illuminate\Http\Request();
+            $myRequest->setMethod('POST');
+            $myRequest->request->add(['mobileNo' => $approveApplicant->mobile_no]);
+            $myRequest->request->add(['otp' => $req->otp]);
+            $otpReturnData = $ThirdPartyController->verifyOtp($myRequest);
+            $verificationStatus = collect($otpReturnData)['original']['status'];
+            if ($verificationStatus == false)
+                throw new Exception("otp Not Validated!");
 
+            $existingData = $mActiveCitizenUndercare->getDetailsForUnderCare($userId, $waterDtl->id);
+            if (!isset($existingData))
+                throw new Exception("ConsumerNo caretaker already exist!");
+
+            $mActiveCitizenUndercare->saveCaretakeDetails($waterDtl->id, $approveApplicant->mobile_no, $userId);
+            DB::commit();
             return responseMsgs(true, "Cosumer Succesfully Attached!", '', '', '01', '623ms', 'Post', '');
         } catch (Exception $e) {
+            DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
     }
