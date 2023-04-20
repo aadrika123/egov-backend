@@ -1069,14 +1069,14 @@ class SafCalculation
                 $readMatrixFactor = $rentalRates->rate;                                                     // (Matrix Factor as Rental Rate)
             } else
                 $readMatrixFactor = 1;                      // (Matrix Factor for the Type of Floors which is not Residential)
-        }
 
-        // Condition for the Institutional or Educational Trust 
-        if (isset($this->_isTrust) && $this->_isTrust == true && $this->_isTrustVerified == true) {
-            $paramOccupancyFactor = 1;
-            $taxPerc = 0.15;
-            $readCalculationFactor = ($this->_trustType == 1) ? 0.25 : 0.50;
-            $readMatrixFactor = 1;
+            // Condition for the Institutional or Educational Trust 
+            if (isset($this->_isTrust) && $this->_isTrust == true && $this->_isTrustVerified == true && $readUsageType != 10) {
+                $paramOccupancyFactor = 1;
+                $taxPerc = 0.15;
+                $readCalculationFactor = ($this->_trustType == 1) ? 0.25 : 0.50;
+                $readMatrixFactor = 1;
+            }
         }
 
         $calculatePropertyTax = ($readCircleRate * $readBuildupArea * $paramOccupancyFactor * $taxPerc * (float)$readCalculationFactor) / 100;
