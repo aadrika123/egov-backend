@@ -10,6 +10,7 @@ use App\Models\Property\PropProperty;
 use App\Models\Property\PropSafsDemand;
 use App\Models\Property\PropTransaction;
 use App\Traits\Property\SAF;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 
@@ -36,7 +37,7 @@ class TcVerificationDemandAdjust
     public $_propAdvDemand;
     public $_mPropAdvance;
     private $_mPropTransactions;
-    private $_tcId;
+    protected $_tcId;
 
     public function __construct()
     {
@@ -115,10 +116,14 @@ class TcVerificationDemandAdjust
             "floor" => $floors,
             "isTrust" => $activeSafDtls->is_trust,
             "trustType" => $activeSafDtls->trust_type,
-            "isTrustVerified" => $activeSafDtls->is_trust_verified
+            "isTrustVerified" => $activeSafDtls->is_trust_verified,
+            "rwhDateFrom" => $activeSafDtls->rwh_date_from
+
         ];
         $calculationReq = new Request($calculationReq);
         $calculation = $this->_safCalculation->calculateTax($calculationReq);
+        if ($calculation->original['status'] == false)
+            throw new Exception($calculation->original['message']);
         $calculation = $calculation->original['data'];
         $demandDetails = $calculation['details'];
         $quaterlyTax = $this->generateSafDemand($demandDetails);
