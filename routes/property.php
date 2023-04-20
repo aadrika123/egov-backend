@@ -463,7 +463,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('reports/not-paid-from-2016', 'notPaidFrom2016');       //done
     Route::post('reports/previous-year-paid-not-current-year', 'previousYearPaidButnotCurrentYear'); //done
     Route::post('reports/dcb-piechart', 'dcbPieChart');                                             //done
-    Route::post('reports/prop/saf/collection', 'propSafCollection');                                             //done
+    Route::post('reports/prop/saf/collection', 'propSafCollection');                          //done
+    Route::post('reports/rebate/penalty', 'rebateNpenalty');
 
     Route::post('reports/property/payment-mode-wise-summery', 'PropPaymentModeWiseSummery'); //done
     Route::post('reports/saf/payment-mode-wise-summery', 'SafPaymentModeWiseSummery');       //done
@@ -471,6 +472,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('reports/property/ward-wise-dcb', 'PropWardWiseDCB');                       //done
     Route::post('reports/property/holding-wise-fine-rebate', 'PropFineRebate');             //done
     Route::post('reports/property/deactivated-list', 'PropDeactedList');                    //done
+
   });
 });
 

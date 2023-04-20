@@ -12,6 +12,24 @@ class WfActiveDocument extends Model
     use HasFactory;
     protected $guarded = [];
 
+
+
+    /**
+     * | Store Wf Active Documents
+     */
+    public function store(array $req)
+    {
+        WfActiveDocument::create($req);
+    }
+
+    /**
+     * | Edit Wf Active Documents
+     */
+    public function edit($wfActiveDocument, array $req)
+    {
+        $wfActiveDocument->update($req);
+    }
+
     /**
      * | Meta Request function for updation and post the request
      */
@@ -29,6 +47,7 @@ class WfActiveDocument extends Model
             "remarks" => $req->remarks ?? null,
             "doc_code" => $req->docCode,
             "owner_dtl_id" => $req->ownerDtlId,
+            "doc_category" => $req->docCategory ?? null
         ];
     }
 
@@ -58,12 +77,28 @@ class WfActiveDocument extends Model
     /**
      * | Check if the document is already existing or not
      */
-    public function ifDocExists($activeId, $workflowId, $moduleId, $docCode, $ownerId = null)
+    public function ifDocExists($activeId, $workflowId, $moduleId, $docCode, $docCategory, $ownerId = null)
     {
         return WfActiveDocument::where('active_id', $activeId)
             ->where('workflow_id', $workflowId)
             ->where('module_id', $moduleId)
             ->where('doc_code', $docCode)
+            ->where('doc_category', $docCategory)
+            ->where('owner_dtl_id', $ownerId)
+            ->where('verify_status', 0)
+            ->where('status', 1)
+            ->first();
+    }
+
+    /**
+     * | Check if the Doc Category already Existing or not
+     */
+    public function isDocCategoryExists($activeId, $workflowId, $moduleId, $docCategory, $ownerId = null)
+    {
+        return WfActiveDocument::where('active_id', $activeId)
+            ->where('workflow_id', $workflowId)
+            ->where('module_id', $moduleId)
+            ->where('doc_category', $docCategory)
             ->where('owner_dtl_id', $ownerId)
             ->where('verify_status', 0)
             ->where('status', 1)

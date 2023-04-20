@@ -449,6 +449,7 @@ class PropProperty extends Model
         return PropProperty::select('id', 'new_holding_no', 'citizen_id')
             ->where('ulb_id', $ulbId)
             ->where('citizen_id', $citizenId)
+            ->orderByDesc('id')
             ->get();
     }
 
@@ -457,9 +458,10 @@ class PropProperty extends Model
      */
     public function getCitizenPtn($citizenId, $ulbId)
     {
-        return $data = PropProperty::select('id', 'pt_no', 'citizen_id')
+        return PropProperty::select('id', 'pt_no', 'citizen_id')
             ->where('ulb_id', $ulbId)
             ->where('citizen_id', $citizenId)
+            ->orderByDesc('id')
             ->get();
     }
 

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Property;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\ThirdPartyController;
 use App\Models\ActiveCitizen;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropOwner;
@@ -35,6 +36,7 @@ class PropertyController extends Controller
     {
         try {
             $mPropOwner = new PropOwner();
+            $ThirdPartyController = new ThirdPartyController();
             $propDtl = app(Pipeline::class)
                 ->send(PropProperty::query()->where('status', 1))
                 ->through([
@@ -50,16 +52,13 @@ class PropertyController extends Controller
             $firstOwner = collect($propOwners)->first();
             $ownerMobile = $firstOwner->mobileNo;
 
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $req->bearerToken(),
-                'Accept' => 'application/json',
-            ])->post('192.168.0.16:8000/api/user/send-otp', [
-                'mobileNo' => $ownerMobile,
-            ]);
+            $myRequest = new \Illuminate\Http\Request();
+            $myRequest->setMethod('POST');
+            $myRequest->request->add([ 'mobileNo' => $ownerMobile]);
+            $response = $ThirdPartyController->sendOtp($myRequest);
 
-            // $data = json_decode($response->getBody()->getContents(), true);
-
-            $data['otp'] = $response['data'];
+            $response = collect($response)->toArray();
+            $data['otp'] = $response['original']['data'];
             $data['mobileNo'] = $ownerMobile;
 
             return responseMsgs(true, "OTP send successfully", $data, '010801', '01', '623ms', 'Post', '');

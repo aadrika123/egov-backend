@@ -95,6 +95,7 @@ class WaterNewConnection implements IWaterNewConnection
                 "water_applications.ward_id",
                 "water_applications.workflow_id",
                 "water_applications.doc_upload_status",
+                "water_applications.apply_from",
                 "ulb_ward_masters.ward_name",
                 "charges.amount",
                 "wf_roles.role_name as current_role_name",

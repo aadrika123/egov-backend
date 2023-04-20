@@ -96,7 +96,6 @@ class  PropActiveSaf extends Model
             'location' => $req->location,
             'landmark' => $req->landmark,
             'is_gb_saf' => isset($req->isGBSaf) ? $req->isGBSaf : false,
-            'late_assess_penalty' => $req->lateAssessmentPenalty,
             'is_trust' => $req->isTrust ?? false,
             'trust_type' => $req->trustType ?? null
         ];
@@ -694,6 +693,7 @@ class  PropActiveSaf extends Model
         return PropActiveSaf::select('id', 'saf_no', 'citizen_id')
             ->where('citizen_id', $citizenId)
             ->where('ulb_id', $ulbId)
+            ->orderByDesc('id')
             ->get();
     }
 

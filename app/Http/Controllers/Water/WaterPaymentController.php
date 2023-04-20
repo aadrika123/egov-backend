@@ -1434,7 +1434,7 @@ class WaterPaymentController extends Controller
      * | @var 
      * | @return 
         | Serial No : 09
-        | Not Working
+        | Not Tested
      */
     public function generateDemandPaymentReceipt(Request $req)
     {
@@ -1539,18 +1539,22 @@ class WaterPaymentController extends Controller
      * | @param 
      * | @var
      * | @return 
-        | Not Working
-        | Recheck 
+        | Not tested
      */
     public function initiateOnlineDemandPayment(reqDemandPayment $request)
     {
         try {
             $refUser = Auth()->user();
             $waterModuleId = config::get('module-constants.WATER_MODULE_ID');
+            $paymentFor = Config::get('waterConstaint.PAYMENT_FOR');
+            $startingDate = Carbon::createFromFormat('Y-m-d',  $request->demandFrom)->startOfMonth();
+            $endDate = Carbon::createFromFormat('Y-m-d',  $request->demandUpto)->endOfMonth();
+            $startingDate = $startingDate->toDateString();
+            $endDate = $endDate->toDateString();
 
             #-------------------- Demand Collection --------------------#
             DB::beginTransaction();
-            $verifiedData = $this->checkOnlineDemandPayParam($request);
+            $refDetails = $this->preOfflinePaymentParams($request, $startingDate, $endDate);
 
             $myRequest = new \Illuminate\Http\Request();
             $myRequest->setMethod('POST');
@@ -1560,89 +1564,25 @@ class WaterPaymentController extends Controller
             $myRequest->request->add(['departmentId' => $waterModuleId]);
             $temp = $this->saveGenerateOrderid($myRequest);
 
-            $RazorPayRequest = new WaterRazorPayRequest;
-            $RazorPayRequest->related_id        = $request->consumerId;
-            $RazorPayRequest->payment_from      = "Demand Collection";
-            $RazorPayRequest->amount            = $request->amount;
-            $RazorPayRequest->demand_from_upto  = $request->demandFrom . "--" . $request->demandUpto;
-            $RazorPayRequest->ip_address        = $request->ip();
-            $RazorPayRequest->order_id          = $temp["orderId"];
-            $RazorPayRequest->department_id     = $temp["departmentId"];
-            $RazorPayRequest->save();
-
+            $mWaterRazorPayRequest = new WaterRazorPayRequest();
+            $mWaterRazorPayRequest->saveRequestData($request, $paymentFor['1'], $temp, $refDetails);
             DB::commit();
 
-            $temp['name']       = $refUser->user_name;
-            $temp['mobile']     = $refUser->mobile;
-            $temp['email']      = $refUser->email;
-            $temp['userId']     = $refUser->id;
-            $temp['ulbId']      = $refUser->ulb_id;
-            $temp["applycationType"] = $request->applycationType;
-            return responseMsg(true, "", $temp);
+            $temp = [
+                'name'               => $refUser->user_name,
+                'mobile'             => $refUser->mobile,
+                'email'              => $refUser->email,
+                'userId'             => $refUser->id,
+                'ulbId'              => $refUser->ulb_id,
+                "applycationType"    => $request->applycationType
+            ];
+
+            return responseMsgs(true, "", $temp, "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
+            DB::rollBack();
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "03", ".ms", "POST", $request->deviceId);
         }
     }
-
-
-    /**
-     * | Check the params before online payment
-     * | @param
-     * | @var
-     * | @return
-        | Serial No :
-        | Not Working
-     */
-    public function checkOnlineDemandPayParam($request)
-    {
-        $consumerId = $request->consumerId;
-        $refAmount = $request->amount;
-        $mWaterConsumerDemand = new WaterConsumerDemand();
-        $mWaterConsumer = new WaterConsumer();
-        $startingDate = Carbon::createFromFormat('Y-m-d',  $request->demandFrom)->startOfMonth();
-        $endDate = Carbon::createFromFormat('Y-m-d',  $request->demandUpto)->endOfMonth();
-        $startingDate = $startingDate->toDateString();
-        $endDate = $endDate->toDateString();
-
-        if ($startingDate > $endDate) {
-            throw new Exception("demandFrom Date should not be grater than demandUpto date!");
-        }
-        $refConsumer = $mWaterConsumer->getConsumerDetailById($consumerId);
-        if (!$refConsumer) {
-            throw new Exception("Consumer Not Found!");
-        }
-        $allCharges = $mWaterConsumerDemand->getFirstConsumerDemand($consumerId)
-            ->where('demand_from', '>=', $startingDate)
-            ->where('demand_upto', '<=', $endDate)
-            ->get();
-        $checkCharges = collect($allCharges)->last();
-        if (!$checkCharges->id || is_null($checkCharges)) {
-            throw new Exception("Charges for respective date doesn't exist!......");
-        }
-        # Call Part
-        $totalPaymentAmount = (collect($allCharges)->sum('balance_amount'));
-        if ($totalPaymentAmount != $refAmount) {
-            throw new Exception("amount Not Matched!");
-        }
-        $totalgeneratedDemand = collect($allCharges)->sum('amount');
-        $totalPenalty = collect($allCharges)->sum('penalty');
-        $refgeneratedDemand = $refAmount - $totalPenalty;
-        if ($refgeneratedDemand != $totalgeneratedDemand) {
-            throw new Exception("penally Not matched!");
-        }
-        # checking the advance anount 
-        $allunpaidCharges = $mWaterConsumerDemand->getFirstConsumerDemand($consumerId)
-            ->get();
-        $leftAmount = (collect($allunpaidCharges)->sum('balance_amount') - collect($allCharges)->sum('balance_amount'));
-
-        $returnData = [
-            "consumer"          => $refConsumer,
-            "consumerChages"    => $allCharges,
-            "leftDemandAmount"  => $leftAmount,
-        ];
-        return $returnData;
-    }
-
 
     /**
      * | Online Payment for the consumer Demand
@@ -1652,12 +1592,12 @@ class WaterPaymentController extends Controller
         | Recheck / Not Working
         | clear the concept
      */
-    // public function endOnlineDemandPayment($args)
+    // public function endOnlineDemandPayment($webhookData)
     // {
     //     try {
     //         $refUser        = Auth()->user();
-    //         $refUserId      = $refUser->id ?? $args["userId"];
-    //         $refUlbId       = $refUser->ulb_id ?? $args["ulbId"];
+    //         $refUserId      = $refUser->id ?? $webhookData["userId"];
+    //         $refUlbId       = $refUser->ulb_id ?? $webhookData["ulbId"];
     //         $mNowDate       = Carbon::now()->format('Y-m-d');
     //         $mTimstamp      = Carbon::now()->format('Y-m-d H:i:s');
     //         $cahges         = null;
@@ -1666,16 +1606,13 @@ class WaterPaymentController extends Controller
     //         $mDemands       = (array)null;
 
     //         #-----------valication------------------- 
-    //         $RazorPayRequest = WaterRazorPayRequest::select("*")
-    //             ->where("order_id", $args["orderId"])
-    //             ->where("related_id", $args["id"])
-    //             ->where("status", 2)
-    //             ->first();
+    //         $mWaterRazorPayRequest = new WaterRazorPayRequest();
+    //         $RazorPayRequest = $mWaterRazorPayRequest->checkRequest($webhookData)->first();
     //         if (!$RazorPayRequest) {
-    //             throw new Exception("Data Not Found");
+    //             throw new Exception("Data Not Found!");
     //         }
     //         if ($RazorPayRequest->payment_from == "Demand Collection") {
-    //             $application = WaterConsumer::find($args["id"]);
+    //             $application = WaterConsumer::find($webhookData["id"]);
     //             $cahges = 0;
     //             $id = explode(",", $RazorPayRequest->demand_from_upto);
     //             if ($id) {
@@ -1691,11 +1628,11 @@ class WaterPaymentController extends Controller
     //         if (!$application) {
     //             throw new Exception("Application Not Found!......");
     //         }
-    //         $applicationId = $args["id"];
+    //         $applicationId = $webhookData["id"];
     //         #-----------End valication----------------------------
 
     //         #-------------Calculation----------------------------- 
-    //         if (!$chargeData || round($args['amount']) != round($chargeData['total_charge'])) {
+    //         if (!$chargeData || round($webhookData['amount']) != round($chargeData['total_charge'])) {
     //             throw new Exception("Payble Amount Missmatch!!!");
     //         }
 
@@ -1709,10 +1646,10 @@ class WaterPaymentController extends Controller
     //         $RazorPayResponse = new WaterRazorPayResponse();
     //         $RazorPayResponse->related_id   = $RazorPayRequest->related_id;
     //         $RazorPayResponse->request_id   = $RazorPayRequest->id;
-    //         $RazorPayResponse->amount       = $args['amount'];
-    //         $RazorPayResponse->merchant_id  = $args['merchantId'] ?? null;
-    //         $RazorPayResponse->order_id     = $args["orderId"];
-    //         $RazorPayResponse->payment_id   = $args["paymentId"];
+    //         $RazorPayResponse->amount       = $webhookData['amount'];
+    //         $RazorPayResponse->merchant_id  = $webhookData['merchantId'] ?? null;
+    //         $RazorPayResponse->order_id     = $webhookData["orderId"];
+    //         $RazorPayResponse->payment_id   = $webhookData["paymentId"];
     //         $RazorPayResponse->save();
 
     //         $RazorPayRequest->status = 1;
@@ -1731,7 +1668,7 @@ class WaterPaymentController extends Controller
     //         $Tradetransaction->ulb_id           = $refUlbId;
     //         $Tradetransaction->save();
     //         $transaction_id                     = $Tradetransaction->id;
-    //         $Tradetransaction->tran_no          = $args["transactionNo"];
+    //         $Tradetransaction->tran_no          = $webhookData["transactionNo"];
     //         $Tradetransaction->update();
 
     //         foreach ($mDemands as $val) {
@@ -1758,7 +1695,7 @@ class WaterPaymentController extends Controller
     //         return responseMsg(true, "", $res);
     //     } catch (Exception $e) {
     //         DB::rollBack();
-    //         return responseMsg(false, $e->getMessage(), $args);
+    //         return responseMsg(false, $e->getMessage(), $webhookData);
     //     }
     // }
 }
