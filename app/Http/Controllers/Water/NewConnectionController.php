@@ -12,6 +12,7 @@ use App\Models\Property\PropActiveObjection;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropActiveSafsOwner;
+use App\Models\Property\PropApartmentDtl;
 use App\Models\Property\PropFloor;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
@@ -960,41 +961,57 @@ class NewConnectionController extends Controller
             'ulbId' => 'required'
         ]);
         try {
+            $mPropProperty = new PropProperty();
+            $mPropOwner = new PropOwner();
+            $mPropFloor = new PropFloor();
+            $mPropActiveSafOwners = new PropActiveSafsOwner();
+            $mPropActiveSafsFloor = new PropActiveSafsFloor();
+            $mPropActiveSaf = new PropActiveSaf();
             $key = $request->connectionThrough;
             $refTenanted = Config::get('PropertyConstaint.OCCUPANCY-TYPE.TENANTED');
+
             switch ($key) {
                 case ("1"):
-                    $mPropProperty = new PropProperty();
-                    $mPropOwner = new PropOwner();
-                    $mPropFloor = new PropFloor();
                     $application = collect($mPropProperty->getPropByHolding($request->id, $request->ulbId));
                     $checkExist = collect($application)->first();
-                    if ($checkExist) {
-                        $areaInSqft['areaInSqFt'] = decimalToSqFt($application['total_area_in_desimal']);
-                        $propUsageType = $this->getPropUsageType($request, $application['id']);
-                        $occupancyOwnerType = collect($mPropFloor->getOccupancyType($application['id'], $refTenanted));
-                        $owners['owners'] = collect($mPropOwner->getOwnerByPropId($application['id']));
-                        $details = $application->merge($areaInSqft)->merge($owners)->merge($occupancyOwnerType)->merge($propUsageType);
-                        return responseMsgs(true, "related Details!", $details, "", "", "", "POST", "");
+                    if (!$checkExist) {
+                        throw new Exception("Data According to Holding Not Found!");
                     }
-                    throw new Exception("Data According to Holding Not Found!");
+                    if (isset($application['apartment_details_id'])) {
+                        $appartmentData = $this->getAppartmentDetails($key, $application);
+                        return responseMsgs(true, "related Details!", $appartmentData, "", "", "", "POST", "");
+                        break;
+                    }
+                    # collecting all data 
+                    $floorDetails = $mPropFloor->getFloorsByPropId($application['id']);
+                    $builtupArea = collect($floorDetails)->sum('builtup_area');
+                    $areaInSqft['areaInSqFt'] = $builtupArea;
+                    $propUsageType = $this->getPropUsageType($request, $application['id']);
+                    $occupancyOwnerType = collect($mPropFloor->getOccupancyType($application['id'], $refTenanted));
+                    $owners['owners'] = collect($mPropOwner->getOwnerByPropId($application['id']));
+
+                    # merge all data for return 
+                    $details = $application->merge($areaInSqft)->merge($owners)->merge($occupancyOwnerType)->merge($propUsageType);
+                    return responseMsgs(true, "related Details!", $details, "", "", "", "POST", "");
                     break;
 
                 case ("2"):
-                    $mPropActiveSafOwners = new PropActiveSafsOwner();
-                    $mPropActiveSafsFloor = new PropActiveSafsFloor();
-                    $mPropActiveSaf = new PropActiveSaf();
                     $application = collect($mPropActiveSaf->getSafDtlBySafUlbNo($request->id, $request->ulbId));
                     $checkExist = collect($application)->first();
-                    if ($checkExist) {
-                        $areaInSqft['areaInSqFt'] = decimalToSqFt($application['total_area_in_desimal']);
-                        $safUsageType = $this->getPropUsageType($request, $application['id']);
-                        $occupancyOwnerType = collect($mPropActiveSafsFloor->getOccupancyType($application['id'], $refTenanted));
-                        $owners['owners'] = collect($mPropActiveSafOwners->getOwnerDtlsBySafId($application['id']));
-                        $details = $application->merge($areaInSqft)->merge($owners)->merge($occupancyOwnerType)->merge($safUsageType);
-                        return responseMsgs(true, "related Details!", $details, "", "", "", "POST", "");
+                    if (!$checkExist) {
+                        throw new Exception("Data According to SAF Not Found!");
                     }
-                    throw new Exception("Data According to SAF Not Found!");
+                    if (isset($application['apartment_details_id'])) {
+                        $appartmentData = $this->getAppartmentDetails($request, $application);
+                        return responseMsgs(true, "related Details!", $appartmentData, "", "", "", "POST", "");
+                        break;
+                    }
+                    $areaInSqft['areaInSqFt'] = decimalToSqFt($application['total_area_in_desimal']);
+                    $safUsageType = $this->getPropUsageType($request, $application['id']);
+                    $occupancyOwnerType = collect($mPropActiveSafsFloor->getOccupancyType($application['id'], $refTenanted));
+                    $owners['owners'] = collect($mPropActiveSafOwners->getOwnerDtlsBySafId($application['id']));
+                    $details = $application->merge($areaInSqft)->merge($owners)->merge($occupancyOwnerType)->merge($safUsageType);
+                    return responseMsgs(true, "related Details!", $details, "", "", "", "POST", "");
                     break;
             }
         } catch (Exception $e) {
@@ -1011,11 +1028,8 @@ class NewConnectionController extends Controller
         $refPropertyTypeId = config::get('waterConstaint.PROPERTY_TYPE');
         switch ($request->connectionThrough) {
             case ('1'):
-                // $porpDetails = $this->checkPropInfo($request, $id);
-                // if ($porpDetails == false) {
                 $mPropFloor = new PropFloor();
                 $usageCatagory = $mPropFloor->getPropUsageCatagory($id);
-                // }
                 break;
             case ('2'):
                 $mPropActiveSafsFloor = new PropActiveSafsFloor();
@@ -1065,6 +1079,81 @@ class NewConnectionController extends Controller
         });
         $returnData['usageType'] = $usage->unique()->values();
         return $returnData;
+    }
+
+    /**
+     * | Get appartment details 
+     * | @param propData
+     * | @param request
+     */
+    public function getAppartmentDetails($key, $propData)
+    {
+        $mPropFloor = new PropFloor();
+        $mPropProperty = new PropProperty();
+        $mPropOwner = new PropOwner();
+        $mPropActiveSaf = new PropActiveSaf();
+        $mPropActiveSafsFloor = new PropActiveSafsFloor();
+        $mPropActiveSafsOwner = new PropActiveSafsOwner();
+        $refPropertyTypeId = Config::get('waterConstaint.PROPERTY_TYPE');
+        $mPropApartmentDtl = new PropApartmentDtl();
+        $apartmentId = $propData['apartment_details_id'];
+        $apartmentDetails = $mPropApartmentDtl->getApartmentById($apartmentId);
+
+        switch ($key) {
+            case ('1'):
+                $propertyDetails = $mPropProperty->getPropByApartmentId($apartmentId)->get();
+                $propertyIds = collect($propertyDetails)->pluck('id');
+                $floorDetails = $mPropFloor->getAppartmentFloor($propertyIds)->get();
+                $totalBuildupArea = collect($floorDetails)->sum('builtup_area');
+                $returnData =  [
+                    'ward_mstr_id'      =>  collect($propertyDetails)->pluck('ward_mstr_id')->unique()->filter()->values()->first(),
+                    'new_ward_mstr_id'  =>  collect($propertyDetails)->pluck('new_ward_mstr_id')->unique()->filter()->values()->first(),
+                    'prop_address'      =>  $apartmentDetails->apartment_address,
+                    'corr_address'      =>  collect($propertyDetails)->pluck('corr_address')->unique()->filter()->values(),
+                    'old_ward_no'       =>  collect($propertyDetails)->pluck('old_ward_no')->unique()->filter()->values()->first(),
+                    'new_ward_no'       =>  collect($propertyDetails)->pluck('new_ward_no')->unique()->filter()->values()->first(),
+                    'holding_no'        =>  collect($propertyDetails)->pluck('holding_no')->unique()->filter()->values(),
+                    'new_holding_no'    =>  collect($propertyDetails)->pluck('new_holding_no')->unique()->filter()->values(),
+                    'prop_pin_code'     =>  collect($propertyDetails)->pluck('prop_pin_code')->unique()->filter()->values()->first(),
+                    'corr_pin_code'     =>  collect($propertyDetails)->pluck('corr_pin_code')->unique()->filter()->values()->first(),
+                ];
+                $returnData['areaInSqFt'] = $totalBuildupArea;
+                $returnData['usageType'][] = [
+                    'id'        => $refPropertyTypeId['Apartment'],
+                    'usageType' => 'Apartment'
+                ];
+                $returnData['tenanted'] = false;
+                $returnData['owners'] = $mPropOwner->getOwnerByPropIds($propertyIds);
+                return $returnData;
+                break;
+
+            case ('2'):
+                $safDetails = $mPropActiveSaf->getSafByApartmentId($apartmentId)->get(); # here
+                $safIds = collect($safDetails)->pluck('id');
+                $floorDetails = $mPropActiveSafsFloor->getSafAppartmentFloor($safIds)->get();
+                $totalBuildupArea = collect($floorDetails)->sum('builtup_area');
+                $returnData =  [
+                    'ward_mstr_id'      =>  collect($safDetails)->pluck('ward_mstr_id')->unique()->filter()->values()->first(),
+                    'new_ward_mstr_id'  =>  collect($safDetails)->pluck('new_ward_mstr_id')->unique()->filter()->values()->first(),
+                    'prop_address'      =>  $apartmentDetails->apartment_address,
+                    'corr_address'      =>  collect($safDetails)->pluck('corr_address')->unique()->filter()->values(),
+                    'old_ward_no'       =>  collect($safDetails)->pluck('old_ward_no')->unique()->filter()->values(),
+                    'new_ward_no'       =>  collect($safDetails)->pluck('new_ward_no')->unique()->filter()->values(),
+                    'holding_no'        =>  collect($safDetails)->pluck('holding_no')->unique()->filter()->values(),
+                    'new_holding_no'    =>  collect($safDetails)->pluck('new_holding_no')->unique()->filter()->values(),
+                    'prop_pin_code'     =>  collect($safDetails)->pluck('prop_pin_code')->unique()->filter()->values(),
+                    'corr_pin_code'     =>  collect($safDetails)->pluck('corr_pin_code')->unique()->filter()->values(),
+                ];
+                $returnData['areaInSqFt'] = $totalBuildupArea;
+                $returnData['usageType'][] = [
+                    'id'        => $refPropertyTypeId['Apartment'],
+                    'usageType' => 'Apartment'
+                ];
+                $returnData['tenanted'] = false;
+                $returnData['owners'] = $mPropActiveSafsOwner->getOwnerDtlsBySafIds($safIds);
+                return $returnData;
+                break;
+        }
     }
 
     /**

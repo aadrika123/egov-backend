@@ -29,7 +29,9 @@ return [
         "Industrial" => "6",
         "Government" => "3",
         "Commercial" => "2",
-        "Institutional" => "4"
+        "Institutional" => "4",
+        "Apartment" => "7",
+        "Multi Stored Unit" => "8"
     ],
 
     "DESMIL_TO_SQFT" => 435.6,

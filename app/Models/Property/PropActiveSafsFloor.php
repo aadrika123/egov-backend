@@ -70,6 +70,7 @@ class PropActiveSafsFloor extends Model
         )
             ->join('ref_prop_usage_types', 'ref_prop_usage_types.id', '=', 'prop_active_safs_floors.usage_type_mstr_id')
             ->where('saf_id', $safId)
+            ->where('ref_prop_usage_types.status', 1)
             ->orderByDesc('ref_prop_usage_types.id')
             ->get();
     }
@@ -122,5 +123,16 @@ class PropActiveSafsFloor extends Model
         $floor->prop_floor_details_id = $req['propFloorDetailId'] ?? null;
         $floor->user_id = $userId;
         $floor->save();
+    }
+
+    /**
+     * | 
+     */
+    public function getSafAppartmentFloor($safIds)
+    {
+        return PropActiveSafsFloor::select('prop_active_safs_floors.*')
+            ->whereIn('prop_active_safs_floors.saf_id', $safIds)
+            ->where('prop_active_safs_floors.status', 1)
+            ->orderByDesc('id');
     }
 }

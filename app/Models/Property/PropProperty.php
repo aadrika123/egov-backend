@@ -141,6 +141,7 @@ class PropProperty extends Model
             'prop_properties.corr_pin_code',
             'prop_properties.prop_address',
             'prop_properties.corr_address',
+            'prop_properties.apartment_details_id',
             'prop_properties.area_of_plot as total_area_in_desimal',
             'ulb_ward_masters.ward_name as old_ward_no',
             'u.ward_name as new_ward_no',
@@ -169,6 +170,7 @@ class PropProperty extends Model
             'prop_properties.corr_pin_code',
             'prop_properties.prop_address',
             'prop_properties.corr_address',
+            'prop_properties.apartment_details_id',
             'prop_properties.area_of_plot as total_area_in_desimal',
             'ulb_ward_masters.ward_name as old_ward_no',
             'u.ward_name as new_ward_no',
@@ -559,5 +561,23 @@ class PropProperty extends Model
             ->update([
                 'status' => 0
             ]);
+    }
+
+    /**
+     * | Get property details under the respective appartment id
+     * | @param apartmentId
+     */
+    public function getPropByApartmentId($apartmentId)
+    {
+        return PropProperty::select(
+            'prop_properties.*',
+            'ulb_ward_masters.ward_name AS old_ward_no',
+            'u.ward_name AS new_ward_no'
+        )
+            ->join('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'prop_properties.ward_mstr_id')
+            ->leftJoin('ulb_ward_masters as u', 'u.id', '=', 'prop_properties.new_ward_mstr_id')
+            ->where('prop_properties.apartment_details_id', $apartmentId)
+            ->where('prop_properties.status', 1)
+            ->orderByDesc('id');
     }
 }
