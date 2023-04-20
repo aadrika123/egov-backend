@@ -1375,7 +1375,7 @@ class ActiveSafController extends Controller
         try {
             $safDtls = PropActiveSaf::findOrFail($req->id);
 
-            if (in_array($safDtls->assessment_type, ['New Assessment', 'Reassessment', 'Re Assessment']))
+            if (in_array($safDtls->assessment_type, ['New Assessment', 'Reassessment', 'Re Assessment', 'Mutation']))
                 $req = $req->merge(['holdingNo' => $safDtls->holding_no]);
 
             $calculateSafById = new CalculateSafById;

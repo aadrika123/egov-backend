@@ -133,4 +133,23 @@ class PropActiveSafsOwner extends Model
         $owner->user_id = $citizenId;
         $owner->save();
     }
+
+     /**
+     * | Get Owner Dtls by Saf Id
+     */
+    public function getOwnerDtlsBySafIds($safIds)
+    {
+        return PropActiveSafsOwner::whereIn('saf_id', $safIds)
+            ->select(
+                'owner_name',
+                'mobile_no',
+                'guardian_name',
+                'email',
+                'is_armed_force',
+                'is_specially_abled'
+            )
+            ->orderBy('id')
+            ->get();
+    }
+
 }

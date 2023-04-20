@@ -49,13 +49,15 @@ class PropFloor extends Model
         $check = collect($occupency)->first();
         if ($check) {
             $metaData = [
-                'tenanted' => true
+                'tenanted' => true,
+                'tenantedDetails' => $occupency,
             ];
             return $metaData;
         }
         return  $metaData = [
             'tenanted' => false
         ];
+
         return $metaData;
     }
 
@@ -69,6 +71,7 @@ class PropFloor extends Model
         )
             ->join('ref_prop_usage_types', 'ref_prop_usage_types.id', '=', 'prop_floors.usage_type_mstr_id')
             ->where('property_id', $propertyId)
+            ->where('ref_prop_usage_types.status', 1)
             ->orderByDesc('ref_prop_usage_types.id')
             ->get();
     }
@@ -141,5 +144,16 @@ class PropFloor extends Model
             ->join('ref_prop_occupancy_types', 'ref_prop_occupancy_types.id', 'prop_floors.occupancy_type_mstr_id')
             ->join('ref_prop_construction_types', 'ref_prop_construction_types.id', 'prop_floors.const_type_mstr_id')
             ->get();
+    }
+
+    /**
+     * | Get details of 
+     */
+    public function getAppartmentFloor($propIds)
+    {
+        return PropFloor::select('prop_floors.*')
+            ->whereIn('prop_floors.property_id', $propIds)
+            ->where('prop_floors.status', 1)
+            ->orderByDesc('id');
     }
 }

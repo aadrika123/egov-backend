@@ -57,6 +57,26 @@ class PropOwner extends Model
             ->get();
     }
 
+     /**
+     * | Get The first Owner by Property Id
+     */
+    public function getOwnerByPropIds($propIds)
+    {
+        return PropOwner::whereIn('property_id', $propIds)
+            ->select(
+                'owner_name as ownerName',
+                'mobile_no as mobileNo',
+                'guardian_name as guardianName',
+                'email',
+                'gender',
+                'is_armed_force',
+                'is_specially_abled'
+            )
+            ->orderBy('id')
+            ->get();
+    }
+
+
     /**
      * | 1st owner by property Id
      */

@@ -371,6 +371,7 @@ class  PropActiveSaf extends Model
                 's.prop_pin_code',
                 's.corr_pin_code',
                 's.area_of_plot as total_area_in_desimal',
+                's.area_of_plot as apartment_details_id',
                 'u.ward_name as old_ward_no',
                 'u1.ward_name as new_ward_no',
             )
@@ -805,5 +806,22 @@ class  PropActiveSaf extends Model
             "water_conn_date" => Carbon::now(),
         ];
         $nPropActiveSaf->update($reqs);
+    }
+
+    /**
+     * | 
+     */
+    public function getSafByApartmentId($apartmentId)
+    {
+        return PropActiveSaf::select(
+            'prop_active_safs.*',
+            'ulb_ward_masters.ward_name AS old_ward_no',
+            'u.ward_name AS new_ward_no'
+        )
+            ->join('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'prop_active_safs.ward_mstr_id')
+            ->leftJoin('ulb_ward_masters as u', 'u.id', '=', 'prop_active_safs.new_ward_mstr_id')
+            ->where('prop_active_safs.apartment_details_id', $apartmentId)
+            ->where('prop_active_safs.status', 1)
+            ->orderByDesc('id');
     }
 }

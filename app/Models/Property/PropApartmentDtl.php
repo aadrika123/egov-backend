@@ -30,4 +30,15 @@ class PropApartmentDtl extends Model
             ->select('road_type_mstr_id')
             ->firstOrFail();
     }
+
+    /**
+     * | Get apartment details by id
+     * | @param
+     */
+    public function getApartmentById($apartmentId)
+    {
+        return PropApartmentDtl::where('id', $apartmentId)
+            ->where('status', 1)
+            ->first();
+    }
 }

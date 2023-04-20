@@ -338,4 +338,15 @@ class WaterConsumer extends Model
             )
             ->get();
     }
+
+    /**
+     * | Fing data according to consumer No 
+     * | @param consumerNo
+     */
+    public function getConsumerByNo($consumerNo)
+    {
+        return WaterConsumer::where('consumer_no', $consumerNo)
+            ->where('status', 1)
+            ->first();
+    }
 }

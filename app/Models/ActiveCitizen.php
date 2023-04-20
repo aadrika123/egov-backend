@@ -61,4 +61,8 @@ class ActiveCitizen extends Authenticatable
             return $token;
         }
     }
+
+    /**
+     * | Get Citizen according to id
+     */
 }
