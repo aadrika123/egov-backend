@@ -108,12 +108,7 @@ class PropertyController extends Controller
     public function ifPropertyExists($propId, $activeCitizen)
     {
         $propIds = collect(explode(',', $activeCitizen->caretaker));
-
-        if ($propIds->contains($propId))
-            throw new Exception("Property Already Attached");
-
         $propIds->push($propId);
-
         return $propIds->implode(',');
     }
 
