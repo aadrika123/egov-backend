@@ -26,7 +26,6 @@ class TcVerificationDemandAdjust
     use SAF;
     public $_mPropSafsDemands;
     public $_safCalculation;
-    public $_applySafController;
     public $_reqs;
     public $_activeSafDtls;
     public $_quaterlyTax;
@@ -38,16 +37,17 @@ class TcVerificationDemandAdjust
     public $_mPropAdvance;
     private $_mPropTransactions;
     protected $_tcId;
+    protected $_calculateSafByid;
 
     public function __construct()
     {
         $this->_mPropSafsDemands = new PropSafsDemand();
         $this->_safCalculation = new SafCalculation;
-        $this->_applySafController = new ApplySafController;
         $this->_mPropDemands = new PropDemand();
         $this->_adjustmentType = Config::get('PropertyConstaint.ADJUSTMENT_TYPES.ULB_ADJUSTMENT');
         $this->_mPropAdvance = new PropAdvance();
         $this->_mPropTransactions = new PropTransaction();
+        $this->_calculateSafByid = new CalculateSafById;
     }
 
     /** 
@@ -129,9 +129,9 @@ class TcVerificationDemandAdjust
         $quaterlyTax = $this->generateSafDemand($demandDetails);
 
         if ($this->_reqs['assessmentType'] == 'Re Assessment') {
-            $this->_applySafController->_generatedDemand = $quaterlyTax;
-            $this->_applySafController->_holdingNo = $activeSafDtls->holding_no;
-            $quaterlyTax = $this->_applySafController->adjustDemand();
+            $this->_calculateSafByid->_demandDetails = $quaterlyTax;
+            $this->_calculateSafByid->_holdingNo = $activeSafDtls->holding_no;
+            $quaterlyTax = $this->_calculateSafByid->adjustAmount();
         }
         return $quaterlyTax;
     }

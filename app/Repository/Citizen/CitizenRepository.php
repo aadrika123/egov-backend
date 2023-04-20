@@ -337,6 +337,8 @@ class CitizenRepository implements iCitizenRepository
         $propIds = explode(',', $propIds);
 
         foreach ($propIds as $propId) {
+            if (!$propId)
+                continue;
             $propdtl =  PropProperty::where('prop_properties.id', $propId)
                 ->select(
                     'prop_properties.id',
