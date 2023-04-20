@@ -7,6 +7,7 @@ use App\Http\Requests\Water\reqDeactivate;
 use App\Http\Requests\Water\reqMeterEntry;
 use App\MicroServices\DocUpload;
 use App\MicroServices\IdGeneration;
+use App\Models\Citizen\ActiveCitizenUndercare;
 use App\Models\Payment\TempTransaction;
 use App\Models\Water\WaterChequeDtl;
 use App\Models\Water\WaterConsumer as WaterWaterConsumer;
@@ -672,5 +673,21 @@ class WaterConsumer extends Controller
     public function checkForPayment($request)
     {
         $mWaterTran = new WaterTran();
+    }
+
+
+    /**
+     * | View details of the caretaken water connection
+     * | using user id
+     */
+    public function viewCaretakenConnection(Request $request)
+    {
+        try {
+            $mActiveCitizenUndercare = new ActiveCitizenUndercare();
+            $NewConnectionController = new NewConnectionController();
+            $mActiveCitizenUndercare->approvedWaterApplications()
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "", "01", ".ms", "POST", $request->deviceId);
+        }
     }
 }

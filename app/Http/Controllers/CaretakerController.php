@@ -84,7 +84,7 @@ class CaretakerController extends Controller
                 throw new Exception("otp Not Validated!");
 
             $existingData = $mActiveCitizenUndercare->getDetailsForUnderCare($userId, $waterDtl->id);
-            if (!isset($existingData))
+            if (!is_null($existingData))
                 throw new Exception("ConsumerNo caretaker already exist!");
 
             $mActiveCitizenUndercare->saveCaretakeDetails($waterDtl->id, $approveApplicant->mobile_no, $userId);

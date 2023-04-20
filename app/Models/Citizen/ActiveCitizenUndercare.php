@@ -17,7 +17,7 @@ class ActiveCitizenUndercare extends Model
     {
         return ActiveCitizenUndercare::where('citizen_id', $userId)
             ->where('consumer_id', $consumerId)
-            ->where('deactive_status', 1)
+            ->where('deactive_status', false)
             ->first();
     }
 
