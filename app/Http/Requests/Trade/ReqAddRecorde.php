@@ -18,8 +18,8 @@ class ReqAddRecorde extends TradeRequest
         }
         $mNowdate = Carbon::now()->format('Y-m-d');
         $mTimstamp = Carbon::now()->format('Y-m-d H:i:s');
-        $mRegex = '/^[a-zA-Z1-9][a-zA-Z1-9\. \s]+$/';
-        $mFramNameRegex = '/^[a-zA-Z1-9][a-zA-Z1-9\'\.\-\,\&\s]+$/i';
+        $mRegex = '/^[a-zA-Z0-9][a-zA-Z0-9\. \s]+$/';
+        $mFramNameRegex = '/^[a-zA-Z0-9][a-zA-Z0-9\'\.\-\,\&\s]+$/i';
         $mAlphaNumCommaSlash = '/^[a-zA-Z0-9- ]+$/i';
         $mAlphaSpace = '/^[a-zA-Z ]+$/i';
         $mAlphaNumhyphen = '/^[a-zA-Z0-9- ]+$/i';

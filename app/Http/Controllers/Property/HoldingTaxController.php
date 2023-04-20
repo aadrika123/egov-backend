@@ -447,7 +447,8 @@ class HoldingTaxController extends Controller
                 'amount' => $amount,
                 'tran_date' => $this->_carbon->format('Y-m-d'),
                 'verify_date' => $this->_carbon->format('Y-m-d'),
-                'user_id' => $userId,
+                'citizen_id' => $userId,
+                'is_citizen' => true,
                 'from_fyear' => $propRazorPayRequest->from_fyear,
                 'to_fyear' => $propRazorPayRequest->to_fyear,
                 'from_qtr' => $propRazorPayRequest->from_qtr,
@@ -664,7 +665,8 @@ class HoldingTaxController extends Controller
             'cheque_dd_no' => $req['chequeNo'],
             'bank_name' => $req['bankName'],
             'tran_date' => $req['todayDate'],
-            'user_id' => $req['userId'],
+            'citizen_id' => $req['userId'],
+            'is_citizen' => false,
             'ulb_id' => $req['ulbId']
         ];
         $mTempTransaction->tempTransaction($tranReqs);

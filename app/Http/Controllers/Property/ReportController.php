@@ -565,4 +565,150 @@ class ReportController extends Controller
 
         return responseMsgs(true, "", $data, "", "", "", "post", $request->deviceId);
     }
+
+    /**
+     * | Holding Wise Rebate & Penalty
+     */
+    public function rebateNpenalty(Request $request)
+    {
+        $propCollection = null;
+        $safCollection = null;
+        $gbsafCollection = null;
+        $proptotalData = 0;
+        $proptotal = 0;
+        $saftotal = 0;
+        $saftotalData = 0;
+        $gbsaftotalData = 0;
+        $collectionTypes = $request->collectionType;
+        $perPage = $request->perPage ?? 5;
+        // $arrayCount = count($collectionTypes);
+        // if ($request->type == 'property') {
+        //     $sql = "select 
+        //         property_id,prop_transactions.amount,payment_mode,demand_amt,
+        //         tran_id,head_name,
+        //             CASE WHEN  property_id is not null THEN property_id END AS property_id,
+        //             CASE WHEN  head_name = '1% Monthly Penalty' THEN pr.amount END AS penalty_amt,
+        //             CASE WHEN  head_name = 'Online Rebate' THEN pr.amount END AS online_rebate_amt,
+        //             CASE WHEN  head_name = 'Special Rebate' THEN pr.amount END AS special_rebate_amt,
+        //             CASE WHEN  head_name = 'JSK (2.5%) Rebate' THEN pr.amount END AS jsk_rebate_amt
+        //         from prop_transactions
+        //         join prop_penaltyrebates as pr on pr.tran_id = prop_transactions.id 
+        //         where pr.status = 1
+        //         and pr.tran_date BETWEEN '2022-03-31' AND '01-04-2023'
+        //         and pr.status = 1
+        //         and prop_transactions.status = 1
+        //         limit 100";
+        //     return DB::select($sql);
+        // }
+        $reportType = $request->reportType;
+
+
+        // foreach ($reportTypes as $reportType) {
+        if ($reportType == 'property') {
+
+            $sql = "select t.property_id,payment_mode,
+                        tran_id,t.amount as paid_amount,
+                        demand_amount as demand_amt,
+                        CASE WHEN  t.property_id is not null THEN t.property_id END AS property_id,
+                        penalty_amt,
+                        online_rebate_amt,
+                        first_qtr_rebate,
+                        jsk_rebate_amt
+           
+                        from prop_transactions as t
+                        join (select  tran_id,
+                                CASE WHEN  head_name = '1% Monthly Penalty' THEN sum(prop_penaltyrebates.amount) END AS penalty_amt,
+                                CASE WHEN  head_name = 'Online Rebate' THEN sum(prop_penaltyrebates.amount) 
+                                    WHEN  head_name = 'Rebate From Jsk/Online Payment' AND prop_transactions.payment_mode = 'ONLINE' then sum(prop_penaltyrebates.amount) END AS online_rebate_amt,
+                                CASE WHEN  head_name = 'First Qtr Rebate' THEN sum(prop_penaltyrebates.amount) END AS first_qtr_rebate,
+                                CASE WHEN  head_name = 'Special Rebate' THEN sum(prop_penaltyrebates.amount) END AS special_rebate_amt,
+                                CASE WHEN  head_name = 'JSK (2.5%) Rebate' THEN sum(prop_penaltyrebates.amount) 
+                                    WHEN  head_name = 'Rebate From Jsk/Online Payment' AND prop_transactions.payment_mode = 'CASH' then  sum(prop_penaltyrebates.amount) END AS jsk_rebate_amt 
+                            from prop_penaltyrebates 
+                            join prop_transactions on prop_penaltyrebates.tran_id=prop_transactions.id
+                            where prop_penaltyrebates.status = 1
+                            group by tran_id,head_name,payment_mode) as pr on pr.tran_id = t.id 
+                        join ( 
+                        select property_id,sum(prop_demands.amount - prop_demands.adjust_amt) as demand_amount
+                        from prop_demands
+                        where due_date <= '2022-03-31' and prop_demands.status =1 and paid_status =1
+                            group by property_id
+                            ) as d on d.property_id = t.property_id 
+                        where  t.tran_date <= '2022-03-31' 
+                        and t.status = 1
+                        limit 100";
+
+            $propData =  DB::select($sql);
+            $propCollection = $propData;
+        }
+
+        if ($reportType == 'saf') {
+
+            $sql2 = "select
+                payment_mode,
+                tran_id,saf_no,
+                sum(t.amount) as paid_amount,pr.demand_amt,
+                sum(penalty_amt) as penalty_amt,
+                sum(online_rebate_amt) as online_rebate_amt,
+                sum(first_qtr_rebate) as first_qtr_rebate,
+                sum(jsk_rebate_amt) as jsk_rebate_amt
+                from prop_transactions as t
+                join (select  tran_id,demand_amt,
+                        CASE WHEN  head_name = '1% Monthly Penalty' THEN sum(prop_penaltyrebates.amount) END AS penalty_amt,
+                        CASE WHEN  head_name = 'Online Rebate' THEN sum(prop_penaltyrebates.amount) 
+                             WHEN  head_name = 'Rebate From Jsk/Online Payment' AND prop_transactions.payment_mode = 'ONLINE' then sum(prop_penaltyrebates.amount) END AS online_rebate_amt,
+                        CASE WHEN  head_name = 'First Qtr Rebate' THEN sum(prop_penaltyrebates.amount) END AS first_qtr_rebate,
+                        CASE WHEN  head_name = 'Special Rebate' THEN sum(prop_penaltyrebates.amount) END AS special_rebate_amt,
+                        CASE WHEN  head_name = 'JSK (2.5%) Rebate' THEN sum(prop_penaltyrebates.amount) 
+                             WHEN  head_name = 'Rebate From Jsk/Online Payment' AND prop_transactions.payment_mode = 'CASH' then  sum(prop_penaltyrebates.amount) END AS jsk_rebate_amt 
+                    from prop_penaltyrebates 
+                    join prop_transactions on prop_penaltyrebates.tran_id=prop_transactions.id
+                    where prop_penaltyrebates.status = 1
+                    group by tran_id,head_name,payment_mode,demand_amt) as pr on pr.tran_id = t.id
+                join prop_active_safs on prop_active_safs.id = t.saf_id
+                where  t.tran_date <= '2023-03-31'
+                and t.status = 1
+                group by tran_id,payment_mode,pr.demand_amt,saf_no";
+
+            $safData =  DB::select($sql2);
+            $safCollection = $safData;
+        }
+
+        if ($reportType == 'gbsaf') {
+
+            $sql3 = "select
+                            payment_mode,
+                            tran_id,saf_no,
+                            sum(t.amount) as paid_amount,pr.demand_amt,
+                            sum(penalty_amt) as penalty_amt,
+                            sum(online_rebate_amt) as online_rebate_amt,
+                            sum(first_qtr_rebate) as first_qtr_rebate,
+                            sum(jsk_rebate_amt) as jsk_rebate_amt
+                            from prop_transactions as t
+                            join (select  tran_id,demand_amt,
+                        CASE WHEN  head_name = '1% Monthly Penalty' THEN sum(prop_penaltyrebates.amount) END AS penalty_amt,
+                        CASE WHEN  head_name = 'Online Rebate' THEN sum(prop_penaltyrebates.amount) 
+                            WHEN  head_name = 'Rebate From Jsk/Online Payment' AND prop_transactions.payment_mode = 'ONLINE' then sum(prop_penaltyrebates.amount) END AS online_rebate_amt,
+                        CASE WHEN  head_name = 'First Qtr Rebate' THEN sum(prop_penaltyrebates.amount) END AS first_qtr_rebate,
+                        CASE WHEN  head_name = 'Special Rebate' THEN sum(prop_penaltyrebates.amount) END AS special_rebate_amt,
+                        CASE WHEN  head_name = 'JSK (2.5%) Rebate' THEN sum(prop_penaltyrebates.amount) 
+                            WHEN  head_name = 'Rebate From Jsk/Online Payment' AND prop_transactions.payment_mode = 'CASH' then  sum(prop_penaltyrebates.amount) END AS jsk_rebate_amt 
+                        from prop_penaltyrebates 
+                        join prop_transactions on prop_penaltyrebates.tran_id=prop_transactions.id
+                        where prop_penaltyrebates.status = 1
+                        group by tran_id,head_name,payment_mode,demand_amt) as pr on pr.tran_id = t.id
+                    join prop_active_safs on prop_active_safs.id = t.saf_id
+                    where  t.tran_date <= '2023-03-31'
+                    and is_gb_saf = true
+                    and t.status = 1
+                    group by tran_id,payment_mode,pr.demand_amt,saf_no";
+            $gbsafData =  DB::select($sql3);
+            $gbsafCollection = $gbsafData;
+        }
+        // }
+
+        $details = collect($propCollection)->merge($safCollection)->merge($gbsafCollection);
+        $data['data'] = $details;
+        return responseMsgs(true, "", $data, "", "", "", "post", $request->deviceId);
+    }
 }

@@ -10,6 +10,7 @@ use App\Models\Property\PropProperty;
 use App\Models\Property\PropSafsDemand;
 use App\Models\Property\PropTransaction;
 use App\Traits\Property\SAF;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 
@@ -25,7 +26,6 @@ class TcVerificationDemandAdjust
     use SAF;
     public $_mPropSafsDemands;
     public $_safCalculation;
-    public $_applySafController;
     public $_reqs;
     public $_activeSafDtls;
     public $_quaterlyTax;
@@ -36,17 +36,18 @@ class TcVerificationDemandAdjust
     public $_propAdvDemand;
     public $_mPropAdvance;
     private $_mPropTransactions;
-    private $_tcId;
+    protected $_tcId;
+    protected $_calculateSafByid;
 
     public function __construct()
     {
         $this->_mPropSafsDemands = new PropSafsDemand();
         $this->_safCalculation = new SafCalculation;
-        $this->_applySafController = new ApplySafController;
         $this->_mPropDemands = new PropDemand();
         $this->_adjustmentType = Config::get('PropertyConstaint.ADJUSTMENT_TYPES.ULB_ADJUSTMENT');
         $this->_mPropAdvance = new PropAdvance();
         $this->_mPropTransactions = new PropTransaction();
+        $this->_calculateSafByid = new CalculateSafById;
     }
 
     /** 
@@ -58,7 +59,8 @@ class TcVerificationDemandAdjust
         $this->_activeSafDtls = $req['activeSafDtls'];
         $this->_tcId = collect($req['fieldVerificationDtls'])->first()->user_id;
         $this->_quaterlyTax = $this->calculateQuaterlyTax();           // (1.1)
-        return $this->adjustVerifiedDemand();
+        $this->adjustVerifiedDemand();
+        $this->tblUpdateDemandAdjust();
     }
 
     /**
@@ -114,18 +116,22 @@ class TcVerificationDemandAdjust
             "floor" => $floors,
             "isTrust" => $activeSafDtls->is_trust,
             "trustType" => $activeSafDtls->trust_type,
-            "isTrustVerified" => $activeSafDtls->is_trust_verified
+            "isTrustVerified" => $activeSafDtls->is_trust_verified,
+            "rwhDateFrom" => $activeSafDtls->rwh_date_from
+
         ];
         $calculationReq = new Request($calculationReq);
         $calculation = $this->_safCalculation->calculateTax($calculationReq);
+        if ($calculation->original['status'] == false)
+            throw new Exception($calculation->original['message']);
         $calculation = $calculation->original['data'];
         $demandDetails = $calculation['details'];
         $quaterlyTax = $this->generateSafDemand($demandDetails);
 
         if ($this->_reqs['assessmentType'] == 'Re Assessment') {
-            $this->_applySafController->_generatedDemand = $quaterlyTax;
-            $this->_applySafController->_holdingNo = $activeSafDtls->holding_no;
-            $quaterlyTax = $this->_applySafController->adjustDemand();
+            $this->_calculateSafByid->_demandDetails = $quaterlyTax;
+            $this->_calculateSafByid->_holdingNo = $activeSafDtls->holding_no;
+            $quaterlyTax = $this->_calculateSafByid->adjustAmount();
         }
         return $quaterlyTax;
     }
@@ -181,13 +187,19 @@ class TcVerificationDemandAdjust
         }
 
         $this->_propNewDemand = $newDemand;
-        if ($newDemand->isNotEmpty())
+        $this->_propAdvDemand = $collectAdvanceAmt;
+    }
+
+    /**
+     * | tblUpdDemandAdvance
+     */
+    public function tblUpdateDemandAdjust()
+    {
+        if ($this->_propNewDemand->isNotEmpty())
             $this->storeDemand();               // (Function Store Demand) 1.2.1
 
-        $this->_propAdvDemand = $collectAdvanceAmt;
-        if ($collectAdvanceAmt->isNotEmpty())
+        if ($this->_propAdvDemand->isNotEmpty())
             $this->storeAdvance();              // (Function Advance Demand Store)  1.2.2
-
     }
 
 

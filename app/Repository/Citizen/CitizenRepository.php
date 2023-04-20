@@ -337,8 +337,19 @@ class CitizenRepository implements iCitizenRepository
         $propIds = explode(',', $propIds);
 
         foreach ($propIds as $propId) {
-            $a = json_decode($propId);
-            $propdtl =  PropProperty::where('prop_properties.id', $a->propId)
+            if (!$propId)
+                continue;
+            $propdtl =  PropProperty::where('prop_properties.id', $propId)
+                ->select(
+                    'prop_properties.id',
+                    'prop_properties.holding_no',
+                    'prop_properties.new_holding_no',
+                    'prop_properties.application_date',
+                    'prop_owners.owner_name',
+                    'prop_properties.balance',
+                    'prop_transactions.amount',
+                    'prop_transactions.tran_date',
+                )
                 ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
                 ->leftjoin('prop_transactions', 'prop_transactions.property_id', 'prop_properties.id')
                 ->orderBydesc('prop_transactions.id')

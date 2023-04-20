@@ -73,7 +73,8 @@ class CalculatorController extends Controller
                             'circleRate',
                             'taxPerc',
                             'calculationFactor',
-                            'matrixFactor'
+                            'matrixFactor',
+                            'area'
                         ]);
                         $finalTaxReview->push($response);
                         return $response;
@@ -94,8 +95,9 @@ class CalculatorController extends Controller
                             return collect($qtr)->pipe(function ($floors) use ($quaterlyTaxes, $key) {
                                 $taxes = [
                                     'key' => $key,
-                                    'effectingFrom' => $floors->first()['quarterYear'],
+                                    'effectingFrom' => $floors->first()['quarterYear'] . '/' . $floors->first()['qtr'],
                                     'qtr' => $floors->first()['qtr'],
+                                    'area' => $floors->first()['area'] ?? null,
                                     'arv' => roundFigure($floors->sum('arv') + $quaterlyTaxes->sum('arv')),
                                     'holdingTax' => roundFigure($floors->sum('holdingTax') + $quaterlyTaxes->sum('holdingTax')),
                                     'waterTax' => roundFigure($floors->sum('waterTax') + $quaterlyTaxes->sum('waterTax')),

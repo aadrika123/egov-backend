@@ -54,7 +54,7 @@ class PropertyController extends Controller
 
             $myRequest = new \Illuminate\Http\Request();
             $myRequest->setMethod('POST');
-            $myRequest->request->add([ 'mobileNo' => $ownerMobile]);
+            $myRequest->request->add(['mobileNo' => $ownerMobile]);
             $response = $ThirdPartyController->sendOtp($myRequest);
 
             $response = collect($response)->toArray();
@@ -78,7 +78,7 @@ class PropertyController extends Controller
         ]);
         try {
             $userId = authUser()->id;
-            $activeCitizen = ActiveCitizen::find($userId);
+            $activeCitizen = ActiveCitizen::findOrFail($userId);
 
             $propDtl = app(Pipeline::class)
                 ->send(PropProperty::query()->where('status', 1))
@@ -92,16 +92,29 @@ class PropertyController extends Controller
             if (!isset($propDtl))
                 throw new Exception('Property Not Found');
 
-            if ($activeCitizen->caretaker == NULL)
-                $activeCitizen->caretaker = '{"propId":' . $propDtl->id . '}';
-            else
-                $activeCitizen->caretaker = $activeCitizen->caretaker .     ',{"propId":' . $propDtl->id . '}';
+            $allPropIds = $this->ifPropertyExists($propDtl->id, $activeCitizen);
+            $activeCitizen->caretaker = $allPropIds;
             $activeCitizen->save();
 
             return responseMsgs(true, "Property Tagged!", '', '010801', '01', '623ms', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
+    }
+
+    /**
+     * | Function if Property Exists
+     */
+    public function ifPropertyExists($propId, $activeCitizen)
+    {
+        $propIds = collect(explode(',', $activeCitizen->caretaker));
+
+        if ($propIds->contains($propId))
+            throw new Exception("Property Already Attached");
+
+        $propIds->push($propId);
+
+        return $propIds->implode(',');
     }
 
     /**

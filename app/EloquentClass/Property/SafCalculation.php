@@ -10,6 +10,7 @@ use App\Models\Property\MPropMultiFactor;
 use App\Models\Property\MPropRentalValue;
 use App\Models\Property\MPropVacantRentalrate;
 use App\Models\Property\PropApartmentDtl;
+use App\Models\UlbMaster;
 use App\Models\UlbWardMaster;
 use Carbon\Carbon;
 use Exception;
@@ -75,6 +76,7 @@ class SafCalculation
     public $_isTrustVerified;
     private $_isPropPoint20Taxed = false;
     private $_rwhAreaOfPlot;
+    private $_ulbType;
 
     /** 
      * | For Building
@@ -131,6 +133,9 @@ class SafCalculation
         $this->_virtualDate = $todayDate->subYears(12)->format('Y-m-d');
         $this->_floors = $propertyDetails['floor'] ?? [];
         $this->_ulbId = ($propertyDetails['ulbId']) ?? auth()->user()->ulb_id;
+
+        $ulbMstrs = UlbMaster::findOrFail($this->_ulbId);
+        $this->_ulbType = $ulbMstrs->category;
 
         $this->_vacantPropertyTypeId = Config::get("PropertyConstaint.VACANT_PROPERTY_TYPE");               // Vacant Property Type Id
 
@@ -859,7 +864,7 @@ class SafCalculation
                 $area = decimalToSqMt($plotArea);
 
             $rentalRate = collect($this->_vacantRentalRates)->where('prop_road_type_id', $this->_readRoadType[$this->_effectiveDateRule2])
-                ->where('ulb_type_id', 1)
+                ->where('ulb_type_id', $this->_ulbType)
                 ->where('effective_date', $this->_effectiveDateRule2)
                 ->first();
 
@@ -989,7 +994,7 @@ class SafCalculation
             else
                 $area = decimalToSqMt($plotArea);
             $rentalRate = collect($this->_vacantRentalRates)->where('prop_road_type_id', $this->_readRoadType[$this->_effectiveDateRule3])
-                ->where('ulb_type_id', 1)
+                ->where('ulb_type_id', $this->_ulbType)
                 ->where('effective_date', $this->_effectiveDateRule3)
                 ->first();
 
@@ -1161,7 +1166,7 @@ class SafCalculation
         $this->_GRID['demand']['adjustAmount'] = 0;
         $this->_GRID['demand']['totalDemand'] = roundFigure($totalDemandAmount);
         $totalDemand = $this->_GRID['demand']['totalDemand'];
-        $this->_GRID['demand']['payableAmount'] = round($totalDemand);
+        $this->_GRID['demand']['payableAmount'] = round($totalDemand, 2);
     }
 
     /**
