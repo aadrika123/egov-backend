@@ -5,11 +5,13 @@ namespace App\Repository\Citizen;
 use Illuminate\Http\Request;
 use App\Repository\Citizen\iCitizenRepository;
 use App\Models\ActiveCitizen;
+use App\Models\Citizen\ActiveCitizenUndercare;
 use App\Models\Payment\PaymentRequest;
 use App\Models\Property\PropLevelPending;
 use App\Models\Property\PropProperty;
 use App\Models\Trade\ActiveLicence;
 use App\Models\Trade\ActiveTradeLicence;
+use App\Models\Trade\TradeLicence;
 use App\Models\User;
 use App\Models\Water\WaterApplication;
 use App\Models\WorkflowTrack;
@@ -109,6 +111,9 @@ class CitizenRepository implements iCitizenRepository
                 if ($req->module == 'careTaker') {
                     $applications['CareTaker'] = $this->getCaretakerProperty($userId);
                 }
+
+                if ($req->module == 'careTakeTrade')
+                    $applications['CareTakerTrade'] = $this->getCareTakerTrade($userId);
             }
 
             return responseMsg(true, "All Applied Applications", remove_null($applications));
@@ -328,13 +333,11 @@ class CitizenRepository implements iCitizenRepository
     public function getCaretakerProperty($userId)
     {
         $data = array();
-        $activeCitizen = DB::table('active_citizens')
-            ->where('id', $userId)
-            ->first();
-        $propIds =  ($activeCitizen->caretaker);
-        if (!$propIds)
+        $mActiveCitizenCareTaker = new ActiveCitizenUndercare();
+        $propertiesByCitizen = $mActiveCitizenCareTaker->getTaggedPropsByCitizenId($userId);
+        $propIds =  ($propertiesByCitizen->pluck('property_id'));
+        if ($propIds->isEmpty())
             throw new Exception('No Caretaker');
-        $propIds = explode(',', $propIds);
 
         foreach ($propIds as $propId) {
             if (!$propId)
@@ -369,6 +372,27 @@ class CitizenRepository implements iCitizenRepository
             array_push($data, $propDtls);
         }
         return collect($data);
+    }
+
+    /**
+     * | Get care taker trade
+     */
+    public function getCareTakerTrade($userId)
+    {
+        $data = collect();
+        $mTradeLicense = new TradeLicence;
+        $mActiveCitizenCareTaker = new ActiveCitizenUndercare();
+        $details = $mActiveCitizenCareTaker->getDetailsByCitizenId($userId);
+        $licenses = $details->pluck('license_id');
+
+        foreach ($licenses as $license) {
+            if (!$license)
+                continue;
+            $license = $mTradeLicense->getTradeDtlsByLicenseNo($license);
+            $data->push($license);
+        }
+
+        return $data;
     }
 
     /**
