@@ -577,21 +577,38 @@ class ReportController extends Controller
      */
     public function rebateNpenalty(Request $request)
     {
+        $uptoDate = $request->uptoDate;
         $propCollection = null;
         $safCollection = null;
         $gbsafCollection = null;
+        $wardId = null;
+        $propertyType = null;
         $proptotalData = 0;
         $proptotal = 0;
         $saftotal = 0;
         $saftotalData = 0;
         $gbsaftotalData = 0;
         $reportTypes = $request->reportType;
+        $paymentMode = $request->paymentMode;
+        $propertyType = $request->propertyType;
         $perPage = $request->perPage ?? 5;
         $arrayCount = count($reportTypes);
         $page = $request->page && $request->page > 0 ? $request->page : 1;
         $limit = $perPage;
         $currentPage = $request->page ?? 1;
         $offset =  $request->page && $request->page > 0 ? ($request->page * $perPage) : 0;
+
+        if ($request->wardId) {
+            $wardId = $request->wardId;
+        }
+
+        if ($request->propertyType) {
+            $propertyType = $request->propertyType;
+        }
+
+        if ($request->paymentMode) {
+            $paymentMode = $request->paymentMode;
+        }
         // if ($request->type == 'property') {
         //     $sql = "select 
         //         property_id,prop_transactions.amount,payment_mode,demand_amt,
@@ -615,12 +632,13 @@ class ReportController extends Controller
         foreach ($reportTypes as $reportType) {
             if ($reportType == 'property') {
 
-                $sql1 = "select t.property_id,payment_mode,
+                $sql1 = "select t.property_id,payment_mode,ward_name as ward_no,
                         tran_id,t.amount as paid_amount,
-                        demand_amount as demand_amt,holding_no,new_holding_no,
+                        demand_amount as demand_amt,holding_no,new_holding_no,saf_no,
                         CASE WHEN  t.property_id is not null THEN t.property_id END AS property_id,
                         penalty_amt,
                         online_rebate_amt,
+                        special_rebate_amt,
                         first_qtr_rebate,
                         jsk_rebate_amt
                         from prop_transactions as t
@@ -635,17 +653,21 @@ class ReportController extends Controller
                             from prop_penaltyrebates 
                             join prop_transactions on prop_penaltyrebates.tran_id=prop_transactions.id
                             where prop_penaltyrebates.status = 1
+                           -- " . ($paymentMode ? " AND prop_transactions.payment_mode = $paymentMode" : "") . "
                             group by tran_id,head_name,payment_mode
                         ) as pr on pr.tran_id = t.id 
                         join ( 
                         select property_id,sum(prop_demands.amount - prop_demands.adjust_amt) as demand_amount
                         from prop_demands
-                        where due_date <= '2022-03-31' and prop_demands.status =1 and paid_status =1
+                        where due_date <= '$uptoDate' and prop_demands.status =1 and paid_status =1
                             group by property_id
                             ) as d on d.property_id = t.property_id 
                         join prop_properties on prop_properties.id = t.property_id
-                        where  t.tran_date <= '2022-03-31' 
+                        join ulb_ward_masters on ulb_ward_masters.id = prop_properties.ward_mstr_id
+                        where  t.tran_date <= '$uptoDate' 
                         and t.status = 1
+                        " . ($wardId ? " AND prop_properties.ward_mstr_id = $wardId" : "") . "
+                        " . ($propertyType ? " AND prop_properties.prop_type_mstr_id = $propertyType" : "") . "
                         limit $limit offset $offset";
 
                 $sql = "select count(*) as total
@@ -666,11 +688,11 @@ class ReportController extends Controller
                             join ( 
                             select property_id,sum(prop_demands.amount - prop_demands.adjust_amt) as demand_amount
                             from prop_demands
-                            where due_date <= '2022-03-31' and prop_demands.status =1 and paid_status =1
+                            where due_date <= '$uptoDate' and prop_demands.status =1 and paid_status =1
                                 group by property_id
                                 ) as d on d.property_id = t.property_id 
                             join prop_properties on prop_properties.id = t.property_id
-                            where  t.tran_date <= '2022-03-31' 
+                            where  t.tran_date <= '$uptoDate' 
                             and t.status = 1";
 
                 $propData =  DB::select($sql1);
@@ -683,12 +705,13 @@ class ReportController extends Controller
 
                 $sql2 = "select
                 payment_mode,
-                tran_id,saf_no,
+                tran_id,saf_no,ward_name as ward_no,
                 sum(t.amount) as paid_amount,pr.demand_amt,
                 sum(penalty_amt) as penalty_amt,
                 sum(online_rebate_amt) as online_rebate_amt,
                 sum(first_qtr_rebate) as first_qtr_rebate,
-                sum(jsk_rebate_amt) as jsk_rebate_amt
+                sum(jsk_rebate_amt) as jsk_rebate_amt,
+                sum(special_rebate_amt) as special_rebate_amt
                 from prop_transactions as t
                 join (select  tran_id,demand_amt,
                         CASE WHEN  head_name = '1% Monthly Penalty' THEN sum(prop_penaltyrebates.amount) END AS penalty_amt,
@@ -701,12 +724,16 @@ class ReportController extends Controller
                     from prop_penaltyrebates 
                     join prop_transactions on prop_penaltyrebates.tran_id=prop_transactions.id
                     where prop_penaltyrebates.status = 1
+                    " . ($paymentMode ? " AND prop_transactions.payment_mode = $paymentMode" : "") . "
                     group by tran_id,head_name,payment_mode,demand_amt
                     ) as pr on pr.tran_id = t.id
                 join prop_active_safs on prop_active_safs.id = t.saf_id
-                where  t.tran_date <= '2023-03-31'
+                join ulb_ward_masters on ulb_ward_masters.id = prop_active_safs.ward_mstr_id
+                where  t.tran_date <= '$uptoDate'
                 and t.status = 1
-                group by tran_id,payment_mode,pr.demand_amt,saf_no
+                " . ($wardId ? " AND prop_active_safs.ward_mstr_id = $wardId" : "") . "
+                " . ($propertyType ? " AND prop_active_safs.prop_type_mstr_id = " . $propertyType . "" : "") . "
+                group by tran_id,payment_mode,pr.demand_amt,saf_no,ward_name
                 limit $limit offset $offset";
 
                 $sql = "select
@@ -727,7 +754,7 @@ class ReportController extends Controller
                         group by tran_id,head_name,payment_mode,demand_amt
                         ) as pr on pr.tran_id = t.id
                     join prop_active_safs on prop_active_safs.id = t.saf_id
-                    where  t.tran_date <= '2023-03-31'
+                    where  t.tran_date <= '$uptoDate'
                     and t.status = 1
                     group by tran_id,payment_mode,pr.demand_amt,saf_no";
 
@@ -741,12 +768,13 @@ class ReportController extends Controller
 
                 $sql3 = "select
                             payment_mode,
-                            tran_id,saf_no,
+                            tran_id,saf_no,ward_name as ward_no,
                             sum(t.amount) as paid_amount,pr.demand_amt,
                             sum(penalty_amt) as penalty_amt,
                             sum(online_rebate_amt) as online_rebate_amt,
                             sum(first_qtr_rebate) as first_qtr_rebate,
-                            sum(jsk_rebate_amt) as jsk_rebate_amt
+                            sum(jsk_rebate_amt) as jsk_rebate_amt,
+                            sum(special_rebate_amt) as special_rebate_amt
                             from prop_transactions as t
                             join (
                                 select  tran_id,demand_amt,
@@ -760,13 +788,17 @@ class ReportController extends Controller
                                 from prop_penaltyrebates 
                                 join prop_transactions on prop_penaltyrebates.tran_id=prop_transactions.id
                                 where prop_penaltyrebates.status = 1
+                                " . ($paymentMode ? " AND prop_transactions.payment_mode = $paymentMode" : "") . "
                                 group by tran_id,head_name,payment_mode,demand_amt
                             ) as pr on pr.tran_id = t.id
                             join prop_active_safs on prop_active_safs.id = t.saf_id
-                            where  t.tran_date <= '2023-03-31'
+                            join ulb_ward_masters on ulb_ward_masters.id = prop_active_safs.ward_mstr_id
+                            where  t.tran_date <= '$uptoDate'
                             and is_gb_saf = true
                             and t.status = 1
-                            group by tran_id,payment_mode,pr.demand_amt,saf_no
+                            " . ($wardId ? " AND prop_active_safs.ward_mstr_id = $wardId" : "") . "
+                            " . ($propertyType ? " AND prop_active_safs.prop_type_mstr_id = $propertyType" : "") . "
+                            group by tran_id,payment_mode,pr.demand_amt,saf_no,ward_name
                             limit $limit offset $offset";
 
                 $sql = "select
@@ -787,7 +819,7 @@ class ReportController extends Controller
                                 group by tran_id,head_name,payment_mode,demand_amt
                             ) as pr on pr.tran_id = t.id
                             join prop_active_safs on prop_active_safs.id = t.saf_id
-                            where  t.tran_date <= '2023-03-31'
+                            where  t.tran_date <= '$uptoDate'
                             and is_gb_saf = true
                             and t.status = 1
                             group by tran_id,payment_mode,pr.demand_amt,saf_no";
@@ -806,8 +838,17 @@ class ReportController extends Controller
         $c = round($gbsaftotalData / $perPage);
         $data['current_page'] = $currentPage;
         $data['total'] = $proptotalData + $saftotalData + $gbsaftotalData;
+        $data['total_holding_no'] = $proptotalData;
+        $data['total_saf_no'] = $saftotalData + $gbsaftotalData;
         $data['totalAmt'] = round($proptotal + $saftotal);
         $data['last_page'] = max($a, $b, $c);
+        $data['total_paid_amount'] = round($details->sum('paid_amount'));
+        $data['total_demand_amt'] = round($details->sum('demand_amt'));
+        $data['total_penalty_amt'] = round($details->sum('penalty_amt'));
+        $data['total_online_rebate_amt'] = round($details->sum('online_rebate_amt'));
+        $data['total_first_qtr_rebate'] = round($details->sum('first_qtr_rebate'));
+        $data['total_jsk_rebate_amt'] = round($details->sum('jsk_rebate_amt'));
+        $data['total_special_rebate_amt'] = round($details->sum('special_rebate_amt'));
         $data['data'] = $details;
 
         return responseMsgs(true, "", $data, "", "", "", "post", $request->deviceId);
