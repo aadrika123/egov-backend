@@ -33,4 +33,16 @@ class ActiveCitizenUndercare extends Model
         $mActiveCitizenUndercare->citizen_id            = $userId;
         $mActiveCitizenUndercare->save();
     }
+
+    /**
+     * | Get Details according to user Id
+     * | @param 
+     */
+    public function getDetailsByCitizenId()
+    {
+        $user = authUser();
+        return ActiveCitizenUndercare::where('citizen_id',$user->id)
+        ->where('deactive_status',false)
+        ->get();
+    }
 }

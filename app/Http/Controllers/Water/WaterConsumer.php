@@ -683,9 +683,13 @@ class WaterConsumer extends Controller
     public function viewCaretakenConnection(Request $request)
     {
         try {
+            $mWaterWaterConsumer = new WaterWaterConsumer();
             $mActiveCitizenUndercare = new ActiveCitizenUndercare();
-            $NewConnectionController = new NewConnectionController();
-            $mActiveCitizenUndercare->approvedWaterApplications()
+            $connectionDetails = $mActiveCitizenUndercare->getDetailsByCitizenId();
+            $consumerIds = collect($connectionDetails)->pluck('consumer_id');
+
+            $consumerDetails = $mWaterWaterConsumer->getConsumerByIds($consumerIds)->get();
+            return responseMsgs(true, 'list of undertaken water connections!', remove_null($consumerDetails), "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "", "01", ".ms", "POST", $request->deviceId);
         }
