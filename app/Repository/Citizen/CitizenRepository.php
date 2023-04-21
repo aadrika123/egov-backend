@@ -5,6 +5,7 @@ namespace App\Repository\Citizen;
 use Illuminate\Http\Request;
 use App\Repository\Citizen\iCitizenRepository;
 use App\Models\ActiveCitizen;
+use App\Models\Citizen\ActiveCitizenUndercare;
 use App\Models\Payment\PaymentRequest;
 use App\Models\Property\PropLevelPending;
 use App\Models\Property\PropProperty;
@@ -328,13 +329,11 @@ class CitizenRepository implements iCitizenRepository
     public function getCaretakerProperty($userId)
     {
         $data = array();
-        $activeCitizen = DB::table('active_citizens')
-            ->where('id', $userId)
-            ->first();
-        $propIds =  ($activeCitizen->caretaker);
-        if (!$propIds)
+        $mActiveCitizenCareTaker = new ActiveCitizenUndercare();
+        $propertiesByCitizen = $mActiveCitizenCareTaker->getTaggedPropsByCitizenId($userId);
+        $propIds =  ($propertiesByCitizen->pluck('property_id'));
+        if ($propIds->isEmpty())
             throw new Exception('No Caretaker');
-        $propIds = explode(',', $propIds);
 
         foreach ($propIds as $propId) {
             if (!$propId)

@@ -64,4 +64,13 @@ class ActiveCitizenUndercare extends Model
         return ActiveCitizenUndercare::where('property_id', $propId)
             ->get();
     }
+
+    /**
+     * | Get Tagged Property by Citizen Id
+     */
+    public function getTaggedPropsByCitizenId($citizenId)
+    {
+        return ActiveCitizenUndercare::where('citizen_id', $citizenId)
+            ->get();
+    }
 }
