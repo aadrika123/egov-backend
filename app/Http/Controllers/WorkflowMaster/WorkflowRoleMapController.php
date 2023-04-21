@@ -304,6 +304,7 @@ class WorkflowRoleMapController extends Controller
             'is_custom_enabled' => $permission->is_custom_enabled,
             'je_comparison' => $permission->je_comparison,
             'technical_comparison' => $permission->technical_comparison,
+            'can_view_technical_comparison' => $permission->can_view_technical_comparison,
         ];
 
         return $data;

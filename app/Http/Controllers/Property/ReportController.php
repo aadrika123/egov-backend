@@ -613,7 +613,7 @@ class ReportController extends Controller
 
                 $sql = "select t.property_id,payment_mode,
                         tran_id,t.amount as paid_amount,
-                        demand_amount as demand_amt,
+                        demand_amount as demand_amt,holding_no,new_holding_no,
                         CASE WHEN  t.property_id is not null THEN t.property_id END AS property_id,
                         penalty_amt,
                         online_rebate_amt,
@@ -639,6 +639,7 @@ class ReportController extends Controller
                         where due_date <= '2022-03-31' and prop_demands.status =1 and paid_status =1
                             group by property_id
                             ) as d on d.property_id = t.property_id 
+                        join prop_properties on prop_properties.id = t.property_id
                         where  t.tran_date <= '2022-03-31' 
                         and t.status = 1
                         limit 100";
