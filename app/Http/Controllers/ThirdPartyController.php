@@ -48,7 +48,7 @@ class ThirdPartyController extends Controller
                 $userDetails = ActiveCitizen::where('mobile', $request->mobileNo)
                     ->first();
                 if (!$userDetails) {
-                    throw new Exception("Account with this mobile no. don't exist!");
+                    throw new Exception("Pleas check your mobile.no!");
                 }
             }
             $generateOtp = $refIdGeneration->generateOtp();

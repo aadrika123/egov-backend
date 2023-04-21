@@ -1592,110 +1592,87 @@ class WaterPaymentController extends Controller
         | Recheck / Not Working
         | clear the concept
      */
-    // public function endOnlineDemandPayment($webhookData)
-    // {
-    //     try {
-    //         $refUser        = Auth()->user();
-    //         $refUserId      = $refUser->id ?? $webhookData["userId"];
-    //         $refUlbId       = $refUser->ulb_id ?? $webhookData["ulbId"];
-    //         $mNowDate       = Carbon::now()->format('Y-m-d');
-    //         $mTimstamp      = Carbon::now()->format('Y-m-d H:i:s');
-    //         $cahges         = null;
-    //         $chargeData     = (array)null;
-    //         $application    = null;
-    //         $mDemands       = (array)null;
+    public function endOnlineDemandPayment($webhookData,$RazorPayRequest)
+    {
+        try {
+            // $vjaf
+            $refUser        = Auth()->user();
+            $refUserId      = $refUser->id ?? $webhookData["userId"];
+            $refUlbId       = $refUser->ulb_id ?? $webhookData["ulbId"];
+            $mNowDate       = Carbon::now()->format('Y-m-d');
+            $mTimstamp      = Carbon::now()->format('Y-m-d H:i:s');
+            $cahges         = null;
+            $chargeData     = (array)null;
+            $application    = null;
+            $mDemands       = (array)null;
+            $mWaterConsumerDemand = new WaterConsumerDemand();
+            
+            $consumerDetails = WaterConsumer::find($webhookData["id"]);
+            $consumerId = $webhookData["id"];
 
-    //         #-----------valication------------------- 
-    //         $mWaterRazorPayRequest = new WaterRazorPayRequest();
-    //         $RazorPayRequest = $mWaterRazorPayRequest->checkRequest($webhookData)->first();
-    //         if (!$RazorPayRequest) {
-    //             throw new Exception("Data Not Found!");
-    //         }
-    //         if ($RazorPayRequest->payment_from == "Demand Collection") {
-    //             $application = WaterConsumer::find($webhookData["id"]);
-    //             $cahges = 0;
-    //             $id = explode(",", $RazorPayRequest->demand_from_upto);
-    //             if ($id) {
-    //                 $mDemands = WaterConsumerDemand::select("*")
-    //                     ->whereIn("id", $id)
-    //                     ->get();
-    //                 $cahges = ($mDemands->sum("amount"));
-    //             }
-    //             $chargeData["total_charge"] = $cahges;
-    //         } elseif ($RazorPayRequest->payment_from == "Demand Collection") {
-    //             $application = null;
-    //         }
-    //         if (!$application) {
-    //             throw new Exception("Application Not Found!......");
-    //         }
-    //         $applicationId = $webhookData["id"];
-    //         #-----------End valication----------------------------
+            if (!$RazorPayRequest || round($webhookData['amount']) != round($RazorPayRequest['amount'])) {
+                throw new Exception("Payble Amount Missmatch!!!");
+            }
 
-    //         #-------------Calculation----------------------------- 
-    //         if (!$chargeData || round($webhookData['amount']) != round($chargeData['total_charge'])) {
-    //             throw new Exception("Payble Amount Missmatch!!!");
-    //         }
+            $transactionType = $RazorPayRequest->payment_from;
+            $totalCharge = $chargeData['total_charge'];
+            #-------------End Calculation-----------------------------
+            #-------- Transection -------------------
+            DB::beginTransaction();
 
-    //         $transactionType = $RazorPayRequest->payment_from;
+            $RazorPayResponse = new WaterRazorPayResponse();
+            $RazorPayResponse->related_id   = $RazorPayRequest->related_id;
+            $RazorPayResponse->request_id   = $RazorPayRequest->id;
+            $RazorPayResponse->amount       = $webhookData['amount'];
+            $RazorPayResponse->merchant_id  = $webhookData['merchantId'] ?? null;
+            $RazorPayResponse->order_id     = $webhookData["orderId"];
+            $RazorPayResponse->payment_id   = $webhookData["paymentId"];
+            $RazorPayResponse->save();
 
-    //         $totalCharge = $chargeData['total_charge'];
-    //         #-------------End Calculation-----------------------------
-    //         #-------- Transection -------------------
-    //         DB::beginTransaction();
+            $RazorPayRequest->status = 1;
+            $RazorPayRequest->update();
 
-    //         $RazorPayResponse = new WaterRazorPayResponse();
-    //         $RazorPayResponse->related_id   = $RazorPayRequest->related_id;
-    //         $RazorPayResponse->request_id   = $RazorPayRequest->id;
-    //         $RazorPayResponse->amount       = $webhookData['amount'];
-    //         $RazorPayResponse->merchant_id  = $webhookData['merchantId'] ?? null;
-    //         $RazorPayResponse->order_id     = $webhookData["orderId"];
-    //         $RazorPayResponse->payment_id   = $webhookData["paymentId"];
-    //         $RazorPayResponse->save();
+            $Tradetransaction = new WaterTran;
+            $Tradetransaction->related_id       = $applicationId;
+            $Tradetransaction->ward_id          = $application->ward_id;
+            $Tradetransaction->tran_type        = $transactionType;
+            $Tradetransaction->tran_date        = $mNowDate;
+            $Tradetransaction->payment_mode     = "Online";
+            $Tradetransaction->amount           = $totalCharge;
+            $Tradetransaction->emp_dtl_id       = $refUserId;
+            $Tradetransaction->created_at       = $mTimstamp;
+            $Tradetransaction->ip_address       = '';
+            $Tradetransaction->ulb_id           = $refUlbId;
+            $Tradetransaction->save();
+            $transaction_id                     = $Tradetransaction->id;
+            $Tradetransaction->tran_no          = $webhookData["transactionNo"];
+            $Tradetransaction->update();
 
-    //         $RazorPayRequest->status = 1;
-    //         $RazorPayRequest->update();
+            foreach ($mDemands as $val) {
+                $TradeDtl = new WaterTranDetail;
+                $TradeDtl->tran_id        = $transaction_id;
+                $TradeDtl->demand_id      = $val->id;
+                $TradeDtl->total_demand   = $val->amount;
+                $TradeDtl->application_id   = $val->application_id;
+                $TradeDtl->created_at     = $mTimstamp;
+                $TradeDtl->save();
 
-    //         $Tradetransaction = new WaterTran;
-    //         $Tradetransaction->related_id       = $applicationId;
-    //         $Tradetransaction->ward_id          = $application->ward_id;
-    //         $Tradetransaction->tran_type        = $transactionType;
-    //         $Tradetransaction->tran_date        = $mNowDate;
-    //         $Tradetransaction->payment_mode     = "Online";
-    //         $Tradetransaction->amount           = $totalCharge;
-    //         $Tradetransaction->emp_dtl_id       = $refUserId;
-    //         $Tradetransaction->created_at       = $mTimstamp;
-    //         $Tradetransaction->ip_address       = '';
-    //         $Tradetransaction->ulb_id           = $refUlbId;
-    //         $Tradetransaction->save();
-    //         $transaction_id                     = $Tradetransaction->id;
-    //         $Tradetransaction->tran_no          = $webhookData["transactionNo"];
-    //         $Tradetransaction->update();
+                $val->paid_status = true;
+                $val->update();
+            }
 
-    //         foreach ($mDemands as $val) {
-    //             $TradeDtl = new WaterTranDetail;
-    //             $TradeDtl->tran_id        = $transaction_id;
-    //             $TradeDtl->demand_id      = $val->id;
-    //             $TradeDtl->total_demand   = $val->amount;
-    //             $TradeDtl->application_id   = $val->application_id;
-    //             $TradeDtl->created_at     = $mTimstamp;
-    //             $TradeDtl->save();
+            $application->payment_status = true;
+            $application->update();
 
-    //             $val->paid_status = true;
-    //             $val->update();
-    //         }
-
-    //         $application->payment_status = true;
-    //         $application->update();
-
-    //         DB::commit();
-    //         #----------End transaction------------------------
-    //         #----------Response------------------------------
-    //         $res['transactionId'] = $transaction_id;
-    //         $res['paymentRecipt'] = config('app.url') . "/api/water/paymentRecipt/" . $applicationId . "/" . $transaction_id;
-    //         return responseMsg(true, "", $res);
-    //     } catch (Exception $e) {
-    //         DB::rollBack();
-    //         return responseMsg(false, $e->getMessage(), $webhookData);
-    //     }
-    // }
+            DB::commit();
+            #----------End transaction------------------------
+            #----------Response------------------------------
+            $res['transactionId'] = $transaction_id;
+            $res['paymentRecipt'] = config('app.url') . "/api/water/paymentRecipt/" . $applicationId . "/" . $transaction_id;
+            return responseMsg(true, "", $res);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), $webhookData);
+        }
+    }
 }
