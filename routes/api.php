@@ -341,6 +341,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('water/caretaker-consumer-tagging', 'caretakerConsumerTag');
 
         Route::post('citizen/caretake-modules', 'careTakeModules');        // CareTake Modules (01)
+        Route::post('citizen/caretake-otp','careTakeOtp');                  // Otp for caretaker
     });
 });
 
