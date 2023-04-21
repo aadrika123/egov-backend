@@ -558,6 +558,9 @@ class ActiveSafController extends Controller
             if (!$data)
                 throw new Exception("Application Not Found for this id");
 
+            if ($data->payment_status == 0)
+                $data->current_role_name = null;
+
             // Basic Details
             $basicDetails = $this->generateBasicDetails($data);      // Trait function to get Basic Details
             $basicElement = [
@@ -663,6 +666,8 @@ class ActiveSafController extends Controller
             $data = $mPropActiveSaf->getActiveSafDtls()                         // <------- Model function Active SAF Details
                 ->where('prop_active_safs.id', $req->applicationId)
                 ->first();
+            if ($data->payment_status == 0)
+                $data->current_role_name = null;
             if (!$data)
                 throw new Exception("Data Not Found");
             $data = json_decode(json_encode($data), true);

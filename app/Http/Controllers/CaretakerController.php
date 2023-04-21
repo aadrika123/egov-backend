@@ -6,9 +6,12 @@ use App\Models\ActiveCitizen;
 use App\Models\Citizen\ActiveCitizenUndercare;
 use App\Models\Water\WaterApprovalApplicant;
 use App\Models\Water\WaterConsumer;
+use App\Pipelines\CareTakers\TagProperty;
+use App\Pipelines\CareTakers\TagTrade;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Pipeline\Pipeline;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -93,6 +96,32 @@ class CaretakerController extends Controller
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+
+    /**
+     * | Master CareTaking for all modules
+     */
+    public function careTakeModules(Request $req)
+    {
+        $req->validate([
+            'moduleId' => 'required|integer',
+            'referenceNo' => 'required'
+        ]);
+
+        try {
+            $data = array();
+            $response = app(Pipeline::class)
+                ->send($data)
+                ->through([
+                    TagProperty::class,
+                    TagTrade::class
+                ])
+                ->thenReturn();
+            return responseMsgs(true, $response, [], '1001', '1.0', "", 'POST', $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], '1001', '1.0', "", 'POST', $req->deviceId);
         }
     }
 }

@@ -580,4 +580,40 @@ class PropProperty extends Model
             ->where('prop_properties.status', 1)
             ->orderByDesc('id');
     }
+
+
+    /**
+     * | Search with holding No for first owner
+     */
+    public function searchHoldingNo($ulbId)
+    {
+        return PropProperty::select(
+            'prop_properties.id',
+            'ulb_name as ulb',
+            'prop_properties.holding_no',
+            'prop_properties.new_holding_no',
+            'ward_name',
+            'prop_address',
+            'prop_properties.status',
+            'prop_owners.mobile_no',
+            'prop_owners.owner_name'
+        )
+            ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
+            ->join('ulb_masters', 'ulb_masters.id', 'prop_properties.ulb_id')
+            ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
+            ->where('prop_properties.ulb_id', $ulbId)
+            ->where('prop_properties.status', 1);
+    }
+    /**
+     * | Get Property id by Ptn or HoldingNo
+     * | @param reference Application No
+     */
+    public function getPropByPtnOrHolding($refrenceNo)
+    {
+        return PropProperty::select('id')
+            ->where('holding_no', $refrenceNo)
+            ->orWhere('new_holding_no', $refrenceNo)
+            ->orWhere('pt_no', $refrenceNo)
+            ->firstOrFail();
+    }
 }
