@@ -34,6 +34,7 @@ trait Report
                 'bank_name',
                 'branch_name',
                 'amount',
+                DB::raw("sum(amount) as total_amount"),
                 DB::raw("CONCAT (from_fyear,'(',from_qtr,')','/',to_fyear,'(',to_qtr,')') AS from_upto_fy_qtr"),
             )
             ->join('prop_transactions as t', 't.saf_id', $table . '.id')
@@ -43,6 +44,20 @@ trait Report
             ->join('ulb_ward_masters', 'ulb_ward_masters.id', $table . '.ward_mstr_id')
             ->leftJoin('prop_cheque_dtls', 'prop_cheque_dtls.transaction_id', 't.id')
             ->where($table . '.is_gb_saf', true)
-            ->whereBetween('tran_date', [$fromDate, $uptoDate]);
+            ->whereBetween('tran_date', [$fromDate, $uptoDate])
+            ->groupBy(
+                't.id',
+                'pp.id',
+                'gbo.officer_name',
+                'gbo.mobile_no',
+                'ulb_ward_masters.ward_name',
+                'users.user_name',
+                'prop_cheque_dtls.cheque_no',
+                'bank_name',
+                'branch_name',
+                $table . '.saf_no',
+                $table . '.ward_mstr_id',
+                $table . '.prop_address'
+            );
     }
 }
