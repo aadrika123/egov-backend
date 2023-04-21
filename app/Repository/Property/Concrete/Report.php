@@ -92,11 +92,7 @@ class Report implements IReport
                             ) AS from_upto_fy_qtr,
                             prop_transactions.tran_date,
                             prop_transactions.payment_mode AS transaction_mode,
-                            prop_transactions.amount,
-                            (
-                                CASE WHEN users.user_name IS NOT NULL THEN users.user_name 
-                                ELSE 'N/A' END
-                            ) AS emp_name,
+                            prop_transactions.amount,users.user_name as emp_name,users.id,
                             prop_transactions.tran_no,prop_cheque_dtls.cheque_no,
                             prop_cheque_dtls.bank_name,prop_cheque_dtls.branch_name
                 "),
@@ -227,11 +223,7 @@ class Report implements IReport
                             ) AS from_upto_fy_qtr,
                             prop_transactions.tran_date,
                             prop_transactions.payment_mode AS transaction_mode,
-                            prop_transactions.amount,
-                            (
-                                CASE WHEN users.user_name IS NOT NULL THEN users.user_name 
-                                ELSE 'N/A' END
-                            ) AS emp_name,
+                            prop_transactions.amount,users.user_name as emp_name,users.id,
                             prop_transactions.tran_no,prop_cheque_dtls.cheque_no,
                             prop_cheque_dtls.bank_name,prop_cheque_dtls.branch_name
                 "),
@@ -285,24 +277,9 @@ class Report implements IReport
                             ) AS from_upto_fy_qtr,
                             prop_transactions.tran_date,
                             prop_transactions.payment_mode AS transaction_mode,
-                            prop_transactions.amount,
-                            (
-                                CASE WHEN users.user_name IS NOT NULL THEN users.user_name 
-                                ELSE 'N/A' END
-                            ) AS emp_name,
-                            prop_transactions.tran_no,
-                            (
-                                CASE WHEN prop_cheque_dtls.cheque_no IS NULL THEN 'N/A' 
-                                ELSE prop_cheque_dtls.cheque_no END
-                            ) AS cheque_no,
-                            (
-                                CASE WHEN prop_cheque_dtls.bank_name IS NULL THEN 'N/A' 
-                                ELSE prop_cheque_dtls.bank_name END
-                            ) AS bank_name,
-                            (
-                                CASE WHEN prop_cheque_dtls.branch_name IS NULL THEN 'N/A' 
-                                ELSE prop_cheque_dtls.branch_name END
-                            ) AS branch_name
+                            prop_transactions.amount,users.user_name as emp_name,users.id,
+                            prop_transactions.tran_no,prop_cheque_dtls.cheque_no,
+                            prop_cheque_dtls.bank_name,prop_cheque_dtls.branch_name
                 "),
             )
                 ->JOIN("prop_rejected_safs", "prop_rejected_safs.id", "prop_transactions.saf_id")
@@ -354,24 +331,9 @@ class Report implements IReport
                             ) AS from_upto_fy_qtr,
                             prop_transactions.tran_date,
                             prop_transactions.payment_mode AS transaction_mode,
-                            prop_transactions.amount,
-                            (
-                                CASE WHEN users.user_name IS NOT NULL THEN users.user_name 
-                                ELSE 'N/A' END
-                            ) AS emp_name,
-                            prop_transactions.tran_no,
-                            (
-                                CASE WHEN prop_cheque_dtls.cheque_no IS NULL THEN 'N/A' 
-                                ELSE prop_cheque_dtls.cheque_no END
-                            ) AS cheque_no,
-                            (
-                                CASE WHEN prop_cheque_dtls.bank_name IS NULL THEN 'N/A' 
-                                ELSE prop_cheque_dtls.bank_name END
-                            ) AS bank_name,
-                            (
-                                CASE WHEN prop_cheque_dtls.branch_name IS NULL THEN 'N/A' 
-                                ELSE prop_cheque_dtls.branch_name END
-                            ) AS branch_name
+                            prop_transactions.amount,users.user_name as emp_name,users.id,
+                            prop_transactions.tran_no,prop_cheque_dtls.cheque_no,
+                            prop_cheque_dtls.bank_name,prop_cheque_dtls.branch_name
                 "),
             )
                 ->JOIN("prop_safs", "prop_safs.id", "prop_transactions.saf_id")
@@ -426,7 +388,7 @@ class Report implements IReport
 
             $data = $activSaf->union($rejectedSaf)->union($saf);
             $data2 = $data;
-            $totalSaf = $data2->count("id");
+            // $totalSaf = $data2->count("id");
             $totalAmount = $data2->sum("amount");
             $perPage = $request->perPage ? $request->perPage : 5;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
@@ -445,7 +407,7 @@ class Report implements IReport
 
                 "current_page" => $paginator->currentPage(),
                 "last_page" => $paginator->lastPage(),
-                "totalSaf" => $totalSaf,
+                // "totalSaf" => $totalSaf,
                 "totalAmount" => $totalAmount,
                 "data" => $paginator->items(),
                 "total" => $paginator->total(),
