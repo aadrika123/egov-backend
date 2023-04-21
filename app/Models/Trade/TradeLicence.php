@@ -8,4 +8,11 @@ use Illuminate\Database\Eloquent\Model;
 class TradeLicence extends Model
 {
     use HasFactory;
+
+    public function getTradeIdByLicenseNo($licenseNo)
+    {
+        return TradeLicence::select('id')
+            ->where('license_no', $licenseNo)
+            ->firstOrFail();
+    }
 }

@@ -66,6 +66,15 @@ class ActiveCitizenUndercare extends Model
     }
 
     /**
+     * | Get Trade By Trade Id
+     */
+    public function getTaggedTrades($licenseNo)
+    {
+        return ActiveCitizenUndercare::where('license_id', $licenseNo)
+            ->get();
+    }
+
+    /**
      * | Get Tagged Property by Citizen Id
      */
     public function getTaggedPropsByCitizenId($citizenId)

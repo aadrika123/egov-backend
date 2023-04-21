@@ -7,6 +7,7 @@ use App\Models\Citizen\ActiveCitizenUndercare;
 use App\Models\Water\WaterApprovalApplicant;
 use App\Models\Water\WaterConsumer;
 use App\Pipelines\CareTakers\TagProperty;
+use App\Pipelines\CareTakers\TagTrade;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
@@ -114,7 +115,8 @@ class CaretakerController extends Controller
             $response = app(Pipeline::class)
                 ->send($data)
                 ->through([
-                    TagProperty::class
+                    TagProperty::class,
+                    TagTrade::class
                 ])
                 ->thenReturn();
             return responseMsgs(true, $response, [], '1001', '1.0', "", 'POST', $req->deviceId);
