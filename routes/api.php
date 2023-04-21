@@ -334,11 +334,13 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     });
 
     /**
-     * | Caretaker Property , Water , Trade 
+     * | Caretaker Property , Water , Trade (10)
      */
     Route::controller(CaretakerController::class)->group(function () {
         Route::post('water/caretaker-otp', 'waterCaretakerOtp');
         Route::post('water/caretaker-consumer-tagging', 'caretakerConsumerTag');
+
+        Route::post('citizen/caretake-modules', 'careTakeModules');        // CareTake Modules (01)
     });
 });
 

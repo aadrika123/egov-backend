@@ -604,4 +604,16 @@ class PropProperty extends Model
             ->where('prop_properties.ulb_id', $ulbId)
             ->where('prop_properties.status', 1);
     }
+    /**
+     * | Get Property id by Ptn or HoldingNo
+     * | @param reference Application No
+     */
+    public function getPropByPtnOrHolding($refrenceNo)
+    {
+        return PropProperty::select('id')
+            ->where('holding_no', $refrenceNo)
+            ->orWhere('new_holding_no', $refrenceNo)
+            ->orWhere('pt_no', $refrenceNo)
+            ->firstOrFail();
+    }
 }

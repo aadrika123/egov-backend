@@ -2,6 +2,7 @@
 
 namespace App\Models\Citizen;
 
+use App\Models\Property\PropProperty;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -9,6 +10,15 @@ use Illuminate\Database\Eloquent\Model;
 class ActiveCitizenUndercare extends Model
 {
     use HasFactory;
+    protected $guarded = [];
+
+    /**
+     * | Store
+     */
+    public function store(array $req)
+    {
+        ActiveCitizenUndercare::create($req);
+    }
 
     /**
      * | 
@@ -41,8 +51,17 @@ class ActiveCitizenUndercare extends Model
     public function getDetailsByCitizenId()
     {
         $user = authUser();
-        return ActiveCitizenUndercare::where('citizen_id',$user->id)
-        ->where('deactive_status',false)
-        ->get();
+        return ActiveCitizenUndercare::where('citizen_id', $user->id)
+            ->where('deactive_status', false)
+            ->get();
+    }
+
+    /**
+     * | Get Property By Citizen Id
+     */
+    public function getTaggedProperties($propId)
+    {
+        return ActiveCitizenUndercare::where('property_id', $propId)
+            ->get();
     }
 }
