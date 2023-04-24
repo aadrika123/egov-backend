@@ -819,6 +819,7 @@ class ObjectionController extends Controller
      */
     public function getDocList($refApplication, $ownerDetails)
     {
+        $ownerDetails = $ownerDetails->first();
         $mRefReqDocs = new RefRequiredDocument();
         $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
         $isOwner = $ownerDetails->owner_name;
