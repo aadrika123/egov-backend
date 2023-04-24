@@ -489,6 +489,18 @@ return [
             "value" => "Special Rebate",
             "perc" => 5
         ],
+        [
+            "id" => 7,
+            "key" => "onlineRebate5%",
+            "value" => "Online Rebate",
+            "perc" => 5
+        ],
+        [
+            "id" => 8,
+            "key" => "jskRebate2.5%",
+            "value" => "JSK (2.5%) Rebate",
+            "perc" => 5
+        ],
     ],
 
     // Adjustment Types 
