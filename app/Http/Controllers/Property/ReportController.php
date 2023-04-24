@@ -583,6 +583,7 @@ class ReportController extends Controller
         $gbsafCollection = null;
         $wardId = null;
         $propertyType = null;
+        $paymentMode = null;
         $proptotalData = 0;
         $proptotal = 0;
         $saftotal = 0;
@@ -597,6 +598,13 @@ class ReportController extends Controller
         $limit = $perPage;
         $currentPage = $request->page ?? 1;
         $offset =  $request->page && $request->page > 0 ? ($request->page * $perPage) : 0;
+
+        $rebatePenalList = collect(Config::get('PropertyConstaint.REBATE_PENAL_MASTERS'));
+
+        $onePercPenalty  =  $rebatePenalList->where('key', 'onePercPenalty')->first()['value'];
+        $firstQtrRebate  =  $rebatePenalList->where('key', 'firstQtrRebate')->first()['value'];
+        $jskonlineRebate =  $rebatePenalList->where('key', 'onlineRebate')->first()['value'];
+        $specialRebate   =  $rebatePenalList->where('key', 'specialRebate')->first()['value'];
 
         if ($request->wardId) {
             $wardId = $request->wardId;
@@ -643,17 +651,17 @@ class ReportController extends Controller
                         jsk_rebate_amt
                         from prop_transactions as t
                         join (select  tran_id,
-                                CASE WHEN  head_name = '1% Monthly Penalty' THEN sum(prop_penaltyrebates.amount) END AS penalty_amt,
+                                CASE WHEN  head_name = '$onePercPenalty' THEN sum(prop_penaltyrebates.amount) END AS penalty_amt,
                                 CASE WHEN  head_name = 'Online Rebate' THEN sum(prop_penaltyrebates.amount) 
-                                    WHEN  head_name = 'Rebate From Jsk/Online Payment' AND prop_transactions.payment_mode = 'ONLINE' then sum(prop_penaltyrebates.amount) END AS online_rebate_amt,
-                                CASE WHEN  head_name = 'First Qtr Rebate' THEN sum(prop_penaltyrebates.amount) END AS first_qtr_rebate,
-                                CASE WHEN  head_name = 'Special Rebate' THEN sum(prop_penaltyrebates.amount) END AS special_rebate_amt,
+                                     WHEN  head_name = '$jskonlineRebate' AND prop_transactions.payment_mode = 'ONLINE' then sum(prop_penaltyrebates.amount) END AS online_rebate_amt,
+                                CASE WHEN  head_name = '$firstQtrRebate' THEN sum(prop_penaltyrebates.amount) END AS first_qtr_rebate,
+                                CASE WHEN  head_name = '$specialRebate' THEN sum(prop_penaltyrebates.amount) END AS special_rebate_amt,
                                 CASE WHEN  head_name = 'JSK (2.5%) Rebate' THEN sum(prop_penaltyrebates.amount) 
-                                    WHEN  head_name = 'Rebate From Jsk/Online Payment' AND prop_transactions.payment_mode = 'CASH' then  sum(prop_penaltyrebates.amount) END AS jsk_rebate_amt 
+                                     WHEN  head_name = '$jskonlineRebate' AND prop_transactions.payment_mode = 'CASH' then  sum(prop_penaltyrebates.amount) END AS jsk_rebate_amt 
                             from prop_penaltyrebates 
                             join prop_transactions on prop_penaltyrebates.tran_id=prop_transactions.id
                             where prop_penaltyrebates.status = 1
-                           -- " . ($paymentMode ? " AND prop_transactions.payment_mode = $paymentMode" : "") . "
+                          " .  ($paymentMode ? " AND prop_transactions.payment_mode = '$paymentMode' " : "") . "
                             group by tran_id,head_name,payment_mode
                         ) as pr on pr.tran_id = t.id 
                         join ( 
@@ -673,13 +681,13 @@ class ReportController extends Controller
                 $sql = "select count(*) as total
                             from prop_transactions as t
                             join (select  tran_id,
-                                    CASE WHEN  head_name = '1% Monthly Penalty' THEN sum(prop_penaltyrebates.amount) END AS penalty_amt,
+                                    CASE WHEN  head_name = '$onePercPenalty' THEN sum(prop_penaltyrebates.amount) END AS penalty_amt,
                                     CASE WHEN  head_name = 'Online Rebate' THEN sum(prop_penaltyrebates.amount) 
-                                        WHEN  head_name = 'Rebate From Jsk/Online Payment' AND prop_transactions.payment_mode = 'ONLINE' then sum(prop_penaltyrebates.amount) END AS online_rebate_amt,
-                                    CASE WHEN  head_name = 'First Qtr Rebate' THEN sum(prop_penaltyrebates.amount) END AS first_qtr_rebate,
-                                    CASE WHEN  head_name = 'Special Rebate' THEN sum(prop_penaltyrebates.amount) END AS special_rebate_amt,
+                                         WHEN  head_name = '$jskonlineRebate' AND prop_transactions.payment_mode = 'ONLINE' then sum(prop_penaltyrebates.amount) END AS online_rebate_amt,
+                                    CASE WHEN  head_name = '$firstQtrRebate' THEN sum(prop_penaltyrebates.amount) END AS first_qtr_rebate,
+                                    CASE WHEN  head_name = '$specialRebate' THEN sum(prop_penaltyrebates.amount) END AS special_rebate_amt,
                                     CASE WHEN  head_name = 'JSK (2.5%) Rebate' THEN sum(prop_penaltyrebates.amount) 
-                                        WHEN  head_name = 'Rebate From Jsk/Online Payment' AND prop_transactions.payment_mode = 'CASH' then  sum(prop_penaltyrebates.amount) END AS jsk_rebate_amt 
+                                         WHEN  head_name = '$jskonlineRebate' AND prop_transactions.payment_mode = 'CASH' then  sum(prop_penaltyrebates.amount) END AS jsk_rebate_amt 
                                 from prop_penaltyrebates 
                                 join prop_transactions on prop_penaltyrebates.tran_id=prop_transactions.id
                                 where prop_penaltyrebates.status = 1
@@ -714,17 +722,17 @@ class ReportController extends Controller
                 sum(special_rebate_amt) as special_rebate_amt
                 from prop_transactions as t
                 join (select  tran_id,demand_amt,
-                        CASE WHEN  head_name = '1% Monthly Penalty' THEN sum(prop_penaltyrebates.amount) END AS penalty_amt,
+                        CASE WHEN  head_name = '$onePercPenalty' THEN sum(prop_penaltyrebates.amount) END AS penalty_amt,
                         CASE WHEN  head_name = 'Online Rebate' THEN sum(prop_penaltyrebates.amount) 
-                             WHEN  head_name = 'Rebate From Jsk/Online Payment' AND prop_transactions.payment_mode = 'ONLINE' then sum(prop_penaltyrebates.amount) END AS online_rebate_amt,
-                        CASE WHEN  head_name = 'First Qtr Rebate' THEN sum(prop_penaltyrebates.amount) END AS first_qtr_rebate,
-                        CASE WHEN  head_name = 'Special Rebate' THEN sum(prop_penaltyrebates.amount) END AS special_rebate_amt,
+                             WHEN  head_name = '$jskonlineRebate' AND prop_transactions.payment_mode = 'ONLINE' then sum(prop_penaltyrebates.amount) END AS online_rebate_amt,
+                        CASE WHEN  head_name = '$firstQtrRebate' THEN sum(prop_penaltyrebates.amount) END AS first_qtr_rebate,
+                        CASE WHEN  head_name = '$specialRebate' THEN sum(prop_penaltyrebates.amount) END AS special_rebate_amt,
                         CASE WHEN  head_name = 'JSK (2.5%) Rebate' THEN sum(prop_penaltyrebates.amount) 
-                             WHEN  head_name = 'Rebate From Jsk/Online Payment' AND prop_transactions.payment_mode = 'CASH' then  sum(prop_penaltyrebates.amount) END AS jsk_rebate_amt 
+                             WHEN  head_name = '$jskonlineRebate' AND prop_transactions.payment_mode = 'CASH' then  sum(prop_penaltyrebates.amount) END AS jsk_rebate_amt 
                     from prop_penaltyrebates 
                     join prop_transactions on prop_penaltyrebates.tran_id=prop_transactions.id
                     where prop_penaltyrebates.status = 1
-                    " . ($paymentMode ? " AND prop_transactions.payment_mode = $paymentMode" : "") . "
+                    " .  ($paymentMode ? " AND prop_transactions.payment_mode = '$paymentMode' " : "") . "
                     group by tran_id,head_name,payment_mode,demand_amt
                     ) as pr on pr.tran_id = t.id
                 join prop_active_safs on prop_active_safs.id = t.saf_id
@@ -741,13 +749,13 @@ class ReportController extends Controller
                             from prop_transactions as t
                             join 
                         (select  tran_id,demand_amt,
-                            CASE WHEN  head_name = '1% Monthly Penalty' THEN sum(prop_penaltyrebates.amount) END AS penalty_amt,
+                            CASE WHEN  head_name = '$onePercPenalty' THEN sum(prop_penaltyrebates.amount) END AS penalty_amt,
                             CASE WHEN  head_name = 'Online Rebate' THEN sum(prop_penaltyrebates.amount) 
-                                WHEN  head_name = 'Rebate From Jsk/Online Payment' AND prop_transactions.payment_mode = 'ONLINE' then sum(prop_penaltyrebates.amount) END AS online_rebate_amt,
-                            CASE WHEN  head_name = 'First Qtr Rebate' THEN sum(prop_penaltyrebates.amount) END AS first_qtr_rebate,
-                            CASE WHEN  head_name = 'Special Rebate' THEN sum(prop_penaltyrebates.amount) END AS special_rebate_amt,
+                                 WHEN  head_name = '$jskonlineRebate' AND prop_transactions.payment_mode = 'ONLINE' then sum(prop_penaltyrebates.amount) END AS online_rebate_amt,
+                            CASE WHEN  head_name = '$firstQtrRebate' THEN sum(prop_penaltyrebates.amount) END AS first_qtr_rebate,
+                            CASE WHEN  head_name = '$specialRebate' THEN sum(prop_penaltyrebates.amount) END AS special_rebate_amt,
                             CASE WHEN  head_name = 'JSK (2.5%) Rebate' THEN sum(prop_penaltyrebates.amount) 
-                        WHEN  head_name = 'Rebate From Jsk/Online Payment' AND prop_transactions.payment_mode = 'CASH' then  sum(prop_penaltyrebates.amount) END AS jsk_rebate_amt 
+                                 WHEN  head_name = '$jskonlineRebate' AND prop_transactions.payment_mode = 'CASH' then  sum(prop_penaltyrebates.amount) END AS jsk_rebate_amt 
                         from prop_penaltyrebates 
                         join prop_transactions on prop_penaltyrebates.tran_id=prop_transactions.id
                         where prop_penaltyrebates.status = 1
@@ -778,17 +786,17 @@ class ReportController extends Controller
                             from prop_transactions as t
                             join (
                                 select  tran_id,demand_amt,
-                                    CASE WHEN  head_name = '1% Monthly Penalty' THEN sum(prop_penaltyrebates.amount) END AS penalty_amt,
+                                    CASE WHEN  head_name = '$onePercPenalty' THEN sum(prop_penaltyrebates.amount) END AS penalty_amt,
                                     CASE WHEN  head_name = 'Online Rebate' THEN sum(prop_penaltyrebates.amount) 
-                                        WHEN  head_name = 'Rebate From Jsk/Online Payment' AND prop_transactions.payment_mode = 'ONLINE' then sum(prop_penaltyrebates.amount) END AS online_rebate_amt,
-                                    CASE WHEN  head_name = 'First Qtr Rebate' THEN sum(prop_penaltyrebates.amount) END AS first_qtr_rebate,
-                                    CASE WHEN  head_name = 'Special Rebate' THEN sum(prop_penaltyrebates.amount) END AS special_rebate_amt,
+                                         WHEN  head_name = '$jskonlineRebate' AND prop_transactions.payment_mode = 'ONLINE' then sum(prop_penaltyrebates.amount) END AS online_rebate_amt,
+                                    CASE WHEN  head_name = '$firstQtrRebate' THEN sum(prop_penaltyrebates.amount) END AS first_qtr_rebate,
+                                    CASE WHEN  head_name = '$specialRebate' THEN sum(prop_penaltyrebates.amount) END AS special_rebate_amt,
                                     CASE WHEN  head_name = 'JSK (2.5%) Rebate' THEN sum(prop_penaltyrebates.amount) 
-                                        WHEN  head_name = 'Rebate From Jsk/Online Payment' AND prop_transactions.payment_mode = 'CASH' then  sum(prop_penaltyrebates.amount) END AS jsk_rebate_amt 
+                                         WHEN  head_name = '$jskonlineRebate' AND prop_transactions.payment_mode = 'CASH' then  sum(prop_penaltyrebates.amount) END AS jsk_rebate_amt 
                                 from prop_penaltyrebates 
                                 join prop_transactions on prop_penaltyrebates.tran_id=prop_transactions.id
                                 where prop_penaltyrebates.status = 1
-                                " . ($paymentMode ? " AND prop_transactions.payment_mode = $paymentMode" : "") . "
+                                " .  ($paymentMode ? " AND prop_transactions.payment_mode = '$paymentMode' " : "") . "
                                 group by tran_id,head_name,payment_mode,demand_amt
                             ) as pr on pr.tran_id = t.id
                             join prop_active_safs on prop_active_safs.id = t.saf_id
@@ -806,15 +814,15 @@ class ReportController extends Controller
                             from prop_transactions as t
                             join (
                                 select  tran_id,demand_amt,
-                                    CASE WHEN  head_name = '1% Monthly Penalty' THEN sum(prop_penaltyrebates.amount) END AS penalty_amt,
+                                    CASE WHEN  head_name = '$onePercPenalty' THEN sum(prop_penaltyrebates.amount) END AS penalty_amt,
                                     CASE WHEN  head_name = 'Online Rebate' THEN sum(prop_penaltyrebates.amount) 
-                                        WHEN  head_name = 'Rebate From Jsk/Online Payment' AND prop_transactions.payment_mode = 'ONLINE' then sum(prop_penaltyrebates.amount) END AS online_rebate_amt,
-                                    CASE WHEN  head_name = 'First Qtr Rebate' THEN sum(prop_penaltyrebates.amount) END AS first_qtr_rebate,
-                                    CASE WHEN  head_name = 'Special Rebate' THEN sum(prop_penaltyrebates.amount) END AS special_rebate_amt,
+                                         WHEN  head_name = '$jskonlineRebate' AND prop_transactions.payment_mode = 'ONLINE' then sum(prop_penaltyrebates.amount) END AS online_rebate_amt,
+                                    CASE WHEN  head_name = '$firstQtrRebate' THEN sum(prop_penaltyrebates.amount) END AS first_qtr_rebate,
+                                    CASE WHEN  head_name = '$specialRebate' THEN sum(prop_penaltyrebates.amount) END AS special_rebate_amt,
                                     CASE WHEN  head_name = 'JSK (2.5%) Rebate' THEN sum(prop_penaltyrebates.amount) 
-                                        WHEN  head_name = 'Rebate From Jsk/Online Payment' AND prop_transactions.payment_mode = 'CASH' then  sum(prop_penaltyrebates.amount) END AS jsk_rebate_amt 
+                                         WHEN  head_name = '$jskonlineRebate' AND prop_transactions.payment_mode = 'CASH' then  sum(prop_penaltyrebates.amount) END AS jsk_rebate_amt 
                                 from prop_penaltyrebates 
-                                join prop_transactions on prop_penaltyrebates.tran_id=prop_transactions.id
+                                join prop_transactions on prop_penaltyrebates.tran_id = prop_transactions.id
                                 where prop_penaltyrebates.status = 1
                                 group by tran_id,head_name,payment_mode,demand_amt
                             ) as pr on pr.tran_id = t.id
