@@ -2967,13 +2967,14 @@ class Report implements IReport
 
                 $sql1 = "select t.id,payment_mode,ward_name as ward_no,
                                 prop_properties.saf_no,holding_no,new_holding_no,
-                                CASE WHEN  t.property_id is not null THEN t.property_id END AS property_id,
-                                round(t.demand_amt),round(t.amount) as paid_amount,
-                                round(penalty_amt),
-                                round(online_rebate_amt),
-                                round(special_rebate_amt),
-                                round(first_qtr_rebate),
-                                round(jsk_rebate_amt)
+                                round(t.demand_amt)as demand_amt,
+                                round(t.amount) as paid_amount,
+                                round(penalty_amt)as penalty_amt,
+                                round(online_rebate_amt) as online_rebate_amt,
+                                round(special_rebate_amt) as special_rebate_amt,
+                                round(first_qtr_rebate) as first_qtr_rebate,
+                                round(jsk_rebate_amt) as jsk_rebate_amt,
+                                CASE WHEN  t.property_id is not null THEN t.property_id END AS property_id
                         from prop_transactions as t
                             join (select  tran_id,
                                         CASE WHEN  head_name = '$onePercPenalty' THEN sum(prop_penaltyrebates.amount) END AS penalty_amt,
@@ -3048,7 +3049,7 @@ class Report implements IReport
                                 CASE WHEN  t.saf_id is not null THEN t.saf_id END AS saf_id,
                                 saf_no,ward_name as ward_no,
                                 round(t.amount) as paid_amount,
-                                round(pr.demand_amt),
+                                round(pr.demand_amt)as demand_amt,
                                 round(sum(penalty_amt)) as penalty_amt,
                                 round(sum(online_rebate_amt)) as online_rebate_amt,
                                 round(sum(first_qtr_rebate)) as first_qtr_rebate,
@@ -3128,7 +3129,8 @@ class Report implements IReport
                 $sql3 = "select
                             payment_mode,
                             tran_id,saf_no,ward_name as ward_no,
-                            t.amount as paid_amount,pr.demand_amt,
+                            t.amount as paid_amount,
+                            pr.demand_amt,
                             sum(penalty_amt) as penalty_amt,
                             sum(online_rebate_amt) as online_rebate_amt,
                             sum(first_qtr_rebate) as first_qtr_rebate,
