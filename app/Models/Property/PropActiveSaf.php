@@ -574,7 +574,7 @@ class  PropActiveSaf extends Model
     {
         return PropActiveSaf::select(
             'saf_no as applicationNo',
-            'application_date as applyDate ',
+            'application_date as applyDate',
             'assessment_type as assessmentType',
             DB::raw("string_agg(owner_name,',') as applicantName"),
         )

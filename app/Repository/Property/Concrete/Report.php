@@ -2895,11 +2895,12 @@ class Report implements IReport
     }
 
     /**
-     * |
+     * | Rebate and Penalty
      */
     public function rebateNpenalty($request)
     {
         $uptoDate = $request->uptoDate;
+        $fromDate = $request->fromDate;
         $propCollection = null;
         $safCollection = null;
         $gbsafCollection = null;
@@ -2919,7 +2920,6 @@ class Report implements IReport
         $limit = $perPage;
         $currentPage = $request->page ?? 1;
         $offset =  $request->page && $request->page > 0 ? ($request->page * $perPage) : 0;
-        $reportTypes = $request->reportType;
         $rebatePenalList = collect(Config::get('PropertyConstaint.REBATE_PENAL_MASTERS'));
 
         $onePercPenalty  =  $rebatePenalList->where('key', 'onePercPenalty')->first()['value'];
@@ -2945,7 +2945,7 @@ class Report implements IReport
             if ($reportType == 'property') {
 
                 $sql1 = "select t.property_id,payment_mode,ward_name as ward_no,
-                                tran_id,t.amount as paid_amount,
+                                tran_id,t.amount as paid_amount,prop_properties.saf_no,
                                 demand_amount as demand_amt,holding_no,new_holding_no,saf_no,
                                 CASE WHEN  t.property_id is not null THEN t.property_id END AS property_id,
                                 penalty_amt,
@@ -2957,11 +2957,11 @@ class Report implements IReport
                             join (select  tran_id,
                                         CASE WHEN  head_name = '$onePercPenalty' THEN sum(prop_penaltyrebates.amount) END AS penalty_amt,
                                         CASE WHEN  head_name = '$onlineRebate' THEN sum(prop_penaltyrebates.amount) 
-                                            WHEN  head_name = '$jskonlineRebate' AND prop_transactions.payment_mode = 'ONLINE' then sum(prop_penaltyrebates.amount) END AS online_rebate_amt,
+                                             WHEN  head_name = '$jskonlineRebate' AND prop_transactions.payment_mode = 'ONLINE' then sum(prop_penaltyrebates.amount) END AS online_rebate_amt,
                                         CASE WHEN  head_name = '$firstQtrRebate' THEN sum(prop_penaltyrebates.amount) END AS first_qtr_rebate,
                                         CASE WHEN  head_name = '$specialRebate' THEN sum(prop_penaltyrebates.amount) END AS special_rebate_amt,
                                         CASE WHEN  head_name = '$jskRebate' THEN sum(prop_penaltyrebates.amount) 
-                                            WHEN  head_name = '$jskonlineRebate' AND prop_transactions.payment_mode = 'CASH' then  sum(prop_penaltyrebates.amount) END AS jsk_rebate_amt 
+                                             WHEN  head_name = '$jskonlineRebate' AND prop_transactions.payment_mode = 'CASH' then  sum(prop_penaltyrebates.amount) END AS jsk_rebate_amt 
                                     from prop_penaltyrebates 
                                     join prop_transactions on prop_penaltyrebates.tran_id=prop_transactions.id
                                     where prop_penaltyrebates.status = 1
@@ -2976,7 +2976,7 @@ class Report implements IReport
                                 ) as d on d.property_id = t.property_id 
                             join prop_properties on prop_properties.id = t.property_id
                             join ulb_ward_masters on ulb_ward_masters.id = prop_properties.ward_mstr_id
-                            where  t.tran_date <= '$uptoDate' 
+                            where t.tran_date between '$fromDate' and '$uptoDate'
                             and t.status = 1
                             " . ($wardId ? " AND prop_properties.ward_mstr_id = $wardId" : "") . "
                             " . ($propertyType ? " AND prop_properties.prop_type_mstr_id = $propertyType" : "") . "
@@ -3004,7 +3004,7 @@ class Report implements IReport
                             group by property_id
                             ) as d on d.property_id = t.property_id 
                         join prop_properties on prop_properties.id = t.property_id
-                        where  t.tran_date <= '$uptoDate' 
+                        where t.tran_date between '$fromDate' and '$uptoDate'
                         and t.status = 1";
 
                 $propData =  DB::select($sql1);
@@ -3042,7 +3042,7 @@ class Report implements IReport
                         ) as pr on pr.tran_id = t.id
                     join prop_active_safs on prop_active_safs.id = t.saf_id
                     join ulb_ward_masters on ulb_ward_masters.id = prop_active_safs.ward_mstr_id
-                    where  t.tran_date <= '$uptoDate'
+                    where t.tran_date between '$fromDate' and '$uptoDate'
                     and t.status = 1
                     " . ($wardId ? " AND prop_active_safs.ward_mstr_id = $wardId" : "") . "
                     " . ($propertyType ? " AND prop_active_safs.prop_type_mstr_id = " . $propertyType . "" : "") . "
@@ -3067,7 +3067,7 @@ class Report implements IReport
                         group by tran_id,head_name,payment_mode,demand_amt
                         ) as pr on pr.tran_id = t.id
                     join prop_active_safs on prop_active_safs.id = t.saf_id
-                    where  t.tran_date <= '$uptoDate'
+                    where t.tran_date between '$fromDate' and '$uptoDate'
                     and t.status = 1";
 
                 $safData =  DB::select($sql2);
@@ -3160,6 +3160,7 @@ class Report implements IReport
         $data['total_first_qtr_rebate'] = round($details->sum('first_qtr_rebate'));
         $data['total_jsk_rebate_amt'] = round($details->sum('jsk_rebate_amt'));
         $data['total_special_rebate_amt'] = round($details->sum('special_rebate_amt'));
+        $data['reportTypes'] = $reportTypes;
         $data['data'] = $details;
 
         return responseMsgs(true, "", $data, "", "", "", "post", $request->deviceId);
