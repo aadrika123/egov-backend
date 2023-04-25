@@ -544,6 +544,7 @@ use Illuminate\Support\Facades\DB;
                 $application->notice_no = $id_respons->original["data"];//$this->generateNoticNo($application->id);
                 $application->notice_date = Carbon::now()->format("Y-m-d");
                 $application->update();
+                $this->sendNotice($application->id);
                 $msg =  "Notice Successfully Generated !!. Your Notice No. ".$application->notice_no;
             }
 
@@ -555,7 +556,7 @@ use Illuminate\Support\Facades\DB;
                 $application->update();
                 $msg = "Application Successfully Rejected !!";
             }
-            DB::commit();
+            // DB::commit();
             return responseMsg(true, $msg, "");
         } catch (Exception $e) {
             DB::rollBack();
@@ -597,8 +598,19 @@ use Illuminate\Support\Facades\DB;
         return $status;
     }
 
-    public function generateNotic()
+    public function sendNotice($applicationId)
     {
-        
+        try{
+            $application = NoticeApplication::where("status",5)->find($applicationId);
+            if($application)
+            {
+                // $pdf = DomPdf()
+            }
+            // dd($application);
+        }
+        catch(Exception $e)
+        {
+
+        }
     }
  }
