@@ -189,6 +189,7 @@ class PropActiveHarvesting extends Model
     public function recentApplication($userId)
     {
         $data = PropActiveHarvesting::select(
+            'prop_active_harvestings.id',
             'application_no as applicationNo',
             'date as applyDate',
             // "'Rain Water Harvesting' as 'assessmentType'",

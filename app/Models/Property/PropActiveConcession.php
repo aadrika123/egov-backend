@@ -132,6 +132,7 @@ class PropActiveConcession extends Model
     public function recentApplication($userId)
     {
         $data = PropActiveConcession::select(
+            'id',
             'application_no as applicationNo',
             'date as applyDate',
             'applied_for as assessmentType',
