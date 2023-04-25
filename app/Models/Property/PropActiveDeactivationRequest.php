@@ -42,6 +42,7 @@ class PropActiveDeactivationRequest extends Model
     public function recentApplication($userId)
     {
         $data = PropActiveDeactivationRequest::select(
+            'prop_active_deactivation_requests.id',
             'holding_no as holdingNo',
             'apply_date as applyDate',
             DB::raw(" 'Deactivation' as assessmentType"),
