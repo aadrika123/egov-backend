@@ -19,5 +19,6 @@ interface IReport
     public function userWiseWardWiseLevelPending(Request $request);
     public function levelformdetail(Request $request);
     public function bulkPaymentRecipt(Request $request);
+    public function applicationStatus(Request $request);
 
 }

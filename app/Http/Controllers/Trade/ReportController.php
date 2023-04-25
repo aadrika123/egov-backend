@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Repository\Common\CommonFunction;
 use App\Repository\Trade\IReport;
 use App\Traits\Auth;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use LDAP\Result;
 
 class ReportController extends Controller
 {
@@ -251,5 +253,22 @@ class ReportController extends Controller
         );
         $request->request->add(["metaData" => ["tr11.1", 1.1, null, $request->getMethod(), null,]]);
         return $this->Repository->bulkPaymentRecipt($request);
+    }
+
+    public function applicationStatus(Request $request)
+    {
+        $request->validate(
+            [
+                "fromDate" => "required|date|date_format:Y-m-d",
+                "uptoDate" => "required|date|date_format:Y-m-d",
+                "wardId" => "nullable|digits_between:1,9223372036854775807",
+                "ulbId" => "nullable|digits_between:1,9223372036854775807",
+                "userId" => "nullable|digits_between:1,9223372036854775807",
+                "areaInsqrFt" => "nullable|numeric",
+                "status" => "nullable|int|in:1,2,3,4,5,6"
+            ]
+        );
+        $request->request->add(["metaData" => ["tr12.1", 1.1, null, $request->getMethod(), null,]]);
+        return $this->Repository->applicationStatus($request);
     }
 }
