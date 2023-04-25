@@ -244,6 +244,39 @@ class WaterNewConnection implements IWaterNewConnection
     public function razorPayResponse($args)
     {
         try {
+            # valication 
+            $RazorPayRequest = WaterRazorPayRequest::select("*")
+                ->where("order_id", $args["orderId"])
+                ->where("related_id", $args["id"])
+                ->where("status", 2)
+                ->first();
+            if (!$RazorPayRequest) {
+                throw new Exception("Data Not Found");
+            }
+            switch ($RazorPayRequest->payment_from) {
+                case "New Connection":
+                    $response = $this->waterConnectionPayment($args);
+                    break;
+                case "Site Inspection":
+                    $response = $this->waterConnectionPayment($args);
+                    break;
+                case "Demand Collection":
+                    $mWaterPaymentController = new WaterPaymentController();
+                    $response = $mWaterPaymentController->endOnlineDemandPayment($args, $RazorPayRequest);
+                    break;
+                default:
+                    throw new Exception("Invalide Transaction");
+            }
+            return $response;
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), $args);
+        }
+    }
+
+    public function waterConnectionPayment($args)
+    {
+        try {
             $refUser        = Auth()->user();
             $refUserId      = $refUser->id ?? $args["userId"];
             $refUlbId       = $refUser->ulb_id ?? $args["ulbId"];
@@ -283,12 +316,6 @@ class WaterNewConnection implements IWaterNewConnection
                     $cahges = $cahges + ($mDemands->sum("balance_amount"));
                 }
                 $chargeData["total_charge"] = $cahges;
-            } elseif ($RazorPayRequest->payment_from == "Demand Collection") {
-                $mWaterPaymentController = new WaterPaymentController();
-                $resposne = $mWaterPaymentController->endOnlineDemandPayment($args, $RazorPayRequest);
-                // $res['transactionId'] = $transaction_id;
-                // $res['paymentRecipt'] = config('app.url') . "/api/water/paymentRecipt/" . $applicationId . "/" . $transaction_id;
-                // return responseMsg(true, "", $res);
             }
             if (!$application) {
                 throw new Exception("Application Not Found!......");
@@ -377,6 +404,7 @@ class WaterNewConnection implements IWaterNewConnection
             return responseMsg(false, $e->getMessage(), $args);
         }
     }
+
 
     public function readTransectionAndApl(Request $request)
     {

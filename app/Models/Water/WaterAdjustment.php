@@ -31,7 +31,7 @@ class WaterAdjustment extends Model
     {
         $mWaterAdjustment = new WaterAdjustment();
         $mWaterAdjustment->related_id       = $request->consumerId;
-        $mWaterAdjustment->adjustment_for   = $adjustmentFor['1'];
+        $mWaterAdjustment->adjustment_for   = $adjustmentFor;
         $mWaterAdjustment->tran_id          = $waterTrans['id'];
         $mWaterAdjustment->amount           = $request->amount;
         $mWaterAdjustment->user_id          = $request->userId;

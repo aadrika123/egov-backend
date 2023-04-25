@@ -46,7 +46,6 @@ class JskController extends Controller
 
             $currentRole =  $this->getRoleByUserUlbId($ulbId, $userId);
 
-
             // if (in_array($userType, $rUserType)) {
 
             $data['recentApplications'] = $propActiveSaf->recentApplication($userId);
@@ -73,7 +72,8 @@ class JskController extends Controller
                     break;
             }
 
-            $data['recentPayments']  = $propTransaction->recentPayment($userId);
+            if ($userType == 'JSK')
+                $data['recentPayments']  = $propTransaction->recentPayment($userId);
             // }
 
             if ($userType == 'BO') {
@@ -131,13 +131,16 @@ class JskController extends Controller
                 $data['harvesting'] = $har->count();
             }
 
-
             if (in_array($currentRole->role_name, $role)) {
                 $safReceivedApp =  $mpropActiveSaf->todayReceivedApplication($currentRole->id, $ulbId)->count();
                 $objectionReceivedApp =  $mPropActiveObjection->todayReceivedApplication($currentRole->id, $ulbId)->count();
                 $concessionReceivedApp =  $mPropActiveConcession->todayReceivedApplication($currentRole->id, $ulbId)->count();
                 $harvestingReceivedApp =  $mPropActiveHarvesting->todayReceivedApplication($currentRole->id, $ulbId)->count();
                 $data['totalReceivedApplication'] = $safReceivedApp + $objectionReceivedApp + $concessionReceivedApp + $harvestingReceivedApp;
+                $data['saf'] = $safReceivedApp;
+                $data['objection'] = $objectionReceivedApp;
+                $data['concession'] = $concessionReceivedApp;
+                $data['harvesting'] = $harvestingReceivedApp;
 
                 $data['totalForwadedApplication'] = $mWorkflowTrack->todayForwadedApplication($currentRole->id, $ulbId, $propertyWorflows);
             }

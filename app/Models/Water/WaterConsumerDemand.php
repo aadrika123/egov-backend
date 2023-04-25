@@ -215,4 +215,19 @@ class WaterConsumerDemand extends Model
             ->orderByDesc('water_consumer_demands.id')
             ->get();
     }
+
+
+    /**
+     * | Get Demand According to consumerId and payment status false 
+        | Caution 
+        | Use only to check consumer demand in case of online payment 
+        | Dont use any where else 
+     */
+    public function checkConsumerDemand($consumerId)
+    {
+        return WaterConsumerDemand::where('consumer_id', $consumerId)
+            ->where('paid_status', 0)
+            ->where('status', true)
+            ->orderByDesc('id');
+    }
 }

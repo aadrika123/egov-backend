@@ -175,10 +175,10 @@ class RainWaterHarvestingController extends Controller
             $request->request->add($wfReqs);
             $track->saveTrack($request);
             DB::commit();
-            return responseMsg(true, "Application applied!", $harvestingNo);
+            return responseMsgs(true, "Application applied!", $harvestingNo);
         } catch (Exception $error) {
             DB::rollBack();
-            return responseMsg(false, "Error!", $error->getMessage());
+            return responseMsgs(false, "Error!", $error->getMessage());
         }
     }
 
@@ -365,7 +365,7 @@ class RainWaterHarvestingController extends Controller
 
             $details = $mPropActiveHarvesting->getDetailsById($req->applicationId);
 
-            $docs =  $mWfActiveDocument->getDocByRefIdsDocCode($req->applicationId, $details->workflow_id, $moduleId, ['WATER_HARVESTING'])->first();
+            $docs =  $mWfActiveDocument->getDocByRefIdsDocCode($req->applicationId, $details->workflow_id, $moduleId, ['WATER_HARVESTING'])->last();
             $data = [
                 'id' => $details->id,
                 'applicationNo' => $details->application_no,

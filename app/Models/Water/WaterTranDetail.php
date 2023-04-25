@@ -23,7 +23,7 @@ class WaterTranDetail extends Model
     }
 
     /**
-     * | Savr
+     * | Save transaction details 
      */
     public function saveDefaultTrans($totalConnectionCharges, $applicationId, $transactionId, $connectionId)
     {
@@ -53,6 +53,7 @@ class WaterTranDetail extends Model
      * | @param
      * | @param
      * | @param 
+        | Not used 
      */
     public function saveTransactionDetails(
         $waterTrans,

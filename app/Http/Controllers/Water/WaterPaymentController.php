@@ -21,6 +21,7 @@ use App\Models\Water\WaterConnectionCharge;
 use App\Models\Water\WaterConnectionThroughMstr;
 use App\Models\Water\WaterConnectionTypeMstr;
 use App\Models\Water\WaterConsumer;
+use App\Models\Water\WaterConsumerCollection;
 use App\Models\Water\WaterConsumerDemand;
 use App\Models\Water\WaterConsumerMeter;
 use App\Models\Water\WaterConsumerTax;
@@ -47,6 +48,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
+use Symfony\Component\HttpKernel\Event\RequestEvent;
 
 /**
  * | ----------------------------------------------------------------------------------
@@ -700,6 +702,7 @@ class WaterPaymentController extends Controller
             $midGeneration = new IdGeneration;
             $mWaterAdjustment = new WaterAdjustment();
             $mwaterTran = new waterTran();
+            $mWaterConsumerCollection = new WaterConsumerCollection();
             $todayDate = Carbon::now();
             $offlinePaymentModes = Config::get('payment-constants.VERIFICATION_PAYMENT_MODE');
             $adjustmentFor = Config::get("waterConstaint.ADVANCE_FOR");
@@ -729,7 +732,7 @@ class WaterPaymentController extends Controller
             $wardId['ward_mstr_id'] = collect($finalCharges['consumer'])['ward_mstr_id'];
             $waterTrans = $mwaterTran->waterTransaction($request, $wardId);
 
-            # Save the Details for the Cheque,DD,nfet
+            # Save the Details for the Cheque,DD,neft
             if (in_array($request['paymentMode'], $offlinePaymentModes)) {
                 $request->merge([
                     'chequeDate'    => $request['chequeDate'],
@@ -743,13 +746,17 @@ class WaterPaymentController extends Controller
 
             # adjustment data saving
             if ($finalCharges['adjustedAmount'] > 0) {
-                $mWaterAdjustment->saveAdjustment($waterTrans, $request, $adjustmentFor);
+                $mWaterAdjustment->saveAdjustment($waterTrans, $request, $adjustmentFor['1']);
             }
-
+            # Save the fine data in the 
+            if ($finalCharges['penaltyAmount'] > 0) {
+                $this->savePenaltyDetails($waterTrans, $finalCharges['penaltyAmount']);
+            }
             # Reflect on water Tran Details
             $consumercharges = collect($finalCharges['consumerChages']);
             foreach ($consumercharges as $charges) {
                 $this->saveConsumerPaymentStatus($request, $offlinePaymentModes, $charges, $waterTrans);
+                $mWaterConsumerCollection->saveConsumerCollection($charges, $waterTrans, $user);
             }
             DB::commit();
             return responseMsgs(true, "payment Done!", "", "", "01", ".ms", "POST", $request->deviceId);
@@ -762,9 +769,8 @@ class WaterPaymentController extends Controller
     /**
      * | Check the Condition before payment
         | Serial No : 05:01
-        | Not Working
-        | Make Adjustment for advance payment 
-        | Subtract the advance amount from the payable amount
+        | Working
+        | Common function
      */
     public function preOfflinePaymentParams($request, $startingDate, $endDate)
     {
@@ -795,7 +801,7 @@ class WaterPaymentController extends Controller
         }
         $totalgeneratedDemand = collect($allCharges)->sum('amount');
         $totalPenalty = collect($allCharges)->sum('penalty');
-        $refgeneratedDemand = $refAmount - $totalPenalty;
+        $refgeneratedDemand = $refAmount - $totalPenalty - $refadvanceAmount['advanceAmount'];
         if ($refgeneratedDemand != $totalgeneratedDemand) {
             throw new Exception("penally Not matched!");
         }
@@ -803,20 +809,20 @@ class WaterPaymentController extends Controller
         $allunpaidCharges = $mWaterConsumerDemand->getFirstConsumerDemand($consumerId)
             ->get();
         $leftAmount = (collect($allunpaidCharges)->sum('balance_amount') - collect($allCharges)->sum('balance_amount'));
-
         return [
             "consumer"          => $refConsumer,
             "consumerChages"    => $allCharges,
             "leftDemandAmount"  => $leftAmount,
-            "adjustedAmount"    => $refadvanceAmount['advanceAmount']
+            "adjustedAmount"    => $refadvanceAmount['advanceAmount'],
+            "penaltyAmount"     => $totalPenalty
         ];
     }
 
 
     /**
      * | Save the consumer demand payment status
-        | Serial No : 50:02
-        | Not Working
+        | Serial No : 05:02
+        | Working
      */
     public function saveConsumerPaymentStatus($request, $offlinePaymentModes, $charges, $waterTrans)
     {
@@ -837,6 +843,27 @@ class WaterPaymentController extends Controller
         );
     }
 
+
+    /**
+     * | Save the penalty in the fine rebate table 
+     * | @param 
+        | Not tested
+        | Serial No : 05:03
+        | Common function
+     */
+    public function savePenaltyDetails($waterTrans, $penaltyAmount)
+    {
+        $transactionId = $waterTrans['id'];
+        $refHeadNames = Config::get("waterConstaint.WATER_HEAD_NAME");
+        $mWaterTranFineRebate = new WaterTranFineRebate();
+        $metaRequest = new Request([
+            'headName'      => $refHeadNames['2'],
+            'amount'        => $penaltyAmount,
+            'valueAddMinus' => "+",
+            'applicationId' => null
+        ]);
+        $mWaterTranFineRebate->saveRebateDetails($metaRequest, $transactionId);
+    }
 
 
     /**
@@ -1552,7 +1579,7 @@ class WaterPaymentController extends Controller
             $startingDate = $startingDate->toDateString();
             $endDate = $endDate->toDateString();
 
-            #-------------------- Demand Collection --------------------#
+            # Demand Collection 
             DB::beginTransaction();
             $refDetails = $this->preOfflinePaymentParams($request, $startingDate, $endDate);
 
@@ -1592,83 +1619,90 @@ class WaterPaymentController extends Controller
         | Recheck / Not Working
         | clear the concept
      */
-    public function endOnlineDemandPayment($webhookData,$RazorPayRequest)
+    public function endOnlineDemandPayment($webhookData, $RazorPayRequest)
     {
         try {
-            // $vjaf
             $refUser        = Auth()->user();
+            $today          = Carbon::now();
             $refUserId      = $refUser->id ?? $webhookData["userId"];
             $refUlbId       = $refUser->ulb_id ?? $webhookData["ulbId"];
-            $mNowDate       = Carbon::now()->format('Y-m-d');
-            $mTimstamp      = Carbon::now()->format('Y-m-d H:i:s');
-            $cahges         = null;
-            $chargeData     = (array)null;
-            $application    = null;
             $mDemands       = (array)null;
+
+            # model assigning
+            $mWaterTran = new WaterTran();
+            $mWaterTranDetail = new WaterTranDetail();
             $mWaterConsumerDemand = new WaterConsumerDemand();
-            
+            $mWaterRazorPayResponse = new WaterRazorPayResponse();
+            $mWaterConsumerCollection = new WaterConsumerCollection();
+            $mWaterAdjustment = new WaterAdjustment();
+
+            # variable assigning
+            $adjustmentFor = Config::get("waterConstaint.ADVANCE_FOR");
             $consumerDetails = WaterConsumer::find($webhookData["id"]);
             $consumerId = $webhookData["id"];
+            $refDate = explode("--", $RazorPayRequest->demand_from_upto);
+            $startingYear = $refDate[0];
+            $endYear = $refDate[1];
 
+            # calcullate demand
+            $mDemands = $mWaterConsumerDemand->checkConsumerDemand($consumerId)
+                ->where('demand_from', '>=', $startingYear)
+                ->where('demand_upto', '<=', $endYear)
+                ->get();
             if (!$RazorPayRequest || round($webhookData['amount']) != round($RazorPayRequest['amount'])) {
                 throw new Exception("Payble Amount Missmatch!!!");
             }
 
-            $transactionType = $RazorPayRequest->payment_from;
-            $totalCharge = $chargeData['total_charge'];
-            #-------------End Calculation-----------------------------
-            #-------- Transection -------------------
             DB::beginTransaction();
+            # save payment data in razorpay response table
+            $mWaterRazorPayResponse->savePaymentResponse($RazorPayRequest, $webhookData);
 
-            $RazorPayResponse = new WaterRazorPayResponse();
-            $RazorPayResponse->related_id   = $RazorPayRequest->related_id;
-            $RazorPayResponse->request_id   = $RazorPayRequest->id;
-            $RazorPayResponse->amount       = $webhookData['amount'];
-            $RazorPayResponse->merchant_id  = $webhookData['merchantId'] ?? null;
-            $RazorPayResponse->order_id     = $webhookData["orderId"];
-            $RazorPayResponse->payment_id   = $webhookData["paymentId"];
-            $RazorPayResponse->save();
-
+            # save the razorpay request status as 1
             $RazorPayRequest->status = 1;
             $RazorPayRequest->update();
 
-            $Tradetransaction = new WaterTran;
-            $Tradetransaction->related_id       = $applicationId;
-            $Tradetransaction->ward_id          = $application->ward_id;
-            $Tradetransaction->tran_type        = $transactionType;
-            $Tradetransaction->tran_date        = $mNowDate;
-            $Tradetransaction->payment_mode     = "Online";
-            $Tradetransaction->amount           = $totalCharge;
-            $Tradetransaction->emp_dtl_id       = $refUserId;
-            $Tradetransaction->created_at       = $mTimstamp;
-            $Tradetransaction->ip_address       = '';
-            $Tradetransaction->ulb_id           = $refUlbId;
-            $Tradetransaction->save();
-            $transaction_id                     = $Tradetransaction->id;
-            $Tradetransaction->tran_no          = $webhookData["transactionNo"];
-            $Tradetransaction->update();
+            # save data in water transaction table 
+            $metaRequest = [
+                "id"                => $webhookData["id"],
+                'amount'            => $webhookData['amount'],
+                'chargeCategory'    => $RazorPayRequest->payment_from,
+                'todayDate'         => $today,
+                'tranNo'            => $webhookData["transactionNo"],
+                'paymentMode'       => "Online",
+                'userId'            => $refUserId,
+                'citizenId'         => $refUserId,
+                'userType'          => $refUser->user_type,
+                'ulbId'             => $refUlbId,
+                'leftDemandAmount'  => $RazorPayRequest->due_amount,
+                'adjustedAmount'    => $RazorPayRequest->adjusted_amount
+            ];
+            $consumer['ward_mstr_id'] = $consumerDetails->ward_mstr_id;
+            $transactionId = $mWaterTran->waterTransaction($metaRequest, $consumer);
 
+            # adjustment data saving
+            $refMetaReq = new Request([
+                "consumerId"    => $webhookData['id'],
+                "amount"        => $RazorPayRequest['adjusted_amount'],
+                "userId"        => $refUserId,
+                "remarks"       => "online payment",
+            ]);
+            if ($RazorPayRequest['adjusted_amount'] > 0) {
+                $mWaterAdjustment->saveAdjustment($transactionId, $refMetaReq, $adjustmentFor['1']);
+            }
+            # Save the fine data in the 
+            if ($RazorPayRequest['penalty_amount'] > 0) {
+                $this->savePenaltyDetails($transactionId, $RazorPayRequest['penalty_amount']);
+            }
             foreach ($mDemands as $val) {
-                $TradeDtl = new WaterTranDetail;
-                $TradeDtl->tran_id        = $transaction_id;
-                $TradeDtl->demand_id      = $val->id;
-                $TradeDtl->total_demand   = $val->amount;
-                $TradeDtl->application_id   = $val->application_id;
-                $TradeDtl->created_at     = $mTimstamp;
-                $TradeDtl->save();
-
-                $val->paid_status = true;
+                # save Water trans details 
+                $mWaterTranDetail->saveDefaultTrans($val->amount, $val->application_id, $transactionId['id'], $val->id);
+                $mWaterConsumerCollection->saveConsumerCollection($val, $transactionId, $refUser);
+                # update the payment status of the demand 
+                $val->paid_status = 1;
                 $val->update();
             }
-
-            $application->payment_status = true;
-            $application->update();
-
             DB::commit();
-            #----------End transaction------------------------
-            #----------Response------------------------------
-            $res['transactionId'] = $transaction_id;
-            $res['paymentRecipt'] = config('app.url') . "/api/water/paymentRecipt/" . $applicationId . "/" . $transaction_id;
+            $res['transactionId'] = $transactionId['id'];
             return responseMsg(true, "", $res);
         } catch (Exception $e) {
             DB::rollBack();
