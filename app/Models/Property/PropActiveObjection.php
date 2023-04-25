@@ -142,6 +142,7 @@ class PropActiveObjection extends Model
     public function recentApplication($userId)
     {
         $data = PropActiveObjection::select(
+            'prop_active_objections.id',
             'objection_no as applicationNo',
             'date as applyDate',
             'objection_for as assessmentType',

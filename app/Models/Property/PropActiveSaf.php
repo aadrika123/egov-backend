@@ -573,6 +573,7 @@ class  PropActiveSaf extends Model
     public function recentApplication($userId)
     {
         return PropActiveSaf::select(
+            'prop_active_safs.id',
             'saf_no as applicationNo',
             'application_date as applyDate',
             'assessment_type as assessmentType',

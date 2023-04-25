@@ -108,23 +108,27 @@ class JskController extends Controller
 
 
             if (in_array($userType, $rUserType)) {
-                $a = $mpropActiveSaf->todayAppliedApplications($userId);
-                $b = $mPropActiveObjection->todayAppliedApplications($userId);
-                $c = $mPropActiveConcession->todayAppliedApplications($userId);
-                $d = $mPropActiveHarvesting->todayAppliedApplications($userId);
-                $e = $mTempTransaction->transactionList($date, $userId, $ulbId);
-                $total = collect($e)->sum('amount');
-                $cash = collect($e)->where('payment_mode', 'CASH')->sum('amount');
-                $cheque = collect($e)->where('payment_mode', 'CHEQUE')->sum('amount');
-                $dd = collect($e)->where('payment_mode', 'DD')->sum('amount');
-                $online = collect($e)->where('payment_mode', 'Online')->sum('amount');
+                $saf = $mpropActiveSaf->todayAppliedApplications($userId);
+                $obj = $mPropActiveObjection->todayAppliedApplications($userId);
+                $con = $mPropActiveConcession->todayAppliedApplications($userId);
+                $har = $mPropActiveHarvesting->todayAppliedApplications($userId);
+                $tran = $mTempTransaction->transactionList($date, $userId, $ulbId);
+                $total = collect($tran)->sum('amount');
+                $cash = collect($tran)->where('payment_mode', 'CASH')->sum('amount');
+                $cheque = collect($tran)->where('payment_mode', 'CHEQUE')->sum('amount');
+                $dd = collect($tran)->where('payment_mode', 'DD')->sum('amount');
+                $online = collect($tran)->where('payment_mode', 'Online')->sum('amount');
 
-                $data['totalAppliedApplication'] = $a->union($b)->union($c)->union($d)->get()->count();
+                $data['totalAppliedApplication'] = $saf->union($obj)->union($con)->union($har)->get()->count();
                 $data['totalCollection'] = $total;
                 $data['totalCash'] = $cash;
                 $data['totalCheque'] = $cheque;
                 $data['totalDD'] = $dd;
                 $data['totalOnline'] = $online;
+                $data['saf'] = $saf->count();
+                $data['objection'] = $obj->count();
+                $data['concession'] = $con->count();
+                $data['harvesting'] = $har->count();
             }
 
 
