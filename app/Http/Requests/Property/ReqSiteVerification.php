@@ -25,7 +25,7 @@ class ReqSiteVerification extends FormRequest
     public function rules()
     {
         $mNowDate = Carbon::now()->format('Y-m-d');
-        return [
+        $validation = [
             'safId' => 'required|integer',
             'propertyType' => 'required|integer',
             'roadWidth' => 'required|numeric',
@@ -41,15 +41,20 @@ class ReqSiteVerification extends FormRequest
             'petrolPump.area' => 'required_if:isPetrolPump,1',
             'petrolPump.dateFrom' => 'required_if:isPetrolPump,1',
             'isWaterHarvesting' => 'required|bool',
-            'floor' => 'required|array',
-            'floor.*.floorId' => 'numeric',
-            'floor.*.floorNo' => 'required|integer',
-            'floor.*.useType' => 'required|integer',
-            'floor.*.constructionType' => 'required|integer',
-            'floor.*.occupancyType' => 'required|integer',
-            'floor.*.buildupArea' => 'required|numeric',
-            'floor.*.dateFrom' => 'required|date|date_format:Y-m-d|before_or_equal:' . $mNowDate,
-            'floor.*.dateUpto' => 'nullable|date|date_format:Y-m-d|before_or_equal:' . $mNowDate,
         ];
+        if ($this->propertyType != 4) {
+            $validation = array_merge($validation, [
+                'floor' => 'required|array',
+                'floor.*.floorId' => 'numeric',
+                'floor.*.floorNo' => 'required|integer',
+                'floor.*.useType' => 'required|integer',
+                'floor.*.constructionType' => 'required|integer',
+                'floor.*.occupancyType' => 'required|integer',
+                'floor.*.buildupArea' => 'required|numeric',
+                'floor.*.dateFrom' => 'required|date|date_format:Y-m-d|before_or_equal:' . $mNowDate,
+                'floor.*.dateUpto' => 'nullable|date|date_format:Y-m-d|before_or_equal:' . $mNowDate,
+            ]);
+        }
+        return $validation;
     }
 }

@@ -4,6 +4,7 @@ namespace App\Repository\Water\Concrete;
 
 use App\EloquentModels\Common\ModelWard;
 use App\Http\Controllers\Water\NewConnectionController;
+use App\Http\Controllers\Water\WaterPaymentController;
 use App\Models\ActiveCitizen;
 use App\Models\Payment\WebhookPaymentData;
 use App\Models\UlbMaster;
@@ -283,7 +284,11 @@ class WaterNewConnection implements IWaterNewConnection
                 }
                 $chargeData["total_charge"] = $cahges;
             } elseif ($RazorPayRequest->payment_from == "Demand Collection") {
-                $application = null;
+                $mWaterPaymentController = new WaterPaymentController();
+                $resposne = $mWaterPaymentController->endOnlineDemandPayment($args, $RazorPayRequest);
+                // $res['transactionId'] = $transaction_id;
+                // $res['paymentRecipt'] = config('app.url') . "/api/water/paymentRecipt/" . $applicationId . "/" . $transaction_id;
+                // return responseMsg(true, "", $res);
             }
             if (!$application) {
                 throw new Exception("Application Not Found!......");

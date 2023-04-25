@@ -15,4 +15,24 @@ class TradeLicence extends Model
             ->where('license_no', $licenseNo)
             ->firstOrFail();
     }
+
+    public function getTradeDtlsByLicenseNo($licenseNo)
+    {
+        return TradeLicence::where('license_no', $licenseNo)
+            ->select(
+                'id',
+                'premises_owner_name',
+                'address',
+                'establishment_date',
+                'application_no',
+                'provisional_license_no',
+                'application_date',
+                'license_no',
+                'license_date',
+                'valid_from',
+                'valid_upto',
+                'firm_name'
+            )
+            ->firstOrFail();
+    }
 }

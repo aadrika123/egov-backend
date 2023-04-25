@@ -4,8 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\ActiveCitizen;
 use App\Models\Citizen\ActiveCitizenUndercare;
+use App\Models\Trade\TradeLicence;
 use App\Models\Water\WaterApprovalApplicant;
 use App\Models\Water\WaterConsumer;
+use App\Pipelines\CareTakers\CareTakeProperty;
+use App\Pipelines\CareTakers\CareTakerTrade;
 use App\Pipelines\CareTakers\TagProperty;
 use App\Pipelines\CareTakers\TagTrade;
 use Carbon\Carbon;
@@ -27,28 +30,37 @@ class CaretakerController extends Controller
     public function waterCaretakerOtp(Request $req)
     {
         try {
-            $mWaterApprovalApplicant = new WaterApprovalApplicant();
-            $ThirdPartyController = new ThirdPartyController();
-            $mWaterConsumer = new WaterConsumer();
+            # trade
+            if (isset($req->moduleId) || $req->moduleId == 3) {
+                $data = [
+                    'otp' => 123123,
+                    'mobileNo' => "0123456789"
+                ];
+            }
 
-            $waterDtl = $mWaterConsumer->getConsumerByNo($req->consumerNo);
-            if (!isset($waterDtl))
-                throw new Exception('Water Connection Not Found!');
+            if (!isset($req->moduleId)) {
+                $mWaterApprovalApplicant = new WaterApprovalApplicant();
+                $ThirdPartyController = new ThirdPartyController();
+                $mWaterConsumer = new WaterConsumer();
 
-            $approveApplicant = $mWaterApprovalApplicant->getOwnerDtlById($waterDtl->apply_connection_id);
-            $applicantMobile = $approveApplicant->mobile_no;
+                $waterDtl = $mWaterConsumer->getConsumerByNo($req->consumerNo);
+                if (!isset($waterDtl))
+                    throw new Exception('Water Connection Not Found!');
 
-            $myRequest = new \Illuminate\Http\Request();
-            $myRequest->setMethod('POST');
-            $myRequest->request->add(['mobileNo' => $applicantMobile]);
-            $otpResponse = $ThirdPartyController->sendOtp($myRequest);
+                $approveApplicant = $mWaterApprovalApplicant->getOwnerDtlById($waterDtl->apply_connection_id);
+                $applicantMobile = $approveApplicant->mobile_no;
 
-            $response = collect($otpResponse)->toArray();
-            $data = [
-                'otp' => $response['original']['data'],
-                'mobileNo' => $applicantMobile
-            ];
+                $myRequest = new \Illuminate\Http\Request();
+                $myRequest->setMethod('POST');
+                $myRequest->request->add(['mobileNo' => $applicantMobile]);
+                $otpResponse = $ThirdPartyController->sendOtp($myRequest);
 
+                $response = collect($otpResponse)->toArray();
+                $data = [
+                    'otp' => $response['original']['data'],
+                    'mobileNo' => $applicantMobile
+                ];
+            }
             return responseMsgs(true, "OTP send successfully", $data, '', '01', '623ms', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
@@ -122,6 +134,30 @@ class CaretakerController extends Controller
             return responseMsgs(true, $response, [], '1001', '1.0', "", 'POST', $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], '1001', '1.0', "", 'POST', $req->deviceId);
+        }
+    }
+
+    /**
+     * | Master caretaking for all module
+     */
+    public function careTakeOtp(Request $req)
+    {
+        try {
+            $req->validate([
+                'moduleId' => 'required|integer',
+                'referenceNo' => 'required'
+            ]);
+            $data = array();
+            $response = app(Pipeline::class)
+            ->send($data)
+            ->through([
+                CareTakeProperty::class,
+                CareTakerTrade::class
+            ])
+            ->thenReturn();
+            return responseMsgs(true, $response, [], '01', '1.0', "", 'POST', $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], '01', '1.0', "", 'POST', $req->deviceId);
         }
     }
 }

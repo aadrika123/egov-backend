@@ -819,6 +819,7 @@ class ObjectionController extends Controller
      */
     public function getDocList($refApplication, $ownerDetails)
     {
+        $ownerDetails = $ownerDetails->first();
         $mRefReqDocs = new RefRequiredDocument();
         $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
         $isOwner = $ownerDetails->owner_name;
@@ -831,6 +832,8 @@ class ObjectionController extends Controller
             $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "OBJECTION_CLERICAL_ADDRESS")->requirements;
         if (isset($pincode)  && isset($isOwner))
             $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "OBJECTION_CLERICAL_ADDRESS_ID")->requirements;
+        if ($ownerDetails->prop_owner_id == null)
+            $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "OBJECTION_CLERICAL_ADD_OWNER")->requirements;
 
         if (!empty($documentList))
             $filteredDocs = $this->filterDocument($documentList, $refApplication);                                     // function(1.2)

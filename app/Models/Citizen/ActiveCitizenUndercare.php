@@ -62,6 +62,7 @@ class ActiveCitizenUndercare extends Model
     public function getTaggedProperties($propId)
     {
         return ActiveCitizenUndercare::where('property_id', $propId)
+            ->where('deactive_status', false)
             ->get();
     }
 
@@ -71,6 +72,7 @@ class ActiveCitizenUndercare extends Model
     public function getTaggedTrades($licenseNo)
     {
         return ActiveCitizenUndercare::where('license_id', $licenseNo)
+            ->where('deactive_status', false)
             ->get();
     }
 
@@ -80,6 +82,7 @@ class ActiveCitizenUndercare extends Model
     public function getTaggedPropsByCitizenId($citizenId)
     {
         return ActiveCitizenUndercare::where('citizen_id', $citizenId)
+            ->where('deactive_status', false)
             ->get();
     }
 }
