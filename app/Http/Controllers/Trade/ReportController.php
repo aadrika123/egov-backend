@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Trade;
 
 use App\Http\Controllers\Controller;
+use App\Models\UlbWardMaster;
 use App\Repository\Common\CommonFunction;
 use App\Repository\Trade\IReport;
 use App\Traits\Auth;
@@ -270,5 +271,37 @@ class ReportController extends Controller
         );
         $request->request->add(["metaData" => ["tr12.1", 1.1, null, $request->getMethod(), null,]]);
         return $this->Repository->applicationStatus($request);
+    }
+
+    public function WardList(Request $request)
+    {
+        $request->request->add(["metaData" => ["tr13.1", 1.1, null, $request->getMethod(), null,]]);
+        $metaData = collect($request->metaData)->all();
+        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
+        try{
+            $refUser        = Auth()->user();
+            $refUserId      = $refUser->id;
+            $ulbId          = $refUser->ulb_id;
+            if($request->ulbId)
+            {
+                $ulbId  =   $request->ulbId;
+            }
+            $wardList = UlbWardMaster::select(DB::raw("min(id) as id ,ward_name as ward_no"))
+                        ->WHERE("ulb_id",$ulbId)
+                        ->GROUPBY("ward_name")
+                        ->ORDERBY("ward_name")
+                        ->GET();
+            
+                        return responseMsgs(true, "", $wardList, $apiId, $version, $queryRunTime, $action, $deviceId);
+        }
+        catch(Exception $e)
+        {
+            return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
+        }        
+    }
+
+    public function TcList(Request $request)
+    {
+        
     }
 }

@@ -2048,6 +2048,8 @@ class Report implements IReport
                 "active_trade_licences.holding_no",
                 "active_trade_licences.address",
                 "active_trade_licences.application_date",
+                "active_trade_licences.valid_from",
+                "active_trade_licences.valid_upto",
                 "active_trade_licences.application_type_id",
                 "owner.owner_name",
                 "owner.guardian_name",
@@ -2086,6 +2088,8 @@ class Report implements IReport
                     "trade_licences.holding_no",
                     "trade_licences.address",
                     "trade_licences.application_date",
+                    "trade_licences.valid_from",
+                    "trade_licences.valid_upto",
                     "trade_licences.application_type_id",
                     "owner.owner_name",
                     "owner.guardian_name",
@@ -2124,6 +2128,8 @@ class Report implements IReport
                     "rejected_trade_licences.holding_no",
                     "rejected_trade_licences.address",
                     "rejected_trade_licences.application_date",
+                    "rejected_trade_licences.valid_from",
+                    "rejected_trade_licences.valid_upto",
                     "rejected_trade_licences.application_type_id",
                     "owner.owner_name",
                     "owner.guardian_name",
@@ -2286,4 +2292,6 @@ class Report implements IReport
             return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
         }
     }
+
+    
 }
