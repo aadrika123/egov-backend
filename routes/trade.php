@@ -180,6 +180,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('application/userwiselevelpending', 'userWiseLevelPending');
         Route::post('application/bulk-payment-recipt', 'bulkPaymentRecipt');
         Route::post('application/application-status', 'applicationStatus');
+        Route::post('ward-list', 'WardList');
     });
 });
 
