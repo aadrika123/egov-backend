@@ -113,6 +113,17 @@ class ReportController extends Controller
         $request->request->add(["metaData"=>["tr6.1",1.1,null,$request->getMethod(),null,]]);
         return $this->Repository->tradeDaseboard($request);
     }
+    public function applicationTypeCollection(Request $request)
+    {
+        $request->validate(
+            [     
+                "fiYear"=>"nullable|regex:/^\d{4}-\d{4}$/",                
+                "ulbId" => "nullable|digits_between:1,9223372036854775807",
+            ]
+        );
+        $request->request->add(["metaData"=>["tr6.2",1.1,null,$request->getMethod(),null,]]);
+        return $this->Repository->applicationTypeCollection($request);
+    }
     public function ApplicantionTrackStatus(Request $request)
     {
         $request->validate(
