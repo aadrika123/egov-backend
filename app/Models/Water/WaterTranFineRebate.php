@@ -21,7 +21,7 @@ class WaterTranFineRebate extends Model
         $mWaterTranFineRebate->head_name            = $metaRequest->headName;
         $mWaterTranFineRebate->amount               = $metaRequest->amount;
         $mWaterTranFineRebate->value_add_minus      = $metaRequest->valueAddMinus;
-        $mWaterTranFineRebate->apply_connection_id  = $metaRequest->applicationId;
+        $mWaterTranFineRebate->apply_connection_id  = $metaRequest->applicationId ?? null;
         $mWaterTranFineRebate->save();
     }
 }
