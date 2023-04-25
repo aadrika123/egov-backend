@@ -302,6 +302,16 @@ class ReportController extends Controller
 
     public function TcList(Request $request)
     {
-        
+        $request->request->add(["metaData" => ["tr14.1", 1.1, null, $request->getMethod(), null,]]);
+        $metaData = collect($request->metaData)->all();
+        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
+        try
+        {
+
+        } 
+        catch(Exception $e)
+        {
+            return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
+        }
     }
 }
