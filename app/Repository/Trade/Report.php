@@ -2284,7 +2284,7 @@ class Report implements IReport
                 "numberOfPages" => $numberOfPages
             ];
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
-            return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime, $action, $deviceId);
+            return responseMsgs(true, "", remove_null($list), $apiId, $version, $queryRunTime, $action, $deviceId);
 
         }
         catch(Exception $e)
