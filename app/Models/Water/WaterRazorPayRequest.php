@@ -25,7 +25,7 @@ class WaterRazorPayRequest extends Model
         $RazorPayRequest->order_id          = $temp["orderId"];
         $RazorPayRequest->department_id     = $temp["departmentId"];
         $RazorPayRequest->adjusted_amount   = $refDetails["adjustedAmount"];
-        $RazorPayRequest->due_amount        = $refDetails["leftDemandAmount"];
+        $RazorPayRequest->due_amount        = $refDetails["leftDemandAmount"]; # dont save 
         $RazorPayRequest->penalty_amount    = $refDetails["penaltyAmount"];
         $RazorPayRequest->remarks           = $request->remarks;
         $RazorPayRequest->save();
