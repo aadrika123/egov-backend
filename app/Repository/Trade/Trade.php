@@ -1051,6 +1051,12 @@ class Trade implements ITrade
             $application = ActiveTradeLicence::select(
                 "application_no",
                 "provisional_license_no",
+                "trade_id",
+                "licence_for_years",
+                "application_date",
+                "application_type_id",
+                "valid_from",
+                "valid_upto",
                 "license_no",
                 "firm_name",
                 "holding_no",
@@ -1083,6 +1089,12 @@ class Trade implements ITrade
                 $application = TradeLicence::select(
                     "application_no",
                     "provisional_license_no",
+                    "trade_id",
+                    "licence_for_years",
+                    "application_date",
+                    "application_type_id",
+                    "valid_from",
+                    "valid_upto",
                     "license_no",
                     "firm_name",
                     "holding_no",
@@ -1116,6 +1128,12 @@ class Trade implements ITrade
                 $application = RejectedTradeLicence::select(
                     "application_no",
                     "provisional_license_no",
+                    "trade_id",
+                    "licence_for_years",
+                    "application_date",
+                    "application_type_id",
+                    "valid_from",
+                    "valid_upto",
                     "license_no",
                     "firm_name",
                     "holding_no",
@@ -1149,6 +1167,12 @@ class Trade implements ITrade
                 $application = TradeRenewal::select(
                     "application_no",
                     "provisional_license_no",
+                    "trade_id",
+                    "licence_for_years",
+                    "application_date",
+                    "application_type_id",
+                    "valid_from",
+                    "valid_upto",
                     "license_no",
                     "firm_name",
                     "holding_no",
@@ -1221,6 +1245,70 @@ class Trade implements ITrade
             $transaction->delay_fee = $delay_fee;
             $transaction->denial_fee = $denial_fee;
             $transaction->paid_amount_in_words = getIndianCurrency($transaction->paid_amount);
+
+            // $licence_for_years = $application->licence_for_years;
+            
+            // # 1	NEW LICENSE
+            // if ($application->application_type_id == 1) 
+            // {
+            //     $valid_from = $application->application_date;
+            //     $valid_upto = date("Y-m-d", strtotime("+$licence_for_years years", strtotime($application->application_date)));
+            // }
+            // # 2 RENEWAL
+            // if ($application->application_type_id == 2) 
+            // {
+            //     $prive_licence = TradeLicence::find($application->trade_id);
+            //     if (!empty($prive_licence)) 
+            //     {
+            //         $valid_from = $prive_licence->valid_upto; 
+            //         $datef = date('Y-m-d', strtotime($valid_from));
+            //         $datefrom = date_create($datef);
+            //         $datea = date('Y-m-d', strtotime($application->application_date));
+            //         $dateapply = date_create($datea);
+            //         $year_diff = date_diff($datefrom, $dateapply);
+            //         $year_diff =  $year_diff->format('%y');
+
+            //         $priv_m_d = date('m-d', strtotime($valid_from));
+            //         $date = date('Y', strtotime($valid_from)) . '-' . $priv_m_d;
+            //         $licence_for_years2 = $licence_for_years + $year_diff;
+            //         $valid_upto = date('Y-m-d', strtotime($date . "+" . $licence_for_years2 . " years"));
+            //         $data['valid_upto'] = $valid_upto;
+            //     } 
+            //     else 
+            //     {
+            //         throw new Exception('licence', 'Some Error Occurred Please Contact to Admin!!!');
+            //     }
+            // }
+
+            // # 3	AMENDMENT
+            // if ($application->application_type_id == 3) 
+            // {
+            //     $prive_licence = TradeLicence::find($application->trade_id);
+            //     $oneYear_validity = date("Y-m-d", strtotime("+1 years", strtotime('now')));
+            //     $previous_validity = $prive_licence->valid_upto;
+            //     if ($previous_validity > $oneYear_validity)
+            //         $valid_upto = $previous_validity;
+            //     else
+            //         $valid_upto = $oneYear_validity;
+            //     $valid_from = date('Y-m-d');
+            // }
+
+            // # 4 SURRENDER
+            // if ($application->application_type_id == 4) 
+            // {
+            //     // Incase of surrender valid upto is previous license validity
+            //     $prive_licence = TradeLicence::find($application->trade_id);                
+            //     $valid_from = $prive_licence->valid_from;
+            //     $valid_upto = $prive_licence->valid_upto;
+            // } 
+            // dd($application->valid_from,$valid_from);           
+            // $valid_from = $application->valid_from?$application->valid_from:$valid_from;
+            // $valid_upto = $application->valid_upto?$application->valid_upto: $valid_upto;
+            // $transaction->from = $valid_from;
+            // $transaction->upto = $valid_upto;
+            
+
+
             $data = [
                 "application" => $application,
                 "transaction" => $transaction,

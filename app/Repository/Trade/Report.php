@@ -2314,13 +2314,13 @@ class Report implements IReport
                 case 3 : $data=$rejected;
                         break;
                 #PAYMENT DONE BUT DOCUMENT NOT UPLOADED
-                case 4 : $data=$active->WHEREIN("payment_status",[1,2])->WHERENOT("document_upload_status",1);
+                case 4 : $data=$active->WHEREIN("payment_status",[1,2])->WHERE("document_upload_status","<>",1);
                         break;
                 #DOCUMENT UPLOADED BUT PAYMENT NOT DONE
                 case 5 : $data=$active->WHERENOTIN("payment_status",[1,2])->WHERE("document_upload_status",1);
                         break;
                 #PAYMENT AND DOCUMENT UPLOAD PENDING
-                case 6 : $data=$active->WHERENOTIN("payment_status",[1,2])->WHERENOT("document_upload_status",1);
+                case 6 : $data=$active->WHERENOTIN("payment_status",[1,2])->WHERE("document_upload_status","<>",1);
                         break;
                 default : $data = $active->union($approved)->union($rejected);
             }
