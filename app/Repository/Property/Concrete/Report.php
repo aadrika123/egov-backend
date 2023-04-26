@@ -2970,7 +2970,7 @@ class Report implements IReport
 
                 $sql1 = "select t.id,payment_mode,ward_name as ward_no,
                                 prop_properties.saf_no,holding_no,new_holding_no,
-                                round(t.demand_amt)as demand_amt,
+                                round(t.demand_amt) as demand_amt,
                                 round(t.amount) as paid_amount,
                                 round(penalty_amt)as penalty_amt,
                                 round(online_rebate_amt) as online_rebate_amt,
@@ -3048,10 +3048,8 @@ class Report implements IReport
             if ($reportType == 'saf') {
 
                 $sql2 = "select
-                                t.id,
-                                payment_mode,
+                                t.id,payment_mode,saf_no,ward_name as ward_no,
                                 CASE WHEN  t.saf_id is not null THEN t.saf_id END AS saf_id,
-                                saf_no,ward_name as ward_no,
                                 round(t.amount) as paid_amount,
                                 round(pr.demand_amt)as demand_amt,
                                 round(sum(penalty_amt)) as penalty_amt,

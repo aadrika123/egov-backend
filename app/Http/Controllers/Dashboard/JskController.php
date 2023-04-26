@@ -102,6 +102,7 @@ class JskController extends Controller
             $mPropActiveObjection = new PropActiveObjection();
             $mPropActiveConcession = new PropActiveConcession();
             $mPropActiveHarvesting = new PropActiveHarvesting();
+            $mPropActiveDeactivation = new PropActiveDeactivationRequest();
             $mTempTransaction = new TempTransaction();
             $mWorkflowTrack = new WorkflowTrack();
             $currentRole =  $this->getRoleByUserUlbId($ulbId, $userId);
@@ -112,6 +113,7 @@ class JskController extends Controller
                 $obj = $mPropActiveObjection->todayAppliedApplications($userId);
                 $con = $mPropActiveConcession->todayAppliedApplications($userId);
                 $har = $mPropActiveHarvesting->todayAppliedApplications($userId);
+                $deactv = $mPropActiveDeactivation->todayAppliedApplications($userId);
                 $tran = $mTempTransaction->transactionList($date, $userId, $ulbId);
                 $total = collect($tran)->sum('amount');
                 $cash = collect($tran)->where('payment_mode', 'CASH')->sum('amount');
@@ -119,7 +121,7 @@ class JskController extends Controller
                 $dd = collect($tran)->where('payment_mode', 'DD')->sum('amount');
                 $online = collect($tran)->where('payment_mode', 'Online')->sum('amount');
 
-                $data['totalAppliedApplication'] = $saf->union($obj)->union($con)->union($har)->get()->count();
+                $data['totalAppliedApplication'] = $saf->union($obj)->union($con)->union($har)->union($deactv)->get()->count();
                 $data['totalCollection'] = $total;
                 $data['totalCash'] = $cash;
                 $data['totalCheque'] = $cheque;
@@ -129,6 +131,7 @@ class JskController extends Controller
                 $data['objection'] = $obj->count();
                 $data['concession'] = $con->count();
                 $data['harvesting'] = $har->count();
+                $data['deactivation'] = $deactv->count();
             }
 
             if (in_array($currentRole->role_name, $role)) {
@@ -136,17 +139,30 @@ class JskController extends Controller
                 $objectionReceivedApp =  $mPropActiveObjection->todayReceivedApplication($currentRole->id, $ulbId)->count();
                 $concessionReceivedApp =  $mPropActiveConcession->todayReceivedApplication($currentRole->id, $ulbId)->count();
                 $harvestingReceivedApp =  $mPropActiveHarvesting->todayReceivedApplication($currentRole->id, $ulbId)->count();
-                $data['totalReceivedApplication'] = $safReceivedApp + $objectionReceivedApp + $concessionReceivedApp + $harvestingReceivedApp;
+                $deactivationReceivedApp =  $mPropActiveDeactivation->todayReceivedApplication($currentRole->id, $ulbId)->count();
+                $data['totalReceivedApplication'] = $safReceivedApp + $objectionReceivedApp + $concessionReceivedApp + $harvestingReceivedApp + $deactivationReceivedApp;
                 $data['saf'] = $safReceivedApp;
                 $data['objection'] = $objectionReceivedApp;
                 $data['concession'] = $concessionReceivedApp;
                 $data['harvesting'] = $harvestingReceivedApp;
+                $data['deactivation'] = $deactivationReceivedApp;
 
-                $data['totalForwadedApplication'] = $mWorkflowTrack->todayForwadedApplication($currentRole->id, $ulbId, $propertyWorflows);
+                $data['totalForwadedApplication'] = $mWorkflowTrack->todayForwadedApplication($currentRole->id, $ulbId, $propertyWorflows)->count();
             }
 
 
             if ($currentRole->role_name == 'Executive Officer') {
+                $safReceivedApp =  $mpropActiveSaf->todayReceivedApplication($currentRole->id, $ulbId)->count();
+                $objectionReceivedApp =  $mPropActiveObjection->todayReceivedApplication($currentRole->id, $ulbId)->count();
+                $concessionReceivedApp =  $mPropActiveConcession->todayReceivedApplication($currentRole->id, $ulbId)->count();
+                $harvestingReceivedApp =  $mPropActiveHarvesting->todayReceivedApplication($currentRole->id, $ulbId)->count();
+                $deactivationReceivedApp =  $mPropActiveDeactivation->todayReceivedApplication($currentRole->id, $ulbId)->count();
+                $data['saf'] = $safReceivedApp;
+                $data['objection'] = $objectionReceivedApp;
+                $data['concession'] = $concessionReceivedApp;
+                $data['harvesting'] = $harvestingReceivedApp;
+                $data['deactivation'] = $deactivationReceivedApp;
+                $data['totalReceivedApplication'] = $safReceivedApp + $objectionReceivedApp + $concessionReceivedApp + $harvestingReceivedApp + $deactivationReceivedApp;
                 $data['totalApprovedApplication'] =  $mWorkflowTrack->todayApprovedApplication($currentRole->id, $ulbId, $propertyWorflows)->count();
                 $data['totalRejectedApplication'] = $mWorkflowTrack->todayRejectedApplication($currentRole->id, $ulbId, $propertyWorflows)->count();
             }

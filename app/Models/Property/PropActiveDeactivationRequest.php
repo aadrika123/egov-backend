@@ -59,4 +59,34 @@ class PropActiveDeactivationRequest extends Model
         });
         return $application;
     }
+
+    /**
+     * | 
+     */
+    public function todayAppliedApplications($userId)
+    {
+        $date = Carbon::now();
+        return PropActiveDeactivationRequest::select('id')
+            ->where('prop_active_deactivation_requests.emp_detail_id', $userId)
+            ->where('apply_date', $date);
+    }
+
+    /**
+     * | Today Received Appklication
+     */
+    public function todayReceivedApplication($currentRole, $ulbId)
+    {
+        $date = Carbon::now()->format('Y-m-d');
+        return PropActiveDeactivationRequest::select(
+            'application_no as applicationNo',
+            'apply_date as applyDate',
+        )
+
+            ->join('workflow_tracks', 'workflow_tracks.ref_table_id_value', 'prop_active_deactivation_requests.id')
+            ->where('prop_active_deactivation_requests.current_role', $currentRole)
+            ->where('workflow_tracks.ulb_id', $ulbId)
+            ->where('ref_table_dot_id', 'prop_active_deactivation_requests')
+            ->whereRaw("date(track_date) = '$date'")
+            ->orderBydesc('prop_active_deactivation_requests.id');
+    }
 }

@@ -166,8 +166,7 @@ class PropActiveConcession extends Model
             ->where('workflow_tracks.ulb_id', $ulbId)
             ->where('ref_table_dot_id', 'prop_active_concessions.id')
             ->whereRaw("date(track_date) = '$date'")
-            ->orderBydesc('prop_active_concessions.id')
-            ->get();
+            ->orderBydesc('prop_active_concessions.id');
     }
 
     /**

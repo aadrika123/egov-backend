@@ -466,7 +466,7 @@ class MenuController extends Controller
             ];
             return responseMsgs(true, "Parent Menu!", $menuPermission, "", "", "", "POST", "");
         } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
+            return responseMsgs(false, $e->getMessage(), "");
         }
     }
 }
