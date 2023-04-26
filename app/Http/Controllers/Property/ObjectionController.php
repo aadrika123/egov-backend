@@ -803,10 +803,11 @@ class ObjectionController extends Controller
             $mPropActiveObjectionOwner = new PropActiveObjectionOwner();
 
             $refApplication = $mPropActiveObjection->getObjectionNo($req->applicationId);
+            $objectionType = collect($refApplication->objection_for)->first();
             $ownerDetails = $mPropActiveObjectionOwner->getOwnerDetail($req->applicationId);      // Get Owner Details
             if (!$refApplication)
                 throw new Exception("Application Not Found for this id");
-            $objectionDoc['listDocs'] = $this->getDocList($refApplication, $ownerDetails);
+            $objectionDoc['listDocs'] = $this->getDocList($refApplication, $ownerDetails, $objectionType);
 
             return responseMsgs(true, "", remove_null($objectionDoc), "010203", "", "", 'POST', "");
         } catch (Exception $e) {
@@ -817,23 +818,26 @@ class ObjectionController extends Controller
     /**
      * | Get Doc List
      */
-    public function getDocList($refApplication, $ownerDetails)
+    public function getDocList($refApplication, $ownerDetails, $objectionType)
     {
-        $ownerDetails = $ownerDetails->first();
         $mRefReqDocs = new RefRequiredDocument();
         $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
-        $isOwner = $ownerDetails->owner_name;
-        $pincode = $ownerDetails->corr_pin_code;
-        $documentList = "";
+        if ($objectionType == 'Clerical Mistake') {
+            $ownerDetails = $ownerDetails->first();
+            $isOwner = $ownerDetails->owner_name;
+            $pincode = $ownerDetails->corr_pin_code;
+            $documentList = "";
 
-        if (isset($isOwner))
-            $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "OBJECTION_CLERICAL_ID")->requirements;
-        if (isset($pincode))
-            $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "OBJECTION_CLERICAL_ADDRESS")->requirements;
-        if (isset($pincode)  && isset($isOwner))
-            $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "OBJECTION_CLERICAL_ADDRESS_ID")->requirements;
-        if ($ownerDetails->prop_owner_id == null)
-            $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "OBJECTION_CLERICAL_ADD_OWNER")->requirements;
+            if (isset($isOwner))
+                $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "OBJECTION_CLERICAL_ID")->requirements;
+            if (isset($pincode))
+                $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "OBJECTION_CLERICAL_ADDRESS")->requirements;
+            if (isset($pincode)  && isset($isOwner))
+                $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "OBJECTION_CLERICAL_ADDRESS_ID")->requirements;
+            if ($ownerDetails->prop_owner_id == null)
+                $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "OBJECTION_CLERICAL_ADD_OWNER")->requirements;
+        } else
+            $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "OBJECTION_EVIDENCE_DOC")->requirements;
 
         if (!empty($documentList))
             $filteredDocs = $this->filterDocument($documentList, $refApplication);                                     // function(1.2)
