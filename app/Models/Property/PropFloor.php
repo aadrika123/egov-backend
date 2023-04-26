@@ -50,7 +50,6 @@ class PropFloor extends Model
         if ($check) {
             $metaData = [
                 'tenanted' => true,
-                'tenantedDetails' => $occupency,
             ];
             return $metaData;
         }

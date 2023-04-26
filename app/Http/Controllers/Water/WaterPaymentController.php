@@ -799,12 +799,7 @@ class WaterPaymentController extends Controller
         if ($totalPaymentAmount != $refAmount) {
             throw new Exception("amount Not Matched!");
         }
-        $totalgeneratedDemand = collect($allCharges)->sum('amount');
         $totalPenalty = collect($allCharges)->sum('penalty');
-        $refgeneratedDemand = $refAmount - $totalPenalty - $refadvanceAmount['advanceAmount'];
-        if ($refgeneratedDemand != $totalgeneratedDemand) {
-            throw new Exception("penally Not matched!");
-        }
         # checking the advance amount 
         $allunpaidCharges = $mWaterConsumerDemand->getFirstConsumerDemand($consumerId)
             ->get();
