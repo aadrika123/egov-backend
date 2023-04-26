@@ -760,12 +760,23 @@ class WaterReportController extends Controller
     }
 
 
-    
+
     /**
      * | Water collection Report
      */
     public function WaterCollection(Request $request)
     {
+        $request->validate(
+            [
+                "fromDate"      => "required|date|date_format:Y-m-d",
+                "uptoDate"      => "required|date|date_format:Y-m-d",
+                "wardId"        => "nullable|digits_between:1,9223372036854775807",
+                "userId"        => "nullable|digits_between:1,9223372036854775807",
+                "paymentMode"   => "nullable",
+                "page"          => "nullable|digits_between:1,9223372036854775807",
+                "perPage"       => "nullable|digits_between:1,9223372036854775807",
+            ]);
+            
         $consumerCollection = null;
         $applicationCollection = null;
         $consumerData = 0;
@@ -782,7 +793,7 @@ class WaterReportController extends Controller
 
         foreach ($collectionTypes as $collectionType) {
             if ($collectionType == 'consumer') {
-                $consumerCollection = $this->collectionReport($request);
+                $consumerCollection = $this->consumerReport($request);
                 $consumerTotal = $consumerCollection->original['data']['totalAmount'];
                 $consumerData = $consumerCollection->original['data']['total'];
                 $consumerCollection = $consumerCollection->original['data']['data'];
@@ -794,13 +805,6 @@ class WaterReportController extends Controller
                 $applicationData = $applicationCollection->original['data']['total'];
                 $applicationCollection = $applicationCollection->original['data']['data'];
             }
-
-            // if ($collectionType == 'gbsaf') {
-            //     $Dont__USE = $this->Dont__USE($request);
-            //     $NOT__USE = $Dont__USE->toarray()['total'];
-            //     $Dont__USE = $Dont__USE->toarray()['data'];
-            //     $gbapplicationTotal = collect($Dont__USE)->sum('amount');
-            // }
         }
         $currentPage = $request->page ?? 1;
         $details = collect($consumerCollection)->merge($applicationCollection);
@@ -817,11 +821,7 @@ class WaterReportController extends Controller
     }
 
 
-
-        /**
-     * | Property Collection
-     */
-    public function collectionReport(Request $request)
+    public function consumerReport(Request $request)
     {
         $request->validate(
             [
@@ -834,9 +834,10 @@ class WaterReportController extends Controller
                 "perPage"       => "nullable|digits_between:1,9223372036854775807",
             ]
         );
+
         $metaData = collect($request->metaData)->all();
 
-        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
+        // list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
         try {
             $refUser        = Auth()->user();
             $refUserId      = $refUser->id;
@@ -868,22 +869,17 @@ class WaterReportController extends Controller
             // DB::enableQueryLog();
             $data = WaterTran::SELECT(
                 DB::raw("
-                            ulb_ward_masters.ward_name AS ward_no,
-                            water_consumers.id,
-                            water_consumers.consumer_no,
                             water_trans.id AS tran_id,
+                            water_consumers.id AS ref_consumer_id,
+                            ulb_ward_masters.ward_name AS ward_no,
+                             'consumer' as type,
+                            water_consumers.consumer_no,
                             CONCAT('', water_consumers.holding_no, '') AS holding_no,
-                            water_consumer_owners.applicant_name AS owner_name,
-                            water_consumer_owners.mobile_no,
-                                                // CONCAT(
-                                                //     water_trans.from_fyear, '(', water_trans.from_qtr, ')', ' / ', 
-                                                //     water_trans.to_fyear, '(', water_trans.to_qtr, ')'
-                                                // ) AS from_upto_fy_qtr,
+                            water_owner_detail.owner_name,
+                            water_owner_detail.mobile_no,
                             water_trans.tran_date,
                             water_trans.payment_mode AS transaction_mode,
-                            water_trans.amount,
-                            users.user_name as emp_name,
-                            users.id as user_id,
+                            water_trans.amount,users.user_name as emp_name,users.id as user_id,
                             water_trans.tran_no,
                             water_cheque_dtls.cheque_no,
                             water_cheque_dtls.bank_name,
@@ -893,37 +889,36 @@ class WaterReportController extends Controller
                 ->JOIN("water_consumers", "water_consumers.id", "water_trans.related_id")
                 ->JOIN(
                     DB::RAW("(
-                        SELECT STRING_AGG(owner_name, ', ') AS owner_name, 
-                        STRING_AGG(mobile_no::TEXT, ', ') AS mobile_no, 
-                        water_consumer_owner.related_id 
-                        FROM prop_owners 
-                        JOIN water_trans on water_trans.related_id = prop_owners.related_id 
+                        SELECT STRING_AGG(applicant_name, ', ') AS owner_name, 
+                                STRING_AGG(mobile_no::TEXT, ', ') AS mobile_no, 
+                                water_consumer_owners.consumer_id 
+                        FROM water_consumer_owners 
+                        JOIN water_trans on water_trans.related_id = water_consumer_owners.consumer_id 
                         WHERE water_trans.related_id IS NOT NULL AND water_trans.status in (1, 2) 
                         AND water_trans.tran_date BETWEEN '$fromDate' AND '$uptoDate'
-                        " .
-                        ($userId ? " AND water_trans.user_id = $userId " : "")
+                        " . ($userId ? " AND water_trans.emp_dtl_id = $userId " : "")
                         . ($paymentMode ? " AND upper(water_trans.payment_mode) = upper('$paymentMode') " : "")
                         . ($ulbId ? " AND water_trans.ulb_id = $ulbId" : "")
                         . "
-                        GROUP BY prop_owners.related_id
-                        ) AS prop_owner_detail
+                        GROUP BY water_consumer_owners.consumer_id
+                        ) AS water_owner_detail
                         "),
                     function ($join) {
-                        $join->on("prop_owner_detail.related_id", "=", "water_trans.related_id");
+                        $join->on("water_owner_detail.consumer_id", "=", "water_trans.related_id");
                     }
                 )
-                ->JOIN("ulb_ward_masters", "ulb_ward_masters.id", "prop_properties.ward_mstr_id")
-                ->LEFTJOIN("users", "users.id", "water_trans.user_id")
-                ->LEFTJOIN("prop_cheque_dtls", "prop_cheque_dtls.transaction_id", "water_trans.id")
+                ->JOIN("ulb_ward_masters", "ulb_ward_masters.id", "water_consumers.ward_mstr_id")
+                ->LEFTJOIN("users", "users.id", "water_trans.emp_dtl_id")
+                ->LEFTJOIN("water_cheque_dtls", "water_cheque_dtls.transaction_id", "water_trans.id")
+                ->WHERE("water_trans.tran_type","Demand Collection")
                 ->WHERENOTNULL("water_trans.related_id")
                 ->WHEREIN("water_trans.status", [1, 2])
                 ->WHEREBETWEEN("water_trans.tran_date", [$fromDate, $uptoDate]);
-
             if ($wardId) {
                 $data = $data->where("ulb_ward_masters.id", $wardId);
             }
             if ($userId) {
-                $data = $data->where("water_trans.user_id", $userId);
+                $data = $data->where("water_trans.emp_dtl_id", $userId);
             }
             if ($paymentMode) {
                 $data = $data->where(DB::raw("upper(water_trans.payment_mode)"), $paymentMode);
@@ -933,9 +928,8 @@ class WaterReportController extends Controller
             }
             $paginator = collect();
 
-           
             $data2 = $data;
-            $totalHolding = $data2->count("prop_properties.id");
+            $totalHolding = $data2->count("water_consumers.id");
             $totalAmount = $data2->sum("water_trans.amount");
             $perPage = $request->perPage ? $request->perPage : 5;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
@@ -946,18 +940,18 @@ class WaterReportController extends Controller
             // $total = $paginator->total();
             // $numberOfPages = ceil($total / $perPage);
             $list = [
-                "current_page" => $paginator->currentPage(),
-                "last_page" => $paginator->lastPage(),
-                "totalHolding" => $totalHolding,
-                "totalAmount" => $totalAmount,
-                "data" => $paginator->items(),
-                "total" => $paginator->total(),
+                "current_page"  => $paginator->currentPage(),
+                "last_page"     => $paginator->lastPage(),
+                "totalHolding"  => $totalHolding,
+                "totalAmount"   => $totalAmount,
+                "data"          => $paginator->items(),
+                "total"         => $paginator->total(),
                 // "numberOfPages" => $numberOfPages
             ];
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
-            return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime, $action, $deviceId);
+            return responseMsgs(true, "", $list);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
+            return responseMsgs(false, $e->getMessage(), $request->all());
         }
     }
 }

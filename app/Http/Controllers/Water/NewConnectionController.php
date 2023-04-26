@@ -721,15 +721,15 @@ class NewConnectionController extends Controller
             $imageName = $docUpload->upload($refImageName, $document, $relativePath);
 
             $metaReqs = [
-                'module_id'     => $refmoduleId,
-                'active_id'     => $getWaterDetails->id,
-                'workflow_id'   => $getWaterDetails->workflow_id,
-                'ulb_id'        => $getWaterDetails->ulb_id,
-                'relative_path' => $relativePath,
+                'moduleId'     => $refmoduleId,
+                'activeId'     => $getWaterDetails->id,
+                'workflowId'   => $getWaterDetails->workflow_id,
+                'ulbId'        => $getWaterDetails->ulb_id,
+                'relativePath' => $relativePath,
                 'document'      => $imageName,
-                'doc_code'      => $req->docCode,
-                'owner_dtl_id'  => $req->ownerId,
-                'doc_category'  => $req->docCategory
+                'docCode'      => $req->docCode,
+                'ownerDtlId'  => $req->ownerId,
+                'docCategory'  => $req->docCategory
             ];
 
             $ifDocExist = $mWfActiveDocument->ifDocExists($getWaterDetails->id, $getWaterDetails->workflow_id, $refmoduleId, $req->docCode, $req->docCategory, $req->ownerId);   // Checking if the document is already existing or not
