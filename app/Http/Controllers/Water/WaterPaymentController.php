@@ -1590,18 +1590,12 @@ class WaterPaymentController extends Controller
             $mWaterRazorPayRequest->saveRequestData($request, $paymentFor['1'], $temp, $refDetails);
             DB::commit();
 
-            $reftemp = [
-                'departmentId'       => $temp["departmentId"],
-                'orderId'            => $temp["orderId"],
-                'name'               => $refUser->user_name,
-                'mobile'             => $refUser->mobile,
-                'email'              => $refUser->email,
-                'userId'             => $refUser->id,
-                'ulbId'              => $refUser->ulb_id,
-                "applycationType"    => $request->applycationType
-            ];
-
-            return responseMsgs(true, "", $reftemp, "", "01", ".ms", "POST", $request->deviceId);
+            $temp['name']               = $refUser->user_name;
+            $temp['mobile']             = $refUser->mobile;
+            $temp['email']              = $refUser->email;
+            $temp['userId']             = $refUser->id;
+            $temp['ulbId']              = $refUser->ulb_id;
+            return responseMsgs(true, "", $temp, "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "03", ".ms", "POST", $request->deviceId);
