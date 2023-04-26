@@ -972,6 +972,7 @@ class RainWaterHarvestingController extends Controller
                 }
             });
             $reqDoc['docType'] = $key;
+            $reqDoc['docName'] = substr($label, 1, -1);
             $reqDoc['uploadedDoc'] = $documents->first();
 
             $reqDoc['masters'] = collect($document)->map(function ($doc) use ($uploadedDocs) {

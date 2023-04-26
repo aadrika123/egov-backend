@@ -619,9 +619,7 @@ class  PropActiveSaf extends Model
             // ->where('track_date' . '::' . 'date', $date)
             ->whereRaw("date(track_date) = '$date'")
             ->orderBydesc('prop_active_safs.id')
-            ->groupBy('saf_no', 'application_date', 'assessment_type', 'prop_active_safs.id')
-            ->take(10)
-            ->get();
+            ->groupBy('saf_no', 'application_date', 'assessment_type', 'prop_active_safs.id');
     }
 
     /**

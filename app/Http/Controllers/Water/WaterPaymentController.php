@@ -799,12 +799,7 @@ class WaterPaymentController extends Controller
         if ($totalPaymentAmount != $refAmount) {
             throw new Exception("amount Not Matched!");
         }
-        $totalgeneratedDemand = collect($allCharges)->sum('amount');
         $totalPenalty = collect($allCharges)->sum('penalty');
-        $refgeneratedDemand = $refAmount - $totalPenalty - $refadvanceAmount['advanceAmount'];
-        if ($refgeneratedDemand != $totalgeneratedDemand) {
-            throw new Exception("penally Not matched!");
-        }
         # checking the advance amount 
         $allunpaidCharges = $mWaterConsumerDemand->getFirstConsumerDemand($consumerId)
             ->get();
@@ -1595,15 +1590,11 @@ class WaterPaymentController extends Controller
             $mWaterRazorPayRequest->saveRequestData($request, $paymentFor['1'], $temp, $refDetails);
             DB::commit();
 
-            $temp = [
-                'name'               => $refUser->user_name,
-                'mobile'             => $refUser->mobile,
-                'email'              => $refUser->email,
-                'userId'             => $refUser->id,
-                'ulbId'              => $refUser->ulb_id,
-                "applycationType"    => $request->applycationType
-            ];
-
+            $temp['name']               = $refUser->user_name;
+            $temp['mobile']             = $refUser->mobile;
+            $temp['email']              = $refUser->email;
+            $temp['userId']             = $refUser->id;
+            $temp['ulbId']              = $refUser->ulb_id;
             return responseMsgs(true, "", $temp, "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             DB::rollBack();

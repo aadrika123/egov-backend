@@ -2933,6 +2933,9 @@ class Report implements IReport
         $propJskRebateAmt = 0;
         $safJskRebateAmt = 0;
         $gbsafJskRebateAmt = 0;
+        $propTotalRebate = 0;
+        $safTotalRebate = 0;
+        $gbsafTotalRebate = 0;
         $reportTypes = $request->reportType;
         $paymentMode = $request->paymentMode;
         $propertyType = $request->propertyType;
@@ -2967,7 +2970,7 @@ class Report implements IReport
 
                 $sql1 = "select t.id,payment_mode,ward_name as ward_no,
                                 prop_properties.saf_no,holding_no,new_holding_no,
-                                round(t.demand_amt)as demand_amt,
+                                round(t.demand_amt) as demand_amt,
                                 round(t.amount) as paid_amount,
                                 round(penalty_amt)as penalty_amt,
                                 round(online_rebate_amt) as online_rebate_amt,
@@ -3038,16 +3041,15 @@ class Report implements IReport
                 $propSpecialRebateAmt = collect($proptotalData)->sum('special_rebate_amt');
                 $propFirstQtrRebateAmt = collect($proptotalData)->sum('first_qtr_amt');
                 $propJskRebateAmt = collect($proptotalData)->sum('jsk_rebate_amt');
+                $propTotalRebate = $propOnlineRebateAmt + $propSpecialRebateAmt + $propFirstQtrRebateAmt + $propJskRebateAmt;
                 $propCollection = $propData;
             }
 
             if ($reportType == 'saf') {
 
                 $sql2 = "select
-                                t.id,
-                                payment_mode,
+                                t.id,payment_mode,saf_no,ward_name as ward_no,
                                 CASE WHEN  t.saf_id is not null THEN t.saf_id END AS saf_id,
-                                saf_no,ward_name as ward_no,
                                 round(t.amount) as paid_amount,
                                 round(pr.demand_amt)as demand_amt,
                                 round(sum(penalty_amt)) as penalty_amt,
@@ -3121,6 +3123,7 @@ class Report implements IReport
                 $safSpecialRebateAmt = collect($saftotalData)->sum('special_rebate_amt');
                 $safFirstQtrRebateAmt = collect($saftotalData)->sum('first_qtr_amt');
                 $safJskRebateAmt = collect($saftotalData)->sum('jsk_rebate_amt');
+                $safTotalRebate = $safOnlineRebateAmt + $safSpecialRebateAmt + $safFirstQtrRebateAmt + $safJskRebateAmt;
                 $safCollection = $safData;
             }
 
@@ -3205,6 +3208,7 @@ class Report implements IReport
                 $gbsafSpecialRebateAmt = collect($gbsaftotalData)->sum('special_rebate_amt');
                 $gbsafFirstQtrRebateAmt = collect($gbsaftotalData)->sum('first_qtr_amt');
                 $gbsafJskRebateAmt = collect($gbsaftotalData)->sum('jsk_rebate_amt');
+                $gbsafTotalRebate = $gbsafOnlineRebateAmt + $gbsafSpecialRebateAmt + $gbsafFirstQtrRebateAmt + $gbsafJskRebateAmt;
                 $gbsafCollection = $gbsafData;
             }
         }
@@ -3227,6 +3231,7 @@ class Report implements IReport
         $data['total_special_rebate_amt'] = round($propSpecialRebateAmt + $safSpecialRebateAmt + $gbsafSpecialRebateAmt);
         $data['total_first_qtr_rebate'] = round($propFirstQtrRebateAmt + $safFirstQtrRebateAmt + $gbsafFirstQtrRebateAmt);
         $data['total_jsk_rebate_amt'] = round($propJskRebateAmt + $safJskRebateAmt + $gbsafJskRebateAmt);
+        $data['total_total_rebate'] = round($propTotalRebate + $safTotalRebate + $gbsafTotalRebate);
         $data['reportTypes'] = $reportTypes;
         $data['data'] = $details;
 

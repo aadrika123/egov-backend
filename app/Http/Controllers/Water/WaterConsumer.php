@@ -616,6 +616,8 @@ class WaterConsumer extends Controller
 
 
 
+    #---------------------------------------------------------------------------------------------------------#
+
     /**
      * | Demand deactivation process
      * | @param 
