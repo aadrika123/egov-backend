@@ -2933,6 +2933,9 @@ class Report implements IReport
         $propJskRebateAmt = 0;
         $safJskRebateAmt = 0;
         $gbsafJskRebateAmt = 0;
+        $propTotalRebate = 0;
+        $safTotalRebate = 0;
+        $gbsafTotalRebate = 0;
         $reportTypes = $request->reportType;
         $paymentMode = $request->paymentMode;
         $propertyType = $request->propertyType;
@@ -3038,6 +3041,7 @@ class Report implements IReport
                 $propSpecialRebateAmt = collect($proptotalData)->sum('special_rebate_amt');
                 $propFirstQtrRebateAmt = collect($proptotalData)->sum('first_qtr_amt');
                 $propJskRebateAmt = collect($proptotalData)->sum('jsk_rebate_amt');
+                $propTotalRebate = $propOnlineRebateAmt + $propSpecialRebateAmt + $propFirstQtrRebateAmt + $propJskRebateAmt;
                 $propCollection = $propData;
             }
 
@@ -3121,6 +3125,7 @@ class Report implements IReport
                 $safSpecialRebateAmt = collect($saftotalData)->sum('special_rebate_amt');
                 $safFirstQtrRebateAmt = collect($saftotalData)->sum('first_qtr_amt');
                 $safJskRebateAmt = collect($saftotalData)->sum('jsk_rebate_amt');
+                $safTotalRebate = $safOnlineRebateAmt + $safSpecialRebateAmt + $safFirstQtrRebateAmt + $safJskRebateAmt;
                 $safCollection = $safData;
             }
 
@@ -3205,6 +3210,7 @@ class Report implements IReport
                 $gbsafSpecialRebateAmt = collect($gbsaftotalData)->sum('special_rebate_amt');
                 $gbsafFirstQtrRebateAmt = collect($gbsaftotalData)->sum('first_qtr_amt');
                 $gbsafJskRebateAmt = collect($gbsaftotalData)->sum('jsk_rebate_amt');
+                $gbsafTotalRebate = $gbsafOnlineRebateAmt + $gbsafSpecialRebateAmt + $gbsafFirstQtrRebateAmt + $gbsafJskRebateAmt;
                 $gbsafCollection = $gbsafData;
             }
         }
@@ -3227,6 +3233,7 @@ class Report implements IReport
         $data['total_special_rebate_amt'] = round($propSpecialRebateAmt + $safSpecialRebateAmt + $gbsafSpecialRebateAmt);
         $data['total_first_qtr_rebate'] = round($propFirstQtrRebateAmt + $safFirstQtrRebateAmt + $gbsafFirstQtrRebateAmt);
         $data['total_jsk_rebate_amt'] = round($propJskRebateAmt + $safJskRebateAmt + $gbsafJskRebateAmt);
+        $data['total_total_rebate'] = round($propTotalRebate + $safTotalRebate + $gbsafTotalRebate);
         $data['reportTypes'] = $reportTypes;
         $data['data'] = $details;
 
