@@ -13,6 +13,7 @@ use App\Models\Water\WaterApplicant;
 use App\Models\Water\WaterApplicantDoc;
 use App\Models\Water\WaterApplication;
 use App\Models\Water\WaterConnectionCharge;
+use App\Models\Water\WaterConsumer;
 use App\Models\Water\WaterParamConnFee;
 use App\Models\Water\WaterParamConnFeeOld;
 use App\Models\Water\WaterParamDocumentType;
@@ -435,6 +436,20 @@ class WaterNewConnection implements IWaterNewConnection
             }
             if ($WaterRazorPayResponse->payment_from == "New Connection") {
                 $application = WaterApplication::find($WaterRazorPayResponse->related_id);
+                $transection = WaterTran::select("*")
+                    ->where("related_id", $WaterRazorPayResponse->related_id)
+                    ->where("tran_type", $WaterRazorPayResponse->payment_from)
+                    ->first();
+            }
+            if ($WaterRazorPayResponse->payment_from == "Site Inspection") {
+                $application = WaterApplication::find($WaterRazorPayResponse->related_id);
+                $transection = WaterTran::select("*")
+                    ->where("related_id", $WaterRazorPayResponse->related_id)
+                    ->where("tran_type", $WaterRazorPayResponse->payment_from)
+                    ->first();
+            }
+            if ($WaterRazorPayResponse->payment_from == "Demand Collection") {
+                $application = WaterConsumer::find($WaterRazorPayResponse->related_id);
                 $transection = WaterTran::select("*")
                     ->where("related_id", $WaterRazorPayResponse->related_id)
                     ->where("tran_type", $WaterRazorPayResponse->payment_from)
