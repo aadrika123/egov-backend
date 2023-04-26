@@ -35,6 +35,27 @@ class CommonFunction implements ICommonFunction
         }
         return $ward_permission;
     }
+    public function oldWardPermission($user_id)
+    {
+        $redis = Redis::connection();
+        $ward_permission = ""; //json_decode(Redis::get('WardPermission:' . $user_id),true)??null; 
+        if (!$ward_permission) {
+            Redis::del('WardPermission:' . $user_id);
+            $ward_permission = WfWardUser::select(                
+                DB::raw("min(ward_id) as ward_id,
+                min(ulb_ward_masters.id) as id,
+                ulb_ward_masters.ward_name as ward_no")
+            )
+                ->join("ulb_ward_masters", "ulb_ward_masters.id", "=", "wf_ward_users.ward_id")
+                ->where('user_id', $user_id)
+                ->groupBy("ward_name")
+                ->orderBy('ward_name')
+                ->get();
+            $ward_permission = objToArray($ward_permission);
+            $this->WardPermissionSet($redis, $user_id, $ward_permission);
+        }
+        return $ward_permission;
+    }
     public function getWorkFlowRoles($user_id, int $ulb_id, int $work_flow_id)
     {
         $redis = Redis::connection();
