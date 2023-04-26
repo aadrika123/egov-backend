@@ -765,6 +765,61 @@ class Report implements IReport
         }
     }
 
+    public function applicationTypeCollection(Request $request)
+    {
+        $metaData = collect($request->metaData)->all();
+        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
+        try{
+            $refUser        = Auth()->user();
+            $refUserId      = $refUser->id;
+            $ulbId          = $refUser->ulb_id;
+            $wardId = null;
+            $userId = null;
+
+            $fiYear = getFY();
+            if($request->fiYear)
+            {
+                $fiYear = $request->fiYear;
+            }            
+            list($fromYear,$toYear)=explode("-",$fiYear);
+            if($toYear-$fromYear !=1)
+            {
+                throw new Exception("Enter Valide Financial Year");
+            }
+            $fromDate = $fromYear."-04-01";
+            $uptoDate = $toYear."-03-31";
+            
+            $where=" AND trade_transactions.tran_date BETWEEN '$fromDate' AND '$uptoDate' ";
+
+            if($request->ulbId)
+            {
+                $ulbId = $request->ulbId;
+            }
+            $where.=" AND trade_transactions.ulb_id = $ulbId ";
+
+            $application_type_transacton = DB::select("
+                                                        SELECT
+                                                            sum(COALESCE(trade_transactions.paid_amount,0)) as amount, 
+                                                            count(trade_transactions.id) as total_transaction,
+                                                            count(trade_transactions.temp_id) as total_consumer,
+                                                            initcap(trade_param_application_types.application_type) as application_type ,
+                                                            trade_param_application_types.id 
+                                                        FROM trade_param_application_types
+                                                        LEFT JOIN trade_transactions ON trade_transactions.tran_type =  trade_param_application_types.application_type 
+                                                            $where AND trade_transactions.status IN(1,2)
+                                                        GROUP BY  trade_param_application_types.application_type ,trade_param_application_types.id
+                                                        ORDER BY trade_param_application_types.id
+                                                        ");
+            $application_type_transacton=collect($application_type_transacton);
+            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
+            return responseMsgs(true,"",remove_null($application_type_transacton),$apiId, $version, $queryRunTime,$action,$deviceId);
+        }
+        catch(Exception $e)
+        {
+            return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
+        }
+    }
+
     public function ApplicantionTrackStatus(Request $request)
     {
         $metaData= collect($request->metaData)->all();
@@ -2259,13 +2314,13 @@ class Report implements IReport
                 case 3 : $data=$rejected;
                         break;
                 #PAYMENT DONE BUT DOCUMENT NOT UPLOADED
-                case 4 : $data=$active->WHEREIN("payment_status",[1,2])->WHERENOT("document_upload_status",1);
+                case 4 : $data=$active->WHEREIN("payment_status",[1,2])->WHERE("document_upload_status","<>",1);
                         break;
                 #DOCUMENT UPLOADED BUT PAYMENT NOT DONE
                 case 5 : $data=$active->WHERENOTIN("payment_status",[1,2])->WHERE("document_upload_status",1);
                         break;
                 #PAYMENT AND DOCUMENT UPLOAD PENDING
-                case 6 : $data=$active->WHERENOTIN("payment_status",[1,2])->WHERENOT("document_upload_status",1);
+                case 6 : $data=$active->WHERENOTIN("payment_status",[1,2])->WHERE("document_upload_status","<>",1);
                         break;
                 default : $data = $active->union($approved)->union($rejected);
             }
@@ -2292,6 +2347,4 @@ class Report implements IReport
             return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
         }
     }
-
-    
 }
