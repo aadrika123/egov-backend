@@ -883,6 +883,8 @@ class NewConnectionController extends Controller
                 $doc = (array) null;
                 $doc["ownerName"] = $ownerList;
                 $doc['docName'] = $val->doc_for;
+                $refDocName  = str_replace('_', ' ', $val->doc_for);
+                $doc["refDocName"] = ucwords(strtolower($refDocName));
                 $doc['isMadatory'] = $val->is_mandatory;
                 $ref['docValue'] = $refWaterNewConnection->getDocumentList($val->doc_for);  # get All Related Document List
                 $doc['docVal'] = $docFor = collect($ref['docValue'])->map(function ($value) {
@@ -913,6 +915,8 @@ class NewConnectionController extends Controller
                     $doc["ownerId"] = $val->id;
                     $doc["ownerName"] = $val->applicant_name;
                     $doc["docName"]   = $refOwnerDoc;
+                    $refDocName  = str_replace('_', ' ', $refOwnerDoc);
+                    $doc["refDocName"] = ucwords(strtolower($refDocName));
                     $doc['isMadatory'] = 1;
                     $ref['docValue'] = $refWaterNewConnection->getDocumentList([$refOwnerDoc]);   #"CONSUMER_PHOTO"
                     $doc['docVal'] = $docFor = collect($ref['docValue'])->map(function ($value) {
@@ -1012,7 +1016,7 @@ class NewConnectionController extends Controller
                     $safUsageType = $this->getPropUsageType($request, $application['id']);
                     $occupancyOwnerType = collect($mPropActiveSafsFloor->getOccupancyType($application['id'], $refTenanted));
                     $owners['owners'] = collect($mPropActiveSafOwners->getOwnerDtlsBySafId($application['id']));
-                    
+
                     # merge all data for return 
                     $details = $application->merge($areaInSqft)->merge($owners)->merge($occupancyOwnerType)->merge($safUsageType);
                     return responseMsgs(true, "related Details!", $details, "", "", "", "POST", "");
@@ -1237,6 +1241,7 @@ class NewConnectionController extends Controller
             $reqDoc['docType'] = $key;
             $reqDoc['uploadedDoc'] = $documents->last();
             $reqDoc['docName'] = substr($label, 1, -1);
+            // $reqDoc['refDocName'] = substr($label, 1, -1);
 
             $reqDoc['masters'] = collect($document)->map(function ($doc) use ($uploadedDocs) {
                 $uploadedDoc = $uploadedDocs->where('doc_code', $doc)->first();
