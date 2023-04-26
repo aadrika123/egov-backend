@@ -113,6 +113,17 @@ class ReportController extends Controller
         $request->request->add(["metaData"=>["tr6.1",1.1,null,$request->getMethod(),null,]]);
         return $this->Repository->tradeDaseboard($request);
     }
+    public function applicationTypeCollection(Request $request)
+    {
+        $request->validate(
+            [     
+                "fiYear"=>"nullable|regex:/^\d{4}-\d{4}$/",                
+                "ulbId" => "nullable|digits_between:1,9223372036854775807",
+            ]
+        );
+        $request->request->add(["metaData"=>["tr6.2",1.1,null,$request->getMethod(),null,]]);
+        return $this->Repository->applicationTypeCollection($request);
+    }
     public function ApplicantionTrackStatus(Request $request)
     {
         $request->validate(
@@ -292,7 +303,7 @@ class ReportController extends Controller
                         ->ORDERBY("ward_name")
                         ->GET();
             
-                        return responseMsgs(true, "", $wardList, $apiId, $version, $queryRunTime, $action, $deviceId);
+            return responseMsgs(true, "", $wardList, $apiId, $version, $queryRunTime, $action, $deviceId);
         }
         catch(Exception $e)
         {
@@ -307,7 +318,28 @@ class ReportController extends Controller
         list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
         try
         {
-
+            $refUser        = Auth()->user();
+            $refUserId      = $refUser->id;
+            $ulbId          = $refUser->ulb_id;
+            if($request->ulbId)
+            {
+                $ulbId  =   $request->ulbId;
+            }
+            $rolse = $this->_common->getAllRoles($refUserId,$ulbId,$this->_WF_MASTER_Id,0,true);
+            $rolseIds = collect($rolse)->implode("id",",");
+            if(!$rolseIds)
+            {
+                throw new Exception("No Anny Role Found In This Ulb");
+            } 
+            $tcList = DB::table("users")
+                    ->select(DB::raw("users.id,users.user_name, wf_roles.role_name"))
+                    ->JOIN("wf_roleusermaps","wf_roleusermaps.user_id","=","users.id")
+                    ->JOIN("wf_roles","wf_roles.id","wf_roleusermaps.wf_role_id")
+                    ->WHERE("wf_roleusermaps.is_suspended",FALSE)
+                    ->WHERE("wf_roles.is_suspended",FALSE)
+                    ->WHEREIN("wf_roles.id",explode(",",$rolseIds))
+                    ->GET();
+            return responseMsgs(true, "", remove_null($tcList), $apiId, $version, $queryRunTime, $action, $deviceId);
         } 
         catch(Exception $e)
         {

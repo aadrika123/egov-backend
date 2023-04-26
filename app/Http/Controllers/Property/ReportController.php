@@ -524,6 +524,7 @@ class ReportController extends Controller
         $proptotalData = 0;
         $proptotal = 0;
         $saftotal = 0;
+        $gbsaftotal = 0;
         $saftotalData = 0;
         $gbsaftotalData = 0;
         $collectionTypes = $request->collectionType;

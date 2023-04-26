@@ -170,6 +170,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post("application/valid-expire-list", "valideAndExpired");
         Route::post("application/collection-summary", "CollectionSummary");
         Route::post("dashboard", "tradeDaseboard");
+        Route::post("dashboard-application-collection", "applicationTypeCollection");
         Route::post("application/track-status", "ApplicantionTrackStatus");
         Route::post("application/application-agent-notice", "applicationAgentNotice"); 
         Route::post("application/notice-summary", "noticeSummary");
@@ -181,6 +182,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('application/bulk-payment-recipt', 'bulkPaymentRecipt');
         Route::post('application/application-status', 'applicationStatus');
         Route::post('ward-list', 'WardList');
+        Route::post('tc-list', 'TcList');
     });
 });
 
