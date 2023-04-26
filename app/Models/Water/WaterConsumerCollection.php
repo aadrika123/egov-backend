@@ -13,14 +13,14 @@ class WaterConsumerCollection extends Model
      * | Save consumer demand details for the transactions
      * | @param 
      */
-    public function saveConsumerCollection($charges, $waterTrans, $user)
+    public function saveConsumerCollection($charges, $waterTrans, $refUserId)
     {
         $mWaterConsumerCollection = new WaterConsumerCollection();
         $mWaterConsumerCollection->consumer_id          = $charges->consumer_id;
         $mWaterConsumerCollection->ward_mstr_id         = $charges->ward_id;
         $mWaterConsumerCollection->transaction_id       = $waterTrans['id'];
         $mWaterConsumerCollection->amount               = $charges->amount;
-        $mWaterConsumerCollection->emp_details_id       = $user->id;
+        $mWaterConsumerCollection->emp_details_id       = $refUserId;
         $mWaterConsumerCollection->demand_id            = $charges->id;
         $mWaterConsumerCollection->demand_from          = $charges->demand_from;
         $mWaterConsumerCollection->demand_upto          = $charges->demand_upto;
