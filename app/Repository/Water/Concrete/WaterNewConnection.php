@@ -453,6 +453,7 @@ class WaterNewConnection implements IWaterNewConnection
                 $transection = WaterTran::select("*")
                     ->where("related_id", $WaterRazorPayResponse->related_id)
                     ->where("tran_type", $WaterRazorPayResponse->payment_from)
+                    ->orderByDesc('id')
                     ->first();
             }
             if (!$application) {

@@ -272,30 +272,30 @@ class WaterReportController extends Controller
 
                     JOIN prop_tran_dtls ON prop_tran_dtls.prop_demand_id = prop_demands.id 
                         AND prop_tran_dtls.prop_demand_id is not null 
-                    JOIN prop_transactions ON prop_transactions.id = prop_tran_dtls.tran_id 
-                        AND prop_transactions.status in (1,2) AND prop_transactions.property_id is not null
+                    JOIN water_trans ON water_trans.id = prop_tran_dtls.tran_id 
+                        AND water_trans.status in (1,2) AND water_trans.related_id is not null
                     WHERE prop_demands.status =1 
                         AND prop_demands.ulb_id =$ulbId
                         " . ($wardId ? " AND prop_properties.ward_mstr_id = $wardId" : "") . "
-                        AND prop_transactions.tran_date  BETWEEN '$fromDate' AND '$uptoDate'
+                        AND water_trans.tran_date  BETWEEN '$fromDate' AND '$uptoDate'
                         AND prop_demands.due_date<='$uptoDate'
-                    GROUP BY prop_demands.property_id
-                )collection ON collection.property_id = prop_properties.id
+                    GROUP BY prop_demands.related_id
+                )collection ON collection.related_id = prop_properties.id
                 LEFT JOIN ( 
-                    SELECT prop_demands.property_id,
+                    SELECT prop_demands.related_id,
                     SUM(prop_demands.amount) AS total_prev_collection
                     FROM prop_demands
-                    JOIN prop_properties ON prop_properties.id = prop_demands.property_id
+                    JOIN prop_properties ON prop_properties.id = prop_demands.related_id
                     JOIN prop_tran_dtls ON prop_tran_dtls.prop_demand_id = prop_demands.id 
                         AND prop_tran_dtls.prop_demand_id is not null 
-                    JOIN prop_transactions ON prop_transactions.id = prop_tran_dtls.tran_id 
-                        AND prop_transactions.status in (1,2) AND prop_transactions.property_id is not null
+                    JOIN water_trans ON water_trans.id = prop_tran_dtls.tran_id 
+                        AND water_trans.status in (1,2) AND water_trans.related_id is not null
                     WHERE prop_demands.status =1 
                         AND prop_demands.ulb_id =$ulbId
                         " . ($wardId ? " AND prop_properties.ward_mstr_id = $wardId" : "") . "
-                        AND prop_transactions.tran_date<'$fromDate'
-                    GROUP BY prop_demands.property_id
-                )prev_collection ON prev_collection.property_id = prop_properties.id 
+                        AND water_trans.tran_date<'$fromDate'
+                    GROUP BY prop_demands.related_id
+                )prev_collection ON prev_collection.related_id = prop_properties.id 
                 JOIN ulb_ward_masters ON ulb_ward_masters.id = prop_properties.ward_mstr_id
                 WHERE  prop_properties.ulb_id = $ulbId  
                     " . ($wardId ? " AND prop_properties.ward_mstr_id = $wardId" : "") . "           
@@ -781,14 +781,14 @@ class WaterReportController extends Controller
         }
 
         foreach ($collectionTypes as $collectionType) {
-            if ($collectionType == 'connection') {
+            if ($collectionType == 'consumer') {
                 $consumerCollection = $this->collectionReport($request);
                 $consumerTotal = $consumerCollection->original['data']['totalAmount'];
                 $consumerData = $consumerCollection->original['data']['total'];
                 $consumerCollection = $consumerCollection->original['data']['data'];
             }
 
-            if ($collectionType == 'consumer') {
+            if ($collectionType == 'connection') {
                 $applicationCollection = $this->applicationCollection($request);
                 $applicationTotal = $applicationCollection->original['data']['totalAmount'];
                 $applicationData = $applicationCollection->original['data']['total'];
@@ -876,8 +876,8 @@ class WaterReportController extends Controller
                             water_consumer_owners.applicant_name AS owner_name,
                             water_consumer_owners.mobile_no,
                                                 // CONCAT(
-                                                //     water_trans.from_fyear, '(', prop_transactions.from_qtr, ')', ' / ', 
-                                                //     water_trans.to_fyear, '(', prop_transactions.to_qtr, ')'
+                                                //     water_trans.from_fyear, '(', water_trans.from_qtr, ')', ' / ', 
+                                                //     water_trans.to_fyear, '(', water_trans.to_qtr, ')'
                                                 // ) AS from_upto_fy_qtr,
                             water_trans.tran_date,
                             water_trans.payment_mode AS transaction_mode,
@@ -895,46 +895,48 @@ class WaterReportController extends Controller
                     DB::RAW("(
                         SELECT STRING_AGG(owner_name, ', ') AS owner_name, 
                         STRING_AGG(mobile_no::TEXT, ', ') AS mobile_no, 
-                        water_consumer_owner.property_id 
+                        water_consumer_owner.related_id 
                         FROM prop_owners 
-                        JOIN prop_transactions on prop_transactions.property_id = prop_owners.property_id 
-                        WHERE prop_transactions.property_id IS NOT NULL AND prop_transactions.status in (1, 2) 
-                        AND prop_transactions.tran_date BETWEEN '$fromDate' AND '$uptoDate'
+                        JOIN water_trans on water_trans.related_id = prop_owners.related_id 
+                        WHERE water_trans.related_id IS NOT NULL AND water_trans.status in (1, 2) 
+                        AND water_trans.tran_date BETWEEN '$fromDate' AND '$uptoDate'
                         " .
-                        ($userId ? " AND prop_transactions.user_id = $userId " : "")
-                        . ($paymentMode ? " AND upper(prop_transactions.payment_mode) = upper('$paymentMode') " : "")
-                        . ($ulbId ? " AND prop_transactions.ulb_id = $ulbId" : "")
+                        ($userId ? " AND water_trans.user_id = $userId " : "")
+                        . ($paymentMode ? " AND upper(water_trans.payment_mode) = upper('$paymentMode') " : "")
+                        . ($ulbId ? " AND water_trans.ulb_id = $ulbId" : "")
                         . "
-                        GROUP BY prop_owners.property_id
+                        GROUP BY prop_owners.related_id
                         ) AS prop_owner_detail
                         "),
                     function ($join) {
-                        $join->on("prop_owner_detail.property_id", "=", "prop_transactions.property_id");
+                        $join->on("prop_owner_detail.related_id", "=", "water_trans.related_id");
                     }
                 )
                 ->JOIN("ulb_ward_masters", "ulb_ward_masters.id", "prop_properties.ward_mstr_id")
-                ->LEFTJOIN("users", "users.id", "prop_transactions.user_id")
-                ->LEFTJOIN("prop_cheque_dtls", "prop_cheque_dtls.transaction_id", "prop_transactions.id")
-                ->WHERENOTNULL("prop_transactions.property_id")
-                ->WHEREIN("prop_transactions.status", [1, 2])
-                ->WHEREBETWEEN("prop_transactions.tran_date", [$fromDate, $uptoDate]);
+                ->LEFTJOIN("users", "users.id", "water_trans.user_id")
+                ->LEFTJOIN("prop_cheque_dtls", "prop_cheque_dtls.transaction_id", "water_trans.id")
+                ->WHERENOTNULL("water_trans.related_id")
+                ->WHEREIN("water_trans.status", [1, 2])
+                ->WHEREBETWEEN("water_trans.tran_date", [$fromDate, $uptoDate]);
+
             if ($wardId) {
                 $data = $data->where("ulb_ward_masters.id", $wardId);
             }
             if ($userId) {
-                $data = $data->where("prop_transactions.user_id", $userId);
+                $data = $data->where("water_trans.user_id", $userId);
             }
             if ($paymentMode) {
-                $data = $data->where(DB::raw("upper(prop_transactions.payment_mode)"), $paymentMode);
+                $data = $data->where(DB::raw("upper(water_trans.payment_mode)"), $paymentMode);
             }
             if ($ulbId) {
-                $data = $data->where("prop_transactions.ulb_id", $ulbId);
+                $data = $data->where("water_trans.ulb_id", $ulbId);
             }
             $paginator = collect();
 
+           
             $data2 = $data;
             $totalHolding = $data2->count("prop_properties.id");
-            $totalAmount = $data2->sum("prop_transactions.amount");
+            $totalAmount = $data2->sum("water_trans.amount");
             $perPage = $request->perPage ? $request->perPage : 5;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
 
