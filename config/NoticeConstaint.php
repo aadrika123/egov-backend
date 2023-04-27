@@ -7,6 +7,10 @@
  */
 
  return [
+    "WHATSAPP_TOKEN"        =>env("WHATSAPP_TOKEN"),
+    "WHATSAPP_NUMBER_ID"    =>env("WHATSAPP_NUMBER_ID"),
+    "WHATSAPP_URL"          =>env("WHATSAPP_URL"),
+    
     "CITIZEN"       => "Citizen",
     "NOTICE_REF_TABLE" => "notice_applications",
     "NOTICE_RELATIVE_PATH" => "Uploads/Notice",

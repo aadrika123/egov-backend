@@ -33,17 +33,17 @@ return [
     "DEALING_ASSISTENT_WF_ID"           => "6",
     "WATER_JE_ROLE_ID"                  => "40",
     "GENERAL_NOTICE_MASTER_ID"          => "634",
-    "PAYMENT_NOTICE_MASTER_ID"          =>"635",
-    "ILLEGAL_OCCUPATION_NOTICE_MASTER_ID" =>"636",
+    "PAYMENT_NOTICE_MASTER_ID"          => "635",
+    "ILLEGAL_OCCUPATION_NOTICE_MASTER_ID" => "636",
 
     // User Types
     "USER_TYPES" => [
         "1" => "Citizen",
     ],
 
-    "baseUrl" => "192.168.0.16:8000",
+    "baseUrl" => "192.168.0.15:8000",
 
-    "ROLES" =>[
+    "ROLES" => [
         "ULB_Tax_Collector" => 7,
         "Tax_Collector" => 5
     ],

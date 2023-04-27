@@ -6,6 +6,7 @@
     "license": "MIT",
     "require": {
         "php": "^7.3|^8.0",
+        "barryvdh/laravel-dompdf": "^2.0",
         "fruitcake/laravel-cors": "^2.0",
         "guzzlehttp/guzzle": "^7.0.1",
         "laravel/framework": "^8.75",
@@ -34,7 +35,8 @@
         },
         "files": [
             "app/Helpers/utility_helper.php",
-            "app/Helpers/sms_helper.php"  
+            "app/Helpers/sms_helper.php" ,
+            "app/Helpers/whatsapp_helper.php" 
         ]
     },
     "autoload-dev": {

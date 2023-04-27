@@ -14,6 +14,7 @@ use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Property\PropApartmentDtl;
 use App\Models\Property\PropDemand;
+use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropSaf;
 use App\Models\Property\PropSafMemoDtl;
@@ -249,22 +250,22 @@ class ActiveSafControllerV2 extends Controller
             $holdingNo = $req->holdingNo;
             $ulbId = $req->ulbId;
             $mPropProperty = new PropProperty();
+            $mPropOwners = new PropOwner();
 
-            $data = $mPropProperty->searchHoldingNo($ulbId)
+            $prop = $mPropProperty->searchHoldingNo($ulbId)
                 ->where('prop_properties.holding_no', $holdingNo)
-                ->orderby('prop_owners.id')
                 ->first();
 
-            if ($data)
-                return responseMsgs(true, "Holding Details", $data, 010124, 1.0, "308ms", "POST", $req->deviceId);
-
-            $data = $mPropProperty->searchHoldingNo($ulbId)
-                ->where('prop_properties.new_holding_no', $holdingNo)
-                ->orderby('prop_owners.id')
-                ->first();
-
-            if (!$data)
+            if (!$prop) {
+                $prop = $mPropProperty->searchHoldingNo($ulbId)
+                    ->where('prop_properties.new_holding_no', $holdingNo)
+                    ->first();
+            }
+            if (!$prop)
                 throw new Exception("Enter Valid Holding No.");
+
+            $owner = $mPropOwners->firstOwner($prop->first()['id']);
+            $data[] = collect($prop)->merge($owner);
 
             return responseMsgs(true, "Holding Details", $data, 010124, 1.0, "308ms", "POST", $req->deviceId);
         } catch (Exception $e) {

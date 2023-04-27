@@ -57,7 +57,7 @@ class PropOwner extends Model
             ->get();
     }
 
-     /**
+    /**
      * | Get The first Owner by Property Id
      */
     public function getOwnerByPropIds($propIds)
@@ -160,5 +160,19 @@ class PropOwner extends Model
             'aadhar_no' => $safOwner->aadhar_no
         ];
         $owner->update($req);
+    }
+
+    /**
+     * | 1st owner by property Id
+     */
+    public function firstOwner($propertyId)
+    {
+        return PropOwner::select(
+            'owner_name',
+            'mobile_no'
+        )
+            ->where('property_id', $propertyId)
+            ->orderBy('id')
+            ->first();
     }
 }

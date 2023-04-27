@@ -19,6 +19,7 @@ use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropSaf;
 use App\Models\Property\PropSafsOwner;
+use App\Models\Workflows\WfRoleusermap;
 use App\Repository\Property\Interfaces\iPropertyDetailsRepo;
 use Exception;
 use Illuminate\Database\Eloquent\Collection;
@@ -386,9 +387,13 @@ class PropertyDetailsController extends Controller
         ]);
 
         try {
+            $mPropProperty = new PropProperty();
+            $mWfRoleUser = new WfRoleusermap();
+            $userId = authUser()->id;
+            $roleIds = $mWfRoleUser->getRoleIdByUserId($userId)->pluck('wf_role_id');                      // Model to () get Role By User Id
+            $role = $roleIds->first();
             $key = $request->filteredBy;
             $parameter = $request->parameter;
-            $mPropProperty = new PropProperty();
             switch ($key) {
                 case ("holdingNo"):
                     $data = $mPropProperty->searchProperty()
@@ -426,6 +431,17 @@ class PropertyDetailsController extends Controller
                         ->get();
                     break;
             }
+            // if ($role == 8) {
+            //     $canPay = collect(['canPay' => true]);
+            //     $data = collect($data)->merge($canPay);
+            //     $data = (array_values(objtoarray($data)));
+            //     $data[]["canPay"] = true;
+            // } else {
+            //     $canPay = collect(['canPay' => false]);
+            //     $data = collect($data)->merge($canPay);
+            //     $data = (array_values(objtoarray($data)));
+            // }
+
             return responseMsgs(true, "Application Details", remove_null($data), "010501", "1.0", "", "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010502", "1.0", "", "POST", $request->deviceId ?? "");
