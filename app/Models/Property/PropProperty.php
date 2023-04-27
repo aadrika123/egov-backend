@@ -595,12 +595,12 @@ class PropProperty extends Model
             'ward_name',
             'prop_address',
             'prop_properties.status',
-            'prop_owners.mobile_no',
-            'prop_owners.owner_name'
+            // 'prop_owners.mobile_no',
+            // 'prop_owners.owner_name'
         )
             ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
             ->join('ulb_masters', 'ulb_masters.id', 'prop_properties.ulb_id')
-            ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
+            // ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
             ->where('prop_properties.ulb_id', $ulbId)
             ->where('prop_properties.status', 1);
     }

@@ -19,6 +19,7 @@ use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropSaf;
 use App\Models\Property\PropSafsOwner;
+use App\Models\Workflows\WfRoleusermap;
 use App\Repository\Property\Interfaces\iPropertyDetailsRepo;
 use Exception;
 use Illuminate\Database\Eloquent\Collection;
@@ -386,9 +387,12 @@ class PropertyDetailsController extends Controller
         ]);
 
         try {
+            $mPropProperty = new PropProperty();
+            $mWfRoleUser = new WfRoleusermap();
+            $userId = authUser()->id;
+            $roleIds = $mWfRoleUser->getRoleIdByUserId($userId)->pluck('wf_role_id');                      // Model to () get Role By User Id
             $key = $request->filteredBy;
             $parameter = $request->parameter;
-            $mPropProperty = new PropProperty();
             switch ($key) {
                 case ("holdingNo"):
                     $data = $mPropProperty->searchProperty()
