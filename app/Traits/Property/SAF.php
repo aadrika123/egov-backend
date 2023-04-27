@@ -221,6 +221,7 @@ trait SAF
         $array['roadTypeMstrId'] = $req['road_type_mstr_id'];
         $array['isGBSaf'] = $req['is_gb_saf'];
         $array['ulbId'] = $req['ulb_id'];
+        $array['rwhDateFrom'] = $req['rwhDateFrom']??null;
         $refFloors = $req['floors'];
 
         foreach ($refFloors as $key => $refFloor) {
