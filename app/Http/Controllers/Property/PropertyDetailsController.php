@@ -430,6 +430,7 @@ class PropertyDetailsController extends Controller
                         ->get();
                     break;
             }
+
             return responseMsgs(true, "Application Details", remove_null($data), "010501", "1.0", "", "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010502", "1.0", "", "POST", $request->deviceId ?? "");

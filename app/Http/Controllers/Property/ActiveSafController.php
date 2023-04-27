@@ -1827,11 +1827,10 @@ class ActiveSafController extends Controller
      */
     public function generatePaymentReceipt(Request $req)
     {
-        $req->validate([
-            'tranNo' => 'required'
-        ]);
-
         try {
+            $req->validate([
+                'tranNo' => 'required'
+            ]);
             $propSafsDemand = new PropSafsDemand();
             $transaction = new PropTransaction();
             $propPenalties = new PropPenaltyrebate();
