@@ -121,7 +121,7 @@ class JskController extends Controller
                 $dd = collect($tran)->where('payment_mode', 'DD')->sum('amount');
                 $online = collect($tran)->where('payment_mode', 'Online')->sum('amount');
 
-                $data['totalAppliedApplication'] = $saf->union($obj)->union($con)->union($har)->union($deactv)->get()->count();
+                $data['totalApplication'] = $saf->union($obj)->union($con)->union($har)->union($deactv)->get()->count();
                 $data['totalCollection'] = $total;
                 $data['totalCash'] = $cash;
                 $data['totalCheque'] = $cheque;
@@ -140,7 +140,7 @@ class JskController extends Controller
                 $concessionReceivedApp =  $mPropActiveConcession->todayReceivedApplication($currentRole->id, $ulbId)->count();
                 $harvestingReceivedApp =  $mPropActiveHarvesting->todayReceivedApplication($currentRole->id, $ulbId)->count();
                 $deactivationReceivedApp =  $mPropActiveDeactivation->todayReceivedApplication($currentRole->id, $ulbId)->count();
-                $data['totalReceivedApplication'] = $safReceivedApp + $objectionReceivedApp + $concessionReceivedApp + $harvestingReceivedApp + $deactivationReceivedApp;
+                $data['totalApplication'] = $safReceivedApp + $objectionReceivedApp + $concessionReceivedApp + $harvestingReceivedApp + $deactivationReceivedApp;
                 $data['saf'] = $safReceivedApp;
                 $data['objection'] = $objectionReceivedApp;
                 $data['concession'] = $concessionReceivedApp;
@@ -162,7 +162,7 @@ class JskController extends Controller
                 $data['concession'] = $concessionReceivedApp;
                 $data['harvesting'] = $harvestingReceivedApp;
                 $data['deactivation'] = $deactivationReceivedApp;
-                $data['totalReceivedApplication'] = $safReceivedApp + $objectionReceivedApp + $concessionReceivedApp + $harvestingReceivedApp + $deactivationReceivedApp;
+                $data['totalApplication'] = $safReceivedApp + $objectionReceivedApp + $concessionReceivedApp + $harvestingReceivedApp + $deactivationReceivedApp;
                 $data['totalApprovedApplication'] =  $mWorkflowTrack->todayApprovedApplication($currentRole->id, $ulbId, $propertyWorflows)->count();
                 $data['totalRejectedApplication'] = $mWorkflowTrack->todayRejectedApplication($currentRole->id, $ulbId, $propertyWorflows)->count();
             }
