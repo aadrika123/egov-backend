@@ -678,9 +678,17 @@ class HoldingTaxController extends Controller
     public function propPaymentReceipt(Request $req)
     {
         try {
-            $req->validate([
-                'tranNo' => 'required'
-            ]);
+            $validated = Validator::make(
+                $req->all(),
+                ['tranNo' => 'required']
+            );
+            if ($validated->fails()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'validation error',
+                    'errors' => $validated->errors()
+                ], 401);
+            }
             $mTransaction = new PropTransaction();
             $mPropPenalties = new PropPenaltyrebate();
             $safController = new ActiveSafController($this->_safRepo);
