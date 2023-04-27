@@ -145,9 +145,13 @@ class WaterConsumer extends Model
             'water_connection_charges.amount',
             'water_connection_charges.penalty',
             'water_connection_charges.conn_fee',
-            'water_connection_charges.rule_set'
+            'water_connection_charges.rule_set',
+            'ulb_ward_masters.ward_name',
+            'ulb_masters.ulb_name'
 
         )
+            ->join('ulb_masters', 'ulb_masters.id', 'water_consumers.ulb_id')
+            ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'water_consumers.ward_mstr_id')
             ->leftjoin('water_connection_charges', 'water_connection_charges.application_id', '=', 'water_consumers.apply_connection_id')
             ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_consumers.id')
             ->where('water_consumers.user_id', auth()->user()->id)
@@ -170,7 +174,9 @@ class WaterConsumer extends Model
                 'water_connection_charges.amount',
                 'water_connection_charges.penalty',
                 'water_connection_charges.conn_fee',
-                'water_connection_charges.rule_set'
+                'water_connection_charges.rule_set',
+                'ulb_ward_masters.ward_name',
+                'ulb_masters.ulb_name'
             )
             ->get();
     }
@@ -368,20 +374,20 @@ class WaterConsumer extends Model
             DB::raw("string_agg(water_consumer_owners.mobile_no::VARCHAR,',') as mobile_no"),
             DB::raw("string_agg(water_consumer_owners.guardian_name,',') as guardian_name"),
         )
-        ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_consumers.id')
-        ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_consumers.ward_mstr_id')
-        ->whereIn("water_consumers.id",$consumerIds)
-        ->where('water_consumers.status',1)
-        ->groupBy(
-            'water_consumers.saf_no',
-            'water_consumers.holding_no',
-            'water_consumers.address',
-            'water_consumers.id',
-            'water_consumers.ulb_id',
-            'water_consumer_owners.consumer_id',
-            'water_consumers.consumer_no',
-            'water_consumers.ward_mstr_id',
-            'ulb_ward_masters.ward_name'
-        );
+            ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_consumers.id')
+            ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_consumers.ward_mstr_id')
+            ->whereIn("water_consumers.id", $consumerIds)
+            ->where('water_consumers.status', 1)
+            ->groupBy(
+                'water_consumers.saf_no',
+                'water_consumers.holding_no',
+                'water_consumers.address',
+                'water_consumers.id',
+                'water_consumers.ulb_id',
+                'water_consumer_owners.consumer_id',
+                'water_consumers.consumer_no',
+                'water_consumers.ward_mstr_id',
+                'ulb_ward_masters.ward_name'
+            );
     }
 }

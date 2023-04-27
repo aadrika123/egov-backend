@@ -123,6 +123,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('consumer/report/list-ward-dcb', 'wardWiseDCB');
         Route::post('consumer/report/dcb-pie-chart', 'dcbPieChart');
         Route::post('report-cosumer', 'consumerReport');
+        Route::post('connection-collection','connectionCollection');
     });
 });
 
