@@ -694,9 +694,6 @@ use Barryvdh\DomPDF\Facade\PDF;
                 }
                 #=========send Notic==========
                 $whatsapp=(Whatsapp_Send($noticeData->mobile_no,"hello_world",));
-                $data = Water(["consumer_no"=>1234],"Application Approved");
-                send_sms('7050180186',$data['sms'],$data["temp_id"]);
-                // dd($whatsapp);
                 #=========end send Notice=======
                 DB::beginTransaction();
                 
