@@ -19,4 +19,6 @@ use Illuminate\Http\Request;
     public function inbox(Request $request);
     public function outbox(Request $request);
     public function approveReject(Request $request);
+    public function openNoticiList($sedule=false);
+    public function genrateAndSendNotice(Request $request);
 }
