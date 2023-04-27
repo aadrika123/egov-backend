@@ -121,7 +121,7 @@ class JskController extends Controller
                 $dd = collect($tran)->where('payment_mode', 'DD')->sum('amount');
                 $online = collect($tran)->where('payment_mode', 'Online')->sum('amount');
 
-                $data['totalApplication'] = $saf->union($obj)->union($con)->union($har)->union($deactv)->get()->count();
+                // $data['totalApplication'] = ($saf->union($obj)->union($con)->union($har)->union($deactv)->get())->count();
                 $data['totalCollection'] = $total;
                 $data['totalCash'] = $cash;
                 $data['totalCheque'] = $cheque;
@@ -132,6 +132,7 @@ class JskController extends Controller
                 $data['concession'] = $con->count();
                 $data['harvesting'] = $har->count();
                 $data['deactivation'] = $deactv->count();
+                $data['totalApplication'] = $data['saf'] + $data['objection'] + $data['concession'] + $data['harvesting'] + $data['deactivation'];
             }
 
             if (in_array($currentRole->role_name, $role)) {
