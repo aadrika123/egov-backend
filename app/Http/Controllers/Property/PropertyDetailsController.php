@@ -391,6 +391,7 @@ class PropertyDetailsController extends Controller
             $mWfRoleUser = new WfRoleusermap();
             $userId = authUser()->id;
             $roleIds = $mWfRoleUser->getRoleIdByUserId($userId)->pluck('wf_role_id');                      // Model to () get Role By User Id
+            $role = $roleIds->first();
             $key = $request->filteredBy;
             $parameter = $request->parameter;
             switch ($key) {
@@ -430,6 +431,16 @@ class PropertyDetailsController extends Controller
                         ->get();
                     break;
             }
+            // if ($role == 8) {
+            //     $canPay = collect(['canPay' => true]);
+            //     $data = collect($data)->merge($canPay);
+            //     $data = (array_values(objtoarray($data)));
+            //     $data[]["canPay"] = true;
+            // } else {
+            //     $canPay = collect(['canPay' => false]);
+            //     $data = collect($data)->merge($canPay);
+            //     $data = (array_values(objtoarray($data)));
+            // }
 
             return responseMsgs(true, "Application Details", remove_null($data), "010501", "1.0", "", "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
