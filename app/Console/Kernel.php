@@ -19,7 +19,7 @@ class Kernel extends ConsoleKernel
         // $schedule->command('inspire')->hourly();
         $schedule->command('sanctum:prune-expired --hours=24')->daily();
         $schedule->command('telescope:prune')->daily();
-        $schedule->command('whatsapp:send')->everyMinute();
+        $schedule->command('whatsapp:send --hours=24')->daily();
     }
 
     /**
