@@ -7,6 +7,8 @@ use App\Http\Controllers\Service\IdGeneratorController;
 use App\MicroServices\DocUpload;
 use App\Models\CustomDetail;
 use App\Models\Notice\NoticeApplication;
+use App\Models\Notice\NoticeReminder;
+use App\Models\Notice\NoticeSedule;
 use App\Models\Workflows\WfRole;
 use App\Models\WorkflowTrack;
 use App\Repository\Common\CommonFunction;
@@ -20,6 +22,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Barryvdh\DomPDF\Facade\PDF;
 
 /**
  * Created By Sandeep Bara
@@ -544,7 +548,8 @@ use Illuminate\Support\Facades\DB;
                 $application->notice_no = $id_respons->original["data"];//$this->generateNoticNo($application->id);
                 $application->notice_date = Carbon::now()->format("Y-m-d");
                 $application->update();
-                $this->sendNotice($application->id);
+                $myRquest = new Request(["applicationId"=>$application->id]);
+                $this->genrateAndSendNotice($myRquest);
                 $msg =  "Notice Successfully Generated !!. Your Notice No. ".$application->notice_no;
             }
 
@@ -598,19 +603,121 @@ use Illuminate\Support\Facades\DB;
         return $status;
     }
 
-    public function sendNotice($applicationId)
+    public function openNoticiList($sedule=false)
     {
+        
         try{
-            $application = NoticeApplication::where("status",5)->find($applicationId);
-            if($application)
+            $noticeList = NoticeApplication::select(DB::raw("notice_applications.id"))
+                        ->WHERE("notice_applications.is_closed",FALSE)
+                        ->WHERE("notice_applications.status",5)
+                        ->GET();
+            if($sedule)
             {
-                // $pdf = DomPdf()
+                foreach($noticeList as $val)
+                {
+                    $myRquest = new Request(["applicationId"=>$val["id"]]);
+                    $this->genrateAndSendNotice($myRquest);
+                }
+                return;
             }
-            // dd($application);
+            return responseMsg(true, "", remove_null($noticeList));
         }
-        catch(Exception $e)
+        catch (Exception $e) 
         {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    } 
+    public function genrateAndSendNotice(Request $request)
+    {
+        $user = Auth()->user();
+        try{
+            
+            $noticeData = NoticeApplication::select(
+                            "notice_applications.*",
+                            "ulb_masters.ulb_name",
+                            )
+                            ->JOIN("ulb_masters","ulb_masters.id","notice_applications.ulb_id")
+                            ->WHERE("notice_applications.id",$request->applicationId)
+                            ->WHERE("notice_applications.is_closed",FALSE)
+                            ->WHERE("notice_applications.status",5)
+                            ->first();
+           
+            if(!$noticeData)
+            {
+                throw new Exception("No Data Found");
+            }
+            
+            $noticeStatus = (!$noticeData->notice_state)? 0 : $noticeData->notice_state;
+                
+            $sedule = NoticeSedule::where("status",1)
+                    ->where("notice_type_id",$noticeData->notice_type_id)
+                    ->where("serial_no",($noticeStatus+1))
+                    ->where("status",1)
+                    ->first(); 
+            $totalDays = NoticeSedule::where("status",1)
+                        ->where("notice_type_id",$noticeData->notice_type_id)
+                        ->where("status",1)
+                        ->get();               
+            $remider = NoticeReminder::SELECT("*",DB::RAW("CAST(created_at AS DATE) AS created_on"))
+                        ->where("status",1)
+                        ->where("notice_id",$noticeData->id)
+                        ->orderBy("created_at","DESC")
+                        ->first();
+            if($sedule && ($remider ?($remider->reminder_date == Carbon::now()->format('Y-m-d') && $remider->created_on != Carbon::now()->format('Y-m-d')) : true)) 
+            { 
+                $url = $remider->notice_file??"";
+                $temp = explode("/",$url);
+                $filename = end($temp);
+                if($sedule->serial_no==1 || (!$url) )
+                {
+                    
+                    $reminder_notice_date = $sedule->serial_no==1?$noticeData->notice_date:($remider->reminder_date??$noticeData->notice_date);
+                    $agency_name = "SRI PUBLICATION & STATIONERS PVT. LTD.";
 
+                    $filename = $noticeData->id."-".$sedule->serial_no."-".time() . '.' . 'pdf';
+                    $url = "Uploads/Notice/Remider/".$filename;
+                    switch($noticeData->notice_type_id)
+                    {
+                        case 1 : $pdf = PDF::loadView('general_notice',["noticeData"=>$noticeData,"reminder_notice_date"=>$reminder_notice_date,"agency_name"=>$agency_name]); 
+                                break;
+                        case 2 : $pdf = PDF::loadView('denial_notice',["noticeData"=>$noticeData,"reminder_notice_date"=>$reminder_notice_date,"agency_name"=>$agency_name]); 
+                                break;
+                        case 3 : $pdf = PDF::loadView('payment_notice',["noticeData"=>$noticeData,"reminder_notice_date"=>$reminder_notice_date,"agency_name"=>$agency_name]); 
+                                break;
+                        case 4 : $pdf = PDF::loadView('illegsl_occupation_notice',["noticeData"=>$noticeData,"reminder_notice_date"=>$reminder_notice_date,"agency_name"=>$agency_name]); 
+                                break;
+                        default : throw new Exception("invalid Notice Type");
+                    } 
+                    $file = $pdf->download($filename . '.' . 'pdf');
+                    $pdf = Storage::put('public' . '/' . $url, $file);
+
+                }
+                #=========send Notic==========
+                $whatsapp=(Whatsapp_Send($noticeData->mobile_no,"hello_world",));
+                $data = Water(["consumer_no"=>1234],"Application Approved");
+                send_sms('7050180186',$data['sms'],$data["temp_id"]);
+                // dd($whatsapp);
+                #=========end send Notice=======
+                DB::beginTransaction();
+                
+                $noticeData->notice_state = $sedule->serial_no;
+                $noticeData->update();
+                $newRemider = new NoticeReminder();
+                $newRemider->notice_id          = $noticeData->id;
+                $newRemider->reminder_date      = Carbon::now()->addDays($sedule->priade_in_days)->format('Y-m-d');
+                $newRemider->final_date         = $sedule->serial_no==1 ? (Carbon::now()->addDays($totalDays->sum("priade_in_days"))->format('Y-m-d')) : ($remider->final_date??Carbon::now()->addDays($totalDays->sum("priade_in_days"))->format('Y-m-d')) ;
+                $newRemider->reminder_content   = $request->reminder_content??null ;
+                $newRemider->remarks            = $request->remarks??null;
+                $newRemider->user_id            = $user->id??0;
+                $newRemider->notice_file        = $url;
+                $newRemider->save();
+                DB::commit();
+            }
+            
+        }
+        catch (Exception $e) 
+        {
+            return responseMsg(false, $e->getMessage(), "");
         }
     }
  }

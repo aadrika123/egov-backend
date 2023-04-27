@@ -9,6 +9,8 @@ use App\Http\Controllers\Water\NewConnectionController;
 use App\Http\Requests\Notice\Add;
 use App\Models\ModuleMaster;
 use App\Models\Notice\NoticeApplication;
+use App\Models\Notice\NoticeReminder;
+use App\Models\Notice\NoticeSedule;
 use App\Models\Notice\NoticeTypeMaster;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\WorkflowTrack;
@@ -391,5 +393,9 @@ class NoticeController extends Controller
             return responseMsg(false, $e->getMessage(), "");
         }
     }
-    
+    public function openNoticiList($sedule=false)
+    {        
+        return $this->_REPOSITORY->openNoticiList($sedule);
+    }
+       
 }
