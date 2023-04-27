@@ -1662,7 +1662,7 @@ class WaterPaymentController extends Controller
                 'paymentMode'       => "Online",
                 'userId'            => $refUserId,
                 'citizenId'         => $refUserId,
-                'userType'          => $refUser->user_type,
+                'userType'          => "Citizen" ?? null, # Check here
                 'ulbId'             => $refUlbId,
                 'leftDemandAmount'  => $RazorPayRequest->due_amount,
                 'adjustedAmount'    => $RazorPayRequest->adjusted_amount
@@ -1686,8 +1686,8 @@ class WaterPaymentController extends Controller
             }
             foreach ($mDemands as $val) {
                 # save Water trans details 
-                $mWaterTranDetail->saveDefaultTrans($val->amount, $val->application_id, $transactionId['id'], $val->id);
-                $mWaterConsumerCollection->saveConsumerCollection($val, $transactionId, $refUser);
+                $mWaterTranDetail->saveDefaultTrans($val->amount, $val->consumer_id, $transactionId['id'], $val->id);
+                $mWaterConsumerCollection->saveConsumerCollection($val, $transactionId, $refUserId);
                 # update the payment status of the demand 
                 $val->paid_status = 1;
                 $val->update();

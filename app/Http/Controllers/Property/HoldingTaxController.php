@@ -677,10 +677,18 @@ class HoldingTaxController extends Controller
      */
     public function propPaymentReceipt(Request $req)
     {
-        $req->validate([
-            'tranNo' => 'required'
-        ]);
         try {
+            $validated = Validator::make(
+                $req->all(),
+                ['tranNo' => 'required']
+            );
+            if ($validated->fails()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'validation error',
+                    'errors' => $validated->errors()
+                ], 401);
+            }
             $mTransaction = new PropTransaction();
             $mPropPenalties = new PropPenaltyrebate();
             $safController = new ActiveSafController($this->_safRepo);
@@ -1378,11 +1386,10 @@ class HoldingTaxController extends Controller
      */
     public function clusterPaymentReceipt(Request $req)
     {
-        $req->validate([
-            'tranNo' => 'required'
-        ]);
-
         try {
+            $req->validate([
+                'tranNo' => 'required'
+            ]);
             $mTransaction = new PropTransaction();
             $mPropPenalties = new PropPenaltyrebate();
             $mClusters = new Cluster();

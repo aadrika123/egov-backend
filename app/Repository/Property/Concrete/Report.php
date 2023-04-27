@@ -2969,14 +2969,15 @@ class Report implements IReport
             if ($reportType == 'property') {
 
                 $sql1 = "select t.id,payment_mode,ward_name as ward_no,
+                                'property' as type,
                                 prop_properties.saf_no,holding_no,new_holding_no,
                                 round(t.demand_amt) as demand_amt,
                                 round(t.amount) as paid_amount,
                                 round(penalty_amt)as penalty_amt,
-                                round(online_rebate_amt) as online_rebate_amt,
-                                round(special_rebate_amt) as special_rebate_amt,
-                                round(first_qtr_rebate) as first_qtr_rebate,
-                                round(jsk_rebate_amt) as jsk_rebate_amt,
+                                online_rebate_amt,
+                                special_rebate_amt,
+                                first_qtr_rebate,
+                                jsk_rebate_amt,
                                 CASE WHEN  t.property_id is not null THEN t.property_id END AS property_id
                         from prop_transactions as t
                             join (select  tran_id,
@@ -3049,6 +3050,7 @@ class Report implements IReport
 
                 $sql2 = "select
                                 t.id,payment_mode,saf_no,ward_name as ward_no,
+                                'saf' as type,
                                 CASE WHEN  t.saf_id is not null THEN t.saf_id END AS saf_id,
                                 round(t.amount) as paid_amount,
                                 round(pr.demand_amt)as demand_amt,
@@ -3131,6 +3133,7 @@ class Report implements IReport
 
                 $sql3 = "select
                             payment_mode,
+                            'gbsaf' as type,
                             tran_id,saf_no,ward_name as ward_no,
                             t.amount as paid_amount,
                             pr.demand_amt,

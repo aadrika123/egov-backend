@@ -272,30 +272,30 @@ class WaterReportController extends Controller
 
                     JOIN prop_tran_dtls ON prop_tran_dtls.prop_demand_id = prop_demands.id 
                         AND prop_tran_dtls.prop_demand_id is not null 
-                    JOIN prop_transactions ON prop_transactions.id = prop_tran_dtls.tran_id 
-                        AND prop_transactions.status in (1,2) AND prop_transactions.property_id is not null
+                    JOIN water_trans ON water_trans.id = prop_tran_dtls.tran_id 
+                        AND water_trans.status in (1,2) AND water_trans.related_id is not null
                     WHERE prop_demands.status =1 
                         AND prop_demands.ulb_id =$ulbId
                         " . ($wardId ? " AND prop_properties.ward_mstr_id = $wardId" : "") . "
-                        AND prop_transactions.tran_date  BETWEEN '$fromDate' AND '$uptoDate'
+                        AND water_trans.tran_date  BETWEEN '$fromDate' AND '$uptoDate'
                         AND prop_demands.due_date<='$uptoDate'
-                    GROUP BY prop_demands.property_id
-                )collection ON collection.property_id = prop_properties.id
+                    GROUP BY prop_demands.related_id
+                )collection ON collection.related_id = prop_properties.id
                 LEFT JOIN ( 
-                    SELECT prop_demands.property_id,
+                    SELECT prop_demands.related_id,
                     SUM(prop_demands.amount) AS total_prev_collection
                     FROM prop_demands
-                    JOIN prop_properties ON prop_properties.id = prop_demands.property_id
+                    JOIN prop_properties ON prop_properties.id = prop_demands.related_id
                     JOIN prop_tran_dtls ON prop_tran_dtls.prop_demand_id = prop_demands.id 
                         AND prop_tran_dtls.prop_demand_id is not null 
-                    JOIN prop_transactions ON prop_transactions.id = prop_tran_dtls.tran_id 
-                        AND prop_transactions.status in (1,2) AND prop_transactions.property_id is not null
+                    JOIN water_trans ON water_trans.id = prop_tran_dtls.tran_id 
+                        AND water_trans.status in (1,2) AND water_trans.related_id is not null
                     WHERE prop_demands.status =1 
                         AND prop_demands.ulb_id =$ulbId
                         " . ($wardId ? " AND prop_properties.ward_mstr_id = $wardId" : "") . "
-                        AND prop_transactions.tran_date<'$fromDate'
-                    GROUP BY prop_demands.property_id
-                )prev_collection ON prev_collection.property_id = prop_properties.id 
+                        AND water_trans.tran_date<'$fromDate'
+                    GROUP BY prop_demands.related_id
+                )prev_collection ON prev_collection.related_id = prop_properties.id 
                 JOIN ulb_ward_masters ON ulb_ward_masters.id = prop_properties.ward_mstr_id
                 WHERE  prop_properties.ulb_id = $ulbId  
                     " . ($wardId ? " AND prop_properties.ward_mstr_id = $wardId" : "") . "           
@@ -595,8 +595,6 @@ class WaterReportController extends Controller
                 )prev_collection ON prev_collection.ward_mstr_id = ulb_ward_masters.id                 
                 WHERE  ulb_ward_masters.ulb_id = $ulbId  
                     " . ($wardId ? " AND ulb_ward_masters.id = $wardId" : "") . "
-                    " . ($connectionType ? " AND water_consumer_demands.connection_type IN ($connectionType)" : "") . "
-                    " . ($propType ? " AND water_consumers.property_type_id = $propType" : "") . "
                 GROUP BY ulb_ward_masters.ward_name           
             ";
 
@@ -760,12 +758,24 @@ class WaterReportController extends Controller
     }
 
 
-    
+
     /**
-     * | Water collection Report
+     * | Water collection Report for Consumer and Connections
      */
     public function WaterCollection(Request $request)
     {
+        $request->validate(
+            [
+                "fromDate"      => "required|date|date_format:Y-m-d",
+                "uptoDate"      => "required|date|date_format:Y-m-d",
+                "wardId"        => "nullable|digits_between:1,9223372036854775807",
+                "userId"        => "nullable|digits_between:1,9223372036854775807",
+                "paymentMode"   => "nullable",
+                "page"          => "nullable|digits_between:1,9223372036854775807",
+                "perPage"       => "nullable|digits_between:1,9223372036854775807",
+            ]
+        );
+
         $consumerCollection = null;
         $applicationCollection = null;
         $consumerData = 0;
@@ -781,26 +791,19 @@ class WaterReportController extends Controller
         }
 
         foreach ($collectionTypes as $collectionType) {
-            if ($collectionType == 'connection') {
-                $consumerCollection = $this->collectionReport($request);
+            if ($collectionType == 'consumer') {
+                $consumerCollection = $this->consumerReport($request);
                 $consumerTotal = $consumerCollection->original['data']['totalAmount'];
                 $consumerData = $consumerCollection->original['data']['total'];
                 $consumerCollection = $consumerCollection->original['data']['data'];
             }
 
-            if ($collectionType == 'consumer') {
+            if ($collectionType == 'connection') {
                 $applicationCollection = $this->applicationCollection($request);
                 $applicationTotal = $applicationCollection->original['data']['totalAmount'];
                 $applicationData = $applicationCollection->original['data']['total'];
                 $applicationCollection = $applicationCollection->original['data']['data'];
             }
-
-            // if ($collectionType == 'gbsaf') {
-            //     $Dont__USE = $this->Dont__USE($request);
-            //     $NOT__USE = $Dont__USE->toarray()['total'];
-            //     $Dont__USE = $Dont__USE->toarray()['data'];
-            //     $gbapplicationTotal = collect($Dont__USE)->sum('amount');
-            // }
         }
         $currentPage = $request->page ?? 1;
         $details = collect($consumerCollection)->merge($applicationCollection);
@@ -816,12 +819,10 @@ class WaterReportController extends Controller
         return responseMsgs(true, "", $data, "", "", "", "post", $request->deviceId);
     }
 
-
-
-        /**
-     * | Property Collection
+    /**
+     * | Consumer Collection Report 
      */
-    public function collectionReport(Request $request)
+    public function consumerReport(Request $request)
     {
         $request->validate(
             [
@@ -834,9 +835,11 @@ class WaterReportController extends Controller
                 "perPage"       => "nullable|digits_between:1,9223372036854775807",
             ]
         );
-        $metaData = collect($request->metaData)->all();
 
+        $metaData = collect($request->metaData)->all();
+        $request->request->add(["metaData" => ["pr1.1", 1.1, null, $request->getMethod(), null,]]);
         list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
+
         try {
             $refUser        = Auth()->user();
             $refUserId      = $refUser->id;
@@ -868,22 +871,17 @@ class WaterReportController extends Controller
             // DB::enableQueryLog();
             $data = WaterTran::SELECT(
                 DB::raw("
-                            ulb_ward_masters.ward_name AS ward_no,
-                            water_consumers.id,
-                            water_consumers.consumer_no,
                             water_trans.id AS tran_id,
+                            water_consumers.id AS ref_consumer_id,
+                            ulb_ward_masters.ward_name AS ward_no,
+                             'consumer' as type,
+                            water_consumers.consumer_no,
                             CONCAT('', water_consumers.holding_no, '') AS holding_no,
-                            water_consumer_owners.applicant_name AS owner_name,
-                            water_consumer_owners.mobile_no,
-                                                // CONCAT(
-                                                //     water_trans.from_fyear, '(', prop_transactions.from_qtr, ')', ' / ', 
-                                                //     water_trans.to_fyear, '(', prop_transactions.to_qtr, ')'
-                                                // ) AS from_upto_fy_qtr,
+                            water_owner_detail.owner_name,
+                            water_owner_detail.mobile_no,
                             water_trans.tran_date,
                             water_trans.payment_mode AS transaction_mode,
-                            water_trans.amount,
-                            users.user_name as emp_name,
-                            users.id as user_id,
+                            water_trans.amount,users.user_name as emp_name,users.id as user_id,
                             water_trans.tran_no,
                             water_cheque_dtls.cheque_no,
                             water_cheque_dtls.bank_name,
@@ -893,48 +891,48 @@ class WaterReportController extends Controller
                 ->JOIN("water_consumers", "water_consumers.id", "water_trans.related_id")
                 ->JOIN(
                     DB::RAW("(
-                        SELECT STRING_AGG(owner_name, ', ') AS owner_name, 
-                        STRING_AGG(mobile_no::TEXT, ', ') AS mobile_no, 
-                        water_consumer_owner.property_id 
-                        FROM prop_owners 
-                        JOIN prop_transactions on prop_transactions.property_id = prop_owners.property_id 
-                        WHERE prop_transactions.property_id IS NOT NULL AND prop_transactions.status in (1, 2) 
-                        AND prop_transactions.tran_date BETWEEN '$fromDate' AND '$uptoDate'
-                        " .
-                        ($userId ? " AND prop_transactions.user_id = $userId " : "")
-                        . ($paymentMode ? " AND upper(prop_transactions.payment_mode) = upper('$paymentMode') " : "")
-                        . ($ulbId ? " AND prop_transactions.ulb_id = $ulbId" : "")
+                        SELECT STRING_AGG(applicant_name, ', ') AS owner_name, 
+                                STRING_AGG(mobile_no::TEXT, ', ') AS mobile_no, 
+                                water_consumer_owners.consumer_id 
+                        FROM water_consumer_owners 
+                        JOIN water_trans on water_trans.related_id = water_consumer_owners.consumer_id 
+                        WHERE water_trans.related_id IS NOT NULL AND water_trans.status in (1, 2) 
+                        AND water_trans.tran_date BETWEEN '$fromDate' AND '$uptoDate'
+                        " . ($userId ? " AND water_trans.emp_dtl_id = $userId " : "")
+                        . ($paymentMode ? " AND upper(water_trans.payment_mode) = upper('$paymentMode') " : "")
+                        . ($ulbId ? " AND water_trans.ulb_id = $ulbId" : "")
                         . "
-                        GROUP BY prop_owners.property_id
-                        ) AS prop_owner_detail
+                        GROUP BY water_consumer_owners.consumer_id
+                        ) AS water_owner_detail
                         "),
                     function ($join) {
-                        $join->on("prop_owner_detail.property_id", "=", "prop_transactions.property_id");
+                        $join->on("water_owner_detail.consumer_id", "=", "water_trans.related_id");
                     }
                 )
-                ->JOIN("ulb_ward_masters", "ulb_ward_masters.id", "prop_properties.ward_mstr_id")
-                ->LEFTJOIN("users", "users.id", "prop_transactions.user_id")
-                ->LEFTJOIN("prop_cheque_dtls", "prop_cheque_dtls.transaction_id", "prop_transactions.id")
-                ->WHERENOTNULL("prop_transactions.property_id")
-                ->WHEREIN("prop_transactions.status", [1, 2])
-                ->WHEREBETWEEN("prop_transactions.tran_date", [$fromDate, $uptoDate]);
+                ->JOIN("ulb_ward_masters", "ulb_ward_masters.id", "water_consumers.ward_mstr_id")
+                ->LEFTJOIN("users", "users.id", "water_trans.emp_dtl_id")
+                ->LEFTJOIN("water_cheque_dtls", "water_cheque_dtls.transaction_id", "water_trans.id")
+                ->WHERE("water_trans.tran_type", "Demand Collection")
+                ->WHERENOTNULL("water_trans.related_id")
+                ->WHEREIN("water_trans.status", [1, 2])
+                ->WHEREBETWEEN("water_trans.tran_date", [$fromDate, $uptoDate]);
             if ($wardId) {
                 $data = $data->where("ulb_ward_masters.id", $wardId);
             }
             if ($userId) {
-                $data = $data->where("prop_transactions.user_id", $userId);
+                $data = $data->where("water_trans.emp_dtl_id", $userId);
             }
             if ($paymentMode) {
-                $data = $data->where(DB::raw("upper(prop_transactions.payment_mode)"), $paymentMode);
+                $data = $data->where(DB::raw("upper(water_trans.payment_mode)"), $paymentMode);
             }
             if ($ulbId) {
-                $data = $data->where("prop_transactions.ulb_id", $ulbId);
+                $data = $data->where("water_trans.ulb_id", $ulbId);
             }
             $paginator = collect();
 
             $data2 = $data;
-            $totalHolding = $data2->count("prop_properties.id");
-            $totalAmount = $data2->sum("prop_transactions.amount");
+            $totalHolding = $data2->count("water_consumers.id");
+            $totalAmount = $data2->sum("water_trans.amount");
             $perPage = $request->perPage ? $request->perPage : 5;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
 
@@ -944,13 +942,282 @@ class WaterReportController extends Controller
             // $total = $paginator->total();
             // $numberOfPages = ceil($total / $perPage);
             $list = [
+                "current_page"  => $paginator->currentPage(),
+                "last_page"     => $paginator->lastPage(),
+                "totalHolding"  => $totalHolding,
+                "totalAmount"   => $totalAmount,
+                "data"          => $paginator->items(),
+                "total"         => $paginator->total(),
+                // "numberOfPages" => $numberOfPages
+            ];
+            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
+            return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime, $action, $deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $request->all());
+        }
+    }
+
+
+    /**
+     * | Connection Collection Report
+     */
+    public function safCollection(Request $request)
+    {
+        $request->validate(
+            [
+                "fromDate" => "required|date|date_format:Y-m-d",
+                "uptoDate" => "required|date|date_format:Y-m-d",
+                "wardId" => "nullable|digits_between:1,9223372036854775807",
+                "userId" => "nullable|digits_between:1,9223372036854775807",
+                "paymentMode" => "nullable",
+                "page" => "nullable|digits_between:1,9223372036854775807",
+                "perPage" => "nullable|digits_between:1,9223372036854775807",
+            ]
+        );
+        $request->request->add(["metaData" => ["pr2.1", 1.1, null, $request->getMethod(), null,]]);
+        $metaData = collect($request->metaData)->all();
+        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
+        
+        try {
+            $refUser        = Auth()->user();
+            $refUserId      = $refUser->id;
+            $ulbId          = $refUser->ulb_id;
+            $wardId = null;
+            $userId = null;
+            $paymentMode = null;
+            $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
+
+            if ($request->fromDate) {
+                $fromDate = $request->fromDate;
+            }
+            if ($request->uptoDate) {
+                $uptoDate = $request->uptoDate;
+            }
+            if ($request->wardId) {
+                $wardId = $request->wardId;
+            }
+            if ($request->userId) {
+                $userId = $request->userId;
+            }
+            if ($request->paymentMode) {
+                $paymentMode = $request->paymentMode;
+            }
+            if ($request->ulbId) {
+                $ulbId = $request->ulbId;
+            }
+            if ($request->is_gbsaf) {
+                $isGbsaf = $request->is_gbsaf;
+            }
+
+            DB::enableQueryLog();
+            $activSaf = PropTransaction::select(
+                DB::raw("
+                            ulb_ward_masters.ward_name AS ward_no,
+                            prop_active_safs.id,
+                            'saf' as type,
+                            assessment_type,
+                            prop_transactions.id AS tran_id,
+                            CONCAT('', prop_active_safs.holding_no, '') AS holding_no,
+                            (
+                                CASE WHEN prop_active_safs.saf_no='' OR prop_active_safs.saf_no IS NULL THEN 'N/A' 
+                                ELSE prop_active_safs.saf_no END
+                            ) AS saf_no,
+                            owner_detail.owner_name,
+                            owner_detail.mobile_no,
+                            CONCAT(
+                                prop_transactions.from_fyear, '(', prop_transactions.from_qtr, ')', ' / ', 
+                                prop_transactions.to_fyear, '(', prop_transactions.to_qtr, ')'
+                            ) AS from_upto_fy_qtr,
+                            prop_transactions.tran_date,
+                            prop_transactions.payment_mode AS transaction_mode,
+                            prop_transactions.amount,users.user_name as emp_name,users.id as user_id,
+                            prop_transactions.tran_no,prop_cheque_dtls.cheque_no,
+                            prop_cheque_dtls.bank_name,prop_cheque_dtls.branch_name
+                "),
+            )
+                ->JOIN("prop_active_safs", "prop_active_safs.id", "prop_transactions.saf_id")
+                ->JOIN(
+                    DB::RAW("(
+                        SELECT STRING_AGG(owner_name, ', ') AS owner_name, 
+                            STRING_AGG(mobile_no::TEXT, ', ') AS mobile_no, 
+                            prop_active_safs_owners.saf_id 
+                        FROM prop_active_safs_owners 
+                        JOIN prop_transactions on prop_transactions.saf_id = prop_active_safs_owners.saf_id 
+                        WHERE prop_transactions.saf_id IS NOT NULL AND prop_transactions.status in (1, 2) 
+                        AND prop_transactions.tran_date BETWEEN '$fromDate' AND '$uptoDate'
+                        " .
+                        ($userId ? " AND prop_transactions.user_id = $userId " : "")
+                        . ($paymentMode ? " AND upper(prop_transactions.payment_mode) = upper('$paymentMode') " : "")
+                        . ($ulbId ? " AND prop_transactions.ulb_id = $ulbId" : "")
+                        . "
+                        GROUP BY prop_active_safs_owners.saf_id 
+                        ) AS owner_detail
+                        "),
+                    function ($join) {
+                        $join->on("owner_detail.saf_id", "=", "prop_transactions.saf_id");
+                    }
+                )
+                ->JOIN("ulb_ward_masters", "ulb_ward_masters.id", "prop_active_safs.ward_mstr_id")
+                ->LEFTJOIN("users", "users.id", "prop_transactions.user_id")
+                ->LEFTJOIN("prop_cheque_dtls", "prop_cheque_dtls.transaction_id", "prop_transactions.id")
+                ->WHERENOTNULL("prop_transactions.saf_id")
+                ->WHEREIN("prop_transactions.status", [1, 2])
+                ->WHEREBETWEEN("prop_transactions.tran_date", [$fromDate, $uptoDate]);
+
+            $rejectedSaf = PropTransaction::select(
+                DB::raw("
+                            ulb_ward_masters.ward_name AS ward_no,
+                            prop_rejected_safs.id,
+                            'saf' as type,
+                            assessment_type,
+                            prop_transactions.id AS tran_id,
+                            CONCAT('', prop_rejected_safs.holding_no, '') AS holding_no,
+                            (
+                                CASE WHEN prop_rejected_safs.saf_no='' OR prop_rejected_safs.saf_no IS NULL THEN 'N/A' 
+                                ELSE prop_rejected_safs.saf_no END
+                            ) AS saf_no,
+                            owner_detail.owner_name,
+                            owner_detail.mobile_no,
+                            CONCAT(
+                                prop_transactions.from_fyear, '(', prop_transactions.from_qtr, ')', ' / ', 
+                                prop_transactions.to_fyear, '(', prop_transactions.to_qtr, ')'
+                            ) AS from_upto_fy_qtr,
+                            prop_transactions.tran_date,
+                            prop_transactions.payment_mode AS transaction_mode,
+                            prop_transactions.amount,users.user_name as emp_name,users.id as user_id,
+                            prop_transactions.tran_no,prop_cheque_dtls.cheque_no,
+                            prop_cheque_dtls.bank_name,prop_cheque_dtls.branch_name
+                "),
+            )
+                ->JOIN("prop_rejected_safs", "prop_rejected_safs.id", "prop_transactions.saf_id")
+                ->JOIN(
+                    DB::RAW("(
+                        SELECT STRING_AGG(owner_name, ', ') AS owner_name, 
+                            STRING_AGG(mobile_no::TEXT, ', ') AS mobile_no, 
+                            prop_rejected_safs_owners.saf_id 
+                        FROM prop_rejected_safs_owners 
+                        JOIN prop_transactions on prop_transactions.saf_id = prop_rejected_safs_owners.saf_id 
+                        WHERE prop_transactions.saf_id IS NOT NULL AND prop_transactions.status in (1, 2) 
+                        AND prop_transactions.tran_date BETWEEN '$fromDate' AND '$uptoDate'
+                        " .
+                        ($userId ? " AND prop_transactions.user_id = $userId " : "")
+                        . ($paymentMode ? " AND upper(prop_transactions.payment_mode) = upper('$paymentMode') " : "")
+                        . ($ulbId ? " AND prop_transactions.ulb_id = $ulbId" : "")
+                        . "
+                        GROUP BY prop_rejected_safs_owners.saf_id 
+                        ) AS owner_detail
+                        "),
+                    function ($join) {
+                        $join->on("owner_detail.saf_id", "=", "prop_transactions.saf_id");
+                    }
+                )
+                ->JOIN("ulb_ward_masters", "ulb_ward_masters.id", "prop_rejected_safs.ward_mstr_id")
+                ->LEFTJOIN("users", "users.id", "prop_transactions.user_id")
+                ->LEFTJOIN("prop_cheque_dtls", "prop_cheque_dtls.transaction_id", "prop_transactions.id")
+                ->WHERENOTNULL("prop_transactions.saf_id")
+                ->WHEREIN("prop_transactions.status", [1, 2])
+                ->WHEREBETWEEN("prop_transactions.tran_date", [$fromDate, $uptoDate]);
+
+            $saf = PropTransaction::select(
+                DB::raw("
+                            ulb_ward_masters.ward_name AS ward_no,
+                            prop_safs.id,
+                            'saf' as type,
+                            assessment_type,
+                            prop_transactions.id AS tran_id,
+                            CONCAT('', prop_safs.holding_no, '') AS holding_no,
+                            (
+                                CASE WHEN prop_safs.saf_no='' OR prop_safs.saf_no IS NULL THEN 'N/A' 
+                                ELSE prop_safs.saf_no END
+                            ) AS saf_no,
+                            owner_detail.owner_name,
+                            owner_detail.mobile_no,
+                            CONCAT(
+                                prop_transactions.from_fyear, '(', prop_transactions.from_qtr, ')', ' / ', 
+                                prop_transactions.to_fyear, '(', prop_transactions.to_qtr, ')'
+                            ) AS from_upto_fy_qtr,
+                            prop_transactions.tran_date,
+                            prop_transactions.payment_mode AS transaction_mode,
+                            prop_transactions.amount,users.user_name as emp_name,users.id as user_id,
+                            prop_transactions.tran_no,prop_cheque_dtls.cheque_no,
+                            prop_cheque_dtls.bank_name,prop_cheque_dtls.branch_name
+                "),
+            )
+                ->JOIN("prop_safs", "prop_safs.id", "prop_transactions.saf_id")
+                ->JOIN(
+                    DB::RAW("(
+                        SELECT STRING_AGG(owner_name, ', ') AS owner_name, 
+                            STRING_AGG(mobile_no::TEXT, ', ') AS mobile_no, 
+                            prop_safs_owners.saf_id 
+                        FROM prop_safs_owners 
+                        JOIN prop_transactions on prop_transactions.saf_id = prop_safs_owners.saf_id 
+                        WHERE prop_transactions.saf_id IS NOT NULL AND prop_transactions.status in (1, 2) 
+                        AND prop_transactions.tran_date BETWEEN '$fromDate' AND '$uptoDate'
+                        " .
+                        ($userId ? " AND prop_transactions.user_id = $userId " : "")
+                        . ($paymentMode ? " AND upper(prop_transactions.payment_mode) = upper('$paymentMode') " : "")
+                        . ($ulbId ? " AND prop_transactions.ulb_id = $ulbId" : "")
+                        . "
+                        GROUP BY prop_safs_owners.saf_id 
+                        ) AS owner_detail
+                        "),
+                    function ($join) {
+                        $join->on("owner_detail.saf_id", "=", "prop_transactions.saf_id");
+                    }
+                )
+                ->JOIN("ulb_ward_masters", "ulb_ward_masters.id", "prop_safs.ward_mstr_id")
+                ->LEFTJOIN("users", "users.id", "prop_transactions.user_id")
+                ->LEFTJOIN("prop_cheque_dtls", "prop_cheque_dtls.transaction_id", "prop_transactions.id")
+                ->WHERENOTNULL("prop_transactions.saf_id")
+                ->WHEREIN("prop_transactions.status", [1, 2])
+                ->WHEREBETWEEN("prop_transactions.tran_date", [$fromDate, $uptoDate]);
+
+            if ($wardId) {
+                $activSaf = $activSaf->where("ulb_ward_masters.id", $wardId);
+                $rejectedSaf = $rejectedSaf->where("ulb_ward_masters.id", $wardId);
+                $saf = $saf->where("ulb_ward_masters.id", $wardId);
+            }
+            if ($userId) {
+                $activSaf = $activSaf->where("prop_transactions.user_id", $userId);
+                $rejectedSaf = $rejectedSaf->where("prop_transactions.user_id", $userId);
+                $saf = $saf->where("prop_transactions.user_id", $userId);
+            }
+            if ($paymentMode) {
+                $activSaf = $activSaf->where(DB::raw("prop_transactions.payment_mode"), $paymentMode);
+                $rejectedSaf = $rejectedSaf->where(DB::raw("prop_transactions.payment_mode"), $paymentMode);
+                $saf = $saf->where(DB::raw("prop_transactions.payment_mode"), $paymentMode);
+            }
+            if ($ulbId) {
+                $activSaf = $activSaf->where("prop_transactions.ulb_id", $ulbId);
+                $rejectedSaf = $rejectedSaf->where("prop_transactions.ulb_id", $ulbId);
+                $saf = $saf->where("prop_transactions.ulb_id", $ulbId);
+            }
+
+            $data = $activSaf->union($rejectedSaf)->union($saf);
+            $data2 = $data;
+            // $totalSaf = $data2->count("id");
+            $totalAmount = $data2->sum("amount");
+            $perPage = $request->perPage ? $request->perPage : 5;
+            $page = $request->page && $request->page > 0 ? $request->page : 1;
+            $paginator = $data->paginate($perPage);
+            // $items = $paginator->items();
+            // $total = $paginator->total();
+            // $numberOfPages = ceil($total / $perPage);
+            $list = [
+                // "perPage" => $perPage,
+                // "page" => $page,
+                // "totalSaf" => $totalSaf,
+                // "totalAmount" => $totalAmount,
+                // "items" => $items,
+                // "total" => $total,
+                // "numberOfPages" => $numberOfPages
+
                 "current_page" => $paginator->currentPage(),
                 "last_page" => $paginator->lastPage(),
-                "totalHolding" => $totalHolding,
+                // "totalSaf" => $totalSaf,
                 "totalAmount" => $totalAmount,
                 "data" => $paginator->items(),
                 "total" => $paginator->total(),
-                // "numberOfPages" => $numberOfPages
             ];
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime, $action, $deviceId);
