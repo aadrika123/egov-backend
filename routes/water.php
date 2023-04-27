@@ -106,7 +106,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('admin/consumer/generate-demand', 'saveGenerateConsumerDemand');                    // Admin
         Route::post('admin/consumer/save-connection-meter', 'saveUpdateMeterDetails');                  // Admin
         Route::post('admin/consumer/get-meter-list', 'getMeterList');                                   // Admin
-        Route::post('consumer/caretaken-connections','viewCaretakenConnection');
+        Route::post('consumer/caretaken-connections', 'viewCaretakenConnection');
 
         # Deactivation
         Route::post('admin/consumer/apply-deactivation', 'applyDeactivation');                          // Admin / Not Used
@@ -122,6 +122,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::controller(WaterReportController::class)->group(function () {
         Route::post('consumer/report/list-ward-dcb', 'wardWiseDCB');
         Route::post('consumer/report/dcb-pie-chart', 'dcbPieChart');
+        Route::post('report-cosumer', 'consumerReport');
     });
 });
 

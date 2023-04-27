@@ -186,7 +186,7 @@ class TradeApplication extends Controller
             
             if (in_array(strtoupper($mUserType), ["ONLINE", "JSK", "SUPER ADMIN", "TL"])) 
             {
-                $data['wardList'] = $this->_MODEL_WARD->getAllWard($refUlbId)->map(function ($val) {
+                $data['wardList'] = $this->_MODEL_WARD->getOldWard($refUlbId)->map(function ($val) {
                     $val->ward_no = $val->ward_name;
                     return $val;
                 });
@@ -194,7 +194,7 @@ class TradeApplication extends Controller
             } 
             else 
             {
-                $data['wardList'] = $this->_COMMON_FUNCTION->WardPermission($refUserId);
+                $data['wardList'] = $this->_COMMON_FUNCTION->oldWardPermission($refUserId);
             }
             return responseMsg(true, "", remove_null($data));
         } catch (Exception $e) {

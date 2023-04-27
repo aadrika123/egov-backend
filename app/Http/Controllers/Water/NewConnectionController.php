@@ -721,18 +721,19 @@ class NewConnectionController extends Controller
             $imageName = $docUpload->upload($refImageName, $document, $relativePath);
 
             $metaReqs = [
-                'module_id'     => $refmoduleId,
-                'active_id'     => $getWaterDetails->id,
-                'workflow_id'   => $getWaterDetails->workflow_id,
-                'ulb_id'        => $getWaterDetails->ulb_id,
-                'relative_path' => $relativePath,
+                'moduleId'     => $refmoduleId,
+                'activeId'     => $getWaterDetails->id,
+                'workflowId'   => $getWaterDetails->workflow_id,
+                'ulbId'        => $getWaterDetails->ulb_id,
+                'relativePath' => $relativePath,
                 'document'      => $imageName,
-                'doc_code'      => $req->docCode,
-                'owner_dtl_id'  => $req->ownerId,
-                'doc_category'  => $req->docCategory
+                'docCode'      => $req->docCode,
+                'ownerDtlId'  => $req->ownerId,
+                'docCategory'  => $req->docCategory
             ];
 
-            $ifDocExist = $mWfActiveDocument->ifDocExists($getWaterDetails->id, $getWaterDetails->workflow_id, $refmoduleId, $req->docCode, $req->docCategory, $req->ownerId);   // Checking if the document is already existing or not
+            $ifDocExist = $mWfActiveDocument->isDocCategoryExists($getWaterDetails->id, $getWaterDetails->workflow_id, $refmoduleId, $req->docCategory, $req->ownerId);   // Checking if the document is already existing or not
+            DB::beginTransaction();
             $metaReqs = new Request($metaReqs);
             if (collect($ifDocExist)->isEmpty())
                 $mWfActiveDocument->postDocuments($metaReqs);
@@ -748,7 +749,7 @@ class NewConnectionController extends Controller
             } else {
                 $this->updateWaterStatus($req, $getWaterDetails);
             }
-
+            DB::commit();
             return responseMsgs(true, "Document Uploadation Successful", "", "", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "", "1.0", "", "POST", $req->deviceId ?? "");
@@ -883,6 +884,8 @@ class NewConnectionController extends Controller
                 $doc = (array) null;
                 $doc["ownerName"] = $ownerList;
                 $doc['docName'] = $val->doc_for;
+                $refDocName  = str_replace('_', ' ', $val->doc_for);
+                $doc["refDocName"] = ucwords(strtolower($refDocName));
                 $doc['isMadatory'] = $val->is_mandatory;
                 $ref['docValue'] = $refWaterNewConnection->getDocumentList($val->doc_for);  # get All Related Document List
                 $doc['docVal'] = $docFor = collect($ref['docValue'])->map(function ($value) {
@@ -913,6 +916,8 @@ class NewConnectionController extends Controller
                     $doc["ownerId"] = $val->id;
                     $doc["ownerName"] = $val->applicant_name;
                     $doc["docName"]   = $refOwnerDoc;
+                    $refDocName  = str_replace('_', ' ', $refOwnerDoc);
+                    $doc["refDocName"] = ucwords(strtolower($refDocName));
                     $doc['isMadatory'] = 1;
                     $ref['docValue'] = $refWaterNewConnection->getDocumentList([$refOwnerDoc]);   #"CONSUMER_PHOTO"
                     $doc['docVal'] = $docFor = collect($ref['docValue'])->map(function ($value) {
@@ -1012,7 +1017,7 @@ class NewConnectionController extends Controller
                     $safUsageType = $this->getPropUsageType($request, $application['id']);
                     $occupancyOwnerType = collect($mPropActiveSafsFloor->getOccupancyType($application['id'], $refTenanted));
                     $owners['owners'] = collect($mPropActiveSafOwners->getOwnerDtlsBySafId($application['id']));
-                    
+
                     # merge all data for return 
                     $details = $application->merge($areaInSqft)->merge($owners)->merge($occupancyOwnerType)->merge($safUsageType);
                     return responseMsgs(true, "related Details!", $details, "", "", "", "POST", "");
@@ -1237,6 +1242,7 @@ class NewConnectionController extends Controller
             $reqDoc['docType'] = $key;
             $reqDoc['uploadedDoc'] = $documents->last();
             $reqDoc['docName'] = substr($label, 1, -1);
+            // $reqDoc['refDocName'] = substr($label, 1, -1);
 
             $reqDoc['masters'] = collect($document)->map(function ($doc) use ($uploadedDocs) {
                 $uploadedDoc = $uploadedDocs->where('doc_code', $doc)->first();
