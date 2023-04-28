@@ -42,7 +42,7 @@ class ClusterController extends Controller
         try {
             $mCluster = new Cluster();
             $clusterList = $mCluster->allClusters();
-            return responseMsgs(true, "Fetched all Cluster!", $clusterList, "", "02", "320.ms", "GET", "");
+            return responseMsgs(true, "Fetched all Cluster!", remove_null($clusterList), "", "02", "320.ms", "GET", "");
         } catch (Exception $error) {
             return responseMsg(false, $error->getMessage(), "");
         }
@@ -67,8 +67,8 @@ class ClusterController extends Controller
                 throw new Exception("Cluster Not exist!");
             }
             # maping cluster
-            $ward_no = $mUlbWardMaster->getExistWard($refClusterList->ward_id);
-            $new_ward_no = $mUlbWardMaster->getExistWard($refClusterList->new_ward_id);
+            $ward_no = $mUlbWardMaster->getExistWard($refClusterList->ward_mstr_id);
+            $new_ward_no = $mUlbWardMaster->getExistWard($refClusterList->new_ward_mstr_id);
 
             $ward_no = $ward_no->ward_name ?? null;
             $new_ward_no = $new_ward_no->ward_name ?? null;

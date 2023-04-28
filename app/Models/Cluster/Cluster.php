@@ -98,19 +98,23 @@ class Cluster extends Model
     public function allClusters()
     {
         return Cluster::select(
-            'id',
+            'clusters.id',
             'cluster_name AS name',
             'cluster_type AS type',
             'address',
             'mobile_no AS mobileNo',
             'authorized_person_name AS authPersonName',
-            'status',
+            'clusters.status',
             'ward_mstr_id as oldWard',
-            'new_ward_mstr_id as newWard'
+            'new_ward_mstr_id as newWard',
+            'ulb_ward_masters.ward_name as oldWardName',
+            'u.ward_name as newWardName',
         )
-            ->where('status', 1)
-            ->where('ulb_id', auth()->user()->ulb_id)
-            ->orderBy('id')
+            ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'clusters.ward_mstr_id')
+            ->leftJoin('ulb_ward_masters as u', 'u.id', '=', 'clusters.new_ward_mstr_id')
+            ->where('clusters.status', 1)
+            ->where('clusters.ulb_id', auth()->user()->ulb_id)
+            ->orderBy('clusters.id')
             ->get();
     }
 

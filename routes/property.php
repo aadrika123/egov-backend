@@ -265,7 +265,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
   Route::controller(ClusterController::class)->group(function () {
 
     #cluster data entry / Master
-    Route::get('cluster/get-all-clusters', 'getAllClusters');
+    Route::post('cluster/get-all-clusters', 'getAllClusters');
     Route::post('cluster/edit-cluster-details', 'editClusterDetails');
     Route::post('cluster/save-cluster-details', 'saveClusterDetails');
     Route::post('cluster/delete-cluster-data', 'deleteClusterData');
