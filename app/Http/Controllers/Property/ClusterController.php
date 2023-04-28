@@ -40,8 +40,8 @@ class ClusterController extends Controller
     public function getAllClusters()
     {
         try {
-            $obj = new Cluster();
-            $clusterList = $obj->allClusters();
+            $mCluster = new Cluster();
+            $clusterList = $mCluster->allClusters();
             return responseMsgs(true, "Fetched all Cluster!", $clusterList, "", "02", "320.ms", "GET", "");
         } catch (Exception $error) {
             return responseMsg(false, $error->getMessage(), "");
