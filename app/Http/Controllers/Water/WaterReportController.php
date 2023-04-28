@@ -458,30 +458,25 @@ class WaterReportController extends Controller
             if ($request->wardId) {
                 $wardId = $request->wardId;
             }
-            if ($request->connectionType) {
+            if ($request->connectionType != '') {
                 $connectionType = $request->connectionType;
             }
             if ($request->propType) {
                 switch ($request->propType) {
                     case ('1'):
-                        $propType = [
-                            $refPropType['Residential']
-                        ];
+                        $propType = $refPropType['Residential'];
                         break;
                     case ('2'):
-                        $propType = [
-                            $refPropType['Commercial']
-                        ];
+                        $propType = $refPropType['Commercial'];
                         break;
                     case ('3'):
-                        $propType = [
-                            $refPropType['Government']
-                        ];
+                        $propType = $refPropType['Government'];
                         break;
                 }
             }
 
             # From Querry
+            //" . ($connectionType ? " AND water_consumer_demands.connection_type IN (" . implode(',', $connectionType) . ")" : "") . "
             $from = "
                 FROM ulb_ward_masters 
                 LEFT JOIN(
@@ -510,7 +505,7 @@ class WaterReportController extends Controller
                             ) AS arrear_demand,
                         SUM(water_consumer_demands.amount) AS total_demand
                 FROM water_consumer_demands
-                
+                JOIN water_consumers ON water_consumers.id = water_consumer_demands.consumer_id
                 JOIN (
                     SELECT water_consumer_meters.* 
                     FROM water_consumer_meters
@@ -522,11 +517,9 @@ class WaterReportController extends Controller
                         )maxdata on maxdata.max_id = water_consumer_meters.id
                     )water_consumer_meters on water_consumer_meters.consumer_id = water_consumers.id
 
-                JOIN water_consumers ON water_consumers.id = water_consumer_demands.consumer_id
                 WHERE water_consumer_demands.status = true
                     AND water_consumer_demands.ulb_id = $ulbId
                     " . ($wardId ? " AND water_consumers.ward_mstr_id = $wardId" : "") . "
-                    --" . ($connectionType ? " AND water_consumer_demands.connection_type IN (" . implode(',', $connectionType) . ")" : "") . "
                     " . ($connectionType ? " AND water_consumer_meters.meter_status = $connectionType " : "") . "
                     " . ($propType ? " AND water_consumers.property_type_id = $propType" : "") . "
                     AND water_consumer_demands.demand_upto <='$uptoDate'
@@ -563,7 +556,13 @@ class WaterReportController extends Controller
                             
                     SUM(water_consumer_demands.amount) AS total_collection
                     FROM water_consumer_demands
-
+                    JOIN water_consumers ON water_consumers.id = water_consumer_demands.consumer_id
+                    JOIN water_tran_details ON water_tran_details.demand_id = water_consumer_demands.id 
+                        AND water_tran_details.demand_id is not null 
+                    JOIN water_trans ON water_trans.id = water_tran_details.tran_id 
+                        AND water_trans.status in (1,2) 
+								AND water_trans.related_id is not null
+								AND water_trans.tran_type = 'Demand Collection'
                     JOIN (
                         SELECT water_consumer_meters.* from water_consumer_meters
                             join(
@@ -572,19 +571,10 @@ class WaterReportController extends Controller
                                 where status = 1
                                 group by consumer_id
                             )maxdata on maxdata.max_id = water_consumer_meters.id
-                        )water_consumer_meters on water_consumer_meters.consumer_id = water_consumers.id
-
-                    JOIN water_consumers ON water_consumers.id = water_consumer_demands.consumer_id
-                    JOIN water_tran_details ON water_tran_details.demand_id = water_consumer_demands.id 
-                        AND water_tran_details.demand_id is not null 
-                    JOIN water_trans ON water_trans.id = water_tran_details.tran_id 
-                        AND water_trans.status in (1,2) 
-								AND water_trans.related_id is not null
-								AND water_trans.tran_type = 'Demand Collection'
+                        )water_consumer_meters on water_consumer_meters.consumer_id = water_consumers.id            
                     WHERE water_consumer_demands.status = true 
                         AND water_consumer_demands.ulb_id = $ulbId
                         " . ($wardId ? " AND water_consumers.ward_mstr_id = $wardId" : "") . "
-                        --" . ($connectionType ? " AND water_consumer_demands.connection_type IN (" . implode(',', $connectionType) . ")" : "") . "
                         " . ($connectionType ? " AND water_consumer_meters.meter_status = $connectionType " : "") . "
                         " . ($propType ? " AND water_consumers.property_type_id = $propType" : "") . "
                         AND water_trans.tran_date  BETWEEN '$fromDate' AND '$uptoDate'
@@ -597,7 +587,12 @@ class WaterReportController extends Controller
                                 AS total_prev_collection
                                 FROM water_consumer_demands
                         JOIN water_consumers ON water_consumers.id = water_consumer_demands.consumer_id
-
+                        JOIN water_tran_details ON water_tran_details.demand_id = water_consumer_demands.id
+                            AND water_tran_details.demand_id IS NOT NULL
+                        JOIN water_trans ON water_trans.id = water_tran_details.tran_id 
+                            AND water_trans.status in (1,2) 
+                            AND water_trans.related_id IS NOT NULL
+                            AND water_trans.tran_type = 'Demand Collection'
                         JOIN (
                             SELECT water_consumer_meters.* from water_consumer_meters
                                 join(
@@ -606,18 +601,10 @@ class WaterReportController extends Controller
                                     where status = 1
                                     group by consumer_id
                                 )maxdata on maxdata.max_id = water_consumer_meters.id
-                            )water_consumer_meters on water_consumer_meters.consumer_id = water_consumers.id
-
-                        JOIN water_tran_details ON water_tran_details.demand_id = water_consumer_demands.id
-                            AND water_tran_details.demand_id IS NOT NULL
-                        JOIN water_trans ON water_trans.id = water_tran_details.tran_id 
-                            AND water_trans.status in (1,2) 
-                            AND water_trans.related_id IS NOT NULL
-                            AND water_trans.tran_type = 'Demand Collection'
+                            )water_consumer_meters on water_consumer_meters.consumer_id = water_consumers.id    
                     WHERE water_consumer_demands.status = true 
                         AND water_consumer_demands.ulb_id = $ulbId
                         " . ($wardId ? " AND ulb_ward_masters.id = $wardId" : "") . "
-                        --" . ($connectionType ? " AND water_consumer_demands.connection_type IN (" . implode(',', $connectionType) . ")" : "") . "
                         " . ($connectionType ? " AND water_consumer_meters.meter_status = $connectionType " : "") . "
                         " . ($propType ? " AND water_consumers.property_type_id = $propType" : "") . "
                        AND water_trans.tran_date <'$fromDate'
@@ -1016,6 +1003,7 @@ class WaterReportController extends Controller
             $userId = null;
             $paymentMode = null;
             $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
+            $refTransType = Config::get("waterConstaint.PAYMENT_FOR");
 
             if ($request->fromDate) {
                 $fromDate = $request->fromDate;
@@ -1037,14 +1025,17 @@ class WaterReportController extends Controller
             }
 
             DB::enableQueryLog();
+            $worflowIds = DB::table('water_applications')->select(DB::raw("trim(concat(workflow_id::text,','),',') workflow_id"))
+                ->groupBy("workflow_id")
+                ->first();
             $activConnections = WaterTran::select(
                 DB::raw("
+                            water_trans.id AS tran_id,
                             ulb_ward_masters.ward_name AS ward_no,
                             water_applications.id,
-                            water_trans.id AS tran_id,                             
+                            water_trans.tran_date,                             
                             owner_detail.owner_name,
                             owner_detail.mobile_no,
-                            water_trans.tran_date,
                             water_trans.payment_mode AS transaction_mode,
                             water_trans.amount,
                             users.user_name as emp_name,
@@ -1081,19 +1072,25 @@ class WaterReportController extends Controller
                 ->JOIN("ulb_ward_masters", "ulb_ward_masters.id", "water_applications.ward_id")
                 ->LEFTJOIN("users", "users.id", "water_trans.emp_dtl_id")
                 ->LEFTJOIN("water_cheque_dtls", "water_cheque_dtls.transaction_id", "water_trans.id")
+
+                ->JOIN("wf_roleusermaps", "wf_roleusermaps.user_id", "users.id")
+                ->JOIN("wf_workflowrolemaps", "wf_workflowrolemaps.wf_role_id", "wf_roleusermaps.wf_role_id")
+                ->WHEREIN("wf_workflowrolemaps.workflow_id", explode(",", collect($worflowIds)->implode("workflow_id", ",")))
+                ->WHERENULL("water_trans.citizen_id")
+
                 ->WHERENOTNULL("water_trans.related_id")
                 ->WHEREIN("water_trans.status", [1, 2])
-                // ->WHERNOT("")
+                ->WHERE("water_trans.tran_type", "<>", $refTransType['1'])
                 ->WHEREBETWEEN("water_trans.tran_date", [$fromDate, $uptoDate]);
 
             $rejectedConnections = WaterTran::select(
                 DB::raw("
+                            water_trans.id AS tran_id,
                             ulb_ward_masters.ward_name AS ward_no,
                             water_rejection_application_details.id,
-                            water_trans.id AS tran_id,
+                            water_trans.tran_date,
                             owner_detail.owner_name,
                             owner_detail.mobile_no,
-                            water_trans.tran_date,
                             water_trans.payment_mode AS transaction_mode,
                             water_trans.amount,
                             users.user_name as emp_name,
@@ -1130,8 +1127,15 @@ class WaterReportController extends Controller
                 ->JOIN("ulb_ward_masters", "ulb_ward_masters.id", "water_rejection_application_details.ward_id")
                 ->LEFTJOIN("users", "users.id", "water_trans.emp_dtl_id")
                 ->LEFTJOIN("water_cheque_dtls", "water_cheque_dtls.transaction_id", "water_trans.id")
+
+                ->JOIN("wf_roleusermaps", "wf_roleusermaps.user_id", "users.id")
+                ->JOIN("wf_workflowrolemaps", "wf_workflowrolemaps.wf_role_id", "wf_roleusermaps.wf_role_id")
+                ->WHEREIN("wf_workflowrolemaps.workflow_id", explode(",", collect($worflowIds)->implode("workflow_id", ",")))
+                ->WHERENULL("water_trans.citizen_id")
+
                 ->WHERENOTNULL("water_trans.related_id")
                 ->WHEREIN("water_trans.status", [1, 2])
+                ->WHERE("water_trans.tran_type", "<>", $refTransType['1'])
                 ->WHEREBETWEEN("water_trans.tran_date", [$fromDate, $uptoDate]);
 
 
@@ -1153,8 +1157,9 @@ class WaterReportController extends Controller
             }
 
             $data = $activConnections->union($rejectedConnections);
+            // dd($data->ORDERBY("tran_id")->get()->implode("tran_id",","));
             $data2 = $data;
-            // $totalSaf = $data2->count("id");
+            // $totalApplications = $data2->count("id");
             $totalAmount = $data2->sum("amount");
             $perPage = $request->perPage ? $request->perPage : 5;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
@@ -1165,7 +1170,7 @@ class WaterReportController extends Controller
             $list = [
                 // "perPage" => $perPage,
                 // "page" => $page,
-                // "totalSaf" => $totalSaf,
+                // "totalApplications" => $totalSaf,
                 // "totalAmount" => $totalAmount,
                 // "items" => $items,
                 // "total" => $total,

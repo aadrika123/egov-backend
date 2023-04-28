@@ -202,10 +202,10 @@ class WaterPaymentController extends Controller
             if (!$applicationId)
                 throw new Exception("This Consumer has not ApplicationId!!");
 
-            # if demand transaction exist
-            $connectionTran[] = $mWaterTran->getTransNo($applicationId, null)->first();                        // Water Connection payment History
-            if (!$connectionTran)
-                throw new Exception("Water Application Tran Details not Found!!");
+            # if demand transactions exist
+            $connectionTran = $mWaterTran->getTransNo($applicationId, null)->get();                        // Water Connection payment History
+            if (!$connectionTran || is_null($connectionTran))
+                throw new Exception("Water Application Transaction Details not Found!!");
 
             $waterTrans = $mWaterTran->ConsumerTransaction($request->consumerId)->get();         // Water Consumer Payment History
             $waterTrans = collect($waterTrans)->map(function ($value, $key) use ($mWaterConsumerDemand, $mWaterTranDetail) {
