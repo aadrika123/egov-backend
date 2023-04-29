@@ -21,6 +21,7 @@ trait Concession
                 'prop_active_concessions.application_no',
                 'prop_active_concessions.applicant_name as owner_name',
                 'new_holding_no',
+                DB::raw("TO_CHAR(date, 'DD-MM-YYYY') as apply_date"),
                 'pt_no',
                 'a.ward_mstr_id',
                 'u.ward_name as ward_no',

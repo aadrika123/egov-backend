@@ -143,11 +143,11 @@ class PropertyDetailsController extends Controller
                     case ("saf"):
                         $propSaf  = $mPropSafs->searchSafs()
                             ->where('so.owner_name', 'LIKE', '%' . strtoupper($ownerName) . '%')
-                            ->groupby('prop_safs.id', 'ulb_ward_masters.ward_name', 'wf_roles.role_name');
+                            ->groupby('prop_safs.id', 'u.ward_name', 'uu.ward_name', 'wf_roles.role_name');
 
                         $activeSaf = $mPropActiveSaf->searchSafs()
                             ->where('so.owner_name', 'LIKE', '%' . strtoupper($ownerName) . '%')
-                            ->groupby('prop_active_safs.id', 'ulb_ward_masters.ward_name', 'wf_roles.role_name');
+                            ->groupby('prop_active_safs.id', 'u.ward_name', 'uu.ward_name', 'wf_roles.role_name');
 
                         $details =  $propSaf->union($activeSaf)->get();
                         break;
@@ -201,11 +201,11 @@ class PropertyDetailsController extends Controller
                     case ("saf"):
                         $propSaf  = $mPropSafs->searchSafs()
                             ->where('so.mobile_no', 'LIKE', '%' . $mobileNo . '%')
-                            ->groupby('prop_safs.id', 'ulb_ward_masters.ward_name', 'wf_roles.role_name');
+                            ->groupby('prop_safs.id', 'u.ward_name', 'uu.ward_name', 'wf_roles.role_name');
 
                         $activeSaf = $mPropActiveSaf->searchSafs()
                             ->where('so.mobile_no', 'LIKE', '%' . $mobileNo . '%')
-                            ->groupby('prop_active_safs.id', 'ulb_ward_masters.ward_name', 'wf_roles.role_name');
+                            ->groupby('prop_active_safs.id', 'u.ward_name', 'uu.ward_name', 'wf_roles.role_name');
 
                         $details = ($propSaf->union($activeSaf)->get());
                         $details = (object)$details;
@@ -259,11 +259,11 @@ class PropertyDetailsController extends Controller
                     case ("saf"):
                         $propSaf = $mPropSafs->searchSafs()
                             ->where('prop_safs.pt_no', $ptn)
-                            ->groupby('prop_safs.id', 'ulb_ward_masters.ward_name', 'wf_roles.role_name');
+                            ->groupby('prop_safs.id', 'u.ward_name', 'uu.ward_name', 'wf_roles.role_name');
 
                         $activeSaf = $mPropActiveSaf->searchSafs()
                             ->where('prop_active_safs.pt_no', $ptn)
-                            ->groupby('prop_active_safs.id', 'ulb_ward_masters.ward_name', 'wf_roles.role_name');
+                            ->groupby('prop_active_safs.id', 'u.ward_name', 'uu.ward_name', 'wf_roles.role_name');
 
                         $details =  $propSaf->union($activeSaf)->get();
                         break;
@@ -316,11 +316,11 @@ class PropertyDetailsController extends Controller
                     case ("saf"):
                         $propSaf  = $mPropSafs->searchSafs()
                             ->where('prop_active_safs.holding_no', $holding)
-                            ->groupby('prop_safs.id', 'ulb_ward_masters.ward_name', 'wf_roles.role_name');
+                            ->groupby('prop_safs.id', 'u.ward_name', 'uu.ward_name', 'wf_roles.role_name');
 
                         $activeSaf = $mPropActiveSaf->searchSafs()
                             ->where('prop_active_safs.holding_no', $holding)
-                            ->groupby('prop_active_safs.id', 'ulb_ward_masters.ward_name', 'wf_roles.role_name');
+                            ->groupby('prop_active_safs.id', 'u.ward_name', 'uu.ward_name', 'wf_roles.role_name');
 
                         $details =  $propSaf->union($activeSaf)->get();
                         break;

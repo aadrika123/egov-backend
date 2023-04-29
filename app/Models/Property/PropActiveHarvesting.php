@@ -27,6 +27,7 @@ class PropActiveHarvesting extends Model
             'a.holding_no',
             'new_holding_no',
             'pt_no',
+            DB::raw("TO_CHAR(date, 'DD-MM-YYYY') as apply_date"),
             'a.prop_type_mstr_id',
             'p.property_type',
             'prop_active_harvestings.workflow_id',
@@ -191,7 +192,8 @@ class PropActiveHarvesting extends Model
         $data = PropActiveHarvesting::select(
             'prop_active_harvestings.id',
             'application_no as applicationNo',
-            'date as applyDate',
+            DB::raw("TO_CHAR(date, 'DD-MM-YYYY') as applyDate"),
+            // 'date as applyDate',
             // "'Rain Water Harvesting' as 'assessmentType'",
             // 'applied_for as assessmentType',
             DB::raw("'Rain Water Harvesting' as assessmentType"),

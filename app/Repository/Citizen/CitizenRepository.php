@@ -144,7 +144,7 @@ class CitizenRepository implements iCitizenRepository
                 'saf_no',
                 'holding_no',
                 'assessment_type',
-                'application_date',
+                DB::raw("TO_CHAR(application_date, 'DD-MM-YYYY') as application_date"),
                 'applicant_name',
                 'payment_status',
                 'doc_upload_status',
@@ -169,7 +169,7 @@ class CitizenRepository implements iCitizenRepository
                 'prop_active_concessions.id as application_id',
                 'prop_active_concessions.application_no',
                 'prop_active_concessions.applicant_name',
-                'prop_active_concessions.date as apply_date',
+                DB::raw("TO_CHAR(prop_active_concessions.date, 'DD-MM-YYYY') as apply_date"),
                 'p.holding_no',
                 'p.new_holding_no',
                 'p.pt_no',
@@ -187,7 +187,7 @@ class CitizenRepository implements iCitizenRepository
             ->select(
                 'prop_active_objections.id as application_id',
                 'prop_active_objections.objection_no',
-                'prop_active_objections.date as apply_date',
+                DB::raw("TO_CHAR(prop_active_objections.date, 'DD-MM-YYYY') as apply_date"),
                 'p.holding_no',
                 'p.new_holding_no',
                 'p.pt_no',
@@ -216,7 +216,7 @@ class CitizenRepository implements iCitizenRepository
             ->select(
                 'prop_active_harvestings.id as application_id',
                 'prop_active_harvestings.application_no',
-                'prop_active_harvestings.date as apply_date',
+                DB::raw("TO_CHAR(prop_active_harvestings.date, 'DD-MM-YYYY') as apply_date"),
                 DB::raw("string_agg(prop_owners.owner_name,',') as applicant_name"),
                 'p.holding_no',
                 'p.new_holding_no',
@@ -347,11 +347,12 @@ class CitizenRepository implements iCitizenRepository
                     'prop_properties.id',
                     'prop_properties.holding_no',
                     'prop_properties.new_holding_no',
-                    'prop_properties.application_date',
+                    DB::raw("TO_CHAR(application_date, 'DD-MM-YYYY') as application_date"),
                     'prop_owners.owner_name',
                     'prop_properties.balance',
                     'prop_transactions.amount',
-                    'prop_transactions.tran_date',
+                    DB::raw("TO_CHAR(prop_transactions.tran_date, 'DD-MM-YYYY') as tran_date"),
+
                 )
                 ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
                 ->leftjoin('prop_transactions', 'prop_transactions.property_id', 'prop_properties.id')
