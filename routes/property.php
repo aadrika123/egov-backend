@@ -482,4 +482,5 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
  */
 Route::controller(PropertyController::class)->group(function () {
   Route::post('getpropLatLong', 'getpropLatLong');                             // 01
+  Route::post('upload-document', 'uploadDocument');                             // 01
 });

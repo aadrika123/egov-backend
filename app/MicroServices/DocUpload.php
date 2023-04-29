@@ -2,6 +2,9 @@
 
 namespace App\MicroServices;
 
+use Intervention\Image\Facades\Image;
+use Illuminate\Support\Str;
+
 /**
  * | Created On-13-12-2021 
  * | Created By-Anshu Kumar
@@ -20,7 +23,17 @@ class DocUpload
     {
         $extention = $image->getClientOriginalExtension();
         $imageName = time() . '-' . $refImageName . '.' . $extention;
-        $image->move($relativePath, $imageName);
+        $imageSize = $image->getSize();
+        $humanReadableSize = $imageSize / (1024 * 1024);
+
+        if ($humanReadableSize > 1) {
+            $image = Image::make($image->path());
+            $image->resize(1024, 1024, function ($constraint) {
+                $constraint->aspectRatio();
+            })->save($relativePath . '/' . $imageName);
+        } else
+            $image->move($relativePath, $imageName);
+
         return $imageName;
     }
 }
