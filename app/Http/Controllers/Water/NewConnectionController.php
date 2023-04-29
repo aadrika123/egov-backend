@@ -1258,7 +1258,7 @@ class NewConnectionController extends Controller
                     "uploadedDoc" => $fullDocPath ?? "",
                     "uploadedDocId" => $uploadedDoc->id ?? "",
                     "verifyStatus'" => $uploadedDoc->verify_status ?? "",
-                    "remarks'" => $uploadedDoc->remarks ?? "",
+                    "remarks" => $uploadedDoc->remarks ?? "",
                 ];
                 return $arr;
             });
@@ -1336,6 +1336,7 @@ class NewConnectionController extends Controller
                 'uploadedDoc' => $fullDocPath ?? "",
                 'verifyStatus' => $ownerPhoto->verify_status ?? ""
             ];
+            $ownerDocList['ownerDetails']['uploadedDocCount'] = $ownerDocList['documents']->whereNotNull('uploadedDoc')->count();
             return $ownerDocList;
         }
     }

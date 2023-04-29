@@ -88,9 +88,9 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('application/payment/get-payment-history', 'getApplicationPaymentHistory');         // Admin/Consumer
         Route::post('consumer/offline-demand-payment', 'offlineDemandPayment');                         // Consumer
         Route::post('application/payment/offline/pay-connection-charge', 'offlineConnectionPayment');   // Admin
-        Route::post('consumer/demand/generate-payment-receipt', 'generateDemandPaymentReceipt');
-        Route::post('consumer/online-demand-payment', 'initiateOnlineDemandPayment');
-
+        Route::post('consumer/demand/generate-payment-receipt', 'generateDemandPaymentReceipt');        // Admin/ Citizen
+        Route::post('consumer/online-demand-payment', 'initiateOnlineDemandPayment');                   // Citizen
+        
         # Site inspection 
         Route::post('site-verification/save-site-details', 'saveSitedetails');                          // Admin
 
@@ -123,6 +123,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('consumer/report/list-ward-dcb', 'wardWiseDCB');
         Route::post('consumer/report/dcb-pie-chart', 'dcbPieChart');
         Route::post('report-cosumer', 'consumerReport');
+        Route::post('connection-collection', 'connectionCollection');
     });
 });
 

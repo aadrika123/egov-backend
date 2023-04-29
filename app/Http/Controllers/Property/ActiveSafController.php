@@ -2511,7 +2511,7 @@ class ActiveSafController extends Controller
             $data["floor_comparison"] = $floors_compais;
             return responseMsgs(true, $message, remove_null($data), "010121", "1.0", "258ms", "POST", $request->deviceId);
         } catch (Exception $e) {
-            // dd($e->getMessage(),$e->getFile(),$e->getLine());
+            dd($e->getMessage(),$e->getFile(),$e->getLine());
             return responseMsg(false, $e->getMessage(), "");
         }
     }
