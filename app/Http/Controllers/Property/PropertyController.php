@@ -10,6 +10,7 @@ use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropSaf;
 use App\Models\Property\PropTransaction;
+use App\Models\Workflows\WfActiveDocument;
 use App\Pipelines\SearchHolding;
 use App\Pipelines\SearchPtn;
 use App\Repository\Property\Interfaces\iSafRepository;
@@ -21,6 +22,7 @@ use Illuminate\Pipeline\Pipeline;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Redis;
 
 /**
  * | Created On - 11-03-2023
@@ -261,5 +263,10 @@ class PropertyController extends Controller
     {
         $path = (config('app.url') . "/" . $path);
         return $path;
+    }
+
+    public function uploadDocument(Request $req)
+    {
+        $mWfActiveDocuments = new WfActiveDocument();
     }
 }
