@@ -1416,21 +1416,41 @@ class NewConnectionController extends Controller
     public function getActiveApplictaions(Request $request)
     {
         $request->validate([
-            'filterBy' => 'required',
-            'applicationNo' => 'required'
+            'filterBy' => 'required|in:newConnection,regularization,name,mobileNo,safNo,holdingNo',
+            'parameter' => $request->filterBy == 'mobileNo' ? 'required|numeric|digits:10' : "required",
         ]);
-        $key = $request->filterBy;
-        $applicationNo = $request->applicationNo;
-        $connectionTypes = Config::get('waterConstaint.CONNECTION_TYPE');
+
         try {
+            $key = $request->filterBy;
+            $parameter = $request->parameter;
+            $mWaterApplicant = new WaterApplication();
+            $connectionTypes = Config::get('waterConstaint.CONNECTION_TYPE');
             switch ($key) {
                 case ("newConnection"):
-                    $mWaterApplicant = new WaterApplication();
-                    $returnData = $mWaterApplicant->getDetailsByApplicationNo($connectionTypes['NEW_CONNECTION'], $applicationNo);
+                    $returnData = $mWaterApplicant->getDetailsByApplicationNo($connectionTypes['NEW_CONNECTION'], $parameter);
                     break;
                 case ("regularization"):
-                    $mWaterApplicant = new WaterApplication();
-                    $returnData = $mWaterApplicant->getDetailsByApplicationNo($connectionTypes['REGULAIZATION'], $applicationNo);
+                    $returnData = $mWaterApplicant->getDetailsByApplicationNo($connectionTypes['REGULAIZATION'], $parameter);
+                    break;
+                case ("name"):
+                    $returnData = $mWaterApplicant->getDetailsByParameters()
+                        ->where("water_applicants.applicant_name", 'ILIKE', '%' . $parameter . '%')
+                        ->get();
+                    break;
+                case ("mobileNo"):
+                    $returnData = $mWaterApplicant->getDetailsByParameters()
+                        ->where("water_applicants.mobile_no", $parameter)
+                        ->get();
+                    break;
+                case ("safNo"):
+                    $returnData = $mWaterApplicant->getDetailsByParameters()
+                        ->where("water_applications.saf_no", 'LIKE', '%' . $parameter . '%')
+                        ->get();
+                    break;
+                case ("holdingNo"):
+                    $returnData = $mWaterApplicant->getDetailsByParameters()
+                        ->where("water_applications.holding_no", 'LIKE', '%' . $parameter . '%')
+                        ->get();
                     break;
             }
             return responseMsgs(true, "List of Appication!", $returnData, "", "01", "723 ms", "POST", "");
@@ -1753,9 +1773,6 @@ class NewConnectionController extends Controller
      */
     public function searchApplicationByParameter(Request $request)
     {
-        $mWaterApplicant = new WaterApplication();
-        $mWaterSiteInspectionsScheduling = new WaterSiteInspectionsScheduling();
-        $mWaterSiteInspection = new WaterSiteInspection();
         $filterBy = Config::get('waterConstaint.FILTER_BY');
         $roleId = Config::get('waterConstaint.ROLE-LABEL.JE');
         $request->validate([
@@ -1765,7 +1782,11 @@ class NewConnectionController extends Controller
             'toDate'    => $request->filterBy == $filterBy['DATE'] ? 'required|date_format:Y-m-d' : 'nullable',
         ]);
         try {
+            $mWaterApplicant = new WaterApplication();
+            $mWaterSiteInspection = new WaterSiteInspection();
+            $mWaterSiteInspectionsScheduling = new WaterSiteInspectionsScheduling();
             $key = $request->filterBy;
+
             switch ($key) {
                 case ("byApplication"):
                     $refSiteDetails['SiteInspectionDate'] = null;
