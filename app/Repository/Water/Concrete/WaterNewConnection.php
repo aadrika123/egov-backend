@@ -79,7 +79,6 @@ class WaterNewConnection implements IWaterNewConnection
      */
     public function getCitizenApplication(Request $request)
     {
-        try {
             $refUser            = Auth()->user();
             $refUserId          = $refUser->id;
             $mWaterTran         = new WaterTran();
@@ -156,9 +155,6 @@ class WaterNewConnection implements IWaterNewConnection
                 return $value;
             });
             return $returnValue;
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), $request->all());
-        }
     }
 
     /**

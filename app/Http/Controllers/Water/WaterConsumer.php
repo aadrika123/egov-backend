@@ -709,14 +709,12 @@ class WaterConsumer extends Controller
             $mWaterWaterConsumer = new WaterWaterConsumer();
             $mActiveCitizenUndercare = new ActiveCitizenUndercare();
             $connectionDetails = $mActiveCitizenUndercare->getDetailsByCitizenId();
-            if (is_null($connectionDetails))
+            $checkData = collect($connectionDetails)->first();
+            if (is_null($checkData))
                 throw new Exception("Under taken data not found!");
 
             $consumerIds = collect($connectionDetails)->pluck('consumer_id');
             $consumerDetails = $mWaterWaterConsumer->getConsumerByIds($consumerIds)->get();
-            if (is_null($consumerDetails))
-                throw new Exception("Data Not Found!");
-
             return responseMsgs(true, 'list of undertaken water connections!', remove_null($consumerDetails), "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "", "01", ".ms", "POST", $request->deviceId);
