@@ -573,11 +573,10 @@ class  PropActiveSaf extends Model
      */
     public function recentApplication($userId)
     {
-        return PropActiveSaf::select(
+        $data = PropActiveSaf::select(
             'prop_active_safs.id',
             'saf_no as applicationNo',
-            // 'application_date as applyDate',
-            DB::raw("TO_CHAR(application_date, 'DD-MM-YYYY') as applyDate"),
+            'application_date as applyDate',
             'assessment_type as assessmentType',
             DB::raw("string_agg(owner_name,',') as applicantName"),
         )
@@ -587,6 +586,12 @@ class  PropActiveSaf extends Model
             ->groupBy('saf_no', 'application_date', 'assessment_type', 'prop_active_safs.id')
             ->take(10)
             ->get();
+
+        $application = collect($data)->map(function ($value) {
+            $value['applyDate'] = (Carbon::parse($value['applyDate']))->format('d-m-Y');
+            return $value;
+        });
+        return $application;
     }
 
 
