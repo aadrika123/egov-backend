@@ -39,6 +39,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
 
+use function PHPUnit\Framework\isEmpty;
 use function PHPUnit\Framework\isNull;
 
 class WaterNewConnection implements IWaterNewConnection
@@ -86,7 +87,7 @@ class WaterNewConnection implements IWaterNewConnection
             $mWaterConnectionCharge = new WaterConnectionCharge();
             $mWaterSiteInspection = new WaterSiteInspection();
             // $departmnetId       = Config::get('waterConstaint.WATER_DEPAPRTMENT_ID');
-            $connection         = WaterApplication::select(
+            $connection = WaterApplication::select(
                 "water_applications.id",
                 "water_applications.application_no",
                 "water_applications.property_type_id",
@@ -133,6 +134,9 @@ class WaterNewConnection implements IWaterNewConnection
                 ->where("water_applications.user_id", $refUserId)
                 ->orderbydesc('water_applications.id')
                 ->get();
+
+            if (is_null($connection) || isEmpty($connection))
+                throw new Exception("Water Applications not found!");
 
             $returnValue = collect($connection)->map(function ($value) use ($mWaterTran, $mWaterParamConnFee, $mWaterConnectionCharge, $mWaterSiteInspection, $connection) {
                 $value['transDetails'] = $mWaterTran->getTransNo($value['id'], null)->first();
