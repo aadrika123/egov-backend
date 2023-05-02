@@ -82,12 +82,8 @@ class WaterConsumer extends Controller
             $consumerDemand['consumerDemands'] = $mWaterConsumerDemand->getConsumerDemand($refConsumerId);
             $checkParam = collect($consumerDemand['consumerDemands'])->first();
             if (isset($checkParam)) {
-                $consumerDemand['totalSumDemand'] = collect($consumerDemand['consumerDemands'])->map(function ($value, $key) {
-                    return $value['balance_amount'];
-                })->sum();
-                $consumerDemand['totalPenalty'] = collect($consumerDemand['consumerDemands'])->map(function ($value, $key) {
-                    return $value['penalty'];
-                })->sum();
+                $consumerDemand['totalSumDemand'] = collect($consumerDemand['consumerDemands'])->sum('balance_amount');
+                $consumerDemand['totalPenalty'] = collect($consumerDemand['consumerDemands'])->sum('penalty');
 
                 # meter Details 
                 $refMeterData = $mWaterConsumerMeter->getMeterDetailsByConsumerId($refConsumerId)->first();
@@ -107,7 +103,7 @@ class WaterConsumer extends Controller
 
                 return responseMsgs(true, "List of Consumer Demand!", $consumerDemand, "", "01", "ms", "POST", "");
             }
-            throw new Exception("there is no demand!");
+            throw new Exception("There is no demand!");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", "ms", "POST", "");
         }
@@ -208,8 +204,8 @@ class WaterConsumer extends Controller
      */
     public function savingDemand($calculatedDemand, $request, $consumerDetails, $demandType, $refMeterConnectionType)
     {
-        $mWaterConsumerDemand = new WaterConsumerDemand();
         $mWaterConsumerTax = new WaterConsumerTax();
+        $mWaterConsumerDemand = new WaterConsumerDemand();
         $generatedDemand = $calculatedDemand['consumer_tax'];
 
         $returnDemandIds = collect($generatedDemand)->map(function ($firstValue)
@@ -262,9 +258,7 @@ class WaterConsumer extends Controller
 
     /**
      * | Save the Meter details 
-     * | @param
-     * | @var 
-     * | @return
+     * | @param request
         | Serial No : 04
         | Not working  
         | Check the parameter for the autherised person
@@ -283,7 +277,7 @@ class WaterConsumer extends Controller
             ]);
             $this->saveGenerateConsumerDemand($metaRequest);
             $documentPath = $this->saveTheMeterDocument($request);
-            $fixedRate = $this->getFixedRate($request);
+            $fixedRate = $this->getFixedRate($request);                             // Manul Entry of fixed rate
             $mWaterConsumerMeter->saveMeterDetails($request, $documentPath);
             DB::commit();
             return responseMsgs(true, "Meter Detail Entry Success !", "", "", "01", ".ms", "POST", $request->deviceId);
@@ -296,19 +290,19 @@ class WaterConsumer extends Controller
     /**
      * | Chech the parameter before Meter entry
      * | Validate the Admin For entring the meter details
-     * | @param req
+     * | @param request
         | Serial No : 04.01
         | Working
      */
     public function checkParamForMeterEntry($request)
     {
         $todayDate = Carbon::now();
-        $mWaterWaterConsumer = new WaterWaterConsumer();
-        $mWaterConsumerMeter = new WaterConsumerMeter();
-        $mWaterConsumerDemand = new WaterConsumerDemand();
-        $refMeterConnType = Config::get('waterConstaint.WATER_MASTER_DATA.METER_CONNECTION_TYPE');
-
         $refConsumerId = $request->consumerId;
+
+        $mWaterWaterConsumer    = new WaterWaterConsumer();
+        $mWaterConsumerMeter    = new WaterConsumerMeter();
+        $mWaterConsumerDemand   = new WaterConsumerDemand();
+        $refMeterConnType = Config::get('waterConstaint.WATER_MASTER_DATA.METER_CONNECTION_TYPE');
 
         $mWaterWaterConsumer->getConsumerDetailById($refConsumerId);
         $consumerMeterDetails = $mWaterConsumerMeter->getMeterDetailsByConsumerId($refConsumerId)->first();
@@ -417,10 +411,12 @@ class WaterConsumer extends Controller
             $request->validate([
                 'consumerId' => "required|digits_between:1,9223372036854775807",
             ]);
-            $meterConnectionType = null;
-            $mWaterConsumerMeter = new WaterConsumerMeter();
+
+            $meterConnectionType    = null;
+            $mWaterConsumerMeter    = new WaterConsumerMeter();
             $refWaterNewConnection  = new WaterNewConnection();
-            $refMeterConnType = Config::get('waterConstaint.WATER_MASTER_DATA.METER_CONNECTION_TYPE');
+            $refMeterConnType       = Config::get('waterConstaint.WATER_MASTER_DATA.METER_CONNECTION_TYPE');
+
             $meterList = $mWaterConsumerMeter->getMeterDetailsByConsumerId($request->consumerId)->get();
             $returnData = collect($meterList)->map(function ($value)
             use ($refMeterConnType, $meterConnectionType, $refWaterNewConnection) {
@@ -460,22 +456,22 @@ class WaterConsumer extends Controller
      */
     public function applyDeactivation(Request $request)
     {
+        $request->validate([
+            'consumerId'    => "required|digits_between:1,9223372036854775807",
+            'amount'        => "required",
+            'paymentMode'   => "required|in:Cash,Cheque,DD",
+            'ulbId'         => "nullable",
+            'document'      => "required|mimes:pdf,jpg,jpeg,png",
+            'reason'        => "required|in:1,2,3",
+            'remarks'       => "required"
+        ]);
         try {
-            $request->validate([
-                'consumerId'    => "required|digits_between:1,9223372036854775807",
-                'amount'        => "required",
-                'paymentMode'   => "required|in:Cash,Cheque,DD",
-                'ulbId'         => "nullable",
-                'document'      => "required|mimes:pdf,jpg,jpeg,png",
-                'reason'        => "required|in:1,2,3",
-                'remarks'       => "required"
-            ]);
 
             $user = authUser();
             $currentDate = Carbon::now();
+            $refIdGeneration = new IdGeneration();
             $mWaterWaterConsumer = new WaterWaterConsumer();
             $mWaterConsumerDisconnection = new WaterConsumerDisconnection();
-            $refIdGeneration = new IdGeneration();
             $refWorkflow = Config::get('workflow-constants.WATER_MASTER_ID');
 
             $request->request->add(['workflowId' => $refWorkflow]);
@@ -522,17 +518,16 @@ class WaterConsumer extends Controller
         $consumerId = $request->consumerId;
         $mWaterWaterConsumer = new WaterWaterConsumer();
         $mWaterConsumerDemand = new WaterConsumerDemand();
+
         $refConsumerDetails = $mWaterWaterConsumer->getConsumerDetailById($consumerId);
         if (isset($refConsumerDetails)) {
             throw new Exception("Consumer Don't Exist!");
         }
-
         $pendingDemand = $mWaterConsumerDemand->getConsumerDemand($consumerId);
         $firstPendingDemand = collect($pendingDemand)->first();
         if (isset($firstPendingDemand)) {
             throw new Exception("There are unpaid pending demand!");
         }
-
         if ($request->amount != 450) {
             throw new Exception("Amount not matched!");
         }
@@ -636,7 +631,6 @@ class WaterConsumer extends Controller
     }
 
 
-
     #---------------------------------------------------------------------------------------------------------#
 
     /**
@@ -677,7 +671,7 @@ class WaterConsumer extends Controller
         | Not Working
         | Serial No: 
         | Not Build
-        | Get Concept for deactivation 
+        | Get Concept for deactivation demand
      */
     public function checkDeactivationDemand($request)
     {
@@ -691,17 +685,22 @@ class WaterConsumer extends Controller
      * | @return 
         | Not Working
         | Serial No:
-        | Get Concept Notes
+        | Get Concept Notes for demand deactivation 
      */
     public function checkForPayment($request)
     {
         $mWaterTran = new WaterTran();
     }
 
+    #---------------------------------------------------------------------------------------------------------#
+
 
     /**
      * | View details of the caretaken water connection
      * | using user id
+     * | @param request
+        | Working
+        | Serial No : 07
      */
     public function viewCaretakenConnection(Request $request)
     {
