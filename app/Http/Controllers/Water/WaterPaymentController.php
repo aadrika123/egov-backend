@@ -860,7 +860,8 @@ class WaterPaymentController extends Controller
 
     /**
      * | Save the penalty in the fine rebate table 
-     * | @param 
+     * | @param waterTrans
+     * | @param penaltyAmount
         | Not tested
         | Serial No : 05:03
         | Common function
@@ -969,7 +970,9 @@ class WaterPaymentController extends Controller
 
 
     /**
-     * | Check the Advance and the exist
+     * | Check the Advance and its existence
+     * | Advance and Adjustment calcullation 
+     * | @param request
         | Serial No : 06:02 / 05:01:01
         | Not Working
         | Common function
@@ -1104,6 +1107,9 @@ class WaterPaymentController extends Controller
     /**
      * | Save Rebate details for water connection
      * | only in terms of regulisation
+     * | @param req
+     * | @param charges
+     * | @param waterTrans
         | Serial No : 07.05
         | Not Tested
         | Check the code 
@@ -1144,6 +1150,10 @@ class WaterPaymentController extends Controller
     /**
      * | Save the payment status for respective payment
      * | @param req
+     * | @param offlinePaymentModes
+     * | @param charges
+     * | @param refWaterApplication
+     * | @param waterTrans
         | Serial No : 07.04
         | Working
         | Common function
@@ -1396,8 +1406,6 @@ class WaterPaymentController extends Controller
     /**
      * | Get the payment history for the Application
      * | @param request
-     * | @var 
-     * | @return 
         | Serial No : 08
         | Working
      */
@@ -1482,8 +1490,6 @@ class WaterPaymentController extends Controller
     /**
      * | Generate Demand Payment receipt
      * | @param req
-     * | @var 
-     * | @return 
         | Serial No : 09
         | Working
      */
@@ -1587,9 +1593,7 @@ class WaterPaymentController extends Controller
      * | Initiate the online Demand payment Online
      * | Get the details for order id 
      * | Check the amount for the orderId
-     * | @param 
-     * | @var
-     * | @return 
+     * | @param request
         | Working
         | Serial No : 10
      */
@@ -1635,7 +1639,8 @@ class WaterPaymentController extends Controller
     /**
      * | Online Payment for the consumer Demand
      * | Data After the Webhook Payment / Called by the Webhook
-     * | @param
+     * | @param webhookData
+     * | @param RazorPayRequest
         | Serial No : 11
         | Recheck / Not Working
         | clear the concept
