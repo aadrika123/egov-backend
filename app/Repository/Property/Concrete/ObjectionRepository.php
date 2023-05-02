@@ -233,7 +233,7 @@ class ObjectionRepository implements iObjectionRepository
                     $objection->last_role_id = collect($initiatorRoleId)->first()->forward_role_id;
                     $objection->user_id = null;
                     $objection->citizen_id = $userId;
-                    $objection->doc_upload_status = 1;
+                    // $objection->doc_upload_status = 1;
                 }
                 $objection->save();
 
@@ -323,8 +323,29 @@ class ObjectionRepository implements iObjectionRepository
                     $assement_floor->save();
                 }
             }
-            // if ($request->document) {
-            // }
+            if ($request->document) {
+                $docUpload = new DocUpload;
+                $mWfActiveDocument = new WfActiveDocument();
+                $relativePath = Config::get('PropertyConstaint.OBJECTION_RELATIVE_PATH');
+                $refImageName = $request->docCode;
+                $refImageName = $objection->id . '-' . str_replace(' ', '_', $refImageName);
+                $document = $request->document;
+
+                $imageName = $docUpload->upload($refImageName, $document, $relativePath);
+                $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+                $metaReqs['activeId'] = $objection->id;
+                $metaReqs['workflowId'] = $objection->workflow_id;
+                $metaReqs['ulbId'] = $objection->ulb_id;
+                $metaReqs['document'] = $imageName;
+                $metaReqs['relativePath'] = $relativePath;
+                $metaReqs['docCode'] = $request->docCode;
+
+                $metaReqs = new Request($metaReqs);
+                $mWfActiveDocument->postDocuments($metaReqs);
+
+                PropActiveObjection::where('id', $objection->id)
+                    ->update(['doc_upload_status' => 1]);
+            }
             $wfReqs['workflowId'] = $ulbWorkflowId->id;
             $wfReqs['refTableDotId'] = 'prop_active_objections.id';
             $wfReqs['refTableIdValue'] = $objection->id;
