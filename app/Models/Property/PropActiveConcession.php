@@ -134,7 +134,7 @@ class PropActiveConcession extends Model
         $data = PropActiveConcession::select(
             'id',
             'application_no as applicationNo',
-            'date as applyDate',
+            DB::raw("TO_CHAR(date, 'DD-MM-YYYY') as applyDate"),
             'applied_for as assessmentType',
             "applicant_name as applicantname",
         )

@@ -44,7 +44,8 @@ class PropActiveDeactivationRequest extends Model
         $data = PropActiveDeactivationRequest::select(
             'prop_active_deactivation_requests.id',
             'holding_no as holdingNo',
-            'apply_date as applyDate',
+            // 'apply_date as applyDate',
+            DB::raw("TO_CHAR(apply_date, 'DD-MM-YYYY') as applyDate"),
             DB::raw(" 'Deactivation' as assessmentType"),
         )
             ->join('prop_properties', 'prop_properties.id', 'prop_active_deactivation_requests.property_id')

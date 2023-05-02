@@ -46,6 +46,8 @@ class CareTakerTrade
 
         $referenceNo = request()->input('referenceNo');
         $trade = $this->_mTradeLicenses->getTradeIdByLicenseNo($referenceNo);
+        if (!$trade)
+            throw new Exception('Enter Valid License No.');
         $this->_tradeId = $trade->id;
         $this->_licenseNo = $referenceNo;
         $this->isTradeAlreadyTagged();                                                      // function (1.1)
