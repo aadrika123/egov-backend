@@ -77,6 +77,8 @@ class WaterConsumerDemand extends Model
         $mWaterConsumerDemand->balance_amount           =  $demands['penalty'] ?? 0 + $demands['amount'];
         $mWaterConsumerDemand->created_at               =  Carbon::now();
         $mWaterConsumerDemand->save();
+
+        return $mWaterConsumerDemand->id;
     }
 
 
