@@ -100,7 +100,10 @@ class WaterTran extends Model
     {
         return WaterTran::select(
             'water_trans.*',
+            DB::raw("TO_CHAR(water_trans.tran_date, 'DD-MM-YYYY') as tran_date"),
             'water_cheque_dtls.*',
+            DB::raw("TO_CHAR(water_cheque_dtls.cheque_date, 'DD-MM-YYYY') as cheque_date"),
+            DB::raw("TO_CHAR(water_cheque_dtls.clear_bounce_date, 'DD-MM-YYYY') as clear_bounce_date"),
             'user_name',
             DB::raw("2 as module_id"),
         )

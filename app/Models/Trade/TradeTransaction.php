@@ -23,18 +23,18 @@ class TradeTransaction extends Model
     {
         return  TradeTransaction::select(
             'trade_cheque_dtls.*',
-            'tran_date',
+            DB::raw("TO_CHAR(tran_date, 'DD-MM-YYYY') as tran_date"),
             'tran_type',
             DB::raw("3 as module_id"),
             'tran_no',
             'payment_mode',
             'paid_amount as amount',
-            "cheque_date",
+            DB::raw("TO_CHAR(cheque_date, 'DD-MM-YYYY') as cheque_date"),
             "bank_name",
             "branch_name",
             "trade_cheque_dtls.status",
             "cheque_no",
-            "clear_bounce_date",
+            DB::raw("TO_CHAR(clear_bounce_date, 'DD-MM-YYYY') as clear_bounce_date"),
             "user_name"
         )
             ->leftjoin('trade_cheque_dtls', 'trade_cheque_dtls.tran_id', 'trade_transactions.id')

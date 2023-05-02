@@ -53,7 +53,7 @@ class CashVerificationController extends Controller
 
             $data = $collection->map(function ($val) use ($date, $propertyModuleId, $waterModuleId, $tradeModuleId) {
                 $total =  $val->sum('amount');
-                $prop = $val->where("module_id", $propertyModuleId)->sum('amount');
+                $prop  = $val->where("module_id", $propertyModuleId)->sum('amount');
                 $water = $val->where("module_id", $waterModuleId)->sum('amount');
                 $trade = $val->where("module_id", $tradeModuleId)->sum('amount');
                 return [
@@ -63,7 +63,7 @@ class CashVerificationController extends Controller
                     "water" => $water,
                     "trade" => $trade,
                     "total" => $total,
-                    "date" => $date,
+                    "date" => Carbon::parse($date)->format('d-m-Y'),
                     // "verified_amount" => 0,
                 ];
             });
@@ -129,7 +129,7 @@ class CashVerificationController extends Controller
                     "water" => $water,
                     "trade" => $trade,
                     "total" => $total,
-                    "date" => $date,
+                    "date" => Carbon::parse($date)->format('d-m-Y'),
                     // "verified_amount" => 0,
                 ];
             });
@@ -268,7 +268,7 @@ class CashVerificationController extends Controller
             $data['totalAmount'] =  $details->sum('amount');
             $data['numberOfTransaction'] =  $details->count();
             $data['collectorName'] =  collect($details)[0]->user_name;
-            $data['date'] = $date;
+            $data['date'] = Carbon::parse($date)->format('d-m-Y');
 
             return responseMsgs(true, "TC Collection", remove_null($data), "010201", "1.0", "", "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
@@ -327,7 +327,7 @@ class CashVerificationController extends Controller
             $data['totalAmount'] =  $details->sum('amount');
             $data['numberOfTransaction'] =  $details->count();
             $data['collectorName'] =  collect($details)[0]->user_name;
-            $data['date'] = $date;
+            $data['date'] = Carbon::parse($date)->format('d-m-Y');
 
             return responseMsgs(true, "TC Collection", remove_null($data), "010201", "1.0", "", "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
@@ -738,8 +738,6 @@ class CashVerificationController extends Controller
                     $tTempTransaction->delete();
                 }
             }
-
-
 
             return responseMsgs(true, "Cash Verified", '', "010201", "1.0", "", "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
