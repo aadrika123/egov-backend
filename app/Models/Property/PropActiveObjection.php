@@ -144,8 +144,7 @@ class PropActiveObjection extends Model
         $data = PropActiveObjection::select(
             'prop_active_objections.id',
             'objection_no as applicationNo',
-            // 'date as applyDate',
-            DB::raw("TO_CHAR(date, 'DD-MM-YYYY') as applyDate"),
+            'date as applydate',
             'objection_for as assessmentType',
             DB::raw("string_agg(owner_name,',') as applicantName"),
         )
@@ -157,7 +156,7 @@ class PropActiveObjection extends Model
             ->get();
 
         $application = collect($data)->map(function ($value) {
-            $value['applyDate'] = (Carbon::parse($value['applyDate']))->format('d-m-Y');
+            $value['applyDate'] = (Carbon::parse($value['applydate']))->format('d-m-Y');
             return $value;
         });
         return $application;
