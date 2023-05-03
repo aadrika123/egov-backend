@@ -648,10 +648,12 @@ class NewConnectionController extends Controller
         ]);
         try {
             $user = authUser();
+            $mWaterSiteInspectionsScheduling = new WaterSiteInspectionsScheduling();
             $mWaterConnectionCharge  = new WaterConnectionCharge();
             $mWaterApplication = new WaterApplication();
             $mWaterApplicant = new WaterApplicant();
             $mWaterTran = new WaterTran();
+            $roleDetails = Config::get('waterConstaint.ROLE-LABEL');
 
             # Application Details
             $applicationDetails['applicationDetails'] = $mWaterApplication->fullWaterDetails($request)->first();
@@ -687,6 +689,14 @@ class NewConnectionController extends Controller
                 ];
                 $waterTransDetail = array_merge($waterTransDetail, $calculation);
             }
+
+            # Site inspection schedule time/date Details 
+            if ($applicationDetails['applicationDetails']['current_role'] == $roleDetails['JE']) {
+                $inspectionTime = $mWaterSiteInspectionsScheduling->getInspectionData($applicationDetails['applicationDetails']['id'])->first();
+                $applicationDetails['applicationDetails']['scheduledTime'] = $inspectionTime->inspection_time ?? null;
+                $applicationDetails['applicationDetails']['scheduledDate'] = $inspectionTime->inspection_date ?? null;
+            }
+
             $returnData = array_merge($applicationDetails, $ownerDetails, $documentDetails, $waterTransDetail);
             return responseMsgs(true, "Application Data!", remove_null($returnData), "", "", "", "Post", "");
         } catch (Exception $e) {

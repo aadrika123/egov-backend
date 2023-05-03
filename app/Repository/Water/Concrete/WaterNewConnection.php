@@ -21,6 +21,7 @@ use App\Models\Water\WaterPenaltyInstallment;
 use App\Models\Water\WaterRazorPayRequest;
 use App\Models\Water\WaterRazorPayResponse;
 use App\Models\Water\WaterSiteInspection;
+use App\Models\Water\WaterSiteInspectionsScheduling;
 use App\Models\Water\WaterTran;
 use App\Models\Water\WaterTranDetail;
 use App\Models\Workflows\WfActiveDocument;
@@ -79,34 +80,39 @@ class WaterNewConnection implements IWaterNewConnection
      */
     public function getCitizenApplication(Request $request)
     {
-            $refUser            = Auth()->user();
-            $refUserId          = $refUser->id;
-            $mWaterTran         = new WaterTran();
-            $mWaterParamConnFee = new WaterParamConnFee();
-            $mWaterConnectionCharge = new WaterConnectionCharge();
-            $mWaterSiteInspection = new WaterSiteInspection();
-            // $departmnetId       = Config::get('waterConstaint.WATER_DEPAPRTMENT_ID');
-            $connection = WaterApplication::select(
-                "water_applications.id",
-                "water_applications.application_no",
-                "water_applications.property_type_id",
-                "water_applications.address",
-                "water_applications.area_sqft",
-                "water_applications.payment_status",
-                "water_applications.doc_status",
-                "water_applications.ward_id",
-                "water_applications.workflow_id",
-                "water_applications.doc_upload_status",
-                "water_applications.apply_from",
-                "water_applications.is_field_verified",
-                "ulb_ward_masters.ward_name",
-                "charges.amount",
-                "wf_roles.role_name as current_role_name",
-                DB::raw("'connection' AS type,
+        $refUser                = Auth()->user();
+        $refUserId              = $refUser->id;
+        $roleDetails            = Config::get('waterConstaint.ROLE-LABEL');
+
+        $mWaterTran             = new WaterTran();
+        $mWaterParamConnFee     = new WaterParamConnFee();
+        $mWaterConnectionCharge = new WaterConnectionCharge();
+        $mWaterSiteInspection   = new WaterSiteInspection();
+        $mWaterSiteInspectionsScheduling = new WaterSiteInspectionsScheduling();
+
+
+        $connection = WaterApplication::select(
+            "water_applications.id",
+            "water_applications.application_no",
+            "water_applications.property_type_id",
+            "water_applications.address",
+            "water_applications.area_sqft",
+            "water_applications.payment_status",
+            "water_applications.doc_status",
+            "water_applications.ward_id",
+            "water_applications.workflow_id",
+            "water_applications.doc_upload_status",
+            "water_applications.apply_from",
+            "water_applications.is_field_verified",
+            "water_applications.current_role",
+            "ulb_ward_masters.ward_name",
+            "charges.amount",
+            "wf_roles.role_name as current_role_name",
+            DB::raw("'connection' AS type,
                                         water_applications.apply_date::date AS apply_date")
-            )
-                ->join(
-                    DB::raw("( 
+        )
+            ->join(
+                DB::raw("( 
                                         SELECT DISTINCT(water_applications.id) AS application_id , SUM(COALESCE(amount,0)) AS amount
                                         FROM water_applications 
                                         LEFT JOIN water_connection_charges 
@@ -123,38 +129,46 @@ class WaterNewConnection implements IWaterNewConnection
                                         GROUP BY water_applications.id
                                         ) AS charges
                                     "),
-                    function ($join) {
-                        $join->on("charges.application_id", "water_applications.id");
-                    }
-                )
-                // ->whereNotIn("status",[0,6,7])
-                ->leftjoin('wf_roles', 'wf_roles.id', "=", "water_applications.current_role")
-                ->join('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_applications.ward_id')
-                ->where("water_applications.user_id", $refUserId)
-                ->orderbydesc('water_applications.id')
-                ->get();
-
-            if (is_null($connection))
-                throw new Exception("Water Applications not found!");
-
-            $returnValue = collect($connection)->map(function ($value) use ($mWaterTran, $mWaterParamConnFee, $mWaterConnectionCharge, $mWaterSiteInspection, $connection) {
-                $value['transDetails'] = $mWaterTran->getTransNo($value['id'], null)->first();
-                $value['calcullation'] = $mWaterParamConnFee->getCallParameter($value['property_type_id'], $value['area_sqft'])->first();
-                $refConnectionCharge = $mWaterConnectionCharge->getWaterchargesById($value['id'])
-                    ->where('paid_status', 0)
-                    ->first();
-                $refConnectionCharge['type'] = $value['type'];
-                $refConnectionCharge['applicationId'] = $value['id'];
-                $refConnectionCharge['applicationNo'] = $value['application_no'];
-                $value['connectionCharges'] = $refConnectionCharge;
-                $siteDetails = $mWaterSiteInspection->getInspectionById($value['id'])->first();
-                $checkEmpty = collect($siteDetails)->first();
-                if (!empty($checkEmpty) || !isNull($checkEmpty)) {
-                    $value['siteInspectionCall'] = $mWaterParamConnFee->getCallParameter($siteDetails['site_inspection_property_type_id'], $siteDetails['site_inspection_area_sqft'])->first();
+                function ($join) {
+                    $join->on("charges.application_id", "water_applications.id");
                 }
-                return $value;
-            });
-            return $returnValue;
+            )
+            // ->whereNotIn("status",[0,6,7])
+            ->leftjoin('wf_roles', 'wf_roles.id', "=", "water_applications.current_role")
+            ->join('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_applications.ward_id')
+            ->where("water_applications.user_id", $refUserId)
+            ->orderbydesc('water_applications.id')
+            ->get();
+
+        if (is_null($connection))
+            throw new Exception("Water Applications not found!");
+
+        $returnValue = collect($connection)->map(function ($value)
+        use ($mWaterTran, $mWaterParamConnFee, $mWaterConnectionCharge, $mWaterSiteInspection, $connection, $mWaterSiteInspectionsScheduling, $roleDetails) {
+            $value['transDetails'] = $mWaterTran->getTransNo($value['id'], null)->first();
+            $value['calcullation'] = $mWaterParamConnFee->getCallParameter($value['property_type_id'], $value['area_sqft'])->first();
+            $refConnectionCharge = $mWaterConnectionCharge->getWaterchargesById($value['id'])
+                ->where('paid_status', 0)
+                ->first();
+            $refConnectionCharge['type'] = $value['type'];
+            $refConnectionCharge['applicationId'] = $value['id'];
+            $refConnectionCharge['applicationNo'] = $value['application_no'];
+            $value['connectionCharges'] = $refConnectionCharge;
+            $siteDetails = $mWaterSiteInspection->getInspectionById($value['id'])->first();
+            $checkEmpty = collect($siteDetails)->first();
+            if (!empty($checkEmpty) || !isNull($checkEmpty)) {
+                $value['siteInspectionCall'] = $mWaterParamConnFee->getCallParameter($siteDetails['site_inspection_property_type_id'], $siteDetails['site_inspection_area_sqft'])->first();
+
+            }
+            if ($value['current_role'] == $roleDetails['JE']) {
+                $inspectionTime = $mWaterSiteInspectionsScheduling->getInspectionData($value['id'])->first();
+                $value['scheduledTime'] = $inspectionTime->inspection_time ?? null;
+                $value['scheduledDate'] = $inspectionTime->inspection_date ?? null;
+            }
+
+            return $value;
+        });
+        return $returnValue;
     }
 
     /**

@@ -726,13 +726,13 @@ class NewConnectionRepository implements iNewConnection
     public function getApplicationsDetails($request)
     {
         # ref
-        $waterObj = new WaterApplication();
-        $ownerObj = new WaterApplicant();
-        $forwardBackward = new WorkflowMap;
-        $mWorkflowTracks = new WorkflowTrack();
-        $mCustomDetails = new CustomDetail();
-        $mUlbNewWardmap = new UlbWardMaster();
-        $mWaterNewConnection = new WaterNewConnection();
+        $waterObj               = new WaterApplication();
+        $ownerObj               = new WaterApplicant();
+        $forwardBackward        = new WorkflowMap;
+        $mWorkflowTracks        = new WorkflowTrack();
+        $mCustomDetails         = new CustomDetail();
+        $mUlbNewWardmap         = new UlbWardMaster();
+        $mWaterNewConnection    = new WaterNewConnection();
 
         # application details
         $applicationDetails = $waterObj->fullWaterDetails($request)->get();
