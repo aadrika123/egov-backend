@@ -14,7 +14,7 @@ use App\Http\Controllers\Property\RainWaterHarvestingController;
 use App\Http\Controllers\Property\PropertyBifurcationController;
 use App\Http\Controllers\Property\PropMaster;
 use App\Http\Controllers\Property\PropertyDetailsController;
-use App\Http\Controllers\property\ClusterController;
+use App\Http\Controllers\Property\ClusterController;
 use App\Http\Controllers\Property\ConcessionDocController;
 use App\Http\Controllers\Property\GbSafController;
 use App\Http\Controllers\Property\HoldingTaxController;
@@ -265,7 +265,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
   Route::controller(ClusterController::class)->group(function () {
 
     #cluster data entry / Master
-    Route::get('cluster/get-all-clusters', 'getAllClusters');
+    Route::post('cluster/get-all-clusters', 'getAllClusters');
     Route::post('cluster/edit-cluster-details', 'editClusterDetails');
     Route::post('cluster/save-cluster-details', 'saveClusterDetails');
     Route::post('cluster/delete-cluster-data', 'deleteClusterData');
@@ -482,4 +482,5 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
  */
 Route::controller(PropertyController::class)->group(function () {
   Route::post('getpropLatLong', 'getpropLatLong');                             // 01
+  Route::post('upload-document', 'uploadDocument');                             // 01
 });

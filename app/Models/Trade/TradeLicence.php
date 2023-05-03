@@ -13,7 +13,7 @@ class TradeLicence extends Model
     {
         return TradeLicence::select('id')
             ->where('license_no', $licenseNo)
-            ->firstOrFail();
+            ->first();
     }
 
     public function getTradeDtlsByLicenseNo($licenseNo)

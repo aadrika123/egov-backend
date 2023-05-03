@@ -159,4 +159,15 @@ class UserController extends Controller
             return responseMsgs(false, $e->getMessage(), "", "", "01", ".ms", "POST", $request->deviceId);
         }
     }
+
+    public function hashPassword()
+    {
+        $datas =  User::select('id', 'password')->orderby('id')->get();
+
+        foreach ($datas as $data) {
+            $user = User::find($data->id);
+            $user->password = Hash::make($data->password);
+            $user->save();
+        }
+    }
 }

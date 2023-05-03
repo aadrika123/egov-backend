@@ -125,13 +125,19 @@ class PropSaf extends Model
             'prop_safs.assessment_type',
             'prop_safs.current_role',
             'role_name as currentRole',
-            'ward_name',
+            'u.ward_name as old_ward_no',
+            'uu.ward_name as new_ward_no',
             'prop_address',
+            DB::raw(
+                "case when prop_safs.user_id is not null then 'TC/TL/JSK' when 
+                prop_safs.citizen_id is not null then 'Citizen' end as appliedBy"
+            ),
             DB::raw("string_agg(so.mobile_no::VARCHAR,',') as mobile_no"),
             DB::raw("string_agg(so.owner_name,',') as owner_name"),
         )
             ->leftjoin('wf_roles', 'wf_roles.id', 'prop_safs.current_role')
-            ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_safs.ward_mstr_id')
+            ->join('ulb_ward_masters as u', 'u.id', 'prop_safs.ward_mstr_id')
+            ->join('ulb_ward_masters as uu', 'uu.id', 'prop_safs.new_ward_mstr_id')
             ->join('prop_safs_owners as so', 'so.saf_id', 'prop_safs.id');
     }
 

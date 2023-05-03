@@ -127,6 +127,6 @@ return [
         "3" => "10% Rebate"
     ],
     "PAYMENT_FOR" => [
-        "1", "Demand Collection",
+        "1" => "Demand Collection",
     ],
 ];

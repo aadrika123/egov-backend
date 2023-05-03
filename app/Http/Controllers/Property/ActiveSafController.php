@@ -66,6 +66,7 @@ use App\Traits\Property\SafDetailsTrait;
 use App\Traits\Workflow\Workflow;
 use Carbon\Carbon;
 use Exception;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
@@ -1827,10 +1828,18 @@ class ActiveSafController extends Controller
      */
     public function generatePaymentReceipt(Request $req)
     {
+        $validated = Validator::make(
+            $req->all(),
+            ['tranNo' => 'required']
+        );
+        if ($validated->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'validation error',
+                'errors' => $validated->errors()
+            ], 401);
+        }
         try {
-            $req->validate([
-                'tranNo' => 'required'
-            ]);
             $propSafsDemand = new PropSafsDemand();
             $transaction = new PropTransaction();
             $propPenalties = new PropPenaltyrebate();

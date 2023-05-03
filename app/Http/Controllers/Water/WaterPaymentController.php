@@ -3,15 +3,12 @@
 namespace App\Http\Controllers\Water;
 
 use App\Http\Controllers\Controller;
-use App\Http\Controllers\Water\WaterConsumer as WaterWaterConsumer;
-use App\Http\Requests\Property\ReqPayment;
 use App\Http\Requests\Water\reqDemandPayment;
 use App\Http\Requests\Water\ReqWaterPayment;
 use App\Http\Requests\Water\siteAdjustment;
 use App\MicroServices\IdGeneration;
 use App\Models\Payment\TempTransaction;
 use App\Models\Payment\WebhookPaymentData;
-use App\Models\Property\PropTransaction;
 use App\Models\Water\WaterAdjustment;
 use App\Models\Water\WaterAdvance;
 use App\Models\Water\WaterApplication;
@@ -23,8 +20,6 @@ use App\Models\Water\WaterConnectionTypeMstr;
 use App\Models\Water\WaterConsumer;
 use App\Models\Water\WaterConsumerCollection;
 use App\Models\Water\WaterConsumerDemand;
-use App\Models\Water\WaterConsumerMeter;
-use App\Models\Water\WaterConsumerTax;
 use App\Models\Water\WaterOwnerTypeMstr;
 use App\Models\Water\WaterParamPipelineType;
 use App\Models\Water\WaterPenaltyInstallment;
@@ -48,11 +43,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
-use Symfony\Component\HttpKernel\Event\RequestEvent;
 
 /**
  * | ----------------------------------------------------------------------------------
- * | Water Module |
+ * | Water Module | 
  * |-----------------------------------------------------------------------------------
  * | Created On-10-02-2023
  * | Created By-Sam kerketta 
@@ -68,11 +62,19 @@ class WaterPaymentController extends Controller
     // water Constant
     private $_waterRoles;
     private $_waterMasterData;
+    private $_towards;
+    private $_accDescription;
+    private $_departmentSection;
+    private $_paymentModes;
 
     public function __construct()
     {
-        $this->_waterRoles = Config::get('waterConstaint.ROLE-LABEL');
-        $this->_waterMasterData = Config::get('waterConstaint.WATER_MASTER_DATA');
+        $this->_waterRoles          = Config::get('waterConstaint.ROLE-LABEL');
+        $this->_waterMasterData     = Config::get('waterConstaint.WATER_MASTER_DATA');
+        $this->_towards             = Config::get('waterConstaint.TOWARDS');
+        $this->_accDescription      = Config::get('waterConstaint.ACCOUNT_DESCRIPTION');
+        $this->_departmentSection   = Config::get('waterConstaint.DEPARTMENT_SECTION');
+        $this->_paymentModes        = Config::get('payment-constants.PAYMENT_OFFLINE_MODE');
     }
 
 
@@ -91,50 +93,47 @@ class WaterPaymentController extends Controller
      * | @var configMasterValues
      * | @return returnValues
         | Serial No : 00 
+        | Working
      */
     public function getWaterMasterData()
     {
         try {
             $redisConn = Redis::connection();
             $returnValues = [];
-            $mWaterParamPipelineType = new WaterParamPipelineType();
-            $mWaterConnectionTypeMstr = new WaterConnectionTypeMstr();
-            $mWaterConnectionThroughMstr = new WaterConnectionThroughMstr();
-            $mWaterPropertyTypeMstr = new WaterPropertyTypeMstr();
-            $mWaterOwnerTypeMstr = new WaterOwnerTypeMstr();
 
-            $waterParamPipelineType = json_decode(Redis::get('water-param-pipeline-type'));
-            $waterConnectionTypeMstr = json_decode(Redis::get('water-connection-type-mstr'));
+            $mWaterParamPipelineType        = new WaterParamPipelineType();
+            $mWaterConnectionTypeMstr       = new WaterConnectionTypeMstr();
+            $mWaterConnectionThroughMstr    = new WaterConnectionThroughMstr();
+            $mWaterPropertyTypeMstr         = new WaterPropertyTypeMstr();
+            $mWaterOwnerTypeMstr            = new WaterOwnerTypeMstr();
+
+            $waterParamPipelineType     = json_decode(Redis::get('water-param-pipeline-type'));
+            $waterConnectionTypeMstr    = json_decode(Redis::get('water-connection-type-mstr'));
             $waterConnectionThroughMstr = json_decode(Redis::get('water-connection-through-mstr'));
-            $waterPropertyTypeMstr = json_decode(Redis::get('water-property-type-mstr'));
-            $waterOwnerTypeMstr = json_decode(Redis::get('water-owner-type-mstr'));
+            $waterPropertyTypeMstr      = json_decode(Redis::get('water-property-type-mstr'));
+            $waterOwnerTypeMstr         = json_decode(Redis::get('water-owner-type-mstr'));
 
             # Ward Masters
             if (!$waterParamPipelineType) {
                 $waterParamPipelineType = $mWaterParamPipelineType->getWaterParamPipelineType();                // Get PipelineType By Model Function
                 $redisConn->set('water-param-pipeline-type', json_encode($waterParamPipelineType));             // Caching
             }
-
             if (!$waterConnectionTypeMstr) {
                 $waterConnectionTypeMstr = $mWaterConnectionTypeMstr->getWaterConnectionTypeMstr();             // Get PipelineType By Model Function
                 $redisConn->set('water-connection-type-mstr', json_encode($waterConnectionTypeMstr));           // Caching
             }
-
             if (!$waterConnectionThroughMstr) {
                 $waterConnectionThroughMstr = $mWaterConnectionThroughMstr->getWaterConnectionThroughMstr();    // Get PipelineType By Model Function
                 $redisConn->set('water-connection-through-mstr', json_encode($waterConnectionThroughMstr));     // Caching
             }
-
             if (!$waterPropertyTypeMstr) {
                 $waterPropertyTypeMstr = $mWaterPropertyTypeMstr->getWaterPropertyTypeMstr();                   // Get PipelineType By Model Function
                 $redisConn->set('water-property-type-mstr', json_encode($waterPropertyTypeMstr));               // Caching
             }
-
             if (!$waterOwnerTypeMstr) {
                 $waterOwnerTypeMstr = $mWaterOwnerTypeMstr->getWaterOwnerTypeMstr();                            // Get PipelineType By Model Function
                 $redisConn->set('water-owner-type-mstr', json_encode($waterOwnerTypeMstr));                     // Caching
             }
-
             $masterValues = [
                 'water_param_pipeline_type'     => $waterParamPipelineType,
                 'water_connection_type_mstr'    => $waterConnectionTypeMstr,
@@ -185,10 +184,10 @@ class WaterPaymentController extends Controller
             'consumerId' => 'required|digits_between:1,9223372036854775807'
         ]);
         try {
-            $mWaterTran = new WaterTran();
-            $mWaterConsumer = new WaterConsumer();
-            $mWaterConsumerDemand = new WaterConsumerDemand();
-            $mWaterTranDetail = new WaterTranDetail();
+            $mWaterTran             = new WaterTran();
+            $mWaterConsumer         = new WaterConsumer();
+            $mWaterConsumerDemand   = new WaterConsumerDemand();
+            $mWaterTranDetail       = new WaterTranDetail();
 
             $transactions = array();
 
@@ -202,10 +201,10 @@ class WaterPaymentController extends Controller
             if (!$applicationId)
                 throw new Exception("This Consumer has not ApplicationId!!");
 
-            # if demand transaction exist
-            $connectionTran[] = $mWaterTran->getTransNo($applicationId, null)->first();                        // Water Connection payment History
-            if (!$connectionTran)
-                throw new Exception("Water Application Tran Details not Found!!");
+            # if demand transactions exist
+            $connectionTran = $mWaterTran->getTransNo($applicationId, null)->get();                        // Water Connection payment History
+            if (!$connectionTran || is_null($connectionTran))
+                throw new Exception("Water Application Transaction Details not Found!!");
 
             $waterTrans = $mWaterTran->ConsumerTransaction($request->consumerId)->get();         // Water Consumer Payment History
             $waterTrans = collect($waterTrans)->map(function ($value, $key) use ($mWaterConsumerDemand, $mWaterTranDetail) {
@@ -257,14 +256,14 @@ class WaterPaymentController extends Controller
         ]);
 
         try {
-            $mPaymentData = new WebhookPaymentData();
+            $mPaymentData           = new WebhookPaymentData();
             $mWaterConnectionCharge = new WaterConnectionCharge();
-            $mWaterApplication = new WaterApplication();
-            $mWaterTransaction = new WaterTran();
+            $mWaterApplication      = new WaterApplication();
+            $mWaterTransaction      = new WaterTran();
 
-            $mTowards = Config::get('waterConstaint.TOWARDS');
-            $mAccDescription = Config::get('waterConstaint.ACCOUNT_DESCRIPTION');
-            $mDepartmentSection = Config::get('waterConstaint.DEPARTMENT_SECTION');
+            $mTowards           = $this->_towards;
+            $mAccDescription    = $this->_accDescription;
+            $mDepartmentSection = $this->_departmentSection;
 
             $applicationDtls = $mPaymentData->getApplicationId($req->transactionNo);
             $applicationId = json_decode($applicationDtls)->applicationId;
@@ -285,45 +284,45 @@ class WaterPaymentController extends Controller
                 ->first();
             if ($demandDetails) {
                 $fee = [
-                    "conn_fee" => $demandDetails->conn_fee,
-                    "penalty" => $demandDetails->penalty
+                    "conn_fee"  => $demandDetails->conn_fee,
+                    "penalty"   => $demandDetails->penalty
                 ];
             }
 
             $responseData = [
-                "departmentSection" => $mDepartmentSection,
-                "accountDescription" => $mAccDescription,
-                "transactionDate" => $waterTrans->tran_date,
-                "transactionNo" => $waterTrans->tran_no,
-                "transactionTime" => $transactionTime,
-                "applicationNo" => $applicationDetails->application_no,
-                "customerName" => $applicationDetails->applicant_name,
-                "customerMobile" => $applicationDetails->mobile_no,
-                "address" => $applicationDetails->address,
-                "paidFrom" => "",
-                "paidFromQtr" => "",
-                "paidUpto" => "",
-                "paidUptoQtr" => "",
-                "paymentMode" => $waterTrans->payment_mode,
-                "bankName" => $webhookDetails->payment_bank ?? null,
-                "branchName" => "",
-                "chequeNo" => "",
-                "chequeDate" => "",
-                "noOfFlats" => "",
-                "monthlyRate" => "",
-                "demandAmount" => "",  // if the trans is diff
-                "taxDetails" => "",
-                "holdingNo" => $applicationDetails->holding_no,
-                "safNo" => $applicationDetails->saf_no,
-                "connectionFee" => $fee->conn_fee ?? $webhookDetails->payment_amount,
-                "connectionPenalty" => $fee->penalty ?? "0.0",
-                "ulbId" => $webhookDetails->ulb_id,
-                "WardNo" => $applicationDetails->ward_name,
-                "towards" => $mTowards,
-                "rebate" => 0,
-                "description" => $waterTrans->tran_type,
-                "totalPaidAmount" => $webhookDetails->payment_amount,
-                "paidAmtInWords" => getIndianCurrency($webhookDetails->payment_amount),
+                "departmentSection"     => $mDepartmentSection,
+                "accountDescription"    => $mAccDescription,
+                "transactionDate"       => $waterTrans->tran_date,
+                "transactionNo"         => $waterTrans->tran_no,
+                "transactionTime"       => $transactionTime,
+                "applicationNo"         => $applicationDetails->application_no,
+                "customerName"          => $applicationDetails->applicant_name,
+                "customerMobile"        => $applicationDetails->mobile_no,
+                "address"               => $applicationDetails->address,
+                "paidFrom"              => "",
+                "paidFromQtr"           => "",
+                "paidUpto"              => "",
+                "paidUptoQtr"           => "",
+                "paymentMode"           => $waterTrans->payment_mode,
+                "bankName"              => $webhookDetails->payment_bank ?? null,
+                "branchName"            => "",
+                "chequeNo"              => "",
+                "chequeDate"            => "",
+                "noOfFlats"             => "",
+                "monthlyRate"           => "",
+                "demandAmount"          => "",                                  // if the trans is diff
+                "taxDetails"            => "",
+                "holdingNo"             => $applicationDetails->holding_no,
+                "safNo"                 => $applicationDetails->saf_no,
+                "connectionFee"         => $fee->conn_fee ?? $webhookDetails->payment_amount,
+                "connectionPenalty"     => $fee->penalty ?? "0.0",
+                "ulbId"                 => $webhookDetails->ulb_id,
+                "WardNo"                => $applicationDetails->ward_name,
+                "towards"               => $mTowards,
+                "rebate"                => 0,                                   // Static
+                "description"           => $waterTrans->tran_type,
+                "totalPaidAmount"       => $webhookDetails->payment_amount,
+                "paidAmtInWords"        => getIndianCurrency($webhookDetails->payment_amount),
             ];
             return responseMsgs(true, "Payment Receipt", remove_null($responseData), "", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
@@ -361,17 +360,18 @@ class WaterPaymentController extends Controller
         ]);
         try {
             $refTransactionNo = $req->transactionNo;
-            $mWaterConnectionCharge = new WaterConnectionCharge();
-            $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
-            $mWaterApplication = new WaterApplication();
-            $mWaterApprovalApplicationDetail = new WaterApprovalApplicationDetail();
-            $mWaterChequeDtl = new WaterChequeDtl();
-            $mWaterTran = new WaterTran();
 
-            $mTowards = Config::get('waterConstaint.TOWARDS');
-            $mAccDescription = Config::get('waterConstaint.ACCOUNT_DESCRIPTION');
-            $mDepartmentSection = Config::get('waterConstaint.DEPARTMENT_SECTION');
-            $mPaymentModes = Config::get('payment-constants.PAYMENT_OFFLINE_MODE');
+            $mWaterConnectionCharge             = new WaterConnectionCharge();
+            $mWaterPenaltyInstallment           = new WaterPenaltyInstallment();
+            $mWaterApplication                  = new WaterApplication();
+            $mWaterApprovalApplicationDetail    = new WaterApprovalApplicationDetail();
+            $mWaterChequeDtl                    = new WaterChequeDtl();
+            $mWaterTran                         = new WaterTran();
+
+            $mTowards           = $this->_towards;
+            $mAccDescription    = $this->_accDescription;
+            $mDepartmentSection = $this->_departmentSection;
+            $mPaymentModes      = $this->_paymentModes;
 
             # transaction Deatils
             $transactionDetails = $mWaterTran->getTransactionByTransactionNo($refTransactionNo)
@@ -405,39 +405,38 @@ class WaterPaymentController extends Controller
             $transactionDate = Carbon::parse($refDate)->format('Y-m-d');
 
             $returnValues = [
-                "departmentSection" => $mDepartmentSection,
-                "accountDescription" => $mAccDescription,
-                "transactionDate" => $transactionDate,
-                "transactionNo" => $refTransactionNo,
-                // "transactionTime" => $transactionTime,
-                "applicationNo" => $applicationDetails['application_no'],
-                "customerName" => $applicationDetails['applicantname'],
-                "customerMobile" => $applicationDetails['mobileno'],
-                "address" => $applicationDetails['address'],
-                "paidFrom" => $connectionCharges['charge_category'],
-                "paidFromQtr" => "",
-                "holdingNo" => $applicationDetails['holding_no'],
-                "safNo" => $applicationDetails['saf_no'],
-                "paidUpto" => "",
-                "paidUptoQtr" => "",
-                "paymentMode" => $transactionDetails['payment_mode'],
-                "bankName" => $chequeDetails[''] ?? null,                                   // in case of cheque,dd,nfts
-                "branchName" => $chequeDetails[''] ?? null,                                 // in case of chque,dd,nfts
-                "chequeNo" => $chequeDetails['']  ?? null,                                  // in case of chque,dd,nfts
-                "chequeDate" => $chequeDetails[''] ?? null,                                 // in case of chque,dd,nfts
-                "monthlyRate" => "",
-                "demandAmount" => $transactionDetails->amount,
-                "taxDetails" => "",
-                "ulbId" => $transactionDetails['ulb_id'],
-                "ulbName" => $applicationDetails['ulb_name'],
-                "WardNo" => $applicationDetails['ward_name'],
-                "towards" => $mTowards,
-                "description" => $mAccDescription,
-                "rebate" => 0,
-                "connectionFee" => $connectionCharges['conn_fee'],
-                "totalPaidAmount" => $transactionDetails->amount,
-                "penaltyAmount" => $totalPenaltyAmount,
-                "paidAmtInWords" => getIndianCurrency($transactionDetails->amount),
+                "departmentSection"     => $mDepartmentSection,
+                "accountDescription"    => $mAccDescription,
+                "transactionDate"       => $transactionDate,
+                "transactionNo"         => $refTransactionNo,
+                "applicationNo"         => $applicationDetails['application_no'],
+                "customerName"          => $applicationDetails['applicantname'],
+                "customerMobile"        => $applicationDetails['mobileno'],
+                "address"               => $applicationDetails['address'],
+                "paidFrom"              => $connectionCharges['charge_category'],
+                "paidFromQtr"           => "",
+                "holdingNo"             => $applicationDetails['holding_no'],
+                "safNo"                 => $applicationDetails['saf_no'],
+                "paidUpto"              => "",
+                "paidUptoQtr"           => "",
+                "paymentMode"           => $transactionDetails['payment_mode'],
+                "bankName"              => $chequeDetails[''] ?? null,                                  // in case of cheque,dd,nfts
+                "branchName"            => $chequeDetails[''] ?? null,                                  // in case of chque,dd,nfts
+                "chequeNo"              => $chequeDetails[''] ?? null,                                  // in case of chque,dd,nfts
+                "chequeDate"            => $chequeDetails[''] ?? null,                                  // in case of chque,dd,nfts
+                "monthlyRate"           => "",
+                "demandAmount"          => $transactionDetails->amount,
+                "taxDetails"            => "",
+                "ulbId"                 => $transactionDetails['ulb_id'],
+                "ulbName"               => $applicationDetails['ulb_name'],
+                "WardNo"                => $applicationDetails['ward_name'],
+                "towards"               => $mTowards,
+                "description"           => $mAccDescription,
+                "rebate"                => 0,                                                           // Static
+                "connectionFee"         => $connectionCharges['conn_fee'],
+                "totalPaidAmount"       => $transactionDetails->amount,
+                "penaltyAmount"         => $totalPenaltyAmount,
+                "paidAmtInWords"        => getIndianCurrency($transactionDetails->amount),
             ];
             return responseMsgs(true, "Payment Receipt", remove_null($returnValues), "", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
@@ -461,7 +460,6 @@ class WaterPaymentController extends Controller
      * | @var installment
      * | @var waterFeeId
      * | @var newChargeAmount
-     * | @var 
      * | @return
         | Serial No : 04
         | Working
@@ -470,9 +468,8 @@ class WaterPaymentController extends Controller
     public function saveSitedetails(siteAdjustment $request)
     {
         try {
-            // return "working";
-            $mWaterSiteInspection = new WaterSiteInspection();
-            $mWaterNewConnection = new WaterNewConnection();
+            $mWaterSiteInspection   = new WaterSiteInspection();
+            $mWaterNewConnection    = new WaterNewConnection();
             $mWaterConnectionCharge = new WaterConnectionCharge();
             $mWaterSiteInspectionsScheduling = new WaterSiteInspectionsScheduling();
 
@@ -527,6 +524,7 @@ class WaterPaymentController extends Controller
      * | @var roleId
         | Serial No : 04.01
         | Working
+        | Common function
      */
     public function CheckInspectionCondition($request, $waterDetails)
     {
@@ -537,8 +535,8 @@ class WaterPaymentController extends Controller
         $userId = authUser()->id;
         $workflowId = $waterDetails->workflow_id;
         $getRoleReq = new Request([                                                 # make request to get role id of the user
-            'userId' => $userId,
-            'workflowId' => $workflowId
+            'userId'        => $userId,
+            'workflowId'    => $workflowId
         ]);
         $readRoleDtls = $mWfRoleUsermap->getRoleByUserWfId($getRoleReq);
         $roleId = $readRoleDtls->wf_role_id;
@@ -562,20 +560,24 @@ class WaterPaymentController extends Controller
      * | Updating the Connection Charges And the Related Deatils
      * | @param request
      * | @param newConnectionCharges
-     * | @param installment
+     * | @param waterApplicationDetails
+     * | @param applicationCharge
         | Serial No : 04.02
         | Working
+        | Common function
      */
     public function adjustmentInConnection($request, $newConnectionCharges, $waterApplicationDetails, $applicationCharge)
     {
-        $applicationId = $request->applicationId;
-        $newCharge = $newConnectionCharges['conn_fee_charge']['amount'];
-        $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
-        $mWaterConnectionCharge = new WaterConnectionCharge();
-        $mWaterApplication = new WaterApplication();
-        $chargeCatagory = Config::get('waterConstaint.CHARGE_CATAGORY');
+        $applicationId      = $request->applicationId;
+        $refPaymentStatus   = 0;
+        $newCharge          = $newConnectionCharges['conn_fee_charge']['amount'];
+
+        $mWaterPenaltyInstallment       = new WaterPenaltyInstallment();
+        $mWaterConnectionCharge         = new WaterConnectionCharge();
+        $mWaterApplication              = new WaterApplication();
+        $chargeCatagory                 = Config::get('waterConstaint.CHARGE_CATAGORY');
         $refInstallment['penalty_head'] = Config::get('waterConstaint.PENALTY_HEAD.1');
-        $refPaymentStatus = 0;
+
 
         # connection charges
         $request->merge([
@@ -584,15 +586,16 @@ class WaterPaymentController extends Controller
             'ward_id'           => $waterApplicationDetails['ward_id']
         ]);
 
-        # in case of connection charge is not 0
         switch ($newCharge) {
+                # in case of connection charge is not 0
             case ($newCharge != 0):
-                # cherge changes 
+                # cherge in changes 
                 if ($newConnectionCharges['conn_fee_charge']['conn_fee'] > $applicationCharge['conn_fee']) {
                     $adjustedConnFee = $newConnectionCharges['conn_fee_charge']['conn_fee'] - $applicationCharge['conn_fee'];
                     $newConnectionCharges['conn_fee_charge']['conn_fee'] = $adjustedConnFee;
                     $payPenalty = false;
-                    # get Water Application Penalty 
+
+                    # get Water Application Penalty  
                     if ($newConnectionCharges['conn_fee_charge']['penalty'] > $applicationCharge['penalty']) {
                         $unpaidPenalty = $this->checkOldPenalty($applicationId, $chargeCatagory);
                         $calculetedPenalty = $newConnectionCharges['conn_fee_charge']['penalty'] - $applicationCharge['penalty'];
@@ -601,7 +604,7 @@ class WaterPaymentController extends Controller
 
                         $mWaterPenaltyInstallment->deactivateOldPenalty($request, $applicationId, $chargeCatagory);
                         $payPenalty = true;
-                        # if write here penalty  
+                        # --- if write here penalty  
                     }
                     # for the Case of no extra penalty 
                     $unpaidPenalty = $this->checkOldPenalty($applicationId, $chargeCatagory);
@@ -612,7 +615,7 @@ class WaterPaymentController extends Controller
 
                         $mWaterPenaltyInstallment->deactivateOldPenalty($request, $applicationId, $chargeCatagory);
                         $payPenalty = true;
-                        # if write here penalty  
+                        # --- if write here penalty  
                     }
                     # if there is no old penalty and all penalty is paid
                     if ($newConnectionCharges['conn_fee_charge']['penalty'] == 0) {
@@ -626,7 +629,7 @@ class WaterPaymentController extends Controller
                         $mWaterPenaltyInstallment->saveWaterPenelty($applicationId, $refInstallment, $chargeCatagory['SITE_INSPECTON'], $connectionId);
                     }
                     $mWaterApplication->updatePaymentStatus($applicationId, false);
-                    $refPaymentStatus = 0;
+                    $refPaymentStatus = 0;                                              // Static
                     break;
                 }
                 # in case of no change in connection charges but the old penalty is unpaid
@@ -637,21 +640,21 @@ class WaterPaymentController extends Controller
                     $newConnectionCharges['conn_fee_charge']['penalty'] = $unpaidPenalty;
 
                     $mWaterPenaltyInstallment->deactivateOldPenalty($request, $applicationId, $chargeCatagory);
-                    # if write here penalty  
+                    # --- if write here penalty  
 
                     # Static Connection fee
                     $newConnectionCharges['conn_fee_charge']['conn_fee'] = 0;
                     $newConnectionCharges['conn_fee_charge']['amount'] = $unpaidPenalty;
                     $connectionId = $mWaterConnectionCharge->saveWaterCharge($applicationId, $request, $newConnectionCharges);
                     $mWaterPenaltyInstallment->saveWaterPenelty($applicationId, $refInstallment, $chargeCatagory['SITE_INSPECTON'], $connectionId);
-                    $refPaymentStatus = 0;
+                    $refPaymentStatus = 0;                                              // Static
                 }
-                $refPaymentStatus = 1;
+                $refPaymentStatus = 1;                                                  // Static
                 break;
             case ($newCharge == 0):
                 $mWaterPenaltyInstallment->deactivateOldPenalty($request, $applicationId, $chargeCatagory);
                 $mWaterApplication->updatePaymentStatus($applicationId, true);
-                $refPaymentStatus = 1;
+                $refPaymentStatus = 1;                                                  // Static
                 break;
         }
         return $refPaymentStatus;
@@ -667,6 +670,7 @@ class WaterPaymentController extends Controller
      * | @var unpaidPenalty
         | Serial No : 04.02.01
         | Working
+        | Common function
      */
     public function checkOldPenalty($applicationId, $chargeCatagory)
     {
@@ -699,16 +703,17 @@ class WaterPaymentController extends Controller
     {
         try {
             $user = authUser();
-            $midGeneration = new IdGeneration;
-            $mWaterAdjustment = new WaterAdjustment();
-            $mwaterTran = new waterTran();
+            $midGeneration      = new IdGeneration;
+            $mWaterAdjustment   = new WaterAdjustment();
+            $mwaterTran         = new waterTran();
             $mWaterConsumerCollection = new WaterConsumerCollection();
-            $todayDate = Carbon::now();
-            $offlinePaymentModes = Config::get('payment-constants.VERIFICATION_PAYMENT_MODE');
-            $adjustmentFor = Config::get("waterConstaint.ADVANCE_FOR");
 
-            $startingDate = Carbon::createFromFormat('Y-m-d',  $request->demandFrom)->startOfMonth();
-            $endDate = Carbon::createFromFormat('Y-m-d',  $request->demandUpto)->endOfMonth();
+            $offlinePaymentModes    = Config::get('payment-constants.VERIFICATION_PAYMENT_MODE');
+            $adjustmentFor          = Config::get("waterConstaint.ADVANCE_FOR");
+
+            $todayDate      = Carbon::now();
+            $startingDate   = Carbon::createFromFormat('Y-m-d',  $request->demandFrom)->startOfMonth();
+            $endDate        = Carbon::createFromFormat('Y-m-d',  $request->demandUpto)->endOfMonth();
             $startingDate = $startingDate->toDateString();
             $endDate = $endDate->toDateString();
 
@@ -721,10 +726,10 @@ class WaterPaymentController extends Controller
                 'tranNo'            => $tranNo,
                 'id'                => $request->consumerId,
                 'ulbId'             => $user->ulb_id,
-                'chargeCategory'    => "Demand Collection",
+                'chargeCategory'    => "Demand Collection",                                 // Static
                 'leftDemandAmount'  => $finalCharges['leftDemandAmount'],
                 'adjustedAmount'    => $finalCharges['adjustedAmount'],
-                'isJsk'             => true
+                'isJsk'             => true                                                 // Static
             ]);
 
             DB::beginTransaction();
@@ -738,7 +743,7 @@ class WaterPaymentController extends Controller
                     'chequeDate'    => $request['chequeDate'],
                     'tranId'        => $waterTrans['id'],
                     'applicationNo' => collect($finalCharges['consumer'])['consumer_no'],
-                    'workflowId'    => 0,
+                    'workflowId'    => 0,                                                   // Static
                     'ward_no'       => collect($finalCharges['consumer'])['ward_mstr_id']
                 ]);
                 $this->postOtherPaymentModes($request);
@@ -768,16 +773,20 @@ class WaterPaymentController extends Controller
 
     /**
      * | Check the Condition before payment
+     * | @param request
+     * | @param startingDate
+     * | @param endDate
         | Serial No : 05:01
         | Working
         | Common function
      */
     public function preOfflinePaymentParams($request, $startingDate, $endDate)
     {
-        $mWaterConsumerDemand = new WaterConsumerDemand();
-        $mWaterConsumer = new WaterConsumer();
+        $mWaterConsumerDemand   = new WaterConsumerDemand();
+        $mWaterConsumer         = new WaterConsumer();
         $consumerId = $request->consumerId;
-        $refAmount = $request->amount;
+        $refAmount  = $request->amount;
+
         if ($startingDate > $endDate) {
             throw new Exception("demandFrom Date should not be grater than demandUpto date!");
         }
@@ -785,6 +794,8 @@ class WaterPaymentController extends Controller
         if (!$refConsumer) {
             throw new Exception("Consumer Not Found!");
         }
+
+        # get charges according to respective from and upto date 
         $allCharges = $mWaterConsumerDemand->getFirstConsumerDemand($consumerId)
             ->where('demand_from', '>=', $startingDate)
             ->where('demand_upto', '<=', $endDate)
@@ -793,13 +804,15 @@ class WaterPaymentController extends Controller
         if (!$checkCharges->id || is_null($checkCharges)) {
             throw new Exception("Charges for respective date doesn't exist!......");
         }
-        # Call Part
+
+        # calculation Part
         $refadvanceAmount = $this->checkAdvance($request);
         $totalPaymentAmount = (collect($allCharges)->sum('balance_amount')) - $refadvanceAmount['advanceAmount'];
         if ($totalPaymentAmount != $refAmount) {
             throw new Exception("amount Not Matched!");
         }
         $totalPenalty = collect($allCharges)->sum('penalty');
+
         # checking the advance amount 
         $allunpaidCharges = $mWaterConsumerDemand->getFirstConsumerDemand($consumerId)
             ->get();
@@ -816,20 +829,26 @@ class WaterPaymentController extends Controller
 
     /**
      * | Save the consumer demand payment status
+     * | @param request
+     * | @param offlinePaymentModes
+     * | @param charges
+     * | @param waterTrans
         | Serial No : 05:02
         | Working
+        | Common function
      */
     public function saveConsumerPaymentStatus($request, $offlinePaymentModes, $charges, $waterTrans)
     {
-        $waterTranDetail = new WaterTranDetail();
-        $mWaterTran = new WaterTran();
+        $waterTranDetail    = new WaterTranDetail();
+        $mWaterTran         = new WaterTran();
+
         if (in_array($request['paymentMode'], $offlinePaymentModes)) {
-            $charges->paid_status = 2;
+            $charges->paid_status = 2;                                       // Update Demand Paid Status // Static
             $mWaterTran->saveVerifyStatus($waterTrans['id']);
         } else {
-            $charges->paid_status = 1;                                      // <-------- Update Demand Paid Status 
+            $charges->paid_status = 1;                                      // Update Demand Paid Status // Static
         }
-        $charges->save();
+        $charges->save();                                                   // Save Demand
         $waterTranDetail->saveDefaultTrans(
             $charges->amount,
             $request->consumerId,
@@ -841,7 +860,8 @@ class WaterPaymentController extends Controller
 
     /**
      * | Save the penalty in the fine rebate table 
-     * | @param 
+     * | @param waterTrans
+     * | @param penaltyAmount
         | Not tested
         | Serial No : 05:03
         | Common function
@@ -854,7 +874,7 @@ class WaterPaymentController extends Controller
         $metaRequest = new Request([
             'headName'      => $refHeadNames['2'],
             'amount'        => $penaltyAmount,
-            'valueAddMinus' => "+",
+            'valueAddMinus' => "+",                                                 // Static
             'applicationId' => null
         ]);
         $mWaterTranFineRebate->saveRebateDetails($metaRequest, $transactionId);
@@ -878,25 +898,25 @@ class WaterPaymentController extends Controller
             'demandUpto' => 'required|date|date_format:Y-m-d',
         ]);
         try {
-            $startingDate = Carbon::createFromFormat('Y-m-d',  $request->demandFrom)->startOfMonth();
-            $startingDate = $startingDate->toDateString();
-            $endDate = Carbon::createFromFormat('Y-m-d',  $request->demandUpto)->endOfMonth();
-            $endDate = $endDate->toDateString();
+            $startingDate   = Carbon::createFromFormat('Y-m-d',  $request->demandFrom)->startOfMonth();
+            $endDate        = Carbon::createFromFormat('Y-m-d',  $request->demandUpto)->endOfMonth();
+            $startingDate   = $startingDate->toDateString();
+            $endDate        = $endDate->toDateString();
 
             $collectiveCharges = $this->checkCallParams($request, $startingDate, $endDate);
 
             # when advance is collected
-            // update the penalty used status after its use
+            # update the penalty used status after its use
             $refadvanceAmount = $this->checkAdvance($request);
             $advanceAmount = $refadvanceAmount['advanceAmount'];
             $totalPaymentAmount  = collect($collectiveCharges)->pluck('balance_amount')->sum();
             $actualCallAmount = $totalPaymentAmount - $advanceAmount;
             if ($actualCallAmount < 0) {
-                $totalPayAmount = 0;
+                $totalPayAmount = 0;                                                                // Static
                 $renmaningAmount = $actualCallAmount * -1;
             } else {
                 $totalPayAmount = $actualCallAmount;
-                $renmaningAmount = 0;
+                $renmaningAmount = 0;                                                               // Static
             }
 
             $returnData = [
@@ -904,7 +924,7 @@ class WaterPaymentController extends Controller
                 'totalPenalty'          => collect($collectiveCharges)->pluck('penalty')->sum(),
                 'totalDemand'           => collect($collectiveCharges)->pluck('amount')->sum(),
                 'totalAdvance'          => $advanceAmount,
-                'totalRebate'           => 0,
+                'totalRebate'           => 0,                                                       // Static
                 'remaningAdvanceAmount' => $renmaningAmount
             ];
             return responseMsgs(true, "Amount Details!", remove_null($returnData), "", "01", ".ms", "POST", $request->deviceId);
@@ -923,9 +943,11 @@ class WaterPaymentController extends Controller
      * | @return allCharges
         | Serial No : 06.01
         | Working  
+        | Common function
      */
     public function checkCallParams($request, $startingDate, $endDate)
     {
+        $mWaterConsumerDemand = new WaterConsumerDemand();
         if ($startingDate > $endDate) {
             throw new Exception("demandFrom Date should not be grater than demandUpto date!");
         }
@@ -933,14 +955,14 @@ class WaterPaymentController extends Controller
         if (!$consumerDetails) {
             throw new Exception("Consumer dont exist!");
         }
-        $mWaterConsumerDemand = new WaterConsumerDemand();
+
+        # get demand by (upto and from) date 
         $allCharges = $mWaterConsumerDemand->getFirstConsumerDemand($request->consumerId)
             ->where('demand_from', '>=', $startingDate)
             ->where('demand_upto', '<=', $endDate)
             ->get();
-
         $checkDemand = collect($allCharges)->first();
-        if (!$checkDemand) {
+        if (!$checkDemand || is_null($checkDemand)) {
             throw new Exception("Demand according to date not found!");
         }
         return $allCharges;
@@ -948,17 +970,20 @@ class WaterPaymentController extends Controller
 
 
     /**
-     * | Check the Advance and the exist
-        | Serial No :
+     * | Check the Advance and its existence
+     * | Advance and Adjustment calcullation 
+     * | @param request
+        | Serial No : 06:02 / 05:01:01
         | Not Working
+        | Common function
      */
     public function checkAdvance($request)
     {
-        $mWaterAdvance = new WaterAdvance();
-        $mWaterAdjustment = new WaterAdjustment();
-        $consumerId = $request->consumerId;
-        $refAdvanceFor = Config::get("waterConstaint.ADVANCE_FOR");
-        $advanceFor = $refAdvanceFor['1'];
+        $mWaterAdvance      = new WaterAdvance();
+        $mWaterAdjustment   = new WaterAdjustment();
+        $refAdvanceFor      = Config::get("waterConstaint.ADVANCE_FOR");
+        $consumerId         = $request->consumerId;
+        $advanceFor         = $refAdvanceFor['1'];
 
         $refAdvance = $mWaterAdvance->getAdvanceByRespectiveId($consumerId, $advanceFor)->get();
         $refAdjustment = $mWaterAdjustment->getAdjustedDetails($consumerId)->get();
@@ -967,7 +992,7 @@ class WaterPaymentController extends Controller
         $totalAdjustment = (collect($refAdjustment)->pluck("amount")->sum()) ?? 0;
         $advanceAmount = $totalAdvance - $totalAdjustment;
         if ($advanceAmount <= 0) {
-            $advanceAmount = 0;
+            $advanceAmount = 0;                                                                     // Static
         }
 
         return $returnData = [
@@ -1001,14 +1026,16 @@ class WaterPaymentController extends Controller
     {
         try {
             # Variable Assignments
-            $userId = auth()->user()->id;
-            $userType = authUser()->user_type;
-            $todayDate = Carbon::now();
-            $waterTran = new WaterTran();
-            $idGeneration = new IdGeneration;
-            $mWaterApplication = new WaterApplication();
+            $userId     = auth()->user()->id;
+            $userType   = authUser()->user_type;
+            $todayDate  = Carbon::now();
+
+            $waterTran              = new WaterTran();
+            $idGeneration           = new IdGeneration;
+            $mWaterApplication      = new WaterApplication();
             $mWaterConnectionCharge = new WaterConnectionCharge();
-            $mWaterSiteInspection = new WaterSiteInspection();
+            $mWaterSiteInspection   = new WaterSiteInspection();
+
             $offlinePaymentModes = Config::get('payment-constants.VERIFICATION_PAYMENT_MODE');
             $paramChargeCatagory = Config::get('waterConstaint.CHARGE_CATAGORY');                                                      # Authenticated user or Ghost User
             $refWaterApplication = $mWaterApplication->getApplicationById($req->applicationId)
@@ -1033,7 +1060,7 @@ class WaterPaymentController extends Controller
                 'tranNo'    => $tranNo,
                 'id'        => $req->applicationId,
                 'ulbId'     => authUser()->ulb_id,
-                'isJsk'     => true
+                'isJsk'     => true                                                                 // Static
             ]);
 
             DB::beginTransaction();
@@ -1080,16 +1107,20 @@ class WaterPaymentController extends Controller
     /**
      * | Save Rebate details for water connection
      * | only in terms of regulisation
+     * | @param req
+     * | @param charges
+     * | @param waterTrans
         | Serial No : 07.05
         | Not Tested
         | Check the code 
+        | Common function
      */
     public function saveRebateForTran($req, $charges, $waterTrans)
     {
-        $transactionId = $waterTrans['id'];
-        $mWaterTranFineRebate = new WaterTranFineRebate();
-        $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
-        $refWaterHeadName = Config::get("waterConstaint.WATER_HEAD_NAME");
+        $transactionId              = $waterTrans['id'];
+        $mWaterTranFineRebate       = new WaterTranFineRebate();
+        $mWaterPenaltyInstallment   = new WaterPenaltyInstallment();
+        $refWaterHeadName           = Config::get("waterConstaint.WATER_HEAD_NAME");
 
         $connectionChargeId = collect($charges)->pluck('id')->first();
         $penaltyDetails = $mWaterPenaltyInstallment->getPenaltyByChargeId($connectionChargeId)->get();
@@ -1100,7 +1131,7 @@ class WaterPaymentController extends Controller
                 "headName"      => $value['penalty_head'],
                 "amount"        => $value['balance_amount'],
                 "applicationId" => $req->applicationId,
-                "valueAddMinus" => "+"
+                "valueAddMinus" => "+"                                                          // Static
             ]);
             $mWaterTranFineRebate->saveRebateDetails($metaRequest, $transactionId);
         });
@@ -1110,37 +1141,40 @@ class WaterPaymentController extends Controller
             "headName"      => $refWaterHeadName['1'],
             "amount"        => $actualPenaltyAmountRebate,
             "applicationId" => $req->applicationId,
-            "valueAddMinus" => "-"
+            "valueAddMinus" => "-"                                                              // Static
         ]);
         $mWaterTranFineRebate->saveRebateDetails($metaRequest, $transactionId);
     }
 
 
-
-
     /**
      * | Save the payment status for respective payment
      * | @param req
+     * | @param offlinePaymentModes
+     * | @param charges
+     * | @param refWaterApplication
+     * | @param waterTrans
         | Serial No : 07.04
         | Working
+        | Common function
      */
     public function savePaymentStatus($req, $offlinePaymentModes, $charges, $refWaterApplication, $waterTrans)
     {
         $mWaterApplication = new WaterApplication();
         $waterTranDetail = new WaterTranDetail();
         $mWaterTran = new WaterTran();
+
         if (in_array($req['paymentMode'], $offlinePaymentModes)) {
-            $charges->paid_status = 2;
+            $charges->paid_status = 2;                                      // Static
             $mWaterApplication->updatePendingStatus($req['id']);
             $mWaterTran->saveVerifyStatus($waterTrans['id']);
         } else {
-            $charges->paid_status = 1;                                      // <-------- Update Demand Paid Status 
-
-            if ($refWaterApplication['payment_status'] == 0) {              // <----------- Update Water Application Payment Status
+            $charges->paid_status = 1;                                      // Update Demand Paid Status // Static
+            if ($refWaterApplication['payment_status'] == 0) {              // Update Water Application Payment Status
                 $mWaterApplication->updateOnlyPaymentstatus($req['id']);
             }
         }
-        $mWaterApplication->sendApplicationToBo($req['id']);                // <---------- Save current role as Bo
+        $mWaterApplication->sendApplicationToBo($req['id']);                // Save current role as Bo
         $charges->save();
         # Save the trans details 
         $waterTranDetail->saveDefaultTrans(
@@ -1168,13 +1202,15 @@ class WaterPaymentController extends Controller
      * | @var actualPenaltyAmount
      * | @var chargeAmount
         | Serial No : 07.01
+        | Common function
+        | Not tested
      */
     public function verifyPaymentRules($req, $refApplication)
     {
-        $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
-        $mWaterConnectionCharge = new WaterConnectionCharge();
-        $paramChargeCatagory = Config::get('waterConstaint.CHARGE_CATAGORY');
-        $connectionTypeIdConfig = Config::get('waterConstaint.CONNECTION_TYPE');
+        $mWaterPenaltyInstallment   = new WaterPenaltyInstallment();
+        $mWaterConnectionCharge     = new WaterConnectionCharge();
+        $paramChargeCatagory        = Config::get('waterConstaint.CHARGE_CATAGORY');
+        $connectionTypeIdConfig     = Config::get('waterConstaint.CONNECTION_TYPE');
 
         switch ($req) {
                 # In Case of Residential payment Offline
@@ -1210,7 +1246,7 @@ class WaterPaymentController extends Controller
                             }
                         }
                         break;
-                    case ($req->isInstallment == "no"): # check <-------------- calculation
+                    case ($req->isInstallment == "no"): # check <-------------- calculation 
                         $actualCharge = $mWaterConnectionCharge->getWaterchargesById($req->applicationId)
                             ->where('charge_category', $req->chargeCategory)
                             ->firstOrFail();
@@ -1237,7 +1273,6 @@ class WaterPaymentController extends Controller
                         if ($actualCharge['conn_fee'] != $chargeAmount) {
                             throw new Exception("Connection fee not matched!");
                         }
-
                         # save penalty and rebate details 
                         # write code to track the rebate and the penalty
                         break;
@@ -1271,6 +1306,7 @@ class WaterPaymentController extends Controller
                 $actualCharge = $mWaterConnectionCharge->getWaterchargesById($req->applicationId)
                     ->where('charge_category', $paramChargeCatagory['SITE_INSPECTON'])
                     ->where('paid_status', 0)
+                    ->orderByDesc('id')
                     ->firstOrFail();
                 if ($actualCharge['amount'] != $req->amount) {
                     throw new Exception("Amount Not Matched!");
@@ -1288,13 +1324,14 @@ class WaterPaymentController extends Controller
      * | @param req
         | Serial No : 07.02
         | Working
+        | Common function
      */
     public function postOtherPaymentModes($req)
     {
-        $cash = Config::get('payment-constants.PAYMENT_MODE.3');
-        $moduleId = Config::get('module-constants.WATER_MODULE_ID');
-        $mTempTransaction = new TempTransaction();
-        $mPropChequeDtl = new WaterChequeDtl();
+        $cash               = Config::get('payment-constants.PAYMENT_MODE.3');
+        $moduleId           = Config::get('module-constants.WATER_MODULE_ID');
+        $mTempTransaction   = new TempTransaction();
+        $mPropChequeDtl     = new WaterChequeDtl();
 
         if ($req['paymentMode'] != $cash) {
             if ($req->chargeCategory == "Demand Collection") {
@@ -1345,6 +1382,8 @@ class WaterPaymentController extends Controller
      * | @param req
      * | @var mWaterPenaltyInstallment
         | Serial No : 07.03
+        | Common function
+        | Not tested
      */
     public function updatePenaltyPaymentStatus($req)
     {
@@ -1357,7 +1396,7 @@ class WaterPaymentController extends Controller
             case (is_null($req->penaltyIds) || empty($req->penaltyIds)):
                 $mWaterPenaltyInstallment->getPenaltyByApplicationId($req->applicationId)
                     ->update([
-                        'paid_status' => 1,
+                        'paid_status' => 1,                                                 // Static
                     ]);
                 break;
         }
@@ -1367,8 +1406,6 @@ class WaterPaymentController extends Controller
     /**
      * | Get the payment history for the Application
      * | @param request
-     * | @var 
-     * | @return 
         | Serial No : 08
         | Working
      */
@@ -1378,10 +1415,10 @@ class WaterPaymentController extends Controller
             'id' => 'required|digits_between:1,9223372036854775807'
         ]);
         try {
-            $mWaterTran = new WaterTran();
-            $mWaterApplication = new WaterApplication();
-            $mWaterConnectionCharge = new WaterConnectionCharge();
-            $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
+            $mWaterTran                 = new WaterTran();
+            $mWaterApplication          = new WaterApplication();
+            $mWaterConnectionCharge     = new WaterConnectionCharge();
+            $mWaterPenaltyInstallment   = new WaterPenaltyInstallment();
 
             $transactions = array();
             $applicationId = $request->id;
@@ -1453,10 +1490,8 @@ class WaterPaymentController extends Controller
     /**
      * | Generate Demand Payment receipt
      * | @param req
-     * | @var 
-     * | @return 
         | Serial No : 09
-        | Not Tested
+        | Working
      */
     public function generateDemandPaymentReceipt(Request $req)
     {
@@ -1465,16 +1500,16 @@ class WaterPaymentController extends Controller
         ]);
         try {
             $refTransactionNo = $req->transactionNo;
-            $mWaterConsumerDemand = new WaterConsumerDemand();
-            $mWaterConsumer = new WaterConsumer();
-            $mWaterTranDetail = new WaterTranDetail();
-            $mWaterChequeDtl = new WaterChequeDtl();
-            $mWaterTran = new WaterTran();
+            $mWaterConsumerDemand   = new WaterConsumerDemand();
+            $mWaterConsumer         = new WaterConsumer();
+            $mWaterTranDetail       = new WaterTranDetail();
+            $mWaterChequeDtl        = new WaterChequeDtl();
+            $mWaterTran             = new WaterTran();
 
-            $mTowards = Config::get('waterConstaint.TOWARDS');
-            $mAccDescription = Config::get('waterConstaint.ACCOUNT_DESCRIPTION');
-            $mDepartmentSection = Config::get('waterConstaint.DEPARTMENT_SECTION');
-            $mPaymentModes = Config::get('payment-constants.PAYMENT_OFFLINE_MODE');
+            $mTowards           = $this->_towards;
+            $mAccDescription    = $this->_accDescription;
+            $mDepartmentSection = $this->_departmentSection;
+            $mPaymentModes      = $this->_paymentModes;
 
             # transaction Deatils
             $transactionDetails = $mWaterTran->getTransactionByTransactionNo($refTransactionNo)
@@ -1504,47 +1539,47 @@ class WaterPaymentController extends Controller
 
             # water consumer consumed
             $consumerTaxes = $mWaterConsumerDemand->getConsumerTax($demandIds);
-            $initialReading = $consumerTaxes->wherein("connection_type", ["Meter", "Metered"])
+            $initialReading = $consumerTaxes->wherein("connection_type", ["Meter", "Metered"])  // Static
                 ->min("initial_reading");
-            $finalReading = $consumerTaxes->wherein("connection_type", ["Meter", "Metered"])
+            $finalReading = $consumerTaxes->wherein("connection_type", ["Meter", "Metered"])    // Static
                 ->max("final_reading");
-            $fixedFrom = $consumerTaxes->where("connection_type", "Fixed")
+            $fixedFrom = $consumerTaxes->where("connection_type", "Fixed")                      // Static
                 ->min("demand_from");
-            $fixedUpto = $consumerTaxes->where("connection_type", "Fixed")
+            $fixedUpto = $consumerTaxes->where("connection_type", "Fixed")                      // Static
                 ->max("demand_upto");
 
             $returnValues = [
-                "departmentSection" => $mDepartmentSection,
-                "accountDescription" => $mAccDescription,
-                "transactionDate" => $transactionDetails['tran_date'],
-                "transactionNo" => $refTransactionNo,
-                "consumerNo" => $consumerDetails['consumer_no'],
-                "customerName" => $consumerDetails['applicant_name'],
-                "customerMobile" => $consumerDetails['mobile_no'],
-                "address" => $consumerDetails['address'],
-                "paidFrom" => $startingDate->format('Y-m-d'),
-                "paidUpto" => $endingDate->format('Y-m-d'),
-                "holdingNo" => $consumerDetails['holding_no'],
-                "safNo" => $consumerDetails['saf_no'],
-                "paymentMode" => $transactionDetails['payment_mode'],
-                "bankName" => $chequeDetails['bank_name'] ?? null,                                      // in case of cheque,dd,nfts
-                "branchName" => $chequeDetails['branch_name'] ?? null,                                  // in case of chque,dd,nfts
-                "chequeNo" => $chequeDetails['cheque_no']  ?? null,                                     // in case of chque,dd,nfts
-                "chequeDate" => $chequeDetails['cheque_date'] ?? null,                                  // in case of chque,dd,nfts
-                "penaltyAmount" => $penaltyAmount,
-                "demandAmount" => $transactionDetails->amount,
-                "ulbId" => $consumerDetails['ulb_id'],
-                "ulbName" => $consumerDetails['ulb_name'],
-                "WardNo" => $consumerDetails['ward_name'],
-                "towards" => $mTowards,
-                "description" => $mAccDescription,
-                "totalPaidAmount" => $transactionDetails->amount,
-                "dueAmount" => $transactionDetails->due_amount,
-                "rebate" => 0,
-                "waterConsumed" => (($finalReading ?? 0.00) - ($initialReading ?? 0.00)),
-                "fixedPaidFrom" => (Carbon::createFromFormat('Y-m-d',  $fixedFrom)->startOfMonth())->format('Y-m-d'),
-                "fixedPaidUpto" => (Carbon::createFromFormat('Y-m-d',  $fixedUpto)->startOfMonth())->format('Y-m-d'),
-                "paidAmtInWords" => getIndianCurrency($transactionDetails->amount),
+                "departmentSection"     => $mDepartmentSection,
+                "accountDescription"    => $mAccDescription,
+                "transactionDate"       => $transactionDetails['tran_date'],
+                "transactionNo"         => $refTransactionNo,
+                "consumerNo"            => $consumerDetails['consumer_no'],
+                "customerName"          => $consumerDetails['applicant_name'],
+                "customerMobile"        => $consumerDetails['mobile_no'],
+                "address"               => $consumerDetails['address'],
+                "paidFrom"              => $startingDate->format('Y-m-d'),
+                "paidUpto"              => $endingDate->format('Y-m-d'),
+                "holdingNo"             => $consumerDetails['holding_no'],
+                "safNo"                 => $consumerDetails['saf_no'],
+                "paymentMode"           => $transactionDetails['payment_mode'],
+                "bankName"              => $chequeDetails['bank_name'] ?? null,                                      // in case of cheque,dd,nfts
+                "branchName"            => $chequeDetails['branch_name'] ?? null,                                  // in case of chque,dd,nfts
+                "chequeNo"              => $chequeDetails['cheque_no']  ?? null,                                     // in case of chque,dd,nfts
+                "chequeDate"            => $chequeDetails['cheque_date'] ?? null,                                  // in case of chque,dd,nfts
+                "penaltyAmount"         => $penaltyAmount,
+                "demandAmount"          => $transactionDetails->amount,
+                "ulbId"                 => $consumerDetails['ulb_id'],
+                "ulbName"               => $consumerDetails['ulb_name'],
+                "WardNo"                => $consumerDetails['ward_name'],
+                "towards"               => $mTowards,
+                "description"           => $mAccDescription,
+                "totalPaidAmount"       => $transactionDetails->amount,
+                "dueAmount"             => $transactionDetails->due_amount,
+                "rebate"                => 0,                                                       // Static
+                "waterConsumed"         => (($finalReading ?? 0.00) - ($initialReading ?? 0.00)),
+                "fixedPaidFrom"         => (Carbon::createFromFormat('Y-m-d',  $fixedFrom)->startOfMonth())->format('Y-m-d'),
+                "fixedPaidUpto"         => (Carbon::createFromFormat('Y-m-d',  $fixedUpto)->startOfMonth())->format('Y-m-d'),
+                "paidAmtInWords"        => getIndianCurrency($transactionDetails->amount),
 
             ];
             return responseMsgs(true, "Payment Receipt", remove_null($returnValues), "", "1.0", "", "POST", $req->deviceId ?? "");
@@ -1558,21 +1593,20 @@ class WaterPaymentController extends Controller
      * | Initiate the online Demand payment Online
      * | Get the details for order id 
      * | Check the amount for the orderId
-     * | @param 
-     * | @var
-     * | @return 
-        | Not tested
+     * | @param request
+        | Working
+        | Serial No : 10
      */
     public function initiateOnlineDemandPayment(reqDemandPayment $request)
     {
         try {
-            $refUser = Auth()->user();
-            $waterModuleId = config::get('module-constants.WATER_MODULE_ID');
-            $paymentFor = Config::get('waterConstaint.PAYMENT_FOR');
-            $startingDate = Carbon::createFromFormat('Y-m-d',  $request->demandFrom)->startOfMonth();
-            $endDate = Carbon::createFromFormat('Y-m-d',  $request->demandUpto)->endOfMonth();
-            $startingDate = $startingDate->toDateString();
-            $endDate = $endDate->toDateString();
+            $refUser        = Auth()->user();
+            $waterModuleId  = config::get('module-constants.WATER_MODULE_ID');
+            $paymentFor     = Config::get('waterConstaint.PAYMENT_FOR');
+            $startingDate   = Carbon::createFromFormat('Y-m-d',  $request->demandFrom)->startOfMonth();
+            $endDate        = Carbon::createFromFormat('Y-m-d',  $request->demandUpto)->endOfMonth();
+            $startingDate   = $startingDate->toDateString();
+            $endDate        = $endDate->toDateString();
 
             # Demand Collection 
             DB::beginTransaction();
@@ -1605,10 +1639,12 @@ class WaterPaymentController extends Controller
     /**
      * | Online Payment for the consumer Demand
      * | Data After the Webhook Payment / Called by the Webhook
-     * | @param
-        | Serial No : 06
+     * | @param webhookData
+     * | @param RazorPayRequest
+        | Serial No : 11
         | Recheck / Not Working
         | clear the concept
+        | Called function 
      */
     public function endOnlineDemandPayment($webhookData, $RazorPayRequest)
     {
@@ -1620,12 +1656,12 @@ class WaterPaymentController extends Controller
             $mDemands       = (array)null;
 
             # model assigning
-            $mWaterTran = new WaterTran();
-            $mWaterTranDetail = new WaterTranDetail();
-            $mWaterConsumerDemand = new WaterConsumerDemand();
-            $mWaterRazorPayResponse = new WaterRazorPayResponse();
-            $mWaterConsumerCollection = new WaterConsumerCollection();
-            $mWaterAdjustment = new WaterAdjustment();
+            $mWaterTran                 = new WaterTran();
+            $mWaterTranDetail           = new WaterTranDetail();
+            $mWaterConsumerDemand       = new WaterConsumerDemand();
+            $mWaterRazorPayResponse     = new WaterRazorPayResponse();
+            $mWaterConsumerCollection   = new WaterConsumerCollection();
+            $mWaterAdjustment           = new WaterAdjustment();
 
             # variable assigning
             $adjustmentFor = Config::get("waterConstaint.ADVANCE_FOR");
@@ -1649,7 +1685,7 @@ class WaterPaymentController extends Controller
             $mWaterRazorPayResponse->savePaymentResponse($RazorPayRequest, $webhookData);
 
             # save the razorpay request status as 1
-            $RazorPayRequest->status = 1;
+            $RazorPayRequest->status = 1;                                       // Static
             $RazorPayRequest->update();
 
             # save data in water transaction table 
@@ -1659,10 +1695,10 @@ class WaterPaymentController extends Controller
                 'chargeCategory'    => $RazorPayRequest->payment_from,
                 'todayDate'         => $today,
                 'tranNo'            => $webhookData["transactionNo"],
-                'paymentMode'       => "Online",
+                'paymentMode'       => "Online",                                // Static
                 'userId'            => $refUserId,
                 'citizenId'         => $refUserId,
-                'userType'          => "Citizen" ?? null, # Check here
+                'userType'          => "Citizen" ?? null,                       // Check here // Static
                 'ulbId'             => $refUlbId,
                 'leftDemandAmount'  => $RazorPayRequest->due_amount,
                 'adjustedAmount'    => $RazorPayRequest->adjusted_amount
@@ -1675,7 +1711,7 @@ class WaterPaymentController extends Controller
                 "consumerId"    => $webhookData['id'],
                 "amount"        => $RazorPayRequest['adjusted_amount'],
                 "userId"        => $refUserId,
-                "remarks"       => "online payment",
+                "remarks"       => "online payment",                            // Static
             ]);
             if ($RazorPayRequest['adjusted_amount'] > 0) {
                 $mWaterAdjustment->saveAdjustment($transactionId, $refMetaReq, $adjustmentFor['1']);
@@ -1684,13 +1720,13 @@ class WaterPaymentController extends Controller
             if ($RazorPayRequest['penalty_amount'] > 0) {
                 $this->savePenaltyDetails($transactionId, $RazorPayRequest['penalty_amount']);
             }
-            foreach ($mDemands as $val) {
+            foreach ($mDemands as $demand) {
                 # save Water trans details 
-                $mWaterTranDetail->saveDefaultTrans($val->amount, $val->consumer_id, $transactionId['id'], $val->id);
-                $mWaterConsumerCollection->saveConsumerCollection($val, $transactionId, $refUserId);
+                $mWaterTranDetail->saveDefaultTrans($demand->amount, $demand->consumer_id, $transactionId['id'], $demand->id);
+                $mWaterConsumerCollection->saveConsumerCollection($demand, $transactionId, $refUserId);
                 # update the payment status of the demand 
-                $val->paid_status = 1;
-                $val->update();
+                $demand->paid_status = 1;                                          // Static
+                $demand->update();
             }
             DB::commit();
             $res['transactionId'] = $transactionId['id'];

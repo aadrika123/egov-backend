@@ -229,16 +229,16 @@ class PropTransaction extends Model
                 "case when prop_transactions.property_id is not null then 'Property' when 
                 prop_transactions.saf_id is not null then 'Saf' end as tran_type"
             ),
-            'tran_date',
+            DB::raw("TO_CHAR(tran_date, 'DD-MM-YYYY') as tran_date"),
             'tran_no',
             'payment_mode',
             'amount',
-            "cheque_date",
+            DB::raw("TO_CHAR(cheque_date, 'DD-MM-YYYY') as cheque_date"),
             "bank_name",
             "branch_name",
             "bounce_status",
             "cheque_no",
-            "clear_bounce_date",
+            DB::raw("TO_CHAR(clear_bounce_date, 'DD-MM-YYYY') as clear_bounce_date"),
             "user_name"
         )
             ->join('prop_cheque_dtls', 'prop_cheque_dtls.transaction_id', 'prop_transactions.id')

@@ -101,8 +101,9 @@ class Report implements IReport
                 ->JOIN(
                     DB::RAW("(
                         SELECT STRING_AGG(owner_name, ', ') AS owner_name, STRING_AGG(mobile_no::TEXT, ', ') AS mobile_no, prop_owners.property_id 
-                        FROM prop_owners 
-                        JOIN prop_transactions on prop_transactions.property_id = prop_owners.property_id 
+                            FROM prop_properties 
+                        JOIN prop_transactions on prop_transactions.property_id = prop_properties.id
+                        JOIN prop_owners on prop_owners.property_id = prop_properties.id
                         WHERE prop_transactions.property_id IS NOT NULL AND prop_transactions.status in (1, 2) 
                         AND prop_transactions.tran_date BETWEEN '$fromDate' AND '$uptoDate'
                         " .

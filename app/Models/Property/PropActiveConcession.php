@@ -134,7 +134,7 @@ class PropActiveConcession extends Model
         $data = PropActiveConcession::select(
             'id',
             'application_no as applicationNo',
-            'date as applyDate',
+            DB::raw("TO_CHAR(date, 'DD-MM-YYYY') as applydate"),
             'applied_for as assessmentType',
             "applicant_name as applicantname",
         )
@@ -144,7 +144,7 @@ class PropActiveConcession extends Model
             ->get();
 
         $application = collect($data)->map(function ($value) {
-            $value['applyDate'] = (Carbon::parse($value['applyDate']))->format('d-m-Y');
+            $value['applyDate'] = (Carbon::parse($value['applydate']))->format('d-m-Y');
             return $value;
         });
         return $application;

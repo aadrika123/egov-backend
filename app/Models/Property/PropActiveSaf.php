@@ -290,7 +290,8 @@ class  PropActiveSaf extends Model
                 's.corr_pin_code',
                 's.assessment_type',
                 's.applicant_name',
-                's.application_date',
+                // 's.application_date',
+                DB::raw("TO_CHAR(s.application_date, 'DD-MM-YYYY') as application_date"),
                 's.area_of_plot as total_area_in_decimal',
                 's.prop_type_mstr_id',
                 'u.ward_name as old_ward_no',
@@ -572,7 +573,7 @@ class  PropActiveSaf extends Model
      */
     public function recentApplication($userId)
     {
-        return PropActiveSaf::select(
+        $data = PropActiveSaf::select(
             'prop_active_safs.id',
             'saf_no as applicationNo',
             'application_date as applyDate',
@@ -585,6 +586,12 @@ class  PropActiveSaf extends Model
             ->groupBy('saf_no', 'application_date', 'assessment_type', 'prop_active_safs.id')
             ->take(10)
             ->get();
+
+        $application = collect($data)->map(function ($value) {
+            $value['applyDate'] = (Carbon::parse($value['applyDate']))->format('d-m-Y');
+            return $value;
+        });
+        return $application;
     }
 
 
@@ -640,7 +647,7 @@ class  PropActiveSaf extends Model
                 'prop_active_safs.ward_mstr_id',
                 'ward.ward_name as ward_no',
                 'prop_active_safs.assessment_type as assessment',
-                'prop_active_safs.application_date as apply_date',
+                DB::raw("TO_CHAR(prop_active_safs.application_date, 'DD-MM-YYYY') as apply_date"),
                 'prop_active_safs.parked',
                 'prop_active_safs.prop_address',
                 'gb_office_name',
@@ -714,7 +721,8 @@ class  PropActiveSaf extends Model
                 's.prop_pin_code',
                 's.assessment_type',
                 's.applicant_name',
-                's.application_date',
+                // 's.application_date',
+                DB::raw("TO_CHAR(s.application_date, 'DD-MM-YYYY') as application_date"),
                 's.area_of_plot as total_area_in_decimal',
                 'u.ward_name as old_ward_no',
                 'u1.ward_name as new_ward_no',
@@ -762,13 +770,19 @@ class  PropActiveSaf extends Model
             'prop_active_safs.assessment_type',
             'prop_active_safs.current_role',
             'role_name as currentRole',
-            'ward_name',
+            'u.ward_name as old_ward_no',
+            'uu.ward_name as new_ward_no',
             'prop_address',
+            DB::raw(
+                "case when prop_active_safs.user_id is not null then 'TC/TL/JSK' when 
+                prop_active_safs.citizen_id is not null then 'Citizen' end as appliedBy"
+            ),
             DB::raw("string_agg(so.mobile_no::VARCHAR,',') as mobile_no"),
             DB::raw("string_agg(so.owner_name,',') as owner_name"),
         )
             ->leftjoin('wf_roles', 'wf_roles.id', 'prop_active_safs.current_role')
-            ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_active_safs.ward_mstr_id')
+            ->join('ulb_ward_masters as u', 'u.id', 'prop_active_safs.ward_mstr_id')
+            ->join('ulb_ward_masters as uu', 'uu.id', 'prop_active_safs.new_ward_mstr_id')
             ->join('prop_active_safs_owners as so', 'so.saf_id', 'prop_active_safs.id');
     }
 

@@ -625,6 +625,7 @@ class NewConnectionController extends Controller
      * | @param
         | 01 <-
         | Not used
+        | Rethink
      */
     public function deactivateAndUpdateWater($refWaterApplicationId)
     {
@@ -646,18 +647,21 @@ class NewConnectionController extends Controller
             'applicationId' => 'required|integer',
         ]);
         try {
+            $user = authUser();
+            $mWaterSiteInspectionsScheduling = new WaterSiteInspectionsScheduling();
             $mWaterConnectionCharge  = new WaterConnectionCharge();
             $mWaterApplication = new WaterApplication();
             $mWaterApplicant = new WaterApplicant();
             $mWaterTran = new WaterTran();
+            $roleDetails = Config::get('waterConstaint.ROLE-LABEL');
 
             # Application Details
             $applicationDetails['applicationDetails'] = $mWaterApplication->fullWaterDetails($request)->first();
 
             # Document Details
             $metaReqs = [
-                'userId' => auth()->user()->id,
-                'ulbId' => auth()->user()->ulb_id,
+                'userId' => $user->id,
+                'ulbId' => $user->ulb_id,
             ];
             $request->request->add($metaReqs);
             $document = $this->getDocToUpload($request);                                                    // get the doc details
@@ -677,14 +681,22 @@ class NewConnectionController extends Controller
                 ->first();
             if ($charges) {
                 $calculation['calculation'] = [
-                    'connectionFee' => $charges['conn_fee'],
-                    'penalty' => $charges['penalty'],
-                    'totalAmount' => $charges['amount'],
-                    'chargeCatagory' => $charges['charge_category'],
-                    'paidStatus' => $charges['paid_status']
+                    'connectionFee'     => $charges['conn_fee'],
+                    'penalty'           => $charges['penalty'],
+                    'totalAmount'       => $charges['amount'],
+                    'chargeCatagory'    => $charges['charge_category'],
+                    'paidStatus'        => $charges['paid_status']
                 ];
                 $waterTransDetail = array_merge($waterTransDetail, $calculation);
             }
+
+            # Site inspection schedule time/date Details 
+            if ($applicationDetails['applicationDetails']['current_role'] == $roleDetails['JE']) {
+                $inspectionTime = $mWaterSiteInspectionsScheduling->getInspectionData($applicationDetails['applicationDetails']['id'])->first();
+                $applicationDetails['applicationDetails']['scheduledTime'] = $inspectionTime->inspection_time ?? null;
+                $applicationDetails['applicationDetails']['scheduledDate'] = $inspectionTime->inspection_date ?? null;
+            }
+
             $returnData = array_merge($applicationDetails, $ownerDetails, $documentDetails, $waterTransDetail);
             return responseMsgs(true, "Application Data!", remove_null($returnData), "", "", "", "Post", "");
         } catch (Exception $e) {
@@ -700,10 +712,10 @@ class NewConnectionController extends Controller
     {
         $req->validate([
             "applicationId" => "required|numeric",
-            "document" => "required|mimes:pdf,jpeg,png,jpg,gif",
-            "docCode" => "required",
-            "docCategory" => "required|string",  # here
-            "ownerId" => "nullable|numeric"
+            "document"      => "required|mimes:pdf,jpeg,png,jpg,gif",
+            "docCode"       => "required",
+            "docCategory"   => "required|string",  # here
+            "ownerId"       => "nullable|numeric"
         ]);
 
         try {
@@ -721,15 +733,15 @@ class NewConnectionController extends Controller
             $imageName = $docUpload->upload($refImageName, $document, $relativePath);
 
             $metaReqs = [
-                'moduleId'     => $refmoduleId,
-                'activeId'     => $getWaterDetails->id,
-                'workflowId'   => $getWaterDetails->workflow_id,
-                'ulbId'        => $getWaterDetails->ulb_id,
-                'relativePath' => $relativePath,
+                'moduleId'      => $refmoduleId,
+                'activeId'      => $getWaterDetails->id,
+                'workflowId'    => $getWaterDetails->workflow_id,
+                'ulbId'         => $getWaterDetails->ulb_id,
+                'relativePath'  => $relativePath,
                 'document'      => $imageName,
-                'docCode'      => $req->docCode,
-                'ownerDtlId'  => $req->ownerId,
-                'docCategory'  => $req->docCategory
+                'docCode'       => $req->docCode,
+                'ownerDtlId'    => $req->ownerId,
+                'docCategory'   => $req->docCategory
             ];
 
             $ifDocExist = $mWfActiveDocument->isDocCategoryExists($getWaterDetails->id, $getWaterDetails->workflow_id, $refmoduleId, $req->docCategory, $req->ownerId);   // Checking if the document is already existing or not
@@ -1258,7 +1270,7 @@ class NewConnectionController extends Controller
                     "uploadedDoc" => $fullDocPath ?? "",
                     "uploadedDocId" => $uploadedDoc->id ?? "",
                     "verifyStatus'" => $uploadedDoc->verify_status ?? "",
-                    "remarks'" => $uploadedDoc->remarks ?? "",
+                    "remarks" => $uploadedDoc->remarks ?? "",
                 ];
                 return $arr;
             });
@@ -1336,6 +1348,7 @@ class NewConnectionController extends Controller
                 'uploadedDoc' => $fullDocPath ?? "",
                 'verifyStatus' => $ownerPhoto->verify_status ?? ""
             ];
+            $ownerDocList['ownerDetails']['uploadedDocCount'] = $ownerDocList['documents']->whereNotNull('uploadedDoc')->count();
             return $ownerDocList;
         }
     }
@@ -1415,21 +1428,41 @@ class NewConnectionController extends Controller
     public function getActiveApplictaions(Request $request)
     {
         $request->validate([
-            'filterBy' => 'required',
-            'applicationNo' => 'required'
+            'filterBy' => 'required|in:newConnection,regularization,name,mobileNo,safNo,holdingNo',
+            'parameter' => $request->filterBy == 'mobileNo' ? 'required|numeric|digits:10' : "required",
         ]);
-        $key = $request->filterBy;
-        $applicationNo = $request->applicationNo;
-        $connectionTypes = Config::get('waterConstaint.CONNECTION_TYPE');
+
         try {
+            $key = $request->filterBy;
+            $parameter = $request->parameter;
+            $mWaterApplicant = new WaterApplication();
+            $connectionTypes = Config::get('waterConstaint.CONNECTION_TYPE');
             switch ($key) {
                 case ("newConnection"):
-                    $mWaterApplicant = new WaterApplication();
-                    $returnData = $mWaterApplicant->getDetailsByApplicationNo($connectionTypes['NEW_CONNECTION'], $applicationNo);
+                    $returnData = $mWaterApplicant->getDetailsByApplicationNo($connectionTypes['NEW_CONNECTION'], $parameter);
                     break;
                 case ("regularization"):
-                    $mWaterApplicant = new WaterApplication();
-                    $returnData = $mWaterApplicant->getDetailsByApplicationNo($connectionTypes['REGULAIZATION'], $applicationNo);
+                    $returnData = $mWaterApplicant->getDetailsByApplicationNo($connectionTypes['REGULAIZATION'], $parameter);
+                    break;
+                case ("name"):
+                    $returnData = $mWaterApplicant->getDetailsByParameters()
+                        ->where("water_applicants.applicant_name", 'ILIKE', '%' . $parameter . '%')
+                        ->get();
+                    break;
+                case ("mobileNo"):
+                    $returnData = $mWaterApplicant->getDetailsByParameters()
+                        ->where("water_applicants.mobile_no", $parameter)
+                        ->get();
+                    break;
+                case ("safNo"):
+                    $returnData = $mWaterApplicant->getDetailsByParameters()
+                        ->where("water_applications.saf_no", 'LIKE', '%' . $parameter . '%')
+                        ->get();
+                    break;
+                case ("holdingNo"):
+                    $returnData = $mWaterApplicant->getDetailsByParameters()
+                        ->where("water_applications.holding_no", 'LIKE', '%' . $parameter . '%')
+                        ->get();
                     break;
             }
             return responseMsgs(true, "List of Appication!", $returnData, "", "01", "723 ms", "POST", "");
@@ -1752,9 +1785,6 @@ class NewConnectionController extends Controller
      */
     public function searchApplicationByParameter(Request $request)
     {
-        $mWaterApplicant = new WaterApplication();
-        $mWaterSiteInspectionsScheduling = new WaterSiteInspectionsScheduling();
-        $mWaterSiteInspection = new WaterSiteInspection();
         $filterBy = Config::get('waterConstaint.FILTER_BY');
         $roleId = Config::get('waterConstaint.ROLE-LABEL.JE');
         $request->validate([
@@ -1764,7 +1794,11 @@ class NewConnectionController extends Controller
             'toDate'    => $request->filterBy == $filterBy['DATE'] ? 'required|date_format:Y-m-d' : 'nullable',
         ]);
         try {
+            $mWaterApplicant = new WaterApplication();
+            $mWaterSiteInspection = new WaterSiteInspection();
+            $mWaterSiteInspectionsScheduling = new WaterSiteInspectionsScheduling();
             $key = $request->filterBy;
+
             switch ($key) {
                 case ("byApplication"):
                     $refSiteDetails['SiteInspectionDate'] = null;

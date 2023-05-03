@@ -27,6 +27,7 @@ class PropActiveHarvesting extends Model
             'a.holding_no',
             'new_holding_no',
             'pt_no',
+            DB::raw("TO_CHAR(date, 'DD-MM-YYYY') as apply_date"),
             'a.prop_type_mstr_id',
             'p.property_type',
             'prop_active_harvestings.workflow_id',
@@ -191,10 +192,10 @@ class PropActiveHarvesting extends Model
         $data = PropActiveHarvesting::select(
             'prop_active_harvestings.id',
             'application_no as applicationNo',
-            'date as applyDate',
+            'date as applydate',
             // "'Rain Water Harvesting' as 'assessmentType'",
             // 'applied_for as assessmentType',
-            DB::raw("'Rain Water Harvesting' as assessmentType"),
+            DB::raw("('Rain Water Harvesting') as assessmentType"),
             DB::raw("string_agg(owner_name,',') as applicantName"),
         )
             ->join('prop_owners', 'prop_owners.property_id', 'prop_active_harvestings.property_id')
@@ -205,7 +206,7 @@ class PropActiveHarvesting extends Model
             ->get();
 
         $application = collect($data)->map(function ($value) {
-            $value['applyDate'] = (Carbon::parse($value['applyDate']))->format('d-m-Y');
+            $value['applyDate'] = (Carbon::parse($value['applydate']))->format('d-m-Y');
             return $value;
         });
         return $application;
