@@ -645,7 +645,6 @@ class TradeCitizenController extends Controller
             }
             return responseMsg(true, "", remove_null($data));
         } catch (Exception $e) {
-            // dd($e->getFile(), $e->getLine(), $e->getMessage());
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
