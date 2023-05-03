@@ -264,6 +264,11 @@ class TradeCitizenController extends Controller
         $this->_META_DATA["action"]    = $request->getMethod();
         $this->_META_DATA["deviceId"] = $request->ip();
         try {
+            $request->validate(
+                [                  
+                    "licenceId" => "required|digits_between:1,9223372036854775807",
+                ]
+            );
             if(!$this->_COMMON_FUNCTION->checkUsersWithtocken("active_citizens"))
             {
                 throw New Exception("Counter User Not Allowed");
