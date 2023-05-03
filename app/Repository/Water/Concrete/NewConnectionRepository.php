@@ -93,21 +93,21 @@ class NewConnectionRepository implements iNewConnection
         # ref variables
         $vacantLand = $this->_vacantLand;
         $workflowID = $this->_waterWorkflowId;
-        $owner = $req['owners'];
-        $tenant = $req['tenant'];
-        $ulbId = $req->ulbId;
-        $reftenant = true;
-        $user = authUser();
-        $citizenId = null;
+        $owner      = $req['owners'];
+        $tenant     = $req['tenant'];
+        $ulbId      = $req->ulbId;
+        $reftenant  = true;
+        $citizenId  = null;
+        $user       = authUser();
 
-        $ulbWorkflowObj = new WfWorkflow();
-        $mWaterNewConnection = new WaterNewConnection();
-        $objNewApplication = new WaterApplication();
-        $mWaterApplicant = new WaterApplicant();
-        $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
-        $mWaterConnectionCharge = new WaterConnectionCharge();
-        $mWaterTran = new WaterTran();
-        $waterTrack = new WorkflowTrack();
+        $ulbWorkflowObj             = new WfWorkflow();
+        $mWaterNewConnection        = new WaterNewConnection();
+        $objNewApplication          = new WaterApplication();
+        $mWaterApplicant            = new WaterApplicant();
+        $mWaterPenaltyInstallment   = new WaterPenaltyInstallment();
+        $mWaterConnectionCharge     = new WaterConnectionCharge();
+        $mWaterTran                 = new WaterTran();
+        $waterTrack                 = new WorkflowTrack();
 
         # Connection Type 
         switch ($req->connectionTypeId) {
@@ -193,7 +193,7 @@ class NewConnectionRepository implements iNewConnection
                 'citizenId'         => $citizenId,
                 'moduleId'          => $this->_waterModulId,
                 'workflowId'        => $ulbWorkflowId['id'],
-                'refTableDotId'     => 'water_applications.id',
+                'refTableDotId'     => 'water_applications.id',                                     // Static
                 'refTableIdValue'   => $applicationId,
                 'user_id'           => $user->id,
                 'ulb_id'            => $ulbId,
@@ -337,8 +337,9 @@ class NewConnectionRepository implements iNewConnection
     public function waterInbox()
     {
         $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
-        $userId = auth()->user()->id;
-        $ulbId = auth()->user()->ulb_id;
+        $user = authUser();
+        $userId = $user->id;
+        $ulbId = $user->ulb_id;
 
         $occupiedWards = $this->getWardByUserId($userId)->pluck('ward_id');
 
@@ -374,8 +375,9 @@ class NewConnectionRepository implements iNewConnection
     {
         $mWfWardUser = new WfWardUser();
         $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
-        $userId = auth()->user()->id;
-        $ulbId = auth()->user()->ulb_id;
+        $user = authUser();
+        $userId = $user->id;
+        $ulbId = $user->ulb_id;
 
         $workflowRoles = $this->getRoleIdByUserId($userId);
         $roleId = $workflowRoles->map(function ($value) {                         // Get user Workflow Roles
@@ -443,11 +445,11 @@ class NewConnectionRepository implements iNewConnection
         }
 
         $waterApplication->save();
-        $metaReqs['moduleId'] =  $this->_waterModulId;
-        $metaReqs['workflowId'] = $waterApplication->workflow_id;
-        $metaReqs['refTableDotId'] = 'water_applications.id';
-        $metaReqs['refTableIdValue'] = $req->applicationId;
-        $metaReqs['user_id'] = authUser()->id;
+        $metaReqs['moduleId']           =  $this->_waterModulId;
+        $metaReqs['workflowId']         = $waterApplication->workflow_id;
+        $metaReqs['refTableDotId']      = 'water_applications.id';
+        $metaReqs['refTableIdValue']    = $req->applicationId;
+        $metaReqs['user_id']            = authUser()->id;
         $req->request->add($metaReqs);
 
         $waterTrack = new WorkflowTrack();
