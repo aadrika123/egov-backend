@@ -26,7 +26,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      * | Updated by-Sam kerketta
      * | ------------------- Apply New Water Connection ------------------------ |
      */
-    Route::resource('application/apply-new-connection', NewConnectionController::class);                             //01
+    Route::resource('application/apply-new-connection', NewConnectionController::class);                //01
     /**
      * | Created On:08-11-2022 
      * | Created by:Sam Kerketta
@@ -120,10 +120,10 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      * |------------- Water Reports -------------|
      */
     Route::controller(WaterReportController::class)->group(function () {
-        Route::post('consumer/report/list-ward-dcb', 'wardWiseDCB');
-        Route::post('consumer/report/dcb-pie-chart', 'dcbPieChart');
-        Route::post('report-cosumer', 'consumerReport');
-        Route::post('connection-collection', 'connectionCollection');
+        Route::post('consumer/report/list-ward-dcb', 'wardWiseDCB');                                    //01
+        Route::post('consumer/report/dcb-pie-chart', 'dcbPieChart');                                    //02
+        Route::post('report-cosumer', 'consumerReport');                                                //03
+        Route::post('connection-collection', 'connectionCollection');                                   //04
     });
 });
 
@@ -141,8 +141,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('getTranNo', 'readTransectionAndApl');                                              //12
 
         # Dashbording Api
-        Route::post('admin/application/dashboard-data', 'getJskAppliedApplication');                    // 13
-        Route::post('admin/workflow/dashboard-data', 'workflowDashordDetails');                         // Route
+        Route::post('admin/application/dashboard-data', 'getJskAppliedApplication');                    //13
+        Route::post('admin/workflow/dashboard-data', 'workflowDashordDetails');                         //14
     });
 });
 Route::controller(WaterApplication::class)->group(function () {
