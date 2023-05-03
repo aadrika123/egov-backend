@@ -134,7 +134,7 @@ class WaterNewConnection implements IWaterNewConnection
                 ->orderbydesc('water_applications.id')
                 ->get();
 
-            if (is_null($connection) || isEmpty($connection))
+            if (is_null($connection))
                 throw new Exception("Water Applications not found!");
 
             $returnValue = collect($connection)->map(function ($value) use ($mWaterTran, $mWaterParamConnFee, $mWaterConnectionCharge, $mWaterSiteInspection, $connection) {
