@@ -26,7 +26,7 @@ class DocUpload
         $imageSize = $image->getSize();
         $humanReadableSize = $imageSize / (1024 * 1024);
 
-        if ($humanReadableSize > 1) {
+        if ($extention != 'pdf' && $humanReadableSize > 1) {
             $image = Image::make($image->path());
             $image->resize(1024, 1024, function ($constraint) {
                 $constraint->aspectRatio();
