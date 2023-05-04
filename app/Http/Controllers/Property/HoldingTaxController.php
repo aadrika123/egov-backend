@@ -665,9 +665,9 @@ class HoldingTaxController extends Controller
             'cheque_dd_no' => $req['chequeNo'],
             'bank_name' => $req['bankName'],
             'tran_date' => $req['todayDate'],
-            'citizen_id' => $req['userId'],
-            'is_citizen' => false,
-            'ulb_id' => $req['ulbId']
+            'user_id' => $req['userId'],
+            'ulb_id' => $req['ulbId'],
+            // 'cluster_id' => $clusterId
         ];
         $mTempTransaction->tempTransaction($tranReqs);
     }
