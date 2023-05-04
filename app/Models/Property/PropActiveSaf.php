@@ -811,9 +811,9 @@ class  PropActiveSaf extends Model
     /**
      * | saf Basic Edit the water connection
      */
-    public function updateWaterConnection($safId, $consumerNo)
+    public function updateWaterConnection($safIds, $consumerNo)
     {
-        $nPropActiveSaf = PropActiveSaf::find($safId);
+        $nPropActiveSaf = PropActiveSaf::whereIn('id', $safIds);
         $reqs = [
             "water_conn_no" => $consumerNo,
             "water_conn_date" => Carbon::now(),
@@ -834,6 +834,17 @@ class  PropActiveSaf extends Model
             ->join('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'prop_active_safs.ward_mstr_id')
             ->leftJoin('ulb_ward_masters as u', 'u.id', '=', 'prop_active_safs.new_ward_mstr_id')
             ->where('prop_active_safs.apartment_details_id', $apartmentId)
+            ->where('prop_active_safs.status', 1)
+            ->orderByDesc('id');
+    }
+
+    /**
+     * | Get Appartment Details 
+     * | @param 
+     */
+    public function getActiveSafByApartmentId($apartmentId)
+    {
+        return PropActiveSaf::where('prop_active_safs.apartment_details_id', $apartmentId)
             ->where('prop_active_safs.status', 1)
             ->orderByDesc('id');
     }
