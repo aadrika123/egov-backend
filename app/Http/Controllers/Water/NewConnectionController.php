@@ -423,7 +423,12 @@ class NewConnectionController extends Controller
         }
     }
 
-    // Back to Citizen  // Recheck
+    // Back to Citizen  
+    /**
+     * | Back to Citizen 
+     * | @param req
+        | Check if the current role of the application will be changed for iniciater role 
+     */
     public function backToCitizen(Request $req)
     {
         $req->validate([
@@ -465,7 +470,8 @@ class NewConnectionController extends Controller
 
     /**
      * | check the application for back to citizen case
-     * | check for the 
+     * | check for the
+        | Check who can use BTC operatio 
      */
     public function btcParamcheck($roleId, $mWaterApplication)
     {
@@ -473,7 +479,6 @@ class NewConnectionController extends Controller
         if ($roleId != $refDealingAssistent) {
             throw new Exception("you are not authorized role!");
         }
-
         if ($mWaterApplication->current_role != $roleId) {
             throw new Exception("the application is not under your possession!");
         }
