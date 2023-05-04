@@ -714,7 +714,7 @@ class NewConnectionController extends Controller
             "applicationId" => "required|numeric",
             "document"      => "required|mimes:pdf,jpeg,png,jpg,gif",
             "docCode"       => "required",
-            "docCategory"   => "required|string",  # here
+            "docCategory"   => "required",                     // Recheck in case of undefined
             "ownerId"       => "nullable|numeric"
         ]);
 
@@ -1109,17 +1109,17 @@ class NewConnectionController extends Controller
      */
     public function getAppartmentDetails($key, $propData)
     {
-        $mPropFloor = new PropFloor();
-        $mPropProperty = new PropProperty();
-        $mPropOwner = new PropOwner();
-        $mPropActiveSaf = new PropActiveSaf();
-        $mPropActiveSafsFloor = new PropActiveSafsFloor();
-        $mPropActiveSafsOwner = new PropActiveSafsOwner();
-        $refPropertyTypeId = Config::get('waterConstaint.PROPERTY_TYPE');
-        $apartmentId = $propData['apartment_details_id'];
+        $apartmentId            = $propData['apartment_details_id'];
+        $refPropertyTypeId      = Config::get('waterConstaint.PROPERTY_TYPE');
+        $mPropFloor             = new PropFloor();
+        $mPropProperty          = new PropProperty();
+        $mPropOwner             = new PropOwner();
+        $mPropActiveSaf         = new PropActiveSaf();
+        $mPropActiveSafsFloor   = new PropActiveSafsFloor();
+        $mPropActiveSafsOwner   = new PropActiveSafsOwner();
 
         switch ($key) {
-            case ('1'):
+            case ('1'): # For holdingNo
                 $propertyDetails = $mPropProperty->getPropByApartmentId($apartmentId)->get();
                 $propertyIds = collect($propertyDetails)->pluck('id');
                 $floorDetails = $mPropFloor->getAppartmentFloor($propertyIds)->get();
@@ -1135,7 +1135,7 @@ class NewConnectionController extends Controller
                 return $propData->merge($returnData);
                 break;
 
-            case ('2'):
+            case ('2'): # For SafNo
                 $safDetails = $mPropActiveSaf->getSafByApartmentId($apartmentId)->get(); # here
                 $safIds = collect($safDetails)->pluck('id');
                 $floorDetails = $mPropActiveSafsFloor->getSafAppartmentFloor($safIds)->get();

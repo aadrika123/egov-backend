@@ -5,6 +5,7 @@ namespace App\Repository\Water\Concrete;
 use App\MicroServices\IdGenerator\PrefixIdGenerator;
 use App\Models\CustomDetail;
 use App\Models\Property\PropActiveSaf;
+use App\Models\Property\PropApartmentDtl;
 use App\Models\Property\PropProperty;
 use App\Models\Ulb\UlbNewWardmap;
 use App\Models\UlbWardMaster;
@@ -631,6 +632,7 @@ class NewConnectionRepository implements iNewConnection
      * | @param roleId
         | Working
         | check the field verified status 
+        | uncomment the line of code  
      */
     public function preApprovalConditionCheck($request, $roleId)
     {
@@ -653,7 +655,7 @@ class NewConnectionRepository implements iNewConnection
         if ($waterDetails->is_field_verified == 0) {
             throw new Exception("Field Verification Not Done!!");
         }
-        $this->checkDataApprovalCondition($request, $roleId, $waterDetails);
+        $this->checkDataApprovalCondition($request, $roleId, $waterDetails);   // Reminder
         return $waterDetails;
     }
 
@@ -692,23 +694,37 @@ class NewConnectionRepository implements iNewConnection
      */
     public function saveWaterConnInProperty($refWaterDetails, $consumerNo)
     {
-        $mPropProperty = new PropProperty();
-        $mPropActiveSaf = new PropActiveSaf();
+        $appartmentsPropIds     = array();
+        $mPropProperty          = new PropProperty();
+        $mPropActiveSaf         = new PropActiveSaf();
+        $refPropType            = Config::get("waterConstaint.PROPERTY_TYPE");
+        $refConnectionThrough   = Config::get("waterConstaint.CONNECTION_THROUGH");
 
         switch ($refWaterDetails) {
-                # For holding
-            case ($refWaterDetails->connection_through == 1):
-                $propDetails = PropProperty::findOrFail($refWaterDetails->propId);
-                $mPropProperty->updateWaterConnection($refWaterDetails->propId, $consumerNo);
+                # For holding  
+            case ($refWaterDetails->connection_through == $refConnectionThrough['HOLDING']):
+                $appartmentsPropIds = collect($refWaterDetails->prop_id);
+                if (in_array($refWaterDetails->property_type_id, [$refPropType['Apartment'], $refPropType['MultiStoredUnit']])) {
+                    $propDetails = PropProperty::findOrFail($refWaterDetails->prop_id);
+                    $apartmentId = $propDetails['apartment_details_id'];
+                    $appartmentsProperty = $mPropProperty->getPropertyByApartmentId($apartmentId)->get();
+                    $appartmentsPropIds = collect($appartmentsProperty)->pluck('id');
+                }
+                $mPropProperty->updateWaterConnection($appartmentsPropIds, $consumerNo);
                 break;
                 # For Saf
-            case ($refWaterDetails->connection_through == 2):
-                $safDetails = PropActiveSaf::findOrFail($refWaterDetails->saf_id);
-                $mPropActiveSaf->updateWaterConnection($refWaterDetails->saf_id, $consumerNo);
+            case ($refWaterDetails->connection_through == $refConnectionThrough['SAF']):
+                $appartmentsSafIds = collect($refWaterDetails->saf_id);
+                if (in_array($refWaterDetails->property_type_id, [$refPropType['Apartment'], $refPropType['MultiStoredUnit']])) {
+                    $safDetails = PropActiveSaf::findOrFail($refWaterDetails->saf_id);
+                    $apartmentId = $safDetails['apartment_details_id'];
+                    $appartmentsSaf = $mPropActiveSaf->getActiveSafByApartmentId($apartmentId)->get();
+                    $appartmentsSafIds = collect($appartmentsSaf)->pluck('id');
+                }
+                $mPropActiveSaf->updateWaterConnection($appartmentsSafIds, $consumerNo);
                 break;
         }
     }
-
 
 
 
@@ -732,7 +748,7 @@ class NewConnectionRepository implements iNewConnection
         $mWorkflowTracks        = new WorkflowTrack();
         $mCustomDetails         = new CustomDetail();
         $mUlbNewWardmap         = new UlbWardMaster();
-        $mWaterNewConnection    = new WaterNewConnection();
+        // $mWaterNewConnection    = new WaterNewConnection();
 
         # application details
         $applicationDetails = $waterObj->fullWaterDetails($request)->get();
@@ -888,10 +904,10 @@ class NewConnectionRepository implements iNewConnection
     {
         $collectionApplications = collect($applicationDetails)->first();
         return new Collection([
-            ['displayString' => 'K.No',             'key' => 'KNo',            'value' => $collectionApplications->elec_k_no],
-            ['displayString' => 'Bind Book No',     'key' => 'BindBookNo',    'value' => $collectionApplications->elec_bind_book_no],
-            ['displayString' => 'Elec Account No',  'key' => 'ElecAccountNo', 'value' => $collectionApplications->elec_account_no],
-            ['displayString' => 'Elec Category',    'key' => 'ElecCategory',   'value' => $collectionApplications->elec_category]
+            ['displayString' => 'K.No',             'key' => 'KNo',             'value' => $collectionApplications->elec_k_no],
+            ['displayString' => 'Bind Book No',     'key' => 'BindBookNo',      'value' => $collectionApplications->elec_bind_book_no],
+            ['displayString' => 'Elec Account No',  'key' => 'ElecAccountNo',   'value' => $collectionApplications->elec_account_no],
+            ['displayString' => 'Elec Category',    'key' => 'ElecCategory',    'value' => $collectionApplications->elec_category]
         ]);
     }
 
@@ -955,14 +971,15 @@ class NewConnectionRepository implements iNewConnection
      */
     public function commentIndependent($request)
     {
-        $applicationId = WaterApplication::find($request->applicationId);
+        $metaReqs = array();
+        $user = authUser();
+        $userType = $user->user_type;
+        $userId = $user->id;
         $workflowTrack = new WorkflowTrack();
         $mWfRoleUsermap = new WfRoleusermap();
-        $mModuleId =  $this->_waterModulId;
-        $metaReqs = array();
-        $userType = authUser()->user_type;
-        $userId = authUser()->id;
+        $mModuleId = $this->_waterModulId;
 
+        $applicationId = WaterApplication::find($request->applicationId);
         if (!$applicationId) {
             throw new Exception("Application Don't Exist!");
         }
@@ -1009,10 +1026,10 @@ class NewConnectionRepository implements iNewConnection
      */
     public function getApprovedWater($request)
     {
-        $mWaterConsumer = new WaterConsumer();
+        $mWaterConsumer         = new WaterConsumer();
         $mWaterConnectionCharge = new WaterConnectionCharge();
-        $mWaterConsumerOwner = new WaterConsumerOwner();
-        $mWaterParamConnFee = new WaterParamConnFee();
+        $mWaterConsumerOwner    = new WaterConsumerOwner();
+        $mWaterParamConnFee     = new WaterParamConnFee();
 
         $key = collect($request)->map(function ($value, $key) {
             return $key;

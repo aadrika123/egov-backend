@@ -714,8 +714,8 @@ class WaterPaymentController extends Controller
             $todayDate      = Carbon::now();
             $startingDate   = Carbon::createFromFormat('Y-m-d',  $request->demandFrom)->startOfMonth();
             $endDate        = Carbon::createFromFormat('Y-m-d',  $request->demandUpto)->endOfMonth();
-            $startingDate = $startingDate->toDateString();
-            $endDate = $endDate->toDateString();
+            $startingDate   = $startingDate->toDateString();
+            $endDate        = $endDate->toDateString();
 
             $finalCharges = $this->preOfflinePaymentParams($request, $startingDate, $endDate);
             $tranNo = $midGeneration->generateTransactionNo();

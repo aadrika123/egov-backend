@@ -3,6 +3,10 @@
 return [
     // Label Role ID (waterConstaint)
 
+    "CONNECTION_THROUGH" => [
+        "HOLDING" => 1,
+        "SAF" => 2
+    ],
     "METER_CONN_TYPE" => [
         "1" => "Meter",
         "2" => "Gallon",
@@ -22,42 +26,42 @@ return [
     "DEPARTMENT_SECTION" => "Revenue Section",
     "TOWARDS" => "Water Connection and Others",
     "WATER_DEPAPRTMENT_ID" => "2",
-    "WATER_RELATIVE_PATH" => "Uploads/water",
+    "WATER_RELATIVE_PATH" => "Uploads/Water",
 
     "PROPERTY_TYPE" => [
-        "Residential" => "1",
-        "Industrial" => "6",
-        "Government" => "3",
-        "Commercial" => "2",
-        "Institutional" => "4",
-        "Apartment" => "7",
-        "Multi Stored Unit" => "8"
+        "Residential"       => 1,
+        "Industrial"        => 6,
+        "Government"        => 3,
+        "Commercial"        => 2,
+        "Institutional"     => 4,
+        "Apartment"         => 7,
+        "MultiStoredUnit"   => 8
     ],
 
     "DESMIL_TO_SQFT" => 435.6,
 
     "CONNECTION_TYPE" => [
-        "NEW_CONNECTION" => 1,
-        "REGULAIZATION" => 2
+        "NEW_CONNECTION"    => 1,
+        "REGULAIZATION"     => 2
     ],
 
     "REF_CONNECTION_TYPE" => [
-        "New Connection" => 1,
-        "Regulaization" => 2
+        "New Connection"    => 1,
+        "Regulaization"     => 2
     ],
 
     "JSK" => "JSK",
 
     "CHARGE_CATAGORY" => [
-        "SITE_INSPECTON" => "Site Inspection",
-        "NEW_CONNECTION" => "New Connection",
-        "REGULAIZATION" => "Regulaization"
+        "SITE_INSPECTON"    => "Site Inspection",
+        "NEW_CONNECTION"    => "New Connection",
+        "REGULAIZATION"     => "Regulaization"
     ],
 
     "FILTER_BY" => [
-        "APPLICATION" => "byApplication",
-        "DATE" => "byDate",
-        "APPLICATION_ID" => "byApplicationId"
+        "APPLICATION"       => "byApplication",
+        "DATE"              => "byDate",
+        "APPLICATION_ID"    => "byApplicationId"
     ],
 
     "New_Connection" => "connection",
@@ -95,7 +99,7 @@ return [
             "Meter"         => 1,
             "Gallon"        => 2,
             "Fixed"         => 3,
-            "Meter/Fixed"    => 4
+            "Meter/Fixed"   => 4
         ],
     ],
 
