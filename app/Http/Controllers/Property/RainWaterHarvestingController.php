@@ -813,7 +813,7 @@ class RainWaterHarvestingController extends Controller
     {
         $req->validate([
             "applicationId" => "required|numeric",
-            "document" => "required|mimes:pdf,jpeg,png,jpg,gif",
+            "document" => "required|mimes:pdf,jpeg,png,jpg|max:2048",
             "docCode" => "required",
         ]);
 

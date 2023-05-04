@@ -2,7 +2,6 @@
 
 namespace App\MicroServices;
 
-use Illuminate\Support\Facades\Config;
 use Intervention\Image\Facades\Image;
 use Illuminate\Support\Str;
 
@@ -22,22 +21,12 @@ class DocUpload
      */
     public function upload($refImageName, $image, $relativePath)
     {
-        // $extentions = Config::get();
         $extention = $image->getClientOriginalExtension();
         $imageName = time() . '-' . $refImageName . '.' . $extention;
-
-        // switch ($extentions) {
-        //     case ('file'):
-        //         # code...
-        //         break;
-
-        //     case ('image'):
-        //         # code...
-        //         break;
-        // }
         $imageSize = $image->getSize();
         $humanReadableSize = $imageSize / (1024 * 1024);
-        if ($humanReadableSize > 1) {
+
+        if ($extention != 'pdf' && $humanReadableSize > 1) {
             $image = Image::make($image->path());
             $image->resize(1024, 1024, function ($constraint) {
                 $constraint->aspectRatio();

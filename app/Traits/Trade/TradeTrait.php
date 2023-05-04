@@ -153,13 +153,13 @@ trait TradeTrait
                 break;
         }
         switch ($ownershipTypeId) {
-            case 3: # OWN PROPERTY
+            case 1: # OWN PROPERTY
                 $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "Owner_Premises")->requirements;
                 break;
-            case 2:# ON LEASE
+            case 2: #ON RENT
                 $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "On_Rent")->requirements;
                 break;
-            case 1: #ON RENT
+            case 3:# ON LEASE
                 $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "On_Rent")->requirements;
                 break;
         }
