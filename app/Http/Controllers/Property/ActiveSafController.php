@@ -669,8 +669,11 @@ class ActiveSafController extends Controller
             $data = $mPropActiveSaf->getActiveSafDtls()                         // <------- Model function Active SAF Details
                 ->where('prop_active_safs.id', $req->applicationId)
                 ->first();
-            if ($data->payment_status == 0)
+            if ($data->payment_status == 0) {
                 $data->current_role_name = null;
+                $data->current_role_name2 = "Payment is Pending";
+            }
+
             if (!$data)
                 throw new Exception("Data Not Found");
             $data = json_decode(json_encode($data), true);
