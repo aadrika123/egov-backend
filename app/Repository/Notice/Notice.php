@@ -664,8 +664,7 @@ use Barryvdh\DomPDF\Facade\PDF;
                         ->where("notice_id",$noticeData->id)
                         ->orderBy("created_at","DESC")
                         ->first();
-            // $remider->reminder_date =  Carbon::now()->format('Y-m-d');
-            // dd($sedule ,$remider );
+           
             if($sedule && ($remider ?($remider->reminder_date == Carbon::now()->format('Y-m-d') && $remider->created_on != Carbon::now()->format('Y-m-d')) : true)) 
             { 
                 $url = $remider->notice_file??"";
@@ -713,7 +712,7 @@ use Barryvdh\DomPDF\Facade\PDF;
                     ]
                 ]));
 
-                dd($noticeData,$whatsapp??"",$filename??"",$whatsapp2); 
+                // dd($noticeData,$whatsapp??"",$filename??"",$whatsapp2); 
                 #=========end send Notice=======
                 DB::beginTransaction();
                 
@@ -728,7 +727,7 @@ use Barryvdh\DomPDF\Facade\PDF;
                 $newRemider->user_id            = $user->id??0;
                 $newRemider->notice_file        = $url;
                 $newRemider->save();
-                // DB::commit();
+                DB::commit();
             }
             
         }
