@@ -782,7 +782,7 @@ class NewConnectionController extends Controller
             }
             # if the application is parked and btc 
             if ($getWaterDetails->parked == true) {
-                $status = true;
+                $status = false;
                 $mWaterApplication->updateParkedstatus($status, $applicationId);
             }
             DB::commit();
