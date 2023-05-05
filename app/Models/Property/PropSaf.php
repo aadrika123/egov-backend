@@ -53,7 +53,12 @@ class PropSaf extends Model
                 'p.property_type',
                 'doc_upload_status',
                 'payment_status',
-                'role_name as currentRole',
+                DB::raw(
+                    "case when payment_status!=1 then 'Payment Not Done'
+                          else role_name end
+                          as current_role
+                    "
+                ),
                 'role_name as approvedBy',
                 's.user_id',
                 's.citizen_id',
@@ -93,7 +98,12 @@ class PropSaf extends Model
                 'u1.ward_name as new_ward_no',
                 'doc_upload_status',
                 'payment_status',
-                // 'role_name as currentRole',
+                DB::raw(
+                    "case when payment_status!=1 then 'Payment Not Done'
+                          else role_name end
+                          as current_role
+                    "
+                ),
                 'role_name as approvedBy',
                 's.user_id',
                 's.citizen_id',

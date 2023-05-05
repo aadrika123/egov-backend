@@ -681,8 +681,8 @@ class CashVerificationController extends Controller
         try {
             $userId = authUser()->id;
             $property =  $request->property;
-            $water =  $request->water;
-            $trade =  $request->trade;
+            $water    =  $request->water;
+            $trade    =  $request->trade;
 
             if ($property) {
                 foreach ($property as $propertyDtl) {
@@ -699,6 +699,11 @@ class CashVerificationController extends Controller
                     $this->dailyCollection($propertyDtl);
                     if (!$pTempTransaction)
                         throw new Exception("No Transaction Found for this id");
+
+                    $logTrans = $pTempTransaction->replicate();
+                    $logTrans->setTable('log_temp_transactions');
+                    $logTrans->id = $pTempTransaction->id;
+                    $logTrans->save();
                     $pTempTransaction->delete();
                 }
             }
@@ -717,6 +722,11 @@ class CashVerificationController extends Controller
                     $this->dailyCollection($waterDtl);
                     if (!$wTempTransaction)
                         throw new Exception("No Transaction Found for this id");
+
+                    $logTrans = $wTempTransaction->replicate();
+                    $logTrans->setTable('log_temp_transactions');
+                    $logTrans->id = $wTempTransaction->id;
+                    $logTrans->save();
                     $wTempTransaction->delete();
                 }
             }
@@ -735,6 +745,11 @@ class CashVerificationController extends Controller
                     $this->dailyCollection($tradeDtl);
                     if (!$tTempTransaction)
                         throw new Exception("No Transaction Found for this id");
+
+                    $logTrans = $tTempTransaction->replicate();
+                    $logTrans->setTable('log_temp_transactions');
+                    $logTrans->id = $tTempTransaction->id;
+                    $logTrans->save();
                     $tTempTransaction->delete();
                 }
             }
@@ -771,10 +786,18 @@ class CashVerificationController extends Controller
         $RevDailycollectiondetail->deposit_amount = $tranDtl['amount'];
         $RevDailycollectiondetail->cheq_dd_no = $tranDtl['cheque_dd_no'];
         $RevDailycollectiondetail->bank_name = $tranDtl['bank_name'];
-        $RevDailycollectiondetail->deposit_mode = $tranDtl['payment_mode'];
+        $RevDailycollectiondetail->deposit_mode = strtoupper($tranDtl['payment_mode']);
         $RevDailycollectiondetail->application_no = $tranDtl['application_no'];
         $RevDailycollectiondetail->transaction_id = $tranDtl['id'];
         $RevDailycollectiondetail->save();
         DB::commit();
+    }
+
+    /**
+     * | Cash Verification Receipt
+     */
+    public function cashVerificationReceipt(Request $request)
+    {
+        # code...
     }
 }

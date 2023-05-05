@@ -36,6 +36,9 @@ trait SafDoc
             case $flip['VACANT LAND']:
                 $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PROP_VACANT_LAND")->requirements;     // Function (1.1)
                 break;
+            case $flip['OCCUPIED PROPERTY']:
+                $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PROP_OCCUPIED_PROPERTY")->requirements;     // Function (1.1)
+                break;
         }
         if ($refSafs->is_trust == true)
             $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "PROP_TRUST")->requirements;

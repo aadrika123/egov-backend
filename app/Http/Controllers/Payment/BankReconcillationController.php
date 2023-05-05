@@ -350,7 +350,7 @@ class BankReconcillationController extends Controller
 
                 $transaction = WaterTran::where('id', $mChequeDtl->transaction_id)
                     ->first();
-
+                $wardId = WaterApplication::find($transaction->related_id)->ward_id;
 
                 if ($request->status == 'clear') {
 
@@ -420,11 +420,8 @@ class BankReconcillationController extends Controller
                                     'paid_status' => 0
                                 ]
                             );
-
-                        $wardId = WaterApplication::find($transaction->related_id)->ward_id;
                     }
                 }
-
 
                 $request->merge([
                     'id' => $mChequeDtl->id,
