@@ -1660,11 +1660,16 @@ class NewConnectionController extends Controller
 
             # Payment Details 
             $refAppDetails = collect($applicationDetails)->first();
-            $waterTransaction = $mWaterTran->getTransNo($refAppDetails->id, $refAppDetails->connection_type)->get();
+            if (is_null($refAppDetails))
+                throw new Exception("Application Not Found!");
+
+            $waterTransaction = $mWaterTran->getTransNo($refAppDetails->id, $refAppDetails->connection_type)
+                ->get();
             $waterTransDetail['waterTransDetail'] = $waterTransaction;
 
             # calculation details
             $charges = $mWaterConnectionCharge->getWaterchargesById($refAppDetails['id'])
+                ->orderByDesc('id')
                 ->firstOrFail();
 
             if ($charges['paid_status'] == 0) {

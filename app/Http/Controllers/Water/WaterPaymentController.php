@@ -1230,9 +1230,6 @@ class WaterPaymentController extends Controller
                         $refPenaltySumAmount = collect($refPenallty)->map(function ($value) {
                             return $value['balance_amount'];
                         })->sum();
-                        if ($refPenaltySumAmount != $req->penaltyAmount) {
-                            throw new Exception("Respective Penalty Amount Not Matched!");
-                        }
 
                         $actualCharge = $mWaterConnectionCharge->getWaterchargesById($req->applicationId)
                             ->where('charge_category', $req->chargeCategory)
@@ -1244,6 +1241,9 @@ class WaterPaymentController extends Controller
                             if ($actualAmount != $refAmount) {
                                 throw new Exception("Connection Amount Not Matched!");
                             }
+                        }
+                        if ($refPenaltySumAmount != ($req->amount - $refAmount)) {
+                            throw new Exception("Respective Penalty Amount Not Matched!");
                         }
                         break;
                     case ($req->isInstallment == "no"): # check <-------------- calculation 
