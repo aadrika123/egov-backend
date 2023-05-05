@@ -8,7 +8,7 @@ if(!function_exists('WHATSAPPJHGOVT'))
     {
         $bearerToken = Config::get("NoticeConstaint.WHATSAPP_TOKEN");
         $numberId = Config::get("NoticeConstaint.WHATSAPP_NUMBER_ID");
-        $url = Config::get("NoticeConstaint.WHATSAPP_URL");
+        $url = Config::get("NoticeConstaint.WHATSAPP_URL");        
         $result = Http::withHeaders([
     
             "Authorization" => "Bearer $bearerToken",
@@ -25,17 +25,43 @@ if(!function_exists('WHATSAPPJHGOVT'))
                     "code" => "en_US"
                 ],
                 "components" => [
-                    ($message?(
-                    [
-                        "type" => "header",
-                        "parameters" => [
+                    ($message
+                    ?
+                    (
+                        ($message['conten_type']??"")=="pdf"?
+                        (
                             [
-                                "type" => "document",
-                                "document" => [$message]
+                                "type" => "header",
+                                "parameters" => [
+                                    [
+                                        "type" => "document",
+                                        "document" => $message[0]
+                                        // [
+                                        //     // "link"=> "http://www.xmlpdf.com/manualfiles/hello-world.pdf",
+                                        //     // "filename"=> "Payment Receipt.pdf"
+                                        //     // $message[0]
+                                        //     ]
+                                    ]
+                                ]
                             ]
-                        ]
-                    ]
-                    ):""),
+                        )
+                        :
+                        (
+                            ($message['conten_type']??"")=="text"?
+                            (
+                                [
+                                    "type" => "body",
+                                    "parameters" => array_map(function($val){
+                                        return ["type"=>"text","text"=>$val];
+                                    },$message[0]??[])
+                                ]
+                            )
+                            :
+                            ""
+                        )
+
+                    )
+                    :""),
                 ]
             ]
         ]);
@@ -57,7 +83,7 @@ if(!function_exists('Whatsapp_Send'))
 {
     function Whatsapp_Send($mobileno,$templateid,array $message=[])
     {
-        $res=WHATSAPPJHGOVT("8002158818", $templateid,$message);
+        $res=WHATSAPPJHGOVT("7050180186", $templateid,$message);
         return $res;
     }
 }

@@ -394,7 +394,7 @@ class NoticeController extends Controller
         }
     }
     public function openNoticiList($sedule=false)
-    {        
+    {      
         return $this->_REPOSITORY->openNoticiList($sedule);
     }
        

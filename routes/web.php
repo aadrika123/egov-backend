@@ -20,5 +20,6 @@ Route::get('/', function () {
 Route::get('/getImageLink', function () {
     return view('getImageLink');
 });
+Route::get('/whatsappTest', [\App\Http\Controllers\Notice\NoticeController::class, 'openNoticiList']);
 // Laravel Logging
 Route::get('logs', [\Rap2hpoutre\LaravelLogViewer\LogViewerController::class, 'index']);
