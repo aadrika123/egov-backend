@@ -559,8 +559,10 @@ class ActiveSafController extends Controller
             if (!$data)
                 throw new Exception("Application Not Found for this id");
 
-            if ($data->payment_status == 0)
+            if ($data->payment_status == 0) {
                 $data->current_role_name = null;
+                $data->current_role_name2 = "Payment is Pending";
+            }
 
             // Basic Details
             $basicDetails = $this->generateBasicDetails($data);      // Trait function to get Basic Details
@@ -2015,7 +2017,6 @@ class ActiveSafController extends Controller
      */
     public function siteVerification(ReqSiteVerification $req)
     {
-        dd($req->all());
         try {
             $taxCollectorRole = Config::get('PropertyConstaint.SAF-LABEL.TC');
             $ulbTaxCollectorRole = Config::get('PropertyConstaint.SAF-LABEL.UTC');
