@@ -290,7 +290,6 @@ class  PropActiveSaf extends Model
                 's.corr_pin_code',
                 's.assessment_type',
                 's.applicant_name',
-                // 's.application_date',
                 DB::raw("TO_CHAR(s.application_date, 'DD-MM-YYYY') as application_date"),
                 's.area_of_plot as total_area_in_decimal',
                 's.prop_type_mstr_id',
@@ -299,7 +298,12 @@ class  PropActiveSaf extends Model
                 'p.property_type',
                 'doc_upload_status',
                 'payment_status',
-                'role_name as currentRole',
+                DB::raw(
+                    "case when payment_status!=1 then 'Payment Not Done'
+                          else role_name end
+                          as current_role
+                    "
+                ),
                 's.user_id',
                 's.citizen_id',
                 DB::raw(
@@ -728,7 +732,12 @@ class  PropActiveSaf extends Model
                 'u1.ward_name as new_ward_no',
                 'doc_upload_status',
                 'payment_status',
-                'role_name as currentRole',
+                DB::raw(
+                    "case when payment_status!=1 then 'Payment Not Done'
+                          else role_name end
+                          as current_role
+                    "
+                ),
                 's.user_id',
                 's.citizen_id',
                 'gb_office_name',

@@ -2015,6 +2015,7 @@ class ActiveSafController extends Controller
      */
     public function siteVerification(ReqSiteVerification $req)
     {
+        dd($req->all());
         try {
             $taxCollectorRole = Config::get('PropertyConstaint.SAF-LABEL.TC');
             $ulbTaxCollectorRole = Config::get('PropertyConstaint.SAF-LABEL.UTC');
@@ -2511,7 +2512,7 @@ class ActiveSafController extends Controller
             $data["floor_comparison"] = $floors_compais;
             return responseMsgs(true, $message, remove_null($data), "010121", "1.0", "258ms", "POST", $request->deviceId);
         } catch (Exception $e) {
-            dd($e->getMessage(),$e->getFile(),$e->getLine());
+            dd($e->getMessage(), $e->getFile(), $e->getLine());
             return responseMsg(false, $e->getMessage(), "");
         }
     }
