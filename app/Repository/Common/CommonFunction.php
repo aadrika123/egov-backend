@@ -41,7 +41,7 @@ class CommonFunction implements ICommonFunction
         $ward_permission = ""; //json_decode(Redis::get('WardPermission:' . $user_id),true)??null; 
         if (!$ward_permission) {
             Redis::del('WardPermission:' . $user_id);
-            $ward_permission = WfWardUser::select(                
+            $ward_permission = WfWardUser::select(
                 DB::raw("min(ward_id) as ward_id,
                 min(ulb_ward_masters.id) as id,
                 ulb_ward_masters.ward_name as ward_no")
@@ -105,7 +105,7 @@ class CommonFunction implements ICommonFunction
                 )
                 ->join("wf_roles", "wf_roles.id", "wf_workflowrolemaps.wf_role_id")
                 ->where("wf_roles.is_suspended", false)
-                ->where("wf_workflows.ulb_id",$ulb_id)
+                ->where("wf_workflows.ulb_id", $ulb_id)
                 ->where("wf_workflows.wf_master_id", $work_flow_id)
                 ->where("wf_workflows.is_suspended", false)
                 ->orderBy("wf_roles.id")
@@ -200,6 +200,7 @@ class CommonFunction implements ICommonFunction
                                             wf_workflowrolemaps.serial_no,wf_workflowrolemaps.is_btc,
                                             wf_workflowrolemaps.can_upload_document,
                                             wf_workflowrolemaps.can_verify_document,
+                                            wf_workflowrolemaps.can_backward,
                                             wf_workflows.id as workflow_id,wf_masters.workflow_name,
                                             ulb_masters.id as ulb_id, ulb_masters.ulb_name,
                                             ulb_masters.ulb_type"
@@ -244,11 +245,11 @@ class CommonFunction implements ICommonFunction
             $initater = array_filter($getWorkFlowRoles, function ($val) {
                 return $val['is_initiator'] == true;
             });
-            $initater = (array_values($initater)[0])??array(null);
+            $initater = (array_values($initater)[0]) ?? array(null);
             $finisher = array_filter($getWorkFlowRoles, function ($val) {
                 return $val['is_finisher'] == true;
             });
-            $finisher = (array_values($finisher)[0])??array(null);
+            $finisher = (array_values($finisher)[0]) ?? array(null);
             return ["initiator" => $initater, "finisher" => $finisher];
         } catch (Exception $e) {
             echo $e->getMessage();
@@ -257,12 +258,12 @@ class CommonFunction implements ICommonFunction
     public function userType($refWorkflowId, $ulb_id = null): string
     {
         $user = Auth()->user();
-        $tableName = $user?$user->gettable():null;
-        $user_id = $user->id??0;
-        $ulb_id = ($ulb_id?$ulb_id:($user->ulb_id??0));
+        $tableName = $user ? $user->gettable() : null;
+        $user_id = $user->id ?? 0;
+        $ulb_id = ($ulb_id ? $ulb_id : ($user->ulb_id ?? 0));
         $user_data = $this->getUserRoll($user_id, $ulb_id, $refWorkflowId);
         $roll_id =  $user_data->role_id ?? -1;
-        if ($roll_id != -1 && ($tableName=="users")) {
+        if ($roll_id != -1 && ($tableName == "users")) {
             $user_type_sort = Config::get('TradeConstant.USER-TYPE-SHORT-NAME.' . strtoupper($user_data->role_name));
             if (!$user_type_sort) {
                 return "Online";
@@ -294,12 +295,11 @@ class CommonFunction implements ICommonFunction
         return (collect($roles)->sortBy('serial_no')->values()->all());
     }
 
-    public function checkUsersWithtocken($tbl="users")
+    public function checkUsersWithtocken($tbl = "users")
     {
         $refUser            = Auth()->user();
         $tableName = $refUser->gettable();
-        if($tableName!=$tbl)
-        {
+        if ($tableName != $tbl) {
             return false;
         }
         return true;

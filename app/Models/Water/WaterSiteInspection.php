@@ -20,7 +20,7 @@ class WaterSiteInspection extends Model
         $role = WfRole::where('id', $refRoleDetails)
             ->where('is_suspended', false)
             ->first();
-            
+
         $saveSiteVerify = new WaterSiteInspection();
         $saveSiteVerify->apply_connection_id    =   $req->applicationId;
         $saveSiteVerify->property_type_id       =   $req->propertyTypeId;
@@ -45,8 +45,8 @@ class WaterSiteInspection extends Model
         $saveSiteVerify->order_officer          =   $refRoleDetails;
         $saveSiteVerify->pipe_type              =   $req->pipeQuality;
         $saveSiteVerify->payment_status         =   $paymentstatus;
-        $saveSiteVerify->latitude               =   $req->latitude;
-        $saveSiteVerify->longitude              =   $req->longitude;
+        $saveSiteVerify->latitude               =   $req->latitude ?? null;
+        $saveSiteVerify->longitude              =   $req->longitude ?? null;
         $saveSiteVerify->save();
     }
 
