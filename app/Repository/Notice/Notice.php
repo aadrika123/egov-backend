@@ -610,7 +610,8 @@ use Barryvdh\DomPDF\Facade\PDF;
             $noticeList = NoticeApplication::select(DB::raw("notice_applications.id"))
                         ->WHERE("notice_applications.is_closed",FALSE)
                         ->WHERE("notice_applications.status",5)
-                        ->GET();
+                        ->GET(); 
+            
             if($sedule)
             {
                 foreach($noticeList as $val)
@@ -641,7 +642,7 @@ use Barryvdh\DomPDF\Facade\PDF;
                             ->WHERE("notice_applications.is_closed",FALSE)
                             ->WHERE("notice_applications.status",5)
                             ->first();
-           
+                            
             if(!$noticeData)
             {
                 throw new Exception("No Data Found");
@@ -663,6 +664,8 @@ use Barryvdh\DomPDF\Facade\PDF;
                         ->where("notice_id",$noticeData->id)
                         ->orderBy("created_at","DESC")
                         ->first();
+            // $remider->reminder_date =  Carbon::now()->format('Y-m-d');
+            // dd($sedule ,$remider );
             if($sedule && ($remider ?($remider->reminder_date == Carbon::now()->format('Y-m-d') && $remider->created_on != Carbon::now()->format('Y-m-d')) : true)) 
             { 
                 $url = $remider->notice_file??"";
@@ -693,7 +696,24 @@ use Barryvdh\DomPDF\Facade\PDF;
 
                 }
                 #=========send Notic==========
-                $whatsapp=(Whatsapp_Send($noticeData->mobile_no,"hello_world",));
+                $whatsapp=(Whatsapp_Send($noticeData->mobile_no,"file_test",
+                [
+                    "conten_type"=>"pdf",
+                    [
+                        "link"=>config('app.url')."/getImageLink?path=".$url,
+                        "filename"=>$this->_NOTICE_CONSTAINT["NOTICE-TYPE-BY-ID"][$noticeData->notice_type_id].".pdf"
+                    ]
+                ]));
+
+                $whatsapp2=(Whatsapp_Send($noticeData->mobile_no,"trn_2_var",
+                ["conten_type"=>"text",
+                    [
+                        "https://modernulb.com/RMCDMC/getImageLink.php?path=RANCHI/water_consumer_deactivation/26dd0dbc6e3f4c8043749885523d6a25.pdf",
+                        "notice.pdf"
+                    ]
+                ]));
+
+                dd($noticeData,$whatsapp??"",$filename??"",$whatsapp2); 
                 #=========end send Notice=======
                 DB::beginTransaction();
                 
@@ -708,7 +728,7 @@ use Barryvdh\DomPDF\Facade\PDF;
                 $newRemider->user_id            = $user->id??0;
                 $newRemider->notice_file        = $url;
                 $newRemider->save();
-                DB::commit();
+                // DB::commit();
             }
             
         }

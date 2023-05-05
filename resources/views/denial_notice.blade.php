@@ -25,10 +25,19 @@
             line-height: 0.1em;
         }
 
-        #container {
+        #container {            
             padding: 20px;
             margin-top: 0.5px;
             font-family: Hindi-Light;
+            position: relative;
+        }
+        .water-mark{
+            position: absolute;
+            top:30%;
+            display: inline-block;
+            opacity: 0.2;
+            text-align: center;
+            width: 100%;
         }
         .border-dark {
             border-color: #343a40!important;
@@ -87,7 +96,10 @@
     </style>
 </head>
 
-<body class="container bg-light border border-dark" id="container">
+<body class="container bg-light border border-dark" id="container" style="font-size:small">
+    <div class="water-mark">
+        <img style ="max-height:400px;" src="{{public_path('image/logo/jharkhand_log.png')}}" alt="">
+    </div>
     <div >
         <div class="row">
             <div class="col-md-12 text-center">
@@ -134,7 +146,7 @@
         <div class="row">
             <div class="col-md-12">
                 <p>
-                    बजरिये नोटिस आपको सूचित किया जाता है कि {{$noticeData->ulb_name}} क्षेत्र में किसी भी भवन का गैर
+                    बजरिये नोटिस आपको सूचित किया जाता है कि राँची नगर निगम क्षेत्र में किसी भी भवन का गैर
                     आवासीय उपयोग करने के लिए झारखण्ड नगरपालिका अधिनियम, 2011 की धारा 455 के तहत
                     म्यूनिसिपल अनुज्ञप्ति प्राप्त करना अनिवार्य है।
                 </p>
