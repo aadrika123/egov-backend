@@ -105,6 +105,7 @@ class WaterNewConnection implements IWaterNewConnection
             "water_applications.apply_from",
             "water_applications.is_field_verified",
             "water_applications.current_role",
+            "water_applications.parked",
             "ulb_ward_masters.ward_name",
             "charges.amount",
             "wf_roles.role_name as current_role_name",
