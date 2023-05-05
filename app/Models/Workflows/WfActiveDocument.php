@@ -344,4 +344,22 @@ class WfActiveDocument extends Model
             ->where('status', 1)
             ->get();
     }
+
+
+    /**
+     * | Deactivate the Rejected Document 
+     * | @param metaReqs
+        | Use for deactivate the rejected document
+     */
+    public function deactivateRejectedDoc($metaReqs)
+    {
+        WfActiveDocument::where('active_id', $metaReqs->activeId)
+            ->where('workflow_id', $metaReqs->workflowId)
+            ->where('module_id', $metaReqs->moduleId)
+            ->where('doc_code', $metaReqs->docCode)
+            ->where('verify_status', 2)
+            ->update([
+                "status" => 0
+            ]);
+    }
 }

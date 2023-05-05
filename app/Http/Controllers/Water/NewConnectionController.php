@@ -712,9 +712,12 @@ class NewConnectionController extends Controller
         }
     }
 
-    // Application details
+
     /**
+     * | Upload Application Documents 
+     * | @param req
         | Working 
+        | Look on the concept of deactivation of the rejected documents 
      */
     public function uploadWaterDoc(Request $req)
     {
@@ -766,10 +769,12 @@ class NewConnectionController extends Controller
             DB::beginTransaction();
             $ifDocExist = $mWfActiveDocument->ifDocExists($getWaterDetails->id, $getWaterDetails->workflow_id, $refmoduleId, $req->docCode, $req->ownerId);   // Checking if the document is already existing or not
             $metaReqs = new Request($metaReqs);
-            if (collect($ifDocExist)->isEmpty())
+            if (collect($ifDocExist)->isEmpty()) {
                 $mWfActiveDocument->postDocuments($metaReqs);
-            else
+            }
+            if (collect($ifDocExist)->isNotEmpty()) {
                 $mWfActiveDocument->editDocuments($ifDocExist, $metaReqs);
+            }
 
             #check full doc upload
             $refCheckDocument = $this->checkFullDocUpload($req);
@@ -784,6 +789,7 @@ class NewConnectionController extends Controller
             if ($getWaterDetails->parked == true) {
                 $status = false;
                 $mWaterApplication->updateParkedstatus($status, $applicationId);
+                $mWfActiveDocument->deactivateRejectedDoc($metaReqs);
             }
             DB::commit();
             return responseMsgs(true, "Document Uploadation Successful", "", "", "1.0", "", "POST", $req->deviceId ?? "");
@@ -898,13 +904,11 @@ class NewConnectionController extends Controller
 
             $workflowId = $waterDetails->workflow_id;
             $documents = $mWfActiveDocument->getWaterDocsByAppNo($req->applicationId, $workflowId, $moduleId);
-            $returnData = collect($documents)->map(function ($value) {
-                if ($value->verify_status != '2') {                           // Static
-                    $path =  $this->readDocumentPath($value->ref_doc_path);
-                    $value->doc_path = !empty(trim($value->ref_doc_path)) ? $path : null;
-                    return $value;
-                }
-            })->filter();
+            $returnData = collect($documents)->map(function ($value) {                          // Static
+                $path =  $this->readDocumentPath($value->ref_doc_path);
+                $value->doc_path = !empty(trim($value->ref_doc_path)) ? $path : null;
+                return $value;
+            });
             return responseMsgs(true, "Uploaded Documents", remove_null($returnData), "010102", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
