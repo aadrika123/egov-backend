@@ -42,6 +42,7 @@ use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\Workflows\WfWorkflowrolemap;
 use App\Models\WorkflowTrack;
+use App\Repository\Common\CommonFunction;
 use App\Repository\Water\Concrete\NewConnectionRepository;
 use App\Repository\Water\Concrete\WaterNewConnection;
 use Illuminate\Http\Request;
@@ -69,8 +70,11 @@ class NewConnectionController extends Controller
     private iNewConnection $newConnection;
     private $_dealingAssistent;
     private $_waterRoles;
+    protected $_commonFunction;
+
     public function __construct(iNewConnection $newConnection)
     {
+        $this->_commonFunction = new CommonFunction();
         $this->newConnection = $newConnection;
         $this->_dealingAssistent = Config::get('workflow-constants.DEALING_ASSISTENT_WF_ID');
         $this->_waterRoles = Config::get('waterConstaint.ROLE-LABEL');
@@ -307,12 +311,12 @@ class NewConnectionController extends Controller
      */
     public function approvalRejectionWater(Request $request)
     {
+        $request->validate([
+            "applicationId" => "required",
+            "status" => "required",
+            "comment" => "required"
+        ]);
         try {
-            $request->validate([
-                "applicationId" => "required",
-                "status" => "required",
-                "comment" => "required"
-            ]);
             $waterDetails = WaterApplication::findOrFail($request->applicationId);
             $mWfRoleUsermap = new WfRoleusermap();
 
@@ -423,7 +427,12 @@ class NewConnectionController extends Controller
         }
     }
 
-    // Back to Citizen  // Recheck
+
+    /**
+     * | Back to Citizen 
+     * | @param req
+        | Check if the current role of the application will be changed for iniciater role 
+     */
     public function backToCitizen(Request $req)
     {
         $req->validate([
@@ -432,26 +441,26 @@ class NewConnectionController extends Controller
         ]);
 
         try {
+            $user = authUser();
             $mWaterApplication = WaterApplication::findOrFail($req->applicationId);
             $WorkflowTrack = new WorkflowTrack();
             $refWorkflowId = Config::get("workflow-constants.WATER_MASTER_ID");
-            $metaRequest = new Request([
-                "workflowId" => $refWorkflowId
-            ]);
-            $roleId = $this->getRole($metaRequest)->pluck('wf_role_id');
-            $this->btcParamcheck($roleId, $mWaterApplication);
+
+            $role = $this->_commonFunction->getUserRoll($user->id, $mWaterApplication->ulb_id, $refWorkflowId);
+            $this->btcParamcheck($role, $mWaterApplication);
 
             DB::beginTransaction();
-            $initiatorRoleId = $mWaterApplication->initiator_role_id;
-            $mWaterApplication->current_role = $initiatorRoleId;
-            $mWaterApplication->parked = true;                        //<------  Pending Status true
+            // $initiatorRoleId = $mWaterApplication->initiator_role_id;
+            // $mWaterApplication->current_role = $initiatorRoleId;
+            $mWaterApplication->parked = true;                          //  Pending Status true
+            $mWaterApplication->doc_upload_status = false;              //  Docupload Status false
             $mWaterApplication->save();
 
             $metaReqs['moduleId'] = Config::get('module-constants.WATER_MODULE_ID');
             $metaReqs['workflowId'] = $mWaterApplication->workflow_id;
             $metaReqs['refTableDotId'] = 'water_applications.id';
             $metaReqs['refTableIdValue'] = $req->applicationId;
-            $metaReqs['senderRoleId'] = $roleId;
+            $metaReqs['senderRoleId'] = $role->role_id;
             $req->request->add($metaReqs);
             $WorkflowTrack->saveTrack($req);
 
@@ -465,16 +474,15 @@ class NewConnectionController extends Controller
 
     /**
      * | check the application for back to citizen case
-     * | check for the 
+     * | check for the
+        | Check who can use BTC operatio 
      */
-    public function btcParamcheck($roleId, $mWaterApplication)
+    public function btcParamcheck($role, $mWaterApplication)
     {
-        $refDealingAssistent = Config::get('waterConstaint.ROLE-LABEL.DA');
-        if ($roleId != $refDealingAssistent) {
-            throw new Exception("you are not authorized role!");
+        if ($role->is_btc != true) {
+            throw new Exception("You dont have permission to BTC!");
         }
-
-        if ($mWaterApplication->current_role != $roleId) {
+        if ($mWaterApplication->current_role != $role->role_id) {
             throw new Exception("the application is not under your possession!");
         }
     }
@@ -712,21 +720,24 @@ class NewConnectionController extends Controller
     {
         $req->validate([
             "applicationId" => "required|numeric",
-            "document"      => "required|mimes:pdf,jpeg,png,jpg,gif",
+            "document"      => "required|mimes:pdf,jpeg,png,jpg|max:2048",
             "docCode"       => "required",
-            "docCategory"   => "required|string",  # here
+            "docCategory"   => "required",                                  // Recheck in case of undefined
             "ownerId"       => "nullable|numeric"
         ]);
 
         try {
+            $user = authUser();
             $metaReqs = array();
+            $applicationId = $req->applicationId;
             $docUpload = new DocUpload;
             $mWfActiveDocument = new WfActiveDocument();
             $mWaterApplication = new WaterApplication();
             $relativePath = Config::get('waterConstaint.WATER_RELATIVE_PATH');
             $refmoduleId = Config::get('module-constants.WATER_MODULE_ID');
 
-            $getWaterDetails = $mWaterApplication->getWaterApplicationsDetails($req->applicationId);
+
+            $getWaterDetails = $mWaterApplication->getWaterApplicationsDetails($applicationId);
             $refImageName = $req->docRefName;
             $refImageName = $getWaterDetails->id . '-' . str_replace(' ', '_', $refImageName);
             $document = $req->document;
@@ -744,8 +755,16 @@ class NewConnectionController extends Controller
                 'docCategory'   => $req->docCategory
             ];
 
-            $ifDocExist = $mWfActiveDocument->isDocCategoryExists($getWaterDetails->id, $getWaterDetails->workflow_id, $refmoduleId, $req->docCategory, $req->ownerId);   // Checking if the document is already existing or not
+            if ($user->user_type == "Citizen") {                                                // Static
+                $isCitizen = true;
+                $this->checkParamForDocUpload($isCitizen, $getWaterDetails, $user);
+            } else {
+                $isCitizen = false;
+                $this->checkParamForDocUpload($isCitizen, $getWaterDetails, $user);
+            }
+
             DB::beginTransaction();
+            $ifDocExist = $mWfActiveDocument->isDocCategoryExists($getWaterDetails->id, $getWaterDetails->workflow_id, $refmoduleId, $req->docCategory, $req->ownerId);   // Checking if the document is already existing or not
             $metaReqs = new Request($metaReqs);
             if (collect($ifDocExist)->isEmpty())
                 $mWfActiveDocument->postDocuments($metaReqs);
@@ -757,9 +776,14 @@ class NewConnectionController extends Controller
 
             # Update the Doc Upload Satus in Application Table
             if ($refCheckDocument->contains(false)) {
-                $mWaterApplication->deactivateUploadStatus($req->applicationId);
+                $mWaterApplication->deactivateUploadStatus($applicationId);
             } else {
                 $this->updateWaterStatus($req, $getWaterDetails);
+            }
+            # if the application is parked and btc 
+            if ($getWaterDetails->parked == true) {
+                $status = false;
+                $mWaterApplication->updateParkedstatus($status, $applicationId);
             }
             DB::commit();
             return responseMsgs(true, "Document Uploadation Successful", "", "", "1.0", "", "POST", $req->deviceId ?? "");
@@ -767,6 +791,37 @@ class NewConnectionController extends Controller
             return responseMsgs(false, $e->getMessage(), "", "", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
+
+
+    /**
+     * | Check if the params for document upload
+     * | @param 
+     */
+    public function checkParamForDocUpload($isCitizen, $applicantDetals, $user)
+    {
+        $refWorkFlowMaster = Config::get('workflow-constants.WATER_MASTER_ID');
+        switch ($isCitizen) {
+                # For citizen 
+            case (true):
+                if (!is_null($applicantDetals->current_role) && $applicantDetals->parked == true) {
+                    return true;
+                }
+                if (!is_null($applicantDetals->current_role)) {
+                    throw new Exception("You aren't allowed to upload document!");
+                }
+                break;
+                # For user
+            case (false):
+                $userId = $user->id;
+                $ulbId = $applicantDetals->ulb_id;
+                $role = $this->_commonFunction->getUserRoll($userId, $ulbId, $refWorkFlowMaster);
+                if ($role->can_upload_document != true) {
+                    throw new Exception("You dont have permission to upload Document!");
+                }
+                break;
+        }
+    }
+
 
 
     /**
@@ -814,7 +869,7 @@ class NewConnectionController extends Controller
     public function updateWaterStatus($req, $application)
     {
         $mWaterApplication = new WaterApplication();
-        $waterRoles = $this->_waterRoles;
+        // $waterRoles = $this->_waterRoles;
         $mWaterApplication->activateUploadStatus($req->applicationId);
         # Auto forward to Bo 
         // if ($application->payment_status == 1) {
@@ -1109,17 +1164,17 @@ class NewConnectionController extends Controller
      */
     public function getAppartmentDetails($key, $propData)
     {
-        $mPropFloor = new PropFloor();
-        $mPropProperty = new PropProperty();
-        $mPropOwner = new PropOwner();
-        $mPropActiveSaf = new PropActiveSaf();
-        $mPropActiveSafsFloor = new PropActiveSafsFloor();
-        $mPropActiveSafsOwner = new PropActiveSafsOwner();
-        $refPropertyTypeId = Config::get('waterConstaint.PROPERTY_TYPE');
-        $apartmentId = $propData['apartment_details_id'];
+        $apartmentId            = $propData['apartment_details_id'];
+        $refPropertyTypeId      = Config::get('waterConstaint.PROPERTY_TYPE');
+        $mPropFloor             = new PropFloor();
+        $mPropProperty          = new PropProperty();
+        $mPropOwner             = new PropOwner();
+        $mPropActiveSaf         = new PropActiveSaf();
+        $mPropActiveSafsFloor   = new PropActiveSafsFloor();
+        $mPropActiveSafsOwner   = new PropActiveSafsOwner();
 
         switch ($key) {
-            case ('1'):
+            case ('1'): # For holdingNo
                 $propertyDetails = $mPropProperty->getPropByApartmentId($apartmentId)->get();
                 $propertyIds = collect($propertyDetails)->pluck('id');
                 $floorDetails = $mPropFloor->getAppartmentFloor($propertyIds)->get();
@@ -1135,7 +1190,7 @@ class NewConnectionController extends Controller
                 return $propData->merge($returnData);
                 break;
 
-            case ('2'):
+            case ('2'): # For SafNo
                 $safDetails = $mPropActiveSaf->getSafByApartmentId($apartmentId)->get(); # here
                 $safIds = collect($safDetails)->pluck('id');
                 $floorDetails = $mPropActiveSafsFloor->getSafAppartmentFloor($safIds)->get();
@@ -1605,11 +1660,16 @@ class NewConnectionController extends Controller
 
             # Payment Details 
             $refAppDetails = collect($applicationDetails)->first();
-            $waterTransaction = $mWaterTran->getTransNo($refAppDetails->id, $refAppDetails->connection_type)->get();
+            if (is_null($refAppDetails))
+                throw new Exception("Application Not Found!");
+
+            $waterTransaction = $mWaterTran->getTransNo($refAppDetails->id, $refAppDetails->connection_type)
+                ->get();
             $waterTransDetail['waterTransDetail'] = $waterTransaction;
 
             # calculation details
             $charges = $mWaterConnectionCharge->getWaterchargesById($refAppDetails['id'])
+                ->orderByDesc('id')
                 ->firstOrFail();
 
             if ($charges['paid_status'] == 0) {
@@ -2171,4 +2231,40 @@ class NewConnectionController extends Controller
         ];
         return $returnData;
     }
+
+
+    /**
+        | May be used recheck
+        | Not used
+     */
+    // public function btcDocUpload(Request $req)
+    // {
+    //     $req->validate([
+    //         "applicationId" => "required|numeric",
+    //     ]);
+    //     try {
+    //         $response = true;
+    //         $applicationId = $req->applicationId;
+    //         $mWaterApplication = new WaterApplication();
+
+    //         $mWaterApplication->getWaterApplicationsDetails($applicationId);
+    //         DB::beginTransaction();
+    //         #check full doc upload
+    //         $refCheckDocument = $this->checkFullDocUpload($req);
+    //         # Update the Doc Upload Satus in Application Table
+    //         if ($refCheckDocument->contains(false)) {
+    //             $mWaterApplication->deactivateUploadStatus($applicationId);
+    //             $response = false;
+    //         } else {
+    //             $status = true;
+    //             $mWaterApplication->updateParkedstatus($status, $applicationId);
+    //         }
+    //         DB::commit();
+    //         if ($response == false)
+    //             throw new Exception("Full document not uploaded!");
+    //         return responseMsgs(true, "Document Uploadation Successful", "", "", "1.0", "", "POST", $req->deviceId ?? "");
+    //     } catch (Exception $e) {
+    //         return responseMsgs(false, $e->getMessage(), "", "", "01", ".ms", "POST", $req->deviceId);
+    //     }
+    // }
 }

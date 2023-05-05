@@ -613,4 +613,22 @@ class WaterApplication extends Model
                 'doc_status' => true
             ]);
     }
+
+    /**
+     * | Update the parked status false 
+     */
+    public function updateParkedstatus($status, $applicationId)
+    {
+        $mWaterApplication = WaterApplication::find($applicationId);
+        switch ($status) {
+            case (true):
+                $mWaterApplication->parked = $status;
+                break;
+
+            case (false):
+                $mWaterApplication->parked = $status;
+                break;
+        }
+        $mWaterApplication->save();
+    }
 }

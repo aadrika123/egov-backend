@@ -559,8 +559,10 @@ class ActiveSafController extends Controller
             if (!$data)
                 throw new Exception("Application Not Found for this id");
 
-            if ($data->payment_status == 0)
+            if ($data->payment_status == 0) {
                 $data->current_role_name = null;
+                $data->current_role_name2 = "Payment is Pending";
+            }
 
             // Basic Details
             $basicDetails = $this->generateBasicDetails($data);      // Trait function to get Basic Details
@@ -667,8 +669,11 @@ class ActiveSafController extends Controller
             $data = $mPropActiveSaf->getActiveSafDtls()                         // <------- Model function Active SAF Details
                 ->where('prop_active_safs.id', $req->applicationId)
                 ->first();
-            if ($data->payment_status == 0)
+            if ($data->payment_status == 0) {
                 $data->current_role_name = null;
+                $data->current_role_name2 = "Payment is Pending";
+            }
+
             if (!$data)
                 throw new Exception("Data Not Found");
             $data = json_decode(json_encode($data), true);
@@ -2511,7 +2516,7 @@ class ActiveSafController extends Controller
             $data["floor_comparison"] = $floors_compais;
             return responseMsgs(true, $message, remove_null($data), "010121", "1.0", "258ms", "POST", $request->deviceId);
         } catch (Exception $e) {
-            dd($e->getMessage(),$e->getFile(),$e->getLine());
+            dd($e->getMessage(), $e->getFile(), $e->getLine());
             return responseMsg(false, $e->getMessage(), "");
         }
     }

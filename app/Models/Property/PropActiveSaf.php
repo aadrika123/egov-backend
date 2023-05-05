@@ -290,7 +290,6 @@ class  PropActiveSaf extends Model
                 's.corr_pin_code',
                 's.assessment_type',
                 's.applicant_name',
-                // 's.application_date',
                 DB::raw("TO_CHAR(s.application_date, 'DD-MM-YYYY') as application_date"),
                 's.area_of_plot as total_area_in_decimal',
                 's.prop_type_mstr_id',
@@ -299,7 +298,12 @@ class  PropActiveSaf extends Model
                 'p.property_type',
                 'doc_upload_status',
                 'payment_status',
-                'role_name as currentRole',
+                DB::raw(
+                    "case when payment_status!=1 then 'Payment Not Done'
+                          else role_name end
+                          as current_role
+                    "
+                ),
                 's.user_id',
                 's.citizen_id',
                 DB::raw(
@@ -728,7 +732,12 @@ class  PropActiveSaf extends Model
                 'u1.ward_name as new_ward_no',
                 'doc_upload_status',
                 'payment_status',
-                'role_name as currentRole',
+                DB::raw(
+                    "case when payment_status!=1 then 'Payment Not Done'
+                          else role_name end
+                          as current_role
+                    "
+                ),
                 's.user_id',
                 's.citizen_id',
                 'gb_office_name',
@@ -811,9 +820,9 @@ class  PropActiveSaf extends Model
     /**
      * | saf Basic Edit the water connection
      */
-    public function updateWaterConnection($safId, $consumerNo)
+    public function updateWaterConnection($safIds, $consumerNo)
     {
-        $nPropActiveSaf = PropActiveSaf::find($safId);
+        $nPropActiveSaf = PropActiveSaf::whereIn('id', $safIds);
         $reqs = [
             "water_conn_no" => $consumerNo,
             "water_conn_date" => Carbon::now(),
@@ -834,6 +843,17 @@ class  PropActiveSaf extends Model
             ->join('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'prop_active_safs.ward_mstr_id')
             ->leftJoin('ulb_ward_masters as u', 'u.id', '=', 'prop_active_safs.new_ward_mstr_id')
             ->where('prop_active_safs.apartment_details_id', $apartmentId)
+            ->where('prop_active_safs.status', 1)
+            ->orderByDesc('id');
+    }
+
+    /**
+     * | Get Appartment Details 
+     * | @param 
+     */
+    public function getActiveSafByApartmentId($apartmentId)
+    {
+        return PropActiveSaf::where('prop_active_safs.apartment_details_id', $apartmentId)
             ->where('prop_active_safs.status', 1)
             ->orderByDesc('id');
     }

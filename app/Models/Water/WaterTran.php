@@ -58,8 +58,13 @@ class WaterTran extends Model
 
     /**
      * | Enter the default details of the transacton which have 0 Connection charges
-     * | @param
-     * | @var 
+     * | @param totalConnectionCharges
+     * | @param ulbId
+     * | @param req
+     * | @param applicationId
+     * | @param connectionId
+     * | @param connectionType
+        | Check for the user Id for wether to save the user id in emp_details_id or in citizen_id
      */
     public function saveZeroConnectionCharg($totalConnectionCharges, $ulbId, $req, $applicationId, $connectionId, $connectionType)
     {
@@ -68,18 +73,20 @@ class WaterTran extends Model
         $transactionNo = $refIdGeneration->generateTransactionNo();
         if ($user->user_type == 'Citizen') {
             $isJsk = false;
+            $paymentMode = "Online";                                                // Static
             $citizenId = $user->id;
-        }
-        if ($user->user_type != 'Citizen') {
             $empId = $user->id;
+        } else {                                                                    // ($user->user_type != 'Citizen')
+            $empId = $user->id;
+            $paymentMode = "Cash";                                                  // Static
         }
 
         $watertransaction = new WaterTran;
         $watertransaction->related_id       = $applicationId;
-        $watertransaction->ward_id          = $req->ward_id;
+        $watertransaction->ward_id          = $req->wardId;
         $watertransaction->tran_type        = $connectionType;
         $watertransaction->tran_date        = Carbon::now();
-        $watertransaction->payment_mode     = "Cash";
+        $watertransaction->payment_mode     = $paymentMode;
         $watertransaction->amount           = $totalConnectionCharges;
         $watertransaction->emp_dtl_id       = $empId ?? null;
         $watertransaction->citizen_id       = $citizenId ?? null;

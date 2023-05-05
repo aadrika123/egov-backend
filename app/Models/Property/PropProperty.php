@@ -542,9 +542,9 @@ class PropProperty extends Model
     /**
      * | Property Basic Edit the water connection
      */
-    public function updateWaterConnection($propId, $consumerNo)
+    public function updateWaterConnection($propIds, $consumerNo)
     {
-        $property = PropProperty::find($propId);
+        $property = PropProperty::whereIn('id', $propIds);
         $reqs = [
             "water_conn_no" => $consumerNo,
             "water_conn_date" => Carbon::now(),
@@ -580,6 +580,18 @@ class PropProperty extends Model
             ->where('prop_properties.status', 1)
             ->orderByDesc('id');
     }
+
+    /**
+     * | Get property list by apartmentid
+     * | @param apartmentId
+     */
+    public function getPropertyByApartmentId($apartmentId)
+    {
+        return PropProperty::where('prop_properties.apartment_details_id', $apartmentId)
+            ->where('prop_properties.status', 1)
+            ->orderByDesc('id');
+    }
+
 
 
     /**
