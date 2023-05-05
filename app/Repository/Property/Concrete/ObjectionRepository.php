@@ -18,6 +18,7 @@ use App\Models\Property\PropProperty;
 use App\Models\PropActiveObjectionDtl;
 use App\Models\PropActiveObjectionFloor;
 use App\Models\Workflows\WfActiveDocument;
+use App\Models\Property\MPropForgeryType;
 use App\Models\WorkflowTrack;
 use App\Repository\Property\Concrete\PropertyBifurcation;
 use Illuminate\Http\Request;
@@ -112,6 +113,7 @@ class ObjectionRepository implements iObjectionRepository
                 $idGeneration = new PrefixIdGenerator($objParamId, $objection->ulb_id);
                 $objectionNo = $idGeneration->generate();
 
+                # Flag : call model <---------- 
                 PropActiveObjection::where('id', $objection->id)
                     ->update(['objection_no' => $objectionNo]);
 
@@ -180,7 +182,9 @@ class ObjectionRepository implements iObjectionRepository
 
             //objection for forgery 
             if ($objectionFor == 'Forgery') {
+                // return $request;
 
+                # Flag : call model <----------
                 $ulbWorkflowId = WfWorkflow::where('wf_master_id', $this->_workflow_id_forgery)
                     ->where('ulb_id', $ulbId)
                     ->first();
@@ -188,21 +192,101 @@ class ObjectionRepository implements iObjectionRepository
                 $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);            // Get Current Initiator ID
                 $initiatorRoleId = DB::select($refInitiatorRoleId);
 
+                # Flag : call model <----------
                 $objection = new PropActiveObjection;
                 $objection->ulb_id = $ulbId;
                 $objection->user_id = $userId;
-                $objection->citizen_id = $userId;
                 $objection->objection_for =  $objectionFor;
                 $objection->property_id = $request->propId;
                 $objection->remarks = $request->remarks;
                 $objection->date = Carbon::now();
                 $objection->created_at = Carbon::now();
                 $objection->workflow_id =  $ulbWorkflowId->id;
+                $objection->applicant_name =  $request->applicantName;
+                $objection->forgery_type_mstr_id =  $request->forgeryTypeMstrId;
                 $objection->current_role = collect($initiatorRoleId)->first()->role_id;
                 $objection->initiator_role_id = collect($initiatorRoleId)->first()->role_id;
                 $objection->finisher_role_id = collect($finisherRoleId)->first()->role_id;
+                if ($userType == 'Citizen') {
+                    $objection->current_role = collect($initiatorRoleId)->first()->forward_role_id;
+                    $objection->initiator_role_id = collect($initiatorRoleId)->first()->forward_role_id;      // Send to DA in Case of Citizen
+                    $objection->last_role_id = collect($initiatorRoleId)->first()->forward_role_id;
+                    $objection->user_id = null;
+                    $objection->citizen_id = $userId;
+                    // $objection->doc_upload_status = 1;
+                }
                 $objection->save();
-                return responseMsg(true, "Successfully Saved", '');
+
+                $idGeneration = new PrefixIdGenerator($objParamId, $objection->ulb_id);
+                $objectionNo = $idGeneration->generate();
+
+                PropActiveObjection::where('id', $objection->id)
+                    ->update(['objection_no' => $objectionNo]);
+
+                $owner = $request->owners;
+                //saving objection owner details
+                foreach ($owner as $owners) {
+                    $mPropActiveObjectionOwner = new PropActiveObjectionOwner();
+                    $mPropActiveObjectionOwner->objection_id = $objection->id;
+                    $mPropActiveObjectionOwner->prop_owner_id = $owners['ownerId'] ?? null;
+                    $mPropActiveObjectionOwner->gender = $owners['gender'] ?? null;
+                    $mPropActiveObjectionOwner->owner_name = $owners['ownerName'] ?? null;
+                    $mPropActiveObjectionOwner->owner_mobile = $owners['mobileNo'] ?? null;
+                    $mPropActiveObjectionOwner->aadhar = $owners['aadhar'] ?? null;
+                    $mPropActiveObjectionOwner->dob = $owners['dob'] ?? null;
+                    $mPropActiveObjectionOwner->guardian_name = $owners['guardianName'] ?? null;
+                    $mPropActiveObjectionOwner->relation = $owners['relation'] ?? null;
+                    $mPropActiveObjectionOwner->pan = $owners['pan'] ?? null;
+                    $mPropActiveObjectionOwner->email = $owners['email'] ?? null;
+                    $mPropActiveObjectionOwner->is_armed_force = $owners['isArmedForce'] ?? false;
+                    $mPropActiveObjectionOwner->is_specially_abled = $owners['isSpeciallyAbled'] ?? false;
+                    $mPropActiveObjectionOwner->created_at = Carbon::now();
+                    $mPropActiveObjectionOwner->save();
+
+                    if (isset($owners['ownerId']) && !$owners['ownerId']) {
+
+                        $docUpload = new DocUpload;
+                        $mWfActiveDocument = new WfActiveDocument();
+                        $relativePath = Config::get('PropertyConstaint.OBJECTION_RELATIVE_PATH');
+                        $refImageName = 'FORGERY_OWNER_DOC';
+                        $refImageName = $objection->id . '-' . str_replace(' ', '_', $refImageName);
+                        $document = $owners['ownerDoc'];
+                        $imageName = $docUpload->upload($refImageName, $document, $relativePath);
+
+                        $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+                        $metaReqs['activeId'] = $objection->id;
+                        $metaReqs['workflowId'] = $objection->workflow_id;
+                        $metaReqs['ulbId'] = $objection->ulb_id;
+                        $metaReqs['document'] = $imageName;
+                        $metaReqs['relativePath'] = $relativePath;
+                        $metaReqs['docCode'] = 'FORGERY_OWNER_DOC';
+
+                        $metaReqs = new Request($metaReqs);
+                        $mWfActiveDocument->postDocuments($metaReqs);
+                    }
+                }
+
+                $documents = $request->documents;
+                foreach ($documents as $document) {
+                    $docUpload = new DocUpload;
+                    $mWfActiveDocument = new WfActiveDocument();
+                    $relativePath = Config::get('PropertyConstaint.OBJECTION_RELATIVE_PATH');
+                    $refImageName = $document['docCode'];
+                    $refImageName = $objection->id . '-' . str_replace(' ', '_', $refImageName);
+                    $documents = $document['doc'];
+                    $imageName = $docUpload->upload($refImageName, $documents, $relativePath);
+
+                    $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+                    $metaReqs['activeId'] = $objection->id;
+                    $metaReqs['workflowId'] = $objection->workflow_id;
+                    $metaReqs['ulbId'] = $objection->ulb_id;
+                    $metaReqs['document'] = $imageName;
+                    $metaReqs['relativePath'] = $relativePath;
+                    $metaReqs['docCode'] = $document['docCode'];
+
+                    $reqs = new Request($metaReqs);
+                    $mWfActiveDocument->postDocuments($reqs);
+                }
             }
 
             // Objection Against Assessment
@@ -361,7 +445,7 @@ class ObjectionRepository implements iObjectionRepository
             $tracks->saveTrack($request);
             DB::commit();
 
-            return responseMsgs(true, "Successfully Saved", $objectionNo, '010801', '01', '382ms-547ms', 'Post', '');
+            return responseMsgs(true, "Successfully Applied Application", $objectionNo, '010801', '01', '382ms-547ms', 'Post', '');
         } catch (Exception $e) {
             DB::rollBack();
             return response()->json($e->getMessage());

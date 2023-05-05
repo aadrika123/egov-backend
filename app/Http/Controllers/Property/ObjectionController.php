@@ -10,6 +10,7 @@ use App\Models\CustomDetail;
 use App\Models\Masters\RefRequiredDocument;
 use App\Models\PropActiveObjectionDtl;
 use App\Models\PropActiveObjectionFloor;
+use App\Models\Property\MPropForgeryType;
 use App\Models\Property\PropActiveObjection;
 use App\Models\Property\PropActiveObjectionOwner;
 use App\Models\Property\PropFloor;
@@ -72,6 +73,21 @@ class ObjectionController extends Controller
             return $objType->objectionType();
         } catch (Exception $e) {
             echo $e->getMessage();
+        }
+    }
+
+    /**
+     * | forgery types
+     */
+    public function forgeryType()
+    {
+        try {
+            $mPropForgeryType = new MPropForgeryType();
+            $forgeryType = $mPropForgeryType->forgeryType();
+
+            return responseMsgs(true, "Forgery Types", $forgeryType, "", '01', '', 'Post', '');
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
         }
     }
 
@@ -278,6 +294,9 @@ class ObjectionController extends Controller
                     }
                     $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$objectionElement,  $objectionFloorElement, $floorElement]);
                 }
+            }
+
+            if ($details->objection_for == 'Forgery') {
             }
 
             // Card Details
@@ -755,7 +774,6 @@ class ObjectionController extends Controller
         }
     }
 
-
     /**
      * | 
      */
@@ -836,8 +854,20 @@ class ObjectionController extends Controller
                 $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "OBJECTION_CLERICAL_ADDRESS_ID")->requirements;
             if ($ownerDetails->prop_owner_id == null)
                 $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "OBJECTION_CLERICAL_ADD_OWNER")->requirements;
-        } else
+        }
+
+        if ($objectionType == 'Assessment Error') {
             $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "OBJECTION_EVIDENCE_DOC")->requirements;
+        }
+
+        if ($objectionType == 'Forgery') {
+            if ($refApplication->forgery_type_mstr_id == 1)
+                $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "OBJECTION_FORGERY_ADVERSE_POSSESSION")->requirements;
+            if ($refApplication->forgery_type_mstr_id == 2)
+                $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "OBJECTION_FORGERY_SURVIVORSHIP")->requirements;
+            if ($refApplication->forgery_type_mstr_id == 3)
+                $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "OBJECTION_FORGERY_TITLE_DISPUTE")->requirements;
+        }
 
         if (!empty($documentList))
             $filteredDocs = $this->filterDocument($documentList, $refApplication);                                     // function(1.2)
@@ -1017,6 +1047,74 @@ class ObjectionController extends Controller
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $request->deviceId ?? "");
         }
+    }
+
+    /**
+     * | forgery Doc list for citizen
+     */
+    public function citizenForgeryDocList(Request $req)
+    {
+        switch ($req->forgeryTypeMstrId) {
+            case ('1'):
+                $data =  RefRequiredDocument::select('*')
+                    ->where('code', 'OBJECTION_FORGERY_ADVERSE_POSSESSION')
+                    ->first()->requirements;
+                $code = $this->citizenForgeryfilterDoc($data);
+                break;
+
+            case ('2'):
+                $data =  RefRequiredDocument::select('*')
+                    ->where('code', 'OBJECTION_FORGERY_SURVIVORSHIP')
+                    ->first()->requirements;
+                $code = $this->citizenForgeryfilterDoc($data);
+                break;
+
+            case ('3'):
+                $data =  RefRequiredDocument::select('*')
+                    ->where('code', 'OBJECTION_FORGERY_TITLE_DISPUTE')
+                    ->first()->requirements;
+                $code = $this->citizenForgeryfilterDoc($data);
+                break;
+
+            case ('4'):
+                $data =  RefRequiredDocument::select('*')
+                    ->where('code', '')
+                    ->first()->requirements;
+                $code = $this->citizenForgeryfilterDoc($data);
+                break;
+        }
+        return responseMsgs(true, "Citizen Doc List", remove_null($code), 010717, 1.0, "413ms", "POST", "", "");
+    }
+
+    /**
+     * | 
+     */
+    public function citizenForgeryfilterDoc($documentList)
+    {
+        $explodeDocs = collect(explode('#', $documentList));
+
+        $filteredDocs = $explodeDocs->map(function ($explodeDoc) {
+            $document = explode(',', $explodeDoc);
+            $key = array_shift($document);
+            $label = array_shift($document);
+            // $documents = collect();
+
+            $reqDoc['docType'] = $key;
+            $reqDoc['docName'] = substr($label, 1, -1);
+            // $reqDoc['uploadedDoc'] = $documents->first();
+
+            $reqDoc['masters'] = collect($document)->map(function ($doc) {
+                $strLower = strtolower($doc);
+                $strReplace = str_replace('_', ' ', $strLower);
+                $arr = [
+                    "documentCode" => $doc,
+                    "docVal" => ucwords($strReplace),
+                ];
+                return $arr;
+            });
+            return $reqDoc;
+        });
+        return $filteredDocs;
     }
 
     public function citizenDocList(Request $req)
