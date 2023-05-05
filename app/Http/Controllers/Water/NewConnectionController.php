@@ -1529,9 +1529,8 @@ class NewConnectionController extends Controller
 
     /**
      * | Document Verify Reject
-     * | @param 
-     * | @var 
-     * | @return 
+     * | @param req
+        | Discuss about the doc_upload_status should be 0 or not 
      */
     public function docVerifyRejects(Request $req)
     {
@@ -1582,9 +1581,9 @@ class NewConnectionController extends Controller
                 $status = 1;
             }
             if ($req->docStatus == "Rejected") {
-                # For Rejection Doc Upload Status and Verify Status will disabled
+                # For Rejection Doc Upload Status and Verify Status will disabled 
                 $status = 2;
-                $waterApplicationDtl->doc_upload_status = 0;
+                // $waterApplicationDtl->doc_upload_status = 0;
                 $waterApplicationDtl->doc_status = 0;
                 $waterApplicationDtl->save();
             }
