@@ -31,7 +31,7 @@ class TradeParamItemType extends Model
     {        
         if(!$id)
         {
-            $id="198";
+            $id="0";
         }
         $id = explode(",",$id);
         $items = self::select("*")
