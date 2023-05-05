@@ -809,7 +809,7 @@ class NewConnectionController extends Controller
                 if (!is_null($applicantDetals->current_role)) {
                     throw new Exception("You aren't allowed to upload document!");
                 }
-
+                break;
                 # For user
             case (false):
                 $userId = $user->id;
