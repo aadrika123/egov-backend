@@ -899,10 +899,12 @@ class NewConnectionController extends Controller
             $workflowId = $waterDetails->workflow_id;
             $documents = $mWfActiveDocument->getWaterDocsByAppNo($req->applicationId, $workflowId, $moduleId);
             $returnData = collect($documents)->map(function ($value) {
-                $path =  $this->readDocumentPath($value->ref_doc_path);
-                $value->doc_path = !empty(trim($value->ref_doc_path)) ? $path : null;
-                return $value;
-            });
+                if ($value->verify_status != '2') {                           // Static
+                    $path =  $this->readDocumentPath($value->ref_doc_path);
+                    $value->doc_path = !empty(trim($value->ref_doc_path)) ? $path : null;
+                    return $value;
+                }
+            })->filter();
             return responseMsgs(true, "Uploaded Documents", remove_null($returnData), "010102", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
