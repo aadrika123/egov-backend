@@ -28,7 +28,11 @@ class TradeParamItemType extends Model
         }
     }
     public Static function itemsById($id)
-    {
+    {        
+        if(!$id)
+        {
+            $id="198";
+        }
         $id = explode(",",$id);
         $items = self::select("*")
             ->whereIn("id",$id)
