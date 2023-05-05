@@ -562,7 +562,8 @@ class ActiveSafController extends Controller
             if ($data->payment_status == 0) {
                 $data->current_role_name = null;
                 $data->current_role_name2 = "Payment is Pending";
-            }
+            } else
+                $data->current_role_name2 = $data->current_role_name;
 
             // Basic Details
             $basicDetails = $this->generateBasicDetails($data);      // Trait function to get Basic Details
@@ -672,7 +673,9 @@ class ActiveSafController extends Controller
             if ($data->payment_status == 0) {
                 $data->current_role_name = null;
                 $data->current_role_name2 = "Payment is Pending";
-            }
+            } else
+                $data->current_role_name2 = $data->current_role_name;
+
 
             if (!$data)
                 throw new Exception("Data Not Found");
