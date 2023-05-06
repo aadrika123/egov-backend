@@ -778,7 +778,12 @@ class  PropActiveSaf extends Model
             DB::raw("'active' as status"),
             'prop_active_safs.saf_no',
             'prop_active_safs.assessment_type',
-            'prop_active_safs.current_role',
+            DB::raw(
+                "case when prop_active_safs.payment_status!=1 then 'Payment Not Done'
+                      else role_name end
+                      as current_role
+                "
+            ),
             'role_name as currentRole',
             'u.ward_name as old_ward_no',
             'uu.ward_name as new_ward_no',
@@ -806,7 +811,12 @@ class  PropActiveSaf extends Model
             DB::raw("'active' as status"),
             'prop_active_safs.saf_no',
             'prop_active_safs.assessment_type',
-            'prop_active_safs.current_role',
+            DB::raw(
+                "case when prop_active_safs.payment_status!=1 then 'Payment Not Done'
+                      else role_name end
+                      as current_role
+                "
+            ),
             'role_name as currentRole',
             'ward_name',
             'prop_address',
