@@ -170,6 +170,7 @@ class HoldingTaxController extends Controller
 
             $propBasicDtls = $mPropProperty->getPropBasicDtls($req->propId);
             $holdingType = $propBasicDtls->holding_type;
+            $ownershipType = $propBasicDtls->ownership_type;
             $basicDtls = collect($propBasicDtls)->only([
                 'holding_no',
                 'new_holding_no',
@@ -185,6 +186,7 @@ class HoldingTaxController extends Controller
                 'prop_address'
             ]);
             $basicDtls["holding_type"] = $holdingType;
+            $basicDtls["ownership_type"] = $ownershipType;
 
             if ($demandList->isEmpty())
                 throw new Exception("Dues Not Available for this Property");

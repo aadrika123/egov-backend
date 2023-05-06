@@ -2229,7 +2229,8 @@ class ActiveSafController extends Controller
                 "new_ward_no" => $req['new_ward_no'],
                 "property_type" => $req['property_type'],
                 "holding_type" => $req['holding_type'],
-                "doc_upload_status" => $req['doc_upload_status']
+                "doc_upload_status" => $req['doc_upload_status'],
+                "ownership_type" => $req['ownership_type']
             ];
             $demand['amounts'] = $safTaxes->original['data']['demand'];
             $demand['details'] = collect($safTaxes->original['data']['details']);
