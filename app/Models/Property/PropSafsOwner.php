@@ -27,4 +27,12 @@ class PropSafsOwner extends Model
             ->orderBy('id')
             ->first();
     }
+
+
+    public function getOwnersBySafId($safId)
+    {
+        return PropSafsOwner::where('saf_id', $safId)
+            ->where('status', 1)
+            ->get();
+    }
 }
