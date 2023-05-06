@@ -26,9 +26,11 @@ use App\Models\Property\PropProperty;
 use App\Models\Property\PropRazorpayPenalrebate;
 use App\Models\Property\PropRazorpayRequest;
 use App\Models\Property\PropRazorpayResponse;
+use App\Models\Property\PropSaf;
 use App\Models\Property\PropSafsDemand;
 use App\Models\Property\PropTranDtl;
 use App\Models\Property\PropTransaction;
+use App\Models\Workflows\WfRoleusermap;
 use App\Repository\Property\Interfaces\iSafRepository;
 use App\Traits\Payment\Razorpay;
 use App\Traits\Property\SAF;
@@ -140,10 +142,14 @@ class HoldingTaxController extends Controller
             $mPropAdvance = new PropAdvance();
             $mPropDemand = new PropDemand();
             $mPropProperty = new PropProperty();
+            $mPropSafs = new PropSaf();
             $penaltyRebateCalc = new PenaltyRebateCalculation;
+            $mWfRoleusermap = new WfRoleusermap();
             $currentQuarter = calculateQtr(Carbon::now()->format('Y-m-d'));
             $currentFYear = getFY();
-            $loggedInUserType = authUser()->user_type ?? "Citizen";
+            $user = authUser();
+            $loggedInUserType = $user->user_type ?? "Citizen";
+            $userId = $user->id;
             $mPropOwners = new PropOwner();
             $pendingFYears = collect();
             $qtrs = collect();
@@ -164,13 +170,14 @@ class HoldingTaxController extends Controller
                     $demandList = $demandList->values();
                 }
             }
-
+            $safDtl = $mPropSafs->getSafbyPropId($req->propId);
             $propDtls = $mPropProperty->getPropById($req->propId);
             $balance = $propDtls->balance ?? 0;
 
             $propBasicDtls = $mPropProperty->getPropBasicDtls($req->propId);
             $holdingType = $propBasicDtls->holding_type;
             $ownershipType = $propBasicDtls->ownership_type;
+            // $workflowId = $safDtl->workflow_id;
             $basicDtls = collect($propBasicDtls)->only([
                 'holding_no',
                 'new_holding_no',
@@ -187,6 +194,12 @@ class HoldingTaxController extends Controller
             ]);
             $basicDtls["holding_type"] = $holdingType;
             $basicDtls["ownership_type"] = $ownershipType;
+
+            // $mreqs = new Request([
+            //     "workflowId" => $workflowId,
+            //     "userId" => $userId
+            // ]);
+            // $role = $mWfRoleusermap->getRoleByUserWfId($mreqs);
 
             if ($demandList->isEmpty())
                 throw new Exception("Dues Not Available for this Property");

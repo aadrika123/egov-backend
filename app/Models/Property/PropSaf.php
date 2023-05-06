@@ -220,4 +220,13 @@ class PropSaf extends Model
             ->leftJoin('ref_prop_gbbuildingusagetypes as gbu', 'gbu.id', 'prop_safs.gb_usage_types')
             ->leftJoin('ref_prop_gbpropusagetypes as gbp', 'gbp.id', 'prop_safs.gb_prop_usage_types');
     }
+
+    /**
+     * | get Safs details from prop id
+     */
+    public function getSafbyPropId($propId)
+    {
+        return PropSaf::where('property_id', $propId)
+            ->first();
+    }
 }
