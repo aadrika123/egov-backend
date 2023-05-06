@@ -2259,6 +2259,7 @@ class ActiveSafController extends Controller
             $demand['taxDetails'] = collect($safTaxes->original['data']['taxDetails']);
             $demand['paymentStatus'] = $safDetails['payment_status'];
             $demand['applicationNo'] = $safDetails['saf_no'];
+            $demand['can_pay'] = true;
             return responseMsgs(true, "Demand Details", remove_null($demand), "", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");

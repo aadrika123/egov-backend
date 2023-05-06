@@ -246,6 +246,7 @@ class HoldingTaxController extends Controller
             $demand['demandList'] = $demandList;
 
             $demand['basicDetails'] = $basicDtls;
+            $demand['can_pay'] = true;
 
             $total = roundFigure($dues - $advanceAmt);
             $totalPayable = round($total + $onePercTax);
