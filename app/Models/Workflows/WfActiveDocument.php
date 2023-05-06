@@ -77,13 +77,12 @@ class WfActiveDocument extends Model
     /**
      * | Check if the document is already existing or not
      */
-    public function ifDocExists($activeId, $workflowId, $moduleId, $docCode, $docCategory, $ownerId = null)
+    public function ifDocExists($activeId, $workflowId, $moduleId, $docCode, $ownerId = null)
     {
         return WfActiveDocument::where('active_id', $activeId)
             ->where('workflow_id', $workflowId)
             ->where('module_id', $moduleId)
             ->where('doc_code', $docCode)
-            ->where('doc_category', $docCategory)
             ->where('owner_dtl_id', $ownerId)
             ->where('verify_status', 0)
             ->where('status', 1)
@@ -344,5 +343,23 @@ class WfActiveDocument extends Model
             ->where('verify_status', '!=', 2)
             ->where('status', 1)
             ->get();
+    }
+
+
+    /**
+     * | Deactivate the Rejected Document 
+     * | @param metaReqs
+        | Use for deactivate the rejected document
+     */
+    public function deactivateRejectedDoc($metaReqs)
+    {
+        WfActiveDocument::where('active_id', $metaReqs->activeId)
+            ->where('workflow_id', $metaReqs->workflowId)
+            ->where('module_id', $metaReqs->moduleId)
+            ->where('doc_code', $metaReqs->docCode)
+            ->where('verify_status', 2)
+            ->update([
+                "status" => 0
+            ]);
     }
 }

@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Property;
 
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Facades\Config;
 
 class ReqPayment extends FormRequest
@@ -37,5 +39,21 @@ class ReqPayment extends FormRequest
         $rules['id'] = "required";
 
         return $rules;
+    }
+
+
+    // Validation Error Message
+    protected function failedValidation(Validator $validator)
+    {
+        throw new HttpResponseException(
+            response()->json(
+                [
+                    'status' => false,
+                    'message' => 'The given data was invalid',
+                    'errors' => $validator->errors()
+                ],
+                422
+            )
+        );
     }
 }

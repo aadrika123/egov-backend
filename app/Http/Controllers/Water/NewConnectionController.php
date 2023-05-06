@@ -712,9 +712,12 @@ class NewConnectionController extends Controller
         }
     }
 
-    // Application details
+
     /**
+     * | Upload Application Documents 
+     * | @param req
         | Working 
+        | Look on the concept of deactivation of the rejected documents 
      */
     public function uploadWaterDoc(Request $req)
     {
@@ -764,12 +767,14 @@ class NewConnectionController extends Controller
             }
 
             DB::beginTransaction();
-            $ifDocExist = $mWfActiveDocument->isDocCategoryExists($getWaterDetails->id, $getWaterDetails->workflow_id, $refmoduleId, $req->docCategory, $req->ownerId);   // Checking if the document is already existing or not
+            $ifDocExist = $mWfActiveDocument->ifDocExists($getWaterDetails->id, $getWaterDetails->workflow_id, $refmoduleId, $req->docCode, $req->ownerId);   // Checking if the document is already existing or not
             $metaReqs = new Request($metaReqs);
-            if (collect($ifDocExist)->isEmpty())
+            if (collect($ifDocExist)->isEmpty()) {
                 $mWfActiveDocument->postDocuments($metaReqs);
-            else
+            }
+            if (collect($ifDocExist)->isNotEmpty()) {
                 $mWfActiveDocument->editDocuments($ifDocExist, $metaReqs);
+            }
 
             #check full doc upload
             $refCheckDocument = $this->checkFullDocUpload($req);
@@ -784,6 +789,7 @@ class NewConnectionController extends Controller
             if ($getWaterDetails->parked == true) {
                 $status = false;
                 $mWaterApplication->updateParkedstatus($status, $applicationId);
+                $mWfActiveDocument->deactivateRejectedDoc($metaReqs);
             }
             DB::commit();
             return responseMsgs(true, "Document Uploadation Successful", "", "", "1.0", "", "POST", $req->deviceId ?? "");
@@ -898,7 +904,7 @@ class NewConnectionController extends Controller
 
             $workflowId = $waterDetails->workflow_id;
             $documents = $mWfActiveDocument->getWaterDocsByAppNo($req->applicationId, $workflowId, $moduleId);
-            $returnData = collect($documents)->map(function ($value) {
+            $returnData = collect($documents)->map(function ($value) {                          // Static
                 $path =  $this->readDocumentPath($value->ref_doc_path);
                 $value->doc_path = !empty(trim($value->ref_doc_path)) ? $path : null;
                 return $value;
@@ -1529,9 +1535,8 @@ class NewConnectionController extends Controller
 
     /**
      * | Document Verify Reject
-     * | @param 
-     * | @var 
-     * | @return 
+     * | @param req
+        | Discuss about the doc_upload_status should be 0 or not 
      */
     public function docVerifyRejects(Request $req)
     {
@@ -1582,9 +1587,9 @@ class NewConnectionController extends Controller
                 $status = 1;
             }
             if ($req->docStatus == "Rejected") {
-                # For Rejection Doc Upload Status and Verify Status will disabled
+                # For Rejection Doc Upload Status and Verify Status will disabled 
                 $status = 2;
-                $waterApplicationDtl->doc_upload_status = 0;
+                // $waterApplicationDtl->doc_upload_status = 0;
                 $waterApplicationDtl->doc_status = 0;
                 $waterApplicationDtl->save();
             }
