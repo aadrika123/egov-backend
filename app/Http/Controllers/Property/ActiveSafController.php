@@ -537,6 +537,7 @@ class ActiveSafController extends Controller
 
         try {
             $mPropActiveSaf = new PropActiveSaf();
+            $mPropSaf = new PropSaf();
             $mPropActiveSafOwner = new PropActiveSafsOwner();
             $mActiveSafsFloors = new PropActiveSafsFloor();
             $mWorkflowTracks = new WorkflowTrack();
@@ -550,11 +551,23 @@ class ActiveSafController extends Controller
                 $data = $mPropActiveSaf->getActiveSafDtls()      // <------- Model function Active SAF Details
                     ->where('prop_active_safs.id', $req->applicationId)
                     ->first();
+
+                if (collect($data)->isEmpty()) {
+                    $data = $mPropSaf->getSafDtls()
+                        ->where('prop_safs.id', $req->applicationId)
+                        ->first();
+                }
             }
             if ($req->safNo) {                                  // <-------- Search By SAF No
                 $data = $mPropActiveSaf->getActiveSafDtls()    // <------- Model Function Active SAF Details
                     ->where('prop_active_safs.saf_no', $req->safNo)
                     ->first();
+
+                if (collect($data)->isEmpty()) {
+                    $data = $mPropSaf->getSafDtls()
+                        ->where('prop_safs.saf_no', $req->applicationId)
+                        ->first();
+                }
             }
 
             if (!$data)
