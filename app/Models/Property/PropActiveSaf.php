@@ -170,6 +170,7 @@ class  PropActiveSaf extends Model
             ->select(
                 'prop_active_safs.*',
                 'prop_active_safs.assessment_type as assessment',
+                DB::raw("REPLACE(prop_active_safs.holding_type, '_', ' ') AS holding_type"),
                 'w.ward_name as old_ward_no',
                 'nw.ward_name as new_ward_no',
                 'o.ownership_type',
