@@ -739,6 +739,11 @@ class TradeCitizenController extends Controller
             if($licenseNo)
             { 
                 $licenseNo = explode(",",$licenseNo);
+                $rowLicenseNo = collect($licenseNo)->map(function($val){
+                    return "'".$val."'";
+                });
+                $rowLicenseNo = ($rowLicenseNo->implode(","));
+
                 $ActiveLicence = ActiveTradeLicence::select(
                     "active_trade_licences.id",
                     "active_trade_licences.application_no",
@@ -769,8 +774,11 @@ class TradeCitizenController extends Controller
                                         STRING_AGG(email_id,',') AS email_id,
                                         active_trade_owners.temp_id
                                         FROM active_trade_owners 
-                                        JOIN active_trade_licences on active_trade_licences.citizen_id = $refUserId 
-                                            AND active_trade_licences.id = active_trade_owners.temp_id 
+                                        JOIN active_trade_licences on active_trade_licences.id = active_trade_owners.temp_id
+                                            AND (
+                                                active_trade_licences.application_no IN($rowLicenseNo)
+                                                OR  active_trade_licences.license_no IN($rowLicenseNo)
+                                             )
                                         WHERE active_trade_owners.is_active = true
                                         GROUP BY active_trade_owners.temp_id
                                         )owner"), function ($join) {
@@ -812,8 +820,11 @@ class TradeCitizenController extends Controller
                                         STRING_AGG(email_id,',') AS email_id,
                                         rejected_trade_owners.temp_id
                                         FROM rejected_trade_owners
-                                        JOIN rejected_trade_licences on rejected_trade_licences.citizen_id = $refUserId 
-                                            AND rejected_trade_licences.id = rejected_trade_owners.temp_id 
+                                        JOIN rejected_trade_licences on rejected_trade_licences.id = rejected_trade_owners.temp_id 
+                                            AND(
+                                                rejected_trade_licences.application_no IN($rowLicenseNo)
+                                                OR  rejected_trade_licences.license_no IN($rowLicenseNo)
+                                            )
                                         WHERE rejected_trade_owners.is_active = true
                                         GROUP BY rejected_trade_owners.temp_id
                                         )owner"), function ($join) {
@@ -826,7 +837,6 @@ class TradeCitizenController extends Controller
                     });
                     
                     // ->get();
-                    DB::enableQueryLog();
                 $ApprovedLicence = TradeLicence::select(
                     "trade_licences.id",
                     "trade_licences.application_no",
@@ -857,8 +867,11 @@ class TradeCitizenController extends Controller
                                             STRING_AGG(email_id,',') AS email_id,
                                             trade_owners.temp_id
                                             FROM trade_owners
-                                            JOIN trade_licences on trade_licences.citizen_id = $refUserId 
-                                            AND trade_licences.id = trade_owners.temp_id 
+                                            JOIN trade_licences on trade_licences.id = trade_owners.temp_id 
+                                                AND(
+                                                    trade_licences.application_no IN($rowLicenseNo)
+                                                    OR  trade_licences.license_no IN($rowLicenseNo)
+                                                )
                                             WHERE trade_owners.is_active = true
                                             GROUP BY trade_owners.temp_id
                                             )owner"), function ($join) {
@@ -899,8 +912,11 @@ class TradeCitizenController extends Controller
                                             STRING_AGG(email_id,',') AS email_id,
                                             trade_owners.temp_id
                                             FROM trade_owners
-                                            JOIN trade_renewals on trade_renewals.citizen_id = $refUserId 
-                                            AND trade_renewals.id = trade_owners.temp_id 
+                                            JOIN trade_renewals on trade_renewals.id = trade_owners.temp_id 
+                                                AND(
+                                                    trade_renewals.application_no IN($rowLicenseNo)
+                                                    OR  trade_renewals.license_no IN($rowLicenseNo)
+                                                )
                                             WHERE trade_owners.is_active = true
                                             GROUP BY trade_owners.temp_id
                                             )owner"), function ($join) {
