@@ -1637,6 +1637,8 @@ class ActiveSafController extends Controller
             foreach ($demands as $demand) {
                 $demand = (array)$demand;
                 unset($demand['ruleSet'], $demand['rwhPenalty'], $demand['onePercPenalty'], $demand['onePercPenaltyTax']);
+                if (isset($demand['status']))
+                    unset($demand['status']);
                 $demand['paid_status'] = 1;
                 $demand['saf_id'] = $safId;
                 $demand['balance'] = 0;
