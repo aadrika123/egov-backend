@@ -263,19 +263,23 @@ class WaterConsumer extends Controller
         | Not working  
         | Check the parameter for the autherised person
         | Chack the Demand
+        | ReDiscuss
      */
     public function saveUpdateMeterDetails(reqMeterEntry $request)
     {
         try {
             $mWaterConsumerMeter = new WaterConsumerMeter();
-            $this->checkParamForMeterEntry($request);
+            $param = $this->checkParamForMeterEntry($request);
             DB::beginTransaction();
             $metaRequest = new Request([
                 "consumerId"    => $request->consumerId,
                 "finalRading"   => $request->oldMeterFinalReading,
                 "demandUpto"    => $request->connectionDate,
+                "document"      => $request->document,
             ]);
-            $this->saveGenerateConsumerDemand($metaRequest);
+            if ($param['meterStatus'] != false) {
+                $this->saveGenerateConsumerDemand($metaRequest);
+            }
             $documentPath = $this->saveTheMeterDocument($request);
             $fixedRate = $this->getFixedRate($request);                             // Manul Entry of fixed rate
             $mWaterConsumerMeter->saveMeterDetails($request, $documentPath);
@@ -293,6 +297,8 @@ class WaterConsumer extends Controller
      * | @param request
         | Serial No : 04.01
         | Working
+        | Look for the meter status true condition 
+        | Recheck the process for meter and non meter 
      */
     public function checkParamForMeterEntry($request)
     {
@@ -314,13 +320,17 @@ class WaterConsumer extends Controller
                 throw new Exception("Connection Date can not be greater than Current Date!");
                 break;
             case ($request->connectionType != $refMeterConnType['Meter/Fixed']):
-                if ($consumerMeterDetails->final_meter_reading >= $request->oldMeterFinalReading) {
-                    throw new Exception("Rading Should be Greater Than last Reading!");
+                if (!is_null($consumerMeterDetails)) {
+                    if ($consumerMeterDetails->final_meter_reading >= $request->oldMeterFinalReading) {
+                        throw new Exception("Rading Should be Greater Than last Reading!");
+                    }
                 }
                 break;
             case ($request->connectionType != $refMeterConnType['Meter']):
-                if ($consumerMeterDetails->connection_type == $request->connectionType) {
-                    throw new Exception("You can not update same connection type as before!");
+                if (!is_null($consumerMeterDetails)) {
+                    if ($consumerMeterDetails->connection_type == $request->connectionType) {
+                        throw new Exception("You can not update same connection type as before!");
+                    }
                 }
                 break;
         }
@@ -342,6 +352,10 @@ class WaterConsumer extends Controller
                     break;
             }
         }
+        if (is_null($consumerMeterDetails)) {
+            $returnData['meterStatus'] = false;
+        }
+        return $returnData;
     }
 
     /**

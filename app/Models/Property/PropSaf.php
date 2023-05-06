@@ -182,4 +182,42 @@ class PropSaf extends Model
             ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_safs.ward_mstr_id')
             ->join('prop_gbofficers as gbo', 'gbo.saf_id', 'prop_safs.id');
     }
+
+    /**
+     * | Get Saf Details
+     */
+    public function getSafDtls()
+    {
+        return DB::table('prop_safs')
+            ->select(
+                'prop_safs.*',
+                'prop_safs.assessment_type as assessment',
+                DB::raw("REPLACE(prop_safs.holding_type, '_', ' ') AS holding_type"),
+                'w.ward_name as old_ward_no',
+                'nw.ward_name as new_ward_no',
+                'o.ownership_type',
+                'p.property_type',
+                'r.road_type as road_type_master',
+                'wr.role_name as current_role_name',
+                't.transfer_mode',
+                'a.apt_code as apartment_code',
+                'a.apartment_address',
+                'a.no_of_block',
+                'a.apartment_name',
+                'building_type',
+                'prop_usage_type',
+                'zone'
+            )
+            ->leftJoin('ulb_ward_masters as w', 'w.id', '=', 'prop_safs.ward_mstr_id')
+            ->leftJoin('wf_roles as wr', 'wr.id', '=', 'prop_safs.current_role')
+            ->leftJoin('ulb_ward_masters as nw', 'nw.id', '=', 'prop_safs.new_ward_mstr_id')
+            ->leftJoin('ref_prop_ownership_types as o', 'o.id', '=', 'prop_safs.ownership_type_mstr_id')
+            ->leftJoin('ref_prop_types as p', 'p.id', '=', 'prop_safs.prop_type_mstr_id')
+            ->leftJoin('ref_prop_road_types as r', 'r.id', '=', 'prop_safs.road_type_mstr_id')
+            ->leftJoin('ref_prop_transfer_modes as t', 't.id', '=', 'prop_safs.transfer_mode_mstr_id')
+            ->leftJoin('prop_apartment_dtls as a', 'a.id', '=', 'prop_safs.apartment_details_id')
+            ->leftJoin('zone_masters', 'zone_masters.id', 'prop_safs.zone_mstr_id')
+            ->leftJoin('ref_prop_gbbuildingusagetypes as gbu', 'gbu.id', 'prop_safs.gb_usage_types')
+            ->leftJoin('ref_prop_gbpropusagetypes as gbp', 'gbp.id', 'prop_safs.gb_prop_usage_types');
+    }
 }

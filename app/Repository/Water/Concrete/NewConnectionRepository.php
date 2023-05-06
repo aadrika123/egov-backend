@@ -203,6 +203,13 @@ class NewConnectionRepository implements iNewConnection
             ]
         );
         $waterTrack->saveTrack($metaReqs);
+        $whatsapp2=(Whatsapp_Send("","trn_2_var",
+                ["conten_type"=>"text",
+                    [
+                        $owner[0]["ownerName"],
+                        $applicationNo,
+                    ]
+                ]));
         DB::commit();
 
         $returnResponse = [
