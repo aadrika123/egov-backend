@@ -473,14 +473,20 @@ trait SAF
     public function holdingType($req)
     {
         $useType =  collect($req)->pluck('useType');
-        $pureResidential = collect($useType)->contains('1');
-        $pureCommercial = collect($useType)->doesntContain('1');
-        if ($pureResidential == true) {
+        // Check Pure Residential
+        $pureResidential = collect($useType)->every(function ($value) {
+            return $value == 1;
+        });
+        // check Pure Commercial
+        $pureCommercial = collect($useType)->every(function ($value) {
+            return $value > 1;
+        });
+
+        if ($pureResidential == true)
             return "PURE_RESIDENTIAL";
-        }
-        if ($pureCommercial == true) {
+        elseif ($pureCommercial == true)
             return "PURE_COMMERCIAL";
-        } else
+        else
             return "MIX_COMMERCIAL";
     }
 }
