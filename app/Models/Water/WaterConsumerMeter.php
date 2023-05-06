@@ -75,8 +75,8 @@ class WaterConsumerMeter extends Model
         $mWaterConsumerMeter->meter_no                  = $req->meterNo ?? null;
         $mWaterConsumerMeter->meter_intallation_date    = $installationDate ?? null;
         $mWaterConsumerMeter->initial_reading           = $req->newMeterInitialReading ?? null;
-        $mWaterConsumerMeter->meter_status              = $meterStatus ?? 1;
-        $mWaterConsumerMeter->rate_per_month            = $ratePerMonth ?? 0;
+        $mWaterConsumerMeter->meter_status              = $meterStatus ?? 1;                        // Static for meter connection
+        $mWaterConsumerMeter->rate_per_month            = $ratePerMonth ?? 0;                       // For fixed connection
         $mWaterConsumerMeter->relative_path             = $documentPath['relaivePath'];
         $mWaterConsumerMeter->meter_doc                 = $documentPath['document'];
         $mWaterConsumerMeter->save();

@@ -44,7 +44,8 @@ class CalculatorController extends Controller
             $finalResponse['demand'] = $response->original['data']['demand'];
             $reviewDetails = collect($response->original['data']['details'])->groupBy(['ruleSet', 'mFloorNo', 'mUsageType']);
             $finalTaxReview = collect();
-            $review = collect($reviewDetails)->map(function ($reviewDetail) use ($finalTaxReview) {
+
+            collect($reviewDetails)->map(function ($reviewDetail) use ($finalTaxReview) {
                 $table = collect($reviewDetail)->map(function ($floors) use ($finalTaxReview) {
                     $usageType = collect($floors)->map(function ($floor) use ($finalTaxReview) {
                         $first = $floor->first();
@@ -88,30 +89,29 @@ class CalculatorController extends Controller
             $reviewCalculation = collect($ruleSetCollections)->map(function ($collection) {
                 return collect($collection)->pipe(function ($collect) {
                     $quaters['floors'] = $collect;
-                    $groupByFloors = $collect->groupBy(['quarterYear', 'qtr']);
+                    $groupByFloors = $collect->groupBy('totalTax');
                     $quaterlyTaxes = collect();
-                    collect($groupByFloors)->map(function ($qtrYear) use ($quaterlyTaxes) {
-                        return collect($qtrYear)->map(function ($qtr, $key) use ($quaterlyTaxes) {
-                            return collect($qtr)->pipe(function ($floors) use ($quaterlyTaxes, $key) {
-                                $taxes = [
-                                    'key' => $key,
-                                    'effectingFrom' => $floors->first()['quarterYear'] . '/' . $floors->first()['qtr'],
-                                    'qtr' => $floors->first()['qtr'],
-                                    'area' => $floors->first()['area'] ?? null,
-                                    'arv' => roundFigure($floors->sum('arv') + $quaterlyTaxes->sum('arv')),
-                                    'holdingTax' => roundFigure($floors->sum('holdingTax') + $quaterlyTaxes->sum('holdingTax')),
-                                    'waterTax' => roundFigure($floors->sum('waterTax') + $quaterlyTaxes->sum('waterTax')),
-                                    'latrineTax' => roundFigure($floors->sum('latrineTax') + $quaterlyTaxes->sum('latrineTax')),
-                                    'educationTax' => roundFigure($floors->sum('educationTax') + $quaterlyTaxes->sum('educationTax')),
-                                    'healthTax' => roundFigure($floors->sum('healthTax') + $quaterlyTaxes->sum('healthTax')),
-                                    'rwhPenalty' => roundFigure($floors->sum('rwhPenalty') + $quaterlyTaxes->sum('rwhPenalty')),
-                                    'quaterlyTax' => roundFigure($floors->sum('totalTax') + $quaterlyTaxes->sum('quaterlyTax')),
-                                ];
-                                $quaterlyTaxes->push($taxes);
-                            });
-                        });
+
+                    $i = 1;
+                    collect($groupByFloors)->map(function ($floors) use ($quaterlyTaxes, $i) {
+                        $taxes = [
+                            'key' => $i,
+                            'effectingFrom' => $floors->first()['quarterYear'] . '/' . $floors->first()['qtr'],
+                            'qtr' => $floors->first()['qtr'],
+                            'area' => $floors->first()['area'] ?? null,
+                            'arv' => roundFigure($floors->sum('arv') + $quaterlyTaxes->sum('arv')),
+                            'holdingTax' => roundFigure($floors->sum('holdingTax') + $quaterlyTaxes->sum('holdingTax')),
+                            'waterTax' => roundFigure($floors->sum('waterTax') + $quaterlyTaxes->sum('waterTax')),
+                            'latrineTax' => roundFigure($floors->sum('latrineTax') + $quaterlyTaxes->sum('latrineTax')),
+                            'educationTax' => roundFigure($floors->sum('educationTax') + $quaterlyTaxes->sum('educationTax')),
+                            'healthTax' => roundFigure($floors->sum('healthTax') + $quaterlyTaxes->sum('healthTax')),
+                            'rwhPenalty' => roundFigure($floors->sum('rwhPenalty') + $quaterlyTaxes->sum('rwhPenalty')),
+                            'quaterlyTax' => roundFigure($floors->sum('totalTax') + $quaterlyTaxes->sum('quaterlyTax')),
+                        ];
+                        $quaterlyTaxes->push($taxes);
                     });
                     $quaters['totalQtrTaxes'] = $quaterlyTaxes;
+                    $i += 1;
                     return $quaters;
                 });
             });

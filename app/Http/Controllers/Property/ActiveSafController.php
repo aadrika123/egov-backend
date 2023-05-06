@@ -33,9 +33,12 @@ use App\Models\Property\PropProperty;
 use App\Models\Property\PropRazorpayPenalrebate;
 use App\Models\Property\PropRazorpayRequest;
 use App\Models\Property\PropRazorpayResponse;
+use App\Models\Property\PropSaf;
 use App\Models\Property\PropSafGeotagUpload;
 use App\Models\Property\PropSafMemoDtl;
 use App\Models\Property\PropSafsDemand;
+use App\Models\Property\PropSafsFloor;
+use App\Models\Property\PropSafsOwner;
 use App\Models\Property\PropSafVerification;
 use App\Models\Property\PropSafVerificationDtl;
 use App\Models\Property\PropTranDtl;
@@ -536,6 +539,7 @@ class ActiveSafController extends Controller
 
         try {
             $mPropActiveSaf = new PropActiveSaf();
+            $mPropSaf = new PropSaf();
             $mPropActiveSafOwner = new PropActiveSafsOwner();
             $mActiveSafsFloors = new PropActiveSafsFloor();
             $mWorkflowTracks = new WorkflowTrack();
@@ -549,11 +553,23 @@ class ActiveSafController extends Controller
                 $data = $mPropActiveSaf->getActiveSafDtls()      // <------- Model function Active SAF Details
                     ->where('prop_active_safs.id', $req->applicationId)
                     ->first();
+
+                if (collect($data)->isEmpty()) {
+                    $data = $mPropSaf->getSafDtls()
+                        ->where('prop_safs.id', $req->applicationId)
+                        ->first();
+                }
             }
             if ($req->safNo) {                                  // <-------- Search By SAF No
                 $data = $mPropActiveSaf->getActiveSafDtls()    // <------- Model Function Active SAF Details
                     ->where('prop_active_safs.saf_no', $req->safNo)
                     ->first();
+
+                if (collect($data)->isEmpty()) {
+                    $data = $mPropSaf->getSafDtls()
+                        ->where('prop_safs.saf_no', $req->applicationId)
+                        ->first();
+                }
             }
 
             if (!$data)
@@ -660,6 +676,9 @@ class ActiveSafController extends Controller
         try {
             // Variable Assignments
             $mPropActiveSaf = new PropActiveSaf();
+            $mPropSafOwner = new PropSafsOwner();
+            $mPropSaf = new PropSaf();
+            $mPropSafsFloors = new PropSafsFloor();
             $mPropActiveSafOwner = new PropActiveSafsOwner();
             $mActiveSafsFloors = new PropActiveSafsFloor();
             $mPropSafMemoDtls = new PropSafMemoDtl();
@@ -670,27 +689,39 @@ class ActiveSafController extends Controller
             $data = $mPropActiveSaf->getActiveSafDtls()                         // <------- Model function Active SAF Details
                 ->where('prop_active_safs.id', $req->applicationId)
                 ->first();
+
+            if (collect($data)->isEmpty()) {
+                $data = $mPropSaf->getSafDtls()
+                    ->where('prop_safs.id', $req->applicationId)
+                    ->first();
+            }
+
+            if (collect($data)->isEmpty())
+                throw new Exception("Data Not Found");
+
             if ($data->payment_status == 0) {
                 $data->current_role_name = null;
                 $data->current_role_name2 = "Payment is Pending";
             } else
                 $data->current_role_name2 = $data->current_role_name;
 
-
-            if (!$data)
-                throw new Exception("Data Not Found");
             $data = json_decode(json_encode($data), true);
 
             $ownerDtls = $mPropActiveSafOwner->getOwnersBySafId($data['id']);
+            if (collect($ownerDtls)->isEmpty())
+                $ownerDtls = $mPropSafOwner->getOwnersBySafId($data['id']);
+
             $data['owners'] = $ownerDtls;
             $getFloorDtls = $mActiveSafsFloors->getFloorsBySafId($data['id']);      // Model Function to Get Floor Details
+            if (collect($getFloorDtls)->isEmpty())
+                $getFloorDtls = $mPropSafsFloors->getFloorsBySafId($data['id']);
             $data['floors'] = $getFloorDtls;
 
             $memoDtls = $mPropSafMemoDtls->memoLists($data['id']);
             $data['memoDtls'] = $memoDtls;
             return responseMsgs(true, "Saf Dtls", remove_null($data), "010127", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return $e->getMessage();
+            return responseMsgs(true, $e->getMessage(), [], "010127", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 
@@ -2229,13 +2260,15 @@ class ActiveSafController extends Controller
                 "new_ward_no" => $req['new_ward_no'],
                 "property_type" => $req['property_type'],
                 "holding_type" => $req['holding_type'],
-                "doc_upload_status" => $req['doc_upload_status']
+                "doc_upload_status" => $req['doc_upload_status'],
+                "ownership_type" => $req['ownership_type']
             ];
             $demand['amounts'] = $safTaxes->original['data']['demand'];
             $demand['details'] = collect($safTaxes->original['data']['details']);
             $demand['taxDetails'] = collect($safTaxes->original['data']['taxDetails']);
             $demand['paymentStatus'] = $safDetails['payment_status'];
             $demand['applicationNo'] = $safDetails['saf_no'];
+            $demand['can_pay'] = true;
             return responseMsgs(true, "Demand Details", remove_null($demand), "", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
