@@ -558,6 +558,7 @@ class ActiveSafController extends Controller
                     $data = $mPropSaf->getSafDtls()
                         ->where('prop_safs.id', $req->applicationId)
                         ->first();
+                    $data->current_role_name = 'Approved By ' . $data->current_role_name;
                 }
             }
             if ($req->safNo) {                                  // <-------- Search By SAF No
@@ -569,6 +570,7 @@ class ActiveSafController extends Controller
                     $data = $mPropSaf->getSafDtls()
                         ->where('prop_safs.saf_no', $req->applicationId)
                         ->first();
+                    $data->current_role_name = 'Approved By ' . $data->current_role_name;
                 }
             }
 
@@ -694,6 +696,7 @@ class ActiveSafController extends Controller
                 $data = $mPropSaf->getSafDtls()
                     ->where('prop_safs.id', $req->applicationId)
                     ->first();
+                $data->current_role_name = 'Approved By ' . $data->current_role_name;
             }
 
             if (collect($data)->isEmpty())
