@@ -296,7 +296,10 @@ class CashVerificationController extends Controller
 
             $details =  RevDailycollection::select(
                 'rev_dailycollections.id',
-                'user_name',
+                'u.user_name as tc_name',
+                'u.mobile as tc_mobile',
+                'uu.user_name as verifier_name',
+                'uu.mobile as verifier_mobile',
                 'tran_no',
                 'deposit_amount as amount',
                 'module_id',
@@ -307,7 +310,8 @@ class CashVerificationController extends Controller
                 'application_no'
             )
                 ->join('rev_dailycollectiondetails as rdc', 'rdc.collection_id', 'rev_dailycollections.id')
-                ->join('users', 'users.id', 'rev_dailycollections.tc_id')
+                ->join('users as u', 'u.id', 'rev_dailycollections.tc_id')
+                ->join('users as uu', 'uu.id', 'rev_dailycollections.user_id')
                 ->where('deposit_date', $date)
                 ->where('tc_id', $userId)
                 ->where('rev_dailycollections.ulb_id', $ulbId)
@@ -326,7 +330,11 @@ class CashVerificationController extends Controller
 
             $data['totalAmount'] =  $details->sum('amount');
             $data['numberOfTransaction'] =  $details->count();
-            $data['collectorName'] =  collect($details)[0]->user_name;
+            $data['collectorName'] =  collect($details)[0]->tc_name;
+            $data['collectorMobile'] =  collect($details)[0]->tc_mobile;
+            $data['verifierName'] =  collect($details)[0]->verifier_name;
+            $data['verifierMobile'] =  collect($details)[0]->verifier_mobile;
+            $data['verifyStatus'] = true;
             $data['date'] = Carbon::parse($date)->format('d-m-Y');
 
             return responseMsgs(true, "TC Collection", remove_null($data), "010201", "1.0", "", "POST", $request->deviceId ?? "");
