@@ -2,7 +2,7 @@
 
 namespace App\BLL\Property;
 
-use App\Models\Property\PropRazorPayPenalrebate;
+use App\Models\Property\PropRazorpayPenalrebate;
 use Exception;
 use Illuminate\Support\Facades\Config;
 
