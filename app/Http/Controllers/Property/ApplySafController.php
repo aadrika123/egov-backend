@@ -148,6 +148,7 @@ class ApplySafController extends Controller
             $demandResponse = $generateSafApplyDemandResponse->generateResponse($generatedDemand, $isResidential);
 
             $metaReqs['isTrust'] = $this->isPropTrust($request['floor']);
+            $metaReqs['holdingType'] = $this->holdingType($request['floor']);
             $request->merge($metaReqs);
             $this->_REQUEST = $request;
             $this->mergeAssessedExtraFields();                                          // Merge Extra Fields for Property Reassessment,Mutation,Bifurcation & Amalgamation(2.2)

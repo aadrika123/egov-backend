@@ -53,6 +53,7 @@ class  PropActiveSaf extends Model
             'corr_city' => $req->corrCity,
             'corr_dist' => $req->corrDist,
             'corr_pin_code' => $req->corrPinCode,
+            'holding_type' => $req->holdingType,
             'is_mobile_tower' => $req->isMobileTower,
             'tower_area' => $req->mobileTower['area'] ?? null,
             'tower_installation_date' => $req->mobileTower['dateFrom'] ?? null,

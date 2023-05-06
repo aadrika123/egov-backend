@@ -221,7 +221,7 @@ trait SAF
         $array['roadTypeMstrId'] = $req['road_type_mstr_id'];
         $array['isGBSaf'] = $req['is_gb_saf'];
         $array['ulbId'] = $req['ulb_id'];
-        $array['rwhDateFrom'] = $req['rwhDateFrom']??null;
+        $array['rwhDateFrom'] = $req['rwhDateFrom'] ?? null;
         $refFloors = $req['floors'];
 
         foreach ($refFloors as $key => $refFloor) {
@@ -465,5 +465,22 @@ trait SAF
         $floorUsageTypeIds = $floors->pluck('useType');
         $isTrust = $floorUsageTypeIds->contains($trustId) ? true : false;
         return $isTrust;
+    }
+
+    /**
+     * | read holding type
+     */
+    public function holdingType($req)
+    {
+        $useType =  collect($req)->pluck('useType');
+        $pureResidential = collect($useType)->contains('1');
+        $pureCommercial = collect($useType)->doesntContain('1');
+        if ($pureResidential == true) {
+            return "PURE_RESIDENTIAL";
+        }
+        if ($pureCommercial == true) {
+            return "PURE_COMMERCIAL";
+        } else
+            return "MIX_COMMERCIAL";
     }
 }
