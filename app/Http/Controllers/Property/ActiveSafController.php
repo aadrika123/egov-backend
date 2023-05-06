@@ -33,6 +33,7 @@ use App\Models\Property\PropProperty;
 use App\Models\Property\PropRazorpayPenalrebate;
 use App\Models\Property\PropRazorpayRequest;
 use App\Models\Property\PropRazorpayResponse;
+use App\Models\Property\PropSaf;
 use App\Models\Property\PropSafGeotagUpload;
 use App\Models\Property\PropSafMemoDtl;
 use App\Models\Property\PropSafsDemand;
@@ -660,6 +661,7 @@ class ActiveSafController extends Controller
         try {
             // Variable Assignments
             $mPropActiveSaf = new PropActiveSaf();
+            $mPropSaf = new PropSaf();
             $mPropActiveSafOwner = new PropActiveSafsOwner();
             $mActiveSafsFloors = new PropActiveSafsFloor();
             $mPropSafMemoDtls = new PropSafMemoDtl();
@@ -670,15 +672,22 @@ class ActiveSafController extends Controller
             $data = $mPropActiveSaf->getActiveSafDtls()                         // <------- Model function Active SAF Details
                 ->where('prop_active_safs.id', $req->applicationId)
                 ->first();
+
+            if (collect($data)->isEmpty()) {
+                $data = $mPropSaf->getSafDtls()
+                    ->where('prop_safs.id', $req->applicationId)
+                    ->first();
+            }
+
+            if (collect($data)->isEmpty())
+                throw new Exception("Data Not Found");
+
             if ($data->payment_status == 0) {
                 $data->current_role_name = null;
                 $data->current_role_name2 = "Payment is Pending";
             } else
                 $data->current_role_name2 = $data->current_role_name;
 
-
-            if (!$data)
-                throw new Exception("Data Not Found");
             $data = json_decode(json_encode($data), true);
 
             $ownerDtls = $mPropActiveSafOwner->getOwnersBySafId($data['id']);
@@ -690,7 +699,7 @@ class ActiveSafController extends Controller
             $data['memoDtls'] = $memoDtls;
             return responseMsgs(true, "Saf Dtls", remove_null($data), "010127", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return $e->getMessage();
+            return responseMsgs(true, $e->getMessage(), [], "010127", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 
