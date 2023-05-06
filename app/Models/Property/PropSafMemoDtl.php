@@ -81,7 +81,7 @@ class PropSafMemoDtl extends Model
                                 nw.ward_name as new_ward_no
                             
                             FROM prop_saf_memo_dtls d
-                            JOIN prop_safs_demands pd ON pd.fyear=d.from_fyear AND pd.qtr=d.from_qtr AND pd.saf_id=d.saf_id AND pd.status=1
+                            LEFT JOIN prop_safs_demands pd ON pd.fyear=d.from_fyear AND pd.qtr=d.from_qtr AND pd.saf_id=d.saf_id AND pd.status=1
                             JOIN (SELECT owner_name,guardian_name,saf_id,relation_type FROM prop_owners ORDER BY id) AS o ON o.saf_id=d.saf_id
                             JOIN prop_active_safs AS s ON s.id=d.saf_id
                             JOIN ulb_ward_masters AS u ON u.id=d.ward_mstr_id
