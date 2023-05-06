@@ -59,6 +59,7 @@ class PropProperty extends Model
         return DB::table('prop_properties')
             ->select(
                 'prop_properties.*',
+                DB::raw("REPLACE(prop_properties.holding_type, '_', ' ') AS holding_type"),
                 'prop_properties.status as active_status',
                 'prop_properties.assessment_type as assessment',
                 'w.ward_name as old_ward_no',

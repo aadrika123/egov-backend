@@ -166,6 +166,7 @@ class ActiveSafControllerV2 extends Controller
             $calculationByUlbTc = new CalculationByUlbTc;
 
             $details = $mPropSafMemoDtl->getMemoDtlsByMemoId($req->memoId);
+            // return $details;
             if (collect($details)->isEmpty())
                 $details = $mPropSafMemoDtl->getPropMemoDtlsByMemoId($req->memoId);
 
@@ -186,7 +187,11 @@ class ActiveSafControllerV2 extends Controller
                 $fieldVerifiedSaf = $mPropSafVerification->getVerificationsBySafId($safId);          // Get fields Verified Saf with all Floor Details
                 if (collect($fieldVerifiedSaf)->isEmpty())
                     throw new Exception("Site Verification not Exist");
-                $saf = PropSaf::findOrFail($safId);
+
+                $saf = PropSaf::find($safId);
+                if (collect($saf)->isEmpty())
+                    $saf = PropActiveSaf::findOrFail($safId);
+
                 $tcVerifyParams = [
                     'safId' => $safId,
                     'fieldVerificationDtls' => $fieldVerifiedSaf,
