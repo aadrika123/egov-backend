@@ -118,6 +118,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('application/amendable-list', 'amendmentList');                 #id = c9
         
         Route::post('application/surrenderable-list', 'surrenderList');             #id = c10
+
+        Route::post('application/attached-list', "readAtachedLicenseDtl");
     });
 });
 
