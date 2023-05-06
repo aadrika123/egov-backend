@@ -558,6 +558,7 @@ class ActiveSafController extends Controller
                     $data = $mPropSaf->getSafDtls()
                         ->where('prop_safs.id', $req->applicationId)
                         ->first();
+                    $data->current_role_name = 'Approved By ' . $data->current_role_name;
                 }
             }
             if ($req->safNo) {                                  // <-------- Search By SAF No
@@ -569,6 +570,7 @@ class ActiveSafController extends Controller
                     $data = $mPropSaf->getSafDtls()
                         ->where('prop_safs.saf_no', $req->applicationId)
                         ->first();
+                    $data->current_role_name = 'Approved By ' . $data->current_role_name;
                 }
             }
 
@@ -694,6 +696,7 @@ class ActiveSafController extends Controller
                 $data = $mPropSaf->getSafDtls()
                     ->where('prop_safs.id', $req->applicationId)
                     ->first();
+                $data->current_role_name = 'Approved By ' . $data->current_role_name;
             }
 
             if (collect($data)->isEmpty())
@@ -2241,7 +2244,22 @@ class ActiveSafController extends Controller
             'id' => 'required|numeric'
         ]);
         try {
+            $mWfRoleusermap = new WfRoleusermap();
+            $jskRole = Config::get('PropertyConstaint.JSK_ROLE');
+            $user = authUser();
+            $userId = $user->id;
             $safDetails = $this->details($req);
+            $workflowId = $safDetails['workflow_id'];
+            $mreqs = new Request([
+                "workflowId" => $workflowId,
+                "userId" => $userId
+            ]);
+            $role = $mWfRoleusermap->getRoleByUserWfId($mreqs);
+            if ($role->wf_role_id == $jskRole)
+                $demand['can_pay'] = true;
+            else
+                $demand['can_pay'] = false;
+
             $safTaxes = $this->calculateSafBySafId($req);
             if ($safTaxes->original['status'] == false)
                 throw new Exception($safTaxes->original['message']);
@@ -2268,7 +2286,6 @@ class ActiveSafController extends Controller
             $demand['taxDetails'] = collect($safTaxes->original['data']['taxDetails']);
             $demand['paymentStatus'] = $safDetails['payment_status'];
             $demand['applicationNo'] = $safDetails['saf_no'];
-            $demand['can_pay'] = true;
             return responseMsgs(true, "Demand Details", remove_null($demand), "", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
