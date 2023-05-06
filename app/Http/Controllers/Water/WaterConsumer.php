@@ -269,7 +269,7 @@ class WaterConsumer extends Controller
     {
         try {
             $mWaterConsumerMeter = new WaterConsumerMeter();
-            $this->checkParamForMeterEntry($request);
+            $param = $this->checkParamForMeterEntry($request);
             DB::beginTransaction();
             $metaRequest = new Request([
                 "consumerId"    => $request->consumerId,
@@ -277,7 +277,9 @@ class WaterConsumer extends Controller
                 "demandUpto"    => $request->connectionDate,
                 "document"      => $request->document,
             ]);
-            $this->saveGenerateConsumerDemand($metaRequest);
+            if ($param['meterStatus'] != false) {
+                $this->saveGenerateConsumerDemand($metaRequest);
+            }
             $documentPath = $this->saveTheMeterDocument($request);
             $fixedRate = $this->getFixedRate($request);                             // Manul Entry of fixed rate
             $mWaterConsumerMeter->saveMeterDetails($request, $documentPath);
@@ -295,6 +297,8 @@ class WaterConsumer extends Controller
      * | @param request
         | Serial No : 04.01
         | Working
+        | Look for the meter status true condition 
+        | Recheck the process for meter and non meter 
      */
     public function checkParamForMeterEntry($request)
     {
@@ -348,6 +352,10 @@ class WaterConsumer extends Controller
                     break;
             }
         }
+        if (is_null($consumerMeterDetails)) {
+            $returnData['meterStatus'] = false;
+        }
+        return $returnData;
     }
 
     /**
