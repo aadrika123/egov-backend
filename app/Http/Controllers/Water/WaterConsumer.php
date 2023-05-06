@@ -263,6 +263,7 @@ class WaterConsumer extends Controller
         | Not working  
         | Check the parameter for the autherised person
         | Chack the Demand
+        | ReDiscuss
      */
     public function saveUpdateMeterDetails(reqMeterEntry $request)
     {
@@ -274,6 +275,7 @@ class WaterConsumer extends Controller
                 "consumerId"    => $request->consumerId,
                 "finalRading"   => $request->oldMeterFinalReading,
                 "demandUpto"    => $request->connectionDate,
+                "document"      => $request->document,
             ]);
             $this->saveGenerateConsumerDemand($metaRequest);
             $documentPath = $this->saveTheMeterDocument($request);
@@ -314,13 +316,17 @@ class WaterConsumer extends Controller
                 throw new Exception("Connection Date can not be greater than Current Date!");
                 break;
             case ($request->connectionType != $refMeterConnType['Meter/Fixed']):
-                if ($consumerMeterDetails->final_meter_reading >= $request->oldMeterFinalReading) {
-                    throw new Exception("Rading Should be Greater Than last Reading!");
+                if (!is_null($consumerMeterDetails)) {
+                    if ($consumerMeterDetails->final_meter_reading >= $request->oldMeterFinalReading) {
+                        throw new Exception("Rading Should be Greater Than last Reading!");
+                    }
                 }
                 break;
             case ($request->connectionType != $refMeterConnType['Meter']):
-                if ($consumerMeterDetails->connection_type == $request->connectionType) {
-                    throw new Exception("You can not update same connection type as before!");
+                if (!is_null($consumerMeterDetails)) {
+                    if ($consumerMeterDetails->connection_type == $request->connectionType) {
+                        throw new Exception("You can not update same connection type as before!");
+                    }
                 }
                 break;
         }
