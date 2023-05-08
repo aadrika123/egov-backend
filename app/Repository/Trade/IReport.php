@@ -13,6 +13,7 @@ interface IReport
     public function tradeDaseboard(Request $request);
     public function applicationTypeCollection(Request $request);
     public function userAppliedApplication(Request $request);
+    public function collectionPerfomance(Request $request);
     public function ApplicantionTrackStatus(Request $request);
     public function applicationAgentNotice(Request $request);
     public function noticeSummary(Request $request);

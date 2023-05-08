@@ -140,6 +140,20 @@ class ReportController extends Controller
         return $this->Repository->userAppliedApplication($request);
     }
 
+    public function collectionPerfomance(Request $request)
+    {
+        $request->validate(
+            [     
+                "fromDate" => "nullable|date|date_format:Y-m-d",
+                "uptoDate" => "nullable|date|date_format:Y-m-d",
+                "wardId" => "nullable|digits_between:1,9223372036854775807",           
+                "ulbId" => "nullable|digits_between:1,9223372036854775807",
+            ]
+        );
+        $request->request->add(["metaData"=>["tr6.4",1.1,null,$request->getMethod(),null,]]);
+        return $this->Repository->collectionPerfomance($request);
+    }
+
     public function ApplicantionTrackStatus(Request $request)
     {
         $request->validate(
