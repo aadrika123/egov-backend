@@ -260,9 +260,13 @@ class WfActiveDocument extends Model
     /**
      * | trade
      */
-    public function getTradeAppByAppNoDocId($appid, $ulb_id, $doc_code, $owner_id = null)
+    public function getTradeAppByAppNoDocId($appid, $ulb_id, $doc_code,$workflowId=null,$owner_id = null)
     {
         // DB::enableQueryLog();
+        if(!$workflowId)
+        {
+            $workflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
+        }
         $data = DB::table('wf_active_documents as d')
             ->select(
                 'd.id',
@@ -271,7 +275,7 @@ class WfActiveDocument extends Model
                 'remarks',
             )
             ->where("d.active_id", $appid)
-            ->where("d.workflow_id", Config::get('workflow-constants.TRADE_WORKFLOW_ID'))
+            ->where("d.workflow_id", $workflowId)
             ->where("d.ulb_id", $ulb_id)
             ->where("d.module_id", Config::get('module-constants.TRADE_MODULE_ID'))
             ->where("d.owner_dtl_id", $owner_id)

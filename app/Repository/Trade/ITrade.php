@@ -23,9 +23,9 @@ interface ITrade
     public function readApplication(Request $request);
     public function postEscalate(Request $request);
     public function updateLicenseBo(Request $request);
-    public function getDocList(Request $request);
+    // public function getDocList(Request $request);
     public function updateBasicDtl(Request $request);
-    public function documentUpload(Request $request);
+    // public function documentUpload(Request $request);
     public function getUploadDocuments(Request $request);
     public function documentVirify(Request $request);
     public function readLicenceDtl($id);
