@@ -267,25 +267,27 @@ class ObjectionRepository implements iObjectionRepository
                 }
 
                 $documents = $request->documents;
-                foreach ($documents as $document) {
-                    $docUpload = new DocUpload;
-                    $mWfActiveDocument = new WfActiveDocument();
-                    $relativePath = Config::get('PropertyConstaint.OBJECTION_RELATIVE_PATH');
-                    $refImageName = $document['docCode'];
-                    $refImageName = $objection->id . '-' . str_replace(' ', '_', $refImageName);
-                    $documents = $document['doc'];
-                    $imageName = $docUpload->upload($refImageName, $documents, $relativePath);
+                if (collect($documents)->isNotEmpty()) {
+                    foreach ($documents as $document) {
+                        $docUpload = new DocUpload;
+                        $mWfActiveDocument = new WfActiveDocument();
+                        $relativePath = Config::get('PropertyConstaint.OBJECTION_RELATIVE_PATH');
+                        $refImageName = $document['docCode'];
+                        $refImageName = $objection->id . '-' . str_replace(' ', '_', $refImageName);
+                        $documents = $document['doc'];
+                        $imageName = $docUpload->upload($refImageName, $documents, $relativePath);
 
-                    $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
-                    $metaReqs['activeId'] = $objection->id;
-                    $metaReqs['workflowId'] = $objection->workflow_id;
-                    $metaReqs['ulbId'] = $objection->ulb_id;
-                    $metaReqs['document'] = $imageName;
-                    $metaReqs['relativePath'] = $relativePath;
-                    $metaReqs['docCode'] = $document['docCode'];
+                        $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+                        $metaReqs['activeId'] = $objection->id;
+                        $metaReqs['workflowId'] = $objection->workflow_id;
+                        $metaReqs['ulbId'] = $objection->ulb_id;
+                        $metaReqs['document'] = $imageName;
+                        $metaReqs['relativePath'] = $relativePath;
+                        $metaReqs['docCode'] = $document['docCode'];
 
-                    $reqs = new Request($metaReqs);
-                    $mWfActiveDocument->postDocuments($reqs);
+                        $reqs = new Request($metaReqs);
+                        $mWfActiveDocument->postDocuments($reqs);
+                    }
                 }
             }
 
