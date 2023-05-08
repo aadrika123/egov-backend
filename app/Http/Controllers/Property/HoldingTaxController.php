@@ -1045,7 +1045,7 @@ class HoldingTaxController extends Controller
     public function generateFloorComparativeDemand($floorFromDate, $floorTypes, $floorMstrId, $safCalculation, $onePercPenalty = 0)
     {
         if ($floorFromDate < $safCalculation->_effectiveDateRule3) {
-            $rule2 = $safCalculation->calculateRuleSet2($floorMstrId, $onePercPenalty);
+            $rule2 = $safCalculation->calculateRuleSet2($floorMstrId, $onePercPenalty, $floorFromDate);
             $rule2 = array_merge(
                 $rule2,
                 ['circleRate' => ""],
@@ -1061,7 +1061,7 @@ class HoldingTaxController extends Controller
             $setRule2 = $this->responseDemand($rule2);          // Function (16.1)
         }
 
-        $rule3 = $safCalculation->calculateRuleSet3($floorMstrId, $onePercPenalty);
+        $rule3 = $safCalculation->calculateRuleSet3($floorMstrId, $onePercPenalty, $floorFromDate);
         $rule3 = array_merge(
             $rule3,
             ['arvTotalPropTax' => 0],
