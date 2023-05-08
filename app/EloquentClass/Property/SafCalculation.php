@@ -673,6 +673,7 @@ class SafCalculation
                     'dateTo' => $this->_floors[$key]['dateUpto'],
                     'mFloorNo' => Config::get("PropertyConstaint.FLOOR-TYPE.$floorNo"),
                     'mUsageType' => Config::get("PropertyConstaint.USAGE-TYPE.$useType.TYPE"),
+                    'floorKey' => $this->_floors[$key]['floorKey'] ?? null              // Used Only for Review Calculation
                 ];
         }
 
