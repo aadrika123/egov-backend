@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Payment;
 
 use App\Http\Controllers\Controller;
+use App\MicroServices\IdGenerator\PrefixIdGenerator;
 use App\Models\Payment\RevDailycollection;
 use App\Models\Payment\RevDailycollectiondetail;
 use App\Models\Payment\TempTransaction;
@@ -269,6 +270,7 @@ class CashVerificationController extends Controller
             $data['numberOfTransaction'] =  $details->count();
             $data['collectorName'] =  collect($details)[0]->user_name;
             $data['date'] = Carbon::parse($date)->format('d-m-Y');
+            $data['verifyStatus'] = false;
 
             return responseMsgs(true, "TC Collection", remove_null($data), "010201", "1.0", "", "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
@@ -330,11 +332,11 @@ class CashVerificationController extends Controller
 
             $data['totalAmount'] =  $details->sum('amount');
             $data['numberOfTransaction'] =  $details->count();
-            $data['collectorName'] =  collect($details)[0]->tc_name;
+            $data['collectorName']   =  collect($details)[0]->tc_name;
             $data['collectorMobile'] =  collect($details)[0]->tc_mobile;
-            $data['verifierName'] =  collect($details)[0]->verifier_name;
-            $data['verifierMobile'] =  collect($details)[0]->verifier_mobile;
-            $data['verifyStatus'] = true;
+            $data['verifierName']    =  collect($details)[0]->verifier_name;
+            $data['verifierMobile']  =  collect($details)[0]->verifier_mobile;
+            $data['verifyStatus']    =  true;
             $data['date'] = Carbon::parse($date)->format('d-m-Y');
 
             return responseMsgs(true, "TC Collection", remove_null($data), "010201", "1.0", "", "POST", $request->deviceId ?? "");
@@ -687,10 +689,17 @@ class CashVerificationController extends Controller
     public function cashVerify(Request $request)
     {
         try {
-            $userId = authUser()->id;
+            $user = authUser();
+            $userId = $user->id;
+            $ulbId = $user->ulb_id;
             $property =  $request->property;
             $water    =  $request->water;
             $trade    =  $request->trade;
+            $cashParamId = Config::get('PropertyConstaint.CASH_VERIFICATION_PARAM_ID');
+
+            DB::beginTransaction();
+            $idGeneration = new PrefixIdGenerator($cashParamId, $ulbId);
+            $tranNo = $idGeneration->generate();
 
             if ($property) {
                 foreach ($property as $propertyDtl) {
@@ -761,9 +770,10 @@ class CashVerificationController extends Controller
                     $tTempTransaction->delete();
                 }
             }
-
+            DB::commit();
             return responseMsgs(true, "Cash Verified", '', "010201", "1.0", "", "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
+            DB::rollBack();
             return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $request->deviceId ?? "");
         }
     }
