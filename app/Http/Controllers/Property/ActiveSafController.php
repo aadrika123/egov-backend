@@ -2255,7 +2255,7 @@ class ActiveSafController extends Controller
                 "userId" => $userId
             ]);
             $role = $mWfRoleusermap->getRoleByUserWfId($mreqs);
-            if ($role->isEmpty())
+            if (collect($role)->isEmpty())
                 $role->wf_role_id = null;
 
             if ($role->wf_role_id == $jskRole)
