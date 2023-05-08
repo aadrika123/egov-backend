@@ -132,6 +132,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post("dashboard", "tradeDaseboard");
         Route::post("dashboard-application-collection", "applicationTypeCollection");
         Route::post("dashboard-applied-application", "userAppliedApplication");
+        Route::post("dashboard-collection-perfomance", "collectionPerfomance");
         Route::post("application/track-status", "ApplicantionTrackStatus");
         Route::post("application/application-agent-notice", "applicationAgentNotice"); 
         Route::post("application/notice-summary", "noticeSummary");

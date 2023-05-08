@@ -331,14 +331,15 @@ if (!function_exists('getFY')) {
             $YY = (int) $carbonDate->format("Y");
             // $MM = date("m");
             // $YY = date("Y");
+            
         } else {
 
             $MM = date("m", strtotime($date));
             $YY = date("Y", strtotime($date));
         }
-        if ($MM > 3) {
+        if ($MM > 3) {            
             return ($YY) . "-" . ($YY + 1);
-        } else {
+        } else {            
             return ($YY - 1) . "-" . ($YY);
         }
     }

@@ -2255,6 +2255,9 @@ class ActiveSafController extends Controller
                 "userId" => $userId
             ]);
             $role = $mWfRoleusermap->getRoleByUserWfId($mreqs);
+            if (collect($role)->isEmpty())
+                $role->wf_role_id = null;
+
             if ($role->wf_role_id == $jskRole)
                 $demand['can_pay'] = true;
             else
