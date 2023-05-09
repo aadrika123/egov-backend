@@ -37,6 +37,8 @@ use App\Models\Property\PropSaf;
 use App\Models\Property\PropSafGeotagUpload;
 use App\Models\Property\PropSafMemoDtl;
 use App\Models\Property\PropSafsDemand;
+use App\Models\Property\PropSafsFloor;
+use App\Models\Property\PropSafsOwner;
 use App\Models\Property\PropSafVerification;
 use App\Models\Property\PropSafVerificationDtl;
 use App\Models\Property\PropTranDtl;
@@ -556,6 +558,7 @@ class ActiveSafController extends Controller
                     $data = $mPropSaf->getSafDtls()
                         ->where('prop_safs.id', $req->applicationId)
                         ->first();
+                    $data->current_role_name = 'Approved By ' . $data->current_role_name;
                 }
             }
             if ($req->safNo) {                                  // <-------- Search By SAF No
@@ -567,6 +570,7 @@ class ActiveSafController extends Controller
                     $data = $mPropSaf->getSafDtls()
                         ->where('prop_safs.saf_no', $req->applicationId)
                         ->first();
+                    $data->current_role_name = 'Approved By ' . $data->current_role_name;
                 }
             }
 
@@ -674,7 +678,9 @@ class ActiveSafController extends Controller
         try {
             // Variable Assignments
             $mPropActiveSaf = new PropActiveSaf();
+            $mPropSafOwner = new PropSafsOwner();
             $mPropSaf = new PropSaf();
+            $mPropSafsFloors = new PropSafsFloor();
             $mPropActiveSafOwner = new PropActiveSafsOwner();
             $mActiveSafsFloors = new PropActiveSafsFloor();
             $mPropSafMemoDtls = new PropSafMemoDtl();
@@ -690,6 +696,7 @@ class ActiveSafController extends Controller
                 $data = $mPropSaf->getSafDtls()
                     ->where('prop_safs.id', $req->applicationId)
                     ->first();
+                $data->current_role_name = 'Approved By ' . $data->current_role_name;
             }
 
             if (collect($data)->isEmpty())
@@ -704,8 +711,13 @@ class ActiveSafController extends Controller
             $data = json_decode(json_encode($data), true);
 
             $ownerDtls = $mPropActiveSafOwner->getOwnersBySafId($data['id']);
+            if (collect($ownerDtls)->isEmpty())
+                $ownerDtls = $mPropSafOwner->getOwnersBySafId($data['id']);
+
             $data['owners'] = $ownerDtls;
             $getFloorDtls = $mActiveSafsFloors->getFloorsBySafId($data['id']);      // Model Function to Get Floor Details
+            if (collect($getFloorDtls)->isEmpty())
+                $getFloorDtls = $mPropSafsFloors->getFloorsBySafId($data['id']);
             $data['floors'] = $getFloorDtls;
 
             $memoDtls = $mPropSafMemoDtls->memoLists($data['id']);
@@ -2232,7 +2244,25 @@ class ActiveSafController extends Controller
             'id' => 'required|numeric'
         ]);
         try {
+            $mWfRoleusermap = new WfRoleusermap();
+            $jskRole = Config::get('PropertyConstaint.JSK_ROLE');
+            $user = authUser();
+            $userId = $user->id;
             $safDetails = $this->details($req);
+            $workflowId = $safDetails['workflow_id'];
+            $mreqs = new Request([
+                "workflowId" => $workflowId,
+                "userId" => $userId
+            ]);
+            $role = $mWfRoleusermap->getRoleByUserWfId($mreqs);
+            if (collect($role)->isEmpty())
+                $role->wf_role_id = null;
+
+            if ($role->wf_role_id == $jskRole)
+                $demand['can_pay'] = true;
+            else
+                $demand['can_pay'] = false;
+
             $safTaxes = $this->calculateSafBySafId($req);
             if ($safTaxes->original['status'] == false)
                 throw new Exception($safTaxes->original['message']);
@@ -2251,7 +2281,8 @@ class ActiveSafController extends Controller
                 "new_ward_no" => $req['new_ward_no'],
                 "property_type" => $req['property_type'],
                 "holding_type" => $req['holding_type'],
-                "doc_upload_status" => $req['doc_upload_status']
+                "doc_upload_status" => $req['doc_upload_status'],
+                "ownership_type" => $req['ownership_type']
             ];
             $demand['amounts'] = $safTaxes->original['data']['demand'];
             $demand['details'] = collect($safTaxes->original['data']['details']);

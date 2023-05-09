@@ -118,6 +118,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('application/amendable-list', 'amendmentList');                 #id = c9
         
         Route::post('application/surrenderable-list', 'surrenderList');             #id = c10
+
+        Route::post('application/attached-list', "readAtachedLicenseDtl");
     });
 });
 
@@ -129,6 +131,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post("application/collection-summary", "CollectionSummary");
         Route::post("dashboard", "tradeDaseboard");
         Route::post("dashboard-application-collection", "applicationTypeCollection");
+        Route::post("dashboard-applied-application", "userAppliedApplication");
+        Route::post("dashboard-collection-perfomance", "collectionPerfomance");
         Route::post("application/track-status", "ApplicantionTrackStatus");
         Route::post("application/application-agent-notice", "applicationAgentNotice"); 
         Route::post("application/notice-summary", "noticeSummary");

@@ -673,6 +673,7 @@ class SafCalculation
                     'dateTo' => $this->_floors[$key]['dateUpto'],
                     'mFloorNo' => Config::get("PropertyConstaint.FLOOR-TYPE.$floorNo"),
                     'mUsageType' => Config::get("PropertyConstaint.USAGE-TYPE.$useType.TYPE"),
+                    'floorKey' => $this->_floors[$key]['floorKey'] ?? null              // Used Only for Review Calculation
                 ];
         }
 
@@ -950,7 +951,7 @@ class SafCalculation
             $rwhPenalty = $arv / 2;
         }
 
-        if ($this->_rwhPenaltyStatus == false && $dateFrom > '2017-03-31' && $dateFrom < $this->_propertyDetails['rwhDateFrom'] && $this->_areaOfPlotInSqft > $this->_rwhAreaOfPlot)
+        if ($this->_rwhPenaltyStatus == false && $dateFrom > '2017-03-31' && $this->_areaOfPlotInSqft > $this->_rwhAreaOfPlot && $dateFrom < $this->_propertyDetails['rwhDateFrom'])
             $rwhPenalty = $arv / 2;
 
         $totalTax = $arv + $rwhPenalty;
@@ -1087,7 +1088,7 @@ class SafCalculation
         if ($this->_rwhPenaltyStatus == true)                                                               // RWH Applicable from 2017-2018
             $rwhPenalty = $calculatePropertyTax / 2;
 
-        if ($this->_rwhPenaltyStatus == false && $dateFrom < $this->_propertyDetails['rwhDateFrom'] && $this->_areaOfPlotInSqft > $this->_rwhAreaOfPlot)
+        if ($this->_rwhPenaltyStatus == false && $dateFrom > '2017-03-31' && $this->_areaOfPlotInSqft > $this->_rwhAreaOfPlot && $dateFrom < $this->_propertyDetails['rwhDateFrom'])
             $rwhPenalty = $calculatePropertyTax / 2;
 
         $totalTax = $calculatePropertyTax + $rwhPenalty;

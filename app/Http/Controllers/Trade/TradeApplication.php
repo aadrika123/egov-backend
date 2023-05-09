@@ -335,10 +335,10 @@ class TradeApplication extends Controller
         }
         return $this->_REPOSITORY->readPaymentReceipt($id, $transectionId);
     }
-    # Serial No : 05
+    # Serial No : 05 it to be remove after test
     public function documentUpload(Request $request)
     {
-        return $this->_REPOSITORY->documentUpload($request);
+        // return $this->_REPOSITORY->documentUpload($request);
     }
     
     # Serial No : 07
@@ -469,7 +469,7 @@ class TradeApplication extends Controller
     public function backToCitizen(Request $req)
     {
         $req->validate([
-            'applicationId' => 'required|integer',
+            'applicationId' => 'required|digits_between:1,9223372036854775807',
             'workflowId' => 'required|integer',
             'currentRoleId' => 'required|integer',
             'comment' => 'required|string'
@@ -515,7 +515,7 @@ class TradeApplication extends Controller
        
         $request->validate([
             "action"        =>'required|in:forward,backward',
-            'applicationId' => 'required|integer',
+            'applicationId' => 'required|digits_between:1,9223372036854775807',
             'senderRoleId' => 'nullable|integer',
             'receiverRoleId' => 'nullable|integer',
             'comment' => ($role->is_initiator??false)?"nullable":'required',
@@ -563,19 +563,30 @@ class TradeApplication extends Controller
             {
                 throw new Exception("Data Not Found");
             }
-            $allRolse = collect($this->_COMMON_FUNCTION->getAllRoles($user_id,$ulb_id,$refWorkflowId,0,true));
+            if($licence->is_parked && $request->action=='forward')
+            {
+                 $request->request->add(["receiverRoleId"=>$licence->current_role??0]);
+            }
+            $allRolse     = collect($this->_COMMON_FUNCTION->getAllRoles($user_id,$ulb_id,$refWorkflowId,0,true));
+            $initFinish   = $this->_COMMON_FUNCTION->iniatorFinisher($user_id, $ulb_id, $refWorkflowId);
             $receiverRole = array_values(objToArray($allRolse->where("id",$request->receiverRoleId)))[0]??[];
-            $senderRole = array_values(objToArray($allRolse->where("id",$request->senderRoleId)))[0]??[];
-            $role = $this->_COMMON_FUNCTION->getUserRoll($user_id,$ulb_id,$refWorkflowId);
+            $senderRole   = array_values(objToArray($allRolse->where("id",$request->senderRoleId)))[0]??[];
+            $role         = $this->_COMMON_FUNCTION->getUserRoll($user_id,$ulb_id,$refWorkflowId);
+
             if($licence->payment_status!=1 && ($role->serial_no  < $receiverRole["serial_no"]??0))
             {
                 throw new Exception("Payment Not Clear");
             }
             
-            if($licence->current_role != $role->role_id)
+            if($licence->current_role != $role->role_id && (!$licence->is_parked))
             {
                 throw new Exception("You Have Not Pending This Application");
             }
+            if($licence->is_parked && !$role->is_initiator)
+            {
+                throw new Exception("You Aer Not Authorized For Forword BTC Application");
+            }
+            
             $sms ="Application BackWord To ".$receiverRole["role_name"]??"";
             
             if($role->serial_no  < $receiverRole["serial_no"]??0)
@@ -619,6 +630,10 @@ class TradeApplication extends Controller
             DB::beginTransaction();
             $licence->max_level_attained = ($licence->max_level_attained < ($receiverRole["serial_no"]??0)) ? ($receiverRole["serial_no"]??0) : $licence->max_level_attained;
             $licence->current_role = $request->receiverRoleId;
+            if($licence->is_parked && $request->action=='forward')
+            {
+                 $licence->is_parked = false;
+            }
             $licence->update();
 
 
@@ -968,7 +983,7 @@ class TradeApplication extends Controller
             }
             
             #reupload documents;
-            if($privDoc = $mWfActiveDocument->getTradeAppByAppNoDocId($getLicenceDtls->id,$getLicenceDtls->ulb_id, collect($req->docName), $metaReqs['ownerDtlId']??null))
+            if($privDoc = $mWfActiveDocument->getTradeAppByAppNoDocId($getLicenceDtls->id,$getLicenceDtls->ulb_id, collect($req->docName), $getLicenceDtls->workflow_id,$metaReqs['ownerDtlId']??null))
             {
                 if($privDoc->verify_status!=2)
                 {

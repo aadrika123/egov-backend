@@ -20,6 +20,8 @@ return [
     "SAF_HARVESTING_REF_TABLE" => "prop_active_harvestings.id",
     "RWH_AREA_OF_PLOT" => 3228,
 
+    "JSK_ROLE" => 8,
+
     "OBJECTION" => [
         "2"     => "RainHarvesting",
         "3"     => "RoadWidth",
@@ -449,6 +451,7 @@ return [
     "OBJ_PARAM_ID"  => 8,
     "HAR_PARAM_ID"  => 9,
     "DEACTIV_PARAM_ID"  => 24,
+    "CASH_VERIFICATION_PARAM_ID"  => 33,
 
 
     /**

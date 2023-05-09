@@ -72,14 +72,17 @@ class ConcessionController extends Controller
     {
 
         $request->validate([
-            'propId' => "required"
+            'propId' => "required",
+            "applicantName" => "required"
         ]);
 
         try {
             $ulbId = $request->ulbId;
-            $userType = auth()->user()->user_type;
-            $userId = auth()->user()->id;
+            $user = auth()->user();
+            $userType = $user->user_type;
+            $userId = $user->id;
             $track = new WorkflowTrack();
+            $mPropProperty = new PropProperty();
             $conParamId = Config::get('PropertyConstaint.CON_PARAM_ID');
             $concessionNo = "";
 
@@ -93,11 +96,14 @@ class ConcessionController extends Controller
             $refFinisherRoleId = $this->getFinisherId($ulbWorkflowId->id);
             $finisherRoleId = DB::select($refFinisherRoleId);
 
+            $propDtl = $mPropProperty->getPropById($request->propId);
+            $ulbId = $propDtl->ulb_id;
+
             DB::beginTransaction();
             $concession = new PropActiveConcession;
             $concession->property_id = $request->propId;
             $concession->prop_owner_id = $request->ownerId;
-            $concession->applicant_name = $request->applicantName;
+            $concession->applicant_name = strtoupper($request->applicantName);
             $concession->gender = $request->gender;
             $concession->dob = $request->dob;
             $concession->is_armed_force = $request->armedForce;

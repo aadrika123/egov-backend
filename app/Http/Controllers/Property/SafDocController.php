@@ -160,7 +160,7 @@ class SafDocController extends Controller
     {
         $req->validate([
             "applicationId" => "required|numeric",
-            "document" => "required|mimes:pdf,jpeg,png,jpg|max:2048",
+            "document" => "required|mimes:pdf,jpeg,png,jpg",
             "docCode" => "required",
             "docCategory" => "required|string",
             "ownerId" => "nullable|numeric"
