@@ -97,6 +97,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      */
     Route::post('/heartbeat', function () {         // Heartbeat Api
         return response()->json([
+            'status' => true,
             'authenticated' => auth()->check()
         ]);
     });
