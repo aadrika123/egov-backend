@@ -1167,7 +1167,7 @@ class SafCalculation
         $this->_GRID['demand']['adjustAmount'] = 0;
         $this->_GRID['demand']['totalDemand'] = roundFigure($totalDemandAmount);
         $totalDemand = $this->_GRID['demand']['totalDemand'];
-        $this->_GRID['demand']['payableAmount'] = round($totalDemand, 2);
+        $this->_GRID['demand']['payableAmount'] = number_format(round($totalDemand), 2);
     }
 
     /**
