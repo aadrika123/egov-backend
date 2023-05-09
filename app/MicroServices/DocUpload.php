@@ -23,16 +23,7 @@ class DocUpload
     {
         $extention = $image->getClientOriginalExtension();
         $imageName = time() . '-' . $refImageName . '.' . $extention;
-        $imageSize = $image->getSize();
-        $humanReadableSize = $imageSize / (1024 * 1024);
-
-        if ($extention != 'pdf' && $humanReadableSize > 1) {
-            $image = Image::make($image->path());
-            $image->resize(1024, 1024, function ($constraint) {
-                $constraint->aspectRatio();
-            })->save($relativePath . '/' . $imageName);
-        } else
-            $image->move($relativePath, $imageName);
+        $image->move($relativePath, $imageName);
 
         return $imageName;
     }

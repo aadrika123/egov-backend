@@ -832,6 +832,8 @@ class CashVerificationController extends Controller
             $data['verifierName']    =  collect($details)[0]->verifier_name;
             $data['verifierMobile']  =  collect($details)[0]->verifier_mobile;
             $data['receiptNo']       =  collect($details)[0]->tran_no;
+            $data['verificationDate'] =  collect($details)[0]->verification_date;
+            $data['ulb']       =  collect($details)[0]->ulb_name;
 
             return responseMsgs(true, "Cash Receipt", $data, "010201", "1.0", "", "POST", $request->deviceId ?? "");
         } catch (Exception $e) {

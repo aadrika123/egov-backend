@@ -297,6 +297,33 @@ class ObjectionController extends Controller
             }
 
             if ($details->objection_for == 'Forgery') {
+
+                // Table Array
+                $ownerList = $mPropOwners->getOwnersByPropId($details->property_id);
+                $ownerList = json_decode(json_encode($ownerList), true);       // Convert Std class to array
+                $ownerDetails = $this->generateOwnerDetails($ownerList);
+                $ownerElement = [
+                    'headerTitle' => 'Owner Details',
+                    'tableHead' => ["#", "Owner Name", "Gender", "DOB", "Guardian Name", "Relation", "Mobile No", "Aadhar", "PAN", "Email", "IsArmedForce", "isSpeciallyAbled"],
+                    'tableData' => $ownerDetails
+                ];
+
+                $objectionOwnerList = $mObjectionOwners->getOwnerDetail($details->objection_id);
+                $objectionOwnerList = json_decode(json_encode($objectionOwnerList), true);       // Convert Std class to array
+                $objectionOwnerDetails = $this->objectionOwnerDetails($objectionOwnerList);
+                $objectionOwnerElement = [
+                    'headerTitle' => 'Applicant Details',
+                    'tableHead' => ["#", "Owner Name", "Gender", "DOB", "Guardian Name", "Relation", "Mobile No", "Aadhar", "PAN", "Email", "IsArmedForce", "isSpeciallyAbled"],
+                    'tableData' => $objectionOwnerDetails
+                ];
+
+                $forgeryDetails = $this->generateForgeryType($details);         // (Basic Details) Trait function to get Basic Details
+                $forgeryElement = [
+                    'headerTitle' => "Reason of Forgery",
+                    "data" => $forgeryDetails
+                ];
+                $fullDetailsData['fullDetailsData']['dataArray'] = new Collection([$forgeryElement, $basicElement]);
+                $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$ownerElement, $objectionOwnerElement]);
             }
 
             // Card Details
@@ -781,8 +808,12 @@ class ObjectionController extends Controller
     {
         $req->validate([
             "applicationId" => "required|numeric",
-            "document" => "required|mimes:pdf,jpeg,png,jpg,gif",
+            "document" => "required|mimes:pdf,jpeg,png,jpg",
             "docCode" => "required",
+        ]);
+        $extention = $req->document->getClientOriginalExtension();
+        $req->validate([
+            'document' => $extention == 'pdf' ? 'max:10240' : 'max:1024',
         ]);
 
         try {
