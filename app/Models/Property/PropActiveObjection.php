@@ -72,6 +72,7 @@ class PropActiveObjection extends Model
                 'pt.property_type',
                 'a.apartment_address',
                 'a.no_of_block',
+                'm_prop_forgery_types.type',
                 'a.apt_code as apartment_code',
                 'a.*',
             )
@@ -82,6 +83,7 @@ class PropActiveObjection extends Model
             ->leftjoin('ref_prop_ownership_types as o', 'o.id', '=', 'p.ownership_type_mstr_id')
             ->leftjoin('ref_prop_types as pt', 'pt.id', '=', 'p.prop_type_mstr_id')
             ->leftJoin('prop_apartment_dtls as a', 'a.id', '=', 'p.apartment_details_id')
+            ->leftJoin('m_prop_forgery_types', 'm_prop_forgery_types.id', '=', 'prop_active_objections.forgery_type_mstr_id')
             ->where('p.status', 1)
             ->where('prop_active_objections.id', $objId)
             ->first();
