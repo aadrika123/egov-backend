@@ -781,8 +781,12 @@ class ObjectionController extends Controller
     {
         $req->validate([
             "applicationId" => "required|numeric",
-            "document" => "required|mimes:pdf,jpeg,png,jpg,gif",
+            "document" => "required|mimes:pdf,jpeg,png,jpg",
             "docCode" => "required",
+        ]);
+        $extention = $req->document->getClientOriginalExtension();
+        $req->validate([
+            'document' => $extention == 'pdf' ? 'max:10240' : 'max:1024',
         ]);
 
         try {

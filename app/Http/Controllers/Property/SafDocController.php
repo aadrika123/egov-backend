@@ -165,6 +165,10 @@ class SafDocController extends Controller
             "docCategory" => "required|string",
             "ownerId" => "nullable|numeric"
         ]);
+        $extention = $req->document->getClientOriginalExtension();
+        $req->validate([
+            'document' => $extention == 'pdf' ? 'max:10240' : 'max:1024',
+        ]);
 
         try {
             // Variable Assignments
