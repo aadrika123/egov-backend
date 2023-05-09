@@ -2,6 +2,7 @@
 
 namespace App\Http;
 
+use App\Http\Middleware\ExpireBearerToken;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
 
 class Kernel extends HttpKernel
@@ -70,5 +71,6 @@ class Kernel extends HttpKernel
         'ability' => \Laravel\Sanctum\Http\Middleware\CheckForAnyAbility::class,
         'request_logger' => \App\Http\Middleware\ApiLogRequests::class,
         'XssSanitizer' => \App\Http\Middleware\XssSanitizer::class,
+        'expireBearerToken' => ExpireBearerToken::class
     ];
 }
