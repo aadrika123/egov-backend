@@ -23,6 +23,7 @@ use App\Http\Controllers\Workflows\UlbWorkflowRolesController;
 use App\Http\Controllers\WorkflowMaster\WorkflowRoleController;
 use App\Http\Controllers\WorkflowMaster\WorkflowRoleUserMapController;
 use App\Http\Controllers\CaretakerController;
+use Illuminate\Http\Request;
 
 /*
 |--------------------------------------------------------------------------
@@ -89,13 +90,14 @@ Route::controller(UlbController::class)->group(function () {
     Route::post('city/state/ulb-id', 'getCityStateByUlb');
 });
 
+
 // Inside Middleware Routes with API Authenticate 
 Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger', 'expireBearerToken']], function () {
 
     /**
      * | Api to Check if the User is authenticated or not
      */
-    Route::post('/heartbeat', function () {         // Heartbeat Api
+    Route::post('/heartbeat', function () {                 // Heartbeat Api
         return response()->json([
             'status' => true,
             'authenticated' => auth()->check()

@@ -25,13 +25,19 @@ class ExpireBearerToken
             $key = 'last_activity_' . $user->id;
             $lastActivity = Redis::get($key);
 
-            if ($lastActivity && ($currentTime - $lastActivity) > 600) {
+            if ($lastActivity && ($currentTime - $lastActivity) > 600) {            // for 600 Seconds(10 Minutes)
                 Redis::del($key);
                 $user->tokens()->delete();
-                abort(response()->json(['error' => 'Unauthenticated.'], 401));
+                abort(response()->json(
+                    [
+                        'status' => true,
+                        'authenticated' => false
+                    ]
+                ));
             }
 
-            Redis::setex($key, 600, $currentTime);            // Caching
+            if (!$request->has('key') && !$request->input('heartbeat'))
+                Redis::set($key, $currentTime);            // Caching
         }
         return $next($request);
     }
