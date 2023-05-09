@@ -27,10 +27,6 @@ class WaterApplication extends Controller
         $this->_NewConnectionController = new NewConnectionController($newConnection);
     }
 
-    public function applyApplication(Request $request)
-    {
-        return $this->Repository->applyApplication($request);
-    }
     public function getCitizenApplication(Request $request)
     {
         try {

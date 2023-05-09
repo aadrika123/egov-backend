@@ -247,7 +247,7 @@ class WaterPaymentController extends Controller
         | Serial No : 02
         | Recheck 
         | Search From Water trans table Not in webhook table 
-        | may not used
+        | Do not used
      */
     public function generatePaymentReceipt(Request $req)
     {
@@ -351,6 +351,7 @@ class WaterPaymentController extends Controller
      * | @var refDate
      * | @return 
         | Serial No : 03
+        | Working
         | Recheck
      */
     public function generateOfflinePaymentReceipt(Request $req)
@@ -463,7 +464,7 @@ class WaterPaymentController extends Controller
      * | @return
         | Serial No : 04
         | Working
-        | Change/Check the Adjustment
+        | Check the Adjustment
      */
     public function saveSitedetails(siteAdjustment $request)
     {
@@ -949,7 +950,7 @@ class WaterPaymentController extends Controller
     {
         $mWaterConsumerDemand = new WaterConsumerDemand();
         if ($startingDate > $endDate) {
-            throw new Exception("demandFrom Date should not be grater than demandUpto date!");
+            throw new Exception("'demandFrom' date should not be grater than 'demandUpto' date!");
         }
         $consumerDetails = WaterConsumer::find($request->consumerId);
         if (!$consumerDetails) {
@@ -963,7 +964,7 @@ class WaterPaymentController extends Controller
             ->get();
         $checkDemand = collect($allCharges)->first();
         if (!$checkDemand || is_null($checkDemand)) {
-            throw new Exception("Demand according to date not found!");
+            throw new Exception("Demand according to given date not found!");
         }
         return $allCharges;
     }
@@ -996,9 +997,9 @@ class WaterPaymentController extends Controller
         }
 
         return $returnData = [
-            "totaladvanceAmount" => $totalAdvance,
-            "advanceAmount" => $advanceAmount,
-            "adjustedAmount" => $totalAdjustment
+            "totaladvanceAmount"    => $totalAdvance,
+            "advanceAmount"         => $advanceAmount,
+            "adjustedAmount"        => $totalAdjustment
         ];
     }
 
