@@ -130,13 +130,14 @@ class WaterConsumer extends Controller
     {
         $request->validate([
             'consumerId' => "required|digits_between:1,9223372036854775807",
-            'document' => "required|mimes:pdf,jpg,jpeg,png",
+            'document' => "required|mimes:pdf,jpeg,png,jpg",
         ]);
         try {
             $mWaterConsumerInitialMeter = new WaterConsumerInitialMeter();
             $mWaterConsumerMeter        = new WaterConsumerMeter();
             $mWaterMeterReadingDoc      = new WaterMeterReadingDoc();
             $refMeterConnectionType     = Config::get('waterConstaint.METER_CONN_TYPE');
+            $meterRefImageName          = config::get('waterConstaint.WATER_METER_CODE');
             $demandIds = array();
 
             $this->checkDemandGeneration($request);                                         // unfinished function
@@ -156,7 +157,7 @@ class WaterConsumer extends Controller
                         $demandIds = $this->savingDemand($calculatedDemand, $request, $consumerDetails, $demandDetails['charge_type'], $refMeterConnectionType);
 
                         # save the chages doc
-                        $documentPath = $this->saveTheMeterDocument($request);
+                        $documentPath = $this->saveDocument($request, $meterRefImageName);
                         collect($demandIds)->map(function ($value)
                         use ($mWaterMeterReadingDoc, $meterDetails, $documentPath) {
                             $mWaterMeterReadingDoc->saveDemandDocs($meterDetails, $documentPath, $value);
@@ -169,7 +170,7 @@ class WaterConsumer extends Controller
                         $demandIds = $this->savingDemand($calculatedDemand, $request, $consumerDetails, $demandDetails['charge_type'], $refMeterConnectionType);
 
                         # save the chages doc
-                        $documentPath = $this->saveTheMeterDocument($request);
+                        $documentPath = $this->saveDocument($request, $meterRefImageName);
                         collect($demandIds)->map(function ($value)
                         use ($mWaterMeterReadingDoc, $meterDetails, $documentPath) {
                             $mWaterMeterReadingDoc->saveDemandDocs($meterDetails, $documentPath, $value);
@@ -260,16 +261,18 @@ class WaterConsumer extends Controller
      * | Save the Meter details 
      * | @param request
         | Serial No : 04
-        | Not working  
+        | Working  
         | Check the parameter for the autherised person
-        | Chack the Demand
-        | ReDiscuss
+        | Chack the Demand for the fixed rate 
+        | Rediscuss
      */
     public function saveUpdateMeterDetails(reqMeterEntry $request)
     {
         try {
-            $mWaterConsumerMeter = new WaterConsumerMeter();
+            $mWaterConsumerMeter    = new WaterConsumerMeter();
+            $meterRefImageName      = config::get('waterConstaint.WATER_METER_CODE');
             $param = $this->checkParamForMeterEntry($request);
+
             DB::beginTransaction();
             $metaRequest = new Request([
                 "consumerId"    => $request->consumerId,
@@ -280,8 +283,8 @@ class WaterConsumer extends Controller
             if ($param['meterStatus'] != false) {
                 $this->saveGenerateConsumerDemand($metaRequest);
             }
-            $documentPath = $this->saveTheMeterDocument($request);
-            $fixedRate = $this->getFixedRate($request);                             // Manul Entry of fixed rate
+            $documentPath = $this->saveDocument($request, $meterRefImageName);
+            // $fixedRate = $this->getFixedRate($request);                             // Manul Entry of fixed rate
             $mWaterConsumerMeter->saveMeterDetails($request, $documentPath);
             DB::commit();
             return responseMsgs(true, "Meter Detail Entry Success !", "", "", "01", ".ms", "POST", $request->deviceId);
@@ -297,18 +300,18 @@ class WaterConsumer extends Controller
      * | @param request
         | Serial No : 04.01
         | Working
-        | Look for the meter status true condition 
+        | Look for the meter status true condition while returning data
         | Recheck the process for meter and non meter 
      */
     public function checkParamForMeterEntry($request)
     {
-        $todayDate = Carbon::now();
         $refConsumerId = $request->consumerId;
+        $todayDate = Carbon::now();
 
         $mWaterWaterConsumer    = new WaterWaterConsumer();
         $mWaterConsumerMeter    = new WaterConsumerMeter();
         $mWaterConsumerDemand   = new WaterConsumerDemand();
-        $refMeterConnType = Config::get('waterConstaint.WATER_MASTER_DATA.METER_CONNECTION_TYPE');
+        $refMeterConnType       = Config::get('waterConstaint.WATER_MASTER_DATA.METER_CONNECTION_TYPE');
 
         $mWaterWaterConsumer->getConsumerDetailById($refConsumerId);
         $consumerMeterDetails = $mWaterConsumerMeter->getMeterDetailsByConsumerId($refConsumerId)->first();
@@ -382,32 +385,22 @@ class WaterConsumer extends Controller
      * | Save the Document for the Meter Entry 
      * | Return the Document Path
      * | @param request
-        | Serial No : 04.02
-        | Not Working
+        | Serial No : 04.02 / 06.02
+        | Working
+        | Common function
      */
-    public function saveTheMeterDocument($request)
+    public function saveDocument($request, $refImageName)
     {
-        $docUpload = new DocUpload;
-        $relativePath = Config::get('waterConstaint.WATER_RELATIVE_PATH');
-        $refImageName = config::get('waterConstaint.WATER_METER_CODE');
-        $document = $request->document;
+        $document       = $request->document;
+        $docUpload      = new DocUpload;
+        $relativePath   = Config::get('waterConstaint.WATER_RELATIVE_PATH');
+
         $imageName = $docUpload->upload($refImageName, $document, $relativePath);
         $doc = [
             "document" => $imageName,
             "relaivePath" => $relativePath
         ];
         return $doc;
-    }
-
-    /**
-     * | Get the Fixed Rate According to the Rate Chart
-     * | Only in Case of Meter Connection Type Fixed
-        | Serial No : 04.03
-        | Not Working
-        | find the fixed rate for the fixed charges from the table
-     */
-    public function getFixedRate($request)
-    {
     }
 
 
@@ -421,11 +414,11 @@ class WaterConsumer extends Controller
      */
     public function getMeterList(Request $request)
     {
-        try {
-            $request->validate([
-                'consumerId' => "required|digits_between:1,9223372036854775807",
-            ]);
+        $request->validate([
+            'consumerId' => "required|digits_between:1,9223372036854775807",
+        ]);
 
+        try {
             $meterConnectionType    = null;
             $mWaterConsumerMeter    = new WaterConsumerMeter();
             $refWaterNewConnection  = new WaterNewConnection();
@@ -479,14 +472,15 @@ class WaterConsumer extends Controller
             'reason'        => "required|in:1,2,3",
             'remarks'       => "required"
         ]);
-        try {
 
-            $user = authUser();
-            $currentDate = Carbon::now();
-            $refIdGeneration = new IdGeneration();
-            $mWaterWaterConsumer = new WaterWaterConsumer();
-            $mWaterConsumerDisconnection = new WaterConsumerDisconnection();
-            $refWorkflow = Config::get('workflow-constants.WATER_MASTER_ID');
+        try {
+            $user                           = authUser();
+            $currentDate                    = Carbon::now();
+            $refIdGeneration                = new IdGeneration();
+            $mWaterWaterConsumer            = new WaterWaterConsumer();
+            $mWaterConsumerDisconnection    = new WaterConsumerDisconnection();
+            $refWorkflow                    = Config::get('workflow-constants.WATER_MASTER_ID');
+            $deactiveRefImageName           = config::get('waterConstaint.WATER_CONSUMER_DEACTIVATION');
 
             $request->request->add(['workflowId' => $refWorkflow]);
             $roleId = $this->getRole($request)->pluck('wf_role_id');
@@ -495,7 +489,7 @@ class WaterConsumer extends Controller
             $consumerDetails = $this->PreConsumerDeactivationCheck($request);
 
             DB::beginTransaction();
-            $document = $this->saveDeactivationDoc($request);
+            $document = $this->saveDocument($request, $deactiveRefImageName);
             $transactionNo = $refIdGeneration->generateTransactionNo();
             $mWaterWaterConsumer->dissconnetConsumer($request);
             $deactivatedDetails = $mWaterConsumerDisconnection->saveDeactivationDetails($request, $currentDate, $document, $consumerDetails);
@@ -525,13 +519,13 @@ class WaterConsumer extends Controller
      * | @var 
         | Not Working
         | Serial No : 06.01
-        | Recheck
+        | Recheck the amount and the order from weaver committee
      */
     public function PreConsumerDeactivationCheck($request)
     {
-        $consumerId = $request->consumerId;
-        $mWaterWaterConsumer = new WaterWaterConsumer();
-        $mWaterConsumerDemand = new WaterConsumerDemand();
+        $consumerId             = $request->consumerId;
+        $mWaterWaterConsumer    = new WaterWaterConsumer();
+        $mWaterConsumerDemand   = new WaterConsumerDemand();
 
         $refConsumerDetails = $mWaterWaterConsumer->getConsumerDetailById($consumerId);
         if (isset($refConsumerDetails)) {
@@ -546,27 +540,6 @@ class WaterConsumer extends Controller
             throw new Exception("Amount not matched!");
         }
         return $refConsumerDetails;
-    }
-
-
-    /**
-     * | Save document for deactivating the consumer 
-     * | @param request
-        | Not Working
-        | Serial No: 06.02
-     */
-    public function saveDeactivationDoc($request)
-    {
-        $docUpload = new DocUpload;
-        $relativePath = Config::get('waterConstaint.WATER_RELATIVE_PATH');
-        $refImageName = config::get('waterConstaint.WATER_CONSUMER_DEACTIVATION');
-        $document = $request->document;
-        $imageName = $docUpload->upload($refImageName, $document, $relativePath);
-        $doc = [
-            "document" => $imageName,
-            "relaivePath" => $relativePath
-        ];
-        return $doc;
     }
 
     /**
