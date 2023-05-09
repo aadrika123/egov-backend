@@ -90,7 +90,18 @@ Route::controller(UlbController::class)->group(function () {
 });
 
 // Inside Middleware Routes with API Authenticate 
-Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {
+Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger', 'expireBearerToken']], function () {
+
+    /**
+     * | Api to Check if the User is authenticated or not
+     */
+    Route::post('/heartbeat', function () {         // Heartbeat Api
+        return response()->json([
+            'status' => true,
+            'authenticated' => auth()->check()
+        ]);
+    });
+
     /**
      * Routes for User 
      * Created By-Anshu Kumar
@@ -246,7 +257,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
 
 // Routes used where authentication not required
-Route::group(['middleware' => ['json.response', 'request_logger']], function () {
+Route::group(['middleware' => ['json.response', 'request_logger', 'expireBearerToken']], function () {
 
     Route::controller(WardController::class)->group(function () {
         Route::post('get-newward-by-oldward', 'getNewWardByOldWard');
@@ -266,7 +277,7 @@ Route::group(['middleware' => ['json.response', 'request_logger']], function () 
 //  * Modified By :- Mrinal Kumar
 //  */
 
-Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {
+Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger', 'expireBearerToken']], function () {
 
 
     /**
@@ -346,7 +357,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     });
 });
 
-Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {
+Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger', 'expireBearerToken']], function () {
 
     /**
      * | Created On-23-11-2022 
