@@ -75,7 +75,6 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 
-use function PHPUnit\Framework\throwException;
 
 class ActiveSafController extends Controller
 {
@@ -385,6 +384,12 @@ class ActiveSafController extends Controller
 
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleIds)->pluck('workflow_id');
             $safInbox = $this->Repository->getSaf($workflowIds)                 // Repository function getSAF
+                ->selectRaw(DB::raw(
+                    "case when prop_active_safs.citizen_id is null then 'true'
+                          else false end
+                          as btc_for_citizen
+                    "
+                ))
                 ->where('parked', true)
                 ->where('prop_active_safs.ulb_id', $mUlbId)
                 ->where('prop_active_safs.status', 1)

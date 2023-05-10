@@ -77,6 +77,7 @@ class SafCalculation
     private $_isPropPoint20Taxed = false;
     private $_rwhAreaOfPlot;
     private $_ulbType;
+    private $_religiousPlaceUsageType;
 
     /** 
      * | For Building
@@ -122,6 +123,7 @@ class SafCalculation
 
     public function readPropertyMasterData()
     {
+        $this->_religiousPlaceUsageType = Config::get('PropertyConstaint.RELIGIOUS_PLACE_USAGE_TYPE_ID');
         $this->_redis = Redis::connection();
         $propertyDetails = $this->_propertyDetails;
 
@@ -159,7 +161,7 @@ class SafCalculation
         // Check If the one of the floors is commercial for Building
         if ($this->_propertyDetails['propertyType'] != $this->_vacantPropertyTypeId) {
             $readCommercial = collect($this->_floors)->where('useType', '!=', 1)
-                ->where('useType', '!=', 10);
+                ->where('useType', '!=', $this->_religiousPlaceUsageType);
             $this->_isResidential = $readCommercial->isEmpty();
         }
 
@@ -808,7 +810,7 @@ class SafCalculation
         $quaterHealthTax = roundFigure($healthTax / 4);
         $quaterEducationTax = roundFigure($educationTax / 4);
         $quaterlyTax = roundFigure($quaterHoldingTax + $quaterLatrineTax + $quaterWaterTax + $quaterHealthTax + $quaterEducationTax);
-        $onePercPenaltyTax = ($readUsageType != 10) ? ($quaterlyTax * $onePercPenalty) / 100 : 0;       // For Religious Place One Perc is 0
+        $onePercPenaltyTax = ($readUsageType != $this->_religiousPlaceUsageType) ? ($quaterlyTax * $onePercPenalty) / 100 : 0;       // For Religious Place One Perc is 0
 
         // Tax Calculation Quaterly
         $tax = [
@@ -1072,7 +1074,7 @@ class SafCalculation
                 $readMatrixFactor = 1;                      // (Matrix Factor for the Type of Floors which is not Residential)
 
             // Condition for the Institutional or Educational Trust 
-            if (isset($this->_isTrust) && $this->_isTrust == true && $this->_isTrustVerified == true && $readUsageType != 10) {
+            if (isset($this->_isTrust) && $this->_isTrust == true && $this->_isTrustVerified == true && $readUsageType != $this->_religiousPlaceUsageType) {
                 $paramOccupancyFactor = 1;
                 $taxPerc = 0.15;
                 $readCalculationFactor = ($this->_trustType == 1) ? 0.25 : 0.50;
@@ -1186,7 +1188,7 @@ class SafCalculation
                     $dateFrom = Carbon::createFromFormat('Y-m-d', $value['dateFrom']);
                     $fromDate = Carbon::parse($dateFrom->format('Y-m-d'));
                     $usageType = $value['useType'];
-                    if ($usageType != 10) {                                                                     // Late Assessment Not Applicable for the Religious Floors
+                    if ($usageType != $this->_religiousPlaceUsageType) {                                                                     // Late Assessment Not Applicable for the Religious Floors
                         $diffInDays = $toDate->diffInDays($fromDate);
                         return $diffInDays > 90;
                     }
