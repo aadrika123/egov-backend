@@ -156,7 +156,7 @@ class EloquentAuthRepository implements AuthRepository
                     $this->redisStore($redis, $emailInfo, $request, $token);   // Trait for update Redis
 
                     Redis::expire('user:' . $emailInfo->id, 18000);         // EXPIRE KEY AFTER 5 HOURS
-                    $message = $this->tResponseSuccess($token, $email,$request);     // Response Message Using Trait
+                    $message = $this->tResponseSuccess($token, $email, $request);     // Response Message Using Trait
                     return response()->json($message, 200);
                 }
                 // AUTHENTICATING PASSWORD IN HASH
@@ -182,7 +182,7 @@ class EloquentAuthRepository implements AuthRepository
                     $this->redisStore($redis, $emailInfo, $request, $token);   // Trait for update Redis
 
                     Redis::expire('user:' . $emailInfo->id, 18000);     //EXPIRE KEY IN AFTER 5 HOURS
-                    $message = $this->tResponseSuccess($token, $email,$request);           // Response Message Using Trait
+                    $message = $this->tResponseSuccess($token, $email, $request);           // Response Message Using Trait
                     return response()->json($message, 200);
                 } else {
                     $msg = "Incorrect Password";
@@ -441,13 +441,22 @@ class EloquentAuthRepository implements AuthRepository
     /**
      * | Get user Notification
      */
-    public function userNotification()
+    public function userNotification($request)
     {
-        $ulbId = authUser()->ulb_id;
-        $userId = authUser()->id;
+        $user = authUser();
+        $userId = $user->id;
+        $ulbId = $user->ulb_id;
+        $userType = $user->user_type;
         $muserNotification = new UserNotification();
 
-        $data =  $muserNotification->notificationByUserId($userId, $ulbId);
+        if ($userType == 'Citizen')
+            $data =  $muserNotification->notificationByUserId($userId)
+                ->get();
+        else
+            $data =  $muserNotification->notificationByUserId($userId)
+                ->where('ulb_id', $ulbId)
+                ->get();
+
         if ($data->isEmpty())
             return responseMsgs(true, "No Current Notification", '', "010108", "1.0", "", "POST", "");
 

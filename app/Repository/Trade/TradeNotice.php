@@ -128,6 +128,7 @@ class TradeNotice implements ITradeNotice
             {
                 throw new Exception($message);
             }
+            $data = $response->original["data"];
             DB::commit();
 
             return  responseMsg(true, $message, $data);
@@ -425,6 +426,7 @@ class TradeNotice implements ITradeNotice
     public function approveReject(Request $req)
     {
         try {
+            $data = (array)null;
             $user = Auth()->user();
             $user_id = $user->id;
             $ulb_id = $user->ulb_id;
@@ -459,6 +461,7 @@ class TradeNotice implements ITradeNotice
                 $application->forceDelete();
 
                 $msg =  "Notice Successfully Generated !!. Your Notice No. ".$approvedApplication->notice_no;
+                $data["notice_no"]=$approvedApplication->notice_no;
             }
 
             // Rejection
@@ -475,10 +478,10 @@ class TradeNotice implements ITradeNotice
             }
             DB::commit();
 
-            return responseMsgs(true, $msg, "", '010811', '01', '474ms-573', 'Post', '');
+            return responseMsgs(true, $msg, $data, '010811', '01', '474ms-573', 'Post', '');
         } catch (Exception $e) {
             DB::rollBack();
-            return responseMsg(false, $e->getMessage(), "", '010811', '01', '474ms-573', 'Post', '');
+            return responseMsg(false, $e->getMessage(), $data, '010811', '01', '474ms-573', 'Post', '');
         }
     }
 

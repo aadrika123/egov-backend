@@ -75,7 +75,6 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 
-use function PHPUnit\Framework\throwException;
 
 class ActiveSafController extends Controller
 {
@@ -385,10 +384,15 @@ class ActiveSafController extends Controller
 
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleIds)->pluck('workflow_id');
             $safInbox = $this->Repository->getSaf($workflowIds)                 // Repository function getSAF
+                ->selectRaw(DB::raw(
+                    "case when prop_active_safs.citizen_id is null then 'true'
+                          else false end
+                          as btc_for_citizen
+                    "
+                ))
                 ->where('parked', true)
                 ->where('prop_active_safs.ulb_id', $mUlbId)
                 ->where('prop_active_safs.status', 1)
-                ->whereIn('current_role', $roleIds)
                 ->whereIn('ward_mstr_id', $occupiedWardsId)
                 ->orderByDesc('id')
                 ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name')
@@ -460,6 +464,7 @@ class ActiveSafController extends Controller
 
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleIds)->pluck('workflow_id');
             $safData = $this->Repository->getSaf($workflowIds)   // Repository function to get SAF
+                ->where('prop_active_safs.parked', false)
                 ->where('prop_active_safs.ulb_id', $ulbId)
                 ->whereNotIn('current_role', $roleIds)
                 ->whereIn('ward_mstr_id', $wardId)
@@ -863,6 +868,7 @@ class ActiveSafController extends Controller
                 $samHoldingDtls = $this->checkPostCondition($senderRoleId, $wfLevels, $saf, $wfMstrId);          // Check Post Next level condition
                 $saf->current_role = $forwardBackwardIds->forward_role_id;
                 $saf->last_role_id =  $forwardBackwardIds->forward_role_id;                     // Update Last Role Id
+                $saf->parked = false;
                 $metaReqs['verificationStatus'] = 1;
                 $metaReqs['receiverRoleId'] = $forwardBackwardIds->forward_role_id;
             }
@@ -1381,17 +1387,23 @@ class ActiveSafController extends Controller
         ]);
 
         try {
-            $saf = PropActiveSaf::find($req->applicationId);
+            $safRefTableName = Config::get('PropertyConstaint.SAF_REF_TABLE');
+            $saf = PropActiveSaf::findOrFail($req->applicationId);
             $track = new WorkflowTrack();
+
+            if (is_null($saf->citizen_id)) {                // If the Application has been applied from Jsk or Ulb Employees
+                $initiatorRoleId = $saf->initiator_role_id;
+                $saf->current_role = $initiatorRoleId;
+                $saf->parked = true;                        //<------ SAF Pending Status true
+            } else
+                $saf->parked = true;                        // If the Application has been applied from Citizen
+
             DB::beginTransaction();
-            $initiatorRoleId = $saf->initiator_role_id;
-            $saf->current_role = $initiatorRoleId;
-            $saf->parked = true;                        //<------ SAF Pending Status true
             $saf->save();
 
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs['workflowId'] = $saf->workflow_id;
-            $metaReqs['refTableDotId'] = 'prop_active_safs.id';
+            $metaReqs['refTableDotId'] = $safRefTableName;
             $metaReqs['refTableIdValue'] = $req->applicationId;
             $metaReqs['user_id'] = authUser()->id;
             $req->request->add($metaReqs);

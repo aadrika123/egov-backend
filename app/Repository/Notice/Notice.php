@@ -172,6 +172,7 @@ use Barryvdh\DomPDF\Facade\PDF;
                 {
                     throw new Exception($message);
                 }
+                $data = $response->original["data"];
             }
             
             DB::commit();

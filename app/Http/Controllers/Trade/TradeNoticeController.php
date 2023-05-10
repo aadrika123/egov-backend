@@ -50,9 +50,23 @@ class TradeNoticeController extends Controller
         $this->_TRADE_CONSTAINT = Config::get("TradeConstant");
         $this->_REF_TABLE = $this->_TRADE_CONSTAINT["TRADE_NOTICE_REF_TABLE"];
     }
-    public function applyDenail(ReqApplyDenail $request)
+    public function applyDenail(Request $request)
     {
         try {
+            $regex = '/^[a-zA-Z1-9][a-zA-Z1-9\.\s]+$/';
+            $rules["firmName"]="required|regex:$regex";
+            $rules["ownerName"]="required|regex:$regex";
+            $rules["wardNo"]="required|int";
+            $rules["holdingNo"]="required";
+            $rules["address"]="required|regex:$regex";
+            $rules["landmark"]="required|regex:$regex";
+            $rules["city"]="required|regex:$regex";
+            $rules["pinCode"]="required|digits:6";
+            $rules["mobileNo"]="digits:10";
+            $rules["comment"]="required|regex:$regex|min:10";
+            $rules["document"]="required|mimes:pdf,jpg,jpeg,png|max:2048";
+            $request->validate($rules);
+
             $user = Auth()->user();
             $userId = $user->id;
             $ulbId = $user->ulb_id;

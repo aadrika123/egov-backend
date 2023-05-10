@@ -132,6 +132,13 @@ class SafDocController extends Controller
             });
             $reqDoc['docType'] = $key;
             $reqDoc['docName'] = substr($label, 1, -1);
+
+            // Check back to citizen status
+            $uploadedDocument = $documents->last();
+            if (collect($uploadedDocument)->isNotEmpty() && $uploadedDocument['verifyStatus'] == 2) {
+                $reqDoc['btcStatus'] = true;
+            } else
+                $reqDoc['btcStatus'] = false;
             $reqDoc['uploadedDoc'] = $documents->last();
 
             $reqDoc['masters'] = collect($document)->map(function ($doc) use ($uploadedDocs) {
@@ -209,8 +216,11 @@ class SafDocController extends Controller
                 $mWfActiveDocument->edit($ifDocCategoryExist, $metaReqs);       // Update Existing Document
 
             $docUploadStatus = $this->checkFullDocUpload($req->applicationId);
-            if ($docUploadStatus == 1) {
-                $getSafDtls->doc_upload_status = 1;                                             // Doc Upload Status Update
+            if ($docUploadStatus == 1) {                                        // Doc Upload Status Update
+                $getSafDtls->doc_upload_status = 1;
+                if ($getSafDtls->parked == true)                                // Case of Back to Citizen
+                    $getSafDtls->parked = false;
+
                 $getSafDtls->save();
             }
             DB::commit();
