@@ -6,14 +6,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
-class UserNotification extends Model
+class MirrorUserNotification extends Model
 {
     use HasFactory;
     protected $updated_at = false;
     protected $fillable = [
         'user_id', 'citizen_id', 'category', 'notification', 'send_by', 'require_acknowledgment',
         'sender_id', 'ulb_id', 'module_id', 'event_id', 'generation_time', 'expected_delivery_time',
-        'ephameral', 'created_at'
+        'ephameral', 'created_at', 'notification_id'
     ];
 
     /**
@@ -21,7 +21,7 @@ class UserNotification extends Model
      */
     public function notificationByUserId()
     {
-        return UserNotification::select('*', DB::raw("Replace(category, ' ', '_') AS category"))
+        return MirrorUserNotification::select('*', DB::raw("Replace(category, ' ', '_') AS category"))
             ->where('status', 1)
             ->orderByDesc('id');
     }
@@ -32,17 +32,15 @@ class UserNotification extends Model
     public function addNotification($req)
     {
         $req = $req->toarray();
-        $notification =  UserNotification::create($req);
-        return $notification->id;
+        MirrorUserNotification::create($req);
     }
 
     /**
-     * | deactivate Notifications 
+     * | Add Notifications 
      */
-    public function deactivateNotification($req)
+    public function editNotification($req)
     {
-        $notification = UserNotification::find($req->id);
-        $notification->status = 0;
-        $notification->save();
+        $req = $req->toarray();
+        MirrorUserNotification::update($req);
     }
 }
