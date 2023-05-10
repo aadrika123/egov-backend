@@ -718,6 +718,7 @@ class NewConnectionController extends Controller
      * | @param req
         | Working 
         | Look on the concept of deactivation of the rejected documents 
+        | Put the static "verify status" 2 in config  
      */
     public function uploadWaterDoc(Request $req)
     {
@@ -787,13 +788,22 @@ class NewConnectionController extends Controller
             }
             # if the application is parked and btc 
             if ($getWaterDetails->parked == true) {
-                $status = false;
-                $mWaterApplication->updateParkedstatus($status, $applicationId);
                 $mWfActiveDocument->deactivateRejectedDoc($metaReqs);
+                $refReq = new Request([
+                    'applicationId' => $applicationId
+                ]);
+                $documentList = $this->getUploadDocuments($refReq);
+                $refVerifyStatus = collect($documentList)['original']['data'];
+                $refVerifyStatus = $refVerifyStatus->where('doc_category', '!=', $req->docCategory)->pluck('verify_status');
+                if (!in_array(2, $refVerifyStatus->toArray())) {                                    // Static "2"
+                    $status = false;
+                    $mWaterApplication->updateParkedstatus($status, $applicationId);
+                }
             }
             DB::commit();
             return responseMsgs(true, "Document Uploadation Successful", "", "", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
+            DB::rollBack();
             return responseMsgs(false, $e->getMessage(), "", "", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
@@ -821,6 +831,9 @@ class NewConnectionController extends Controller
                 $userId = $user->id;
                 $ulbId = $applicantDetals->ulb_id;
                 $role = $this->_commonFunction->getUserRoll($userId, $ulbId, $refWorkFlowMaster);
+                if (is_null($role)) {
+                    throw new Exception("You dont have any role!");
+                }
                 if ($role->can_upload_document != true) {
                     throw new Exception("You dont have permission to upload Document!");
                 }

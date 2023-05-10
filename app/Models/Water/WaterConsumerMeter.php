@@ -52,7 +52,7 @@ class WaterConsumerMeter extends Model
      * | @param 
         | Get the fixed rate
      */
-    public function saveMeterDetails($req, $documentPath)
+    public function saveMeterDetails($req, $documentPath, $fixedRate)
     {
         $meterStatus = null;
         $refConnectionType = Config::get('waterConstaint.WATER_MASTER_DATA.METER_CONNECTION_TYPE');
@@ -63,10 +63,10 @@ class WaterConsumerMeter extends Model
         if ($req->connectionType == $refConnectionType['Meter']) {
             $installationDate = Carbon::now();
         }
-        // if($req->connectionType = $refConnectionType['Fixed'])
-        // {
-        //     $ratePerMonth = 
-        // }
+        if ($req->connectionType == $refConnectionType['Fixed']) {
+            $meterStatus = 0;
+        }
+
         $mWaterConsumerMeter = new WaterConsumerMeter();
         $mWaterConsumerMeter->consumer_id               = $req->consumerId;
         $mWaterConsumerMeter->connection_date           = $req->connectionDate;
@@ -76,7 +76,7 @@ class WaterConsumerMeter extends Model
         $mWaterConsumerMeter->meter_intallation_date    = $installationDate ?? null;
         $mWaterConsumerMeter->initial_reading           = $req->newMeterInitialReading ?? null;
         $mWaterConsumerMeter->meter_status              = $meterStatus ?? 1;                        // Static for meter connection
-        $mWaterConsumerMeter->rate_per_month            = $ratePerMonth ?? 0;                       // For fixed connection
+        $mWaterConsumerMeter->rate_per_month            = $fixedRate ?? 0;                          // For fixed connection
         $mWaterConsumerMeter->relative_path             = $documentPath['relaivePath'];
         $mWaterConsumerMeter->meter_doc                 = $documentPath['document'];
         $mWaterConsumerMeter->save();
