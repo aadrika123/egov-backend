@@ -209,8 +209,11 @@ class SafDocController extends Controller
                 $mWfActiveDocument->edit($ifDocCategoryExist, $metaReqs);       // Update Existing Document
 
             $docUploadStatus = $this->checkFullDocUpload($req->applicationId);
-            if ($docUploadStatus == 1) {
-                $getSafDtls->doc_upload_status = 1;                                             // Doc Upload Status Update
+            if ($docUploadStatus == 1) {                                        // Doc Upload Status Update
+                $getSafDtls->doc_upload_status = 1;
+                if ($getSafDtls->parked == true)                                // Case of Back to Citizen
+                    $getSafDtls->parked = false;
+
                 $getSafDtls->save();
             }
             DB::commit();
