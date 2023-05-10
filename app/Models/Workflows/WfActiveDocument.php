@@ -175,6 +175,8 @@ class WfActiveDocument extends Model
                 'd.remarks',
                 'd.verify_status',
                 'd.doc_code',
+                'd.doc_category',
+                'd.status',
                 'o.applicant_name as owner_name'
             )
             ->leftJoin('water_applicants as o', 'o.id', '=', 'd.owner_dtl_id')

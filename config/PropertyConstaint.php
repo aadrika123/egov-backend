@@ -100,181 +100,183 @@ return [
 
     ],
 
+    "RELIGIOUS_PLACE_USAGE_TYPE_ID" => "10",                // Religious Place usage type
+
     "USAGE-TYPE" => [
         "1" => [
             "CODE" => "A",
             "TYPE" => "RESIDENTIAL"
         ],
-        "6" => [
+        "7" => [
             "CODE" => "G",
             "TYPE" => "COMMERCIAL ESTABLISHMENTS AND UNDERTAKING OF STATE AND CENTRAL GOVERNMENT"
         ],
-        "8" => [
+        "9" => [
             "CODE" => "I",
             "TYPE" => "STATE AND CENTRAL GOVERNMENT OFFICES OTHER THAN COMMERCIAL ESTABLISHMENT AND UNDERTAKINGS"
         ],
-        "10" => [
+        "11" => [
             "CODE" => "K",
             "TYPE" => "RELIGIOUS AND SPIRITUAL PLACES"
         ],
-        "12" => [
+        "13" => [
             "CODE" => "B",
             "TYPE" => "HOTEL"
         ],
-        "13" => [
+        "14" => [
             "CODE" => "B",
             "TYPE" => "BARS"
         ],
-        "14" => [
+        "15" => [
             "CODE" => "B",
             "TYPE" => "CLUBS"
         ],
 
-        "15" => [
+        "16" => [
             "CODE" => "B",
             "TYPE" => "HEALTH CLUB"
         ],
-        "16" => [
+        "17" => [
             "CODE" => "B",
             "TYPE" => "MARRIAGE HALLS"
         ],
-        "17" => [
+        "18" => [
             "CODE" => "C",
             "TYPE" => "SHOP WITH LESS THAN 250 SQ. FEET"
         ],
-        "18" => [
+        "19" => [
             "CODE" => "D",
             "TYPE" => "SHOW ROOM"
         ],
-        "19" => [
+        "20" => [
             "CODE" => "D",
             "TYPE" => "SHOPPING MALLS"
         ],
-        "20" => [
+        "21" => [
             "TYPE" => "CINEMA HOUSES",
             "CODE" => "D"
         ],
-        "21" => [
+        "22" => [
             "CODE" => "D",
             "TYPE" => "MULTIPLEXES",
 
         ],
-        "22" => [
+        "23" => [
             "CODE" => "D",
             "TYPE" => "DISPENSARIES",
 
         ],
-        "23" => [
+        "24" => [
             "CODE" => "D",
             "TYPE" => "LABORATORIES",
 
         ],
-        "24" => [
+        "25" => [
             "CODE" => "D",
             "TYPE" => "RESTURANTS",
 
         ],
-        "25" => [
+        "26" => [
             "CODE" => "D",
             "TYPE" => "GUEST HOUSES",
 
         ],
-        "26" => [
+        "27" => [
             "CODE" => "E",
             "TYPE" => "COMMERCIAL OFFICES",
 
         ],
-        "27" => [
+        "28" => [
             "CODE" => "E",
             "TYPE" => "FINANCIAL INSTITUTIONS",
 
         ],
-        "28" => [
+        "29" => [
             "CODE" => "E",
             "TYPE" => "BANKS",
 
         ],
-        "29" => [
+        "30" => [
             "CODE" => "E",
             "TYPE" => "INSURANCE OFFICES",
 
         ],
-        "30" => [
+        "31" => [
             "CODE" => "E",
             "TYPE" => "PRIVATE HOSPITALS",
 
         ],
-        "31" => [
+        "32" => [
             "CODE" => "E",
             "TYPE" => "NURSING HOMES",
 
         ],
-        "32" => [
+        "33" => [
             "CODE" => "F",
             "TYPE" => "INDUSTRIES",
 
         ],
-        "33" => [
+        "34" => [
             "CODE" => "F",
             "TYPE" => "WORKSHOPS",
 
         ],
-        "34" => [
+        "35" => [
             "CODE" => "F",
             "TYPE" => "STORAGE",
 
         ],
-        "35" => [
+        "36" => [
             "CODE" => "F",
             "TYPE" => "GODOWNS",
 
         ],
-        "36" => [
+        "37" => [
             "CODE" => "F",
             "TYPE" => "WARE HOUSES",
 
         ],
-        "37" => [
+        "38" => [
             "CODE" => "H",
             "TYPE" => "COACHING CLASSES",
 
         ],
-        "38" => [
+        "39" => [
             "CODE" => "H",
             "TYPE" => "GUIDANCE & TRAINING CENTRES & THEIR HOSTELS",
 
         ],
-        "39" => [
+        "40" => [
             "CODE" => "J",
             "TYPE" => "PRIVATE SCHOOLS",
 
         ],
-        "40" => [
+        "41" => [
             "CODE" => "J",
             "TYPE" => "PRIVATE COLLEGES",
 
         ],
-        "41" => [
+        "42" => [
             "CODE" => "J",
             "TYPE" => "PRIVATE RESEARCH INSTITUTION AND OTHER PRIVATE EDUCATIONAL INSTITUTIONS AND THEIT HOSTELS",
 
         ],
-        "42" => [
+        "43" => [
             "CODE" => "L",
             "TYPE" => "EDUCATIONAL & SOCIAL INSTITUTIONS RUN BY TRUST",
 
         ],
-        "43" => [
+        "44" => [
             "CODE" => "L",
             "TYPE" => "NGOS ON NO-PROFIT",
 
         ],
-        "44" => [
+        "45" => [
             "CODE" => "L",
             "TYPE" => "NO-LOSS BASIS",
 
         ],
-        "45" => [
+        "46" => [
             "CODE" => "M",
             "TYPE" => "OTHERS",
 

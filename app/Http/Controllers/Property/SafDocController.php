@@ -132,6 +132,13 @@ class SafDocController extends Controller
             });
             $reqDoc['docType'] = $key;
             $reqDoc['docName'] = substr($label, 1, -1);
+
+            // Check back to citizen status
+            $uploadedDocument = $documents->last();
+            if (collect($uploadedDocument)->isNotEmpty() && $uploadedDocument['verifyStatus'] == 2) {
+                $reqDoc['btcStatus'] = true;
+            } else
+                $reqDoc['btcStatus'] = false;
             $reqDoc['uploadedDoc'] = $documents->last();
 
             $reqDoc['masters'] = collect($document)->map(function ($doc) use ($uploadedDocs) {
