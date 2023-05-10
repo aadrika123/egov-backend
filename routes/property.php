@@ -45,9 +45,7 @@ use App\Http\Controllers\Property\ZoneController;
 
 
 // Inside Middleware Routes with API Authenticate 
-Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {
-
-
+Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger', 'expireBearerToken']], function () {
 
   /**
    * | SAF
@@ -440,7 +438,7 @@ Route::controller(HoldingTaxController::class)->group(function () {
 #Added By Sandeep Bara
 #Date 16/02/2023
 
-Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {
+Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger', 'expireBearerToken']], function () {
 
   /**
    * | Route Outside the Middleware

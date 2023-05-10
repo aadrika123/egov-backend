@@ -730,14 +730,14 @@ class NewConnectionController extends Controller
         ]);
 
         try {
-            $user = authUser();
-            $metaReqs = array();
-            $applicationId = $req->applicationId;
-            $docUpload = new DocUpload;
-            $mWfActiveDocument = new WfActiveDocument();
-            $mWaterApplication = new WaterApplication();
-            $relativePath = Config::get('waterConstaint.WATER_RELATIVE_PATH');
-            $refmoduleId = Config::get('module-constants.WATER_MODULE_ID');
+            $user               = authUser();
+            $metaReqs           = array();
+            $applicationId      = $req->applicationId;
+            $docUpload          = new DocUpload;
+            $mWfActiveDocument  = new WfActiveDocument();
+            $mWaterApplication  = new WaterApplication();
+            $relativePath       = Config::get('waterConstaint.WATER_RELATIVE_PATH');
+            $refmoduleId        = Config::get('module-constants.WATER_MODULE_ID');
 
 
             $getWaterDetails = $mWaterApplication->getWaterApplicationsDetails($applicationId);
@@ -767,7 +767,7 @@ class NewConnectionController extends Controller
             }
 
             DB::beginTransaction();
-            $ifDocExist = $mWfActiveDocument->ifDocExists($getWaterDetails->id, $getWaterDetails->workflow_id, $refmoduleId, $req->docCode, $req->ownerId);   // Checking if the document is already existing or not
+            $ifDocExist = $mWfActiveDocument->isDocCategoryExists($getWaterDetails->id, $getWaterDetails->workflow_id, $refmoduleId, $req->docCategory, $req->ownerId);   // Checking if the document is already existing or not
             $metaReqs = new Request($metaReqs);
             if (collect($ifDocExist)->isEmpty()) {
                 $mWfActiveDocument->postDocuments($metaReqs);

@@ -103,7 +103,7 @@ return [
         ],
     ],
 
-    "WATER_METER_CODE" => "meter",
+    "WATER_METER_CODE" => "Meter",
     "PENALTY_HEAD" => [
         "1" => "1 Installment",
         "2" => "2 Installment",

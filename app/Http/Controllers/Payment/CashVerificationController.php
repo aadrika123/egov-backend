@@ -110,10 +110,10 @@ class CashVerificationController extends Controller
             $waterModuleId = Config::get('module-constants.WATER_MODULE_ID');
             $tradeModuleId = Config::get('module-constants.TRADE_MODULE_ID');
 
-            $revDailycollection =  RevDailycollection::select('users.id', 'user_name', 'deposit_amount', 'module_id')
+            $revDailycollection =  RevDailycollection::select('users.id', 'user_name', 'deposit_amount', 'module_id', 'tran_no')
                 ->join('rev_dailycollectiondetails as rdc', 'rdc.collection_id', 'rev_dailycollections.id')
                 ->join('users', 'users.id', 'rev_dailycollections.tc_id')
-                ->groupBy('users.id', 'user_name', 'rdc.deposit_amount', 'module_id')
+                ->groupBy('users.id', 'user_name', 'rdc.deposit_amount', 'module_id', 'tran_no')
                 ->where('deposit_date', $date)
                 ->get();
             $collection = collect($revDailycollection->groupBy("id")->all());
@@ -131,7 +131,8 @@ class CashVerificationController extends Controller
                     "trade" => $trade,
                     "total" => $total,
                     "date" => Carbon::parse($date)->format('d-m-Y'),
-                    // "verified_amount" => 0,
+                    "verifyStatus" => true,
+                    "tranNo" => $val[0]['tran_no'],
                 ];
             });
 
@@ -296,27 +297,10 @@ class CashVerificationController extends Controller
             $waterModuleId = Config::get('module-constants.WATER_MODULE_ID');
             $tradeModuleId = Config::get('module-constants.TRADE_MODULE_ID');
 
-            $details =  RevDailycollection::select(
-                'rev_dailycollections.id',
-                'u.user_name as tc_name',
-                'u.mobile as tc_mobile',
-                'uu.user_name as verifier_name',
-                'uu.mobile as verifier_mobile',
-                'tran_no',
-                'deposit_amount as amount',
-                'module_id',
-                'deposit_date as tran_date',
-                'deposit_mode as payment_mode',
-                'cheq_dd_no as cheque_dd_no',
-                'bank_name',
-                'application_no'
-            )
-                ->join('rev_dailycollectiondetails as rdc', 'rdc.collection_id', 'rev_dailycollections.id')
-                ->join('users as u', 'u.id', 'rev_dailycollections.tc_id')
-                ->join('users as uu', 'uu.id', 'rev_dailycollections.user_id')
+            $mRevDailycollection = new RevDailycollection();
+            $details = $mRevDailycollection->collectionDetails($ulbId)
                 ->where('deposit_date', $date)
                 ->where('tc_id', $userId)
-                ->where('rev_dailycollections.ulb_id', $ulbId)
                 ->get();
 
             if ($details->isEmpty())
@@ -336,6 +320,7 @@ class CashVerificationController extends Controller
             $data['collectorMobile'] =  collect($details)[0]->tc_mobile;
             $data['verifierName']    =  collect($details)[0]->verifier_name;
             $data['verifierMobile']  =  collect($details)[0]->verifier_mobile;
+            $data['tranNo']  =  collect($details)[0]->tran_no;
             $data['verifyStatus']    =  true;
             $data['date'] = Carbon::parse($date)->format('d-m-Y');
 
@@ -695,11 +680,22 @@ class CashVerificationController extends Controller
             $property =  $request->property;
             $water    =  $request->water;
             $trade    =  $request->trade;
+            $mRevDailycollection = new RevDailycollection();
             $cashParamId = Config::get('PropertyConstaint.CASH_VERIFICATION_PARAM_ID');
 
             DB::beginTransaction();
             $idGeneration = new PrefixIdGenerator($cashParamId, $ulbId);
             $tranNo = $idGeneration->generate();
+
+            $mReqs = new Request([
+                "tran_no" => $tranNo,
+                "user_id" => $userId,
+                "demand_date" => Carbon::now(),  //   <- to be changed
+                "deposit_date" => Carbon::now(),
+                "ulb_id" => $ulbId,
+                "tc_id" => 1,                    //   <- to be changed
+            ]);
+            $collectionId =  $mRevDailycollection->store($mReqs);
 
             if ($property) {
                 foreach ($property as $propertyDtl) {
@@ -713,7 +709,7 @@ class CashVerificationController extends Controller
                                 'verified_by' => $userId
                             ]
                         );
-                    $this->dailyCollection($propertyDtl);
+                    $this->dailyCollectionDtl($propertyDtl, $collectionId);
                     if (!$pTempTransaction)
                         throw new Exception("No Transaction Found for this id");
 
@@ -736,7 +732,7 @@ class CashVerificationController extends Controller
                                 'verified_by' => $userId
                             ]
                         );
-                    $this->dailyCollection($waterDtl);
+                    $this->dailyCollectionDtl($waterDtl, $collectionId);
                     if (!$wTempTransaction)
                         throw new Exception("No Transaction Found for this id");
 
@@ -759,7 +755,7 @@ class CashVerificationController extends Controller
                                 'verify_by' => $userId
                             ]
                         );
-                    $this->dailyCollection($tradeDtl);
+                    $this->dailyCollectionDtl($tradeDtl, $collectionId);
                     if (!$tTempTransaction)
                         throw new Exception("No Transaction Found for this id");
 
@@ -782,40 +778,67 @@ class CashVerificationController extends Controller
     /**
      * | serial : 5.1
      */
-    public function dailyCollection($tranDtl)
+    public function dailyCollectionDtl($tranDtl, $collectionId)
     {
-        $userId = authUser()->id;
-        $ulbId = authUser()->ulb_id;
-
-        DB::beginTransaction();
-        $mRevDailycollection = new RevDailycollection();
-        $mRevDailycollection->tran_no = $tranDtl['tran_no'];
-        $mRevDailycollection->demand_date = $tranDtl['tran_date'];
-        $mRevDailycollection->deposit_date = Carbon::now();
-        $mRevDailycollection->ulb_id = $ulbId;
-        $mRevDailycollection->user_id = $userId;
-        $mRevDailycollection->tc_id = $tranDtl['tc_id'];
-        $mRevDailycollection->save();
-
         $RevDailycollectiondetail = new RevDailycollectiondetail();
-        $RevDailycollectiondetail->collection_id = $mRevDailycollection->id;
-        $RevDailycollectiondetail->module_id = $tranDtl['module_id'];
-        $RevDailycollectiondetail->demand = $tranDtl['amount'];
-        $RevDailycollectiondetail->deposit_amount = $tranDtl['amount'];
-        $RevDailycollectiondetail->cheq_dd_no = $tranDtl['cheque_dd_no'];
-        $RevDailycollectiondetail->bank_name = $tranDtl['bank_name'];
-        $RevDailycollectiondetail->deposit_mode = strtoupper($tranDtl['payment_mode']);
-        $RevDailycollectiondetail->application_no = $tranDtl['application_no'];
-        $RevDailycollectiondetail->transaction_id = $tranDtl['id'];
-        $RevDailycollectiondetail->save();
-        DB::commit();
+        $mReqs = new Request([
+            "collection_id" => $collectionId,
+            "module_id" => $tranDtl['module_id'],
+            "demand" => $tranDtl['amount'],
+            "deposit_amount" => $tranDtl['amount'],
+            "cheq_dd_no" => $tranDtl['cheque_dd_no'],
+            "bank_name" => $tranDtl['bank_name'],
+            "deposit_mode" => strtoupper($tranDtl['payment_mode']),
+            "application_no" => $tranDtl['application_no'],
+            "transaction_id" => $tranDtl['id']
+        ]);
+        $RevDailycollectiondetail->store($mReqs);
     }
 
     /**
      * | Cash Verification Receipt
      */
-    public function cashVerificationReceipt(Request $request)
+    public function cashReceipt(Request $request)
     {
-        # code...
+        $request->validate([
+            'receiptNo' => 'required'
+        ]);
+        try {
+            $ulbId = authUser()->ulb_id;
+            $propertyModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $waterModuleId = Config::get('module-constants.WATER_MODULE_ID');
+            $tradeModuleId = Config::get('module-constants.TRADE_MODULE_ID');
+
+            $mRevDailycollection = new RevDailycollection();
+            $details = $mRevDailycollection->collectionDetails($ulbId)
+                ->where('rev_dailycollections.tran_no', $request->receiptNo)
+                ->get();
+
+            if ($details->isEmpty())
+                throw new Exception("No Application Found for this id");
+
+            $data['property'] = collect($details)->where('module_id', $propertyModuleId)->values();
+            $data['water'] = collect($details)->where('module_id', $waterModuleId)->values();
+            $data['trade'] = collect($details)->where('module_id', $tradeModuleId)->values();
+
+            $data['Cash'] = collect($details)->where('payment_mode', 'CASH')->sum('amount');
+            $data['Cheque'] = collect($details)->where('payment_mode', 'CHEQUE')->sum('amount');
+            $data['DD'] = collect($details)->where('payment_mode', 'DD')->sum('amount');
+
+            $data['totalAmount'] =  $details->sum('amount');
+            $data['numberOfTransaction'] =  $details->count();
+            $data['collectorName']   =  collect($details)[0]->tc_name;
+            $data['collectorMobile'] =  collect($details)[0]->tc_mobile;
+            $data['verifierName']    =  collect($details)[0]->verifier_name;
+            $data['verifierMobile']  =  collect($details)[0]->verifier_mobile;
+            $data['receiptNo']       =  collect($details)[0]->tran_no;
+            $data['verificationDate'] =  collect($details)[0]->verification_date;
+            $data['ulb']       =  collect($details)[0]->ulb_name;
+
+            return responseMsgs(true, "Cash Receipt", $data, "010201", "1.0", "", "POST", $request->deviceId ?? "");
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $request->deviceId ?? "");
+        }
     }
 }

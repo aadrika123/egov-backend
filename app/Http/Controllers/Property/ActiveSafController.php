@@ -1381,6 +1381,7 @@ class ActiveSafController extends Controller
         ]);
 
         try {
+            $safRefTableName = Config::get('PropertyConstaint.SAF_REF_TABLE');
             $saf = PropActiveSaf::find($req->applicationId);
             $track = new WorkflowTrack();
             DB::beginTransaction();
@@ -1391,7 +1392,7 @@ class ActiveSafController extends Controller
 
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs['workflowId'] = $saf->workflow_id;
-            $metaReqs['refTableDotId'] = 'prop_active_safs.id';
+            $metaReqs['refTableDotId'] = $safRefTableName;
             $metaReqs['refTableIdValue'] = $req->applicationId;
             $metaReqs['user_id'] = authUser()->id;
             $req->request->add($metaReqs);
@@ -2255,7 +2256,8 @@ class ActiveSafController extends Controller
                 "userId" => $userId
             ]);
             $role = $mWfRoleusermap->getRoleByUserWfId($mreqs);
-            if ($role->wf_role_id == $jskRole)
+
+            if (isset($role) && $role->wf_role_id == $jskRole)
                 $demand['can_pay'] = true;
             else
                 $demand['can_pay'] = false;

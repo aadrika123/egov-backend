@@ -352,4 +352,15 @@ trait SafDetailsTrait
             ['displayString' => 'Is-Hoarding-Board', 'key' => 'isHoardingBoard', 'value' => ($req->is_hoarding_board == true) ? 'Yes' : 'No']
         ]);
     }
+
+    /**
+     * | Get Basic Details
+     */
+    public function generateForgeryType($data)
+    {
+        return new Collection([
+            ['displayString' => 'Reason Of Forgery', 'key' => 'forgeryReason', 'value' => $data->type],
+            ['displayString' => 'Additional Details', 'key' => 'remarks', 'value' => $data->remarks],
+        ]);
+    }
 }
