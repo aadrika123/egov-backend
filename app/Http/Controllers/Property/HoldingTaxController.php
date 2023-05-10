@@ -142,14 +142,11 @@ class HoldingTaxController extends Controller
             $mPropAdvance = new PropAdvance();
             $mPropDemand = new PropDemand();
             $mPropProperty = new PropProperty();
-            $mPropSafs = new PropSaf();
             $penaltyRebateCalc = new PenaltyRebateCalculation;
-            $mWfRoleusermap = new WfRoleusermap();
             $currentQuarter = calculateQtr(Carbon::now()->format('Y-m-d'));
             $currentFYear = getFY();
             $user = authUser();
             $loggedInUserType = $user->user_type ?? "Citizen";
-            $userId = $user->id;
             $mPropOwners = new PropOwner();
             $pendingFYears = collect();
             $qtrs = collect();
@@ -170,14 +167,15 @@ class HoldingTaxController extends Controller
                     $demandList = $demandList->values();
                 }
             }
-            $safDtl = $mPropSafs->getSafbyPropId($req->propId);
             $propDtls = $mPropProperty->getPropById($req->propId);
             $balance = $propDtls->balance ?? 0;
 
             $propBasicDtls = $mPropProperty->getPropBasicDtls($req->propId);
+            if (collect($propBasicDtls)->isEmpty()) {
+                throw new Exception("Property Details Not Available");
+            }
             $holdingType = $propBasicDtls->holding_type;
             $ownershipType = $propBasicDtls->ownership_type;
-            // $workflowId = $safDtl->workflow_id;
             $basicDtls = collect($propBasicDtls)->only([
                 'holding_no',
                 'new_holding_no',
@@ -194,12 +192,6 @@ class HoldingTaxController extends Controller
             ]);
             $basicDtls["holding_type"] = $holdingType;
             $basicDtls["ownership_type"] = $ownershipType;
-
-            // $mreqs = new Request([
-            //     "workflowId" => $workflowId,
-            //     "userId" => $userId
-            // ]);
-            // $role = $mWfRoleusermap->getRoleByUserWfId($mreqs);
 
             if ($demandList->isEmpty())
                 throw new Exception("Dues Not Available for this Property");
@@ -287,7 +279,7 @@ class HoldingTaxController extends Controller
             ];
             return responseMsgs(true, "Demand Details", remove_null($demand), "011602", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), ['basicDetails' => $basicDtls], "011602", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), ['basicDetails' => $basicDtls ?? []], "011602", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 

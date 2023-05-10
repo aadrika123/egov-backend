@@ -400,7 +400,6 @@ class ApplySafController extends Controller
                 'current_role' => $currentRole,
                 'finisher_role_id' => $finisherRoleId->role_id,
                 'workflow_id' => $ulbWfId->wf_master_id,
-                'late_assess_penalty' => $lateAssessmentPenalty,
                 'is_trust' => $isTrust,
                 'trust_type' => $req->trustType ?? null
             ];

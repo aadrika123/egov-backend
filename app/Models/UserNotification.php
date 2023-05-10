@@ -13,13 +13,11 @@ class UserNotification extends Model
     /**
      * | Get notification of logged in user
      */
-    public function notificationByUserId($userId, $ulbId)
+    public function notificationByUserId($userId)
     {
         return UserNotification::where('user_id', $userId)
-            ->where('ulb_id', $ulbId)
             ->where('status', 1)
-            ->orderByDesc('id')
-            ->get();
+            ->orderByDesc('id');
     }
 
     /**
@@ -27,6 +25,7 @@ class UserNotification extends Model
      */
     public function addNotification($userId, $ulbId, $req)
     {
+        // $req = $req->toarray();
         $notification = new UserNotification();
         $notification->user_id = $req->userId;
         $notification->user_type = $req->userType;
