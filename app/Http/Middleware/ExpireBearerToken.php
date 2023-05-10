@@ -6,6 +6,12 @@ use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redis;
 
+/**
+ * | Author Name-Anshu Kumar
+ * | Date-09-05-2023
+ * | Status-Closed(09-05-2023)
+ */
+
 class ExpireBearerToken
 {
     /**
@@ -25,7 +31,7 @@ class ExpireBearerToken
             $key = 'last_activity_' . $user->id;
             $lastActivity = Redis::get($key);
 
-            if ($lastActivity && ($currentTime - $lastActivity) > 600) {            // for 600 Seconds(10 Minutes)
+            if ($lastActivity && ($currentTime - $lastActivity) > 900) {            // for 900 Seconds(15 Minutes)
                 Redis::del($key);
                 $user->tokens()->delete();
                 abort(response()->json(
