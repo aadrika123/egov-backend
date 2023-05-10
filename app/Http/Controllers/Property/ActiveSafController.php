@@ -1386,7 +1386,6 @@ class ActiveSafController extends Controller
             $saf = PropActiveSaf::findOrFail($req->applicationId);
             $track = new WorkflowTrack();
 
-
             if (is_null($saf->citizen_id)) {                // If the Application has been applied from Jsk or Ulb Employees
                 $initiatorRoleId = $saf->initiator_role_id;
                 $saf->current_role = $initiatorRoleId;
