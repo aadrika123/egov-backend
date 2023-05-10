@@ -33,6 +33,7 @@ return [
     "DEALING_ASSISTENT_WF_ID"           => "6",
     "WATER_JE_ROLE_ID"                  => "40",
     "GENERAL_NOTICE_MASTER_ID"          => "634",
+    "DENIAL_NOTICE_MASTER_ID"          => "28",
     "PAYMENT_NOTICE_MASTER_ID"          => "635",
     "ILLEGAL_OCCUPATION_NOTICE_MASTER_ID" => "636",
 
