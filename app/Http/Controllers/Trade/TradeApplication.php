@@ -393,7 +393,6 @@ class TradeApplication extends Controller
             DB::rollBack();
             return responseMsgs(false, $e->getMessage(), "", "tc7.1", "1.0", "", "POST", $request->deviceId ?? "");
         }
-        // return $this->_REPOSITORY->documentVirify($request);
     }
     # Serial No : 08 
     public function getLicenceDtl(Request $request)

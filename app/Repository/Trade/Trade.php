@@ -708,7 +708,8 @@ class Trade implements ITrade
             $args['noticeDate']          = $mNoticeDate;
             // dd($args);
             $chargeData = $this->cltCharge($args);
-            if ($chargeData['response'] == false || $chargeData['total_charge'] != $request->totalCharge) {
+            if ($chargeData['response'] == false || $chargeData['total_charge'] != $request->totalCharge) 
+            {
                 throw new Exception("Payble Amount Missmatch!!!");
             }
 
@@ -1888,7 +1889,7 @@ class Trade implements ITrade
         $rolles = $this->_COMMON_FUNCTION->getUserRoll($user_id, $ulb_id, $workflow_id);
         $roll_id =  $rolles->role_id ?? null;
         $mUserType = $this->_COMMON_FUNCTION->userType($workflow_id);
-        // dd($this->_COMMON_FUNCTION->getUserRoll($user_id, $ulb_id, $workflow_id));
+
         $licenceId = $request->licenceId;
         $rules = [];
         $message = [];
@@ -1940,9 +1941,12 @@ class Trade implements ITrade
             $data["uploadDocs"] = $mUploadDocument;
             $data["licence"] = $licence;
             $data["owneres"] = $owneres;
-            if ($request->getMethod() == "GET") {
+            if ($request->getMethod() == "GET") 
+            {
                 return responseMsg(true, "", remove_null($data));
-            } elseif ($request->getMethod() == "POST") {
+            } 
+            elseif ($request->getMethod() == "POST") 
+            {
                 $rules = [];
                 $message = [];
                 $nowdate = Carbon::now()->format('Y-m-d');
@@ -1953,18 +1957,22 @@ class Trade implements ITrade
                     'id' => 'required',
                 ];
                 $status = 1;
-                if ($request->btn == "reject") {
+                if ($request->btn == "reject") 
+                {
                     $status = 2;
                     $rules["comment"] = "required|regex:$regex|min:10";
                 }
                 $validator = Validator::make($request->all(), $rules, $message);
-                if ($validator->fails()) {
+                if ($validator->fails()) 
+                {
                     return responseMsg(false, $validator->errors(), $request->all());
                 }
                 $level_data = $this->getWorkflowTrack($request->licenceId); //TradeLevelPending::getLevelData($licenceId);
-                if (!$level_data || $level_data->receiver_role_id != $roll_id) {
+                if (!$level_data || $level_data->receiver_role_id != $roll_id) 
+                {
                     throw new Exception("You Are Not Authorized For This Action");
                 }
+
                 DB::beginTransaction();
                 $tradeDoc = ActiveTradeDocument::find($request->id);
                 $tradeDoc->verify_status = $status;
@@ -1976,7 +1984,9 @@ class Trade implements ITrade
                 $sms = $tradeDoc->doc_for . " " . strtoupper($request->btn);
                 return responseMsg(true, $sms, "");
             }
-        } catch (Exception $e) {
+        } 
+        catch (Exception $e) 
+        {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
