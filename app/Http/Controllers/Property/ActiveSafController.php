@@ -2266,7 +2266,8 @@ class ActiveSafController extends Controller
                 "workflowId" => $workflowId,
                 "userId" => $userId
             ]);
-            $role = $mWfRoleusermap->getRoleByUserWfId($mreqs);
+            // $role = $mWfRoleusermap->getRoleByUserWfId($mreqs);
+            $role = $mWfRoleusermap->getRoleByUserId($mreqs);
 
             if (isset($role) && $role->wf_role_id == $jskRole)
                 $demand['can_pay'] = true;

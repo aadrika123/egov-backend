@@ -294,7 +294,7 @@ class NoticeController extends Controller
             $request->validate(
                 [
                     "moduleName"=>"required|regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9\.\,\_\-\']+)*$/",
-                    "keyWord"=>"regex:/^([a-zA-Z])*$/",
+                    "keyWord"=>"nullable|regex:/^([a-zA-Z])*$/",
                 ]
             );
             return $this->_REPOSITORY->noticeList($request);
