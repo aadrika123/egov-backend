@@ -46,6 +46,7 @@ return [
 
     "ROLES" => [
         "ULB_Tax_Collector" => 7,
-        "Tax_Collector" => 5
+        "Tax_Collector" => 5,
+        "Team_Leader" => 4
     ],
 ];

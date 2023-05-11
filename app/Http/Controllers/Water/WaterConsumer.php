@@ -288,7 +288,7 @@ class WaterConsumer extends Controller
             }
             $documentPath = $this->saveDocument($request, $meterRefImageName);
             // $fixedRate = $this->getFixedRate($request);                             // Manul Entry of fixed rate
-            $mWaterConsumerMeter->saveMeterDetails($request, $documentPath);
+            $mWaterConsumerMeter->saveMeterDetails($request, $documentPath, $fixedRate = null);
             DB::commit();
             return responseMsgs(true, "Meter Detail Entry Success !", "", "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
@@ -708,5 +708,71 @@ class WaterConsumer extends Controller
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "", "01", ".ms", "POST", $request->deviceId);
         }
+    }
+
+
+    /**
+     * | Add Fixed Rate for the Meter connection is under Fixed
+     * | Admin Entered Data
+        | Serial No : 08
+        | Not Used
+        | Recheck 
+     */
+    public function addFixedRate(Request $request)
+    {
+        $request->validate([
+            'consumerId'    => "required|digits_between:1,9223372036854775807",
+            'ratePerMonth'  => "required|numeric"
+        ]);
+        try {
+            $consumerId = $request->consumerId;
+            $mWaterConsumerMeter = new WaterConsumerMeter();
+            $relatedDetails = $this->checkParamForFixedEntry($consumerId);
+            $metaRequest = new Request([
+                'consumerId'                => $consumerId,
+                'connectionDate'            => $relatedDetails['meterDetails']['connection_date'],
+                'connectionType'            => $relatedDetails['meterDetails']['connection_type'],
+                'meterNo'                   => $relatedDetails['meterDetails']['meter_no'],
+                'newMeterInitialReading'    => $relatedDetails['meterDetails']['initial_reading']
+            ]);
+            $document = [
+                'relaivePath'   => $relatedDetails['meterDetails']['relative_path'],
+                'document'      => $relatedDetails['meterDetails']['meter_doc']
+            ];
+            $mWaterConsumerMeter->saveMeterDetails($metaRequest, $document, $request->ratePerMonth);
+            return responseMsgs(true, "Fixed rate entered successfully!", "", "", "01", ".ms", "POST", $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [""], "", "01", ".ms", "POST", $request->deviceId);
+        }
+    }
+
+
+    /**
+     * | Check the parameter for Fixed meter entry
+     * | @param consumerId
+        | Seriel No : 08.01
+        | Not used
+     */
+    public function checkParamForFixedEntry($consumerId)
+    {
+        $mWaterConsumerMeter    = new WaterConsumerMeter();
+        $mWaterWaterConsumer    = new WaterWaterConsumer();
+        $refPropertyType        = Config::get('waterConstaint.PROPERTY_TYPE');
+        $refConnectionType      = Config::get('waterConstaint.WATER_MASTER_DATA.METER_CONNECTION_TYPE');
+
+        $consumerDetails = $mWaterWaterConsumer->getConsumerDetailById($consumerId);
+        if ($consumerDetails->property_type_id != $refPropertyType['Government'])
+            throw new Exception("Consumer's property type is not under Government!");
+
+        $meterConnectionDetails = $mWaterConsumerMeter->getMeterDetailsByConsumerId($consumerId)->first();
+        if (!$meterConnectionDetails)
+            throw new Exception("Consumer not found!");
+
+        if ($meterConnectionDetails->connection_type != $refConnectionType['Fixed'])
+            throw new Exception("Consumer meter's connection type is not fixed!");
+
+        return $returnData = [
+            "meterDetails" => $meterConnectionDetails
+        ];
     }
 }

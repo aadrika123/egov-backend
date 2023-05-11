@@ -273,6 +273,42 @@ trait Auth
         });
 
         $this->checkForMobileView($menuRoleDetails, $request);
+        //-->>
+        return $collection;
+    }
+
+
+    /**
+     * | Check for the mobile View
+     * | @param 
+     * | @var
+     * | @return
+     */
+    public function checkForMobileView($menuRoleDetails, $request)
+    {
+        $roleIds = collect($menuRoleDetails)->pluck("roleId")->toArray();
+        $refRoleIds = Config::get("workflow-constants.ROLES");
+        switch ($request->type) {
+            case ("mobile"):
+                if (in_array($refRoleIds['ULB_Tax_Collector'], $roleIds) || in_array($refRoleIds['Tax_Collector'], $roleIds) || in_array($refRoleIds['Team_Leader'], $roleIds)) {
+                    true;
+                } else {
+                    throw new Exception("You are not authorised for mobile View!");
+                }
+                break;
+            case (""):
+                if (in_array($refRoleIds['ULB_Tax_Collector'], $roleIds) || in_array($refRoleIds['Tax_Collector'], $roleIds)) {
+                    throw new Exception("You are not authorised for web View!");
+                } else {
+                    true;
+                }
+                break;
+        }
+    }
+}
+
+
+        // -->>
         // $roleId = $menuRoleDetails['roleId'] = collect($menuRoleDetails)->map(function ($value, $key) {
         //     $values = $value['roleId'];
         //     return $values;
@@ -295,36 +331,3 @@ trait Auth
         // $mMenuRepo = new MenuRepo();
         // $treeStructure = $mMenuRepo->generateMenuTree($lodeData);
         // $collection['menuPermission'] = collect($treeStructure)['original']['data'];
-
-        return $collection;
-    }
-
-
-    /**
-     * | Check for the mobile View
-     * | @param 
-     * | @var
-     * | @return
-     */
-    public function checkForMobileView($menuRoleDetails, $request)
-    {
-        $roleIds = collect($menuRoleDetails)->pluck("roleId")->toArray();
-        $refRoleIds = Config::get("workflow-constants.ROLES");
-        switch ($request->type) {
-            case ("mobile"):
-                if (in_array($refRoleIds['ULB_Tax_Collector'], $roleIds) || in_array($refRoleIds['Tax_Collector'], $roleIds)) {
-                    true;
-                } else {
-                    throw new Exception("You are not authorised for mobile View!");
-                }
-                break;
-            case (""):
-                if (in_array($refRoleIds['ULB_Tax_Collector'], $roleIds) || in_array($refRoleIds['Tax_Collector'], $roleIds)) {
-                    throw new Exception("You are not authorised for web View!");
-                } else {
-                    true;
-                }
-                break;
-        }
-    }
-}
