@@ -10,10 +10,10 @@ use App\Http\Controllers\Trade\ReportController;
 /**
  * | Created On-06-10-2022 
  * | Created For-The Routes defined for the Water Usage Charge Management System Module
- * | Created By-SandeepBara
+ * | Created By-SandeepBara  
  */
 
-Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {
+Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger','expireBearerToken']], function () {
     /**
      *  -----------------------------------------------------------------
      * |                TRADE MODULE                                      |

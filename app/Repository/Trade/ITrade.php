@@ -37,14 +37,12 @@ interface ITrade
     public function btcInbox(Request $request);
     public function inbox(Request $request);
     public function outbox(Request $request);
-    public function postNextLevel(Request $request);
+
     public function addIndependentComment(Request $request);
     public function readIndipendentComment(Request $request);
     public function provisionalCertificate($id);
     public function licenceCertificate($id);
-    public function addDenail(Request $request);
-    public function denialInbox(Request $request);
-    public function denialView($id, $mailID, Request $request);
+    
     public function approvedApplication(Request $request);
     public function getLicenceDocuments($id, $tbl = "active_");
     public function getLicenceById($id);
