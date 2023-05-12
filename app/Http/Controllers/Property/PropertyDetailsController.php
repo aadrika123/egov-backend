@@ -406,28 +406,28 @@ class PropertyDetailsController extends Controller
                 case ("ptn"):
                     $data = $mPropProperty->searchProperty()
                         ->where('prop_properties.pt_no', 'LIKE', '%' . $parameter . '%')
-                        ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name')
+                        ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'latitude', 'longitude', 'direction_type')
                         ->get();
                     break;
 
                 case ("ownerName"):
                     $data = $mPropProperty->searchProperty()
                         ->where('prop_owners.owner_name', 'LIKE', '%' . strtoupper($parameter) . '%')
-                        ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name')
+                        ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'latitude', 'longitude', 'direction_type')
                         ->get();
                     break;
 
                 case ("address"):
                     $data = $mPropProperty->searchProperty()
                         ->where('prop_properties.prop_address', 'LIKE', '%' . strtoupper($parameter) . '%')
-                        ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name')
+                        ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'latitude', 'longitude', 'direction_type')
                         ->get();
                     break;
 
                 case ("mobileNo"):
                     $data = $mPropProperty->searchProperty()
                         ->where('prop_owners.mobile_no', 'LIKE', '%' . $parameter . '%')
-                        ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name')
+                        ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'latitude', 'longitude', 'direction_type')
                         ->get();
                     break;
             }
