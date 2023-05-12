@@ -399,7 +399,7 @@ class PropertyDetailsController extends Controller
                     $data = $mPropProperty->searchProperty()
                         ->where('prop_properties.holding_no', 'LIKE', '%' . $parameter . '%')
                         ->orWhere('prop_properties.new_holding_no', 'LIKE', '%' . $parameter . '%')
-                        ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name')
+                        ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'latitude', 'longitude', 'direction_type')
                         ->get();
                     break;
 

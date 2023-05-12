@@ -528,6 +528,9 @@ class PropProperty extends Model
         return PropProperty::select(
             'prop_properties.id',
             'prop_properties.holding_no',
+            'latitude',
+            'longitude',
+            'direction_type',
             'prop_properties.new_holding_no',
             'prop_properties.pt_no',
             'ward_name',
@@ -537,7 +540,10 @@ class PropProperty extends Model
             DB::raw("string_agg(prop_owners.owner_name,',') as owner_name"),
         )
             ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
-            ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id');
+            ->join('prop_saf_geotag_uploads', 'prop_saf_geotag_uploads.saf_id', 'prop_properties.saf_id')
+            ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
+            ->where('prop_saf_geotag_uploads.direction_type', 'Front')
+            ->where('prop_saf_geotag_uploads.direction_type', 'front view');
     }
 
     /**
