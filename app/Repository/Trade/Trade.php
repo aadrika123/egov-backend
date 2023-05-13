@@ -345,7 +345,7 @@ class Trade implements ITrade
                     $refNoticeDetails = $this->getDenialFirmDetails($refUlbId, strtoupper(trim($noticeNo)));
                     if ($refNoticeDetails) {
                         $refDenialId = $refNoticeDetails->dnialid;
-                        $licence->dnial_id = $refDenialId;
+                        $licence->denial_id = $refDenialId;
                         $licence->update();
                         $mNoticeDate = date("Y-m-d", strtotime($refNoticeDetails['created_on'])); //notice date  
                         if ($firm_date < $mNoticeDate) {
@@ -684,8 +684,8 @@ class Trade implements ITrade
                 throw new Exception("Tobaco Application Not Take Licence More Than One Year");
             }
             if ($refNoticeDetails = $this->readNotisDtl($refLecenceData->denial_id)) {
-                $refDenialId = $refNoticeDetails->dnialid;
-                $mNoticeDate = date("Y-m-d", strtotime($refNoticeDetails['created_on'])); //notice date 
+                $refDenialId = $refNoticeDetails->id;
+                $mNoticeDate = date("Y-m-d", strtotime($refNoticeDetails['notice_date'])); //notice date 
             }
 
             $ward_no = UlbWardMaster::select("ward_name")
@@ -779,7 +779,7 @@ class Trade implements ITrade
                 $args["citizen_id"] = $refUserId;;
                 $args["ref_table_dot_id"] = "active_trade_licences";
                 $args["ref_table_id_value"] = $licenceId;
-                $args["workflow_id"] = $refWorkflowId;
+                $args["workflow_id"] = $refLecenceData->workflow_id??"";//$refWorkflowId;
                 $args["module_id"] = $this->_MODULE_ID;
 
                 $tem =  $this->insertWorkflowTrack($args);
@@ -2313,6 +2313,7 @@ class Trade implements ITrade
             $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
             $refWorkflowId      = $this->_WF_MASTER_Id;
             $mUserType          = $this->_COMMON_FUNCTION->userType($refWorkflowId);
+            $request->request->add(['ulbId'=>$refUlbId]);
             if (in_array(strtoupper($mUserType), ["ONLINE"])) {
                 $rules["ulbId"]     = "required|digits_between:1,92";
             }
