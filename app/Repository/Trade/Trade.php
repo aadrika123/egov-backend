@@ -2683,6 +2683,7 @@ class Trade implements ITrade
                         "owner.guardian_name",
                         "owner.mobile_no",
                         "owner.email_id",
+                        "active_trade_licences.application_type_id",
                         "trade_param_application_types.application_type",
                         DB::raw("TO_CHAR(active_trade_licences.application_date, 'DD-MM-YYYY') as application_date"),
                     );
