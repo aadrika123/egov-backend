@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\ThirdPartyController;
 use App\Models\ActiveCitizen;
 use App\Models\Property\PropActiveSaf;
+use App\Models\Property\PropDemand;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropSaf;
@@ -235,6 +236,7 @@ class PropertyController extends Controller
                 'wardId' => 'required|integer',
             ]);
             $mPropSaf = new PropActiveSaf();
+            $mPropProperty = new PropProperty();
             $propDetails = $mPropSaf->getpropLatLongDetails($req->wardId);
             $propDetails = collect($propDetails)->map(function ($value) {
                 $currentDate = Carbon::now();
@@ -246,6 +248,13 @@ class PropertyController extends Controller
                     return $value;
                 }
                 $path = $this->readDocumentPath($value['doc_path']);
+
+                # arrrer,current,paid
+                $mPropDemand = new PropDemand();
+                $mPropDemand->
+
+
+
                 $value['full_doc'] = !empty(trim($value['doc_path'])) ? $path : null;
                 return $value;
             });

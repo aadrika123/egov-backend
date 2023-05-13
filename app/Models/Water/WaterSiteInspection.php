@@ -138,8 +138,7 @@ class WaterSiteInspection extends Model
     /**
      * | Save Payment Status after payment 
      * | updating payment status true or false
-     * | @param 
-     * | @param
+     * | @param applicationId
      */
     public function saveSitePaymentStatus($applicationId)
     {
@@ -151,4 +150,6 @@ class WaterSiteInspection extends Model
         $siteDetails->payment_status = 1;
         $siteDetails->save();
     }
+
+
 }

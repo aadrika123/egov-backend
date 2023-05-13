@@ -203,13 +203,17 @@ class NewConnectionRepository implements iNewConnection
             ]
         );
         $waterTrack->saveTrack($metaReqs);
-        $whatsapp2=(Whatsapp_Send("","trn_2_var",
-                ["conten_type"=>"text",
-                    [
-                        $owner[0]["ownerName"],
-                        $applicationNo,
-                    ]
-                ]));
+        $whatsapp2 = (Whatsapp_Send(
+            "",
+            "trn_2_var",
+            [
+                "conten_type" => "text",
+                [
+                    $owner[0]["ownerName"],
+                    $applicationNo,
+                ]
+            ]
+        ));
         DB::commit();
 
         $returnResponse = [
@@ -341,6 +345,7 @@ class NewConnectionRepository implements iNewConnection
      * | @return waterList : Details to be displayed in the inbox of the offices in water workflow. 
         | Serila No : 02
         | Working
+        | Remove 
      */
     public function waterInbox()
     {
@@ -543,6 +548,7 @@ class NewConnectionRepository implements iNewConnection
      * |
         | Serial No : 05
         | Woking 
+        | Remove
      */
     public function waterSpecialInbox($request)
     {
@@ -578,6 +584,7 @@ class NewConnectionRepository implements iNewConnection
      * | @var 
         | Serial No : 06 
         | working
+        | Remove
      */
     public function postEscalate($request)
     {
@@ -975,6 +982,7 @@ class NewConnectionRepository implements iNewConnection
      * | @var metaReqs
         | Serial No : 09
         | Working 
+        | Remove 
      */
     public function commentIndependent($request)
     {
@@ -1065,6 +1073,7 @@ class NewConnectionRepository implements iNewConnection
      * | @return waterList 
         | Serial No : 11
         | Working
+        | Remove
      */
     public function fieldVerifiedInbox($req)
     {
