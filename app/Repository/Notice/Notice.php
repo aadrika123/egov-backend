@@ -242,6 +242,8 @@ use Barryvdh\DomPDF\Facade\PDF;
                 case "ILLEGAL" : $data["application"]   =   $notice->where("notice_type_id",($this->_NOTICE_TYPE["ILLEGAL OCCUPATION NOTICE"]??0));
                                  break;
             }
+            
+            $data["application"] = ($data["application"]->values())->toArray();
             $data["total_notice"] = $notice->count();
             $data["total_approved_notice"] = $notice->where("status",5)->count();
             $data["total_rejected_notice"] = $notice->where("status",4)->count();

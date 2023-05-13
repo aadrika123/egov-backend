@@ -445,11 +445,11 @@ class TradeApplication extends Controller
     {
         return $this->_REPOSITORY->postEscalate($request);
     }
-    public function specialInbox(Request $request)
+    public function specialInbox(ReqInbox $request)
     {
         return $this->_REPOSITORY->specialInbox($request);
     }
-    public function btcInbox(Request $request)
+    public function btcInbox(ReqInbox $request)
     {
         return $this->_REPOSITORY->btcInbox($request);
     }
@@ -459,7 +459,7 @@ class TradeApplication extends Controller
         return $this->_REPOSITORY->inbox($request);
     }
     # Serial No : 17
-    public function outbox(Request $request)
+    public function outbox(ReqInbox $request)
     {
         return $this->_REPOSITORY->outbox($request);
     }
@@ -538,6 +538,7 @@ class TradeApplication extends Controller
                 }
             }
 
+            #if finisher forward then
             if(($role->is_finisher??0) && $request->action=='forward')
             {
                 $request->request->add(["status"=>1]);                
@@ -548,7 +549,8 @@ class TradeApplication extends Controller
             {
                 throw New Exception("Citizen Not Allowed");
             }
-            // Trade Application Update Current Role Updation
+
+            #Trade Application Update Current Role Updation
            
             $workflowId = WfWorkflow::where('wf_master_id', $refWorkflowId)
                 ->where('ulb_id', $ulb_id)
@@ -647,6 +649,7 @@ class TradeApplication extends Controller
 
             $track = new WorkflowTrack();
             $track->saveTrack($request);
+
             DB::commit();
             return responseMsgs(true, $sms, "", "010109", "1.0", "286ms", "POST", $request->deviceId);
         } catch (Exception $e) {
@@ -787,35 +790,7 @@ class TradeApplication extends Controller
         }
         return $this->_REPOSITORY->licenceCertificate($request->id);
     }
-    # Serial No : 21
-    public function applyDenail(ReqApplyDenail $request)
-    {
-        try {
-            if(!$this->_COMMON_FUNCTION->checkUsersWithtocken("users"))
-            {
-                throw New Exception("Citizen Not Allowed");
-            }
-            $user = Auth()->user();
-            $userId = $user->id;
-            $ulbId = $user->ulb_id;
-            $refWorkflowId = $this->_WF_NOTICE_MASTER_Id;
-            $role = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $refWorkflowId);
-            if (!$role) {
-                throw new Exception("You Are Not Authorized");
-            }
-            $userType = $this->_COMMON_FUNCTION->userType($refWorkflowId);
-            if (!in_array(strtoupper($userType), ["TC", "UTC"])) {
-                throw new Exception("You Are Not Authorize For Apply Denial");
-            }
-            if ($request->getMethod() == 'GET') {
-                $data['wardList'] = $this->_COMMON_FUNCTION->WardPermission($userId);
-                return  responseMsg(true, "", $data);
-            }
-            return $this->_REPOSITORY->addDenail($request);
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), $request->all());
-        }
-    }
+    
     # Serial No : 22
     public function addIndependentComment(Request $request)
     {
@@ -826,31 +801,7 @@ class TradeApplication extends Controller
     {
         return $this->_REPOSITORY->readIndipendentComment($request);
     }
-    # Serial No : 24
-    public function denialInbox(Request $request)
-    {
-        try {
-            $user = Auth()->user();
-            $user_id = $user->id;
-            $ulb_id = $user->ulb_id;
-            $workflow_id = $this->_WF_NOTICE_MASTER_Id;
-            $role = $this->_COMMON_FUNCTION->getUserRoll($user_id, $ulb_id, $workflow_id);
-            $role_id = $role->role_id ?? -1;
-            if (!$role  || !in_array($role_id, [10])) {
-                throw new Exception("You Are Not Authorized");
-            }
-            return $this->_REPOSITORY->denialInbox($request);
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), $request->all());
-        }
-    }
-    # Serial No : 25
-    public function denialview(Request $request)
-    {
-        $id = $request->id;
-        $mailID = $request->mailID;
-        return $this->_REPOSITORY->denialView($id, $mailID, $request);
-    }
+    
     # Serial No : 26
     public function approvedApplication(Request $request)
     {

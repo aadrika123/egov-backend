@@ -13,10 +13,10 @@ class ReqInbox extends TradeRequest
     public function rules()
     {
         return [
-            "key"       =>  "string",
-            "wardNo"    =>  "digits_between:1,9223372036854775807",
-            "formDate"  =>  "date",
-            "toDate"    =>  "date",
+            "key"       =>  "nullable|string",
+            "wardNo"    =>  "nullable|digits_between:1,9223372036854775807",
+            "formDate"  =>  "nullable|date|date_format:Y-m-d",
+            "toDate"    =>  "nullable|date|date_format:Y-m-d",
         ];
     }
 }

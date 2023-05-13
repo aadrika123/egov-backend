@@ -528,6 +528,8 @@ class PropProperty extends Model
         return PropProperty::select(
             'prop_properties.id',
             'prop_properties.holding_no',
+            'latitude',
+            'longitude',
             'prop_properties.new_holding_no',
             'prop_properties.pt_no',
             'ward_name',
@@ -537,6 +539,37 @@ class PropProperty extends Model
             DB::raw("string_agg(prop_owners.owner_name,',') as owner_name"),
         )
             ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
+            ->join(DB::raw("(select latitude, longitude,  prop_saf_geotag_uploads.saf_id
+                                from prop_saf_geotag_uploads 
+                                JOIN prop_properties ON prop_properties.saf_id = prop_saf_geotag_uploads.saf_id 
+                                where direction_type ILIKE('%front%')                               
+                                GROUP BY prop_saf_geotag_uploads.saf_id,latitude, longitude
+                           ) as geotag"), function ($join) {
+                $join->on("geotag.saf_id", "=", "prop_properties.saf_id");
+            })
+
+            // ->join(DB::raw("(select  latitude , longitude, direction_type,
+            //                     prop_saf_geotag_uploads.saf_id
+            //                 from prop_saf_geotag_uploads 
+            //                 JOIN prop_properties ON prop_properties.saf_id = prop_saf_geotag_uploads.saf_id                                
+            //                 where prop_saf_geotag_uploads.id = ANY(
+            //                 (
+            //                 SELECT concat('{',concated_id,'}') as id
+            //                     from (
+            //                         select string_agg(
+            //                         temps.max_id,','
+            //                     ) as concated_id
+            //                     from(
+            //                         SELECT MAX(id)::text as max_id
+            //                         FROM prop_saf_geotag_uploads 
+            //                         where direction_type not ILIKE('%Harvesting%')
+            //                         GROUP BY prop_saf_geotag_uploads.saf_id
+            //                     ) temps
+            //                     )temp2
+            //                 )::bigint[]) 
+            //                ) as geotag"), function ($join) {
+            //     $join->on("geotag.saf_id", "=", "prop_properties.saf_id");
+            // })
             ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id');
     }
 

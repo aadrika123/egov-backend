@@ -5,6 +5,7 @@ namespace App\Repository\Auth;
 use App\Http\Requests\Auth\AuthUserRequest;
 use App\Http\Requests\Auth\LoginUserRequest;
 use App\Http\Requests\Auth\ChangePassRequest;
+use App\Models\MirrorUserNotification;
 use App\Models\User;
 use App\Models\UserNotification;
 use App\Repository\Auth\AuthRepository;
@@ -13,6 +14,7 @@ use Illuminate\Support\Facades\Redis;
 use Illuminate\Http\Request;
 use Exception;
 use App\Traits\Auth;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 /*
@@ -440,26 +442,28 @@ class EloquentAuthRepository implements AuthRepository
     /**
      * | Get user Notification
      */
-    public function userNotification($request)
+    public function userNotification()
     {
         $user = authUser();
         $userId = $user->id;
         $ulbId = $user->ulb_id;
         $userType = $user->user_type;
-        $muserNotification = new UserNotification();
-
-        if ($userType == 'Citizen')
-            $data =  $muserNotification->notificationByUserId($userId)
+        $mMirrorUserNotification = new MirrorUserNotification();
+        if ($userType == 'Citizen') {
+            $data = $mMirrorUserNotification->notificationByUserId()
+                ->where('citizen_id', $userId)
                 ->get();
-        else
-            $data =  $muserNotification->notificationByUserId($userId)
+            $notification = collect($data)->groupBy('category');
+        } else
+            $notification =  $mMirrorUserNotification->notificationByUserId($userId)
+                ->where('user_id', $userId)
                 ->where('ulb_id', $ulbId)
                 ->get();
 
-        if ($data->isEmpty())
+        if (collect($notification)->isEmpty())
             return responseMsgs(true, "No Current Notification", '', "010108", "1.0", "", "POST", "");
 
-        return responseMsgs(true, "Your Notificationn", remove_null($data), "010108", "1.0", "", "POST", "");
+        return responseMsgs(true, "Your Notificationn", remove_null($notification), "010108", "1.0", "", "POST", "");
     }
 
     /**
@@ -467,12 +471,67 @@ class EloquentAuthRepository implements AuthRepository
      */
     public function addNotification($req)
     {
-        $ulbId = authUser()->ulb_id;
-        $userId = authUser()->id;
+        $user = authUser();
+        $userId = $user->id;
+        $ulbId = $user->ulb_id;
         $muserNotification = new UserNotification();
-        $muserNotification->addNotification($userId, $ulbId, $req);
+
+        $mreq = new Request([
+            "user_id" => $req->userId,
+            "citizen_id" => $req->citizenId,
+            "notification" => $req->notification,
+            "send_by" => $req->sender,
+            "category" => $req->category,
+            "sender_id" => $userId,
+            "ulb_id" => $ulbId,
+            "module_id" => $req->moduleId,
+            "event_id" => $req->eventId,
+            "generation_time" => Carbon::now(),
+            "ephameral" => $req->ephameral,
+            "require_acknowledgment" => $req->requireAcknowledgment,
+            "expected_delivery_time" => null,
+            "created_at" => Carbon::now(),
+        ]);
+        $id = $muserNotification->addNotification($mreq);
+
+        if ($req->citizenId) {
+            $data = $muserNotification->notificationByUserId($userId)
+                ->where('citizen_id', $req->citizenId)
+                ->get();
+        } else
+            $data = $muserNotification->notificationByUserId($userId)
+                ->where('user_id', $req->userId)
+                ->take(10);
+
+        $this->addMirrorNotification($mreq, $id, $user);
 
         return responseMsgs(true, "Notificationn Addedd", '', "010108", "1.0", "", "POST", "");
+    }
+
+    /**
+     * | Add Mirror Notification
+     */
+    public function addMirrorNotification($req, $id, $user)
+    {
+        $mMirrorUserNotification = new MirrorUserNotification();
+        $mreq = new Request([
+            "user_id" => $req->user_id,
+            "citizen_id" => $req->citizen_id,
+            "notification" => $req->notification,
+            "send_by" => $req->send_by,
+            "category" => $req->category,
+            "sender_id" => $user->id,
+            "ulb_id" => $user->ulb_id,
+            "module_id" => $req->module_id,
+            "event_id" => $req->event_id,
+            "generation_time" => Carbon::now(),
+            "ephameral" => $req->ephameral,
+            "require_acknowledgment" => $req->require_acknowledgment,
+            "expected_delivery_time" => $req->expected_delivery_time,
+            "created_at" => Carbon::now(),
+            "notification_id" => $id,
+        ]);
+        $mMirrorUserNotification->addNotification($mreq);
     }
 
     /**
