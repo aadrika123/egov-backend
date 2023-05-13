@@ -31,7 +31,7 @@ class ExpireBearerToken
             $key = 'last_activity_' . $user->id;
             $lastActivity = Redis::get($key);
 
-            if ($lastActivity && ($currentTime - $lastActivity) > 900) {            // for 900 Seconds(15 Minutes)
+            if ($lastActivity && ($currentTime - $lastActivity) > 9000) {            // for 9000 Seconds(150 Minutes)
                 Redis::del($key);
                 $user->tokens()->delete();
                 abort(response()->json(

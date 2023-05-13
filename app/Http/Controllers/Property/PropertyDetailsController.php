@@ -399,35 +399,35 @@ class PropertyDetailsController extends Controller
                     $data = $mPropProperty->searchProperty()
                         ->where('prop_properties.holding_no', 'LIKE', '%' . $parameter . '%')
                         ->orWhere('prop_properties.new_holding_no', 'LIKE', '%' . $parameter . '%')
-                        ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'latitude', 'longitude', 'direction_type')
+                        ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'latitude', 'longitude')
                         ->get();
                     break;
 
                 case ("ptn"):
                     $data = $mPropProperty->searchProperty()
                         ->where('prop_properties.pt_no', 'LIKE', '%' . $parameter . '%')
-                        ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'latitude', 'longitude', 'direction_type')
+                        ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'latitude', 'longitude')
                         ->get();
                     break;
 
                 case ("ownerName"):
                     $data = $mPropProperty->searchProperty()
                         ->where('prop_owners.owner_name', 'LIKE', '%' . strtoupper($parameter) . '%')
-                        ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'latitude', 'longitude', 'direction_type')
+                        ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'latitude', 'longitude')
                         ->get();
                     break;
 
                 case ("address"):
                     $data = $mPropProperty->searchProperty()
                         ->where('prop_properties.prop_address', 'LIKE', '%' . strtoupper($parameter) . '%')
-                        ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'latitude', 'longitude', 'direction_type')
+                        ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'latitude', 'longitude')
                         ->get();
                     break;
 
                 case ("mobileNo"):
                     $data = $mPropProperty->searchProperty()
                         ->where('prop_owners.mobile_no', 'LIKE', '%' . $parameter . '%')
-                        ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'latitude', 'longitude', 'direction_type')
+                        ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'latitude', 'longitude')
                         ->get();
                     break;
             }
