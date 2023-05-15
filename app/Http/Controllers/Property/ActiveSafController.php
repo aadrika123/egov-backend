@@ -260,7 +260,7 @@ class ActiveSafController extends Controller
             }
             $data['zone_mstrs'] = $zoneMstrs;
 
-            return responseMsgs(true, 'Property Masters', $data, "010101", "1.0", "317ms", "GET", "");
+            return responseMsgs(true, 'Property Masters', $data, "010101", "1.0", responseTime(), "GET", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -619,6 +619,7 @@ class ActiveSafController extends Controller
             $fullDetailsData['apply_date'] = $data->application_date;
             $fullDetailsData['doc_verify_status'] = $data->doc_verify_status;
             $fullDetailsData['doc_upload_status'] = $data->doc_upload_status;
+            $fullDetailsData['payment_status'] = $data->payment_status;
             $fullDetailsData['fullDetailsData']['dataArray'] = new Collection([$basicElement, $propertyElement, $corrElement, $electElement]);
             // Table Array
             // Owner Details
@@ -666,7 +667,7 @@ class ActiveSafController extends Controller
             $custom = $mCustomDetails->getCustomDetails($req);
             $fullDetailsData['departmentalPost'] = collect($custom)['original']['data'];
 
-            return responseMsgs(true, 'Data Fetched', remove_null($fullDetailsData), "010104", "1.0", "303ms", "POST", $req->deviceId);
+            return responseMsgs(true, 'Data Fetched', remove_null($fullDetailsData), "010104", "1.0", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -1434,7 +1435,6 @@ class ActiveSafController extends Controller
         ]);
         try {
             $safDtls = PropActiveSaf::findOrFail($req->id);
-
             if (in_array($safDtls->assessment_type, ['New Assessment', 'Reassessment', 'Re Assessment', 'Mutation']))
                 $req = $req->merge(['holdingNo' => $safDtls->holding_no]);
 
@@ -2074,12 +2074,14 @@ class ActiveSafController extends Controller
         try {
             $taxCollectorRole = Config::get('PropertyConstaint.SAF-LABEL.TC');
             $ulbTaxCollectorRole = Config::get('PropertyConstaint.SAF-LABEL.UTC');
+            $propertyType = collect(Config::get('PropertyConstaint.PROPERTY-TYPE'))->flip();
             $propActiveSaf = new PropActiveSaf();
             $verification = new PropSafVerification();
             $mWfRoleUsermap = new WfRoleusermap();
             $verificationDtl = new PropSafVerificationDtl();
             $userId = authUser()->id;
             $ulbId = authUser()->ulb_id;
+            $vacantLand = $propertyType['VACANT LAND'];
 
             $safDtls = $propActiveSaf->getSafNo($req->safId);
             $workflowId = $safDtls->workflow_id;
@@ -2113,28 +2115,30 @@ class ActiveSafController extends Controller
             // Verification Store
             $verificationId = $verification->store($req);                            // Model function to store verification and get the id
             // Verification Dtl Table Update                                         // For Tax Collector
-            foreach ($req->floor as $floorDetail) {
-                if ($floorDetail['useType'] == 1)
-                    $carpetArea =  $floorDetail['buildupArea'] * 0.70;
-                else
-                    $carpetArea =  $floorDetail['buildupArea'] * 0.80;
+            if ($req->propertyType != $vacantLand) {
+                foreach ($req->floor as $floorDetail) {
+                    if ($floorDetail['useType'] == 1)
+                        $carpetArea =  $floorDetail['buildupArea'] * 0.70;
+                    else
+                        $carpetArea =  $floorDetail['buildupArea'] * 0.80;
 
-                $floorReq = [
-                    'verification_id' => $verificationId,
-                    'saf_id' => $req->safId,
-                    'saf_floor_id' => $floorDetail['floorId'] ?? null,
-                    'floor_mstr_id' => $floorDetail['floorNo'],
-                    'usage_type_id' => $floorDetail['useType'],
-                    'construction_type_id' => $floorDetail['constructionType'],
-                    'occupancy_type_id' => $floorDetail['occupancyType'],
-                    'builtup_area' => $floorDetail['buildupArea'],
-                    'date_from' => $floorDetail['dateFrom'],
-                    'date_to' => $floorDetail['dateUpto'],
-                    'carpet_area' => $carpetArea,
-                    'user_id' => $userId,
-                    'ulb_id' => $ulbId
-                ];
-                $verificationDtl->store($floorReq);
+                    $floorReq = [
+                        'verification_id' => $verificationId,
+                        'saf_id' => $req->safId,
+                        'saf_floor_id' => $floorDetail['floorId'] ?? null,
+                        'floor_mstr_id' => $floorDetail['floorNo'],
+                        'usage_type_id' => $floorDetail['useType'],
+                        'construction_type_id' => $floorDetail['constructionType'],
+                        'occupancy_type_id' => $floorDetail['occupancyType'],
+                        'builtup_area' => $floorDetail['buildupArea'],
+                        'date_from' => $floorDetail['dateFrom'],
+                        'date_to' => $floorDetail['dateUpto'],
+                        'carpet_area' => $carpetArea,
+                        'user_id' => $userId,
+                        'ulb_id' => $ulbId
+                    ];
+                    $verificationDtl->store($floorReq);
+                }
             }
 
             DB::commit();
@@ -2257,10 +2261,15 @@ class ActiveSafController extends Controller
         ]);
         try {
             $mWfRoleusermap = new WfRoleusermap();
+            $mPropTransactions = new PropTransaction();
             $jskRole = Config::get('PropertyConstaint.JSK_ROLE');
             $user = authUser();
             $userId = $user->id;
             $safDetails = $this->details($req);
+            if ($safDetails['payment_status'] == 1) {       // Get Transaction no if the payment is done
+                $transaction = $mPropTransactions->getLastTranByKeyId('saf_id', $req->id);
+                $demand['tran_no'] = $transaction->tran_no;
+            }
             $workflowId = $safDetails['workflow_id'];
             $mreqs = new Request([
                 "workflowId" => $workflowId,

@@ -732,7 +732,6 @@ class WaterConsumer extends Controller
                 'consumerId'                => $consumerId,
                 'connectionDate'            => $relatedDetails['meterDetails']['connection_date'],
                 'connectionType'            => $relatedDetails['meterDetails']['connection_type'],
-                'meterNo'                   => $relatedDetails['meterDetails']['meter_no'],
                 'newMeterInitialReading'    => $relatedDetails['meterDetails']['initial_reading']
             ]);
             $document = [

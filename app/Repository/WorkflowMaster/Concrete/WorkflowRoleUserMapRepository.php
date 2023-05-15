@@ -128,14 +128,15 @@ class WorkflowRoleUserMapRepository implements iWorkflowRoleUserMapRepository
      * | @var query 
      * | Status-Closed
      * | Query Run Time-400 ms
-     * | Rating-2
-     * 
+     * | Rating-1
+        | handel the suspended 
      */
     public function getRolesByUserId($req)
     {
         try {
             // $roles = json_decode(Redis::get('roles-user-u-' . $req->userId));
             // if (!$roles) {
+            $userId = authUser()->id;
             $query = "SELECT 
                                 r.id AS role_id,
                                 r.role_name,
@@ -143,12 +144,16 @@ class WorkflowRoleUserMapRepository implements iWorkflowRoleUserMapRepository
                                 (CASE 
                                 WHEN rum.wf_role_id IS NOT NULL THEN TRUE 
                                 ELSE 
-                                FALSE END) AS permission_status
+                                FALSE END) AS permission_status,
+                                rum.user_id
 
                         FROM wf_roles r
 
-                LEFT JOIN (SELECT * FROM wf_roleusermaps WHERE user_id=$req->userId AND is_suspended=false) rum ON rum.wf_role_id=r.id";
-
+                LEFT JOIN (SELECT * FROM wf_roleusermaps WHERE user_id= $userId AND is_suspended = false) rum ON rum.wf_role_id=r.id
+                WHERE r.is_suspended = false
+                AND r.status = 1
+                ";
+                
             $roles = DB::select($query);
             $this->_redis->set('roles-user-u-' . $req->userId, json_encode($roles));               // Caching Should Be flush on New role Permission to the user
             // }

@@ -11,18 +11,6 @@ class PropSaf extends Model
     use HasFactory;
 
     /**
-     * | Get citizen safs
-     */
-    public function getCitizenSafs($citizenId, $ulbId)
-    {
-        return PropSaf::select('id', 'saf_no', 'citizen_id')
-            ->where('citizen_id', $citizenId)
-            ->where('ulb_id', $ulbId)
-            ->orderByDesc('id')
-            ->get();
-    }
-
-    /**
      * | 
      */
     public function getSafDtlsBySafNo($safNo)
