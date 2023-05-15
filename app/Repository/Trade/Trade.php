@@ -4266,10 +4266,13 @@ class Trade implements ITrade
             $appMandetoryDoc = $applicationDoc->whereIn("docType", ["R", "OR"]);
             $appUploadedDoc = $applicationDoc->whereNotNull("uploadedDoc");
             $appUploadedDocVerified = collect();
-            $appUploadedDoc->map(function ($val) use ($appUploadedDocVerified) {
+            $appUploadedDocRejected = collect();
+            $appUploadedDoc->map(function ($val) use ($appUploadedDocVerified,$appUploadedDocRejected) {
                 $appUploadedDocVerified->push(["is_docVerify" => (!empty($val["uploadedDoc"]) ?  (((collect($val["uploadedDoc"])->all())["verifyStatus"]) ? true : false) : true)]);
+                $appUploadedDocRejected->push(["is_docRejected" => (!empty($val["uploadedDoc"]) ?  (((collect($val["uploadedDoc"])->all())["verifyStatus"]==2) ? true : false) : true)]);
             });
             $is_appUploadedDocVerified = $appUploadedDocVerified->where("is_docVerify", false);
+            $is_appUploadedDocRejected = $appUploadedDocVerified->where("is_docRejected", true);
             $is_appMandUploadedDoc  = $appMandetoryDoc->whereNull("uploadedDoc");
             $Wdocuments = collect();
             $ownerDoc->map(function ($val) use ($Wdocuments) {
@@ -4278,15 +4281,17 @@ class Trade implements ITrade
                     $val1["ownerId"] = $ownerId;
                     $val1["is_uploded"] = (in_array($val1["docType"], ["R", "OR"]))  ? ((!empty($val1["uploadedDoc"])) ? true : false) : true;
                     $val1["is_docVerify"] = !empty($val1["uploadedDoc"]) ?  (((collect($val1["uploadedDoc"])->all())["verifyStatus"]) ? true : false) : true;
+                    $val1["is_docRejected"] = !empty($val1["uploadedDoc"]) ?  (((collect($val1["uploadedDoc"])->all())["verifyStatus"]==2) ? true : false) : false;
                     $Wdocuments->push($val1);
                 });
             });
             $ownerMandetoryDoc = $Wdocuments->whereIn("docType", ["R", "OR"]);
             $is_ownerUploadedDoc = $Wdocuments->where("is_uploded", false);
             $is_ownerDocVerify = $Wdocuments->where("is_docVerify", false);
-
+            $is_ownerDocRejected = $Wdocuments->where("is_docRejected", true);
+            
             if (($fromRole["can_upload_document"] ?? false) || strtoupper($mUserType) == "ONLINE") {
-                return (empty($is_ownerUploadedDoc->all()) && empty($is_appMandUploadedDoc->all()));
+                return (empty($is_ownerUploadedDoc->all()) && empty($is_ownerDocRejected->all()) && empty($is_appMandUploadedDoc->all()) && empty($appUploadedDocRejected->all()));
             }
             if ($fromRole["can_verify_document"] ?? false) {
                 return (empty($is_ownerDocVerify->all()) && empty($is_appUploadedDocVerified->all()));

@@ -528,7 +528,7 @@ class Report implements IReport
                     {
                         $old = $old->where("trade_renewals.ulb_id",$ulbId);
                     }
-                    $data= $data->union($old);
+                    $data= $data->union($old)->orderBy("application_date");
                     
             }
             $perPage = $request->perPage ? $request->perPage :  10000;

@@ -564,6 +564,7 @@ class TradeApplication extends Controller
         $user = Auth()->user();
         $user_id = $user->id;
         $ulb_id = $user->ulb_id;
+        $fromRole = [];
         $refWorkflowId = $this->_WF_MASTER_Id;
         $role = $this->_COMMON_FUNCTION->getUserRoll($user_id,$ulb_id,$refWorkflowId);
        
@@ -627,8 +628,7 @@ class TradeApplication extends Controller
             $initFinish   = $this->_COMMON_FUNCTION->iniatorFinisher($user_id, $ulb_id, $refWorkflowId);
             $receiverRole = array_values(objToArray($allRolse->where("id",$request->receiverRoleId)))[0]??[];
             $senderRole   = array_values(objToArray($allRolse->where("id",$request->senderRoleId)))[0]??[];
-            $role         = $this->_COMMON_FUNCTION->getUserRoll($user_id,$ulb_id,$refWorkflowId);
-
+            
             if($licence->payment_status!=1 && ($role->serial_no  < $receiverRole["serial_no"]??0))
             {
                 throw new Exception("Payment Not Clear");
@@ -650,9 +650,23 @@ class TradeApplication extends Controller
                 $sms ="Application Forward To ".$receiverRole["role_name"]??"";
             }
             $tradC = new Trade();
-            $documents = $tradC->checkWorckFlowForwardBackord($request);
+            $documents = $tradC->checkWorckFlowForwardBackord($request);            
+            
+            
             if((($senderRole["serial_no"]??0) < ($receiverRole["serial_no"]??0)) && !$documents)
             {
+                if (($role->can_upload_document ?? false) && $licence->is_parked) 
+                {
+                    throw new Exception("Rejected Document Are Not Uploaded");
+                }
+                if (($role->can_upload_document ?? false)) 
+                {
+                    throw new Exception("No Every Madetry Documests are Uploaded");
+                }
+                if ($role->can_verify_document ?? false) 
+                {
+                    throw new Exception("No Every Documests are Veryfied");
+                }
                 throw new Exception("Not Every Actoin Are Performed");
             }
             if($role->can_upload_document)
