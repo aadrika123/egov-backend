@@ -1434,7 +1434,6 @@ class ActiveSafController extends Controller
         ]);
         try {
             $safDtls = PropActiveSaf::findOrFail($req->id);
-
             if (in_array($safDtls->assessment_type, ['New Assessment', 'Reassessment', 'Re Assessment', 'Mutation']))
                 $req = $req->merge(['holdingNo' => $safDtls->holding_no]);
 
@@ -2257,10 +2256,15 @@ class ActiveSafController extends Controller
         ]);
         try {
             $mWfRoleusermap = new WfRoleusermap();
+            $mPropTransactions = new PropTransaction();
             $jskRole = Config::get('PropertyConstaint.JSK_ROLE');
             $user = authUser();
             $userId = $user->id;
             $safDetails = $this->details($req);
+            if ($safDetails['payment_status'] == 1) {       // Get Transaction no if the payment is done
+                $transaction = $mPropTransactions->getLastTranByKeyId('saf_id', $req->id);
+                $demand['tran_no'] = $transaction->tran_no;
+            }
             $workflowId = $safDetails['workflow_id'];
             $mreqs = new Request([
                 "workflowId" => $workflowId,
