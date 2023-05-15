@@ -517,11 +517,11 @@ class WaterApplication extends Model
     /**
      * | update the current role in case of online citizen apply
      */
-    public function updateCurrentRoleForDa($applicationId, $waterRoles)
+    public function updateCurrentRoleForDa($applicationId, $waterRole)
     {
         WaterApplication::where('id', $applicationId)
             ->update([
-                'current_role' => $waterRoles['DA']
+                'current_role' => $waterRole
             ]);
     }
 

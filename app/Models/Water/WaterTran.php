@@ -39,6 +39,13 @@ class WaterTran extends Model
             ->where('status', true)
             ->orderByDesc('id');
     }
+    public function siteInspectionTransaction($applicationId)
+    {
+        return WaterTran::where('related_id', $applicationId)
+            ->where('tran_type', "Site Inspection")
+            ->where('status', true)
+            ->orderByDesc('id');
+    }
 
     /**
      * | Get Transaction Details According to TransactionId

@@ -94,6 +94,7 @@ class NewConnectionRepository implements iNewConnection
         # ref variables
         $vacantLand = $this->_vacantLand;
         $workflowID = $this->_waterWorkflowId;
+        $waterRoles = $this->_waterRoles;
         $owner      = $req['owners'];
         $tenant     = $req['tenant'];
         $ulbId      = $req->ulbId;
@@ -176,15 +177,17 @@ class NewConnectionRepository implements iNewConnection
         # in case of connection charge is 0
         if ($totalConnectionCharges == 0) {
             $mWaterTran->saveZeroConnectionCharg($totalConnectionCharges, $ulbId, $req, $applicationId, $connectionId, $connectionType);
+            if ($user->user_type != "Citizen") {                                                    // Static
+                $objNewApplication->updateCurrentRoleForDa($applicationId, $waterRoles['BO']);
+            }
         }
 
         # Save the record in the tracks
-        if ($user->user_type == "Citizen") {
-            $waterRoles = $this->_waterRoles;
+        if ($user->user_type == "Citizen") {                                                        // Static
             $citizenId = $user->id;
             $receiverRoleId = $waterRoles['DA'];
         }
-        if ($user->user_type != "Citizen") {
+        if ($user->user_type != "Citizen") {                                                        // Static
             $roleDetails = $this->getUserRolesDetails($user, $ulbWorkflowId['id']);
             $senderRoleId = $roleDetails->wf_role_id;
             $receiverRoleId = collect($initiatorRoleId)->first()->role_id;
@@ -203,6 +206,8 @@ class NewConnectionRepository implements iNewConnection
             ]
         );
         $waterTrack->saveTrack($metaReqs);
+
+        # watsapp message
         $whatsapp2 = (Whatsapp_Send(
             "",
             "trn_2_var",
@@ -323,6 +328,9 @@ class NewConnectionRepository implements iNewConnection
             'workflowId' => $ulbWorkflowId
         ]);
         $readRoleDtls = $mWfRoleUsermap->getRoleByUserWfId($getRoleReq);
+        if (is_null($readRoleDtls)) {
+            throw new Exception("Role details not found!");
+        }
         return $readRoleDtls;
     }
 

@@ -60,6 +60,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Unique;
 use Ramsey\Collection\Collection as CollectionCollection;
+use SebastianBergmann\Type\VoidType;
 use Symfony\Contracts\Service\Attribute\Required;
 
 class NewConnectionController extends Controller
@@ -1072,13 +1073,38 @@ class NewConnectionController extends Controller
      */
     public function updateWaterStatus($req, $application)
     {
-        $mWaterApplication = new WaterApplication();
-        // $waterRoles = $this->_waterRoles;
+        $mWaterTran         = new WaterTran();
+        $mWaterApplication  = new WaterApplication();
+        $refApplyFrom       = Config::get("waterConstaint.APP_APPLY_FROM");
         $mWaterApplication->activateUploadStatus($req->applicationId);
-        # Auto forward to Bo 
-        // if ($application->payment_status == 1) {
-        //     $mWaterApplication->updateCurrentRoleForDa($req->applicationId, $waterRoles);
-        // }
+        # Auto forward to Da
+        if ($application->payment_status == 1) {
+            $waterTransaction = $mWaterTran->getTransNo($application->id, true)->first();
+            if (is_null($waterTransaction)) {
+                throw new Exception("Transaction Details not found!");
+            }
+            if ($application->apply_from == $refApplyFrom['1']) {
+                $this->autoForwardProcess($waterTransaction, $req, $application);
+            }
+        }
+    }
+
+
+    /**
+     * | Auto forward process 
+     * | 
+     */
+    public function autoForwardProcess($waterTransaction, $req, $application)
+    {
+        $waterRoles         = $this->_waterRoles;
+        $refChargeCatagory  = Config::get("waterConstaint.CHARGE_CATAGORY");
+        $mWaterApplication  = new WaterApplication();
+        if ($waterTransaction->tran_type == $refChargeCatagory['SITE_INSPECTON']) {
+            throw new Exception("Error there is different charge catagory in application!");
+        }
+        if ($application->current_role == null) {
+            $mWaterApplication->updateCurrentRoleForDa($req->applicationId, $waterRoles['DA']);
+        }
     }
 
 
@@ -1607,6 +1633,7 @@ class NewConnectionController extends Controller
                 'uploadedDoc' => $fullDocPath ?? "",
                 'verifyStatus' => $ownerPhoto->verify_status ?? ""
             ];
+            $ownerDocList['ownerDetails']['reqDocCount'] = $ownerDocList['documents']->count();
             $ownerDocList['ownerDetails']['uploadedDocCount'] = $ownerDocList['documents']->whereNotNull('uploadedDoc')->count();
             return $ownerDocList;
         }
@@ -2131,17 +2158,19 @@ class NewConnectionController extends Controller
      */
     public function cancelSiteInspection(Request $request)
     {
+        $request->validate([
+            'applicationId' => 'required',
+        ]);
         try {
-            $request->validate([
-                'applicationId' => 'required',
-            ]);
             $this->checkForSaveDateTime($request);
-            $mWaterSiteInspectionsScheduling = new WaterSiteInspectionsScheduling();
-            $mWaterConnectionCharge = new WaterConnectionCharge();
-            $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
-            $mWaterApplication = new WaterApplication();
-            $refSiteInspection = Config::get("waterConstaint.CHARGE_CATAGORY.SITE_INSPECTON");
-            $refApplicationId = $request->applicationId;
+            $this->checkforPaymentStatus($request);
+
+            $refApplicationId                   = $request->applicationId;
+            $mWaterSiteInspectionsScheduling    = new WaterSiteInspectionsScheduling();
+            $mWaterConnectionCharge             = new WaterConnectionCharge();
+            $mWaterPenaltyInstallment           = new WaterPenaltyInstallment();
+            $mWaterApplication                  = new WaterApplication();
+            $refSiteInspection                  = Config::get("waterConstaint.CHARGE_CATAGORY.SITE_INSPECTON");
 
             DB::beginTransaction();
             $mWaterSiteInspectionsScheduling->cancelInspectionDateTime($refApplicationId);
@@ -2155,6 +2184,24 @@ class NewConnectionController extends Controller
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", "");
         }
     }
+
+
+    /**
+     * | Check the param for cancel of site inspection date and corresponding data 
+     * | @param request
+        | Recheck
+     */
+    public function checkforPaymentStatus($request)
+    {
+        $applicationId  = $request->applicationId;
+        $mWaterTran     = new WaterTran();
+
+        $sitePayment = $mWaterTran->siteInspectionTransaction($applicationId)->first();
+        if ($sitePayment) {
+            throw new Exception("Payment for Site Inspction has done!");
+        }
+    }
+
 
     /**
      * | Save the site Inspection Date and Time 
@@ -2195,16 +2242,18 @@ class NewConnectionController extends Controller
      */
     public function checkForSaveDateTime($request)
     {
-        $mWfRoleUser = new WfRoleusermap();
-        $refApplication = WaterApplication::findOrFail($request->applicationId);
-        $WaterRoles = Config::get('waterConstaint.ROLE-LABEL');
-        $workflowId = Config::get('workflow-constants.WATER_WORKFLOW_ID');
-        $metaReqs =  new Request([
+        $mWfRoleUser        = new WfRoleusermap();
+        $refApplication     = WaterApplication::findOrFail($request->applicationId);
+        $WaterRoles         = Config::get('waterConstaint.ROLE-LABEL');
+        $workflowId         = Config::get('workflow-constants.WATER_WORKFLOW_ID');
+        $metaReqs = new Request([
             'userId'        => authUser()->id,
             'workflowId'    => $workflowId
         ]);
         $readRoles = $mWfRoleUser->getRoleByUserWfId($metaReqs);                      // Model to () get Role By User Id
-
+        if (is_null($readRoles)) {
+            throw new Exception("Role not found!");
+        }
         if ($refApplication['current_role'] != $WaterRoles['JE']) {
             throw new Exception("Application is not Under the JE!");
         }

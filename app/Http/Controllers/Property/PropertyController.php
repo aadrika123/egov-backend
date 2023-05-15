@@ -149,11 +149,7 @@ class PropertyController extends Controller
             }
 
             if ($type == 'saf') {
-                $data = $mPropSafs->getCitizenSafs($citizenId, $ulbId);
-
-                if ($data->isEmpty())
-                    $data = $mPropActiveSafs->getCitizenSafs($citizenId, $ulbId);
-
+                $data = $mPropActiveSafs->getCitizenSafs($citizenId, $ulbId);
                 $msg = 'Citizen Safs';
             }
             if ($type == 'ptn') {
@@ -235,9 +231,8 @@ class PropertyController extends Controller
             $req->validate([
                 'wardId' => 'required|integer',
             ]);
-            $mPropSaf = new PropActiveSaf();
             $mPropProperty = new PropProperty();
-            $propDetails = $mPropSaf->getpropLatLongDetails($req->wardId);
+            $propDetails = $mPropProperty->getPropLatlong($req->wardId);
             $propDetails = collect($propDetails)->map(function ($value) {
                 $currentDate = Carbon::now();
                 $geoDate = strtotime($value['created_at']);
@@ -251,9 +246,9 @@ class PropertyController extends Controller
 
                 # arrrer,current,paid
                 $mPropDemand = new PropDemand();
-                $mPropDemand->
-
-
+                $refUnpaidPropDemands = $mPropDemand->getDueDemandByPropId($value['property_id']);
+                // if()
+                // collect($refUnpaidPropDemands)->min('')
 
                 $value['full_doc'] = !empty(trim($value['doc_path'])) ? $path : null;
                 return $value;
