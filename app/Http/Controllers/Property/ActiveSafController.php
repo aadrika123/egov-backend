@@ -619,6 +619,7 @@ class ActiveSafController extends Controller
             $fullDetailsData['apply_date'] = $data->application_date;
             $fullDetailsData['doc_verify_status'] = $data->doc_verify_status;
             $fullDetailsData['doc_upload_status'] = $data->doc_upload_status;
+            $fullDetailsData['payment_status'] = $data->payment_status;
             $fullDetailsData['fullDetailsData']['dataArray'] = new Collection([$basicElement, $propertyElement, $corrElement, $electElement]);
             // Table Array
             // Owner Details
