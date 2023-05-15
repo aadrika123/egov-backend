@@ -35,7 +35,7 @@ class SafCalculation
     private $_isResidential;
     private $_ruleSets;
     public $_ulbId;
-    private $_rentalValue;
+    public $_rentalValue;
     public $_rentalRates;
     private $_virtualDate;
     public $_effectiveDateRule2;

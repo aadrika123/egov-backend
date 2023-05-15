@@ -535,4 +535,12 @@ return [
         "specialRebate" => "Special Rebate",
         "firstQtrRebate" => "First Qtr Rebate",
     ],
+
+    // Road Types
+    "ROAD_TYPES" => [
+        "1" => "Principal Main Road",
+        "2" => "Main Road",
+        "3" => "Other",
+        "4" => "No Road"
+    ]
 ];
