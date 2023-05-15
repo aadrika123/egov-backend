@@ -547,29 +547,6 @@ class PropProperty extends Model
                            ) as geotag"), function ($join) {
                 $join->on("geotag.saf_id", "=", "prop_properties.saf_id");
             })
-
-            // ->join(DB::raw("(select  latitude , longitude, direction_type,
-            //                     prop_saf_geotag_uploads.saf_id
-            //                 from prop_saf_geotag_uploads 
-            //                 JOIN prop_properties ON prop_properties.saf_id = prop_saf_geotag_uploads.saf_id                                
-            //                 where prop_saf_geotag_uploads.id = ANY(
-            //                 (
-            //                 SELECT concat('{',concated_id,'}') as id
-            //                     from (
-            //                         select string_agg(
-            //                         temps.max_id,','
-            //                     ) as concated_id
-            //                     from(
-            //                         SELECT MAX(id)::text as max_id
-            //                         FROM prop_saf_geotag_uploads 
-            //                         where direction_type not ILIKE('%Harvesting%')
-            //                         GROUP BY prop_saf_geotag_uploads.saf_id
-            //                     ) temps
-            //                     )temp2
-            //                 )::bigint[]) 
-            //                ) as geotag"), function ($join) {
-            //     $join->on("geotag.saf_id", "=", "prop_properties.saf_id");
-            // })
             ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id');
     }
 

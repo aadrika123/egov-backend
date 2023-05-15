@@ -158,6 +158,9 @@ class EloquentAuthRepository implements AuthRepository
                     $this->redisStore($redis, $emailInfo, $request, $token);   // Trait for update Redis
 
                     Redis::expire('user:' . $emailInfo->id, 18000);         // EXPIRE KEY AFTER 5 HOURS
+                    $key = 'last_activity_' . $emailInfo->id;               // Set last activity key 
+                    Redis::set($key, time());
+
                     $message = $this->tResponseSuccess($token, $email, $request);     // Response Message Using Trait
                     return response()->json($message, 200);
                 }
@@ -184,6 +187,8 @@ class EloquentAuthRepository implements AuthRepository
                     $this->redisStore($redis, $emailInfo, $request, $token);   // Trait for update Redis
 
                     Redis::expire('user:' . $emailInfo->id, 18000);     //EXPIRE KEY IN AFTER 5 HOURS
+                    $key = 'last_activity_' . $emailInfo->id;               // Set last activity key 
+                    Redis::set($key, time());
                     $message = $this->tResponseSuccess($token, $email, $request);           // Response Message Using Trait
                     return response()->json($message, 200);
                 } else {

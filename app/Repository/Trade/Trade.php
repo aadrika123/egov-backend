@@ -345,7 +345,7 @@ class Trade implements ITrade
                     $refNoticeDetails = $this->getDenialFirmDetails($refUlbId, strtoupper(trim($noticeNo)));
                     if ($refNoticeDetails) {
                         $refDenialId = $refNoticeDetails->dnialid;
-                        $licence->dnial_id = $refDenialId;
+                        $licence->denial_id = $refDenialId;
                         $licence->update();
                         $mNoticeDate = date("Y-m-d", strtotime($refNoticeDetails['created_on'])); //notice date  
                         if ($firm_date < $mNoticeDate) {
@@ -684,8 +684,8 @@ class Trade implements ITrade
                 throw new Exception("Tobaco Application Not Take Licence More Than One Year");
             }
             if ($refNoticeDetails = $this->readNotisDtl($refLecenceData->denial_id)) {
-                $refDenialId = $refNoticeDetails->dnialid;
-                $mNoticeDate = date("Y-m-d", strtotime($refNoticeDetails['created_on'])); //notice date 
+                $refDenialId = $refNoticeDetails->id;
+                $mNoticeDate = date("Y-m-d", strtotime($refNoticeDetails['notice_date'])); //notice date 
             }
 
             $ward_no = UlbWardMaster::select("ward_name")
@@ -708,7 +708,8 @@ class Trade implements ITrade
             $args['noticeDate']          = $mNoticeDate;
             // dd($args);
             $chargeData = $this->cltCharge($args);
-            if ($chargeData['response'] == false || $chargeData['total_charge'] != $request->totalCharge) {
+            if ($chargeData['response'] == false || $chargeData['total_charge'] != $request->totalCharge) 
+            {
                 throw new Exception("Payble Amount Missmatch!!!");
             }
 
@@ -778,7 +779,7 @@ class Trade implements ITrade
                 $args["citizen_id"] = $refUserId;;
                 $args["ref_table_dot_id"] = "active_trade_licences";
                 $args["ref_table_id_value"] = $licenceId;
-                $args["workflow_id"] = $refWorkflowId;
+                $args["workflow_id"] = $refLecenceData->workflow_id??"";//$refWorkflowId;
                 $args["module_id"] = $this->_MODULE_ID;
 
                 $tem =  $this->insertWorkflowTrack($args);
@@ -1888,7 +1889,7 @@ class Trade implements ITrade
         $rolles = $this->_COMMON_FUNCTION->getUserRoll($user_id, $ulb_id, $workflow_id);
         $roll_id =  $rolles->role_id ?? null;
         $mUserType = $this->_COMMON_FUNCTION->userType($workflow_id);
-        // dd($this->_COMMON_FUNCTION->getUserRoll($user_id, $ulb_id, $workflow_id));
+
         $licenceId = $request->licenceId;
         $rules = [];
         $message = [];
@@ -1940,9 +1941,12 @@ class Trade implements ITrade
             $data["uploadDocs"] = $mUploadDocument;
             $data["licence"] = $licence;
             $data["owneres"] = $owneres;
-            if ($request->getMethod() == "GET") {
+            if ($request->getMethod() == "GET") 
+            {
                 return responseMsg(true, "", remove_null($data));
-            } elseif ($request->getMethod() == "POST") {
+            } 
+            elseif ($request->getMethod() == "POST") 
+            {
                 $rules = [];
                 $message = [];
                 $nowdate = Carbon::now()->format('Y-m-d');
@@ -1953,18 +1957,22 @@ class Trade implements ITrade
                     'id' => 'required',
                 ];
                 $status = 1;
-                if ($request->btn == "reject") {
+                if ($request->btn == "reject") 
+                {
                     $status = 2;
                     $rules["comment"] = "required|regex:$regex|min:10";
                 }
                 $validator = Validator::make($request->all(), $rules, $message);
-                if ($validator->fails()) {
+                if ($validator->fails()) 
+                {
                     return responseMsg(false, $validator->errors(), $request->all());
                 }
                 $level_data = $this->getWorkflowTrack($request->licenceId); //TradeLevelPending::getLevelData($licenceId);
-                if (!$level_data || $level_data->receiver_role_id != $roll_id) {
+                if (!$level_data || $level_data->receiver_role_id != $roll_id) 
+                {
                     throw new Exception("You Are Not Authorized For This Action");
                 }
+
                 DB::beginTransaction();
                 $tradeDoc = ActiveTradeDocument::find($request->id);
                 $tradeDoc->verify_status = $status;
@@ -1976,7 +1984,9 @@ class Trade implements ITrade
                 $sms = $tradeDoc->doc_for . " " . strtoupper($request->btn);
                 return responseMsg(true, $sms, "");
             }
-        } catch (Exception $e) {
+        } 
+        catch (Exception $e) 
+        {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
@@ -2303,6 +2313,7 @@ class Trade implements ITrade
             $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
             $refWorkflowId      = $this->_WF_MASTER_Id;
             $mUserType          = $this->_COMMON_FUNCTION->userType($refWorkflowId);
+            $request->request->add(['ulbId'=>$refUlbId]);
             if (in_array(strtoupper($mUserType), ["ONLINE"])) {
                 $rules["ulbId"]     = "required|digits_between:1,92";
             }
@@ -2672,6 +2683,7 @@ class Trade implements ITrade
                         "owner.guardian_name",
                         "owner.mobile_no",
                         "owner.email_id",
+                        "active_trade_licences.application_type_id",
                         "trade_param_application_types.application_type",
                         DB::raw("TO_CHAR(active_trade_licences.application_date, 'DD-MM-YYYY') as application_date"),
                     );

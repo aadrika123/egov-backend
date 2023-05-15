@@ -207,7 +207,6 @@ class BankReconcillationController extends Controller
                 'moduleId' => 'required',
                 'chequeId' => 'required',
                 'status' => 'required',
-                // 'remarks' => 'required',
                 'clearanceDate' => 'required'
             ]);
 

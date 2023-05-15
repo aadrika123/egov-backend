@@ -298,7 +298,7 @@ return [
     "ASSESSMENT-TYPE" =>
     [
         "1" => "New Assessment",
-        "2" => "Re Assessment",
+        "2" => "Reassessment",
         "3" => "Mutation",
         "4" => "Bifurcation",
         "5" => "Amalgamation"
