@@ -2074,12 +2074,14 @@ class ActiveSafController extends Controller
         try {
             $taxCollectorRole = Config::get('PropertyConstaint.SAF-LABEL.TC');
             $ulbTaxCollectorRole = Config::get('PropertyConstaint.SAF-LABEL.UTC');
+            $propertyType = collect(Config::get('PropertyConstaint.PROPERTY-TYPE'))->flip();
             $propActiveSaf = new PropActiveSaf();
             $verification = new PropSafVerification();
             $mWfRoleUsermap = new WfRoleusermap();
             $verificationDtl = new PropSafVerificationDtl();
             $userId = authUser()->id;
             $ulbId = authUser()->ulb_id;
+            $vacantLand = $propertyType['VACANT LAND'];
 
             $safDtls = $propActiveSaf->getSafNo($req->safId);
             $workflowId = $safDtls->workflow_id;
@@ -2113,28 +2115,30 @@ class ActiveSafController extends Controller
             // Verification Store
             $verificationId = $verification->store($req);                            // Model function to store verification and get the id
             // Verification Dtl Table Update                                         // For Tax Collector
-            foreach ($req->floor as $floorDetail) {
-                if ($floorDetail['useType'] == 1)
-                    $carpetArea =  $floorDetail['buildupArea'] * 0.70;
-                else
-                    $carpetArea =  $floorDetail['buildupArea'] * 0.80;
+            if ($req->propertyType != $vacantLand) {
+                foreach ($req->floor as $floorDetail) {
+                    if ($floorDetail['useType'] == 1)
+                        $carpetArea =  $floorDetail['buildupArea'] * 0.70;
+                    else
+                        $carpetArea =  $floorDetail['buildupArea'] * 0.80;
 
-                $floorReq = [
-                    'verification_id' => $verificationId,
-                    'saf_id' => $req->safId,
-                    'saf_floor_id' => $floorDetail['floorId'] ?? null,
-                    'floor_mstr_id' => $floorDetail['floorNo'],
-                    'usage_type_id' => $floorDetail['useType'],
-                    'construction_type_id' => $floorDetail['constructionType'],
-                    'occupancy_type_id' => $floorDetail['occupancyType'],
-                    'builtup_area' => $floorDetail['buildupArea'],
-                    'date_from' => $floorDetail['dateFrom'],
-                    'date_to' => $floorDetail['dateUpto'],
-                    'carpet_area' => $carpetArea,
-                    'user_id' => $userId,
-                    'ulb_id' => $ulbId
-                ];
-                $verificationDtl->store($floorReq);
+                    $floorReq = [
+                        'verification_id' => $verificationId,
+                        'saf_id' => $req->safId,
+                        'saf_floor_id' => $floorDetail['floorId'] ?? null,
+                        'floor_mstr_id' => $floorDetail['floorNo'],
+                        'usage_type_id' => $floorDetail['useType'],
+                        'construction_type_id' => $floorDetail['constructionType'],
+                        'occupancy_type_id' => $floorDetail['occupancyType'],
+                        'builtup_area' => $floorDetail['buildupArea'],
+                        'date_from' => $floorDetail['dateFrom'],
+                        'date_to' => $floorDetail['dateUpto'],
+                        'carpet_area' => $carpetArea,
+                        'user_id' => $userId,
+                        'ulb_id' => $ulbId
+                    ];
+                    $verificationDtl->store($floorReq);
+                }
             }
 
             DB::commit();
