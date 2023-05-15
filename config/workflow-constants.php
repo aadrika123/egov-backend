@@ -28,15 +28,15 @@ return [
 
     // workflow master
     "WATER_MASTER_ID"                   => "3",
-    "TRADE_MASTER_ID"                   => "19",
-    "TRADE_NOTICE_ID"                   => "120",
+    "TRADE_MASTER_ID"                   => "16",
+    "TRADE_NOTICE_ID"                   => "17",
     "WATER_WORKFLOW_ID"                 => "16",
     "DEALING_ASSISTENT_WF_ID"           => "6",
     "WATER_JE_ROLE_ID"                  => "40",
-    "GENERAL_NOTICE_MASTER_ID"          => "634",
+    "GENERAL_NOTICE_MASTER_ID"          => "27",
     "DENIAL_NOTICE_MASTER_ID"          => "28",
-    "PAYMENT_NOTICE_MASTER_ID"          => "635",
-    "ILLEGAL_OCCUPATION_NOTICE_MASTER_ID" => "636",
+    "PAYMENT_NOTICE_MASTER_ID"          => "29",
+    "ILLEGAL_OCCUPATION_NOTICE_MASTER_ID" => "30",
 
     // User Types
     "USER_TYPES" => [

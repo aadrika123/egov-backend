@@ -62,6 +62,7 @@ class TradeApplication extends Controller
 
     public function __construct(ITrade $TradeRepository)
     {
+        DB::enableQueryLog();
         $this->_REPOSITORY = $TradeRepository;
         $this->_MODEL_WARD = new ModelWard();
         $this->_COMMON_FUNCTION = new CommonFunction();
@@ -393,7 +394,6 @@ class TradeApplication extends Controller
             DB::rollBack();
             return responseMsgs(false, $e->getMessage(), "", "tc7.1", "1.0", "", "POST", $request->deviceId ?? "");
         }
-        // return $this->_REPOSITORY->documentVirify($request);
     }
     # Serial No : 08 
     public function getLicenceDtl(Request $request)
@@ -439,6 +439,60 @@ class TradeApplication extends Controller
             return responseMsg(false, $validator->errors(), $request->all());
         }
         return $this->_REPOSITORY->readApplication($request);
+    }
+    public function workflowDashordDetails(Request $request)
+    {
+        try{
+            
+            $track = new WorkflowTrack();
+            $mWfWorkflow = new WfWorkflow();
+            $tradC = new Trade();
+            $refUser = Auth()->user();
+            $refUserId = $refUser->id;
+            $refUlbId = $refUser->ulb_id;
+            $refWorkflowId      = $this->_WF_MASTER_Id;
+            $userRole = $this->_COMMON_FUNCTION->getUserRoll($refUserId,$refUlbId,$refWorkflowId);
+            $wfAllRoles         = $this->_COMMON_FUNCTION->getWorkFlowAllRoles($refUserId,$refUlbId,$refWorkflowId,true);
+            $workflow           = $mWfWorkflow->getulbWorkflowId($refWorkflowId, $refUlbId);
+            if(!$userRole)
+            {
+                throw new Exception("Access Denied! No Role");
+                
+            }
+            $canView = true;
+            if (((!$userRole->forward_role_id??false) && !$userRole->backward_role_id)) 
+            {
+                $canView = false;
+            }
+            
+            $metaRequest = new Request([
+                'workflowId'    => $workflow->id,
+                'ulbId'         => $refUlbId,
+                'moduleId'      => $this->_MODULE_ID
+            ]);
+            $dateWiseData = $track->getWfDashbordData($metaRequest)->get();
+            $inboxData = $this->_REPOSITORY->inbox($request);
+            $returnData = [
+                'canView'               => $canView ,
+                'userDetails'           => $refUser,
+                'roleId'                => $userRole->role_id,
+                'roleName'              => $userRole->role_name,
+                "shortRole"             => ($this->_TRADE_CONSTAINT['USER-TYPE-SHORT-NAME'][strtoupper($userRole->role_name)])??"N/A",
+                'todayForwardCount'     => collect($dateWiseData)->where('sender_role_id', $userRole->role_idd)->count(),
+                'todayReceivedCount'    => collect($dateWiseData)->where('receiver_role_id', $userRole->role_id)->count(),
+                'pendingApplication'    => $inboxData->original['data']->count()??0,
+                'newLicense'            => $inboxData->original['data']->where("application_type_id",1)->count()??0,
+                'renewalLicense'        => $inboxData->original['data']->where("application_type_id",2)->count()??0,
+                'amendmentLicense'      => $inboxData->original['data']->where("application_type_id",3)->count()??0,
+                'surenderLicense'       => $inboxData->original['data']->where("application_type_id",4)->count()??0
+            ];
+
+            return responseMsgs(true, "", remove_null($returnData), "", "01", ".ms", "POST", $request->deviceId);
+        } 
+        catch (Exception $e) 
+        {
+            return responseMsgs(false, $e->getMessage(), "", "01", ".ms", "POST", "");
+        }
     }
     # Serial No : 15
     public function postEscalate(Request $request)

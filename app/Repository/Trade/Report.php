@@ -1027,7 +1027,8 @@ class Report implements IReport
             $refUser        = Auth()->user();
             $refUserId      = $refUser->id;
             $ulbId          = $refUser->ulb_id;
-
+            $refWorkflowId      = $this->_WF_MASTER_Id;
+            $mUserType          = $this->_COMMON_FUNCTION->userType($refWorkflowId);
             $data = (array) null;
             $wardId = null;
 
@@ -1055,7 +1056,7 @@ class Report implements IReport
             $toDay = $now->format('Y-m-d');
 
             $yearlly = TradeTransaction::select(DB::RAW("
-                                SUM(COALESCE(trade_transactions.paid_amount,0)) as amount,
+                                CASE WHEN SUM(COALESCE(trade_transactions.paid_amount,0)) IS NOT NULL THEN SUM(COALESCE(trade_transactions.paid_amount,0)) ELSE 0 END  as amount,
                                 COUNT(DISTINCT(trade_transactions.temp_id)) AS total_application,
                                 COUNT(DISTINCT(trade_transactions.id)) AS total_transection
                                 "))
@@ -1063,7 +1064,7 @@ class Report implements IReport
                             ->WHEREIN("trade_transactions.status",[1,2]);
 
             $monthlly = TradeTransaction::select(DB::RAW("
-                            SUM(COALESCE(trade_transactions.paid_amount,0)) as amount,
+                            CASE WHEN SUM(COALESCE(trade_transactions.paid_amount,0)) IS NOT NULL THEN SUM(COALESCE(trade_transactions.paid_amount,0)) ELSE 0 END  as amount,
                             COUNT(DISTINCT(trade_transactions.temp_id)) AS total_application,
                             COUNT(DISTINCT(trade_transactions.id)) AS total_transection
                             "))
@@ -1071,7 +1072,7 @@ class Report implements IReport
                         ->WHEREIN("trade_transactions.status",[1,2]);
 
             $weeklly = TradeTransaction::select(DB::RAW("
-                            SUM(COALESCE(trade_transactions.paid_amount,0)) as amount,
+                            CASE WHEN SUM(COALESCE(trade_transactions.paid_amount,0)) IS NOT NULL THEN SUM(COALESCE(trade_transactions.paid_amount,0)) ELSE 0 END  as amount,
                             COUNT(DISTINCT(trade_transactions.temp_id)) AS total_application,
                             COUNT(DISTINCT(trade_transactions.id)) AS total_transection
                             "))
@@ -1079,7 +1080,7 @@ class Report implements IReport
                         ->WHEREIN("trade_transactions.status",[1,2]);
 
             $daylly = TradeTransaction::select(DB::RAW("
-                            SUM(COALESCE(trade_transactions.paid_amount,0)) as amount,
+                            CASE WHEN SUM(COALESCE(trade_transactions.paid_amount,0)) IS NOT NULL THEN SUM(COALESCE(trade_transactions.paid_amount,0)) ELSE 0 END  as amount,
                             COUNT(DISTINCT(trade_transactions.temp_id)) AS total_application,
                             COUNT(DISTINCT(trade_transactions.id)) AS total_transection
                             "))
@@ -1097,6 +1098,18 @@ class Report implements IReport
                 $monthlly = $monthlly->WHERE('trade_transactions.ward_id',$wardId);
                 $weeklly = $weeklly->WHERE('trade_transactions.ward_id',$wardId);
                 $daylly = $daylly->WHERE('trade_transactions.ward_id',$wardId);
+            }
+
+            if(in_array(strtoupper($mUserType),["JSK","TC"]))
+            {
+                $yearlly = $yearlly->WHERE('trade_transactions.emp_dtl_id',$refUserId)
+                            ->WHERENOTIN(DB::RAW('UPPER(trade_transactions.payment_mode)'),['ONLINE','ONL']);
+                $monthlly = $monthlly->WHERE('trade_transactions.emp_dtl_id',$refUserId)
+                            ->WHERENOTIN(DB::RAW('UPPER(trade_transactions.payment_mode)'),['ONLINE','ONL']);
+                $weeklly = $weeklly->WHERE('trade_transactions.emp_dtl_id',$refUserId)
+                            ->WHERENOTIN(DB::RAW('UPPER(trade_transactions.payment_mode)'),['ONLINE','ONL']);
+                $daylly = $daylly->WHERE('trade_transactions.emp_dtl_id',$refUserId)
+                            ->WHERENOTIN(DB::RAW('UPPER(trade_transactions.payment_mode)'),['ONLINE','ONL']);
             }
 
             $yearlly = $yearlly->get();
