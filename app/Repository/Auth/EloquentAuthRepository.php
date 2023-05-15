@@ -158,6 +158,9 @@ class EloquentAuthRepository implements AuthRepository
                     $this->redisStore($redis, $emailInfo, $request, $token);   // Trait for update Redis
 
                     Redis::expire('user:' . $emailInfo->id, 18000);         // EXPIRE KEY AFTER 5 HOURS
+                    $key = 'last_activity_' . $emailInfo->id;               // Set last activity key 
+                    Redis::set($key, time());
+
                     $message = $this->tResponseSuccess($token, $email, $request);     // Response Message Using Trait
                     return response()->json($message, 200);
                 }
@@ -184,6 +187,8 @@ class EloquentAuthRepository implements AuthRepository
                     $this->redisStore($redis, $emailInfo, $request, $token);   // Trait for update Redis
 
                     Redis::expire('user:' . $emailInfo->id, 18000);     //EXPIRE KEY IN AFTER 5 HOURS
+                    $key = 'last_activity_' . $emailInfo->id;               // Set last activity key 
+                    Redis::set($key, time());
                     $message = $this->tResponseSuccess($token, $email, $request);           // Response Message Using Trait
                     return response()->json($message, 200);
                 } else {
@@ -219,8 +224,7 @@ class EloquentAuthRepository implements AuthRepository
             $user->tokens()->delete();
 
             Redis::connection();
-            $redis = Redis::del('user:' . $id);     //Deleting Key from Redis Database
-            $redis = Redis::del('workflow_candidate:' . $id);     //Deleting Workflow_candidate from Redis Database
+            $redis = Redis::del(['user:' . $id, 'workflow_candidate:' . $id]);                              // Deleting Key from Redis Database  Deleting Workflow_candidate from Redis Database
 
             if ($redis) {
                 return response()->json(['Token' => $user->remember_token ?? '', 'status' => $redis], 200);

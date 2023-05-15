@@ -5,6 +5,7 @@ namespace App\Http\Controllers\property;
 use App\EloquentClass\Property\SafCalculation;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Property\reqApplySaf;
+use App\Models\Property\RefPropOccupancyFactor;
 use Illuminate\Http\Request;
 use App\Repository\Property\Interfaces\iCalculatorRepository;
 use Exception;
@@ -13,8 +14,13 @@ use Illuminate\Support\Facades\Config;
 class CalculatorController extends Controller
 {
     protected $Repository;
+    private $_reqs;
+    private $_occupancyFactors;
+    private $_roadTypes;
+
     public function __construct(iCalculatorRepository $iCalculatorRepository)
     {
+        $this->_roadTypes = Config::get('PropertyConstaint.ROAD_TYPES');
         $this->Repository = $iCalculatorRepository;
     }
 
@@ -34,7 +40,11 @@ class CalculatorController extends Controller
     public function reviewCalculation(reqApplySaf $req)
     {
         try {
+            $this->_reqs = $req;
             $calculation = new SafCalculation;
+            $refPropOccupancyFactor = new RefPropOccupancyFactor();
+
+            $this->_occupancyFactors = $refPropOccupancyFactor->getOccupancyFactors();
             if ($req->propertyType != 4) {
                 $floors = collect($req->floor);
                 $floors = $floors->map(function ($item, $key) {
@@ -92,12 +102,25 @@ class CalculatorController extends Controller
 
             $totalTaxDetails = collect($response->original['data']['details']);
             $ruleSetCollections = collect($finalTaxReview)->groupBy(['ruleSet']);
-            $reviewCalculation = collect($ruleSetCollections)->map(function ($collection) use ($totalTaxDetails) {
-                return collect($collection)->pipe(function ($collect) use ($totalTaxDetails) {
+            $reviewCalculation = collect($ruleSetCollections)->map(function ($collection) use ($totalTaxDetails, $calculation) {
+                return collect($collection)->pipe(function ($collect) use ($totalTaxDetails, $calculation) {
                     $quaters['floors'] = $collect;
                     $ruleSetWiseCollection = $totalTaxDetails
                         ->where('ruleSet', $collect->first()['ruleSet'])
                         ->values();
+
+                    if ($collect->first()['ruleSet'] == 'RuleSet1' && $this->_reqs->propertyType != 4)              // If Property Type is Building
+                        $quaters['rentalRates'] = $this->generateRentalValues($calculation->_rentalValue);
+
+                    if ($collect->first()['ruleSet'] == 'RuleSet2' && $this->_reqs->propertyType != 4) {
+                        $quaters['multiFactors'] = $this->generateMultiFactors($calculation->_multiFactors)->where('effective_date', '2016-04-01')->values();
+                        $quaters['occupancyFactors'] = $this->_occupancyFactors;
+                        $quaters['rentalRate'] = $this->generateRentalRates(collect($calculation->_rentalRates)->where('effective_date', '2016-04-01'));
+                    }
+
+                    if ($collect->first()['ruleSet'] == 'RuleSet3' && $this->_reqs->propertyType != 4)
+                        $quaters['multiFactors'] = $this->generateMultiFactors($calculation->_multiFactors)->where('effective_date', '2022-04-01')->values();
+
                     $groupByTotalTax = $ruleSetWiseCollection->groupBy('totalTax');
                     $quaterlyTaxes = collect();
                     $i = 1;
@@ -142,6 +165,43 @@ class CalculatorController extends Controller
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
+    }
+
+
+    /**
+     * | Renta Rate Generation
+     */
+    public function generateRentalValues($rentalRates)
+    {
+        foreach ($rentalRates as $rentalRate) {
+            $rentalRate->usage_type = ($rentalRate->usage_types_id == 1) ? 'RESIDENTIAL' : 'COMMERCIAL';
+            $rentalRate->construction_type = Config::get('PropertyConstaint.CONSTRUCTION-TYPE.' . $rentalRate->construction_types_id);
+        }
+        return collect($rentalRates)->groupBy(['usage_type', 'construction_type']);
+    }
+
+    /**
+     * | Generate Multi Factors
+     */
+    public function generateMultiFactors($multiFactors)
+    {
+        foreach ($multiFactors as $multiFactor) {
+            $usageTypeId = $multiFactor->usage_type_id;
+            $multiFactor->usage_type = Config::get("PropertyConstaint.USAGE-TYPE.$usageTypeId.TYPE");
+        }
+        return collect($multiFactors)->where('usage_type', '!=', null)->values();
+    }
+
+    /**
+     * | Generate Rental Rates
+     */
+    public function generateRentalRates($rentalRates)
+    {
+        foreach ($rentalRates as $rentalRate) {
+            $rentalRate->road_type = $this->_roadTypes[$rentalRate->prop_road_type_id];
+            $rentalRate->construction_type = Config::get('PropertyConstaint.CONSTRUCTION-TYPE.' . $rentalRate->construction_types_id);
+        }
+        return collect($rentalRates)->groupBy(['construction_type', 'road_type']);
     }
 
     public function dashboardDate(Request $request)

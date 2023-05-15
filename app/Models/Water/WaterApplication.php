@@ -256,6 +256,7 @@ class WaterApplication extends Model
     public function finalApproval($request, $consumerNo, $refJe)
     {
         # object creation
+        $mWaterApprovalApplicationDetail = new WaterApprovalApplicationDetail();
         $mWaterSiteInspection = new WaterSiteInspection();
         $mWaterConsumer = new WaterConsumer();
         $waterTrack = new WorkflowTrack();
@@ -264,11 +265,11 @@ class WaterApplication extends Model
         $approvedWater = WaterApplication::query()
             ->where('id', $request->applicationId)
             ->first();
-        $checkExist = WaterApprovalApplicationDetail::where('id', $approvedWater->id)->first();
+        $checkExist = $mWaterApprovalApplicationDetail->getApproveApplication($approvedWater->id);
         if ($checkExist) {
             throw new Exception("Access Denied ! Consumer Already Exist!");
         }
-        $checkconsumer = WaterConsumer::where('id', $approvedWater->id)->first();
+        $checkconsumer = $mWaterConsumer->getConsumerByAppId($approvedWater->id);
         if ($checkconsumer) {
             throw new Exception("Access Denied ! Consumer Already Exist!");
         }
@@ -300,7 +301,7 @@ class WaterApplication extends Model
 
         # dend record in the track table 
         $metaReqs = [
-            'moduleId'          =>  Config::get("module-constants.WATER_MODULE_ID"),
+            'moduleId'          => Config::get("module-constants.WATER_MODULE_ID"),
             'workflowId'        => $approvedWater->workflow_id,
             'refTableDotId'     => 'water_applications.id',
             'refTableIdValue'   => $approvedWater->id,
@@ -433,7 +434,7 @@ class WaterApplication extends Model
                 WaterApplication::where('id', $applicationId)
                     ->update([
                         'payment_status' => 0,
-                        'is_field_verified' => true
+                        // 'is_field_verified' => true
                     ]);
                 break;
 
@@ -441,7 +442,7 @@ class WaterApplication extends Model
                 WaterApplication::where('id', $applicationId)
                     ->update([
                         'payment_status' => 1,
-                        'is_field_verified' => true
+                        // 'is_field_verified' => true
                     ]);
                 break;
         }
@@ -516,11 +517,11 @@ class WaterApplication extends Model
     /**
      * | update the current role in case of online citizen apply
      */
-    public function updateCurrentRoleForDa($applicationId, $waterRoles)
+    public function updateCurrentRoleForDa($applicationId, $waterRole)
     {
         WaterApplication::where('id', $applicationId)
             ->update([
-                'current_role' => $waterRoles['DA']
+                'current_role' => $waterRole
             ]);
     }
 

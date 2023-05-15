@@ -170,6 +170,8 @@ class CitizenController extends Controller
                     $citizenInfo->remember_token = $token;
                     $citizenInfo->save();
                     $userDetails['token'] = $token;
+                    $key = 'last_activity_citizen_' . $citizenInfo->id;               // Set last activity key 
+                    Redis::set($key, time());
                     return responseMsgs(true, 'You r logged in now', $userDetails, '', "1.0", "494ms", "POST", "");
                 } else {
                     $msg = "Incorrect Password";

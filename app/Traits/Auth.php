@@ -255,7 +255,7 @@ trait Auth
             )
             ->first();
 
-        $collection['userName'] = $userInfo->name;
+        $collection['userName'] = $userInfo->name ?? null;
         $collection['userType'] = $userInfo->userType;
         $collection['ulbId'] = $userInfo->ulbId;
         $userId = $userInfo->id;

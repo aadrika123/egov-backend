@@ -298,7 +298,7 @@ return [
     "ASSESSMENT-TYPE" =>
     [
         "1" => "New Assessment",
-        "2" => "Re Assessment",
+        "2" => "Reassessment",
         "3" => "Mutation",
         "4" => "Bifurcation",
         "5" => "Amalgamation"
@@ -535,4 +535,12 @@ return [
         "specialRebate" => "Special Rebate",
         "firstQtrRebate" => "First Qtr Rebate",
     ],
+
+    // Road Types
+    "ROAD_TYPES" => [
+        "1" => "Principal Main Road",
+        "2" => "Main Road",
+        "3" => "Other",
+        "4" => "No Road"
+    ]
 ];

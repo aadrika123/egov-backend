@@ -416,6 +416,11 @@ class WaterNewConnection implements IWaterNewConnection
                 $application->update();
             }
             /////////////////////////////////////////
+            if ($RazorPayRequest->payment_from == "Site Inspection") {
+                $mWaterSiteInspection = new WaterSiteInspection();
+                $mWaterSiteInspection->saveSitePaymentStatus($applicationId);
+            }
+
             DB::commit();
             #----------End transaction------------------------
             #----------Response------------------------------

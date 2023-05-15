@@ -47,6 +47,7 @@ use App\Repository\Water\Concrete\NewConnectionRepository;
 use App\Repository\Water\Concrete\WaterNewConnection;
 use Illuminate\Http\Request;
 use App\Repository\Water\Interfaces\iNewConnection;
+use App\Traits\Property\SAF;
 use App\Traits\Ward;
 use App\Traits\Water\WaterTrait;
 use App\Traits\Workflow\Workflow;
@@ -59,6 +60,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Unique;
 use Ramsey\Collection\Collection as CollectionCollection;
+use SebastianBergmann\Type\VoidType;
 use Symfony\Contracts\Service\Attribute\Required;
 
 class NewConnectionController extends Controller
@@ -66,11 +68,13 @@ class NewConnectionController extends Controller
     use Ward;
     use Workflow;
     use WaterTrait;
+    use SAF;
 
     private iNewConnection $newConnection;
     private $_dealingAssistent;
     private $_waterRoles;
     protected $_commonFunction;
+    private $_waterModulId;
 
     public function __construct(iNewConnection $newConnection)
     {
@@ -78,6 +82,7 @@ class NewConnectionController extends Controller
         $this->newConnection = $newConnection;
         $this->_dealingAssistent = Config::get('workflow-constants.DEALING_ASSISTENT_WF_ID');
         $this->_waterRoles = Config::get('waterConstaint.ROLE-LABEL');
+        $this->_waterModulId = Config::get('module-constants.WATER_MODULE_ID');
     }
     /**
      * Display a listing of the resource.
@@ -171,11 +176,31 @@ class NewConnectionController extends Controller
      * | Repositiory Call
         | Serial No :
         | Working
+        | Remove the repository
      */
     public function waterInbox()
     {
         try {
-            return $this->newConnection->waterInbox();
+            // return $this->newConnection->waterInbox();                       // repoRemove
+            $user = authUser();
+            $userId = $user->id;
+            $ulbId = $user->ulb_id;
+            $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
+
+            $occupiedWards = $this->getWardByUserId($userId)->pluck('ward_id');
+
+            $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
+            $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
+
+            $waterList = $this->getWaterApplicatioList($workflowIds, $ulbId)
+                ->whereIn('water_applications.current_role', $roleId)
+                ->whereIn('water_applications.ward_id', $occupiedWards)
+                ->where('water_applications.is_escalate', false)
+                ->where('water_applications.parked', false)
+                ->orderByDesc('water_applications.id')
+                ->get();
+            $filterWaterList = collect($waterList)->unique('id')->values();
+            return responseMsgs(true, "Inbox List Details!", remove_null($filterWaterList), '', '02', '', 'Post', '');
         } catch (Exception $error) {
             return responseMsg(false, $error->getMessage(), "");
         }
@@ -187,11 +212,37 @@ class NewConnectionController extends Controller
      * | Reposotory Call
         | Serial No :
         | Working
+        | Remove repo
      */
     public function waterOutbox()
     {
         try {
-            return $this->newConnection->waterOutbox();
+            // return $this->newConnection->waterOutbox();                              // repoRemove
+            $mWfWardUser = new WfWardUser();
+            $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
+            $user = authUser();
+            $userId = $user->id;
+            $ulbId = $user->ulb_id;
+
+            $workflowRoles = $this->getRoleIdByUserId($userId);
+            $roleId = $workflowRoles->map(function ($value) {                         // Get user Workflow Roles
+                return $value->wf_role_id;
+            });
+
+            $refWard = $mWfWardUser->getWardsByUserId($userId);
+            $wardId = $refWard->map(function ($value) {
+                return $value->ward_id;
+            });
+
+            $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
+
+            $waterList = $this->getWaterApplicatioList($workflowIds, $ulbId)
+                ->whereNotIn('water_applications.current_role', $roleId)
+                ->whereIn('water_applications.ward_id', $wardId)
+                ->orderByDesc('water_applications.id')
+                ->get();
+            $filterWaterList = collect($waterList)->unique('id')->values();
+            return responseMsgs(true, "Outbox List", remove_null($filterWaterList), '', '01', '.ms', 'Post', '');
         } catch (Exception $error) {
             return responseMsg(false, $error->getMessage(), "");
         }
@@ -249,10 +300,33 @@ class NewConnectionController extends Controller
     }
 
     // Water Special Inbox
+    /**
+        | Remove repo
+     */
     public function waterSpecialInbox(Request $request)
     {
         try {
-            return $this->newConnection->waterSpecialInbox($request);
+            // return $this->newConnection->waterSpecialInbox($request);                    // repoRemove
+            $mWfWardUser = new WfWardUser();
+            $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
+            $userId = authUser()->id;
+            $ulbId = authUser()->ulb_id;
+
+            $occupiedWard = $mWfWardUser->getWardsByUserId($userId);                        // Get All Occupied Ward By user id using trait
+            $wardId = $occupiedWard->map(function ($item, $key) {                           // Filter All ward_id in an array using laravel collections
+                return $item->ward_id;
+            });
+
+            $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
+            $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
+
+            $waterData = $this->getWaterApplicatioList($workflowIds, $ulbId)                              // Repository function to get SAF Details
+                ->where('water_applications.is_escalate', 1)
+                ->whereIn('water_applications.ward_id', $wardId)
+                ->orderByDesc('water_applications.id')
+                ->get();
+            $filterWaterList = collect($waterData)->unique('id')->values();
+            return responseMsgs(true, "Data Fetched", remove_null($filterWaterList), "010107", "1.0", "251ms", "POST", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -261,15 +335,15 @@ class NewConnectionController extends Controller
     // Post Next Level
     public function postNextLevel(Request $request)
     {
+        $wfLevels = Config::get('waterConstaint.ROLE-LABEL');
+        $request->validate([
+            'applicationId'     => 'required',
+            'senderRoleId'      => 'required',
+            'receiverRoleId'    => 'required',
+            'action'            => 'required|In:forward,backward',
+            'comment'           => $request->senderRoleId == $wfLevels['BO'] ? 'nullable' : 'required',
+        ]);
         try {
-            $wfLevels = Config::get('waterConstaint.ROLE-LABEL');
-            $request->validate([
-                'applicationId'     => 'required',
-                'senderRoleId'      => 'required',
-                'receiverRoleId'    => 'required',
-                'action'            => 'required|In:forward,backward',
-                'comment'           => $request->senderRoleId == $wfLevels['BO'] ? 'nullable' : 'required',
-            ]);
             return $this->newConnection->postNextLevel($request);
         } catch (Exception $error) {
             DB::rollBack();
@@ -280,10 +354,10 @@ class NewConnectionController extends Controller
     // Water Application details for the view in workflow
     public function getApplicationsDetails(Request $request)
     {
+        $request->validate([
+            'applicationId' => 'required'
+        ]);
         try {
-            $request->validate([
-                'applicationId' => 'required'
-            ]);
             return $this->newConnection->getApplicationsDetails($request);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
@@ -291,14 +365,24 @@ class NewConnectionController extends Controller
     }
 
     // Application's Post Escalated
+    /**
+        | Remove repo 
+     */
     public function postEscalate(Request $request)
     {
+        $request->validate([
+            "escalateStatus" => "required|int",
+            "applicationId" => "required|int",
+        ]);
         try {
-            $request->validate([
-                "escalateStatus" => "required|int",
-                "applicationId" => "required|int",
-            ]);
-            return $this->newConnection->postEscalate($request);
+            // return $this->newConnection->postEscalate($request);                             // repoRemove
+            $userId = authUser()->id;
+            $applicationId = $request->applicationId;
+            $applicationsData = WaterApplication::find($applicationId);
+            $applicationsData->is_escalate = $request->escalateStatus;
+            $applicationsData->escalate_by = $userId;
+            $applicationsData->save();
+            return responseMsgs(true, $request->escalateStatus == 1 ? 'Water is Escalated' : "Water is removed from Escalated", '', "", "1.0", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -343,17 +427,60 @@ class NewConnectionController extends Controller
     }
 
     // Indipendent Comment on the Water Applications
+    /**
+        | Remove repo 
+        | Recheck
+     */
     public function commentIndependent(Request $request)
     {
+        $request->validate([
+            'comment'       => 'required',
+            'applicationId' => 'required',
+            'senderRoleId'  => 'nullable|integer'
+        ]);
         try {
-            $request->validate([
-                'comment' => 'required',
-                'applicationId' => 'required',
-                'senderRoleId' => 'nullable|integer'
-            ]);
+            // return $this->newConnection->commentIndependent($request);
+            $metaReqs       = array();
+            $user           = authUser();
+            $userType       = $user->user_type;
+            $userId         = $user->id;
+            $workflowTrack  = new WorkflowTrack();
+            $mWfRoleUsermap = new WfRoleusermap();
+            $mModuleId      = $this->_waterModulId;
+
+            $applicationId = WaterApplication::find($request->applicationId);
+            if (!$applicationId) {
+                throw new Exception("Application Don't Exist!");
+            }
+
+            # Save On Workflow Track
+            $metaReqs = [
+                'workflowId'        => $applicationId->workflow_id,
+                'moduleId'          => $mModuleId,
+                'refTableDotId'     => "water_applications.id",                                     // Static
+                'refTableIdValue'   => $applicationId->id,
+                'message'           => $request->comment
+            ];
             DB::beginTransaction();
-            return $this->newConnection->commentIndependent($request);
+            if ($userType != 'Citizen') {                                                           // Static
+                $roleReqs = new Request([
+                    'workflowId' => $applicationId->workflow_id,
+                    'userId' => $userId,
+                ]);
+                $wfRoleId = $mWfRoleUsermap->getRoleByUserWfId($roleReqs);
+                $metaReqs = array_merge($metaReqs, ['senderRoleId' => $wfRoleId->wf_role_id]);
+                $metaReqs = array_merge($metaReqs, ['user_id' => $userId]);
+            }
+            # For Citizen Independent Comment
+            if ($userType == 'Citizen') {                                                           // Static
+                $metaReqs = array_merge($metaReqs, ['citizenId' => $userId]);
+                $metaReqs = array_merge($metaReqs, ['ulb_id' => $applicationId->ulb_id]);
+                $metaReqs = array_merge($metaReqs, ['user_id' => NULL]);
+            }
+            $request->request->add($metaReqs);
+            $workflowTrack->saveTrack($request);
             DB::commit();
+            return responseMsgs(true, "You Have Commented Successfully!!", ['Comment' => $request->comment], "010108", "1.0", "427ms", "POST", "");
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
@@ -418,10 +545,33 @@ class NewConnectionController extends Controller
     }
 
     // Get the Field fieldVerifiedInbox // recheck
+    /**
+        | Remove repo
+     */
     public function fieldVerifiedInbox(Request $request)
     {
         try {
-            return $this->newConnection->fieldVerifiedInbox($request);
+            // return $this->newConnection->fieldVerifiedInbox($request);
+            $mWfWardUser            = new WfWardUser();
+            $mWfWorkflowRoleMaps    = new WfWorkflowrolemap();
+            $userId                 = auth()->user()->id;
+            $ulbId                  = auth()->user()->ulb_id;
+
+            $refWard = $mWfWardUser->getWardsByUserId($userId);
+            $wardId = $refWard->map(function ($value) {
+                return $value->ward_id;
+            });
+
+            $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
+            $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
+
+            $waterList = $this->getWaterApplicatioList($workflowIds, $ulbId)
+                ->whereIn('water_applications.ward_id', $wardId)
+                ->where('is_field_verified', true)
+                ->orderByDesc('water_applications.id')
+                ->get();
+
+            return responseMsgs(true, "field Verified Inbox", remove_null($waterList), 010125, 1.0, "", "POST", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -437,30 +587,38 @@ class NewConnectionController extends Controller
     {
         $req->validate([
             'applicationId' => 'required|integer',
-            'comment' => 'required|string'
+            'comment'       => 'required|string'
         ]);
 
         try {
-            $user = authUser();
-            $mWaterApplication = WaterApplication::findOrFail($req->applicationId);
-            $WorkflowTrack = new WorkflowTrack();
-            $refWorkflowId = Config::get("workflow-constants.WATER_MASTER_ID");
+            $user               = authUser();
+            $WorkflowTrack      = new WorkflowTrack();
+            $refWorkflowId      = Config::get("workflow-constants.WATER_MASTER_ID");
+            $refApplyFrom       = config::get("waterConstaint.APP_APPLY_FROM");
+            $mWaterApplication  = WaterApplication::findOrFail($req->applicationId);
 
             $role = $this->_commonFunction->getUserRoll($user->id, $mWaterApplication->ulb_id, $refWorkflowId);
             $this->btcParamcheck($role, $mWaterApplication);
 
             DB::beginTransaction();
-            // $initiatorRoleId = $mWaterApplication->initiator_role_id;
-            // $mWaterApplication->current_role = $initiatorRoleId;
-            $mWaterApplication->parked = true;                          //  Pending Status true
-            $mWaterApplication->doc_upload_status = false;              //  Docupload Status false
-            $mWaterApplication->save();
+            # if application is not applied by citizen 
+            if ($mWaterApplication->apply_from != $refApplyFrom['1']) {
+                $mWaterApplication->current_role = $mWaterApplication->initiator_role_id;
+                $mWaterApplication->parked = true;                          //  Pending Status true
+                $mWaterApplication->doc_upload_status = false;              //  Docupload Status false
+                $mWaterApplication->save();
+            }
+            # if citizen applied 
+            else {
+                $mWaterApplication->parked = true;                          //  Pending Status true
+                $mWaterApplication->doc_upload_status = false;              //  Docupload Status false
+            }
 
-            $metaReqs['moduleId'] = Config::get('module-constants.WATER_MODULE_ID');
-            $metaReqs['workflowId'] = $mWaterApplication->workflow_id;
-            $metaReqs['refTableDotId'] = 'water_applications.id';
-            $metaReqs['refTableIdValue'] = $req->applicationId;
-            $metaReqs['senderRoleId'] = $role->role_id;
+            $metaReqs['moduleId']           = Config::get('module-constants.WATER_MODULE_ID');
+            $metaReqs['workflowId']         = $mWaterApplication->workflow_id;
+            $metaReqs['refTableDotId']      = 'water_applications.id';
+            $metaReqs['refTableIdValue']    = $req->applicationId;
+            $metaReqs['senderRoleId']       = $role->role_id;
             $req->request->add($metaReqs);
             $WorkflowTrack->saveTrack($req);
 
@@ -498,35 +656,53 @@ class NewConnectionController extends Controller
             'applicationId' => 'required|integer'
         ]);
         try {
-            $userId = auth()->user()->id;
-            $mWaterApplication = new WaterApplication();
-            $mWaterApplicant = new WaterApplicant();
-            $mWaterConnectionCharge = new WaterConnectionCharge();
-            $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
+            $user                       = authUser();
+            $userId                     = $user->id;
+            $mWaterApplication          = new WaterApplication();
+            $mWaterApplicant            = new WaterApplicant();
+            $mWaterConnectionCharge     = new WaterConnectionCharge();
+            $mWaterPenaltyInstallment   = new WaterPenaltyInstallment();
 
             $applicantDetals = $mWaterApplication->getWaterApplicationsDetails($req->applicationId);
+            $this->checkParamsForApplicationDelete($applicantDetals, $userId);
 
-            if (!$applicantDetals) {
-                throw new Exception("Relted Data or Owner not found!");
-            }
-            if ($applicantDetals->payment_status == 1) {
-                throw new Exception("Your paymnet is done application Cannot be Deleted!");
-            }
-            if ($applicantDetals->user_id == $userId) {
-                DB::beginTransaction();
-                $mWaterApplication->deleteWaterApplication($req->applicationId);
-                $mWaterApplicant->deleteWaterApplicant($req->applicationId);
-                $mWaterConnectionCharge->deleteWaterConnectionCharges($req->applicationId);
-                $mWaterPenaltyInstallment->deleteWaterPenelty($req->applicationId);
-                DB::commit();
-                return responseMsgs(true, "Application Successfully Deleted", "", "", "1.0", "", "POST", $req->deviceId);
-            }
-            throw new Exception("You'r not the user of this form!");
+            DB::beginTransaction();
+            $mWaterApplication->deleteWaterApplication($req->applicationId);
+            $mWaterApplicant->deleteWaterApplicant($req->applicationId);
+            $mWaterConnectionCharge->deleteWaterConnectionCharges($req->applicationId);
+            $mWaterPenaltyInstallment->deleteWaterPenelty($req->applicationId);
+            DB::commit();
+            return responseMsgs(true, "Application Successfully Deleted", "", "", "1.0", "", "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+
+    /**
+     * | Check the parameter for deleting Application 
+     * | @param applicationDetails
+     * | @param user
+     */
+    public function checkParamsForApplicationDelete($applicationDetails, $user)
+    {
+        $refUserType = Config::get("waterConstaint.REF_USER_TYPE");
+        if (!$applicationDetails) {
+            throw new Exception("Relted Data or Owner not found!");
+        }
+        if ($applicationDetails->payment_status == 1) {
+            throw new Exception("Your paymnet is done application Cannot be Deleted!");
+        }
+        if ($user->user_type != $refUserType["1"]) {
+            throw new Exception("You are not logedIn as Citizen!");
+        }
+        if ($applicationDetails->user_id != $user->id) {
+            throw new Exception("You'r not the user of this form!");
+        }
+    }
+
+
+
 
     // Edit the Water Application
     /**
@@ -536,23 +712,22 @@ class NewConnectionController extends Controller
     public function editWaterAppliction(Request $req)
     {
         $req->validate([
-            'applicatonId' => 'required|integer',
-            'owner' => 'nullable|array',
+            'applicatonId'  => 'required|integer',
+            'owner'         => 'nullable|array',
         ]);
 
         try {
-            $mWaterApplication = new WaterApplication();
-            $mWaterApplicant = new WaterApplicant();
-            $mWaterConnectionCharge = new WaterConnectionCharge();
-            $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
+            $mWaterApplication          = new WaterApplication();
+            $mWaterApplicant            = new WaterApplicant();
+            $mWaterConnectionCharge     = new WaterConnectionCharge();
+            $mWaterPenaltyInstallment   = new WaterPenaltyInstallment();
             $repNewConnectionRepository = new NewConnectionRepository();
-            $mwaterAudit = new waterAudit();
-            $levelRoles = Config::get('waterConstaint.ROLE-LABEL');
-            $refApplicationId =  $req->applicatonId;
+            $mwaterAudit                = new waterAudit();
+            $levelRoles                 = Config::get('waterConstaint.ROLE-LABEL');
+            $refApplicationId           = $req->applicatonId;
 
             $refWaterApplications = $mWaterApplication->getApplicationById($refApplicationId)->firstorFail();
             $this->checkEditParameters($req, $refWaterApplications);
-
 
             DB::beginTransaction();
             if ($refWaterApplications->current_role == $levelRoles['BO']) {
@@ -562,7 +737,7 @@ class NewConnectionController extends Controller
 
             $refConnectionCharges = $mWaterConnectionCharge->getWaterchargesById($refApplicationId)->firstOrFail();
             $Waterowner = $mWaterApplicant->getOwnerList($refApplicationId)->get();
-            $refWaterowner = collect($Waterowner)->map(function ($value, $key) {
+            $refWaterowner = collect($Waterowner)->map(function ($value) {
                 return $value['id'];
             });
             $penaltyInstallment = $mWaterPenaltyInstallment->getPenaltyByApplicationId($refApplicationId)->get();
@@ -574,6 +749,17 @@ class NewConnectionController extends Controller
             }
             $mwaterAudit->saveUpdatedDetailsId($refWaterApplications->id, $refWaterowner, $refConnectionCharges->id, $refPenaltyInstallment);
             $this->deactivateAndUpdateWater($refWaterApplications->id);
+            // $refRequest = new Request([
+            //     'connectionTypeId'      => $that,
+            //     'propertyTypeId'        => $that,
+            //     'ownerType'             => $that,
+            //     'wardId'                => $that,
+            //     'areaSqft'              => $that,
+            //     'pin'                   => $that,
+            //     'connection_through'    => $that,
+            //     'ulbId'                 => $that,
+            //     'owners'                => $that,
+            // ])
             $repNewConnectionRepository->store($req); // here<-----------------------
             DB::commit();
             return responseMsgs(true, "Successfully Updated the Data", "", 010124, 1.0, "308ms", "POST", $req->deviceId);
@@ -637,10 +823,10 @@ class NewConnectionController extends Controller
      */
     public function deactivateAndUpdateWater($refWaterApplicationId)
     {
-        $mWaterApplication = new WaterApplication();
-        $mWaterApplicant = new WaterApplicant();
-        $mWaterConnectionCharge = new WaterConnectionCharge();
-        $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
+        $mWaterApplication          = new WaterApplication();
+        $mWaterApplicant            = new WaterApplicant();
+        $mWaterConnectionCharge     = new WaterConnectionCharge();
+        $mWaterPenaltyInstallment   = new WaterPenaltyInstallment();
 
         $mWaterApplication->deactivateApplication($refWaterApplicationId);
         $mWaterApplicant->deactivateApplicant($refWaterApplicationId);
@@ -793,8 +979,8 @@ class NewConnectionController extends Controller
                     'applicationId' => $applicationId
                 ]);
                 $documentList = $this->getUploadDocuments($refReq);
-                $refVerifyStatus = collect($documentList)['original']['data'];
-                $refVerifyStatus = $refVerifyStatus->where('doc_category', '!=', $req->docCategory)->pluck('verify_status');
+                $DocList = collect($documentList)['original']['data'];
+                $refVerifyStatus = $DocList->where('doc_category', '!=', $req->docCategory)->pluck('verify_status');
                 if (!in_array(2, $refVerifyStatus->toArray())) {                                    // Static "2"
                     $status = false;
                     $mWaterApplication->updateParkedstatus($status, $applicationId);
@@ -887,13 +1073,38 @@ class NewConnectionController extends Controller
      */
     public function updateWaterStatus($req, $application)
     {
-        $mWaterApplication = new WaterApplication();
-        // $waterRoles = $this->_waterRoles;
+        $mWaterTran         = new WaterTran();
+        $mWaterApplication  = new WaterApplication();
+        $refApplyFrom       = Config::get("waterConstaint.APP_APPLY_FROM");
         $mWaterApplication->activateUploadStatus($req->applicationId);
-        # Auto forward to Bo 
-        // if ($application->payment_status == 1) {
-        //     $mWaterApplication->updateCurrentRoleForDa($req->applicationId, $waterRoles);
-        // }
+        # Auto forward to Da
+        if ($application->payment_status == 1) {
+            $waterTransaction = $mWaterTran->getTransNo($application->id, true)->first();
+            if (is_null($waterTransaction)) {
+                throw new Exception("Transaction Details not found!");
+            }
+            if ($application->apply_from == $refApplyFrom['1']) {
+                $this->autoForwardProcess($waterTransaction, $req, $application);
+            }
+        }
+    }
+
+
+    /**
+     * | Auto forward process 
+     * | 
+     */
+    public function autoForwardProcess($waterTransaction, $req, $application)
+    {
+        $waterRoles         = $this->_waterRoles;
+        $refChargeCatagory  = Config::get("waterConstaint.CHARGE_CATAGORY");
+        $mWaterApplication  = new WaterApplication();
+        if ($waterTransaction->tran_type == $refChargeCatagory['SITE_INSPECTON']) {
+            throw new Exception("Error there is different charge catagory in application!");
+        }
+        if ($application->current_role == null) {
+            $mWaterApplication->updateCurrentRoleForDa($req->applicationId, $waterRoles['DA']);
+        }
     }
 
 
@@ -1422,6 +1633,7 @@ class NewConnectionController extends Controller
                 'uploadedDoc' => $fullDocPath ?? "",
                 'verifyStatus' => $ownerPhoto->verify_status ?? ""
             ];
+            $ownerDocList['ownerDetails']['reqDocCount'] = $ownerDocList['documents']->count();
             $ownerDocList['ownerDetails']['uploadedDocCount'] = $ownerDocList['documents']->whereNotNull('uploadedDoc')->count();
             return $ownerDocList;
         }
@@ -1946,17 +2158,19 @@ class NewConnectionController extends Controller
      */
     public function cancelSiteInspection(Request $request)
     {
+        $request->validate([
+            'applicationId' => 'required',
+        ]);
         try {
-            $request->validate([
-                'applicationId' => 'required',
-            ]);
             $this->checkForSaveDateTime($request);
-            $mWaterSiteInspectionsScheduling = new WaterSiteInspectionsScheduling();
-            $mWaterConnectionCharge = new WaterConnectionCharge();
-            $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
-            $mWaterApplication = new WaterApplication();
-            $refSiteInspection = Config::get("waterConstaint.CHARGE_CATAGORY.SITE_INSPECTON");
-            $refApplicationId = $request->applicationId;
+            $this->checkforPaymentStatus($request);
+
+            $refApplicationId                   = $request->applicationId;
+            $mWaterSiteInspectionsScheduling    = new WaterSiteInspectionsScheduling();
+            $mWaterConnectionCharge             = new WaterConnectionCharge();
+            $mWaterPenaltyInstallment           = new WaterPenaltyInstallment();
+            $mWaterApplication                  = new WaterApplication();
+            $refSiteInspection                  = Config::get("waterConstaint.CHARGE_CATAGORY.SITE_INSPECTON");
 
             DB::beginTransaction();
             $mWaterSiteInspectionsScheduling->cancelInspectionDateTime($refApplicationId);
@@ -1970,6 +2184,24 @@ class NewConnectionController extends Controller
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", "");
         }
     }
+
+
+    /**
+     * | Check the param for cancel of site inspection date and corresponding data 
+     * | @param request
+        | Recheck
+     */
+    public function checkforPaymentStatus($request)
+    {
+        $applicationId  = $request->applicationId;
+        $mWaterTran     = new WaterTran();
+
+        $sitePayment = $mWaterTran->siteInspectionTransaction($applicationId)->first();
+        if ($sitePayment) {
+            throw new Exception("Payment for Site Inspction has done!");
+        }
+    }
+
 
     /**
      * | Save the site Inspection Date and Time 
@@ -2010,16 +2242,18 @@ class NewConnectionController extends Controller
      */
     public function checkForSaveDateTime($request)
     {
-        $mWfRoleUser = new WfRoleusermap();
-        $refApplication = WaterApplication::findOrFail($request->applicationId);
-        $WaterRoles = Config::get('waterConstaint.ROLE-LABEL');
-        $workflowId = Config::get('workflow-constants.WATER_WORKFLOW_ID');
-        $metaReqs =  new Request([
+        $mWfRoleUser        = new WfRoleusermap();
+        $refApplication     = WaterApplication::findOrFail($request->applicationId);
+        $WaterRoles         = Config::get('waterConstaint.ROLE-LABEL');
+        $workflowId         = Config::get('workflow-constants.WATER_WORKFLOW_ID');
+        $metaReqs = new Request([
             'userId'        => authUser()->id,
             'workflowId'    => $workflowId
         ]);
         $readRoles = $mWfRoleUser->getRoleByUserWfId($metaReqs);                      // Model to () get Role By User Id
-
+        if (is_null($readRoles)) {
+            throw new Exception("Role not found!");
+        }
         if ($refApplication['current_role'] != $WaterRoles['JE']) {
             throw new Exception("Application is not Under the JE!");
         }

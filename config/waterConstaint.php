@@ -133,4 +133,14 @@ return [
     "PAYMENT_FOR" => [
         "1" => "Demand Collection",
     ],
+    "APP_APPLY_FROM" => [
+        "1" => "Online",
+    ],
+    "REF_USER_TYPE" => [
+        "1" => "Citizen",
+        "2" => "JSK",
+        "3" => "TC",
+        "4" => "Pseudo",
+        "5" => "Employee"
+    ],
 ];

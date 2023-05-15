@@ -70,4 +70,15 @@ class WaterApprovalApplicationDetail extends Model
                 'ulb_masters.ulb_name'
             );
     }
+
+    /**
+     * | Get approved appliaction using the id 
+     */
+    public function getApproveApplication($applicationId)
+    {
+        return WaterApprovalApplicationDetail::where('id', $applicationId)
+            ->where('status', 1)
+            ->orderByDesc('id')
+            ->first();
+    }
 }

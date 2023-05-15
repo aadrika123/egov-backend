@@ -27,7 +27,7 @@ if (!function_exists("responseMsgs")) {
             'meta-data' => [
                 'apiId' => $apiId,
                 'version' => $version,
-                'responsetime' => $queryRunTime,
+                'responsetime(in ms)' => $queryRunTime,
                 'epoch' => Carbon::now()->format('Y-m-d H:i:m'),
                 'action' => $action,
                 'deviceId' => $deviceId
@@ -331,15 +331,15 @@ if (!function_exists('getFY')) {
             $YY = (int) $carbonDate->format("Y");
             // $MM = date("m");
             // $YY = date("Y");
-            
+
         } else {
 
             $MM = date("m", strtotime($date));
             $YY = date("Y", strtotime($date));
         }
-        if ($MM > 3) {            
+        if ($MM > 3) {
             return ($YY) . "-" . ($YY + 1);
-        } else {            
+        } else {
             return ($YY - 1) . "-" . ($YY);
         }
     }
@@ -519,5 +519,17 @@ if (!function_exists('flipConstants')) {
     {
         json_decode($string);
         return json_last_error() === JSON_ERROR_NONE;
+    }
+}
+
+/**
+ * | Api Response time for the the apis
+ */
+
+if (!function_exists("responseTime")) {
+    function responseTime()
+    {
+        $responseTime = (microtime(true) - LARAVEL_START) * 1000;
+        return round($responseTime, 2);
     }
 }

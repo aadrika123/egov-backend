@@ -20,7 +20,7 @@ Route::post('/apply-new-connection', function () {
     dd('Welcome to simple Water route file');
 });
 
-Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {
+Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger','expireBearerToken']], function () {
     /**
      * | Created On-07-10-2022 
      * | Updated by-Sam kerketta
@@ -135,7 +135,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
  * | Modified on: 11-01-2023
  * | ------------------- Water Connection / mobile ------------------------ |
  */
-Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {
+Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger','expireBearerToken']], function () {
     Route::controller(WaterApplication::class)->group(function () {
         Route::post('citizenApplications', 'getCitizenApplication');                                    //10
         Route::post('Razorpay-Orderid', 'handeRazorPay');                                               //11

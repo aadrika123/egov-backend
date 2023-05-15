@@ -390,4 +390,15 @@ class WaterConsumer extends Model
                 'ulb_ward_masters.ward_name'
             );
     }
+
+    /**
+     * | Get water consumer according to apply connection id 
+     */
+    public function getConsumerByAppId($applicationId)
+    {
+        return WaterConsumer::where('apply_connection_id', $applicationId)
+            ->where('status', 1)
+            ->orderByDesc('id')
+            ->first();
+    }
 }
