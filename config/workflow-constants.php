@@ -8,34 +8,32 @@
 
 return [
     // SAF Workflow Masters
-    "SAF_WORKFLOW_ID"           => "4",
-    "SAF_REASSESSMENT_ID"       => "5",
-    "SAF_MUTATION_ID"           => "9",
-    "GBSAF_NEW_ASSESSMENT"      => "10",
-    "GBSAF_REASSESSMENT"        => "11",
-    "SAF_BIFURCATION_ID"        => "25",
-    "SAF_AMALGAMATION_ID"       => "373",
+    "SAF_WORKFLOW_ID"           => "1",
+    "SAF_REASSESSMENT_ID"       => "2",
+    "SAF_MUTATION_ID"           => "3",
+    "GBSAF_NEW_ASSESSMENT"      => "4",
+    "GBSAF_REASSESSMENT"        => "5",
+    "SAF_BIFURCATION_ID"        => "6",
+    "SAF_AMALGAMATION_ID"       => "7",
 
-    "PROPERTY_CONCESSION_ID"            => "35",
-    "TRADE_WORKFLOW_ID"                 => "10",
-    "PROPERTY_DEACTIVATION_WORKFLOW_ID" => "167",
-    "PROPERTY_DEACTIVATION_MASTER_ID"   => "24",
-    "PROPERTY_OBJECTION_CLERICAL"       => "36",
-    "PROPERTY_OBJECTION_ASSESSMENT"     => "56",
-    "PROPERTY_OBJECTION_FORGERY"        => "76",
-    "RAIN_WATER_HARVESTING_ID"          => "98",
+    "PROPERTY_DEACTIVATION_MASTER_ID"   => "8",
+    "PROPERTY_CONCESSION_ID"            => "9",
+    "PROPERTY_OBJECTION_CLERICAL"       => "10",
+    "PROPERTY_OBJECTION_ASSESSMENT"     => "11",
+    "PROPERTY_OBJECTION_FORGERY"        => "12",
+    "RAIN_WATER_HARVESTING_ID"          => "13",
 
-    // workflow master
-    "WATER_MASTER_ID"                   => "3",
+    "WATER_MASTER_ID"                   => "15",
     "TRADE_MASTER_ID"                   => "16",
     "TRADE_NOTICE_ID"                   => "17",
-    "WATER_WORKFLOW_ID"                 => "16",
+
+    "GENERAL_NOTICE_MASTER_ID"            => "27",
+    "DENIAL_NOTICE_MASTER_ID"             => "28",
+    "PAYMENT_NOTICE_MASTER_ID"            => "29",
+    "ILLEGAL_OCCUPATION_NOTICE_MASTER_ID" => "30",
+
     "DEALING_ASSISTENT_WF_ID"           => "6",
     "WATER_JE_ROLE_ID"                  => "40",
-    "GENERAL_NOTICE_MASTER_ID"          => "27",
-    "DENIAL_NOTICE_MASTER_ID"          => "28",
-    "PAYMENT_NOTICE_MASTER_ID"          => "29",
-    "ILLEGAL_OCCUPATION_NOTICE_MASTER_ID" => "30",
 
     // User Types
     "USER_TYPES" => [

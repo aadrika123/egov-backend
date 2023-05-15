@@ -34,7 +34,7 @@ trait Auth
         $docUpload = new DocUpload;
         $imageRelativePath = 'Uploads/User/Photo';
         $signatureRelativePath = 'Uploads/User/Signature';
-        $user->user_name = $request->name;
+        $user->name = $request->name;
         $user->mobile = $request->mobile;
         $user->email = $request->email;
         // $user->ulb_id = $request->ulb;
@@ -92,7 +92,7 @@ trait Auth
             'user:' . $emailInfo->id,
             json_encode([
                 'id' => $emailInfo->id,
-                'name' => $emailInfo->user_name,
+                'name' => $emailInfo->name,
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
                 'remember_token' => $token,
@@ -216,7 +216,8 @@ trait Auth
     {
         $query = "SELECT 
         u.id,
-        u.user_name AS NAME,
+        u.name AS NAME,
+        u.user_name AS USER_NAME,
         u.mobile AS mobile,
         u.email AS email,
         u.ulb_id,
@@ -248,7 +249,7 @@ trait Auth
         $userInfo = User::where('email', $emailInfo)
             ->select(
                 'id',
-                'user_name AS name',
+                'name AS name',
                 'user_type AS userType',
                 'ulb_id as ulbId'
             )
