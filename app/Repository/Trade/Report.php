@@ -1706,16 +1706,16 @@ class Report implements IReport
             }
             $workflow_id = $refWfWorkflow->id;
             $data = WfRole::SELECT(
-                "wf_roles.id",
-                "wf_roles.role_name",
-                DB::RAW("COUNT(active_trade_licences.id) AS total")
-            )
+                    "wf_roles.id",
+                    "wf_roles.role_name",
+                    DB::RAW("COUNT(active_trade_licences.id) AS total")
+                )
                 ->JOIN(DB::RAW("(
-                                        SELECT distinct(wf_role_id) as wf_role_id
-                                        FROM wf_workflowrolemaps 
-                                        WHERE  wf_workflowrolemaps.is_suspended = false AND (forward_role_id IS NOT NULL OR backward_role_id IS NOT NULL)
-                                            AND workflow_id IN(".$workflow_id.") 
-                                        GROUP BY wf_role_id 
+                                    SELECT distinct(wf_role_id) as wf_role_id
+                                    FROM wf_workflowrolemaps 
+                                    WHERE  wf_workflowrolemaps.is_suspended = false AND (forward_role_id IS NOT NULL OR backward_role_id IS NOT NULL)
+                                        AND workflow_id IN(".$workflow_id.") 
+                                    GROUP BY wf_role_id 
                                 ) AS roles
                     "), function ($join) {
                     $join->on("wf_roles.id", "roles.wf_role_id");
@@ -1741,7 +1741,7 @@ class Report implements IReport
                 )
                 ->GET();
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
-            return responseMsgs(true, "", $data, $apiId, $version, $queryRunTime, $action, $deviceId);
+            return responseMsgs(true,["header"=>"LEVEL PENDING REPORT"] , $data, $apiId, $version, $queryRunTime, $action, $deviceId);
         }
         catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
@@ -1756,6 +1756,8 @@ class Report implements IReport
             $refUserId      = $refUser->id;
             $ulbId          = $refUser->ulb_id;
             $roleId = $roleId2 = $userId = null;
+            $header = $userName = $roleName = null;
+            $allRolse = $this->_COMMON_FUNCTION->getAllRoles($refUserId,$ulbId,$this->_WF_MASTER_Id,0,TRUE);
             $joins = "join";
             if ($request->ulbId) 
             {
@@ -1763,16 +1765,28 @@ class Report implements IReport
             }
             if ($request->userId) 
             {
-                $userId = $request->userId;
+                $userId = $request->userId;                
+                $userName = DB::TABLE('users')->find($userId )->name??"";
                 $roleId2 = ($this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_WF_MASTER_Id))->role_id ?? 0;
             }
             if ($request->roleId) 
             {
                 $roleId = $request->roleId;
+                $currentRole = (array_values(collect($allRolse)->where("id",$roleId)->toArray()))[0]??[];
+                
+                $roleName = $currentRole["role_name"]??"";
             }
             if (($request->roleId && $request->userId) && ($roleId != $roleId2)) 
             {                
                 throw new Exception("Invalid RoleId Pass");
+            }
+            if($roleName)
+            {
+                $header = ["header"=>"PENDING AT $roleName"];
+            }
+            if($userName)
+            {
+                $header = ["header"=>"PENDING AT $userName"];
             }
             if (in_array($roleId, [8])) 
             {
@@ -1781,14 +1795,14 @@ class Report implements IReport
 
             // DB::enableQueryLog();
             $data = ActiveTradeLicence::SELECT(
-                DB::RAW(
-                    "count(active_trade_licences.id),
-                    users_role.user_id ,
-                    users_role.user_name,
-                    users_role.wf_role_id as role_id,
-                    users_role.role_name"
+                    DB::RAW(
+                        "count(active_trade_licences.id),
+                        users_role.user_id ,
+                        users_role.user_name,
+                        users_role.wf_role_id as role_id,
+                        users_role.role_name"
+                    )
                 )
-            )
                 ->$joins(
                     DB::RAW("(
                         select wf_role_id,user_id,user_name,role_name,concat('{',ward_ids,'}') as ward_ids
@@ -1842,7 +1856,7 @@ class Report implements IReport
             $perPage = $request->perPage ? $request->perPage : 10000;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
             $paginator = $data->paginate($perPage);
-            $items = $paginator->items();//dd(DB::getQueryLog());
+            $items = $paginator->items();
             $total = $paginator->total();
             $numberOfPages = ceil($total / $perPage);
             $list = [
@@ -1853,7 +1867,7 @@ class Report implements IReport
                 "numberOfPages" => $numberOfPages
             ];
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
-            return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime, $action, $deviceId);
+            return responseMsgs(true, $header, $list, $apiId, $version, $queryRunTime, $action, $deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
         }
@@ -1868,6 +1882,8 @@ class Report implements IReport
             $refUserId      = $refUser->id;
             $ulbId          = $refUser->ulb_id;
             $roleId = $roleId2 = $userId = null;
+            $header = $userName = $roleName = null;
+            $allRolse = $this->_COMMON_FUNCTION->getAllRoles($refUserId,$ulbId,$this->_WF_MASTER_Id,0,TRUE);
             $mWardPermission = collect([]);
             if ($request->ulbId) 
             {
@@ -1876,10 +1892,14 @@ class Report implements IReport
             if ($request->roleId) 
             {
                 $roleId = $request->roleId;
+                $currentRole = (array_values(collect($allRolse)->where("id",$roleId)->toArray()))[0]??[];
+                
+                $roleName = $currentRole["role_name"]??"";
             }
             if ($request->userId) 
             {
                 $userId = $request->userId;
+                $userName = DB::TABLE('users')->find($userId )->name??"";
                 $roleId2 = ($this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_WF_MASTER_Id))->role_id ?? 0;
             }
             if (($request->roleId && $request->userId) && ($roleId != $roleId2)) 
@@ -1891,6 +1911,14 @@ class Report implements IReport
             {
                 $mWfWardUser = new WfWardUser();
                 $mWardPermission = $mWfWardUser->getWardsByUserId($userId);
+            }
+            if($roleName)
+            {
+                $header = ["header"=>"PENDING AT $roleName"];
+            }
+            if($userName)
+            {
+                $header = ["header"=>"PENDING AT $userName"];
             }
             
             $mWardIds = $mWardPermission->implode("ward_id", ",");
@@ -1936,7 +1964,7 @@ class Report implements IReport
                 "numberOfPages" => $numberOfPages
             ];
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
-            return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime, $action, $deviceId);
+            return responseMsgs(true,$header, $list, $apiId, $version, $queryRunTime, $action, $deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
         }
