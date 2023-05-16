@@ -5,6 +5,7 @@ namespace App\Http\Controllers\property;
 use App\EloquentClass\Property\SafCalculation;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Property\reqApplySaf;
+use App\Models\Property\MCapitalValueRate;
 use App\Models\Property\RefPropOccupancyFactor;
 use Illuminate\Http\Request;
 use App\Repository\Property\Interfaces\iCalculatorRepository;
@@ -17,11 +18,13 @@ class CalculatorController extends Controller
     private $_reqs;
     private $_occupancyFactors;
     private $_roadTypes;
+    private $_mCapitalValueRates;
 
     public function __construct(iCalculatorRepository $iCalculatorRepository)
     {
         $this->_roadTypes = Config::get('PropertyConstaint.ROAD_TYPES');
         $this->Repository = $iCalculatorRepository;
+        $this->_mCapitalValueRates = new MCapitalValueRate();
     }
 
     public function calculator(reqApplySaf $request)
@@ -52,6 +55,7 @@ class CalculatorController extends Controller
                 });
                 $req->merge(['floor' => $floors->toArray()]);
             }
+
             if (isset($req->isGBSaf))
                 $req->merge(['isGBSaf' => $req->isGBSaf]);
             else
@@ -93,7 +97,8 @@ class CalculatorController extends Controller
                         'taxPerc',
                         'calculationFactor',
                         'matrixFactor',
-                        'area'
+                        'area',
+                        'yearlyTax'
                     ]);
                     $finalTaxReview->push($response);
                     return $response;
@@ -109,33 +114,67 @@ class CalculatorController extends Controller
                         ->where('ruleSet', $collect->first()['ruleSet'])
                         ->values();
 
+                    // Calculation Parameters
                     if ($collect->first()['ruleSet'] == 'RuleSet1' && $this->_reqs->propertyType != 4)              // If Property Type is Building
                         $quaters['rentalRates'] = $this->generateRentalValues($calculation->_rentalValue);
 
                     if ($collect->first()['ruleSet'] == 'RuleSet2' && $this->_reqs->propertyType != 4) {
                         $quaters['multiFactors'] = $this->generateMultiFactors($calculation->_multiFactors)->where('effective_date', '2016-04-01')->values();
                         $quaters['occupancyFactors'] = $this->_occupancyFactors;
-                        $quaters['rentalRate'] = $this->generateRentalRates(collect($calculation->_rentalRates)->where('effective_date', '2016-04-01'));
+                        $quaters['rentalRate'] = $this->generateRentalRates(collect($calculation->_rentalRates)->where('effective_date', '2016-04-01'), $calculation->_paramRentalRate);
                     }
 
-                    if ($collect->first()['ruleSet'] == 'RuleSet3' && $this->_reqs->propertyType != 4)
-                        $quaters['multiFactors'] = $this->generateMultiFactors($calculation->_multiFactors)->where('effective_date', '2022-04-01')->values();
+                    if ($collect->first()['ruleSet'] == 'RuleSet2' && $this->_reqs->propertyType == 4) {            // For Vacant Land(RuleSet 2)
+                        $quaters['multiFactors'] = $this->_occupancyFactors;
+                        $rentalRates = collect($calculation->_vacantRentalRates)
+                            ->where('effective_date', '2016-04-01')
+                            ->where('ulb_type_id', $calculation->_ulbType);
+                        $quaters['rentalRate'] = $this->generateVacantRentalRates($rentalRates);
+                    }
+
+                    if ($collect->first()['ruleSet'] == 'RuleSet3' && $this->_reqs->propertyType != 4) {
+                        $quaters['calculationFactor'] = $this->generateMultiFactors($calculation->_multiFactors)->where('effective_date', '2022-04-01')->values();
+                        $quaters['occupancyFactors'] = $this->_occupancyFactors;
+                        $quaters['matrixFactor'] = $this->generateMatrixFactor(collect($calculation->_rentalRates)->where('effective_date', '2022-04-01'));
+                        $quaters['circleRates'] = $this->readCapitalValueRates($calculation->_wardNo);
+                    }
+
+                    if ($collect->first()['ruleSet'] == 'RuleSet3' && $this->_reqs->propertyType == 4) {        // For Vacant Land (Ruleset3)
+                        $quaters['circleRates'] = $this->readCapitalValueRates($calculation->_wardNo);
+                        $quaters['matrixFactor'] = $this->generateMatrixFactor(collect($calculation->_rentalRates)->where('effective_date', '2022-04-01'));
+                        $quaters['occupancyFactors'] = $this->_occupancyFactors;
+                        $rentalRates = collect($calculation->_vacantRentalRates)
+                            ->where('effective_date', '2022-04-01')
+                            ->where('ulb_type_id', $calculation->_ulbType);
+                        $vacantRentalRates = $this->generateVacantRentalRates($rentalRates)
+                            ->whereIn('prop_road_type_id', [2, 3, 4])                           // Road Types
+                            ->values();
+                        $quaters['vacantRentalRates'] = $vacantRentalRates;
+                    }
 
                     $groupByTotalTax = $ruleSetWiseCollection->groupBy('totalTax');
                     $quaterlyTaxes = collect();
                     $i = 1;
                     collect($groupByTotalTax)->map(function ($floors) use ($quaterlyTaxes, $i) {
-                        $groupByFloor = $floors->groupBy('floorKey')->values();
+                        if ($this->_reqs->propertyType != 4)
+                            $groupByFloor = $floors->groupBy('floorKey')->values();
+                        else
+                            $groupByFloor = $floors->groupBy('propertyType')->values();
+
                         $taxDetails = $groupByFloor->map(function ($item) {
+                            /**
+                             * | Every First Quarter key is taken for sum the total quaterly Taxes of the floors individually
+                             */
                             $firstTaxes = [
-                                'arv' => $item->first()['arv'],
-                                'holdingTax' => $item->first()['holdingTax'],
-                                'waterTax' => $item->first()['waterTax'],
-                                'latrineTax' => $item->first()['latrineTax'],
-                                'educationTax' => $item->first()['educationTax'],
-                                'healthTax' => $item->first()['healthTax'],
-                                'rwhPenalty' => $item->first()['rwhPenalty'],
-                                'quaterlyTax' => $item->first()['totalTax'],
+                                'arv' => $item->first()['arv'] ?? null,
+                                'holdingTax' => $item->first()['holdingTax'] ?? null,
+                                'waterTax' => $item->first()['waterTax'] ?? null,
+                                'latrineTax' => $item->first()['latrineTax'] ?? null,
+                                'educationTax' => $item->first()['educationTax'] ?? null,
+                                'healthTax' => $item->first()['healthTax'] ?? null,
+                                'rwhPenalty' => $item->first()['rwhPenalty'] ?? null,
+                                'yearlyTax' => $item->first()['yearlyTax'] ?? null,
+                                'quaterlyTax' => $item->first()['totalTax'] ?? null,
                             ];
                             return collect($firstTaxes);
                         });
@@ -161,9 +200,9 @@ class CalculatorController extends Controller
                 });
             });
             $finalResponse['details'] = $reviewCalculation;
-            return responseMsg(true, "", $finalResponse);
+            return responseMsgs(true, "", $finalResponse, "", "1.0", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
+            return responseMsgs(false, $e->getMessage(), [], "", "1.0", responseTime(), "POST", $req->deviceId);
         }
     }
 
@@ -195,14 +234,53 @@ class CalculatorController extends Controller
     /**
      * | Generate Rental Rates
      */
-    public function generateRentalRates($rentalRates)
+    public function generateRentalRates($rentalRates, $param)
     {
         foreach ($rentalRates as $rentalRate) {
             $rentalRate->road_type = $this->_roadTypes[$rentalRate->prop_road_type_id];
+            $rentalRate->rate = round($rentalRate->rate * $param);
             $rentalRate->construction_type = Config::get('PropertyConstaint.CONSTRUCTION-TYPE.' . $rentalRate->construction_types_id);
         }
         return collect($rentalRates)->groupBy(['construction_type', 'road_type']);
     }
+
+    /**
+     * | Generate Matrix Factors
+     */
+    public function generateMatrixFactor($rentalRates)
+    {
+        $rentalRates = collect($rentalRates)
+            ->whereIn('prop_road_type_id', [1, 3]);
+        foreach ($rentalRates as $rentalRate) {
+            $rentalRate->road_type = $this->_roadTypes[$rentalRate->prop_road_type_id];
+            if ($rentalRate->road_type == 'Principal Main Road')
+                $rentalRate->road_type = 'Main Road';
+            $rentalRate->construction_type = Config::get('PropertyConstaint.CONSTRUCTION-TYPE.' . $rentalRate->construction_types_id);
+        }
+        return collect($rentalRates)->groupBy(['construction_type', 'road_type']);
+    }
+
+
+    /**
+     * | Read Capital Value Rates
+     */
+    public function readCapitalValueRates($wardNo)
+    {
+        return $this->_mCapitalValueRates->readCvRatesByWardNo($wardNo)->groupBy('property_type');
+    }
+
+    /**
+     * | Generate Vacant Rental Rates
+     */
+    public function generateVacantRentalRates($rentalRates)
+    {
+        $rentalRates->map(function ($rentalRate) {
+            $rentalRate->prop_road_type = $this->_roadTypes[$rentalRate->prop_road_type_id];
+        });
+        return $rentalRates->values();
+    }
+
+
 
     public function dashboardDate(Request $request)
     {

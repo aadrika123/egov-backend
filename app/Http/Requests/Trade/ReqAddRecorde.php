@@ -1,17 +1,24 @@
 <?php
 
 namespace App\Http\Requests\Trade;
-
-use App\Repository\Common\CommonFunction;
 use Illuminate\Support\Facades\Config;
 use Carbon\Carbon;
 
 class ReqAddRecorde extends TradeRequest
 {
+    public function __construct()
+    {
+        parent::__construct();
+
+    }
     public function rules()
-    {        
+    {   
+        $refWorkflowId = $this->_WF_MASTER_Id;
+        $mUserType = $this->_COMMON_FUNCTION->userType($refWorkflowId);
+
         $rules["applicationType"] = "required|string|in:NEWLICENSE,RENEWAL,AMENDMENT,SURRENDER";
-        $mApplicationTypeId = Config::get("TradeConstant.APPLICATION-TYPE." . $this->applicationType);
+        $mApplicationTypeId = $this->_TRADE_CONSTAINT["APPLICATION-TYPE"][$this->applicationType]??0;
+        
         if (!in_array($mApplicationTypeId, [1]))
         {
             $rules["licenseId"] = "required|digits_between:1,9223372036854775807";
@@ -26,9 +33,7 @@ class ReqAddRecorde extends TradeRequest
         $mNumDot = '/^\d+(?:\.\d+)+$/i';
         $mDateFormatYYYMMDD = '/^([12]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]))+$/i';
         $mDateFormatYYYMM = '/^([12]\d{3}-(0[1-9]|1[0-2]))+$/i';
-        $reftrade = new CommonFunction();
-        $refWorkflowId = Config::get('workflow-constants.TRADE_MASTER_ID');
-        $mUserType = $reftrade->userType($refWorkflowId);
+        
         $rules = [];
         if (in_array($mApplicationTypeId, [1])) 
         {

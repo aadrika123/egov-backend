@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use Carbon\Carbon;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
@@ -32,7 +33,7 @@ class ExpireBearerToken
         $citizenUserType = Config::get('workflow-constants.USER_TYPES.1');
         $this->_user = auth()->user();
         $this->_token = $request->bearerToken();
-        $this->_currentTime = time();
+        $this->_currentTime = Carbon::now();
 
         if ($this->_user && $this->_token) {
             if ($this->_user->user_type == $citizenUserType) {                             // If the User type is citizen
@@ -57,7 +58,7 @@ class ExpireBearerToken
      */
     public function validateToken()
     {
-        if ($this->_lastActivity && ($this->_currentTime - $this->_lastActivity) > 1800) {            // for 1800 Seconds(30 Minutes)
+        if ($this->_lastActivity && ($this->_currentTime->diffInSeconds($this->_lastActivity)) > 1800) {            // for 1800 Seconds(30 Minutes)
             Redis::del($this->_key);
             $this->_user->tokens()->delete();
             abort(response()->json(

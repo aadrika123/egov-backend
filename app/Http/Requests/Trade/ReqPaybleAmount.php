@@ -5,6 +5,11 @@ namespace App\Http\Requests\Trade;
 class ReqPaybleAmount extends TradeRequest
 {
 
+    public function __construct()
+    {
+        parent::__construct();
+
+    }
     /**
      * Get the validation rules that apply to the request.
      *

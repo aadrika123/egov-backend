@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Route;
  * Modified By :- Mrinal Kumar
  */
 
-Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {
+Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger', 'expireBearerToken']], function () {
 
     /**
      * workflow Master CRUD operation

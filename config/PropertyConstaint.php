@@ -100,7 +100,7 @@ return [
 
     ],
 
-    "RELIGIOUS_PLACE_USAGE_TYPE_ID" => "10",                // Religious Place usage type
+    "RELIGIOUS_PLACE_USAGE_TYPE_ID" => "11",                // Religious Place usage type
 
     "USAGE-TYPE" => [
         "1" => [

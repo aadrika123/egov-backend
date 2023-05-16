@@ -8,6 +8,11 @@ use Illuminate\Support\Facades\Config;
 
 class ReqCitizenAddRecorde extends TradeRequest
 {
+    public function __construct()
+    {
+        parent::__construct();
+
+    }
     /**
      * Get the validation rules that apply to the request.
      *
@@ -15,13 +20,14 @@ class ReqCitizenAddRecorde extends TradeRequest
      */
     public function rules()
     {
-        $mApplicationTypeId = Config::get("TradeConstant.APPLICATION-TYPE." . $this->applicationType);
+        $refWorkflowId = $this->_WF_MASTER_Id;
+        $mUserType = $this->_COMMON_FUNCTION->userType($refWorkflowId);
+        $mApplicationTypeId = $this->_TRADE_CONSTAINT["APPLICATION-TYPE"][$this->applicationType]??0;
+
         $mNowdate = Carbon::now()->format('Y-m-d');
         $mRegex = '/^[a-zA-Z1-9][a-zA-Z1-9\. \s]+$/';
         $mFramNameRegex = '/^[a-zA-Z1-9][a-zA-Z1-9\.\,\'&\s]+$/';
-        $reftrade = new CommonFunction();
-        $refWorkflowId = Config::get('workflow-constants.TRADE_MASTER_ID');
-        $mUserType = $reftrade->userType($refWorkflowId);
+        
         $rules = [];
         $rules["ulbId"]="required|digits_between:1,92";
         $rules["applicationType"]="required|string|in:NEWLICENSE,RENEWAL,AMENDMENT,SURRENDER";
