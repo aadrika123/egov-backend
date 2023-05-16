@@ -2686,7 +2686,8 @@ class Trade implements ITrade
                         "active_trade_licences.application_type_id",
                         "trade_param_application_types.application_type",
                         DB::raw("TO_CHAR(active_trade_licences.application_date, 'DD-MM-YYYY') as application_date"),
-                    );
+                    )
+                    ->WHERE("active_trade_licences.is_active",TRUE);
     }
     # Serial No : 16
     /**
@@ -2775,8 +2776,24 @@ class Trade implements ITrade
             }
             $license = $license
                 ->whereIn('active_trade_licences.ward_id', $mWardIds)
-                ->get();         
-            return responseMsg(true, "", $license);
+                ->orderBy("active_trade_licences.application_date","DESC"); 
+            if($request->all)
+            {
+                $license= $license->get();
+                return responseMsg(true, "", $license);
+            } 
+            $perPage = $request->perPage ? $request->perPage :  10;
+            $page = $request->page && $request->page > 0 ? $request->page : 1;
+
+            $paginator = $license->paginate($perPage);
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
+            ]; 
+            return responseMsg(true, "", $list);     
+            
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
@@ -2843,8 +2860,23 @@ class Trade implements ITrade
             }
             $license = $license
                 ->whereIn('active_trade_licences.ward_id', $mWardIds)
-                ->get();
-            return responseMsg(true, "", $license);
+                ->orderBy("active_trade_licences.application_date","DESC");
+            if($request->all)
+            {
+                $license= $license->get();
+                return responseMsg(true, "", $license);
+            } 
+            $perPage = $request->perPage ? $request->perPage :  10;
+            $page = $request->page && $request->page > 0 ? $request->page : 1;
+
+            $paginator = $license->paginate($perPage);
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
+            ]; 
+            return responseMsg(true, "", $list); 
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
@@ -2905,8 +2937,23 @@ class Trade implements ITrade
             }
             $license = $license
                 ->whereIn('active_trade_licences.ward_id', $mWardIds)
-                ->get();
-            return responseMsg(true, "", $license);
+                ->orderBy("active_trade_licences.application_date","DESC"); 
+            if($request->all)
+            {
+                $license= $license->get();
+                return responseMsg(true, "", $license);
+            } 
+            $perPage = $request->perPage ? $request->perPage :  10;
+            $page = $request->page && $request->page > 0 ? $request->page : 1;
+
+            $paginator = $license->paginate($perPage);
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
+            ]; 
+            return responseMsg(true, "", $list);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
@@ -2967,8 +3014,23 @@ class Trade implements ITrade
             }
             $license = $license
                 ->whereIn('active_trade_licences.ward_id', $mWardIds)
-                ->get();
-            return responseMsg(true, "", $license);
+                ->orderBy("active_trade_licences.application_date","DESC"); 
+            if($request->all)
+            {
+                $license= $license->get();
+                return responseMsg(true, "", $license);
+            } 
+            $perPage = $request->perPage ? $request->perPage :  10;
+            $page = $request->page && $request->page > 0 ? $request->page : 1;
+
+            $paginator = $license->paginate($perPage);
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
+            ]; 
+            return responseMsg(true, "", $list);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }

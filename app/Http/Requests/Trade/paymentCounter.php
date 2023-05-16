@@ -3,11 +3,13 @@
 namespace App\Http\Requests\Trade;
 
 use Carbon\Carbon;
-use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Contracts\Validation\Validator;
-use Illuminate\Http\Exceptions\HttpResponseException;
-class paymentCounter extends FormRequest
+class paymentCounter extends TradeRequest
 {
+    public function __construct()
+    {
+        parent::__construct();
+
+    }
     /**
      * Determine if the user is authorized to make this request.
      *
@@ -40,17 +42,5 @@ class paymentCounter extends FormRequest
         } 
         return $rules;
     }
-    protected function failedValidation(Validator $validator)
-    { 
-        throw new HttpResponseException(
-            response()->json(
-                [
-                    'status' => false,
-                    'message' => 'The given data was invalid',
-                    'errors' => $validator->errors()
-                ], 
-                422)
-        );
-        
-    }
+    
 }

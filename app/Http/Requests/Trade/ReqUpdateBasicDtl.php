@@ -6,7 +6,11 @@ use Illuminate\Support\Facades\Config;
 
 class ReqUpdateBasicDtl extends TradeRequest
 {
-    
+    public function __construct()
+    {
+        parent::__construct();
+
+    }
     /**
      * Get the validation rules that apply to the request. 
      *

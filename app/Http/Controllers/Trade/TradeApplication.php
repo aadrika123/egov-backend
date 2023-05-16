@@ -30,7 +30,6 @@ use App\Http\Requests\Trade\paymentCounter;
 use App\Http\Requests\Trade\ReqApplyDenail;
 use App\Http\Requests\Trade\ReqPaybleAmount;
 use App\Models\Trade\TradeParamCategoryType;
-use App\Http\Requests\Trade\ReqPostNextLevel;
 use App\Models\Trade\TradeParamOwnershipType;
 use App\Http\Requests\Trade\ReqUpdateBasicDtl;
 use App\Models\Trade\ActiveTradeOwner;
@@ -471,6 +470,7 @@ class TradeApplication extends Controller
                 'moduleId'      => $this->_MODULE_ID
             ]);
             $dateWiseData = $track->getWfDashbordData($metaRequest)->get();
+            $request->request->add(["all"=>true]);
             $inboxData = $this->_REPOSITORY->inbox($request);
             $returnData = [
                 'canView'               => $canView ,
@@ -559,12 +559,13 @@ class TradeApplication extends Controller
 
 
     # Serial No : 18
+    #please not use custome request
     public function postNextLevel(Request $request)
     {
         $user = Auth()->user();
         $user_id = $user->id;
         $ulb_id = $user->ulb_id;
-        $fromRole = [];
+
         $refWorkflowId = $this->_WF_MASTER_Id;
         $role = $this->_COMMON_FUNCTION->getUserRoll($user_id,$ulb_id,$refWorkflowId);
        
@@ -592,7 +593,8 @@ class TradeApplication extends Controller
                     $request->request->add(["receiverRoleId"=>$role->backward_role_id??0]);
                 }
             }
-
+            
+            
             #if finisher forward then
             if(($role->is_finisher??0) && $request->action=='forward')
             {
@@ -604,7 +606,7 @@ class TradeApplication extends Controller
             {
                 throw New Exception("Citizen Not Allowed");
             }
-
+            
             #Trade Application Update Current Role Updation
            
             $workflowId = WfWorkflow::where('wf_master_id', $refWorkflowId)
@@ -625,6 +627,7 @@ class TradeApplication extends Controller
                  $request->request->add(["receiverRoleId"=>$licence->current_role??0]);
             }
             $allRolse     = collect($this->_COMMON_FUNCTION->getAllRoles($user_id,$ulb_id,$refWorkflowId,0,true));
+            
             $initFinish   = $this->_COMMON_FUNCTION->iniatorFinisher($user_id, $ulb_id, $refWorkflowId);
             $receiverRole = array_values(objToArray($allRolse->where("id",$request->receiverRoleId)))[0]??[];
             $senderRole   = array_values(objToArray($allRolse->where("id",$request->senderRoleId)))[0]??[];
@@ -726,30 +729,57 @@ class TradeApplication extends Controller
         }
     }
 
-    # Serial No
+    # Serial No 
+    #please not use custome request
     public function approveReject(Request $req)
     {
         try {
             $req->validate([
                 "applicationId" => "required",
-                "status" => "required"
+                "status" => "required",
+                "comment" => $req->status==0?"required":"nullable",
             ]);
             if(!$this->_COMMON_FUNCTION->checkUsersWithtocken("users"))
             {
                 throw New Exception("Citizen Not Allowed");
             }
+            
             $user = Auth()->user();
             $user_id = $user->id;
             $ulb_id = $user->ulb_id;
             $refWorkflowId = $this->_WF_MASTER_Id;
 
             $activeLicence = ActiveTradeLicence::find($req->applicationId);
+            
             $role = $this->_COMMON_FUNCTION->getUserRoll($user_id,$ulb_id,$refWorkflowId);
+            
             if ($activeLicence->finisher_role != $role->role_id) {
                 return responseMsg(false, "Forbidden Access", "");
             }
+            if(!$req->senderRoleId)
+            {
+                $req->request->add(["senderRoleId"=>$role->role_id??0]);
+            }
+            if(!$req->receiverRoleId)
+            {
+                if($req->action=='forward')
+                {
+                    $req->request->add(["receiverRoleId"=>$role->forward_role_id??0]);
+                }
+                if($req->action=='backward')
+                {
+                    $req->request->add(["receiverRoleId"=>$role->backward_role_id??0]);
+                }
+            }
+            $metaReqs['moduleId'] = $this->_MODULE_ID;
+            $metaReqs['workflowId'] = $activeLicence->workflow_id;
+            $metaReqs['refTableDotId'] = 'active_trade_licences';
+            $metaReqs['refTableIdValue'] = $req->applicationId;
+            $metaReqs['user_id']=$user_id;
+            $metaReqs['ulb_id']=$ulb_id;
+            $req->request->add($metaReqs);
             DB::beginTransaction();
-
+            
             // Approval
             if ($req->status == 1) 
             {
@@ -785,6 +815,8 @@ class TradeApplication extends Controller
             // Rejection
             if ($req->status == 0) 
             {
+                $track = new WorkflowTrack();
+                $d = $track->saveTrack($req);
                 // Objection Application replication
                 $approvedLicence = $activeLicence->replicate();
                 $approvedLicence->setTable('rejected_trade_licences');

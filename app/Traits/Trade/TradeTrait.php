@@ -65,19 +65,7 @@ trait TradeTrait
             ['displayString' => 'Street Name', 'key' => 'street_name', 'value' => $data->street_name],
         ]);
     }
-
-
-    // public function generatepaymentDetails($data)
-    // {
-    //     return new Collection([
-    //         ['displayString' => 'Transaction No', 'key' => 'tranNo', 'value' => $data->tran_no],
-    //         ['displayString' => 'Payment Mode', 'key' => 'paymentMode', 'value' => $data->payment_mode],
-    //         ['displayString' => 'Paid Amount', 'key' => 'paidAmount', 'value' => $data->paid_amount],
-    //         ['displayString' => 'Payment For', 'key' => 'tranType', 'value' => $data->tran_type],
-    //         ['displayString' => 'Trasaction Date', 'key' => 'created_at', 'value' => $data->created_at],
-    //     ]);
-    // }
-
+    
     public function generatepaymentDetails($data)
     {
         return collect($data)->map(function ($val, $key) {
@@ -294,7 +282,7 @@ trait TradeTrait
             $user = Auth()->user();
             $user_id = $user->id;
             $ulb_id = $user->ulb_id;
-            $refWorkflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
+            $refWorkflowId = Config::get('workflow-constants.TRADE_MASTER_ID');
             $role = $commonFuction->getUserRoll($user_id, $ulb_id,$refWorkflowId);
             $init_finish = $commonFuction->iniatorFinisher($user_id, $ulb_id, $refWorkflowId);
             $licence_for_years = $refLicenc->licence_for_years;
