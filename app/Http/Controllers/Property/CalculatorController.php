@@ -97,7 +97,8 @@ class CalculatorController extends Controller
                         'taxPerc',
                         'calculationFactor',
                         'matrixFactor',
-                        'area'
+                        'area',
+                        'yearlyTax'
                     ]);
                     $finalTaxReview->push($response);
                     return $response;
@@ -123,11 +124,32 @@ class CalculatorController extends Controller
                         $quaters['rentalRate'] = $this->generateRentalRates(collect($calculation->_rentalRates)->where('effective_date', '2016-04-01'), $calculation->_paramRentalRate);
                     }
 
+                    if ($collect->first()['ruleSet'] == 'RuleSet2' && $this->_reqs->propertyType == 4) {            // For Vacant Land(RuleSet 2)
+                        $quaters['multiFactors'] = $this->_occupancyFactors;
+                        $rentalRates = collect($calculation->_vacantRentalRates)
+                            ->where('effective_date', '2016-04-01')
+                            ->where('ulb_type_id', $calculation->_ulbType);
+                        $quaters['rentalRate'] = $this->generateVacantRentalRates($rentalRates);
+                    }
+
                     if ($collect->first()['ruleSet'] == 'RuleSet3' && $this->_reqs->propertyType != 4) {
                         $quaters['calculationFactor'] = $this->generateMultiFactors($calculation->_multiFactors)->where('effective_date', '2022-04-01')->values();
                         $quaters['occupancyFactors'] = $this->_occupancyFactors;
                         $quaters['matrixFactor'] = $this->generateMatrixFactor(collect($calculation->_rentalRates)->where('effective_date', '2022-04-01'));
                         $quaters['circleRates'] = $this->readCapitalValueRates($calculation->_wardNo);
+                    }
+
+                    if ($collect->first()['ruleSet'] == 'RuleSet3' && $this->_reqs->propertyType == 4) {        // For Vacant Land (Ruleset3)
+                        $quaters['circleRates'] = $this->readCapitalValueRates($calculation->_wardNo);
+                        $quaters['matrixFactor'] = $this->generateMatrixFactor(collect($calculation->_rentalRates)->where('effective_date', '2022-04-01'));
+                        $quaters['occupancyFactors'] = $this->_occupancyFactors;
+                        $rentalRates = collect($calculation->_vacantRentalRates)
+                            ->where('effective_date', '2022-04-01')
+                            ->where('ulb_type_id', $calculation->_ulbType);
+                        $vacantRentalRates = $this->generateVacantRentalRates($rentalRates)
+                            ->whereIn('prop_road_type_id', [2, 3, 4])
+                            ->values();
+                        $quaters['vacantRentalRates'] = $vacantRentalRates;
                     }
 
                     $groupByTotalTax = $ruleSetWiseCollection->groupBy('totalTax');
@@ -140,6 +162,9 @@ class CalculatorController extends Controller
                             $groupByFloor = $floors->groupBy('propertyType')->values();
 
                         $taxDetails = $groupByFloor->map(function ($item) {
+                            /**
+                             * | Every First Quarter key is taken for sum the total quaterly Taxes of the floors individually
+                             */
                             $firstTaxes = [
                                 'arv' => $item->first()['arv'] ?? null,
                                 'holdingTax' => $item->first()['holdingTax'] ?? null,
@@ -148,6 +173,7 @@ class CalculatorController extends Controller
                                 'educationTax' => $item->first()['educationTax'] ?? null,
                                 'healthTax' => $item->first()['healthTax'] ?? null,
                                 'rwhPenalty' => $item->first()['rwhPenalty'] ?? null,
+                                'yearlyTax' => $item->first()['yearlyTax'] ?? null,
                                 'quaterlyTax' => $item->first()['totalTax'] ?? null,
                             ];
                             return collect($firstTaxes);
@@ -242,6 +268,18 @@ class CalculatorController extends Controller
     {
         return $this->_mCapitalValueRates->readCvRatesByWardNo($wardNo)->groupBy('property_type');
     }
+
+    /**
+     * | Generate Vacant Rental Rates
+     */
+    public function generateVacantRentalRates($rentalRates)
+    {
+        $rentalRates->map(function ($rentalRate) {
+            $rentalRate->prop_road_type = $this->_roadTypes[$rentalRate->prop_road_type_id];
+        });
+        return $rentalRates->values();
+    }
+
 
 
     public function dashboardDate(Request $request)
