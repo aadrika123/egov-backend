@@ -218,8 +218,7 @@ class CalculatorController extends Controller
     public function generateMatrixFactor($rentalRates)
     {
         $rentalRates = collect($rentalRates)
-            ->whereIn('prop_road_type_id', [1, 3])
-            ->toArray();
+            ->whereIn('prop_road_type_id', [1, 3]);
         foreach ($rentalRates as $rentalRate) {
             $rentalRate->road_type = $this->_roadTypes[$rentalRate->prop_road_type_id];
             if ($rentalRate->road_type == 'Principal Main Road')

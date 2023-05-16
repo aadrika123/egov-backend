@@ -41,7 +41,7 @@ class MCapitalValueRate extends Model
             case when road_type_mstr_id = '1' then 'Main Road' else 'Others' end as road_type")
                 )
                 ->get();
-            Redis::set('cv_by_ward_no', json_encode($capitalValueRates));
+            Redis::set('cv_by_ward_no' . $wardNo, json_encode($capitalValueRates));
         }
         return $capitalValueRates;
     }
