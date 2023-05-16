@@ -55,6 +55,7 @@ class CalculatorController extends Controller
                 });
                 $req->merge(['floor' => $floors->toArray()]);
             }
+
             if (isset($req->isGBSaf))
                 $req->merge(['isGBSaf' => $req->isGBSaf]);
             else
@@ -119,7 +120,7 @@ class CalculatorController extends Controller
                     if ($collect->first()['ruleSet'] == 'RuleSet2' && $this->_reqs->propertyType != 4) {
                         $quaters['multiFactors'] = $this->generateMultiFactors($calculation->_multiFactors)->where('effective_date', '2016-04-01')->values();
                         $quaters['occupancyFactors'] = $this->_occupancyFactors;
-                        $quaters['rentalRate'] = $this->generateRentalRates(collect($calculation->_rentalRates)->where('effective_date', '2016-04-01'));
+                        $quaters['rentalRate'] = $this->generateRentalRates(collect($calculation->_rentalRates)->where('effective_date', '2016-04-01'), $calculation->_paramRentalRate);
                     }
 
                     if ($collect->first()['ruleSet'] == 'RuleSet3' && $this->_reqs->propertyType != 4) {
@@ -133,17 +134,21 @@ class CalculatorController extends Controller
                     $quaterlyTaxes = collect();
                     $i = 1;
                     collect($groupByTotalTax)->map(function ($floors) use ($quaterlyTaxes, $i) {
-                        $groupByFloor = $floors->groupBy('floorKey')->values();
+                        if ($this->_reqs->propertyType != 4)
+                            $groupByFloor = $floors->groupBy('floorKey')->values();
+                        else
+                            $groupByFloor = $floors->groupBy('propertyType')->values();
+
                         $taxDetails = $groupByFloor->map(function ($item) {
                             $firstTaxes = [
-                                'arv' => $item->first()['arv'],
-                                'holdingTax' => $item->first()['holdingTax'],
-                                'waterTax' => $item->first()['waterTax'],
-                                'latrineTax' => $item->first()['latrineTax'],
-                                'educationTax' => $item->first()['educationTax'],
-                                'healthTax' => $item->first()['healthTax'],
-                                'rwhPenalty' => $item->first()['rwhPenalty'],
-                                'quaterlyTax' => $item->first()['totalTax'],
+                                'arv' => $item->first()['arv'] ?? null,
+                                'holdingTax' => $item->first()['holdingTax'] ?? null,
+                                'waterTax' => $item->first()['waterTax'] ?? null,
+                                'latrineTax' => $item->first()['latrineTax'] ?? null,
+                                'educationTax' => $item->first()['educationTax'] ?? null,
+                                'healthTax' => $item->first()['healthTax'] ?? null,
+                                'rwhPenalty' => $item->first()['rwhPenalty'] ?? null,
+                                'quaterlyTax' => $item->first()['totalTax'] ?? null,
                             ];
                             return collect($firstTaxes);
                         });
@@ -203,10 +208,11 @@ class CalculatorController extends Controller
     /**
      * | Generate Rental Rates
      */
-    public function generateRentalRates($rentalRates)
+    public function generateRentalRates($rentalRates, $param)
     {
         foreach ($rentalRates as $rentalRate) {
             $rentalRate->road_type = $this->_roadTypes[$rentalRate->prop_road_type_id];
+            $rentalRate->rate = round($rentalRate->rate * $param);
             $rentalRate->construction_type = Config::get('PropertyConstaint.CONSTRUCTION-TYPE.' . $rentalRate->construction_types_id);
         }
         return collect($rentalRates)->groupBy(['construction_type', 'road_type']);
