@@ -147,7 +147,7 @@ class CalculatorController extends Controller
                             ->where('effective_date', '2022-04-01')
                             ->where('ulb_type_id', $calculation->_ulbType);
                         $vacantRentalRates = $this->generateVacantRentalRates($rentalRates)
-                            ->whereIn('prop_road_type_id', [2, 3, 4])
+                            ->whereIn('prop_road_type_id', [2, 3, 4])                           // Road Types
                             ->values();
                         $quaters['vacantRentalRates'] = $vacantRentalRates;
                     }
