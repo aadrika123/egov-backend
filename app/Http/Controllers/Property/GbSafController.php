@@ -811,7 +811,7 @@ class GbSafController extends Controller
             $propDtls = $mPropProperties->getPropIdBySafId($req->applicationId);
             $propId = $propDtls->id;
             $fieldVerifiedSaf = $propSafVerification->getVerificationsBySafId($safId);
-            if ($fieldVerifiedSaf->isEmpty())
+            if (collect($fieldVerifiedSaf)->isEmpty())
                 throw new Exception("Site Verification not Exist");
 
             DB::beginTransaction();
