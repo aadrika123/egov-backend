@@ -5,6 +5,7 @@ namespace App\Http\Controllers\property;
 use App\EloquentClass\Property\SafCalculation;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Property\reqApplySaf;
+use App\Models\Property\MCapitalValueRate;
 use App\Models\Property\RefPropOccupancyFactor;
 use Illuminate\Http\Request;
 use App\Repository\Property\Interfaces\iCalculatorRepository;
@@ -17,11 +18,13 @@ class CalculatorController extends Controller
     private $_reqs;
     private $_occupancyFactors;
     private $_roadTypes;
+    private $_mCapitalValueRates;
 
     public function __construct(iCalculatorRepository $iCalculatorRepository)
     {
         $this->_roadTypes = Config::get('PropertyConstaint.ROAD_TYPES');
         $this->Repository = $iCalculatorRepository;
+        $this->_mCapitalValueRates = new MCapitalValueRate();
     }
 
     public function calculator(reqApplySaf $request)
@@ -109,6 +112,7 @@ class CalculatorController extends Controller
                         ->where('ruleSet', $collect->first()['ruleSet'])
                         ->values();
 
+                    // Calculation Parameters
                     if ($collect->first()['ruleSet'] == 'RuleSet1' && $this->_reqs->propertyType != 4)              // If Property Type is Building
                         $quaters['rentalRates'] = $this->generateRentalValues($calculation->_rentalValue);
 
@@ -118,8 +122,12 @@ class CalculatorController extends Controller
                         $quaters['rentalRate'] = $this->generateRentalRates(collect($calculation->_rentalRates)->where('effective_date', '2016-04-01'));
                     }
 
-                    if ($collect->first()['ruleSet'] == 'RuleSet3' && $this->_reqs->propertyType != 4)
-                        $quaters['multiFactors'] = $this->generateMultiFactors($calculation->_multiFactors)->where('effective_date', '2022-04-01')->values();
+                    if ($collect->first()['ruleSet'] == 'RuleSet3' && $this->_reqs->propertyType != 4) {
+                        $quaters['calculationFactor'] = $this->generateMultiFactors($calculation->_multiFactors)->where('effective_date', '2022-04-01')->values();
+                        $quaters['occupancyFactors'] = $this->_occupancyFactors;
+                        $quaters['matrixFactor'] = $this->generateMatrixFactor(collect($calculation->_rentalRates)->where('effective_date', '2022-04-01'));
+                        $quaters['circleRates'] = $this->readCapitalValueRates($calculation->_wardNo);
+                    }
 
                     $groupByTotalTax = $ruleSetWiseCollection->groupBy('totalTax');
                     $quaterlyTaxes = collect();
@@ -161,9 +169,9 @@ class CalculatorController extends Controller
                 });
             });
             $finalResponse['details'] = $reviewCalculation;
-            return responseMsg(true, "", $finalResponse);
+            return responseMsgs(true, "", $finalResponse, "", "1.0", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
+            return responseMsgs(false, $e->getMessage(), [], "", "1.0", responseTime(), "POST", $req->deviceId);
         }
     }
 
@@ -203,6 +211,33 @@ class CalculatorController extends Controller
         }
         return collect($rentalRates)->groupBy(['construction_type', 'road_type']);
     }
+
+    /**
+     * | Generate Matrix Factors
+     */
+    public function generateMatrixFactor($rentalRates)
+    {
+        $rentalRates = collect($rentalRates)
+            ->whereIn('prop_road_type_id', [1, 3])
+            ->toArray();
+        foreach ($rentalRates as $rentalRate) {
+            $rentalRate->road_type = $this->_roadTypes[$rentalRate->prop_road_type_id];
+            if ($rentalRate->road_type == 'Principal Main Road')
+                $rentalRate->road_type = 'Main Road';
+            $rentalRate->construction_type = Config::get('PropertyConstaint.CONSTRUCTION-TYPE.' . $rentalRate->construction_types_id);
+        }
+        return collect($rentalRates)->groupBy(['construction_type', 'road_type']);
+    }
+
+
+    /**
+     * | Read Capital Value Rates
+     */
+    public function readCapitalValueRates($wardNo)
+    {
+        return $this->_mCapitalValueRates->readCvRatesByWardNo($wardNo)->groupBy('property_type');
+    }
+
 
     public function dashboardDate(Request $request)
     {
