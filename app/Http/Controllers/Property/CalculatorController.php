@@ -19,12 +19,16 @@ class CalculatorController extends Controller
     private $_occupancyFactors;
     private $_roadTypes;
     private $_mCapitalValueRates;
+    private $_effectiveRuleset2;
+    private $_effectiveRuleset3;
 
     public function __construct(iCalculatorRepository $iCalculatorRepository)
     {
         $this->_roadTypes = Config::get('PropertyConstaint.ROAD_TYPES');
         $this->Repository = $iCalculatorRepository;
         $this->_mCapitalValueRates = new MCapitalValueRate();
+        $this->_effectiveRuleset2 = Config::get('PropertyConstaint.EFFECTIVE_DATE_RULE2');
+        $this->_effectiveRuleset3 = Config::get('PropertyConstaint.EFFECTIVE_DATE_RULE3');
     }
 
     public function calculator(reqApplySaf $request)
@@ -119,9 +123,9 @@ class CalculatorController extends Controller
                         $quaters['rentalRates'] = $this->generateRentalValues($calculation->_rentalValue);
 
                     if ($collect->first()['ruleSet'] == 'RuleSet2' && $this->_reqs->propertyType != 4) {
-                        $quaters['multiFactors'] = $this->generateMultiFactors($calculation->_multiFactors)->where('effective_date', '2016-04-01')->values();
+                        $quaters['multiFactors'] = $this->generateMultiFactors($calculation->_multiFactors)->where('effective_date', $this->_effectiveRuleset2)->values();
                         $quaters['occupancyFactors'] = $this->_occupancyFactors;
-                        $quaters['rentalRate'] = $this->generateRentalRates(collect($calculation->_rentalRates)->where('effective_date', '2016-04-01'), $calculation->_paramRentalRate);
+                        $quaters['rentalRate'] = $this->generateRentalRates(collect($calculation->_rentalRates)->where('effective_date', $this->_effectiveRuleset2), $calculation->_paramRentalRate);
                     }
 
                     if ($collect->first()['ruleSet'] == 'RuleSet2' && $this->_reqs->propertyType == 4) {            // For Vacant Land(RuleSet 2)
@@ -133,15 +137,15 @@ class CalculatorController extends Controller
                     }
 
                     if ($collect->first()['ruleSet'] == 'RuleSet3' && $this->_reqs->propertyType != 4) {
-                        $quaters['calculationFactor'] = $this->generateMultiFactors($calculation->_multiFactors)->where('effective_date', '2022-04-01')->values();
+                        $quaters['calculationFactor'] = $this->generateMultiFactors($calculation->_multiFactors)->where('effective_date', $this->_effectiveRuleset3)->values();
                         $quaters['occupancyFactors'] = $this->_occupancyFactors;
-                        $quaters['matrixFactor'] = $this->generateMatrixFactor(collect($calculation->_rentalRates)->where('effective_date', '2022-04-01'));
+                        $quaters['matrixFactor'] = $this->generateMatrixFactor(collect($calculation->_rentalRates)->where('effective_date', $this->_effectiveRuleset3));
                         $quaters['circleRates'] = $this->readCapitalValueRates($calculation->_wardNo);
                     }
 
                     if ($collect->first()['ruleSet'] == 'RuleSet3' && $this->_reqs->propertyType == 4) {        // For Vacant Land (Ruleset3)
                         $quaters['circleRates'] = $this->readCapitalValueRates($calculation->_wardNo);
-                        $quaters['matrixFactor'] = $this->generateMatrixFactor(collect($calculation->_rentalRates)->where('effective_date', '2022-04-01'));
+                        $quaters['matrixFactor'] = $this->generateMatrixFactor(collect($calculation->_rentalRates)->where('effective_date', $this->_effectiveRuleset3));
                         $quaters['occupancyFactors'] = $this->_occupancyFactors;
                         $rentalRates = collect($calculation->_vacantRentalRates)
                             ->where('effective_date', '2022-04-01')
