@@ -3947,6 +3947,18 @@ class Trade implements ITrade
                     new_ward.ward_name as new_ward_no,ulb_masters.ulb_name,'$table' AS tbl")
                 );
             }
+            if (!$test) {
+                $table = "trade_renewals";
+                $application = TradeRenewal::select(
+                    "trade_renewals.*",
+                    "trade_param_application_types.application_type",
+                    "trade_param_category_types.category_type",
+                    "trade_param_firm_types.firm_type",
+                    "trade_param_ownership_types.ownership_type",
+                    DB::raw("ulb_ward_masters.ward_name AS ward_no, 
+                    new_ward.ward_name as new_ward_no,ulb_masters.ulb_name,'$table' AS tbl")
+                );
+            }
 
             $application = $application
                 ->leftjoin("ulb_ward_masters", function ($join) use ($table) {
@@ -4228,6 +4240,10 @@ class Trade implements ITrade
         }
         if (!$application) {
             $application = RejectedTradeLicence::find($licenceId);
+        }
+        if(!$application)
+        {
+            $application = TradeRenewal::find($licenceId);
         }
         $status = "";
         if ($application->pending_status == 5) {
