@@ -305,11 +305,11 @@ class TradeApplication extends Controller
                 $response = responseMsgs($response->original["status"],
                     $response->original["message"],
                     $response->original["data"],
-                    $response->original["meta-data"]["apiId"],
-                    $response->original["meta-data"]["version"],
-                    $response->original["meta-data"]["responsetime"],
-                    $response->original["meta-data"]["action"],
-                    $response->original["meta-data"]["deviceId"]
+                    $response->original["meta-data"]["apiId"]??"",
+                    $response->original["meta-data"]["version"]??"",
+                    $response->original["meta-data"]["responsetime"]??"",
+                    $response->original["meta-data"]["action"]??"",
+                    $response->original["meta-data"]["deviceId"]??""
                 );
             }
         }
