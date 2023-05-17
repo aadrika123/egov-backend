@@ -58,9 +58,9 @@ class ExpireBearerToken
      */
     public function validateToken()
     {
-        if ($this->_lastActivity && ($this->_currentTime->diffInSeconds($this->_lastActivity)) > 3600) {            // for 3600 Seconds(60 Minutes)
+        if ($this->_lastActivity && ($this->_currentTime->diffInMinutes($this->_lastActivity)) > 60) {            // for 60 Minutes
             Redis::del($this->_key);
-            $this->_user->tokens()->delete();
+            $this->_user->currentAccessToken()->delete();
             abort(response()->json(
                 [
                     'status' => true,
