@@ -12,6 +12,7 @@ use App\Pipelines\SearchHolding;
 use App\Pipelines\SearchPtn;
 use Illuminate\Http\Request;
 use App\Repository\Citizen\iCitizenRepository;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
@@ -171,7 +172,7 @@ class CitizenController extends Controller
                     $citizenInfo->save();
                     $userDetails['token'] = $token;
                     $key = 'last_activity_citizen_' . $citizenInfo->id;               // Set last activity key 
-                    Redis::set($key, time());
+                    Redis::set($key, Carbon::now());
                     return responseMsgs(true, 'You r logged in now', $userDetails, '', "1.0", "494ms", "POST", "");
                 } else {
                     $msg = "Incorrect Password";
