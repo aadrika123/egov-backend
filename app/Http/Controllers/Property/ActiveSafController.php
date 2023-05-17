@@ -352,7 +352,7 @@ class ActiveSafController extends Controller
                 ->get();
             // ->paginate($perPage);
 
-            return responseMsgs(true, "Data Fetched", remove_null($safInbox->values()), "010103", "1.0", "339ms", "POST", "");
+            return responseMsgs(true, "Data Fetched", remove_null($safInbox->values()), "010103", "1.0", responseTime(), "POST", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -1087,7 +1087,7 @@ class ActiveSafController extends Controller
         }
 
         // Edit In Case of Reassessment,Mutation
-        if (in_array($assessmentType, ['Re Assessment', 'Mutation'])) {         // Edit Property In case of Reassessment, Mutation
+        if (in_array($assessmentType, ['Reassessment', 'Mutation'])) {         // Edit Property In case of Reassessment, Mutation
             $propId = $activeSaf->previous_holding_id;
             $mProperty = new PropProperty();
             $mPropOwners = new PropOwner();

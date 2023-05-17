@@ -23,6 +23,7 @@ class SafRepository implements iSafRepository
                 'prop_active_safs.payment_status',
                 'prop_active_safs.saf_no',
                 'prop_active_safs.id',
+                'prop_active_safs.workflow_id',
                 'prop_active_safs.ward_mstr_id',
                 'ward.ward_name as ward_no',
                 'prop_active_safs.prop_type_mstr_id',
