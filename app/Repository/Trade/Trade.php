@@ -339,53 +339,63 @@ class Trade implements ITrade
                 $licence->update();
                 #----------------End Crate Application--------------------
                 #---------------- transaction of payment-------------------------------
-                if ($mApplicationTypeId == 1 && $request->initialBusinessDetails['applyWith'] == 1) {
+                if ($mApplicationTypeId == 1 && $request->initialBusinessDetails['applyWith'] == 1) 
+                {
                     $noticeNo = trim($request->initialBusinessDetails['noticeNo']);
                     $firm_date = $request->firmDetails['firmEstdDate'];
                     $refNoticeDetails = $this->getDenialFirmDetails($refUlbId, strtoupper(trim($noticeNo)));
-                    if ($refNoticeDetails) {
+                    if ($refNoticeDetails) 
+                    {
                         $refDenialId = $refNoticeDetails->dnialid;
                         $licence->denial_id = $refDenialId;
                         $licence->update();
                         $mNoticeDate = date("Y-m-d", strtotime($refNoticeDetails['created_on'])); //notice date  
-                        if ($firm_date < $mNoticeDate) {
+                        if ($firm_date < $mNoticeDate) 
+                        {
                             throw new Exception("Firm Establishment Date Can Not Be Greater Than Notice Date ");
                         }
                     }
                 }
-                if (in_array(strtoupper($mUserType), ["JSK", "UTC", "TC", "SUPER ADMIN", "TL"]) && $mApplicationTypeId != 4) {
+                if (in_array(strtoupper($mUserType), ["JSK", "UTC", "TC", "SUPER ADMIN", "TL"]) && $mApplicationTypeId != 4) 
+                {
                     $myRequest = new \Illuminate\Http\Request();
                     $myRequest->setMethod('POST');
                     $myRequest->request->add(['paymentMode' => $request->licenseDetails['paymentMode']]);
                     $myRequest->request->add(['licenceId'   => $licence->id]);
                     $myRequest->request->add(['licenseFor' => $licence->licence_for_years]);
                     $myRequest->request->add(['totalCharge' => $request->licenseDetails["totalCharge"]]);
-                    if ($request->licenseDetails['paymentMode'] != "CASH") {
+                    if ($request->licenseDetails['paymentMode'] != "CASH") 
+                    {
                         $myRequest->request->add(['chequeNo' => $request->licenseDetails["chequeNo"]]);
                         $myRequest->request->add(['chequeDate' => $request->licenseDetails["chequeDate"]]);
                         $myRequest->request->add(['bankName' => $request->licenseDetails["bankName"]]);
                         $myRequest->request->add(['branchName' => $request->licenseDetails["branchName"]]);
                     }
                     $temp = $this->paymentCounter($myRequest);
-                    if (!$temp->original["status"]) {
+                    if (!$temp->original["status"]) 
+                    {
                         throw new Exception($temp->original["message"]);
                     }
                     $res['transactionId']   = $temp->original["data"]["transactionId"];
                     $res['paymentReceipt']   = $temp->original["data"]["paymentReceipt"];
-                } elseif ($refNoticeDetails) {
+                } 
+                elseif ($refNoticeDetails) 
+                {
                     $licence->denial_id = $refDenialId;
                     $licence->update();
                     $this->updateStatusFine($refDenialId, 0, $licenceId, 1); //update status and fineAmount                     
                 }
                 #---------------- End transaction of payment----------------------------
-                if ($mApplicationTypeId == 4) {
+                if ($mApplicationTypeId == 4) 
+                {
                     $mProvno                         = $this->createProvisinalNo($mShortUlbName, $mWardNo, $licenceId);
                     $licence->provisional_license_no = $mProvno;
                     $licence->payment_status         = 1;
                     $licence->update();
                 }
                 #frize Priviuse License
-                if ($mApplicationTypeId != 1 && !$this->transferExpire($mOldLicenceId)) {
+                if ($mApplicationTypeId != 1 && !$this->transferExpire($mOldLicenceId)) 
+                {
                     throw new Exception("Some Error Ocures!....");
                 }
                 DB::commit();
