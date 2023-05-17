@@ -131,7 +131,7 @@ class CalculatorController extends Controller
                     if ($collect->first()['ruleSet'] == 'RuleSet2' && $this->_reqs->propertyType == 4) {            // For Vacant Land(RuleSet 2)
                         $quaters['multiFactors'] = $this->_occupancyFactors;
                         $rentalRates = collect($calculation->_vacantRentalRates)
-                            ->where('effective_date', '2016-04-01')
+                            ->where('effective_date', $this->_effectiveRuleset2)
                             ->where('ulb_type_id', $calculation->_ulbType);
                         $quaters['rentalRate'] = $this->generateVacantRentalRates($rentalRates);
                     }
@@ -148,7 +148,7 @@ class CalculatorController extends Controller
                         $quaters['matrixFactor'] = $this->generateMatrixFactor(collect($calculation->_rentalRates)->where('effective_date', $this->_effectiveRuleset3));
                         $quaters['occupancyFactors'] = $this->_occupancyFactors;
                         $rentalRates = collect($calculation->_vacantRentalRates)
-                            ->where('effective_date', '2022-04-01')
+                            ->where('effective_date', $this->_effectiveRuleset3)
                             ->where('ulb_type_id', $calculation->_ulbType);
                         $vacantRentalRates = $this->generateVacantRentalRates($rentalRates)
                             ->whereIn('prop_road_type_id', [2, 3, 4])                           // Road Types
