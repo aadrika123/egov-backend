@@ -2050,16 +2050,7 @@ class Trade implements ITrade
             $refOwnerDtl                = $this->getAllOwnereDtlByLId($id);
             $refTransactionDtl          = TradeTransaction::listByLicId($id);
             $refTimeLine                = $this->getTimelin($id);
-            // $refUploadDocuments         = $this->getLicenceDocuments($id,$tbl)->map(function($val){
-            //                                     $val->document_path = !empty(trim($val->document_path))? $this->readDocumentPath($val->document_path):"";
-            //                                     return $val;
-            //                                 });
-            // $pendingAt  = $init_finish['initiator']['id'];
-            // $mlevelData = $this->getWorkflowTrack($id);//TradeLevelPending::getLevelData($id);
-            // if($mlevelData)
-            // {
-            //     $pendingAt = $mlevelData->receiver_user_type_id;                
-            // }
+            
             $mworkflowRoles = $this->_COMMON_FUNCTION->getWorkFlowAllRoles($refUserId, $refUlbId, $refWorkflowId, true);
             $mileSton = $this->_COMMON_FUNCTION->sortsWorkflowRols($mworkflowRoles);
 
@@ -2072,13 +2063,7 @@ class Trade implements ITrade
             $data["userType"]       = $mUserType;
             $data["roles"]          = $mileSton;
 
-            // $data['documents']      = $refUploadDocuments;   
-            // $data["pendingAt"]      = $pendingAt;
-            // $data["levelData"]      = $mlevelData;
-            // $data['finisher']       = $finisher;
-
-            //=========================================================================================
-            // return $data['licenceDtl'];
+            
             $newData = array();
             $fullDetailsData = array();
             $basicDetails = $this->generateBasicDetails($licenseDetail);      // Trait function to get Basic Details
@@ -2087,18 +2072,13 @@ class Trade implements ITrade
                 "data" => $basicDetails
             ];
 
-            // Property Details and address
-            // $propertyDetails = $this->generatePropertyDetails($licenseDetail);   // Trait function to get Property Details
-            // $propertyElement = [
-            //     'headerTitle' => "Property Details & Address",
-            //     'data' => $propertyDetails
-            // ];
+            
             $paymentDetail = sizeOf($transactionDtl) > 0 ? $this->generatepaymentDetails($transactionDtl) : (array) null;      // Trait function to get payment Details
             $paymentElement = [
                 'headerTitle' => "Transaction Details",
                 'tableHead' => ["#", "Payment For", "Tran No", "Payment Mode", "Date"],
                 'tableData' => $paymentDetail,
-                // "data" => $paymentDetail
+                
             ];
 
             $ownerDetails = $this->generateOwnerDetails($ownerDetails);
@@ -2124,7 +2104,6 @@ class Trade implements ITrade
             $metaReqs['wfRoleId'] = $licenseDetail->current_role;
             $metaReqs['workflowId'] = $licenseDetail->workflow_id;
             $metaReqs['lastRoleId'] = $licenseDetail->last_role_id;
-            // dd($mRefTable);
             $levelComment = $mWorkflowTracks->getTracksByRefId($mRefTable, $licenseDetail->id);
             $fullDetailsData['levelComment'] = $levelComment;
 
@@ -2141,7 +2120,9 @@ class Trade implements ITrade
             $fullDetailsData['departmentalPost'] = collect($custom)['original']['data'];
 
             return responseMsgs(true, 'Data Fetched', remove_null($fullDetailsData), "010104", "1.0", "303ms", "POST", $request->deviceId);
-        } catch (Exception $e) {
+        } 
+        catch (Exception $e) 
+        {
             return responseMsg(false, $e->getMessage(), '');
         }
     }
@@ -3923,7 +3904,8 @@ class Trade implements ITrade
                 "trade_param_ownership_types.ownership_type",
                 DB::raw("ulb_ward_masters.ward_name AS ward_no, new_ward.ward_name as new_ward_no,ulb_masters.ulb_name, '$table' AS tbl")
             );
-            if (!$test) {
+            if (!$test) 
+            {
                 $test = RejectedTradeLicence::select("id")->find($id);
                 $table = "rejected_trade_licences";
                 $application = RejectedTradeLicence::select(
@@ -3935,7 +3917,9 @@ class Trade implements ITrade
                     DB::raw("ulb_ward_masters.ward_name AS ward_no, new_ward.ward_name as new_ward_no,ulb_masters.ulb_name,'$table' AS tbl")
                 );
             }
-            if (!$test) {
+            if (!$test) 
+            {
+                $test = ActiveTradeLicence::select("id")->find($id);
                 $table = "active_trade_licences";
                 $application = ActiveTradeLicence::select(
                     "active_trade_licences.*",
@@ -3947,7 +3931,8 @@ class Trade implements ITrade
                     new_ward.ward_name as new_ward_no,ulb_masters.ulb_name,'$table' AS tbl")
                 );
             }
-            if (!$test) {
+            if (!$test) 
+            {
                 $table = "trade_renewals";
                 $application = TradeRenewal::select(
                     "trade_renewals.*",
@@ -3975,7 +3960,9 @@ class Trade implements ITrade
                 ->where($table . '.id', $id)
                 ->first();
             return $application;
-        } catch (Exception $e) {
+        } 
+        catch (Exception $e) 
+        {
             echo $e->getMessage();
         }
     }
