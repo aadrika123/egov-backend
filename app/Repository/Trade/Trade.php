@@ -417,8 +417,8 @@ class Trade implements ITrade
         $refActiveLicense->firm_description    = $request->initialBusinessDetails['otherFirmType'] ?? null;
         $refActiveLicense->category_type_id    = $request->initialBusinessDetails['categoryTypeId'] ?? null;
         $refActiveLicense->ownership_type_id   = $request->initialBusinessDetails['ownershipType'];
-        $refActiveLicense->ward_id        = $request->firmDetails['wardNo'];
-        $refActiveLicense->new_ward_id    = $request->firmDetails['newWardNo'];
+        $refActiveLicense->ward_id             = $request->firmDetails['wardNo'];
+        $refActiveLicense->new_ward_id         = $request->firmDetails['newWardNo'];
         $refActiveLicense->holding_no          = $request->firmDetails['holdingNo'];
         $refActiveLicense->firm_name           = $request->firmDetails['firmName'];
         $refActiveLicense->premises_owner_name = $request->firmDetails['premisesOwner'] ?? null;
@@ -4237,10 +4237,10 @@ class Trade implements ITrade
             }
         } elseif ($application->is_parked) {
             $rols  = WfRole::find($application->current_role);
-            $status = "Application back to citizen by " . $rols->role_name;
+            $status = "Application back to citizen by " . ($rols->role_name??"");
         } elseif ($application->pending_status != 0 && (($application->current_role != $application->finisher_role) || ($application->current_role == $application->finisher_role))) {
             $rols  = WfRole::find($application->current_role);
-            $status = "Application pending at " . $rols->role_name;
+            $status = "Application pending at " . ($rols->role_name??"");
         } elseif (!$application->is_active) {
             $status = "Application rejected ";
         } elseif (strtoupper($mUserType) == "ONLINE" && $application->citizen_id == $refUserId && $application->payment_status == 0) {
