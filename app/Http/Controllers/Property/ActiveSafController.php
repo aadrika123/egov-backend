@@ -334,8 +334,8 @@ class ActiveSafController extends Controller
             $mWfWardUser = new WfWardUser();
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
 
-            $userId = auth()->user()->id;
-            $ulbId = auth()->user()->ulb_id;
+            $userId = authUser()->id;
+            $ulbId = authUser()->ulb_id;
 
             $occupiedWards = $mWfWardUser->getWardsByUserId($userId)->pluck('ward_id');                       // Model () to get Occupied Wards of Current User
             $roleIds = $mWfRoleUser->getRoleIdByUserId($userId)->pluck('wf_role_id');                      // Model to () get Role By User Id
@@ -387,8 +387,7 @@ class ActiveSafController extends Controller
                 ->selectRaw(DB::raw(
                     "case when prop_active_safs.citizen_id is null then 'true'
                           else false end
-                          as btc_for_citizen
-                    "
+                          as btc_for_citizen"
                 ))
                 ->where('parked', true)
                 ->where('prop_active_safs.ulb_id', $mUlbId)

@@ -35,7 +35,7 @@ class CustomDetail extends Model
             )
                 ->orderBy("id", 'desc')
                 ->where('ref_id', $request->applicationId)
-                ->where('ref_type', $request->customFor)
+                ->where('ref_type', trim(strtoupper($request->customFor)))
                 ->get();
             $customDetails = $customDetails->map(function ($val) {
                 $path = $this->_bifuraction->readDocumentPath($val->relative_path . $val->docUrl);
@@ -52,7 +52,7 @@ class CustomDetail extends Model
     public function postCustomDetails($request)
     {
         try {
-            $customFor = strtoupper($request->customFor);
+            $customFor = trim(strtoupper($request->customFor));
             $customDetails = new CustomDetail;
             $filename = NULL;
 

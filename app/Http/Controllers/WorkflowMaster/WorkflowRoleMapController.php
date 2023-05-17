@@ -129,9 +129,10 @@ class WorkflowRoleMapController extends Controller
             $mWfWorkflows = new WfWorkflow();
             $mWfWorkflowrolemap = new WfWorkflowrolemap();
             $ulbId = authUser()->ulb_id;
-            $wfMasterId = $req->workflowId;                  // wfMasterId from frontend in the key of wokflowId
-            $ulbWorkflow = $mWfWorkflows->getulbWorkflowId($wfMasterId, $ulbId);
-            $workflowId =  $ulbWorkflow->id;
+            // $wfMasterId = $req->workflowId;                  // wfMasterId from frontend in the key of wokflowId
+            $workflowId = $req->workflowId;                  // wfMasterId from frontend in the key of wokflowId
+            // $ulbWorkflow = $mWfWorkflows->getulbWorkflowId($wfMasterId, $ulbId);
+            // $workflowId  =  $ulbWorkflow->id;
 
             $mreqs = new Request(["workflowId" => $workflowId]);
             $role = $mWorkflowMap->getRoleByWorkflow($mreqs);
@@ -149,100 +150,6 @@ class WorkflowRoleMapController extends Controller
 
             // pseudo users
             $data['pseudoUsers'] = $this->pseudoUser($ulbId);
-
-            // $req->merge([
-            //     'wf_mstr_id' =>  $wfMstrId,
-            //     'bearerToken' => $req->bearerToken(),
-            // ]);
-
-            // //inbox
-            // switch ($wfMstrId) {
-
-            //         // SAF
-            //     case (in_array(
-            //         $wfMstrId,
-            //         [
-            //             $propSafMstrId, $propReassementMstrId,
-            //             $propMutationMstrId, $propBifurcationtMstrId,
-            //             $propAmalgamationMstrId
-            //         ]
-            //     )):
-            //         $inbox = $this->_safRepository;
-            //         $ab = $inbox->inbox();
-            //         collect($ab)['original']['data'];
-            //         $data['inbox'] = collect($ab)['original']['data'];
-            //         break;
-
-            //         // GB Saf
-            //     case (in_array(
-            //         $wfMstrId,
-            //         [
-            //             $propGbNewassementMstrId, $propGbReassessmentMstrId,
-            //         ]
-            //     )):
-            //         $inbox = new GbSafController;
-            //         $ab = $inbox->inbox();
-            //         collect($ab)['original']['data'];
-            //         $data['inbox'] = collect($ab)['original']['data'];
-            //         break;
-
-            //         // Concession
-            //     case ($propConcessionMstrId):
-            //         $inbox = $this->_concession;
-            //         $ab = $inbox->inbox($req);
-            //         collect($ab)['original']['data'];
-            //         $data['inbox'] = collect($ab)['original']['data'];
-            //         break;
-
-            //         // Objection
-            //     case (in_array(
-            //         $wfMstrId,
-            //         [
-            //             $propclericalObjectionMstrId, $propassessmentObjectionMstrId,
-            //             $propforgeryObjectionMstrId
-            //         ]
-            //     )):
-            //         $inbox = $this->_objection;
-            //         $ab = $inbox->inbox();
-            //         collect($ab)['original']['data'];
-            //         $data['inbox'] = collect($ab)['original']['data'];
-            //         break;
-
-            //         // Rain water harvesting
-            //     case ($propWaterHarvestingMstrId):
-            //         $inbox = new RainWaterHarvestingController;
-            //         $ab = $inbox->harvestingInbox();
-            //         collect($ab)['original']['data'];
-            //         $data['inbox'] = collect($ab)['original']['data'];
-            //         break;
-
-            //         // Property deactivation
-            //     case ($propDeactivationMstrId):
-            //         $inbox = new PropertyDeactivate();
-            //         $ab = $inbox->inbox($req);
-            //         collect($ab)['original']['data'];
-            //         $data['inbox'] = collect($ab)['original']['data'];
-            //         break;
-
-            //         // Water
-            //     case ($waterMstrId):
-            //         $inbox = new NewConnectionRepository;
-            //         $ab = $inbox->waterInbox();
-            //         collect($ab)['original']['data'];
-            //         $data['inbox'] = collect($ab)['original']['data'];
-            //         break;
-
-            //         // Trade
-            //     case ($tradeMstrId):
-            //         $inbox = new Trade();
-            //         $ab = $inbox->inbox($req);
-            //         collect($ab)['original']['data'];
-            //         $data['inbox'] = collect($ab)['original']['data'];
-            //         break;
-
-            //     default:
-            //         $data['inbox'] =   "Workflow Not Assigned";
-            // }
 
             return responseMsgs(true, "Workflow Information", remove_null($data));
         } catch (Exception $e) {

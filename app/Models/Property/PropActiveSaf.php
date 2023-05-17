@@ -648,6 +648,7 @@ class  PropActiveSaf extends Model
             ->join('ref_prop_road_types as r', 'r.id', 'prop_active_safs.road_type_mstr_id')
             ->select(
                 'prop_active_safs.id',
+                'prop_active_safs.workflow_id',
                 'prop_active_safs.payment_status',
                 'prop_active_safs.saf_no',
                 'prop_active_safs.ward_mstr_id',
