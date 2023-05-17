@@ -2661,6 +2661,7 @@ class Trade implements ITrade
                                                 )owner"), function ($join) {
                             $join->on("owner.temp_id", "active_trade_licences.id");
                         })
+                        ->leftjoin("trade_param_firm_types", "trade_param_firm_types.id", "active_trade_licences.firm_type_id")
                     ->select(
                         "active_trade_licences.id",
                         "active_trade_licences.application_no",
@@ -2676,6 +2677,8 @@ class Trade implements ITrade
                         "owner.email_id",
                         "active_trade_licences.application_type_id",
                         "trade_param_application_types.application_type",
+                        "trade_param_firm_types.firm_type",
+                        "active_trade_licences.firm_type_id",
                         DB::raw("TO_CHAR(active_trade_licences.application_date, 'DD-MM-YYYY') as application_date"),
                     )
                     ->WHERE("active_trade_licences.is_active",TRUE);
@@ -3082,15 +3085,17 @@ class Trade implements ITrade
                     "trade_licences.document_upload_status",
                     "trade_licences.payment_status",
                     "trade_licences.firm_name",
-                    "trade_licences.application_date",
-                    "trade_licences.apply_from",
-                    "trade_licences.valid_from",
-                    "trade_licences.valid_upto",
                     "trade_licences.licence_for_years",
                     "owner.owner_name",
                     "owner.guardian_name",
                     "owner.mobile_no",
                     "owner.email_id",
+                    DB::raw("
+                        TO_CHAR(trade_licences.valid_from, 'DD-MM-YYYY') as valid_from ,
+                        TO_CHAR(trade_licences.valid_upto, 'DD-MM-YYYY') as valid_upto,
+                        TO_CHAR(trade_licences.application_date, 'DD-MM-YYYY') as application_date,
+                        TO_CHAR(trade_licences.license_date, 'DD-MM-YYYY') as license_date
+                    "),
                 )
                 ->join(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
                                 STRING_AGG(guardian_name,',') AS guardian_name,
