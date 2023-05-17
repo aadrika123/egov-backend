@@ -166,7 +166,6 @@ class ActiveSafControllerV2 extends Controller
             $calculationByUlbTc = new CalculationByUlbTc;
 
             $details = $mPropSafMemoDtl->getMemoDtlsByMemoId($req->memoId);
-            // return $details;
             if (collect($details)->isEmpty())
                 $details = $mPropSafMemoDtl->getPropMemoDtlsByMemoId($req->memoId);
 
@@ -214,8 +213,14 @@ class ActiveSafControllerV2 extends Controller
                     $ulbTax = $ulbWiseTax->where('quarterYear', $taxDiff->first()->fyear)->where('qtr', $taxDiff->first()->qtr)->first();
                     $totalFirstQtrs = $qtrParam - $taxDiff->first()->qtr;
                     $selfAssessAmt = ($taxDiff->first()->amount - $taxDiff->first()->additional_tax) * $totalFirstQtrs;               // Holding Tax Amount without penalty
-                    $ulbAssessAmt = ($ulbTax['balance']) * $totalFirstQtrs;                                                              // Holding Tax Amount Without Panalty
-                    $diffAmt = $ulbAssessAmt - $selfAssessAmt;
+                    if (!is_null($ulbTax)) {
+                        $ulbAssessAmt = ($ulbTax['balance']) * $totalFirstQtrs;                                                              // Holding Tax Amount Without Panalty
+                        $diffAmt = $ulbAssessAmt - $selfAssessAmt;
+                    } else {
+                        $ulbAssessAmt = 0;
+                        $diffAmt = -$selfAssessAmt;
+                    }
+
                     return [
                         'Particulars' => $taxDiff->first()->due_date <= '2021-03-31' ? "Holding Tax @ 2%" : "Holding Tax @ 0.075% or 0.15% or 0.2%",
                         'quarterFinancialYear' => 'Quarter' . $taxDiff->first()->qtr . '/' . $taxDiff->first()->fyear,
@@ -225,7 +230,6 @@ class ActiveSafControllerV2 extends Controller
                     ];
                 });
                 $holdingTaxes = $holdingTaxes->values();
-
                 $total = collect([
                     'Particulars' => 'Total Amount',
                     'quarterFinancialYear' => "",
@@ -235,9 +239,9 @@ class ActiveSafControllerV2 extends Controller
                 ]);
                 $details->taxTable = $holdingTaxes->merge([$total])->values();
             }
-            return responseMsgs(true, "", remove_null($details), "011803", 1.0, "", "POST", $req->deviceId);
+            return responseMsgs(true, "", remove_null($details), "011803", 1.0, responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "011803", 1.0, "", "POST", $req->deviceId);
+            return responseMsgs(false, $e->getMessage(), "", "011803", 1.0, responseTime(), "POST", $req->deviceId);
         }
     }
 
