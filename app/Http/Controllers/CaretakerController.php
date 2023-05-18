@@ -30,44 +30,34 @@ class CaretakerController extends Controller
     public function waterCaretakerOtp(Request $req)
     {
         try {
-            # trade
-            if (isset($req->moduleId) || $req->moduleId == 3) {
-                $data = [
-                    'otp' => 123123,
-                    'mobileNo' => "0123456789"
-                ];
-            }
+            $user                       = authUser();
+            $userId                     = $user->id;
+            $mWaterApprovalApplicant    = new WaterApprovalApplicant();
+            $ThirdPartyController       = new ThirdPartyController();
+            $mActiveCitizenUndercare    = new ActiveCitizenUndercare();
+            $mWaterConsumer             = new WaterConsumer();
 
-            if (!isset($req->moduleId)) {
-                $user = authUser();
-                $userId = $user->id;
-                $mWaterApprovalApplicant = new WaterApprovalApplicant();
-                $ThirdPartyController = new ThirdPartyController();
-                $mActiveCitizenUndercare = new ActiveCitizenUndercare();
-                $mWaterConsumer = new WaterConsumer();
+            $waterDtl = $mWaterConsumer->getConsumerByNo($req->consumerNo);
+            if (!isset($waterDtl))
+                throw new Exception('Water Connection Not Found!');
 
-                $waterDtl = $mWaterConsumer->getConsumerByNo($req->consumerNo);
-                if (!isset($waterDtl))
-                    throw new Exception('Water Connection Not Found!');
+            $existingData = $mActiveCitizenUndercare->getDetailsForUnderCare($userId, $waterDtl->id);
+            if (!is_null($existingData))
+                throw new Exception("ConsumerNo caretaker already exist!");
 
-                $existingData = $mActiveCitizenUndercare->getDetailsForUnderCare($userId, $waterDtl->id);
-                if (!is_null($existingData))
-                    throw new Exception("ConsumerNo caretaker already exist!");
+            $approveApplicant = $mWaterApprovalApplicant->getOwnerDtlById($waterDtl->apply_connection_id);
+            $applicantMobile = $approveApplicant->mobile_no;
 
-                $approveApplicant = $mWaterApprovalApplicant->getOwnerDtlById($waterDtl->apply_connection_id);
-                $applicantMobile = $approveApplicant->mobile_no;
+            $myRequest = new \Illuminate\Http\Request();
+            $myRequest->setMethod('POST');
+            $myRequest->request->add(['mobileNo' => $applicantMobile]);
+            $otpResponse = $ThirdPartyController->sendOtp($myRequest);
 
-                $myRequest = new \Illuminate\Http\Request();
-                $myRequest->setMethod('POST');
-                $myRequest->request->add(['mobileNo' => $applicantMobile]);
-                $otpResponse = $ThirdPartyController->sendOtp($myRequest);
-
-                $response = collect($otpResponse)->toArray();
-                $data = [
-                    'otp' => $response['original']['data'],
-                    'mobileNo' => $applicantMobile
-                ];
-            }
+            $response = collect($otpResponse)->toArray();
+            $data = [
+                'otp' => $response['original']['data'],
+                'mobileNo' => $applicantMobile
+            ];
             return responseMsgs(true, "OTP send successfully", $data, '', '01', '623ms', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");

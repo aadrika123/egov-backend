@@ -418,13 +418,15 @@ class SafDocController extends Controller
                 'action_taken_by' => $userId
             ];
             $mWfDocument->docVerifyReject($wfDocId, $reqs);
-            $ifFullDocVerifiedV1 = $this->ifFullDocVerified($applicationId);
+            if ($req->docStatus == 'Verified')
+                $ifFullDocVerifiedV1 = $this->ifFullDocVerified($applicationId, $req->docStatus);
+            else
+                $ifFullDocVerifiedV1 = 0;                                       // In Case of Rejection the Document Verification Status will always remain false
 
             if ($ifFullDocVerifiedV1 == 1) {                                     // If The Document Fully Verified Update Verify Status
                 $safDtls->doc_verify_status = 1;
                 $safDtls->save();
             }
-
             DB::commit();
             return responseMsgs(true, $req->docStatus . " Successfully", "", "010204", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
@@ -447,7 +449,7 @@ class SafDocController extends Controller
             'moduleId' => FacadesConfig::get('module-constants.PROPERTY_MODULE_ID')
         ];
         $req = new Request($refReq);
-        $refDocList = $mWfActiveDocument->getDocsByActiveId($req);
+        $refDocList = $mWfActiveDocument->getDocsByActiveId($req);      // return Only the Pending Documents 
         // Property List Documents
         $ifPropDocUnverified = $refDocList->contains('verify_status', 0);
         if ($ifPropDocUnverified == 1)
