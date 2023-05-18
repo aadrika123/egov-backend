@@ -20,7 +20,7 @@ Route::post('/apply-new-connection', function () {
     dd('Welcome to simple Water route file');
 });
 
-Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger','expireBearerToken']], function () {
+Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger', 'expireBearerToken']], function () {
     /**
      * | Created On-07-10-2022 
      * | Updated by-Sam kerketta
@@ -82,7 +82,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         # Consumer And Citizen Transaction Operation
         Route::post('master/get-listed-details', 'getWaterMasterData');                                 // Admin/ Citizen
         Route::post('consumer/get-payment-history', 'getConsumerPaymentHistory');                       // Consumer
-        Route::post('generate-payment-receipt', 'generatePaymentReceipt');                              // Citizen
+        Route::post('generate-payment-receipt', 'generatePaymentReceipt');   // Not used                // Citizen
         Route::post('admin/application/generate-payment-receipt', 'generateOfflinePaymentReceipt');     // Consumer
         Route::post('consumer/calculate-month-demand', 'callDemandByMonth');                            // Admin/Consumer
         Route::post('application/payment/get-payment-history', 'getApplicationPaymentHistory');         // Admin/Consumer
@@ -90,6 +90,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('application/payment/offline/pay-connection-charge', 'offlineConnectionPayment');   // Admin
         Route::post('consumer/demand/generate-payment-receipt', 'generateDemandPaymentReceipt');        // Admin/ Citizen
         Route::post('consumer/online-demand-payment', 'initiateOnlineDemandPayment');                   // Citizen
+        Route::post('citizen/payment-history', 'paymentHistory');           // Here 
 
         # Site inspection 
         Route::post('site-verification/save-site-details', 'saveSitedetails');                          // Admin
@@ -107,7 +108,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('admin/consumer/save-connection-meter', 'saveUpdateMeterDetails');                  // Admin
         Route::post('admin/consumer/get-meter-list', 'getMeterList');                                   // Admin
         Route::post('consumer/caretaken-connections', 'viewCaretakenConnection');                       // Citiizen
-        Route::post('admin/consumer/add-fixed-rate','addFixedRate');                                    // Admin
+        Route::post('admin/consumer/add-fixed-rate', 'addFixedRate');      // Here                             // Admin
 
         # Deactivation
         Route::post('admin/consumer/apply-deactivation', 'applyDeactivation');                          // Admin / Not Used
@@ -135,7 +136,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
  * | Modified on: 11-01-2023
  * | ------------------- Water Connection / mobile ------------------------ |
  */
-Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger','expireBearerToken']], function () {
+Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger', 'expireBearerToken']], function () {
     Route::controller(WaterApplication::class)->group(function () {
         Route::post('citizenApplications', 'getCitizenApplication');                                    //10
         Route::post('Razorpay-Orderid', 'handeRazorPay');                                               //11

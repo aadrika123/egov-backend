@@ -503,6 +503,7 @@ class NewConnectionRepository implements iNewConnection
     public function checkPostCondition($senderRoleId, $wfLevels, $application)
     {
         $mWaterSiteInspection = new WaterSiteInspection();
+        $refRole = Config::get("waterConstaint.ROLE-LABEL");
         switch ($senderRoleId) {
             case $wfLevels['BO']:                                                                       // Back Office Condition
                 if ($application->doc_upload_status == false || $application->payment_status != 1)
@@ -519,6 +520,7 @@ class NewConnectionRepository implements iNewConnection
                     throw new Exception("Document Not Fully Uploaded");
                 }
                 $siteDetails = $mWaterSiteInspection->getSiteDetails($application->id)
+                    ->where('order_officer', $refRole['JE'])
                     ->where('payment_status', 1)
                     ->first();
                 if (!$siteDetails) {
@@ -537,6 +539,12 @@ class NewConnectionRepository implements iNewConnection
                     throw new Exception("Document Not Fully Verified or Payment in not Done!");
                 if ($application->doc_upload_status == false || $application->is_field_verified == false) {
                     throw new Exception("Document Not Fully Uploaded or site inspection not done!");
+                }
+                $siteDetails = $mWaterSiteInspection->getSiteDetails($application->id)
+                    ->where('order_officer', $refRole['AE'])
+                    ->first();
+                if (is_null($siteDetails)) {
+                    throw new Exception("Technical Inspection is not done!");
                 }
                 break;
         }

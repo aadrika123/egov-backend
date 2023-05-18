@@ -39,13 +39,20 @@ class CaretakerController extends Controller
             }
 
             if (!isset($req->moduleId)) {
+                $user = authUser();
+                $userId = $user->id;
                 $mWaterApprovalApplicant = new WaterApprovalApplicant();
                 $ThirdPartyController = new ThirdPartyController();
+                $mActiveCitizenUndercare = new ActiveCitizenUndercare();
                 $mWaterConsumer = new WaterConsumer();
 
                 $waterDtl = $mWaterConsumer->getConsumerByNo($req->consumerNo);
                 if (!isset($waterDtl))
                     throw new Exception('Water Connection Not Found!');
+
+                $existingData = $mActiveCitizenUndercare->getDetailsForUnderCare($userId, $waterDtl->id);
+                if (!is_null($existingData))
+                    throw new Exception("ConsumerNo caretaker already exist!");
 
                 $approveApplicant = $mWaterApprovalApplicant->getOwnerDtlById($waterDtl->apply_connection_id);
                 $applicantMobile = $approveApplicant->mobile_no;
@@ -77,11 +84,11 @@ class CaretakerController extends Controller
             'otp' => 'required|digits:6'
         ]);
         try {
-            $userId = authUser()->id;
-            $mWaterApprovalApplicant = new WaterApprovalApplicant();
-            $mActiveCitizenUndercare = new ActiveCitizenUndercare();
-            $mWaterConsumer = new WaterConsumer();
-            $ThirdPartyController = new ThirdPartyController();
+            $userId                     = authUser()->id;
+            $mWaterApprovalApplicant    = new WaterApprovalApplicant();
+            $mActiveCitizenUndercare    = new ActiveCitizenUndercare();
+            $mWaterConsumer             = new WaterConsumer();
+            $ThirdPartyController       = new ThirdPartyController();
 
             DB::beginTransaction();
             $waterDtl = $mWaterConsumer->getConsumerByNo($req->consumerNo);
@@ -149,12 +156,12 @@ class CaretakerController extends Controller
             ]);
             $data = array();
             $response = app(Pipeline::class)
-            ->send($data)
-            ->through([
-                CareTakeProperty::class,
-                CareTakerTrade::class
-            ])
-            ->thenReturn();
+                ->send($data)
+                ->through([
+                    CareTakeProperty::class,
+                    CareTakerTrade::class
+                ])
+                ->thenReturn();
             return responseMsgs(true, $response, [], '01', '1.0', "", 'POST', $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], '01', '1.0', "", 'POST', $req->deviceId);

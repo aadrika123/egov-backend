@@ -415,16 +415,14 @@ class WaterPaymentController extends Controller
                 "customerMobile"        => $applicationDetails['mobileno'],
                 "address"               => $applicationDetails['address'],
                 "paidFrom"              => $connectionCharges['charge_category'],
-                "paidFromQtr"           => "",
                 "holdingNo"             => $applicationDetails['holding_no'],
                 "safNo"                 => $applicationDetails['saf_no'],
                 "paidUpto"              => "",
-                "paidUptoQtr"           => "",
                 "paymentMode"           => $transactionDetails['payment_mode'],
-                "bankName"              => $chequeDetails[''] ?? null,                                  // in case of cheque,dd,nfts
-                "branchName"            => $chequeDetails[''] ?? null,                                  // in case of chque,dd,nfts
-                "chequeNo"              => $chequeDetails[''] ?? null,                                  // in case of chque,dd,nfts
-                "chequeDate"            => $chequeDetails[''] ?? null,                                  // in case of chque,dd,nfts
+                "bankName"              => $chequeDetails['bank_name'] ?? null,                                  // in case of cheque,dd,nfts
+                "branchName"            => $chequeDetails['branch_name'] ?? null,                                  // in case of chque,dd,nfts
+                "chequeNo"              => $chequeDetails['cheque_no'] ?? null,                                  // in case of chque,dd,nfts
+                "chequeDate"            => $chequeDetails['cheque_date'] ?? null,                                  // in case of chque,dd,nfts
                 "monthlyRate"           => "",
                 "demandAmount"          => $transactionDetails->amount,
                 "taxDetails"            => "",
@@ -536,8 +534,8 @@ class WaterPaymentController extends Controller
         $userId = authUser()->id;
         $workflowId = $waterDetails->workflow_id;
         $getRoleReq = new Request([                                                 # make request to get role id of the user
-            'userId'        => $userId,
-            'workflowId'    => $workflowId
+            'userId'     => $userId,
+            'workflowId' => $workflowId
         ]);
         $readRoleDtls = $mWfRoleUsermap->getRoleByUserWfId($getRoleReq);
         $roleId = $readRoleDtls->wf_role_id;
@@ -570,7 +568,7 @@ class WaterPaymentController extends Controller
     public function adjustmentInConnection($request, $newConnectionCharges, $waterApplicationDetails, $applicationCharge)
     {
         $applicationId      = $request->applicationId;
-        $refPaymentStatus   = 0;
+        $refPaymentStatus   = 0;                                                                    // Static
         $newCharge          = $newConnectionCharges['conn_fee_charge']['amount'];
 
         $mWaterPenaltyInstallment       = new WaterPenaltyInstallment();
@@ -1500,7 +1498,7 @@ class WaterPaymentController extends Controller
             'transactionNo' => 'required'
         ]);
         try {
-            $refTransactionNo = $req->transactionNo;
+            $refTransactionNo       = $req->transactionNo;
             $mWaterConsumerDemand   = new WaterConsumerDemand();
             $mWaterConsumer         = new WaterConsumer();
             $mWaterTranDetail       = new WaterTranDetail();
@@ -1563,9 +1561,9 @@ class WaterPaymentController extends Controller
                 "holdingNo"             => $consumerDetails['holding_no'],
                 "safNo"                 => $consumerDetails['saf_no'],
                 "paymentMode"           => $transactionDetails['payment_mode'],
-                "bankName"              => $chequeDetails['bank_name'] ?? null,                                      // in case of cheque,dd,nfts
+                "bankName"              => $chequeDetails['bank_name']   ?? null,                                    // in case of cheque,dd,nfts
                 "branchName"            => $chequeDetails['branch_name'] ?? null,                                  // in case of chque,dd,nfts
-                "chequeNo"              => $chequeDetails['cheque_no']  ?? null,                                     // in case of chque,dd,nfts
+                "chequeNo"              => $chequeDetails['cheque_no']   ?? null,                                   // in case of chque,dd,nfts
                 "chequeDate"            => $chequeDetails['cheque_date'] ?? null,                                  // in case of chque,dd,nfts
                 "penaltyAmount"         => $penaltyAmount,
                 "demandAmount"          => $transactionDetails->amount,
@@ -1576,10 +1574,10 @@ class WaterPaymentController extends Controller
                 "description"           => $mAccDescription,
                 "totalPaidAmount"       => $transactionDetails->amount,
                 "dueAmount"             => $transactionDetails->due_amount,
-                "rebate"                => 0,                                                       // Static
+                "rebate"                => 0,                                                                       // Static
                 "waterConsumed"         => (($finalReading ?? 0.00) - ($initialReading ?? 0.00)),
                 "fixedPaidFrom"         => (Carbon::createFromFormat('Y-m-d',  $fixedFrom)->startOfMonth())->format('Y-m-d'),
-                "fixedPaidUpto"         => (Carbon::createFromFormat('Y-m-d',  $fixedUpto)->startOfMonth())->format('Y-m-d'),
+                "fixedPaidUpto"         => (Carbon::createFromFormat('Y-m-d',  $fixedUpto)->endOfMonth())->format('Y-m-d'),
                 "paidAmtInWords"        => getIndianCurrency($transactionDetails->amount),
 
             ];
@@ -1625,11 +1623,11 @@ class WaterPaymentController extends Controller
             $mWaterRazorPayRequest->saveRequestData($request, $paymentFor['1'], $temp, $refDetails);
             DB::commit();
 
-            $temp['name']               = $refUser->user_name;
-            $temp['mobile']             = $refUser->mobile;
-            $temp['email']              = $refUser->email;
-            $temp['userId']             = $refUser->id;
-            $temp['ulbId']              = $refUser->ulb_id;
+            $temp['name']   = $refUser->user_name;
+            $temp['mobile'] = $refUser->mobile;
+            $temp['email']  = $refUser->email;
+            $temp['userId'] = $refUser->id;
+            $temp['ulbId']  = $refUser->ulb_id;
             return responseMsgs(true, "", $temp, "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
@@ -1644,7 +1642,8 @@ class WaterPaymentController extends Controller
      * | @param RazorPayRequest
         | Serial No : 11
         | Recheck / Not Working
-        | clear the concept
+        | Clear the concept
+        | Save the pgId and pgResponseId in trans table 
         | Called function 
      */
     public function endOnlineDemandPayment($webhookData, $RazorPayRequest)
@@ -1683,7 +1682,7 @@ class WaterPaymentController extends Controller
 
             DB::beginTransaction();
             # save payment data in razorpay response table
-            $mWaterRazorPayResponse->savePaymentResponse($RazorPayRequest, $webhookData);
+            $paymentResponseId = $mWaterRazorPayResponse->savePaymentResponse($RazorPayRequest, $webhookData);
 
             # save the razorpay request status as 1
             $RazorPayRequest->status = 1;                                       // Static
@@ -1702,7 +1701,9 @@ class WaterPaymentController extends Controller
                 'userType'          => "Citizen" ?? null,                       // Check here // Static
                 'ulbId'             => $refUlbId,
                 'leftDemandAmount'  => $RazorPayRequest->due_amount,
-                'adjustedAmount'    => $RazorPayRequest->adjusted_amount
+                'adjustedAmount'    => $RazorPayRequest->adjusted_amount,
+                'pgResponseId'      => $paymentResponseId['razorpayResponseId'],
+                'pgId'              => $webhookData['gatewayType']
             ];
             $consumer['ward_mstr_id'] = $consumerDetails->ward_mstr_id;
             $transactionId = $mWaterTran->waterTransaction($metaRequest, $consumer);
@@ -1735,6 +1736,32 @@ class WaterPaymentController extends Controller
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), $webhookData);
+        }
+    }
+
+
+    /**
+     * | Get citizen payment history to show 
+     * | Using user Id for displaying data
+     * | @param request 
+        | Selail No : 12
+        | Use 
+     */
+    public function paymentHistory(Request $request)
+    {
+        try {
+            $citizen = authUser();
+            $citizenId = $citizen->id;
+            $mWaterTran = new WaterTran();
+            $refUserType = Config::get("waterConstaint.USER_TYPE");
+
+            if ($citizenId->user_type != $refUserType["Citizen"]) {
+                throw new Exception("You're user type is not citizen!");
+            }
+            $transactionDetails = $mWaterTran->getTransByCitizenId($citizenId);
+            return responseMsgs(true, "List of transactions", remove_null($transactionDetails), "", "01", ".ms", "POST", $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $request->deviceId);
         }
     }
 }

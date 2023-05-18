@@ -14,7 +14,7 @@ class WaterRazorPayResponse extends Model
     /**
      * | Save data for the razorpay response
      */
-    public function savePaymentResponse($RazorPayRequest,$webhookData)
+    public function savePaymentResponse($RazorPayRequest, $webhookData)
     {
         $RazorPayResponse = new WaterRazorPayResponse();
         $RazorPayResponse->related_id   = $RazorPayRequest->related_id;
@@ -24,5 +24,8 @@ class WaterRazorPayResponse extends Model
         $RazorPayResponse->order_id     = $webhookData["orderId"];
         $RazorPayResponse->payment_id   = $webhookData["paymentId"];
         $RazorPayResponse->save();
+        return [
+            'razorpayResponseId' => $RazorPayResponse->id
+        ];
     }
 }

@@ -102,7 +102,7 @@ class WaterSiteInspection extends Model
             'area_sqft as site_inspection_area_sqft'
         )
             ->where('apply_connection_id', $applicationId)
-            ->where('status', true)
+            ->where('status', 1)
             ->orderByDesc('water_site_inspections.id');
     }
 
@@ -142,7 +142,7 @@ class WaterSiteInspection extends Model
      */
     public function saveSitePaymentStatus($applicationId)
     {
-        $siteDetails =  WaterApplication::where('apply_connection_id', $applicationId)
+        $siteDetails = WaterSiteInspection::where('apply_connection_id', $applicationId)
             ->where('status', 1)
             ->where('payment_status', 0)
             ->orderByDesc('id')
@@ -152,4 +152,16 @@ class WaterSiteInspection extends Model
     }
 
 
+    /**
+     * | Deactivate the site inspection details
+     * | @param id
+     */
+    public function deactivateSiteDetails($id)
+    {
+        WaterSiteInspection::where('id', $id)
+            ->where('status', 1)
+            ->update([
+                'status' => 0
+            ]);
+    }
 }

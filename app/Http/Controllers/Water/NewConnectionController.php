@@ -430,6 +430,7 @@ class NewConnectionController extends Controller
     /**
         | Remove repo 
         | Recheck
+        | Use
      */
     public function commentIndependent(Request $request)
     {
@@ -2044,6 +2045,7 @@ class NewConnectionController extends Controller
      * | Site Comparision Screen 
      * | Je comparision data
         | Recheck 
+        | Not used 
      * | @param request
      */
     public function listComparision(Request $request)
@@ -2056,10 +2058,10 @@ class NewConnectionController extends Controller
             $mWaterSiteInspection = new WaterSiteInspection();
             $mWaterApplication = new WaterApplication();
             $applicationDetails = $mWaterApplication->getApplicationById($request->applicationId)->firstOrFail();
-            $siteInspectiondetails = $mWaterSiteInspection->getInspectionById($request->applicationId)->first();
+            // $siteInspectiondetails = $mWaterSiteInspection->getInspectionById($request->applicationId)->first();
             $returnData = [
                 "applicationDetails" => $applicationDetails,
-                "siteInspectiondetails" => $siteInspectiondetails
+                // "siteInspectiondetails" => $siteInspectiondetails
             ];
             return responseMsgs(true, "Comparative data!", remove_null($returnData), "", "01", "ms", "POST", "");
         } catch (Exception $e) {
@@ -2170,13 +2172,22 @@ class NewConnectionController extends Controller
             $mWaterConnectionCharge             = new WaterConnectionCharge();
             $mWaterPenaltyInstallment           = new WaterPenaltyInstallment();
             $mWaterApplication                  = new WaterApplication();
+            $mWaterSiteInspection               = new WaterSiteInspection();
             $refSiteInspection                  = Config::get("waterConstaint.CHARGE_CATAGORY.SITE_INSPECTON");
+            $refJeRole                          = Config::get("waterConstaint.ROLE-LABEL.JE");
+
+            $refSiteInspection = $mWaterSiteInspection->getSiteDetails($refApplicationId)
+                ->where('order_officer', $refJeRole)
+                ->first();
 
             DB::beginTransaction();
             $mWaterSiteInspectionsScheduling->cancelInspectionDateTime($refApplicationId);
             $mWaterConnectionCharge->deactivateSiteCharges($refApplicationId, $refSiteInspection);
             $mWaterPenaltyInstallment->deactivateSitePenalty($refApplicationId, $refSiteInspection);
             $mWaterApplication->updateOnlyPaymentstatus($refApplicationId);
+            if (!is_null($refSiteInspection)) {
+                $mWaterSiteInspection->deactivateSiteDetails($refSiteInspection->site_inspection_id);
+            }
             DB::commit();
             return responseMsgs(true, "Scheduled Date is Cancelled!", "", "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
@@ -2245,17 +2256,16 @@ class NewConnectionController extends Controller
         $mWfRoleUser        = new WfRoleusermap();
         $refApplication     = WaterApplication::findOrFail($request->applicationId);
         $WaterRoles         = Config::get('waterConstaint.ROLE-LABEL');
-        $workflowId         = Config::get('workflow-constants.WATER_WORKFLOW_ID');
         $metaReqs = new Request([
             'userId'        => authUser()->id,
-            'workflowId'    => $workflowId
+            'workflowId'    => $refApplication->workflow_id
         ]);
         $readRoles = $mWfRoleUser->getRoleByUserWfId($metaReqs);                      // Model to () get Role By User Id
         if (is_null($readRoles)) {
             throw new Exception("Role not found!");
         }
         if ($refApplication['current_role'] != $WaterRoles['JE']) {
-            throw new Exception("Application is not Under the JE!");
+            throw new Exception("Application is not Under JE!");
         }
         if ($readRoles->wf_role_id != $WaterRoles['JE']) {
             throw new Exception("you Are Not Autherised for the process!");
@@ -2318,27 +2328,31 @@ class NewConnectionController extends Controller
      * | @param request
      * | @var 
      * | @return 
-        | Not Working
-        | Make the concept clear
+        | Working
+        | Check for deactivation of technical site inspection details 
         | opration shoul be adding new record
      */
     public function onlineSiteInspection(Request $request)
     {
+        $request->validate([
+            'applicationId' => 'required',
+            'waterLockArng' => 'required',
+            'gateValve'     => 'required',
+            'pipelineSize'  => 'required',
+            'pipeSize'      => 'required|in:15,20,25',
+            'ferruleType'   => 'required|in:6,10,12,16'
+        ]);
         try {
-            $request->validate([
-                'applicationId' => 'required',
-                'waterLockArng' => 'required',
-                'gateValve'     => 'required',
-                'pipelineSize'  => 'required',
-                'pipeSize'      => 'required|in:15,20,25',
-                'ferruleType'   => 'required|in:6,10,12,16'
-            ]);
             $user = authUser();
             $current = Carbon::now();
             $currentDate = $current->format('Y-m-d');
             $currentTime = $current->format('H:i:s');
             $mWaterSiteInspection = new WaterSiteInspection();
+            $refAeRole = Config::get("waterConstaint.ROLE-LABEL.AE");
             $refDetails = $this->onlineSitePreConditionCheck($request);
+            $refTechnicalDetails = $mWaterSiteInspection->getSiteDetails($request->applicationId)
+                ->where('order_officer', $refAeRole)
+                ->first();
             $request->request->add([
                 'wardId'            => $refDetails['refApplication']->ward_id,
                 'userId'            => $user->id,
@@ -2347,9 +2361,15 @@ class NewConnectionController extends Controller
                 'inspectionDate'    => $currentDate,
                 'inspectionTime'    => $currentTime
             ]);
+            DB::beginTransaction();
             $mWaterSiteInspection->saveOnlineSiteDetails($request);
+            if ($refTechnicalDetails) {
+                $mWaterSiteInspection->deactivateSiteDetails($refTechnicalDetails->site_inspection_id);
+            }
+            DB::commit();
             return responseMsgs(true, "Technical Inspection Completed!", "", "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
+            DB::rollBack();
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", "");
         }
     }

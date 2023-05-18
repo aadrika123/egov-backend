@@ -234,22 +234,44 @@ class PropertyController extends Controller
             $mPropProperty = new PropProperty();
             $propDetails = $mPropProperty->getPropLatlong($req->wardId);
             $propDetails = collect($propDetails)->map(function ($value) {
+
                 $currentDate = Carbon::now();
+                $mPropDemand = new PropDemand();
+                $currentStatus = 2;
+
                 $geoDate = strtotime($value['created_at']);
                 $geoDate = date('Y-m-d', $geoDate);
+
+                $path = $this->readDocumentPath($value['doc_path']);
+                # arrrer,current,paid
+                $refUnpaidPropDemands = $mPropDemand->getDueDemandByPropId($value['property_id']);
+                $checkPropDemand = collect($refUnpaidPropDemands)->first();
+                if (is_null($checkPropDemand)) {
+                    $currentStatus = 3;
+                    $statusName = "Arrear";
+                }
+                if ($checkPropDemand) {
+                    $lastDemand = collect($refUnpaidPropDemands)->first();
+                    if (is_null($lastDemand->due_date)) {
+                        $currentStatus = 3;
+                        $statusName = "Arrear";
+                    }
+                    $refDate = Carbon::createFromFormat('Y-m-d', $lastDemand->due_date)->toDateString();
+                    if ($currentDate < $refDate) {
+                        $currentStatus = 1;
+                        $statusName = "No Dues";
+                    } else {
+                        $currentStatus = 2;
+                        $statusName = "Current Dues";
+                    }
+                }
+                $value['statusName'] = $statusName;
+                $value['currentStatus'] = $currentStatus;
                 if ($geoDate < $currentDate) {
                     $path = $this->readRefDocumentPath($value['doc_path']);
                     $value['full_doc'] = !empty(trim($value['doc_path'])) ? $path : null;
                     return $value;
                 }
-                $path = $this->readDocumentPath($value['doc_path']);
-
-                # arrrer,current,paid
-                $mPropDemand = new PropDemand();
-                $refUnpaidPropDemands = $mPropDemand->getDueDemandByPropId($value['property_id']);
-                // if()
-                // collect($refUnpaidPropDemands)->min('')
-
                 $value['full_doc'] = !empty(trim($value['doc_path'])) ? $path : null;
                 return $value;
             });
