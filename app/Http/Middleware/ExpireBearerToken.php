@@ -37,17 +37,17 @@ class ExpireBearerToken
 
         if ($this->_user && $this->_token) {
             if ($this->_user->user_type == $citizenUserType) {                             // If the User type is citizen
-                $key = 'last_activity_citizen_' . $this->_user->id;
-                $this->_lastActivity = Redis::get($key);                                   // Function (1.1)
+                $this->_key = 'last_activity_citizen_' . $this->_user->id;
+                $this->_lastActivity = Redis::get($this->_key);                                   // Function (1.1)
                 $this->validateToken();
             } else {                                                                       // If the User type is not a Citizen
-                $key = 'last_activity_' . $this->_user->id;
-                $this->_lastActivity = Redis::get($key);
+                $this->_key = 'last_activity_' . $this->_user->id;
+                $this->_lastActivity = Redis::get($this->_key);
                 $this->validateToken();                                                     // Function (1.1)
             }
 
             if (!$request->has('key') && !$request->input('heartbeat'))
-                Redis::set($key, $this->_currentTime);            // Caching
+                Redis::set($this->_key, $this->_currentTime);            // Caching
         }
         return $next($request);
     }
@@ -58,13 +58,15 @@ class ExpireBearerToken
      */
     public function validateToken()
     {
-        if ($this->_lastActivity && ($this->_currentTime->diffInMinutes($this->_lastActivity)) > 60) {            // for 60 Minutes
+        $timeDiff = $this->_currentTime->diffInMinutes($this->_lastActivity);
+        if ($this->_lastActivity && ($timeDiff > 60)) {            // for 60 Minutes
             Redis::del($this->_key);
             $this->_user->currentAccessToken()->delete();
             abort(response()->json(
                 [
                     'status' => true,
-                    'authenticated' => false
+                    'authenticated' => false,
+                    'sessionTime' => $timeDiff
                 ]
             ));
         }
