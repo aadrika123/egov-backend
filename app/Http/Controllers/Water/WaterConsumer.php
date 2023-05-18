@@ -143,11 +143,11 @@ class WaterConsumer extends Controller
             $meterRefImageName          = config::get('waterConstaint.WATER_METER_CODE');
             $demandIds = array();
 
-            $this->checkDemandGeneration($request);                                         // unfinished function
+            $this->checkDemandGeneration($request); //dd($request->all());                                        // unfinished function
             $consumerDetails = WaterWaterConsumer::findOrFail($request->consumerId);
             $calculatedDemand = collect($this->Repository->calConsumerDemand($request));
             if ($calculatedDemand['status'] == false) {
-                throw new Exception($calculatedDemand);
+                throw new Exception($calculatedDemand['errors']);
             }
             if (isset($calculatedDemand)) {
                 # get the demand
@@ -189,7 +189,7 @@ class WaterConsumer extends Controller
             }
         } catch (Exception $e) {
             DB::rollBack();
-            return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", "ms", "POST", "");
+            return responseMsgs(false, $e->getMessage(), [], "", "01", "ms", "POST", "");
         }
     }
 
@@ -463,6 +463,7 @@ class WaterConsumer extends Controller
      * | @var 
         | Not Working
         | Serial No : 06
+        | Differenciate btw citizen and user 
      */
     public function applyDeactivation(Request $request)
     {
@@ -715,7 +716,7 @@ class WaterConsumer extends Controller
      * | Add Fixed Rate for the Meter connection is under Fixed
      * | Admin Entered Data
         | Serial No : 08
-        | Not Used
+        | Use It
         | Recheck 
      */
     public function addFixedRate(Request $request)

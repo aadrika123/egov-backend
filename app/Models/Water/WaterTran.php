@@ -30,20 +30,26 @@ class WaterTran extends Model
     {
         return WaterTran::where('related_id', $applicationId)
             ->where('tran_type', "<>", "Demand Collection")
-            ->where('status', true);
+            ->where('status', 1);
     }
     public function ConsumerTransaction($applicationId)
     {
         return WaterTran::where('related_id', $applicationId)
             ->where('tran_type', "=", "Demand Collection")
-            ->where('status', true)
+            ->where('status', 1)
             ->orderByDesc('id');
     }
     public function siteInspectionTransaction($applicationId)
     {
         return WaterTran::where('related_id', $applicationId)
             ->where('tran_type', "Site Inspection")
-            ->where('status', true)
+            ->where('status', 1)
+            ->orderByDesc('id');
+    }
+    public function getTransByCitizenId($citizenId)
+    {
+        return WaterTran::where('citizen_id', $citizenId)
+            ->where('status', 1)
             ->orderByDesc('id');
     }
 
@@ -59,8 +65,8 @@ class WaterTran extends Model
         )
             ->join('water_tran_details', 'water_tran_details.tran_id', '=', 'water_trans.id')
             ->where('tran_no', $transactionNo)
-            ->where('water_trans.status', true)
-            ->where('water_tran_details.status', true);
+            ->where('water_trans.status', 1)
+            ->where('water_tran_details.status', 1);
     }
 
     /**
@@ -82,7 +88,6 @@ class WaterTran extends Model
             $isJsk = false;
             $paymentMode = "Online";                                                // Static
             $citizenId = $user->id;
-            $empId = $user->id;
         } else {                                                                    // ($user->user_type != 'Citizen')
             $empId = $user->id;
             $paymentMode = "Cash";                                                  // Static
@@ -129,6 +134,7 @@ class WaterTran extends Model
 
     /**
      * | Post Water Transaction
+        | Make the column for pg_response_id and pg_id
      */
     public function waterTransaction($req, $consumer)
     {
@@ -147,6 +153,8 @@ class WaterTran extends Model
         $waterTrans->ward_id            = $consumer['ward_mstr_id'];
         $waterTrans->due_amount         = $req['leftDemandAmount'] ?? 0;
         $waterTrans->adjustment_amount  = $req['adjustedAmount'] ?? 0;
+        $waterTrans->pg_response_id     = $req['pgResponseId'] ?? null;
+        $waterTrans->pg_id              = $req['pgId'] ?? null;
         $waterTrans->save();
 
         return [
@@ -169,7 +177,7 @@ class WaterTran extends Model
             ->where('verified_date', $date)
             ->where('water_trans.status', 1)
             ->where('payment_mode', '!=', 'ONLINE')
-            ->where('verify_status', true)
+            ->where('verify_status', 1)
             ->where('water_trans.ulb_id', $ulbId)
             ->groupBy(["users.id", "users.user_name"]);
     }

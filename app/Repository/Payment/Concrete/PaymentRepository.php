@@ -294,6 +294,7 @@ class PaymentRepository implements iPayment
                 'orderId' => $webhookData->payment_order_id,
                 'paymentId' => $webhookData->payment_id,
                 'tranDate' => $request->created_at,
+                'gatewayType' => 1,                                 // Razorpay
             ];
 
             # conditionaly upadting the request data

@@ -106,6 +106,7 @@ class WaterNewConnection implements IWaterNewConnection
             "water_applications.is_field_verified",
             "water_applications.current_role",
             "water_applications.parked",
+            "water_applications.category",
             "ulb_ward_masters.ward_name",
             "charges.amount",
             "wf_roles.role_name as current_role_name",
@@ -159,7 +160,6 @@ class WaterNewConnection implements IWaterNewConnection
             $checkEmpty = collect($siteDetails)->first();
             if (!empty($checkEmpty) || !isNull($checkEmpty)) {
                 $value['siteInspectionCall'] = $mWaterParamConnFee->getCallParameter($siteDetails['site_inspection_property_type_id'], $siteDetails['site_inspection_area_sqft'])->first();
-
             }
             if ($value['current_role'] == $roleDetails['JE']) {
                 $inspectionTime = $mWaterSiteInspectionsScheduling->getInspectionData($value['id'])->first();
@@ -244,13 +244,17 @@ class WaterNewConnection implements IWaterNewConnection
             #--------------------water Consumer----------------------
             else {
             }
-            $whatsapp2=(Whatsapp_Send("","payment_status",
-                ["conten_type"=>"text",
+            $whatsapp2 = (Whatsapp_Send(
+                "",
+                "payment_status",
+                [
+                    "conten_type" => "text",
                     [
                         $totalAmount,
                         $application->application_no,
                     ]
-                ]));
+                ]
+            ));
             DB::commit();
             $temp['name']       = $refUser->user_name;
             $temp['mobile']     = $refUser->mobile;
@@ -385,6 +389,8 @@ class WaterNewConnection implements IWaterNewConnection
             $watertransaction->ip_address       = '';
             $watertransaction->ulb_id           = $refUlbId;
             $watertransaction->user_type        = $refUserDetails->user_type;
+            $watertransaction->pg_response_id   = $RazorPayResponse->id ?? null;
+            $watertransaction->pg_id            = $args['gatewayType'] ?? null;
             $watertransaction->save();
             $transaction_id                     = $watertransaction->id;
             $watertransaction->tran_no          = $args["transactionNo"];
