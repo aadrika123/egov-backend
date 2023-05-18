@@ -55,7 +55,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('tc-collections', 'tcCollectionDtl');                           //03
         Route::post('verified-tc-collections', 'verifiedTcCollectionDtl');          //04
         Route::post('verify-cash', 'cashVerify');                                   //05
-        Route::post('cash-receipt', 'cashReceipt');                                   //05
+        Route::post('cash-receipt', 'cashReceipt');                                 //06
+        Route::post('edit-chequedtl', 'editChequeNo');                              //07
     });
 
     Route::controller(BankReconcillationController::class)->group(function () {

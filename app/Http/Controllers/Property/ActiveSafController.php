@@ -131,6 +131,7 @@ class ActiveSafController extends Controller
         try {
             $method = $req->getMethod();
             $redisConn = Redis::connection();
+            $wards = collect();
             $data = [];
             if ($method == 'GET')
                 $ulbId = auth()->user()->ulb_id;
@@ -168,10 +169,15 @@ class ActiveSafController extends Controller
             // Ward Masters
             if (!$wardMaster) {
                 $wardMaster = $ulbWardMaster->getWardByUlbId($ulbId);   // <----- Get Ward by Ulb ID By Model Function
-                $redisConn->set('wards-ulb-' . $ulbId, json_encode($wardMaster));            // Caching
+                $groupByWards = $wardMaster->groupBy('ward_name');
+                foreach ($groupByWards as $ward) {
+                    $wards->push(collect($ward)->first());
+                }
+                $wards->sortBy('ward_name')->values();
+                $redisConn->set('wards-ulb-' . $ulbId, json_encode($wards));            // Caching
             }
 
-            $data['ward_master'] = $wardMaster;
+            $data['ward_master'] = $wards;
 
             // Ownership Types
             if (!$ownershipTypes) {

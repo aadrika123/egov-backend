@@ -27,6 +27,7 @@ class UlbWardMaster extends Model
     {
         return UlbWardMaster::select('id', 'ward_name')
             ->where('ulb_id', $ulbId)
+            ->where('status', 1)
             ->get();
     }
 
@@ -36,17 +37,17 @@ class UlbWardMaster extends Model
      */
     public function getWard($id)
     {
-        return UlbWardMaster::where('id',$id)
-        ->firstOrFail();
+        return UlbWardMaster::where('id', $id)
+            ->firstOrFail();
     }
 
-     /**
+    /**
      * | get the ward by Id
      * | @param id
      */
     public function getExistWard($id)
     {
-        return UlbWardMaster::where('id',$id)
-        ->first();
+        return UlbWardMaster::where('id', $id)
+            ->first();
     }
 }

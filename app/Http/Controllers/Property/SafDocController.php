@@ -382,8 +382,8 @@ class SafDocController extends Controller
 
             $senderRoleId = $senderRoleDtls->wf_role_id;
 
-            // if ($senderRoleId != $wfLevel['DA'])                                // Authorization for Dealing Assistant Only
-            //     throw new Exception("You are not Authorized");
+            if ($senderRoleId != $wfLevel['DA'])                                // Authorization for Dealing Assistant Only
+                throw new Exception("You are not Authorized");
 
             if (!$safDtls || collect($safDtls)->isEmpty())
                 throw new Exception("Saf Details Not Found");
@@ -418,12 +418,15 @@ class SafDocController extends Controller
                 'action_taken_by' => $userId
             ];
             $mWfDocument->docVerifyReject($wfDocId, $reqs);
-            $ifFullDocVerifiedV1 = $this->ifFullDocVerified($applicationId);
+            if ($req->docStatus == 'Verified')
+                $ifFullDocVerifiedV1 = $this->ifFullDocVerified($applicationId, $req->docStatus);
+            else
+                $ifFullDocVerifiedV1 = 0;                                       // In Case of Rejection the Document Verification Status will always remain false
+
             if ($ifFullDocVerifiedV1 == 1) {                                     // If The Document Fully Verified Update Verify Status
                 $safDtls->doc_verify_status = 1;
                 $safDtls->save();
             }
-
             DB::commit();
             return responseMsgs(true, $req->docStatus . " Successfully", "", "010204", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
@@ -446,11 +449,9 @@ class SafDocController extends Controller
             'moduleId' => FacadesConfig::get('module-constants.PROPERTY_MODULE_ID')
         ];
         $req = new Request($refReq);
-        $refDocList = $mWfActiveDocument->getDocsByActiveId($req);
+        $refDocList = $mWfActiveDocument->getDocsByActiveId($req);      // return Only the Pending Documents 
         // Property List Documents
-        $ifPropDocUnverified = $refDocList->contains(function ($item) {
-            return $item->whereIn('verify_status', [0, 2]);                 // 0-Document Pending,1-Document Reject
-        });
+        $ifPropDocUnverified = $refDocList->contains('verify_status', 0);
         if ($ifPropDocUnverified == 1)
             return 0;
         else

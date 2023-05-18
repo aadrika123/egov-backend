@@ -5,6 +5,7 @@ namespace App\Models\Payment;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class TempTransaction extends Model
 {
@@ -29,8 +30,8 @@ class TempTransaction extends Model
             'module_id',
             'ward_no as ward_name',
             'application_no',
-            'tran_date',
-            'user_name',
+            DB::raw("TO_CHAR(tran_date, 'DD-MM-YYYY') as tran_date"),
+            'name as user_name',
             'users.id as tc_id'
         )
             ->join('users', 'users.id', 'temp_transactions.user_id')
