@@ -237,10 +237,10 @@ class PropertyController extends Controller
 
                 $currentDate = Carbon::now();
                 $mPropDemand = new PropDemand();
-                $currentStatus = 2;
 
                 $geoDate = strtotime($value['created_at']);
                 $geoDate = date('Y-m-d', $geoDate);
+                $ref2023 = Carbon::createFromFormat('Y-m-d', "2023-01-01")->toDateString();
 
                 $path = $this->readDocumentPath($value['doc_path']);
                 # arrrer,current,paid
@@ -267,7 +267,7 @@ class PropertyController extends Controller
                 }
                 $value['statusName'] = $statusName;
                 $value['currentStatus'] = $currentStatus;
-                if ($geoDate < $currentDate) {
+                if ($geoDate < $ref2023) {
                     $path = $this->readRefDocumentPath($value['doc_path']);
                     $value['full_doc'] = !empty(trim($value['doc_path'])) ? $path : null;
                     return $value;

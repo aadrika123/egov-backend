@@ -30,21 +30,14 @@ class CaretakerController extends Controller
     public function waterCaretakerOtp(Request $req)
     {
         try {
-            # trade
-            if (isset($req->moduleId) || $req->moduleId == 3) {
-                $data = [
-                    'otp' => 123123,
-                    'mobileNo' => "0123456789"
-                ];
-            }
+            if (isset($req->moduleId)) {
 
-            if (!isset($req->moduleId)) {
-                $user = authUser();
-                $userId = $user->id;
-                $mWaterApprovalApplicant = new WaterApprovalApplicant();
-                $ThirdPartyController = new ThirdPartyController();
-                $mActiveCitizenUndercare = new ActiveCitizenUndercare();
-                $mWaterConsumer = new WaterConsumer();
+                $user                       = authUser();
+                $userId                     = $user->id;
+                $mWaterApprovalApplicant    = new WaterApprovalApplicant();
+                $ThirdPartyController       = new ThirdPartyController();
+                $mActiveCitizenUndercare    = new ActiveCitizenUndercare();
+                $mWaterConsumer             = new WaterConsumer();
 
                 $waterDtl = $mWaterConsumer->getConsumerByNo($req->consumerNo);
                 if (!isset($waterDtl))
