@@ -59,7 +59,7 @@ class CashVerificationController extends Controller
                 $trade = $val->where("module_id", $tradeModuleId)->sum('amount');
                 return [
                     "id" => $val[0]['id'],
-                    "user_name" => $val[0]['user_name'],
+                    "user_name" => $val[0]['name'],
                     "property" => $prop,
                     "water" => $water,
                     "trade" => $trade,
@@ -110,10 +110,10 @@ class CashVerificationController extends Controller
             $waterModuleId = Config::get('module-constants.WATER_MODULE_ID');
             $tradeModuleId = Config::get('module-constants.TRADE_MODULE_ID');
 
-            $revDailycollection =  RevDailycollection::select('users.id', 'user_name', 'deposit_amount', 'module_id', 'tran_no')
+            $revDailycollection =  RevDailycollection::select('users.id', 'name', 'deposit_amount', 'module_id', 'tran_no')
                 ->join('rev_dailycollectiondetails as rdc', 'rdc.collection_id', 'rev_dailycollections.id')
                 ->join('users', 'users.id', 'rev_dailycollections.tc_id')
-                ->groupBy('users.id', 'user_name', 'rdc.deposit_amount', 'module_id', 'tran_no')
+                ->groupBy('users.id', 'name', 'rdc.deposit_amount', 'module_id', 'tran_no')
                 ->where('deposit_date', $date)
                 ->get();
             $collection = collect($revDailycollection->groupBy("id")->all());
@@ -125,7 +125,7 @@ class CashVerificationController extends Controller
                 $trade = $val->where("module_id", $tradeModuleId)->sum('deposit_amount');
                 return [
                     "id" => $val[0]['id'],
-                    "user_name" => $val[0]['user_name'],
+                    "user_name" => $val[0]['name'],
                     "property" => $prop,
                     "water" => $water,
                     "trade" => $trade,
@@ -269,7 +269,7 @@ class CashVerificationController extends Controller
             // $data['RTGS'] = collect($details)->where('payment_mode', '=', 'RTGS')->first()->amount;
             $data['totalAmount'] =  $details->sum('amount');
             $data['numberOfTransaction'] =  $details->count();
-            $data['collectorName'] =  collect($details)[0]->user_name;
+            $data['collectorName'] =  collect($details)[0]->name;
             $data['date'] = Carbon::parse($date)->format('d-m-Y');
             $data['verifyStatus'] = false;
 
