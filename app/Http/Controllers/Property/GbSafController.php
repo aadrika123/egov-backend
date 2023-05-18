@@ -655,6 +655,11 @@ class GbSafController extends Controller
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleIds)->pluck('workflow_id');
 
             $safInbox = $mpropActiveSafs->getGbSaf($workflowIds)
+                ->selectRaw(DB::raw(
+                    "case when prop_active_safs.citizen_id is not null then 'true'
+                      else false end
+                      as btc_for_citizen"
+                ))
                 ->where('parked', true)
                 ->where('prop_active_safs.ulb_id', $mUlbId)
                 ->where('prop_active_safs.status', 1)
@@ -1067,8 +1072,15 @@ class GbSafController extends Controller
             });
             $reqDoc['docType'] = $key;
             $reqDoc['docName'] = substr($label, 1, -1);
-            $reqDoc['uploadedDoc'] = $documents->first();
 
+            // Check back to citizen status
+            $uploadedDocument = $documents->last();
+            if (collect($uploadedDocument)->isNotEmpty() && $uploadedDocument['verifyStatus'] == 2) {
+                $reqDoc['btcStatus'] = true;
+            } else
+                $reqDoc['btcStatus'] = false;
+
+            $reqDoc['uploadedDoc'] = $documents->last();
             $reqDoc['masters'] = collect($document)->map(function ($doc) use ($uploadedDocs) {
                 $uploadedDoc = $uploadedDocs->where('doc_code', $doc)->first();
                 $strLower = strtolower($doc);

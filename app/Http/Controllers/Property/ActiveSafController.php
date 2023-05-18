@@ -349,8 +349,9 @@ class ActiveSafController extends Controller
                 ->whereIn('ward_mstr_id', $occupiedWards)
                 ->orderByDesc('id')
                 ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name')
-                ->get();
-            // ->paginate($perPage);
+                // ->get();
+                // ->paginate($perPage);
+                ->paginate(100);
 
             return responseMsgs(true, "Data Fetched", remove_null($safInbox->values()), "010103", "1.0", responseTime(), "POST", "");
         } catch (Exception $e) {
@@ -385,7 +386,7 @@ class ActiveSafController extends Controller
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleIds)->pluck('workflow_id');
             $safInbox = $this->Repository->getSaf($workflowIds)                 // Repository function getSAF
                 ->selectRaw(DB::raw(
-                    "case when prop_active_safs.citizen_id is null then 'true'
+                    "case when prop_active_safs.citizen_id is not null then 'true'
                           else false end
                           as btc_for_citizen"
                 ))
@@ -397,9 +398,9 @@ class ActiveSafController extends Controller
                 ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name')
                 ->get();
 
-            return responseMsgs(true, "BTC Inbox List", remove_null($safInbox), 010123, 1.0, "271ms", "POST", $mDeviceId);
+            return responseMsgs(true, "BTC Inbox List", remove_null($safInbox), 010123, 1.0, responseTime(), "POST", $mDeviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", 010123, 1.0, "271ms", "POST", $mDeviceId);
+            return responseMsgs(false, $e->getMessage(), "", 010123, 1.0, responseTime(), "POST", $mDeviceId);
         }
     }
 

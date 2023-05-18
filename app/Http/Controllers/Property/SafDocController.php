@@ -425,10 +425,10 @@ class SafDocController extends Controller
             }
 
             DB::commit();
-            return responseMsgs(true, $req->docStatus . " Successfully", "", "010204", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true, $req->docStatus . " Successfully", "", "010204", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             DB::rollBack();
-            return responseMsgs(false, $e->getMessage(), "", "010204", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "010204", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         }
     }
 

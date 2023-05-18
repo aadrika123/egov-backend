@@ -26,7 +26,6 @@ use App\Models\Workflows\WfWorkflow;
 use App\Models\Workflows\WfWorkflowrolemap;
 use App\Models\WorkflowTrack;
 use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
-use App\Traits\Property\Concession;
 use App\Traits\Property\SafDetailsTrait;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -85,7 +84,7 @@ class ObjectionController extends Controller
             $mPropForgeryType = new MPropForgeryType();
             $forgeryType = $mPropForgeryType->forgeryType();
 
-            return responseMsgs(true, "Forgery Types", $forgeryType, "", '01', '', 'Post', '');
+            return responseMsgs(true, "Forgery Types", $forgeryType, "", '01', responseTime(), 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -125,7 +124,7 @@ class ObjectionController extends Controller
                 ->orderByDesc('prop_active_objections.id')
                 ->get();
 
-            return responseMsgs(true, "", remove_null($objection), '010805', '01', '474ms-573ms', 'Post', '');
+            return responseMsgs(true, "", remove_null($objection), '010805', '01', responseTime(), 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -152,7 +151,7 @@ class ObjectionController extends Controller
                 ->orderByDesc('prop_active_objections.id')
                 ->get();
 
-            return responseMsgs(true, "Outbox List", remove_null($objections), '010806', '01', '336ms-420ms', 'Post', '');
+            return responseMsgs(true, "Outbox List", remove_null($objections), '010806', '01', responseTime(), 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -353,9 +352,9 @@ class ObjectionController extends Controller
             $custom = $mCustomDetails->getCustomDetails($req);
             $fullDetailsData['departmentalPost'] = collect($custom)['original']['data'];
 
-            return responseMsgs(true, "Objection Details", remove_null($fullDetailsData), '010807', '01', '', 'Post', '');
+            return responseMsgs(true, "Objection Details", remove_null($fullDetailsData), '010807', '01', responseTime(), 'Post', '');
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", '010807', '01', '', 'Post', '');
+            return responseMsgs(false, $e->getMessage(), "", '010807', '01', responseTime(), 'Post', '');
         }
     }
 
@@ -379,7 +378,7 @@ class ObjectionController extends Controller
             $data->escalated_by = $userId;
             $data->save();
             DB::commit();
-            return responseMsgs(true, $req->escalateStatus == 1 ? 'Objection is Escalated' : "Objection is removed from Escalated", '', '010808', '01', '', 'Post', '');
+            return responseMsgs(true, $req->escalateStatus == 1 ? 'Objection is Escalated' : "Objection is removed from Escalated", '', '010808', '01', responseTime(), 'Post', '');
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
@@ -404,7 +403,7 @@ class ObjectionController extends Controller
                 ->whereIn('prop_active_objections.current_role', $roleId)
                 ->whereIn('p.ward_mstr_id', $occupiedWards)
                 ->get();
-            return responseMsgs(true, "Data Fetched", remove_null($objections), '010809', '01', '', 'Post', '');
+            return responseMsgs(true, "Data Fetched", remove_null($objections), '010809', '01', responseTime(), 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -429,7 +428,7 @@ class ObjectionController extends Controller
                 ->whereIn('p.ward_mstr_id', $occupiedWards)
                 ->where('prop_active_objections.parked', true)
                 ->get();
-            return responseMsgs(true, "Data Fetched", remove_null($objections), '010809', '01', '', 'Post', '');
+            return responseMsgs(true, "Data Fetched", remove_null($objections), '010809', '01', responseTime(), 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -492,7 +491,7 @@ class ObjectionController extends Controller
 
             DB::commit();
 
-            return responseMsgs(true, "Successfully Forwarded The Application!!", "", '010810', '01', '', 'Post', '');
+            return responseMsgs(true, "Successfully Forwarded The Application!!", "", '010810', '01', responseTime(), 'Post', '');
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
@@ -686,7 +685,7 @@ class ObjectionController extends Controller
 
             DB::commit();
 
-            return responseMsgs(true, $msg, "", '010811', '01', '474ms-573', 'Post', '');
+            return responseMsgs(true, $msg, "", '010811', '01', responseTime(), 'Post', '');
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
@@ -727,10 +726,10 @@ class ObjectionController extends Controller
             $track->saveTrack($req);
 
             DB::commit();
-            return responseMsgs(true, "Successfully Done", "", '010812', '01', '', 'Post', '');
+            return responseMsgs(true, "Successfully Done", "", '010812', '01', responseTime(), 'Post', '');
         } catch (Exception $e) {
             DB::rollBack();
-            return responseMsg(false, $e->getMessage(), "", "", '010812', '01', '', 'Post', '');
+            return responseMsg(false, $e->getMessage(), "", "", '010812', '01', responseTime(), 'Post', '');
         }
     }
 
@@ -1074,9 +1073,9 @@ class ObjectionController extends Controller
             }
             DB::commit();
 
-            return responseMsgs(true, "member added use this for future use", $objectionNo, "010201", "1.0", "", "POST", $request->deviceId ?? "");
+            return responseMsgs(true, "member added use this for future use", $objectionNo, "010201", "1.0", responseTime(), "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $request->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", responseTime(), "POST", $request->deviceId ?? "");
         }
     }
 
@@ -1114,7 +1113,7 @@ class ObjectionController extends Controller
                 $code = $this->citizenForgeryfilterDoc($data);
                 break;
         }
-        return responseMsgs(true, "Citizen Doc List", remove_null($code), 010717, 1.0, "413ms", "POST", "", "");
+        return responseMsgs(true, "Citizen Doc List", remove_null($code), 010717, 1.0, responseTime(), "POST", "", "");
     }
 
     /**
@@ -1172,7 +1171,7 @@ class ObjectionController extends Controller
                 $code = $this->filterCitizenDoc($data);
                 break;
         }
-        return responseMsgs(true, "Citizen Doc List", remove_null($code), 010717, 1.0, "413ms", "POST", "", "");
+        return responseMsgs(true, "Citizen Doc List", remove_null($code), 010717, 1.0, responseTime(), "POST", "", "");
     }
 
     /**
