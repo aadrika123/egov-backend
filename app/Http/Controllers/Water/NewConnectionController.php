@@ -1343,7 +1343,7 @@ class NewConnectionController extends Controller
                 $usageCatagory = $mPropActiveSafsFloor->getSafUsageCatagory($id);
         }
 
-        $usage = collect($usageCatagory)->map(function ($value, $key) use ($id, $refPropertyTypeId) {
+        $usage = collect($usageCatagory)->map(function ($value) use ($refPropertyTypeId) {
             $var = $value['usage_code'];
             switch (true) {
                 case ($var == 'A'):
@@ -1825,7 +1825,11 @@ class NewConnectionController extends Controller
                 'action_taken_by'   => $userId
             ];
             $mWfDocument->docVerifyReject($wfDocId, $reqs);
-            $ifFullDocVerifiedV1 = $this->ifFullDocVerified($applicationId);
+            if ($req->docStatus == 'Verified')
+                $ifFullDocVerifiedV1 = $this->ifFullDocVerified($applicationId);
+            else
+                $ifFullDocVerifiedV1 = 0;
+
             if ($ifFullDocVerifiedV1 == 1) {                                        // If The Document Fully Verified Update Verify Status
                 $mWaterApplication->updateAppliVerifyStatus($applicationId);
             }
