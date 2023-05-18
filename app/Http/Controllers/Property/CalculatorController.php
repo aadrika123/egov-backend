@@ -117,7 +117,6 @@ class CalculatorController extends Controller
                     $ruleSetWiseCollection = $totalTaxDetails
                         ->where('ruleSet', $collect->first()['ruleSet'])
                         ->values();
-
                     // Calculation Parameters
                     if ($collect->first()['ruleSet'] == 'RuleSet1' && $this->_reqs->propertyType != 4)              // If Property Type is Building
                         $quaters['rentalRates'] = $this->generateRentalValues($calculation->_rentalValue);
@@ -155,46 +154,23 @@ class CalculatorController extends Controller
                             ->values();
                         $quaters['vacantRentalRates'] = $vacantRentalRates;
                     }
-
-                    $groupByTotalTax = $ruleSetWiseCollection->groupBy('totalTax');
+                    $groupByDateFrom = $collect->groupBy('dateFrom');
                     $quaterlyTaxes = collect();
                     $i = 1;
-                    collect($groupByTotalTax)->map(function ($floors) use ($quaterlyTaxes, $i) {
-                        if ($this->_reqs->propertyType != 4)
-                            $groupByFloor = $floors->groupBy('floorKey')->values();
-                        else
-                            $groupByFloor = $floors->groupBy('propertyType')->values();
-
-                        $taxDetails = $groupByFloor->map(function ($item) {
-                            /**
-                             * | Every First Quarter key is taken for sum the total quaterly Taxes of the floors individually
-                             */
-                            $firstTaxes = [
-                                'arv' => $item->first()['arv'] ?? null,
-                                'holdingTax' => $item->first()['holdingTax'] ?? null,
-                                'waterTax' => $item->first()['waterTax'] ?? null,
-                                'latrineTax' => $item->first()['latrineTax'] ?? null,
-                                'educationTax' => $item->first()['educationTax'] ?? null,
-                                'healthTax' => $item->first()['healthTax'] ?? null,
-                                'rwhPenalty' => $item->first()['rwhPenalty'] ?? null,
-                                'yearlyTax' => $item->first()['yearlyTax'] ?? null,
-                                'quaterlyTax' => $item->first()['totalTax'] ?? null,
-                            ];
-                            return collect($firstTaxes);
-                        });
+                    collect($groupByDateFrom)->map(function ($floors) use ($quaterlyTaxes, $i) {
                         $taxes = [
                             'key' => $i,
                             'effectingFrom' => $floors->first()['quarterYear'] . '/' . $floors->first()['qtr'],
                             'qtr' => $floors->first()['qtr'],
                             'area' => $floors->first()['area'] ?? null,
-                            'arv' => roundFigure($taxDetails->sum('arv')),
-                            'holdingTax' => roundFigure($taxDetails->sum('holdingTax')),
-                            'waterTax' => roundFigure($taxDetails->sum('waterTax')),
-                            'latrineTax' => roundFigure($taxDetails->sum('latrineTax')),
-                            'educationTax' => roundFigure($taxDetails->sum('educationTax')),
-                            'healthTax' => roundFigure($taxDetails->sum('healthTax')),
-                            'rwhPenalty' => roundFigure($taxDetails->sum('rwhPenalty')),
-                            'quaterlyTax' => roundFigure($taxDetails->sum('quaterlyTax')),
+                            'arv' => roundFigure($floors->sum('arv') + $quaterlyTaxes->sum('arv')),
+                            'holdingTax' => roundFigure($floors->sum('holdingTax') + $quaterlyTaxes->sum('holdingTax')),
+                            'waterTax' => roundFigure($floors->sum('waterTax') + $quaterlyTaxes->sum('waterTax')),
+                            'latrineTax' => roundFigure($floors->sum('latrineTax') + $quaterlyTaxes->sum('latrineTax')),
+                            'educationTax' => roundFigure($floors->sum('educationTax') + $quaterlyTaxes->sum('educationTax')),
+                            'healthTax' => roundFigure($floors->sum('healthTax') + $quaterlyTaxes->sum('healthTax')),
+                            'rwhPenalty' => roundFigure($floors->sum('rwhPenalty') + $quaterlyTaxes->sum('rwhPenalty')),
+                            'quaterlyTax' => roundFigure($floors->sum('totalTax') + $quaterlyTaxes->sum('quaterlyTax')),
                         ];
                         $quaterlyTaxes->push($taxes);
                     });
