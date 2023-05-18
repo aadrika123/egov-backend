@@ -9,13 +9,16 @@ use App\Models\Payment\RevDailycollectiondetail;
 use App\Models\Payment\TempTransaction;
 use App\Models\Property\PropChequeDtl;
 use App\Models\Property\PropTransaction;
+use App\Models\Trade\TradeChequeDtl;
 use App\Models\Trade\TradeTransaction;
+use App\Models\Water\WaterChequeDtl;
 use App\Models\Water\WaterTran;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 /**
  * | Created On-31-01-2023 
@@ -848,19 +851,58 @@ class CashVerificationController extends Controller
      */
     public function editChequeNo(Request $request)
     {
-        $propertyModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
-        $waterModuleId = Config::get('module-constants.WATER_MODULE_ID');
-        $tradeModuleId = Config::get('module-constants.TRADE_MODULE_ID');
-
-        if ($request->moduleId == $propertyModuleId) {
-            $tranId = TempTransaction::find($request->id)->transaction_id;
-                        PropChequeDtl::
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|numeric',
+            'moduleId' => 'required|numeric',
+            'chequeNo' => 'required',
+        ]);
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'validation error',
+                'errors' => $validator->errors()
+            ], 401);
         }
+        try {
 
-        if ($request->moduleId == $waterModuleId) {
-        }
+            $propertyModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $waterModuleId = Config::get('module-constants.WATER_MODULE_ID');
+            $tradeModuleId = Config::get('module-constants.TRADE_MODULE_ID');
+            $tranDtl = TempTransaction::find($request->id);
+            $tranId = $tranDtl->transaction_id;
 
-        if ($request->moduleId == $tradeModuleId) {
+            DB::beginTransaction();
+            $tranDtl
+                ->update(
+                    ['cheque_dd_no' => $request->chequeNo]
+                );
+
+            if ($request->moduleId == $propertyModuleId) {
+                PropChequeDtl::where('transaction_id', $tranId)
+                    ->update(
+                        ['cheque_no' => $request->chequeNo]
+                    );
+            }
+
+            if ($request->moduleId == $waterModuleId) {
+                WaterChequeDtl::where('transaction_id', $tranId)
+                    ->update(
+                        ['cheque_no' => $request->chequeNo]
+                    );
+            }
+
+            if ($request->moduleId == $tradeModuleId) {
+                TradeChequeDtl::where('tran_id', $tranId)
+                    ->update(
+                        ['cheque_no' => $request->chequeNo]
+                    );
+            }
+
+            DB::commit();
+            return responseMsgs(true, "Edit Successful", "", "010201", "1.0", responseTime(), "POST", $request->deviceId ?? "");
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", responseTime(), "POST", $request->deviceId ?? "");
         }
     }
 }
