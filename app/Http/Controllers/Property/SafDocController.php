@@ -382,8 +382,8 @@ class SafDocController extends Controller
 
             $senderRoleId = $senderRoleDtls->wf_role_id;
 
-            // if ($senderRoleId != $wfLevel['DA'])                                // Authorization for Dealing Assistant Only
-            //     throw new Exception("You are not Authorized");
+            if ($senderRoleId != $wfLevel['DA'])                                // Authorization for Dealing Assistant Only
+                throw new Exception("You are not Authorized");
 
             if (!$safDtls || collect($safDtls)->isEmpty())
                 throw new Exception("Saf Details Not Found");
