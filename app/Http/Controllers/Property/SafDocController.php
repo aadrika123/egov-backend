@@ -451,12 +451,7 @@ class SafDocController extends Controller
         $req = new Request($refReq);
         $refDocList = $mWfActiveDocument->getDocsByActiveId($req);      // return Only the Pending Documents 
         // Property List Documents
-        $ifPropDocUnverified = $refDocList->contains(function ($item) {
-            $item = $item->toArray();
-            $a = in_array($item['verify_status'], [0, 2]);                       // 0-Document Pending,1-Document Reject
-            return $a;
-        });
-
+        $ifPropDocUnverified = $refDocList->contains('verify_status', 0);
         if ($ifPropDocUnverified == 1)
             return 0;
         else
