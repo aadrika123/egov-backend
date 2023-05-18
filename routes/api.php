@@ -340,6 +340,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::controller(CustomController::class)->group(function () {
         Route::post('get-all-custom-tab-data', 'getCustomDetails');
         Route::post('post-custom-data', 'postCustomDetails');
+        Route::post('get-dues-api', 'duesApi');
     });
 
     /**

@@ -372,11 +372,6 @@ class ConcessionController extends Controller
             $mRefTable = Config::get('PropertyConstaint.SAF_CONCESSION_REF_TABLE');
             $details = $mPropActiveConcession->getDetailsById($req->applicationId);
 
-            // WorkflowTrack::where('ref_table_id_value', $req->applicationId)
-            //     ->where('ref_table_dot_id', 'prop_active_concessions.id')
-            //     ->get();
-
-
             if (!$details)
                 throw new Exception("Application Not Found for this id");
 
@@ -393,18 +388,6 @@ class ConcessionController extends Controller
                 'data' => $propertyDetails
             ];
 
-            // $corrDetails = $this->generateCorrDtls($details);              // (Corresponding Address Details) Trait function to generate corresponding address details
-            // $corrElement = [
-            //     'headerTitle' => 'Corresponding Address',
-            //     'data' => $corrDetails,
-            // ];
-
-            // $electDetails = $this->generateElectDtls($details);            // (Electricity & Water Details) Trait function to generate Electricity Details
-            // $electElement = [
-            //     'headerTitle' => 'Electricity & Water Details',
-            //     'data' => $electDetails
-            // ];
-
             $fullDetailsData['application_no'] = $details->application_no;
             $fullDetailsData['apply_date'] = $details->date;
             $fullDetailsData['fullDetailsData']['dataArray'] = new Collection([$basicElement, $propertyElement]);
@@ -418,13 +401,7 @@ class ConcessionController extends Controller
                 'tableHead' => ["#", "Owner Name", "Gender", "DOB", "Guardian Name", "Relation", "Mobile No", "Aadhar", "PAN", "Email", "IsArmedForce", "isSpeciallyAbled"],
                 'tableData' => $ownerDetails
             ];
-            // $floorList = $mPropFloors->getPropFloors($details->property_id);    // Model Function to Get Floor Details
-            // $floorDetails = $this->generateFloorDetails($floorList);
-            // $floorElement = [
-            //     'headerTitle' => 'Floor Details',
-            //     'tableHead' => ["#", "Floor", "Usage Type", "Occupancy Type", "Construction Type", "Build Up Area", "From Date", "Upto Date"],
-            //     'tableData' => $floorDetails
-            // ];
+
             $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$ownerElement]);
             // Card Details
             $cardElement = $this->generateConcessionCardDtls($details, $ownerList);

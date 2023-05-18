@@ -363,4 +363,23 @@ trait SafDetailsTrait
             ['displayString' => 'Additional Details', 'key' => 'remarks', 'value' => $data->remarks],
         ]);
     }
+
+    /**
+     * | Generate Demand Detail
+     */
+    public function generateDemandDues($demandDues)
+    {
+        // return $demandDues;
+        // return collect($demandDues)->map(function ($ownerDetail) {
+        return [
+            1,
+            $demandDues['duesFrom'],
+            $demandDues['duesTo'],
+            $demandDues['totalDues'],
+            $demandDues['onePercPenalty'],
+            $demandDues['payableAmount'],
+            $demandDues['rebateAmt'],
+        ];
+        // });
+    }
 }
