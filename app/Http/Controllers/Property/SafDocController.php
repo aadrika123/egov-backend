@@ -382,8 +382,8 @@ class SafDocController extends Controller
 
             $senderRoleId = $senderRoleDtls->wf_role_id;
 
-            if ($senderRoleId != $wfLevel['DA'])                                // Authorization for Dealing Assistant Only
-                throw new Exception("You are not Authorized");
+            // if ($senderRoleId != $wfLevel['DA'])                                // Authorization for Dealing Assistant Only
+            //     throw new Exception("You are not Authorized");
 
             if (!$safDtls || collect($safDtls)->isEmpty())
                 throw new Exception("Saf Details Not Found");
@@ -419,7 +419,6 @@ class SafDocController extends Controller
             ];
             $mWfDocument->docVerifyReject($wfDocId, $reqs);
             $ifFullDocVerifiedV1 = $this->ifFullDocVerified($applicationId);
-
             if ($ifFullDocVerifiedV1 == 1) {                                     // If The Document Fully Verified Update Verify Status
                 $safDtls->doc_verify_status = 1;
                 $safDtls->save();
@@ -449,7 +448,9 @@ class SafDocController extends Controller
         $req = new Request($refReq);
         $refDocList = $mWfActiveDocument->getDocsByActiveId($req);
         // Property List Documents
-        $ifPropDocUnverified = $refDocList->contains('verify_status', 0);
+        $ifPropDocUnverified = $refDocList->contains(function ($item) {
+            return $item->whereIn('verify_status', [0, 2]);                 // 0-Document Pending,1-Document Reject
+        });
         if ($ifPropDocUnverified == 1)
             return 0;
         else
