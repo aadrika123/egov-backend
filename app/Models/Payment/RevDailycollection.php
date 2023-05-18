@@ -30,9 +30,9 @@ class RevDailycollection extends Model
         return RevDailycollection::select(
             'rev_dailycollections.id',
             'ulb_name',
-            'u.user_name as tc_name',
+            'u.name as tc_name',
             'u.mobile as tc_mobile',
-            'uu.user_name as verifier_name',
+            'uu.name as verifier_name',
             'uu.mobile as verifier_mobile',
             'tran_no',
             'deposit_amount as amount',

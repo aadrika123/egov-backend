@@ -39,7 +39,7 @@ class PropOwner extends Model
     }
 
     /**
-     * | Get The first Owner by Property Id
+     * | Get The Owner by Property Id
      */
     public function getOwnerByPropId($propId)
     {

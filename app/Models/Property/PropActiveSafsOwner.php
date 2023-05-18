@@ -49,10 +49,11 @@ class PropActiveSafsOwner extends Model
     {
         return PropActiveSafsOwner::where('saf_id', $safId)
             ->select(
-                'owner_name',
-                'mobile_no',
-                'guardian_name',
+                'owner_name as ownerName',
+                'mobile_no as mobileNo',
+                'guardian_name as guardianName',
                 'email',
+                'gender',
                 'is_armed_force',
                 'is_specially_abled'
             )
@@ -134,7 +135,7 @@ class PropActiveSafsOwner extends Model
         $owner->save();
     }
 
-     /**
+    /**
      * | Get Owner Dtls by Saf Id
      */
     public function getOwnerDtlsBySafIds($safIds)
@@ -151,5 +152,4 @@ class PropActiveSafsOwner extends Model
             ->orderBy('id')
             ->get();
     }
-
 }

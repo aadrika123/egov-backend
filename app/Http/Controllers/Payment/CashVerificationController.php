@@ -7,6 +7,7 @@ use App\MicroServices\IdGenerator\PrefixIdGenerator;
 use App\Models\Payment\RevDailycollection;
 use App\Models\Payment\RevDailycollectiondetail;
 use App\Models\Payment\TempTransaction;
+use App\Models\Property\PropChequeDtl;
 use App\Models\Property\PropTransaction;
 use App\Models\Trade\TradeTransaction;
 use App\Models\Water\WaterTran;
@@ -269,7 +270,7 @@ class CashVerificationController extends Controller
             // $data['RTGS'] = collect($details)->where('payment_mode', '=', 'RTGS')->first()->amount;
             $data['totalAmount'] =  $details->sum('amount');
             $data['numberOfTransaction'] =  $details->count();
-            $data['collectorName'] =  collect($details)[0]->name;
+            $data['collectorName'] =  collect($details)[0]->user_name;
             $data['date'] = Carbon::parse($date)->format('d-m-Y');
             $data['verifyStatus'] = false;
 
@@ -835,10 +836,31 @@ class CashVerificationController extends Controller
             $data['verificationDate'] =  collect($details)[0]->verification_date;
             $data['ulb']       =  collect($details)[0]->ulb_name;
 
-            return responseMsgs(true, "Cash Receipt", $data, "010201", "1.0", "", "POST", $request->deviceId ?? "");
+            return responseMsgs(true, "Cash Receipt", $data, "010201", "1.0", responseTime(), "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
             DB::rollBack();
-            return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $request->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", responseTime(), "POST", $request->deviceId ?? "");
+        }
+    }
+
+    /**
+     * | Edit Cheque No
+     */
+    public function editChequeNo(Request $request)
+    {
+        $propertyModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
+        $waterModuleId = Config::get('module-constants.WATER_MODULE_ID');
+        $tradeModuleId = Config::get('module-constants.TRADE_MODULE_ID');
+
+        if ($request->moduleId == $propertyModuleId) {
+            $tranId = TempTransaction::find($request->id)->transaction_id;
+                        PropChequeDtl::
+        }
+
+        if ($request->moduleId == $waterModuleId) {
+        }
+
+        if ($request->moduleId == $tradeModuleId) {
         }
     }
 }
