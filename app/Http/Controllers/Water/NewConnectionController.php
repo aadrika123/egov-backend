@@ -1343,7 +1343,7 @@ class NewConnectionController extends Controller
                 $usageCatagory = $mPropActiveSafsFloor->getSafUsageCatagory($id);
         }
 
-        $usage = collect($usageCatagory)->map(function ($value, $key) use ($id, $refPropertyTypeId) {
+        $usage = collect($usageCatagory)->map(function ($value) use ($refPropertyTypeId) {
             $var = $value['usage_code'];
             switch (true) {
                 case ($var == 'A'):

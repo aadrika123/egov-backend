@@ -37,6 +37,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
+use Nette\Utils\Random;
 
 /**
  * | -------------- Repository for the New Water Connection Operations ----------------------- |
@@ -87,6 +88,7 @@ class NewConnectionRepository implements iNewConnection
      * | Generating the demand amount for the applicant in Water Connection Charges Table 
         | Serila No : 01
         | Check the ulb_id
+        | make Application No using id generation
         | send it in track
      */
     public function store(Request $req)
@@ -151,7 +153,7 @@ class NewConnectionRepository implements iNewConnection
 
         # Generating Application No
         $now = Carbon::now();
-        $applicationNo = 'APP' . $now->getTimeStamp();
+        $applicationNo = 'APP' . $now->getTimeStamp() . rand(5, 5);
 
         DB::beginTransaction();
         # water application

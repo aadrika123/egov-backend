@@ -70,7 +70,7 @@ class PropFloor extends Model
         )
             ->join('ref_prop_usage_types', 'ref_prop_usage_types.id', '=', 'prop_floors.usage_type_mstr_id')
             ->where('property_id', $propertyId)
-            ->where('ref_prop_usage_types.status', 1)
+            // ->where('ref_prop_usage_types.status', 1)
             ->orderByDesc('ref_prop_usage_types.id')
             ->get();
     }

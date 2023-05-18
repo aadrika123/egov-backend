@@ -70,7 +70,7 @@ class PropActiveSafsFloor extends Model
         )
             ->join('ref_prop_usage_types', 'ref_prop_usage_types.id', '=', 'prop_active_safs_floors.usage_type_mstr_id')
             ->where('saf_id', $safId)
-            ->where('ref_prop_usage_types.status', 1)
+            // ->where('ref_prop_usage_types.status', 1)
             ->orderByDesc('ref_prop_usage_types.id')
             ->get();
     }
