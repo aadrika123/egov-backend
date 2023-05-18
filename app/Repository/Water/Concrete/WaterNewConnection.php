@@ -142,7 +142,8 @@ class WaterNewConnection implements IWaterNewConnection
             ->orderbydesc('water_applications.id')
             ->get();
 
-        if (is_null($connection))
+        $checkData = collect($connection)->first();
+        if (is_null($checkData))
             throw new Exception("Water Applications not found!");
 
         $returnValue = collect($connection)->map(function ($value)
@@ -156,10 +157,15 @@ class WaterNewConnection implements IWaterNewConnection
             $refConnectionCharge['applicationId'] = $value['id'];
             $refConnectionCharge['applicationNo'] = $value['application_no'];
             $value['connectionCharges'] = $refConnectionCharge;
-            $siteDetails = $mWaterSiteInspection->getInspectionById($value['id'])->first();
+            $siteDetails = $mWaterSiteInspection->getInspectionById($value['id'])
+                ->where('order_officer', $roleDetails['JE'])
+                ->first();
             $checkEmpty = collect($siteDetails)->first();
             if (!empty($checkEmpty) || !isNull($checkEmpty)) {
-                $value['siteInspectionCall'] = $mWaterParamConnFee->getCallParameter($siteDetails['site_inspection_property_type_id'], $siteDetails['site_inspection_area_sqft'])->first();
+                $value['siteInspectionCall'] = $mWaterParamConnFee->getCallParameter(
+                    $siteDetails['site_inspection_property_type_id'],
+                    $siteDetails['site_inspection_area_sqft']
+                )->first();
             }
             if ($value['current_role'] == $roleDetails['JE']) {
                 $inspectionTime = $mWaterSiteInspectionsScheduling->getInspectionData($value['id'])->first();
