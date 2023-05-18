@@ -262,11 +262,10 @@ class WfActiveDocument extends Model
     /**
      * | trade
      */
-    public function getTradeAppByAppNoDocId($appid, $ulb_id, $doc_code,$workflowId=null,$owner_id = null)
+    public function getTradeAppByAppNoDocId($appid, $ulb_id, $doc_code, $workflowId = null, $owner_id = null)
     {
         // DB::enableQueryLog();
-        if(!$workflowId)
-        {
+        if (!$workflowId) {
             $workflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
         }
         $data = DB::table('wf_active_documents as d')
@@ -301,6 +300,7 @@ class WfActiveDocument extends Model
             ->where('workflow_id', $workflowId)
             ->where('module_id', $moduleId)
             ->where('status', 1)
+            ->orderByDesc('id')
             ->get();
     }
 

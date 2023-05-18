@@ -135,6 +135,7 @@ class SafDocController extends Controller
 
             // Check back to citizen status
             $uploadedDocument = $documents->last();
+
             if (collect($uploadedDocument)->isNotEmpty() && $uploadedDocument['verifyStatus'] == 2) {
                 $reqDoc['btcStatus'] = true;
             } else
