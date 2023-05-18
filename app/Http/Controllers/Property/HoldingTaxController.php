@@ -34,6 +34,7 @@ use App\Models\Workflows\WfRoleusermap;
 use App\Repository\Property\Interfaces\iSafRepository;
 use App\Traits\Payment\Razorpay;
 use App\Traits\Property\SAF;
+use App\Traits\Property\SafDetailsTrait;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
@@ -48,6 +49,7 @@ class HoldingTaxController extends Controller
 {
     use SAF;
     use Razorpay;
+    use SafDetailsTrait;
     protected $_propertyDetails;
     protected $_safRepo;
     protected $_holdingTaxInterest = 0;
@@ -1477,5 +1479,34 @@ class HoldingTaxController extends Controller
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011613", "1.0", "", "POST", $req->deviceId ?? "");
         }
+    }
+
+    /**
+     * | Get Property Dues
+     */
+    public function propertyDues(Request $req)
+    {
+        $validator = Validator::make(
+            $req->all(),
+            ['propId' => 'required']
+        );
+        if ($validator->fails()) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'validation error',
+                'errors'  => $validator->errors()
+            ]);
+        }
+        $demandDues = $this->getHoldingDues($req);
+        if ($demandDues->original['status'] == false)
+            return responseMsgs(false, "No Dues Available for this Property", "");
+        $demandDues = $demandDues->original['data']['duesList'];
+        $demandDetails = $this->generateDemandDues($demandDues);
+        $data['tableTop'] =  [
+            'headerTitle' => 'Property Dues',
+            'tableHead' => ["#", "Dues From", "Dues To", "Total Dues", "1 % Penalty", "Payable Amount", "Rebate Amt"],
+            'tableData' => $demandDetails
+        ];
+        return responseMsgs(true, "Demand Dues", remove_null($data), "", "1.0", responseTime(), "POST", $req->deviceId ?? "");
     }
 }
