@@ -848,6 +848,7 @@ class CashVerificationController extends Controller
 
     /**
      * | Edit Cheque No
+       | Currently not in use
      */
     public function editChequeNo(Request $request)
     {
