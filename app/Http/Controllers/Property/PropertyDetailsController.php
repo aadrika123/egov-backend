@@ -69,7 +69,6 @@ class PropertyDetailsController extends Controller
             $mPropHarvesting = new PropHarvesting();
             $searchBy = $request->searchBy;
             $key = $request->filteredBy;
-            // $applicationNo = $request->applicationNo;
 
             //search by application no.
             if ($searchBy == 'applicationNo') {

@@ -20,6 +20,7 @@ class PropActiveHarvesting extends Model
     {
         return PropActiveHarvesting::select(
             'prop_active_harvestings.id',
+            'prop_active_harvestings.workflow_id',
             'prop_active_harvestings.application_no',
             DB::raw("string_agg(owner_name,',') as applicant_name"),
             'a.ward_mstr_id',

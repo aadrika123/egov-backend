@@ -100,7 +100,7 @@ return [
 
     ],
 
-    "RELIGIOUS_PLACE_USAGE_TYPE_ID" => "10",                // Religious Place usage type
+    "RELIGIOUS_PLACE_USAGE_TYPE_ID" => "11",                // Religious Place usage type
 
     "USAGE-TYPE" => [
         "1" => [
@@ -535,4 +535,12 @@ return [
         "specialRebate" => "Special Rebate",
         "firstQtrRebate" => "First Qtr Rebate",
     ],
+
+    // Road Types
+    "ROAD_TYPES" => [
+        "1" => "Principal Main Road",
+        "2" => "Main Road",
+        "3" => "Other",
+        "4" => "No Road"
+    ]
 ];

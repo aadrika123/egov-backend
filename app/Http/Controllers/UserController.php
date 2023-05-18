@@ -12,6 +12,7 @@ use App\Repository\Auth\EloquentAuthRepository;
 use App\Traits\Auth;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Redis;
 
@@ -162,12 +163,17 @@ class UserController extends Controller
 
     public function hashPassword()
     {
-        $datas =  User::select('id', 'password')->orderby('id')->get();
+        $datas =  User::select('id', 'password', "old_password")->where('password', '121')->orderby('id')->get();
 
         foreach ($datas as $data) {
             $user = User::find($data->id);
-            $user->password = Hash::make($data->password);
-            $user->save();
+            if (!$user || $user->password != '121') {
+                continue;
+            }
+            DB::beginTransaction();
+            $user->password = Hash::make($data->old_password);
+            $user->update();
+            DB::commit();
         }
     }
 }

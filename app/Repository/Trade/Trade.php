@@ -339,53 +339,63 @@ class Trade implements ITrade
                 $licence->update();
                 #----------------End Crate Application--------------------
                 #---------------- transaction of payment-------------------------------
-                if ($mApplicationTypeId == 1 && $request->initialBusinessDetails['applyWith'] == 1) {
+                if ($mApplicationTypeId == 1 && $request->initialBusinessDetails['applyWith'] == 1) 
+                {
                     $noticeNo = trim($request->initialBusinessDetails['noticeNo']);
                     $firm_date = $request->firmDetails['firmEstdDate'];
                     $refNoticeDetails = $this->getDenialFirmDetails($refUlbId, strtoupper(trim($noticeNo)));
-                    if ($refNoticeDetails) {
+                    if ($refNoticeDetails) 
+                    {
                         $refDenialId = $refNoticeDetails->dnialid;
                         $licence->denial_id = $refDenialId;
                         $licence->update();
                         $mNoticeDate = date("Y-m-d", strtotime($refNoticeDetails['created_on'])); //notice date  
-                        if ($firm_date < $mNoticeDate) {
+                        if ($firm_date < $mNoticeDate) 
+                        {
                             throw new Exception("Firm Establishment Date Can Not Be Greater Than Notice Date ");
                         }
                     }
                 }
-                if (in_array(strtoupper($mUserType), ["JSK", "UTC", "TC", "SUPER ADMIN", "TL"]) && $mApplicationTypeId != 4) {
+                if (in_array(strtoupper($mUserType), ["JSK", "UTC", "TC", "SUPER ADMIN", "TL"]) && $mApplicationTypeId != 4) 
+                {
                     $myRequest = new \Illuminate\Http\Request();
                     $myRequest->setMethod('POST');
                     $myRequest->request->add(['paymentMode' => $request->licenseDetails['paymentMode']]);
                     $myRequest->request->add(['licenceId'   => $licence->id]);
                     $myRequest->request->add(['licenseFor' => $licence->licence_for_years]);
                     $myRequest->request->add(['totalCharge' => $request->licenseDetails["totalCharge"]]);
-                    if ($request->licenseDetails['paymentMode'] != "CASH") {
+                    if ($request->licenseDetails['paymentMode'] != "CASH") 
+                    {
                         $myRequest->request->add(['chequeNo' => $request->licenseDetails["chequeNo"]]);
                         $myRequest->request->add(['chequeDate' => $request->licenseDetails["chequeDate"]]);
                         $myRequest->request->add(['bankName' => $request->licenseDetails["bankName"]]);
                         $myRequest->request->add(['branchName' => $request->licenseDetails["branchName"]]);
                     }
                     $temp = $this->paymentCounter($myRequest);
-                    if (!$temp->original["status"]) {
+                    if (!$temp->original["status"]) 
+                    {
                         throw new Exception($temp->original["message"]);
                     }
                     $res['transactionId']   = $temp->original["data"]["transactionId"];
                     $res['paymentReceipt']   = $temp->original["data"]["paymentReceipt"];
-                } elseif ($refNoticeDetails) {
+                } 
+                elseif ($refNoticeDetails) 
+                {
                     $licence->denial_id = $refDenialId;
                     $licence->update();
                     $this->updateStatusFine($refDenialId, 0, $licenceId, 1); //update status and fineAmount                     
                 }
                 #---------------- End transaction of payment----------------------------
-                if ($mApplicationTypeId == 4) {
+                if ($mApplicationTypeId == 4) 
+                {
                     $mProvno                         = $this->createProvisinalNo($mShortUlbName, $mWardNo, $licenceId);
                     $licence->provisional_license_no = $mProvno;
                     $licence->payment_status         = 1;
                     $licence->update();
                 }
                 #frize Priviuse License
-                if ($mApplicationTypeId != 1 && !$this->transferExpire($mOldLicenceId)) {
+                if ($mApplicationTypeId != 1 && !$this->transferExpire($mOldLicenceId)) 
+                {
                     throw new Exception("Some Error Ocures!....");
                 }
                 DB::commit();
@@ -407,8 +417,8 @@ class Trade implements ITrade
         $refActiveLicense->firm_description    = $request->initialBusinessDetails['otherFirmType'] ?? null;
         $refActiveLicense->category_type_id    = $request->initialBusinessDetails['categoryTypeId'] ?? null;
         $refActiveLicense->ownership_type_id   = $request->initialBusinessDetails['ownershipType'];
-        $refActiveLicense->ward_id        = $request->firmDetails['wardNo'];
-        $refActiveLicense->new_ward_id    = $request->firmDetails['newWardNo'];
+        $refActiveLicense->ward_id             = $request->firmDetails['wardNo'];
+        $refActiveLicense->new_ward_id         = $request->firmDetails['newWardNo'];
         $refActiveLicense->holding_no          = $request->firmDetails['holdingNo'];
         $refActiveLicense->firm_name           = $request->firmDetails['firmName'];
         $refActiveLicense->premises_owner_name = $request->firmDetails['premisesOwner'] ?? null;
@@ -2040,16 +2050,7 @@ class Trade implements ITrade
             $refOwnerDtl                = $this->getAllOwnereDtlByLId($id);
             $refTransactionDtl          = TradeTransaction::listByLicId($id);
             $refTimeLine                = $this->getTimelin($id);
-            // $refUploadDocuments         = $this->getLicenceDocuments($id,$tbl)->map(function($val){
-            //                                     $val->document_path = !empty(trim($val->document_path))? $this->readDocumentPath($val->document_path):"";
-            //                                     return $val;
-            //                                 });
-            // $pendingAt  = $init_finish['initiator']['id'];
-            // $mlevelData = $this->getWorkflowTrack($id);//TradeLevelPending::getLevelData($id);
-            // if($mlevelData)
-            // {
-            //     $pendingAt = $mlevelData->receiver_user_type_id;                
-            // }
+            
             $mworkflowRoles = $this->_COMMON_FUNCTION->getWorkFlowAllRoles($refUserId, $refUlbId, $refWorkflowId, true);
             $mileSton = $this->_COMMON_FUNCTION->sortsWorkflowRols($mworkflowRoles);
 
@@ -2062,13 +2063,7 @@ class Trade implements ITrade
             $data["userType"]       = $mUserType;
             $data["roles"]          = $mileSton;
 
-            // $data['documents']      = $refUploadDocuments;   
-            // $data["pendingAt"]      = $pendingAt;
-            // $data["levelData"]      = $mlevelData;
-            // $data['finisher']       = $finisher;
-
-            //=========================================================================================
-            // return $data['licenceDtl'];
+            
             $newData = array();
             $fullDetailsData = array();
             $basicDetails = $this->generateBasicDetails($licenseDetail);      // Trait function to get Basic Details
@@ -2077,18 +2072,13 @@ class Trade implements ITrade
                 "data" => $basicDetails
             ];
 
-            // Property Details and address
-            // $propertyDetails = $this->generatePropertyDetails($licenseDetail);   // Trait function to get Property Details
-            // $propertyElement = [
-            //     'headerTitle' => "Property Details & Address",
-            //     'data' => $propertyDetails
-            // ];
+            
             $paymentDetail = sizeOf($transactionDtl) > 0 ? $this->generatepaymentDetails($transactionDtl) : (array) null;      // Trait function to get payment Details
             $paymentElement = [
                 'headerTitle' => "Transaction Details",
                 'tableHead' => ["#", "Payment For", "Tran No", "Payment Mode", "Date"],
                 'tableData' => $paymentDetail,
-                // "data" => $paymentDetail
+                
             ];
 
             $ownerDetails = $this->generateOwnerDetails($ownerDetails);
@@ -2114,7 +2104,6 @@ class Trade implements ITrade
             $metaReqs['wfRoleId'] = $licenseDetail->current_role;
             $metaReqs['workflowId'] = $licenseDetail->workflow_id;
             $metaReqs['lastRoleId'] = $licenseDetail->last_role_id;
-            // dd($mRefTable);
             $levelComment = $mWorkflowTracks->getTracksByRefId($mRefTable, $licenseDetail->id);
             $fullDetailsData['levelComment'] = $levelComment;
 
@@ -2131,7 +2120,9 @@ class Trade implements ITrade
             $fullDetailsData['departmentalPost'] = collect($custom)['original']['data'];
 
             return responseMsgs(true, 'Data Fetched', remove_null($fullDetailsData), "010104", "1.0", "303ms", "POST", $request->deviceId);
-        } catch (Exception $e) {
+        } 
+        catch (Exception $e) 
+        {
             return responseMsg(false, $e->getMessage(), '');
         }
     }
@@ -2670,6 +2661,7 @@ class Trade implements ITrade
                                                 )owner"), function ($join) {
                             $join->on("owner.temp_id", "active_trade_licences.id");
                         })
+                        ->leftjoin("trade_param_firm_types", "trade_param_firm_types.id", "active_trade_licences.firm_type_id")
                     ->select(
                         "active_trade_licences.id",
                         "active_trade_licences.application_no",
@@ -2685,8 +2677,11 @@ class Trade implements ITrade
                         "owner.email_id",
                         "active_trade_licences.application_type_id",
                         "trade_param_application_types.application_type",
+                        "trade_param_firm_types.firm_type",
+                        "active_trade_licences.firm_type_id",
                         DB::raw("TO_CHAR(active_trade_licences.application_date, 'DD-MM-YYYY') as application_date"),
-                    );
+                    )
+                    ->WHERE("active_trade_licences.is_active",TRUE);
     }
     # Serial No : 16
     /**
@@ -2775,8 +2770,24 @@ class Trade implements ITrade
             }
             $license = $license
                 ->whereIn('active_trade_licences.ward_id', $mWardIds)
-                ->get();         
-            return responseMsg(true, "", $license);
+                ->orderBy("active_trade_licences.application_date","DESC"); 
+            if($request->all)
+            {
+                $license= $license->get();
+                return responseMsg(true, "", $license);
+            } 
+            $perPage = $request->perPage ? $request->perPage :  10;
+            $page = $request->page && $request->page > 0 ? $request->page : 1;
+
+            $paginator = $license->paginate($perPage);
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
+            ]; 
+            return responseMsg(true, "", $list);     
+            
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
@@ -2843,8 +2854,23 @@ class Trade implements ITrade
             }
             $license = $license
                 ->whereIn('active_trade_licences.ward_id', $mWardIds)
-                ->get();
-            return responseMsg(true, "", $license);
+                ->orderBy("active_trade_licences.application_date","DESC");
+            if($request->all)
+            {
+                $license= $license->get();
+                return responseMsg(true, "", $license);
+            } 
+            $perPage = $request->perPage ? $request->perPage :  10;
+            $page = $request->page && $request->page > 0 ? $request->page : 1;
+
+            $paginator = $license->paginate($perPage);
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
+            ]; 
+            return responseMsg(true, "", $list); 
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
@@ -2905,8 +2931,23 @@ class Trade implements ITrade
             }
             $license = $license
                 ->whereIn('active_trade_licences.ward_id', $mWardIds)
-                ->get();
-            return responseMsg(true, "", $license);
+                ->orderBy("active_trade_licences.application_date","DESC"); 
+            if($request->all)
+            {
+                $license= $license->get();
+                return responseMsg(true, "", $license);
+            } 
+            $perPage = $request->perPage ? $request->perPage :  10;
+            $page = $request->page && $request->page > 0 ? $request->page : 1;
+
+            $paginator = $license->paginate($perPage);
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
+            ]; 
+            return responseMsg(true, "", $list);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
@@ -2967,8 +3008,23 @@ class Trade implements ITrade
             }
             $license = $license
                 ->whereIn('active_trade_licences.ward_id', $mWardIds)
-                ->get();
-            return responseMsg(true, "", $license);
+                ->orderBy("active_trade_licences.application_date","DESC"); 
+            if($request->all)
+            {
+                $license= $license->get();
+                return responseMsg(true, "", $license);
+            } 
+            $perPage = $request->perPage ? $request->perPage :  10;
+            $page = $request->page && $request->page > 0 ? $request->page : 1;
+
+            $paginator = $license->paginate($perPage);
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
+            ]; 
+            return responseMsg(true, "", $list);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
@@ -3029,15 +3085,17 @@ class Trade implements ITrade
                     "trade_licences.document_upload_status",
                     "trade_licences.payment_status",
                     "trade_licences.firm_name",
-                    "trade_licences.application_date",
-                    "trade_licences.apply_from",
-                    "trade_licences.valid_from",
-                    "trade_licences.valid_upto",
                     "trade_licences.licence_for_years",
                     "owner.owner_name",
                     "owner.guardian_name",
                     "owner.mobile_no",
                     "owner.email_id",
+                    DB::raw("
+                        TO_CHAR(trade_licences.valid_from, 'DD-MM-YYYY') as valid_from ,
+                        TO_CHAR(trade_licences.valid_upto, 'DD-MM-YYYY') as valid_upto,
+                        TO_CHAR(trade_licences.application_date, 'DD-MM-YYYY') as application_date,
+                        TO_CHAR(trade_licences.license_date, 'DD-MM-YYYY') as license_date
+                    "),
                 )
                 ->join(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
                                 STRING_AGG(guardian_name,',') AS guardian_name,
@@ -3851,7 +3909,8 @@ class Trade implements ITrade
                 "trade_param_ownership_types.ownership_type",
                 DB::raw("ulb_ward_masters.ward_name AS ward_no, new_ward.ward_name as new_ward_no,ulb_masters.ulb_name, '$table' AS tbl")
             );
-            if (!$test) {
+            if (!$test) 
+            {
                 $test = RejectedTradeLicence::select("id")->find($id);
                 $table = "rejected_trade_licences";
                 $application = RejectedTradeLicence::select(
@@ -3863,10 +3922,25 @@ class Trade implements ITrade
                     DB::raw("ulb_ward_masters.ward_name AS ward_no, new_ward.ward_name as new_ward_no,ulb_masters.ulb_name,'$table' AS tbl")
                 );
             }
-            if (!$test) {
+            if (!$test) 
+            {
+                $test = ActiveTradeLicence::select("id")->find($id);
                 $table = "active_trade_licences";
                 $application = ActiveTradeLicence::select(
                     "active_trade_licences.*",
+                    "trade_param_application_types.application_type",
+                    "trade_param_category_types.category_type",
+                    "trade_param_firm_types.firm_type",
+                    "trade_param_ownership_types.ownership_type",
+                    DB::raw("ulb_ward_masters.ward_name AS ward_no, 
+                    new_ward.ward_name as new_ward_no,ulb_masters.ulb_name,'$table' AS tbl")
+                );
+            }
+            if (!$test) 
+            {
+                $table = "trade_renewals";
+                $application = TradeRenewal::select(
+                    "trade_renewals.*",
                     "trade_param_application_types.application_type",
                     "trade_param_category_types.category_type",
                     "trade_param_firm_types.firm_type",
@@ -3891,7 +3965,9 @@ class Trade implements ITrade
                 ->where($table . '.id', $id)
                 ->first();
             return $application;
-        } catch (Exception $e) {
+        } 
+        catch (Exception $e) 
+        {
             echo $e->getMessage();
         }
     }
@@ -4157,6 +4233,10 @@ class Trade implements ITrade
         if (!$application) {
             $application = RejectedTradeLicence::find($licenceId);
         }
+        if(!$application)
+        {
+            $application = TradeRenewal::find($licenceId);
+        }
         $status = "";
         if ($application->pending_status == 5) {
             $status = "License Created Successfully";
@@ -4165,10 +4245,10 @@ class Trade implements ITrade
             }
         } elseif ($application->is_parked) {
             $rols  = WfRole::find($application->current_role);
-            $status = "Application back to citizen by " . $rols->role_name;
+            $status = "Application back to citizen by " . ($rols->role_name??"");
         } elseif ($application->pending_status != 0 && (($application->current_role != $application->finisher_role) || ($application->current_role == $application->finisher_role))) {
             $rols  = WfRole::find($application->current_role);
-            $status = "Application pending at " . $rols->role_name;
+            $status = "Application pending at " . ($rols->role_name??"");
         } elseif (!$application->is_active) {
             $status = "Application rejected ";
         } elseif (strtoupper($mUserType) == "ONLINE" && $application->citizen_id == $refUserId && $application->payment_status == 0) {
@@ -4266,10 +4346,13 @@ class Trade implements ITrade
             $appMandetoryDoc = $applicationDoc->whereIn("docType", ["R", "OR"]);
             $appUploadedDoc = $applicationDoc->whereNotNull("uploadedDoc");
             $appUploadedDocVerified = collect();
-            $appUploadedDoc->map(function ($val) use ($appUploadedDocVerified) {
+            $appUploadedDocRejected = collect();
+            $appUploadedDoc->map(function ($val) use ($appUploadedDocVerified,$appUploadedDocRejected) {
                 $appUploadedDocVerified->push(["is_docVerify" => (!empty($val["uploadedDoc"]) ?  (((collect($val["uploadedDoc"])->all())["verifyStatus"]) ? true : false) : true)]);
+                $appUploadedDocRejected->push(["is_docRejected" => (!empty($val["uploadedDoc"]) ?  (((collect($val["uploadedDoc"])->all())["verifyStatus"]==2) ? true : false) : true)]);
             });
             $is_appUploadedDocVerified = $appUploadedDocVerified->where("is_docVerify", false);
+            $is_appUploadedDocRejected = $appUploadedDocVerified->where("is_docRejected", true);
             $is_appMandUploadedDoc  = $appMandetoryDoc->whereNull("uploadedDoc");
             $Wdocuments = collect();
             $ownerDoc->map(function ($val) use ($Wdocuments) {
@@ -4278,15 +4361,17 @@ class Trade implements ITrade
                     $val1["ownerId"] = $ownerId;
                     $val1["is_uploded"] = (in_array($val1["docType"], ["R", "OR"]))  ? ((!empty($val1["uploadedDoc"])) ? true : false) : true;
                     $val1["is_docVerify"] = !empty($val1["uploadedDoc"]) ?  (((collect($val1["uploadedDoc"])->all())["verifyStatus"]) ? true : false) : true;
+                    $val1["is_docRejected"] = !empty($val1["uploadedDoc"]) ?  (((collect($val1["uploadedDoc"])->all())["verifyStatus"]==2) ? true : false) : false;
                     $Wdocuments->push($val1);
                 });
             });
             $ownerMandetoryDoc = $Wdocuments->whereIn("docType", ["R", "OR"]);
             $is_ownerUploadedDoc = $Wdocuments->where("is_uploded", false);
             $is_ownerDocVerify = $Wdocuments->where("is_docVerify", false);
-
+            $is_ownerDocRejected = $Wdocuments->where("is_docRejected", true);
+            
             if (($fromRole["can_upload_document"] ?? false) || strtoupper($mUserType) == "ONLINE") {
-                return (empty($is_ownerUploadedDoc->all()) && empty($is_appMandUploadedDoc->all()));
+                return (empty($is_ownerUploadedDoc->all()) && empty($is_ownerDocRejected->all()) && empty($is_appMandUploadedDoc->all()) && empty($appUploadedDocRejected->all()));
             }
             if ($fromRole["can_verify_document"] ?? false) {
                 return (empty($is_ownerDocVerify->all()) && empty($is_appUploadedDocVerified->all()));

@@ -94,6 +94,7 @@ class Report implements IReport
                 $ulbId = $request->ulbId;
             }
             $where .= " AND trade_transactions.ulb_id =  $ulbId ";
+
             $active = TradeTransaction::select(
                             DB::raw("   ulb_ward_masters.ward_name AS ward_no,
                                         active_trade_licences.application_no AS application_no,
@@ -104,7 +105,7 @@ class Report implements IReport
                                         owner_detail.owner_name,
                                         owner_detail.mobile_no,
                                         active_trade_licences.firm_name AS firm_name,
-                                        trade_transactions.tran_date,
+                                        TO_CHAR(trade_transactions.tran_date, 'DD-MM-YYYY') as tran_date ,
                                         trade_transactions.payment_mode AS transaction_mode,
                                         trade_transactions.paid_amount,
                                         (
@@ -154,7 +155,7 @@ class Report implements IReport
                                     owner_detail.owner_name,
                                     owner_detail.mobile_no,
                                     trade_licences.firm_name AS firm_name,
-                                    trade_transactions.tran_date,
+                                    TO_CHAR(trade_transactions.tran_date, 'DD-MM-YYYY') as tran_date ,
                                     trade_transactions.payment_mode AS transaction_mode,
                                     trade_transactions.paid_amount,
                                     (
@@ -205,7 +206,7 @@ class Report implements IReport
                                 owner_detail.owner_name,
                                 owner_detail.mobile_no,
                                 rejected_trade_licences.firm_name AS firm_name,
-                                trade_transactions.tran_date,
+                                TO_CHAR(trade_transactions.tran_date, 'DD-MM-YYYY') as tran_date ,
                                 trade_transactions.payment_mode AS transaction_mode,
                                 trade_transactions.paid_amount,
                                 (
@@ -254,7 +255,7 @@ class Report implements IReport
                                 owner_detail.owner_name,
                                 owner_detail.mobile_no,
                                 trade_renewals.firm_name AS firm_name,
-                                trade_transactions.tran_date,
+                                TO_CHAR(trade_transactions.tran_date, 'DD-MM-YYYY') as tran_date ,
                                 trade_transactions.payment_mode AS transaction_mode,
                                 trade_transactions.paid_amount,
                                 (
@@ -326,7 +327,7 @@ class Report implements IReport
             $data = $active->union($approved)
                             ->union($rejected)
                             ->union($old);
-            $perPage = $request->perPage ? $request->perPage : 10000;
+            $perPage = $request->perPage ? $request->perPage : 10;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
             $paginator = $data->paginate($perPage);
             $items = $paginator->items();
@@ -417,7 +418,7 @@ class Report implements IReport
             }
             $data=$data->groupBy(["users.id", "users.user_name"]);
             
-            $perPage = $request->perPage ? $request->perPage : 10000;
+            $perPage = $request->perPage ? $request->perPage : 10;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
             $paginator = $data->paginate($perPage);
             $items = $paginator->items();
@@ -480,13 +481,21 @@ class Report implements IReport
 
             $data = TradeLicence::select("trade_licences.id","trade_licences.ward_id","trade_licences.application_type_id",
                         "trade_licences.ulb_id","trade_licences.application_no","trade_licences.provisional_license_no",
-                        "trade_licences.application_date","trade_licences.license_no","trade_licences.license_date",
-                        "trade_licences.valid_from","trade_licences.valid_upto","trade_licences.firm_name",
-                    DB::raw("ulb_ward_masters.ward_name as ward_no,'approve' as type, ulb_masters.ulb_name")
+                        "trade_licences.license_no",
+                        "trade_licences.firm_name",
+                        "trade_param_firm_types.firm_type",
+                        "trade_licences.firm_type_id",
+                    DB::raw("ulb_ward_masters.ward_name as ward_no,'approve' as type, ulb_masters.ulb_name,
+                        TO_CHAR(trade_licences.valid_from, 'DD-MM-YYYY') as valid_from ,
+                        TO_CHAR(trade_licences.valid_upto, 'DD-MM-YYYY') as valid_upto,
+                        TO_CHAR(trade_licences.application_date, 'DD-MM-YYYY') as application_date,
+                        TO_CHAR(trade_licences.license_date, 'DD-MM-YYYY') as license_date
+                    ")
             
                     )
                     ->join("ulb_masters","ulb_masters.id","trade_licences.ulb_id")
-                    ->join("ulb_ward_masters","ulb_ward_masters.id","trade_licences.ward_id");
+                    ->join("ulb_ward_masters","ulb_ward_masters.id","trade_licences.ward_id")
+                    ->leftjoin("trade_param_firm_types", "trade_param_firm_types.id", "trade_licences.firm_type_id");
                     
             if($oprater)
             {
@@ -512,13 +521,21 @@ class Report implements IReport
             {
                 $old = TradeRenewal::select("trade_renewals.id","trade_renewals.ward_id","trade_renewals.application_type_id",
                         "trade_renewals.ulb_id","trade_renewals.application_no","trade_renewals.provisional_license_no",
-                        "trade_renewals.application_date","trade_renewals.license_no","trade_renewals.license_date",
-                        "trade_renewals.valid_from","trade_renewals.valid_upto","trade_renewals.firm_name",
-                    DB::raw("ulb_ward_masters.ward_name as ward_no,'old' as type , ulb_masters.ulb_name")
+                        "trade_renewals.license_no",
+                        "trade_renewals.firm_name",
+                        "trade_param_firm_types.firm_type",
+                        "trade_renewals.firm_type_id",
+                    DB::raw("ulb_ward_masters.ward_name as ward_no,'old' as type , ulb_masters.ulb_name,
+                        TO_CHAR(trade_renewals.valid_from, 'DD-MM-YYYY') as valid_from ,
+                        TO_CHAR(trade_renewals.valid_upto, 'DD-MM-YYYY') as valid_upto,
+                        TO_CHAR(trade_renewals.application_date, 'DD-MM-YYYY') as application_date,
+                        TO_CHAR(trade_renewals.license_date, 'DD-MM-YYYY') as license_date
+                    ")
             
                     )
                     ->join("ulb_masters","ulb_masters.id","trade_renewals.ulb_id")
                     ->join("ulb_ward_masters","ulb_ward_masters.id","trade_renewals.ward_id") 
+                    ->leftjoin("trade_param_firm_types", "trade_param_firm_types.id", "trade_renewals.firm_type_id")
                     ->where('trade_renewals.license_no', 'ILIKE', '%' . $licenseNo . '%');
                     if($wardId)
                     {
@@ -528,10 +545,10 @@ class Report implements IReport
                     {
                         $old = $old->where("trade_renewals.ulb_id",$ulbId);
                     }
-                    $data= $data->union($old);
+                    $data= $data->union($old)->orderBy("application_date");
                     
             }
-            $perPage = $request->perPage ? $request->perPage :  10000;
+            $perPage = $request->perPage ? $request->perPage :  10;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
 
             $paginator = $data->paginate($perPage);
@@ -1302,7 +1319,7 @@ class Report implements IReport
                     ->union($rejected)
                     ->union($approved)
                     ->union($old);
-            $perPage = $request->perPage ? $request->perPage : 10000;
+            $perPage = $request->perPage ? $request->perPage : 10;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
 
             $paginator = $data->paginate($perPage);
@@ -1614,7 +1631,7 @@ class Report implements IReport
                     ->union($approved)
                     ->union($old);
 
-            $perPage = $request->perPage ? $request->perPage :10000;
+            $perPage = $request->perPage ? $request->perPage :10;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
 
             $paginator = $data->paginate($perPage);
@@ -1853,7 +1870,7 @@ class Report implements IReport
                             });
                 }
 
-            $perPage = $request->perPage ? $request->perPage : 10000;
+            $perPage = $request->perPage ? $request->perPage : 10;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
             $paginator = $data->paginate($perPage);
             $items = $paginator->items();
@@ -1950,7 +1967,7 @@ class Report implements IReport
                     ->WHERE("active_trade_licences.is_parked", FALSE);
             $data = $data->groupBy(["ward_name","ulb_ward_masters.id"]);
 
-            $perPage = $request->perPage ? $request->perPage : 10000;
+            $perPage = $request->perPage ? $request->perPage : 10;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
             $paginator = $data->paginate($perPage);
             $items = $paginator->items();
@@ -2057,7 +2074,7 @@ class Report implements IReport
             {
                 $data = $data->WHEREIN("active_trade_licences.ward_id", $mWardIds);
             }
-            $perPage = $request->perPage ? $request->perPage : 10000;
+            $perPage = $request->perPage ? $request->perPage : 10;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
             $paginator = $data->paginate($perPage);
             $items = $paginator->items();
@@ -2667,7 +2684,7 @@ class Report implements IReport
                 default : $data = $active->union($approved)->union($rejected);
             }
             
-            $perPage = $request->perPage ? $request->perPage : 10000;
+            $perPage = $request->perPage ? $request->perPage : 10;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
             $paginator = $data->paginate($perPage);
             $items = $paginator->items();

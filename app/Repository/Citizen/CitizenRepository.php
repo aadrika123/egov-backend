@@ -131,19 +131,17 @@ class CitizenRepository implements iCitizenRepository
     {
         $applications = array();
         $propertyApplications = DB::table('prop_active_safs')
-            ->leftJoin('wf_roles as r', 'r.id', '=', 'prop_active_safs.current_role')
+            ->Join('wf_roles as r', 'r.id', '=', 'prop_active_safs.current_role')
             ->leftJoin('prop_transactions as t', 't.saf_id', '=', 'prop_active_safs.id')
-            ->leftJoin('prop_saf_verifications as v', function ($query) {
-                $query->on('prop_active_safs.id', '=', 'v.saf_id')->where('v.agency_verification', true)->orderByDesc('v.id')->limit(1);
-            })
+            // ->leftJoin('prop_saf_verifications as v', function ($query) {
+            //     $query->on('prop_active_safs.id', '=', 'v.saf_id')->where('v.agency_verification', true)->orderByDesc('v.id')->limit(1);
+            // })
             ->select(
-                DB::raw("(CASE WHEN v.agency_verification=true and v.agency_verification  notnull THEN 'true' ELSE 'false' END) as is_agency_verified"),
-                DB::raw("(CASE WHEN is_field_verified=true and is_field_verified  notnull THEN 'true' ELSE 'false' END) as is_ulb_verified"),
-                'r.role_name as current_level',
                 'prop_active_safs.id as application_id',
                 'saf_no',
                 'holding_no',
                 'assessment_type',
+                'r.role_name as current_level',
                 DB::raw("TO_CHAR(application_date, 'DD-MM-YYYY') as application_date"),
                 'applicant_name',
                 'payment_status',
@@ -154,7 +152,9 @@ class CitizenRepository implements iCitizenRepository
                 'prop_active_safs.created_at',
                 'prop_active_safs.updated_at',
                 't.tran_no as transaction_no',
-                't.tran_date as transaction_date'
+                't.tran_date as transaction_date',
+                // DB::raw("(CASE WHEN v.agency_verification=true and v.agency_verification  notnull THEN 'true' ELSE 'false' END) as is_agency_verified"),
+                // DB::raw("(CASE WHEN is_field_verified=true and is_field_verified  notnull THEN 'true' ELSE 'false' END) as is_ulb_verified"),
             )
             ->where('prop_active_safs.citizen_id', $userId)
             ->where('prop_active_safs.status', 1)

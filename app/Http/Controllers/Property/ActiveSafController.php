@@ -334,8 +334,8 @@ class ActiveSafController extends Controller
             $mWfWardUser = new WfWardUser();
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
 
-            $userId = auth()->user()->id;
-            $ulbId = auth()->user()->ulb_id;
+            $userId = authUser()->id;
+            $ulbId = authUser()->ulb_id;
 
             $occupiedWards = $mWfWardUser->getWardsByUserId($userId)->pluck('ward_id');                       // Model () to get Occupied Wards of Current User
             $roleIds = $mWfRoleUser->getRoleIdByUserId($userId)->pluck('wf_role_id');                      // Model to () get Role By User Id
@@ -349,10 +349,11 @@ class ActiveSafController extends Controller
                 ->whereIn('ward_mstr_id', $occupiedWards)
                 ->orderByDesc('id')
                 ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name')
-                ->get();
-            // ->paginate($perPage);
+                // ->get();
+                // ->paginate($perPage);
+                ->paginate(100);
 
-            return responseMsgs(true, "Data Fetched", remove_null($safInbox->values()), "010103", "1.0", "339ms", "POST", "");
+            return responseMsgs(true, "Data Fetched", remove_null($safInbox->values()), "010103", "1.0", responseTime(), "POST", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -385,10 +386,9 @@ class ActiveSafController extends Controller
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleIds)->pluck('workflow_id');
             $safInbox = $this->Repository->getSaf($workflowIds)                 // Repository function getSAF
                 ->selectRaw(DB::raw(
-                    "case when prop_active_safs.citizen_id is null then 'true'
+                    "case when prop_active_safs.citizen_id is not null then 'true'
                           else false end
-                          as btc_for_citizen
-                    "
+                          as btc_for_citizen"
                 ))
                 ->where('parked', true)
                 ->where('prop_active_safs.ulb_id', $mUlbId)
@@ -398,9 +398,9 @@ class ActiveSafController extends Controller
                 ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name')
                 ->get();
 
-            return responseMsgs(true, "BTC Inbox List", remove_null($safInbox), 010123, 1.0, "271ms", "POST", $mDeviceId);
+            return responseMsgs(true, "BTC Inbox List", remove_null($safInbox), 010123, 1.0, responseTime(), "POST", $mDeviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", 010123, 1.0, "271ms", "POST", $mDeviceId);
+            return responseMsgs(false, $e->getMessage(), "", 010123, 1.0, responseTime(), "POST", $mDeviceId);
         }
     }
 
@@ -1087,7 +1087,7 @@ class ActiveSafController extends Controller
         }
 
         // Edit In Case of Reassessment,Mutation
-        if (in_array($assessmentType, ['Re Assessment', 'Mutation'])) {         // Edit Property In case of Reassessment, Mutation
+        if (in_array($assessmentType, ['Reassessment', 'Mutation'])) {         // Edit Property In case of Reassessment, Mutation
             $propId = $activeSaf->previous_holding_id;
             $mProperty = new PropProperty();
             $mPropOwners = new PropOwner();
@@ -2074,12 +2074,14 @@ class ActiveSafController extends Controller
         try {
             $taxCollectorRole = Config::get('PropertyConstaint.SAF-LABEL.TC');
             $ulbTaxCollectorRole = Config::get('PropertyConstaint.SAF-LABEL.UTC');
+            $propertyType = collect(Config::get('PropertyConstaint.PROPERTY-TYPE'))->flip();
             $propActiveSaf = new PropActiveSaf();
             $verification = new PropSafVerification();
             $mWfRoleUsermap = new WfRoleusermap();
             $verificationDtl = new PropSafVerificationDtl();
             $userId = authUser()->id;
             $ulbId = authUser()->ulb_id;
+            $vacantLand = $propertyType['VACANT LAND'];
 
             $safDtls = $propActiveSaf->getSafNo($req->safId);
             $workflowId = $safDtls->workflow_id;
@@ -2113,28 +2115,30 @@ class ActiveSafController extends Controller
             // Verification Store
             $verificationId = $verification->store($req);                            // Model function to store verification and get the id
             // Verification Dtl Table Update                                         // For Tax Collector
-            foreach ($req->floor as $floorDetail) {
-                if ($floorDetail['useType'] == 1)
-                    $carpetArea =  $floorDetail['buildupArea'] * 0.70;
-                else
-                    $carpetArea =  $floorDetail['buildupArea'] * 0.80;
+            if ($req->propertyType != $vacantLand) {
+                foreach ($req->floor as $floorDetail) {
+                    if ($floorDetail['useType'] == 1)
+                        $carpetArea =  $floorDetail['buildupArea'] * 0.70;
+                    else
+                        $carpetArea =  $floorDetail['buildupArea'] * 0.80;
 
-                $floorReq = [
-                    'verification_id' => $verificationId,
-                    'saf_id' => $req->safId,
-                    'saf_floor_id' => $floorDetail['floorId'] ?? null,
-                    'floor_mstr_id' => $floorDetail['floorNo'],
-                    'usage_type_id' => $floorDetail['useType'],
-                    'construction_type_id' => $floorDetail['constructionType'],
-                    'occupancy_type_id' => $floorDetail['occupancyType'],
-                    'builtup_area' => $floorDetail['buildupArea'],
-                    'date_from' => $floorDetail['dateFrom'],
-                    'date_to' => $floorDetail['dateUpto'],
-                    'carpet_area' => $carpetArea,
-                    'user_id' => $userId,
-                    'ulb_id' => $ulbId
-                ];
-                $verificationDtl->store($floorReq);
+                    $floorReq = [
+                        'verification_id' => $verificationId,
+                        'saf_id' => $req->safId,
+                        'saf_floor_id' => $floorDetail['floorId'] ?? null,
+                        'floor_mstr_id' => $floorDetail['floorNo'],
+                        'usage_type_id' => $floorDetail['useType'],
+                        'construction_type_id' => $floorDetail['constructionType'],
+                        'occupancy_type_id' => $floorDetail['occupancyType'],
+                        'builtup_area' => $floorDetail['buildupArea'],
+                        'date_from' => $floorDetail['dateFrom'],
+                        'date_to' => $floorDetail['dateUpto'],
+                        'carpet_area' => $carpetArea,
+                        'user_id' => $userId,
+                        'ulb_id' => $ulbId
+                    ];
+                    $verificationDtl->store($floorReq);
+                }
             }
 
             DB::commit();

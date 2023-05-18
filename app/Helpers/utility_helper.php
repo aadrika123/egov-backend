@@ -27,7 +27,7 @@ if (!function_exists("responseMsgs")) {
             'meta-data' => [
                 'apiId' => $apiId,
                 'version' => $version,
-                'responsetime(in ms)' => $queryRunTime,
+                'responsetime' => $queryRunTime,
                 'epoch' => Carbon::now()->format('Y-m-d H:i:m'),
                 'action' => $action,
                 'deviceId' => $deviceId

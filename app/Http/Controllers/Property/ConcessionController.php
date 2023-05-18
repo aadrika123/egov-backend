@@ -298,8 +298,8 @@ class ConcessionController extends Controller
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
             $perPage = $req->perPage ?? 10;
 
-            $userId = auth()->user()->id;
-            $ulbId = auth()->user()->ulb_id;
+            $userId = authUser()->id;
+            $ulbId  = authUser()->ulb_id;
             $occupiedWards = $mWfWardUser->getWardsByUserId($userId)->pluck('ward_id');                       // Model () to get Occupied Wards of Current User
 
             $roleIds = $mWfRoleUser->getRoleIdByUserId($userId)->pluck('wf_role_id');                      // Model to () get Role By User Id
@@ -312,7 +312,7 @@ class ConcessionController extends Controller
                 ->orderByDesc('prop_active_concessions.id')
                 // ->paginate($perPage);
                 ->get();
-            return responseMsgs(true, "Inbox List", remove_null($concessions), '010703', '01', '326ms-478ms', 'Post', '');
+            return responseMsgs(true, "Inbox List", remove_null($concessions), '010703', '01', responseTime(), 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }

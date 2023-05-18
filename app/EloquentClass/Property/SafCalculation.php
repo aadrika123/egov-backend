@@ -35,7 +35,7 @@ class SafCalculation
     private $_isResidential;
     private $_ruleSets;
     public $_ulbId;
-    private $_rentalValue;
+    public $_rentalValue;
     public $_rentalRates;
     private $_virtualDate;
     public $_effectiveDateRule2;
@@ -49,7 +49,7 @@ class SafCalculation
     private $_mobileQuaterlyRuleSets;
     private $_hoardingQuaterlyRuleSets;
     private $_petrolPumpQuaterlyRuleSets;
-    private $_vacantRentalRates;
+    public $_vacantRentalRates;
     private $_vacantPropertyTypeId;
     private $_currentQuarterDate;
     private $_loggedInUserType;
@@ -76,7 +76,7 @@ class SafCalculation
     public $_isTrustVerified;
     private $_isPropPoint20Taxed = false;
     private $_rwhAreaOfPlot;
-    private $_ulbType;
+    public $_ulbType;
     private $_religiousPlaceUsageType;
 
     /** 
@@ -377,7 +377,7 @@ class SafCalculation
                     json_encode($capitalValueRate)
                 );
             }
-            $capitalValueRate->rate = ($capitalValueRate->rate > $capitalValueRate->max_rate) ? $capitalValueRate->max_rate : $capitalValueRate->rate;
+            $capitalValueRate->rate = $capitalValueRate->max_rate;
             array_push($capitalValue, $capitalValueRate->rate);
         }
 
@@ -412,7 +412,7 @@ class SafCalculation
                 json_encode($capitalValueRate)
             );
         }
-        return $capitalValueRate->rate = ($capitalValueRate->rate > $capitalValueRate->max_rate) ? $capitalValueRate->max_rate : $capitalValueRate->rate;
+        return $capitalValueRate->rate = $capitalValueRate->max_rate;
     }
 
     /**
@@ -823,6 +823,7 @@ class SafCalculation
             "healthTax" => $quaterHealthTax,
             "educationTax" => $quaterEducationTax,
             "rwhPenalty" => roundFigure($rwhPenalty),
+            "yearlyTax" => roundFigure($quaterlyTax * 4),
             "totalTax" => $quaterlyTax,
             "onePercPenalty" => $onePercPenalty,
             "onePercPenaltyTax" => roundFigure($onePercPenaltyTax)
@@ -876,12 +877,15 @@ class SafCalculation
             $tax = $area * $rentalRate * $occupancyFactor;
 
             $onePercPenaltyTax = ($tax * $onePercPenalty) / 100;                                // One Perc Penalty Tax
+            $quaterlyTax = roundFigure($tax / 4);
             $taxQuaterly = [
                 "area" => roundFigure($area),
                 "rentalRate" => $rentalRate,
                 "occupancyFactor" => $occupancyFactor,
                 "onePercPenalty"   => $onePercPenalty,
-                "totalTax" => roundFigure($tax / 4),
+                "yearlyTax" => roundFigure($tax),
+                "totalTax" => $quaterlyTax,
+                "holdingTax" => $quaterlyTax,
                 "onePercPenaltyTax" => roundFigure($onePercPenaltyTax / 4)
             ];
             return $taxQuaterly;
@@ -975,6 +979,7 @@ class SafCalculation
             "educationTax" => 0,
 
             "rwhPenalty" => roundFigure($rwhPenalty / 4),
+            "yearlyTax" => roundFigure($totalTax),
             "totalTax" => roundFigure($totalTax / 4),
             "onePercPenalty" => $onePercPenalty,
             "onePercPenaltyTax" => roundFigure($onePercPenaltyTax / 4)
@@ -1005,12 +1010,15 @@ class SafCalculation
             $occupancyFactor = 1;
             $tax = (float)$area * $rentalRate * $occupancyFactor;
             $onePercPenaltyTax = ($tax * $onePercPenalty) / 100;
+            $quaterlyTax = roundFigure($tax / 4);
             $taxQuaterly = [
                 "area" => roundFigure($area),
                 "rentalRate" => $rentalRate,
                 "occupancyFactor" => $occupancyFactor,
                 "onePercPenalty"   => $onePercPenalty,
-                "totalTax" => roundFigure($tax / 4),
+                "totalTax" => $quaterlyTax,
+                "holdingTax" => $quaterlyTax,
+                "yearlyTax" => roundFigure($tax),
                 "onePercPenaltyTax" => roundFigure($onePercPenaltyTax / 4)
             ];
             return $taxQuaterly;
@@ -1118,6 +1126,7 @@ class SafCalculation
             "educationTax" => 0,
 
             "rwhPenalty" => $qRwhPenalty,
+            "yearlyTax" => roundFigure($quaterTax * 4),
             "totalTax" => $quaterTax,
             "onePercPenalty" => $onePercPenalty,
             "onePercPenaltyTax" => roundFigure($onePercPenaltyTax / 4)

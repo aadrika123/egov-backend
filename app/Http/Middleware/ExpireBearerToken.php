@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use Carbon\Carbon;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
@@ -32,21 +33,21 @@ class ExpireBearerToken
         $citizenUserType = Config::get('workflow-constants.USER_TYPES.1');
         $this->_user = auth()->user();
         $this->_token = $request->bearerToken();
-        $this->_currentTime = time();
+        $this->_currentTime = Carbon::now();
 
         if ($this->_user && $this->_token) {
             if ($this->_user->user_type == $citizenUserType) {                             // If the User type is citizen
-                $key = 'last_activity_citizen_' . $this->_user->id;
-                $this->_lastActivity = Redis::get($key);                                   // Function (1.1)
+                $this->_key = 'last_activity_citizen_' . $this->_user->id;
+                $this->_lastActivity = Redis::get($this->_key);                                   // Function (1.1)
                 $this->validateToken();
             } else {                                                                       // If the User type is not a Citizen
-                $key = 'last_activity_' . $this->_user->id;
-                $this->_lastActivity = Redis::get($key);
+                $this->_key = 'last_activity_' . $this->_user->id;
+                $this->_lastActivity = Redis::get($this->_key);
                 $this->validateToken();                                                     // Function (1.1)
             }
 
             if (!$request->has('key') && !$request->input('heartbeat'))
-                Redis::set($key, $this->_currentTime);            // Caching
+                Redis::set($this->_key, $this->_currentTime);            // Caching
         }
         return $next($request);
     }
@@ -57,13 +58,15 @@ class ExpireBearerToken
      */
     public function validateToken()
     {
-        if ($this->_lastActivity && ($this->_currentTime - $this->_lastActivity) > 1800) {            // for 1800 Seconds(30 Minutes)
+        $timeDiff = $this->_currentTime->diffInMinutes($this->_lastActivity);
+        if ($this->_lastActivity && ($timeDiff > 60)) {            // for 60 Minutes
             Redis::del($this->_key);
-            $this->_user->tokens()->delete();
+            $this->_user->currentAccessToken()->delete();
             abort(response()->json(
                 [
                     'status' => true,
-                    'authenticated' => false
+                    'authenticated' => false,
+                    'sessionTime' => $timeDiff
                 ]
             ));
         }

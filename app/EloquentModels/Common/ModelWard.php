@@ -15,7 +15,11 @@ class ModelWard
     public function getAllWard(int $ulb_id)
     {
         try{
-            return $this->obj->select("id","ward_name")
+            return $this->obj->select("id",
+                            DB::RAW("CASE WHEN old_ward_name IS NULL THEN CAST(ward_name AS TEXT) 
+                                        ELSE old_ward_name 
+                                        END AS ward_name")
+                            )
             ->where("ulb_id",$ulb_id)
             ->get();
         }
