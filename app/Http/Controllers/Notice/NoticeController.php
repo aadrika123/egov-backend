@@ -219,8 +219,12 @@ class NoticeController extends Controller
             //     $responseBody->data[$key]->moduleType = $moduleType;
             // }
             
-            // return($responseBody);  
-
+            // return($responseBody); 
+            
+            if(!$response->original["status"])
+            {
+                throw new Exception($response->original["message"]);
+            }
             if($moduleId==3)
             {
                 
