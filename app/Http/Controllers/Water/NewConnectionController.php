@@ -507,6 +507,7 @@ class NewConnectionController extends Controller
                 $mWaterConsumerTax          = new WaterConsumerTax();
                 $mWaterConsumerDemand       = new WaterConsumerDemand();
                 $refConnectionName          = Config::get('waterConstaint.METER_CONN_TYPE');
+                $flipConnection             = collect($refConnectionName)->flip();
 
                 $consumerDetails = $this->newConnection->getApprovedWater($request);
                 $refApplicationId['applicationId'] = $consumerDetails['consumer_id'];
@@ -521,6 +522,7 @@ class NewConnectionController extends Controller
                         case (1):
                             if ($refMeterData['meter_status'] == 1) {
                                 $connectionName = $refConnectionName['1'];
+                                $consumerDemand['connectionId'] = $flipConnection['Meter'];
                                 $fialMeterReading = $mWaterConsumerInitialMeter->getmeterReadingAndDetails($refConsumerId)
                                     ->orderByDesc('id')
                                     ->first();
@@ -528,6 +530,7 @@ class NewConnectionController extends Controller
                                 break;
                             }
                             $connectionName = $refConnectionName['4'];
+                            $consumerDemand['connectionId'] = $flipConnection['Meter/Fixed'];
                             $refConsumerDemand = $mWaterConsumerDemand->consumerDemandByConsumerId($refConsumerId);
                             $refConsumerTax = $mWaterConsumerTax->getConsumerByConsumerId($refConsumerId)->first();
                             $fialMeterReading = $mWaterConsumerInitialMeter->getmeterReadingAndDetails($refConsumerId)
@@ -550,6 +553,7 @@ class NewConnectionController extends Controller
                             break;
                         case (2):
                             $connectionName = $refConnectionName['2'];
+                            $consumerDemand['connectionId'] = $flipConnection['Gallon'];
                             $fialMeterReading = $mWaterConsumerInitialMeter->getmeterReadingAndDetails($refConsumerId)
                                 ->orderByDesc('id')
                                 ->first();
@@ -557,6 +561,7 @@ class NewConnectionController extends Controller
                             break;
                         case (3):
                             $connectionName = $refConnectionName['3'];
+                            $consumerDemand['connectionId'] = $flipConnection['Fixed'];
                             break;
                     }
                     $consumerDemand['meterDetails'] = $refMeterData;

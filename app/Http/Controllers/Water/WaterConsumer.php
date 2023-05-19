@@ -809,8 +809,9 @@ class WaterConsumer extends Controller
             $refOldDemandUpto = $refConsumerDemand->demand_upto;
             $startDate = Carbon::parse($refOldDemandUpto);
             $endDate = Carbon::parse($request->uptoData);
-            if ($startDate > $endDate) {
-                throw new Exception("current uptoData should be grater than the previous uptoDate!");
+            $difference = $endDate->diffInMonths($startDate);
+            if ($difference < 1 || $startDate > $endDate) {
+                throw new Exception("current uptoData should be grater than the previous uptoDate! and should have a month difference!");
             }
             $diffInDays = $endDate->diffInDays($startDate);
             $refConsumerTax = $mWaterConsumerTax->getConsumerByConsumerId($refConsumerId)->first();
