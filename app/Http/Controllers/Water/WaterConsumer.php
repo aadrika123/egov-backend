@@ -783,4 +783,55 @@ class WaterConsumer extends Controller
             "meterDetails" => $meterConnectionDetails
         ];
     }
+
+
+    /**
+     * | Calculate Final meter reading according to demand upto date and previous upto data 
+     * | @param req
+     */
+    public function calculateMeterFixedReading(Request $request)
+    {
+        $request->validate([
+            'consumerId'  => "required|",
+            'uptoData'    => "required|date",
+        ]);
+        try {
+            $refConsumerId              = $request->consumerId;
+            $mWaterConsumerDemand       = new WaterConsumerDemand();
+            $mWaterConsumerTax          = new WaterConsumerTax();
+            $mWaterConsumerInitialMeter = new WaterConsumerInitialMeter();
+
+            $refConsumerDemand = $mWaterConsumerDemand->consumerDemandByConsumerId($refConsumerId);
+            if (is_null($refConsumerDemand)) {
+                throw new Exception("There should be last data regarding meter!");
+            }
+
+            $refOldDemandUpto = $refConsumerDemand->demand_upto;
+            $startDate = Carbon::parse($refOldDemandUpto);
+            $endDate = Carbon::parse($request->uptoData);
+            if ($startDate > $endDate) {
+                throw new Exception("current uptoData should be grater than the previous uptoDate!");
+            }
+            $diffInDays = $endDate->diffInDays($startDate);
+            $refConsumerTax = $mWaterConsumerTax->getConsumerByConsumerId($refConsumerId)->first();
+            $finalMeterReading = $mWaterConsumerInitialMeter->getmeterReadingAndDetails($refConsumerId)
+                ->orderByDesc('id')
+                ->first();
+            if (is_null($refConsumerDemand)) {
+                throw new Exception("There should be demand for the previous meter entry!");
+            }
+
+            $refTaxUnitConsumed = $refConsumerTax->final_reading - $refConsumerTax->initial_reading;
+            $avgReading         = $refTaxUnitConsumed / $diffInDays;
+            $lastMeterReading   = $finalMeterReading->initial_reading;
+            $ActualReading      = ($diffInDays * $avgReading) + $lastMeterReading;
+
+            $returnData['finalMeterReading'] = number_format($ActualReading, 2);
+            $returnData['diffInDays'] = $diffInDays;
+
+            return responseMsgs(true, "calculated date difference!", $returnData, "", "01", ".ms", "POST", $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $request->deviceId);
+        }
+    }
 }
