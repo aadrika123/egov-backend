@@ -108,7 +108,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('admin/consumer/save-connection-meter', 'saveUpdateMeterDetails');                  // Admin
         Route::post('admin/consumer/get-meter-list', 'getMeterList');                                   // Admin
         Route::post('consumer/caretaken-connections', 'viewCaretakenConnection');                       // Citiizen
-        Route::post('admin/consumer/add-fixed-rate', 'addFixedRate');      // Here                             // Admin
+        Route::post('consumer/calculate/meter-fixed-reading', 'calculateMeterFixedReading');            // Admin
+        Route::post('admin/consumer/add-fixed-rate', 'addFixedRate');      // Here                      // Admin
 
         # Deactivation
         Route::post('admin/consumer/apply-deactivation', 'applyDeactivation');                          // Admin / Not Used
