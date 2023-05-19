@@ -27,8 +27,10 @@ use App\Models\Water\WaterConnectionThroughMstrs;
 use App\Models\Water\WaterConnectionTypeMstr;
 use App\Models\Water\WaterConsumer;
 use App\Models\Water\WaterConsumerDemand;
+use App\Models\Water\WaterConsumerInitialMeter;
 use App\Models\Water\WaterConsumerMeter;
 use App\Models\Water\WaterConsumerOwner;
+use App\Models\Water\WaterConsumerTax;
 use App\Models\Water\WaterOwnerTypeMstr;
 use App\Models\Water\WaterParamConnFee;
 use App\Models\Water\WaterPenaltyInstallment;
@@ -328,7 +330,7 @@ class NewConnectionController extends Controller
             $filterWaterList = collect($waterData)->unique('id')->values();
             return responseMsgs(true, "Data Fetched", remove_null($filterWaterList), "010107", "1.0", "251ms", "POST", "");
         } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
+            return responseMsgs(false, $e->getMessage(), [], "", "0.1", ".ms", "POST", $request->deviceId);
         }
     }
 
@@ -497,15 +499,20 @@ class NewConnectionController extends Controller
         try {
             if ($request->id) {
                 $request->validate([
-                    "id" => "nullable|int",
+                    "id" => "nullable|int",                                     // Consumer ID
                 ]);
-                $mWaterConsumerMeter = new WaterConsumerMeter();
-                $refConnectionName = Config::get('waterConstaint.METER_CONN_TYPE');
+                $refConsumerId              = $request->id;
+                $mWaterConsumerMeter        = new WaterConsumerMeter();
+                $mWaterConsumerInitialMeter = new WaterConsumerInitialMeter();
+                $mWaterConsumerTax          = new WaterConsumerTax();
+                $mWaterConsumerDemand       = new WaterConsumerDemand();
+                $refConnectionName          = Config::get('waterConstaint.METER_CONN_TYPE');
+
                 $consumerDetails = $this->newConnection->getApprovedWater($request);
                 $refApplicationId['applicationId'] = $consumerDetails['consumer_id'];
-                $metaRequest = new Request($refApplicationId);
-                $refDocumentDetails = $this->getUploadDocuments($metaRequest);
-                $documentDetails['documentDetails'] = collect($refDocumentDetails)['original']['data'];
+                // $metaRequest = new Request($refApplicationId);
+                // $refDocumentDetails = $this->getUploadDocuments($metaRequest);
+                // $documentDetails['documentDetails'] = collect($refDocumentDetails)['original']['data'];
 
                 # meter Details 
                 $refMeterData = $mWaterConsumerMeter->getMeterDetailsByConsumerId($request->id)->first();
@@ -514,11 +521,35 @@ class NewConnectionController extends Controller
                         case (1):
                             if ($refMeterData['meter_status'] == 1) {
                                 $connectionName = $refConnectionName['1'];
+                                $fialMeterReading = $mWaterConsumerInitialMeter->getmeterReadingAndDetails($refConsumerId)
+                                    ->orderByDesc('id')
+                                    ->first();
+                                $consumerDemand['lastMeterReading'] = $fialMeterReading->initial_reading;
+                                break;
                             }
                             $connectionName = $refConnectionName['4'];
+                            $refConsumerDemand = $mWaterConsumerDemand->consumerDemandByConsumerId($refConsumerId);
+                            $refConsumerTax = $mWaterConsumerTax->getConsumerByConsumerId($refConsumerId)->first();
+                            if (is_null($refConsumerDemand)) {
+                                throw new Exception("How is this even possible!");
+                            }
+                            $consumerDemand['demandFrom'] = collect($refConsumerDemand)['demand_from'];
+                            $consumerDemand['demandUpto'] = collect($refConsumerDemand)['demand_upto'];
+                            $startDate = Carbon::parse($consumerDemand['demandFrom']);
+                            $endDate = Carbon::parse($consumerDemand['demandUpto']);
+                            $diffInDays = $endDate->diffInDays($startDate);
+                            $refTaxUnitConsumed = collect($refConsumerTax)['final_reading'] - collect($refConsumerTax)['initial_reading'];
+
+                            $consumerDemand['lastConsumedUnit'] = $refTaxUnitConsumed;
+                            $consumerDemand['avgReading'] = number_format(($refTaxUnitConsumed / $diffInDays), 2);
+
                             break;
                         case (2):
                             $connectionName = $refConnectionName['2'];
+                            $fialMeterReading = $mWaterConsumerInitialMeter->getmeterReadingAndDetails($refConsumerId)
+                                ->orderByDesc('id')
+                                ->first();
+                            $consumerDemand['lastMeterReading'] = $fialMeterReading->initial_reading;
                             break;
                         case (3):
                             $connectionName = $refConnectionName['3'];
@@ -528,7 +559,7 @@ class NewConnectionController extends Controller
                     $consumerDemand['connectionName'] = $connectionName;
                     $consumerDetails = $consumerDetails->merge($consumerDemand);
                 }
-                $consumerDetails = $consumerDetails->merge($documentDetails);
+                $consumerDetails = $consumerDetails; //->merge($documentDetails);
                 return responseMsgs(true, "Consumer Details!", remove_null($consumerDetails), "", "01", ".ms", "POST", $request->deviceId);
             }
 
@@ -1166,7 +1197,9 @@ class NewConnectionController extends Controller
                 throw new Exception("Application Not Found!");
             }
 
-            $connectionCharges = $mWaterConnectionCharge->getWaterchargesById($connectionId)->first();
+            $connectionCharges = $mWaterConnectionCharge->getWaterchargesById($connectionId)
+                ->where('charge_category', '!=', "Site Inspection")                         # Static
+                ->first();
             $connectionCharges['type'] = Config::get('waterConstaint.New_Connection');
             $connectionCharges['applicationNo'] = $refApplication->application_no;
             $connectionCharges['applicationId'] = $refApplication->id;

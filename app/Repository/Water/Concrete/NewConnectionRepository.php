@@ -1070,7 +1070,9 @@ class NewConnectionRepository implements iNewConnection
         $string = preg_replace("/([A-Z])/", "_$1", $key);
         $refstring = strtolower($string);
         $approvedWater = $mWaterConsumer->getConsumerByConsumerNo($refstring, $request->id);
-        $connectionCharge['connectionCharg'] = $mWaterConnectionCharge->getWaterchargesById($approvedWater['apply_connection_id'])->get();
+        $connectionCharge['connectionCharg'] = $mWaterConnectionCharge->getWaterchargesById($approvedWater['apply_connection_id'])
+            ->where('charge_category', '!=', 'Site Inspection')                                     # Static
+            ->first();
         $waterOwner['ownerDetails'] = $mWaterConsumerOwner->getConsumerOwner($approvedWater['id']);
         $water['calcullation'] = $mWaterParamConnFee->getCallParameter($approvedWater['property_type_id'], $approvedWater['area_sqft'])->first();
 
