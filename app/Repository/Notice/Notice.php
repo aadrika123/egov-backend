@@ -44,6 +44,7 @@ use Barryvdh\DomPDF\Facade\PDF;
 
     private $_WF_MASTER_ID;
     protected $_GENERAL_NOTICE_WF_MASTER_Id;
+    protected $_DENIAL_NOTICE_WF_MASTER_Id;
     protected $_PAYMENT_NOTICE_WF_MASTER_Id;
     protected $_ILLEGAL_OCCUPATION_WF_MASTER_Id;
     protected $_MODULE_ID;
@@ -64,6 +65,7 @@ use Barryvdh\DomPDF\Facade\PDF;
         $this->_WORKFLOW_MAP                 = new WorkflowMap();
 
         $this->_GENERAL_NOTICE_WF_MASTER_Id =   Config::get('workflow-constants.GENERAL_NOTICE_MASTER_ID');
+        $this->_DENIAL_NOTICE_WF_MASTER_Id  =   Config::get('workflow-constants.DENIAL_NOTICE_MASTER_ID');;
         $this->_PAYMENT_NOTICE_WF_MASTER_Id =   Config::get('workflow-constants.PAYMENT_NOTICE_MASTER_ID');
         $this->_ILLEGAL_OCCUPATION_WF_MASTER_Id = Config::get('workflow-constants.ILLEGAL_OCCUPATION_NOTICE_MASTER_ID');
         $this->_MODULE_CONSTAINT            =   Config::get('module-constants');
@@ -94,7 +96,7 @@ use Barryvdh\DomPDF\Facade\PDF;
             }
             elseif($request->noticeType==2)
             {
-                $this->_WF_MASTER_ID = $this->_GENERAL_NOTICE_WF_MASTER_Id;
+                $this->_WF_MASTER_ID = $this->_DENIAL_NOTICE_WF_MASTER_Id;
             }
             elseif($request->noticeType==3)
             {
@@ -116,7 +118,7 @@ use Barryvdh\DomPDF\Facade\PDF;
             $notice_type_id = $request->noticeType??NULL;
             $notice_type = $this->_NOTICE_CONSTAINT["NOTICE-TYPE-BY-ID"][$notice_type_id]??null;
             $refWorkflows  = $this->_COMMON_FUNCTION->iniatorFinisher($userId, $ulbId, $this->_WF_MASTER_ID);
-            
+            // dd(DB::getQueryLog());
             DB::beginTransaction();
             $noticeApplication = new NoticeApplication();
             $noticeApplication->notice_type_id  = $notice_type_id;
@@ -147,6 +149,7 @@ use Barryvdh\DomPDF\Facade\PDF;
             $id_respons = $this->_ID_GENERATOR->idGenerator($id_request);
             $noticeApplication->application_no  = $id_respons->original["data"];
             $noticeApplication->save();
+            $applicationNo =  $noticeApplication->application_no ;
             $notice_id = $noticeApplication->id;
             if ($notice_id && $request->document) 
             {
@@ -160,13 +163,20 @@ use Barryvdh\DomPDF\Facade\PDF;
                 $noticeApplication->save();
 
             }
-            $message="Notice Apply Successfully";
-            if($noticeApplication->initater_role==$noticeApplication->finiser_role )
+            $message="Notice Apply Successfully. Your Notice Application No. is: $applicationNo";
+            $data["ApplicationNo"]=$applicationNo;
+            if($noticeApplication->initater_role==$noticeApplication->finisher_role )
             {
                 $metaReqs["applicationId"] = $notice_id;
                 $metaReqs["status"] = 1;
                 $metaReqs = new Request($metaReqs);
-                $response = $this->approveReject($metaReqs);
+                $role = $this->_COMMON_FUNCTION->getUserRoll($userId,$ulbId,$this->_WF_MASTER_ID);
+                $noticeApplication->current_role    = ($role->role_id??0);    
+                $noticeApplication->update();
+
+                $response = $this->approveReject($metaReqs);                
+                $noticeApplication->current_role    = $refWorkflows["initiator"]["id"];
+                $noticeApplication->update();
                 $message = $response->original["message"];
                 if(!$response->original["status"])
                 {
@@ -535,7 +545,7 @@ use Barryvdh\DomPDF\Facade\PDF;
             $this->_WF_MASTER_ID = $application->workflow_id;
             $role = $this->_COMMON_FUNCTION->getUserRoll($user_id,$ulb_id,$this->_WF_MASTER_ID);
             
-            if ($application->finisher_role != ($role->role_id??0)) 
+            if ($application->current_role != ($role->role_id??0)) 
             {
                 return responseMsg(false, "Forbidden Access", "");
             }
@@ -554,6 +564,7 @@ use Barryvdh\DomPDF\Facade\PDF;
                 $myRquest = new Request(["applicationId"=>$application->id]);
                 $this->genrateAndSendNotice($myRquest);
                 $msg =  "Notice Successfully Generated !!. Your Notice No. ".$application->notice_no;
+                
             }
 
             // Rejection
@@ -563,9 +574,11 @@ use Barryvdh\DomPDF\Facade\PDF;
                 $application->status = 4;
                 $application->update();
                 $msg = "Application Successfully Rejected !!";
+                
             }
-            // DB::commit();
-            return responseMsg(true, $msg, "");
+            DB::commit();
+            $data["NoticeNo"] = $application->notice_no;
+            return responseMsg(true, $msg, remove_null($data));
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
@@ -673,7 +686,7 @@ use Barryvdh\DomPDF\Facade\PDF;
                 $url = $remider->notice_file??"";
                 $temp = explode("/",$url);
                 $filename = end($temp);
-                if($sedule->serial_no==1 || (!$url) )
+                if($sedule->serial_no==1 || (!$url) || (!file_exists(storage_path($url)) ))
                 {
                     
                     $reminder_notice_date = $sedule->serial_no==1?$noticeData->notice_date:($remider->reminder_date??$noticeData->notice_date);

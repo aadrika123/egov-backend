@@ -37,6 +37,14 @@ class WaterConsumerDemand extends Model
             ->get();
     }
 
+    public function consumerDemandByConsumerId($consumerId)
+    {
+        return WaterConsumerDemand::where('consumer_id', $consumerId)
+            ->where('status', true)
+            ->orderByDesc('id')
+            ->first();
+    }
+
     /**
      * | Deactivate the consumer Demand
      * | Demand Ids will be in array
