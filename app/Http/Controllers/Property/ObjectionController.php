@@ -1187,7 +1187,7 @@ class ObjectionController extends Controller
 
         $reqDoc['docType'] = $key;
         $reqDoc['docName'] = substr($label, 1, -1);
-        $reqDoc['uploadedDoc'] = $documents->first();
+        $reqDoc['uploadedDoc'] = $documents->last();
 
         $reqDoc['masters'] = collect($document)->map(function ($doc) {
             $strLower = strtolower($doc);
