@@ -530,8 +530,11 @@ class NewConnectionController extends Controller
                             $connectionName = $refConnectionName['4'];
                             $refConsumerDemand = $mWaterConsumerDemand->consumerDemandByConsumerId($refConsumerId);
                             $refConsumerTax = $mWaterConsumerTax->getConsumerByConsumerId($refConsumerId)->first();
+                            $fialMeterReading = $mWaterConsumerInitialMeter->getmeterReadingAndDetails($refConsumerId)
+                                ->orderByDesc('id')
+                                ->first();
                             if (is_null($refConsumerDemand)) {
-                                throw new Exception("How is this even possible!");
+                                throw new Exception("There should be demand for the previous meter entry!");
                             }
                             $consumerDemand['demandFrom'] = collect($refConsumerDemand)['demand_from'];
                             $consumerDemand['demandUpto'] = collect($refConsumerDemand)['demand_upto'];
@@ -542,6 +545,7 @@ class NewConnectionController extends Controller
 
                             $consumerDemand['lastConsumedUnit'] = $refTaxUnitConsumed;
                             $consumerDemand['avgReading'] = number_format(($refTaxUnitConsumed / $diffInDays), 2);
+                            $consumerDemand['lastMeterReading'] = $fialMeterReading->initial_reading;
 
                             break;
                         case (2):
