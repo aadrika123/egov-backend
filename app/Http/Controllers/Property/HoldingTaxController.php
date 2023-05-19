@@ -1502,10 +1502,12 @@ class HoldingTaxController extends Controller
             return responseMsgs(false, "No Dues Available for this Property", "");
         $demandDues = $demandDues->original['data']['duesList'];
         $demandDetails = $this->generateDemandDues($demandDues);
+        $dataRow['dataRow'] = $demandDetails;
+        $dataRow['btnUrl'] = "/viewDemandHoldingProperty/" . $req->propId;
         $data['tableTop'] =  [
             'headerTitle' => 'Property Dues',
             'tableHead' => ["#", "Dues From", "Dues To", "Total Dues", "1 % Penalty", "Payable Amount", "Rebate Amt"],
-            'tableData' => $demandDetails
+            'tableData' => [$dataRow]
         ];
         return responseMsgs(true, "Demand Dues", remove_null($data), "", "1.0", responseTime(), "POST", $req->deviceId ?? "");
     }
