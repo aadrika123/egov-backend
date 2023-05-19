@@ -77,13 +77,15 @@ class WaterConsumer extends Controller
             $mWaterConsumerDemand   = new WaterConsumerDemand();
             $mWaterConsumerMeter    = new WaterConsumerMeter();
             $refConnectionName      = Config::get('waterConstaint.METER_CONN_TYPE');
-            $refConsumerId = $request->ConsumerId;
+            $refConsumerId          = $request->ConsumerId;
 
             $consumerDemand['consumerDemands'] = $mWaterConsumerDemand->getConsumerDemand($refConsumerId);
             $checkParam = collect($consumerDemand['consumerDemands'])->first();
             if (isset($checkParam)) {
-                $consumerDemand['totalSumDemand'] = collect($consumerDemand['consumerDemands'])->sum('balance_amount');
-                $consumerDemand['totalPenalty'] = collect($consumerDemand['consumerDemands'])->sum('penalty');
+                $sumDemandAmount = collect($consumerDemand['consumerDemands'])->sum('balance_amount');
+                $totalPenalty = collect($consumerDemand['consumerDemands'])->sum('penalty');
+                $consumerDemand['totalSumDemand'] = number_format($sumDemandAmount, 2);
+                $consumerDemand['totalPenalty'] = number_format($totalPenalty, 2);
 
                 # meter Details 
                 $refMeterData = $mWaterConsumerMeter->getMeterDetailsByConsumerId($refConsumerId)->first();
@@ -91,6 +93,7 @@ class WaterConsumer extends Controller
                     case (1):
                         if ($refMeterData['meter_status'] == 1) {
                             $connectionName = $refConnectionName['1'];
+                            break;
                         }
                         $connectionName = $refConnectionName['4'];
                         break;
