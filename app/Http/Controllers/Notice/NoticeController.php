@@ -219,13 +219,35 @@ class NoticeController extends Controller
             //     $responseBody->data[$key]->moduleType = $moduleType;
             // }
             
-            // return($responseBody);    
-            foreach($response->original["data"] as $key=>$val)
+            // return($responseBody); 
+            
+            if(!$response->original["status"])
             {
-                $response->original["data"][$key]["moduleId"] = $moduleId;
-                $response->original["data"][$key]["moduleType"] = $moduleType;
+                throw new Exception($response->original["message"]);
+            }
+            if($moduleId==3)
+            {
+                
+                $newRespons= ($response->original["data"]["licence"]??$response->original["data"]);
+                $response->original["data"] = $newRespons;
+                foreach($response->original["data"] as $key=>$val)
+                {
+                    $response->original["data"][$key]["moduleId"] = $moduleId;
+                    $response->original["data"][$key]["moduleType"] = $moduleType;
+                    
+                }
                 
             }
+            else{
+                foreach($response->original["data"] as $key=>$val)
+                {
+                    $response->original["data"][$key]["moduleId"] = $moduleId;
+                    $response->original["data"][$key]["moduleType"] = $moduleType;
+                    
+                }
+            }
+
+            
             return responseMsgs($response->original["status"],$response->original["message"],$response->original["data"]);           
         }
         catch (Exception $e) 

@@ -328,9 +328,10 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('generate-holding-demand', 'generateHoldingDemand');              // (01) Property/Holding Yearly Holding Tax Generation
     Route::post('get-holding-dues', 'getHoldingDues');                            // (02) Property/ Holding Dues
     Route::post('generate-prop-orderid', 'generateOrderId');                      // (03) Generate Property Order ID
-    Route::post('offline-payment-holding', 'offlinePaymentHolding');                     // (04) Payment Holding
+    Route::post('offline-payment-holding', 'offlinePaymentHolding');              // (04) Payment Holding
     Route::post('prop/get-cluster-holding-due', 'getClusterHoldingDues');         // (11) Property Cluster Dues
     Route::post('prop/cluster-payment', 'clusterPayment');                        // (12) Cluster Payment
+    Route::post('prop-dues', 'propertyDues');                                     // (13) Property Dues Dynamic
   });
 
   /**

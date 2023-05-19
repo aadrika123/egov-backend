@@ -10,4 +10,9 @@ class ModuleMaster extends Model
 {
     use HasFactory;
     use SoftDeletes;
+
+    public function duesApi($req)
+    {
+        return ModuleMaster::orderby('id')->get();
+    }
 }

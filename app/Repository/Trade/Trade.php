@@ -2671,6 +2671,7 @@ class Trade implements ITrade
                         "active_trade_licences.payment_status",
                         "active_trade_licences.firm_name",
                         "active_trade_licences.apply_from",
+                        "active_trade_licences.workflow_id",
                         "owner.owner_name",
                         "owner.guardian_name",
                         "owner.mobile_no",
@@ -2786,7 +2787,7 @@ class Trade implements ITrade
                 "data" => $paginator->items(),
                 "total" => $paginator->total(),
             ]; 
-            return responseMsg(true, "", $list);     
+            return responseMsg(true, "", remove_null($list));     
             
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
@@ -2870,7 +2871,7 @@ class Trade implements ITrade
                 "data" => $paginator->items(),
                 "total" => $paginator->total(),
             ]; 
-            return responseMsg(true, "", $list); 
+            return responseMsg(true, "", remove_null($list)); 
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
@@ -2947,7 +2948,7 @@ class Trade implements ITrade
                 "data" => $paginator->items(),
                 "total" => $paginator->total(),
             ]; 
-            return responseMsg(true, "", $list);
+            return responseMsg(true, "", remove_null($list));
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
@@ -3024,7 +3025,7 @@ class Trade implements ITrade
                 "data" => $paginator->items(),
                 "total" => $paginator->total(),
             ]; 
-            return responseMsg(true, "", $list);
+            return responseMsg(true, "", remove_null($list));
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
