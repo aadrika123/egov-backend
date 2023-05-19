@@ -686,7 +686,7 @@ use Barryvdh\DomPDF\Facade\PDF;
                 $url = $remider->notice_file??"";
                 $temp = explode("/",$url);
                 $filename = end($temp);
-                if($sedule->serial_no==1 || (!$url) )
+                if($sedule->serial_no==1 || (!$url) || (!file_exists(storage_path($url)) ))
                 {
                     
                     $reminder_notice_date = $sedule->serial_no==1?$noticeData->notice_date:($remider->reminder_date??$noticeData->notice_date);
