@@ -4241,6 +4241,10 @@ class Trade implements ITrade
         $status = "";
         if ($application->pending_status == 5) {
             $status = "License Created Successfully";
+            if($application->application_type_id == 4)
+            {
+                $status = "License Surrenderd Successfully";
+            }
             if ($application->valid_upto < Carbon::now()->format("Y-m-d")) {
                 $status = "License Expired On " . $application->valid_upto;
             }
