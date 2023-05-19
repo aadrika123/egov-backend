@@ -24,13 +24,13 @@ class ReqCitizenAddRecorde extends TradeRequest
         $mUserType = $this->_COMMON_FUNCTION->userType($refWorkflowId);
         $mApplicationTypeId = $this->_TRADE_CONSTAINT["APPLICATION-TYPE"][$this->applicationType]??0;
 
-        $mNowdate = Carbon::now()->format('Y-m-d');
-        $mRegex = '/^[a-zA-Z1-9][a-zA-Z1-9\. \s]+$/';
-        $mFramNameRegex = '/^[a-zA-Z1-9][a-zA-Z1-9\.\,\'&\s]+$/';
+        $mNowdate = $this->_CURRENT_DATE;
+        $mRegex = $this->_REX_ALPHA_NUM_DOT_SPACE;
+        $mFramNameRegex = $this->_REX_ALPHA_NUM_OPS_DOT_MIN_COM_AND_SPACE_SL;
         
         $rules = [];
         $rules["ulbId"]="required|digits_between:1,92";
-        $rules["applicationType"]="required|string|in:NEWLICENSE,RENEWAL,AMENDMENT,SURRENDER";
+        $rules["applicationType"]=$this->_REX_APPLICATION_TYPE;
         if($this->applicationType!="NEWLICENSE")
         {
             $rules["licenseId"] ="required|digits_between:1,9223372036854775807";

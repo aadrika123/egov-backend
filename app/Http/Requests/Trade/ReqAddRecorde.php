@@ -13,28 +13,27 @@ class ReqAddRecorde extends TradeRequest
     }
     public function rules()
     {   
-        $refWorkflowId = $this->_WF_MASTER_Id;
-        $mUserType = $this->_COMMON_FUNCTION->userType($refWorkflowId);
+        $refWorkflowId      = $this->_WF_MASTER_Id;
+        $mUserType          = $this->_COMMON_FUNCTION->userType($refWorkflowId);        
+        $mNowdate           = $this->_CURRENT_DATE;
+        $mTimstamp          = $this->_CURRENT_DATE_TIME;
+        $mRegex             = $this->_REX_ALPHA_NUM_DOT_SPACE;
+        $mFramNameRegex     = $this->_REX_ALPHA_NUM_OPS_DOT_MIN_COM_AND_SPACE_SL;
+        // $mAlphaSpace = '/^[a-zA-Z ]+$/i';
+        // $mAlphaNumhyphen = '/^[a-zA-Z0-9- ]+$/i';
+        // $mNumDot = '/^\d+(?:\.\d+)+$/i';
+        // $mDateFormatYYYMMDD = '/^([12]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]))+$/i';
+        // $mDateFormatYYYMM = '/^([12]\d{3}-(0[1-9]|1[0-2]))+$/i';
 
-        $rules["applicationType"] = "required|string|in:NEWLICENSE,RENEWAL,AMENDMENT,SURRENDER";
+        $rules["applicationType"] = $this->_REX_APPLICATION_TYPE;
+
         $mApplicationTypeId = $this->_TRADE_CONSTAINT["APPLICATION-TYPE"][$this->applicationType]??0;
         
         if (!in_array($mApplicationTypeId, [1]))
         {
             $rules["licenseId"] = "required|digits_between:1,9223372036854775807";
         }
-        $mNowdate = Carbon::now()->format('Y-m-d');
-        $mTimstamp = Carbon::now()->format('Y-m-d H:i:s');
-        $mRegex = '/^[a-zA-Z0-9][a-zA-Z0-9\. \s]+$/';
-        $mFramNameRegex = '/^[a-zA-Z0-9][a-zA-Z0-9\'\.\-\,\&\s]+$/i';
-        $mAlphaNumCommaSlash = '/^[a-zA-Z0-9- ]+$/i';
-        $mAlphaSpace = '/^[a-zA-Z ]+$/i';
-        $mAlphaNumhyphen = '/^[a-zA-Z0-9- ]+$/i';
-        $mNumDot = '/^\d+(?:\.\d+)+$/i';
-        $mDateFormatYYYMMDD = '/^([12]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]))+$/i';
-        $mDateFormatYYYMM = '/^([12]\d{3}-(0[1-9]|1[0-2]))+$/i';
         
-        $rules = [];
         if (in_array($mApplicationTypeId, [1])) 
         {
             $rules["firmDetails.areaSqft"] = "required|numeric";
