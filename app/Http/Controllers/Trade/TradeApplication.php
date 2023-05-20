@@ -653,8 +653,7 @@ class TradeApplication extends Controller
                 $sms ="Application Forward To ".$receiverRole["role_name"]??"";
             }
             $tradC = new Trade();
-            $documents = $tradC->checkWorckFlowForwardBackord($request);            
-            
+            $documents = $tradC->checkWorckFlowForwardBackord($request);  
             
             if((($senderRole["serial_no"]??0) < ($receiverRole["serial_no"]??0)) && !$documents)
             {
@@ -664,11 +663,11 @@ class TradeApplication extends Controller
                 }
                 if (($role->can_upload_document ?? false)) 
                 {
-                    throw new Exception("No Every Madetry Documests are Uploaded");
+                    throw new Exception("No Every Madetry Documents are Uploaded");
                 }
                 if ($role->can_verify_document ?? false) 
                 {
-                    throw new Exception("No Every Documests are Veryfied");
+                    throw new Exception("No Every Documents are Veryfied Or Madetory Document is Rejected");
                 }
                 throw new Exception("Not Every Actoin Are Performed");
             }

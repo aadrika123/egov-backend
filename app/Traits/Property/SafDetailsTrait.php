@@ -377,8 +377,8 @@ trait SafDetailsTrait
             $demandDues['duesTo'],
             $demandDues['totalDues'],
             $demandDues['onePercPenalty'],
-            $demandDues['payableAmount'],
             $demandDues['rebateAmt'],
+            $demandDues['payableAmount'],
         ];
         // });
     }

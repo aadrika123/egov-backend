@@ -1506,7 +1506,7 @@ class HoldingTaxController extends Controller
         $dataRow['btnUrl'] = "/viewDemandHoldingProperty/" . $req->propId;
         $data['tableTop'] =  [
             'headerTitle' => 'Property Dues',
-            'tableHead' => ["#", "Dues From", "Dues To", "Total Dues", "1 % Penalty", "Payable Amount", "Rebate Amt"],
+            'tableHead' => ["#", "Dues From", "Dues To", "Total Dues", "1 % Penalty", "Rebate Amt", "Payable Amount"],
             'tableData' => [$dataRow]
         ];
         return responseMsgs(true, "Demand Dues", remove_null($data), "", "1.0", responseTime(), "POST", $req->deviceId ?? "");
