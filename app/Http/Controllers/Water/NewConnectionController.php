@@ -1703,7 +1703,6 @@ class NewConnectionController extends Controller
             'parameter' => 'required'
         ]);
         try {
-
             $mWaterConsumer = new WaterConsumer();
             $key = $request->filterBy;
             $paramenter = $request->parameter;
@@ -1715,34 +1714,36 @@ class NewConnectionController extends Controller
                     $waterReturnDetails = $mWaterConsumer->getDetailByConsumerNo($refstring, $paramenter);
                     $checkVal = collect($waterReturnDetails)->first();
                     if (!$checkVal)
-                        throw new Exception("Data Not Found!");
+                        throw new Exception("Data according to " . $key . " not Found!");
                     break;
                 case ("holdingNo"):
                     $waterReturnDetails = $mWaterConsumer->getDetailByConsumerNo($refstring, $paramenter);
                     $checkVal = collect($waterReturnDetails)->first();
                     if (!$checkVal)
-                        throw new Exception("Data Not Found!");
+                        throw new Exception("Data according to " . $key . " not Found!");
                     break;
                 case ("safNo"):
                     $waterReturnDetails = $mWaterConsumer->getDetailByConsumerNo($refstring, $paramenter);
                     $checkVal = collect($waterReturnDetails)->first();
                     if (!$checkVal)
-                        throw new Exception("Data Not Found!");
+                        throw new Exception("Data according to " . $key . " not Found!");
                     break;
                 case ("applicantName"):
                     $waterReturnDetails = $mWaterConsumer->getDetailByOwnerDetails($refstring, $paramenter);
                     $checkVal = collect($waterReturnDetails)->first();
                     if (!$checkVal)
-                        throw new Exception("Data Not Found!");
+                        throw new Exception("Data according to " . $key . " not Found!");
                     break;
                 case ('mobileNo'):
                     $waterReturnDetails = $mWaterConsumer->getDetailByOwnerDetails($refstring, $paramenter);
                     $checkVal = collect($waterReturnDetails)->first();
                     if (!$checkVal)
-                        throw new Exception("Data Not Found!");
+                        throw new Exception("Data according to " . $key . " not Found!");
                     break;
+                default:
+                    throw new Exception("Data provided in filterBy is not valid!");
             }
-            return responseMsgs(true, "Water Consumer Data According To Parameter!", $waterReturnDetails, "", "01", "652 ms", "POST", "");
+            return responseMsgs(true, "Water Consumer Data According To Parameter!", remove_null($waterReturnDetails), "", "01", "652 ms", "POST", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
