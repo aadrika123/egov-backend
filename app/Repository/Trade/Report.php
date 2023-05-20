@@ -328,20 +328,15 @@ class Report implements IReport
                             ->union($rejected)
                             ->union($old);
             $perPage = $request->perPage ? $request->perPage : 10;
-            $page = $request->page && $request->page > 0 ? $request->page : 1;
-            $paginator = $data->paginate($perPage);
-            $items = $paginator->items();
-            $total = $paginator->total();
-            $numberOfPages = ceil($total/$perPage);                
-            $list=[
-                "perPage"=>$perPage,
-                "page"=>$page,
-                "items"=>$items,
-                "total"=>$total,
-                "numberOfPages"=>$numberOfPages
-            ];
+            $paginator = $data->paginate($perPage);              
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
+            ]; 
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
-            return responseMsgs(true,"",$list,$apiId, $version, $queryRunTime,$action,$deviceId);
+            return responseMsgs(true,"",remove_null($list),$apiId, $version, $queryRunTime,$action,$deviceId);
         }
         catch(Exception $e)
         {
@@ -419,21 +414,15 @@ class Report implements IReport
             $data=$data->groupBy(["users.id", "users.user_name"]);
             
             $perPage = $request->perPage ? $request->perPage : 10;
-            $page = $request->page && $request->page > 0 ? $request->page : 1;
-            $paginator = $data->paginate($perPage);
-            $items = $paginator->items();
-            $total = $paginator->total();
-            $numberOfPages = ceil($total/$perPage);                
-            $list=[
-                "perPage"=>$perPage,
-                "page"=>$page,
-                "items"=>$items,
-                "total"=>$total,
-                "numberOfPages"=>$numberOfPages
-            ];
-            // dd(DB::getQueryLog());
+            $paginator = $data->paginate($perPage);            
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
+            ]; 
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
-            return responseMsgs(true,"",$list,$apiId, $version, $queryRunTime,$action,$deviceId);
+            return responseMsgs(true,"",remove_null($list),$apiId, $version, $queryRunTime,$action,$deviceId);
         }
         catch(Exception $e)
         {
@@ -549,22 +538,15 @@ class Report implements IReport
                     
             }
             $perPage = $request->perPage ? $request->perPage :  10;
-            $page = $request->page && $request->page > 0 ? $request->page : 1;
-
-            $paginator = $data->paginate($perPage);
-            $items = $paginator->items();
-            $total = $paginator->total();
-            $numberOfPages = ceil($total/$perPage);                
-            $list=[
-                "perPage"=>$perPage,
-                "page"=>$page,
-                "items"=>$items,
-                "total"=>$total,
-                "numberOfPages"=>$numberOfPages
-            ];
-            // dd(DB::getQueryLog());
+            $paginator = $data->paginate($perPage);             
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
+            ]; 
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
-            return responseMsgs(true,"",$list,$apiId, $version, $queryRunTime,$action,$deviceId);
+            return responseMsgs(true,"",remove_null($list),$apiId, $version, $queryRunTime,$action,$deviceId);
             
         }
         catch(Exception $e)
@@ -1354,110 +1336,14 @@ class Report implements IReport
                 "); 
                 $val["level"]  =(collect($level)->first())->level?(json_decode((collect($level)->first())->level,true)):[]; 
                     
-                // $dealingStatus = WorkflowTrack::select("workflow_tracks.track_date",
-                //                         "workflow_tracks.forward_date",
-                //                         "verification_status",
-                //                         DB::raw("'dealing' AS Role")
-                //                         )
-                //                     ->join("wf_roles","wf_roles.id","workflow_tracks.receiver_role_id")
-                //                     ->where("wf_roles.role_name","ILIKE","Dealing Assistant")
-                //                     ->where("workflow_tracks.ref_table_id_value",$val["id"])
-                //                     ->where("workflow_tracks.ref_table_dot_id","active_trade_licences")
-                //                     ->where("workflow_tracks.status",true)
-                //                     ->where("workflow_tracks.workflow_id",$val["workflow_id"])
-                //                     ->whereNull("workflow_tracks.citizen_id")
-                //                     ->orderBy("workflow_tracks.id","DESC")
-                //                     ->first();
-                // $juniorStatus = WorkflowTrack::select("workflow_tracks.track_date",
-                //                 "workflow_tracks.forward_date",
-                //                 "verification_status",
-                //                 DB::raw("'junior' AS Role")
-                //                 )
-                //                 ->join("wf_roles","wf_roles.id","workflow_tracks.receiver_role_id")
-                //                 ->where("wf_roles.role_name","ILIKE","Junior Engineer")
-                //                 ->where("workflow_tracks.ref_table_id_value",$val["id"])
-                //                 ->where("workflow_tracks.ref_table_dot_id","active_trade_licences")
-                //                 ->where("workflow_tracks.status",true)
-                //                 ->where("workflow_tracks.workflow_id",$val["workflow_id"])
-                //                 ->whereNull("workflow_tracks.citizen_id")
-                //                 ->orderBy("workflow_tracks.id","DESC")
-                //                 ->first();
-                // $sectionStatus = WorkflowTrack::select("workflow_tracks.track_date",
-                //                 "workflow_tracks.forward_date",
-                //                 "verification_status",
-                //                 DB::raw("'section' AS Role")
-                //                 )
-                //                 ->join("wf_roles","wf_roles.id","workflow_tracks.receiver_role_id")
-                //                 ->where("wf_roles.role_name","ILIKE","Section Head")
-                //                 ->where("workflow_tracks.ref_table_id_value",$val["id"])
-                //                 ->where("workflow_tracks.ref_table_dot_id","active_trade_licences")
-                //                 ->where("workflow_tracks.status",true)
-                //                 ->where("workflow_tracks.workflow_id",$val["workflow_id"])
-                //                 ->whereNull("workflow_tracks.citizen_id")
-                //                 ->orderBy("workflow_tracks.id","DESC")
-                //                 ->first();
-
-                // $assistantStatus = WorkflowTrack::select("workflow_tracks.track_date",
-                //                 "workflow_tracks.forward_date",
-                //                 "verification_status",
-                //                 DB::raw("'assistant' AS Role")
-                //                 )
-                //                 ->join("wf_roles","wf_roles.id","workflow_tracks.receiver_role_id")
-                //                 ->where("wf_roles.role_name","ILIKE","Assistant Engineer")
-                //                 ->where("workflow_tracks.ref_table_id_value",$val["id"])
-                //                 ->where("workflow_tracks.ref_table_dot_id","active_trade_licences")
-                //                 ->where("workflow_tracks.status",true)
-                //                 ->where("workflow_tracks.workflow_id",$val["workflow_id"])
-                //                 ->whereNull("workflow_tracks.citizen_id")
-                //                 ->orderBy("workflow_tracks.id","DESC")
-                //                 ->first();
-
-                // $executiveStatus = WorkflowTrack::select("workflow_tracks.track_date",
-                //                 "workflow_tracks.forward_date",
-                //                 "verification_status",                                
-                //                 DB::raw("'executive' AS Role")
-                //                 )
-                //                 ->join("wf_roles","wf_roles.id","workflow_tracks.receiver_role_id")
-                //                 ->where("wf_roles.role_name","ILIKE","Executive Officer")
-                //                 ->where("workflow_tracks.ref_table_id_value",$val["id"])
-                //                 ->where("workflow_tracks.ref_table_dot_id","active_trade_licences")
-                //                 ->where("workflow_tracks.status",true)
-                //                 ->where("workflow_tracks.workflow_id",$val["workflow_id"])
-                //                 ->whereNull("workflow_tracks.citizen_id")
-                //                 ->orderBy("workflow_tracks.id","DESC")
-                //                 ->first();
-                // if($dealingStatus)
-                // {
-                //     $level[] = $dealingStatus;
-                    
-                // }
-                // if($juniorStatus)
-                // {
-                //     $level[] = $juniorStatus;
-                // }
-                // if($sectionStatus)
-                // {
-                //     $level[] = $sectionStatus;
-                // }
-                // if($assistantStatus)
-                // {
-                //     $level[] = $assistantStatus;
-                // }
-                // if($executiveStatus)
-                // {
-                    
-                //     $level[] = $executiveStatus;
-                // }
                 
-                // $val["level"]=$level;
-                // array_push($item2,$val);
             }               
             $list=[
+                "current_page"=>$page,
+                "last_page"=>$numberOfPages,
                 "perPage"=>$perPage,
-                "page"=>$page,
-                "items"=>$items,
+                "data"=>$items,
                 "total"=>$total,
-                "numberOfPages"=>$numberOfPages
             ];
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true,"",$list,$apiId, $version, $queryRunTime,$action,$deviceId);
@@ -1632,21 +1518,15 @@ class Report implements IReport
                     ->union($old);
 
             $perPage = $request->perPage ? $request->perPage :10;
-            $page = $request->page && $request->page > 0 ? $request->page : 1;
-
             $paginator = $data->paginate($perPage);
-            $items = $paginator->items();
-            $total = $paginator->total();
-            $numberOfPages = ceil($total/$perPage);                
-            $list=[
-                "perPage"=>$perPage,
-                "page"=>$page,
-                "items"=>$items,
-                "total"=>$total,
-                "numberOfPages"=>$numberOfPages
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
             ];
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
-            return responseMsgs(true,"",$list,$apiId, $version, $queryRunTime,$action,$deviceId);
+            return responseMsgs(true,"",remove_null($list),$apiId, $version, $queryRunTime,$action,$deviceId);
         }
         catch(Exception $e)
         {
@@ -1871,20 +1751,15 @@ class Report implements IReport
                 }
 
             $perPage = $request->perPage ? $request->perPage : 10;
-            $page = $request->page && $request->page > 0 ? $request->page : 1;
             $paginator = $data->paginate($perPage);
-            $items = $paginator->items();
-            $total = $paginator->total();
-            $numberOfPages = ceil($total / $perPage);
             $list = [
-                "perPage" => $perPage,
-                "page" => $page,
-                "items" => $items,
-                "total" => $total,
-                "numberOfPages" => $numberOfPages
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
             ];
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
-            return responseMsgs(true, $header, $list, $apiId, $version, $queryRunTime, $action, $deviceId);
+            return responseMsgs(true, $header, remove_null($list), $apiId, $version, $queryRunTime, $action, $deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
         }
@@ -1968,17 +1843,12 @@ class Report implements IReport
             $data = $data->groupBy(["ward_name","ulb_ward_masters.id"]);
 
             $perPage = $request->perPage ? $request->perPage : 10;
-            $page = $request->page && $request->page > 0 ? $request->page : 1;
             $paginator = $data->paginate($perPage);
-            $items = $paginator->items();
-            $total = $paginator->total();
-            $numberOfPages = ceil($total / $perPage);
             $list = [
-                "perPage" => $perPage,
-                "page" => $page,
-                "items" => $items,
-                "total" => $total,
-                "numberOfPages" => $numberOfPages
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
             ];
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true,$header, $list, $apiId, $version, $queryRunTime, $action, $deviceId);
@@ -2075,17 +1945,12 @@ class Report implements IReport
                 $data = $data->WHEREIN("active_trade_licences.ward_id", $mWardIds);
             }
             $perPage = $request->perPage ? $request->perPage : 10;
-            $page = $request->page && $request->page > 0 ? $request->page : 1;
-            $paginator = $data->paginate($perPage);
-            $items = $paginator->items();
-            $total = $paginator->total();
-            $numberOfPages = ceil($total / $perPage);
+            $paginator = $data->paginate($perPage);            
             $list = [
-                "perPage" => $perPage,
-                "page" => $page,
-                "items" => $items,
-                "total" => $total,
-                "numberOfPages" => $numberOfPages
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
             ];
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime, $action, $deviceId);
@@ -2685,17 +2550,13 @@ class Report implements IReport
             }
             
             $perPage = $request->perPage ? $request->perPage : 10;
-            $page = $request->page && $request->page > 0 ? $request->page : 1;
-            $paginator = $data->paginate($perPage);
-            $items = $paginator->items();
-            $total = $paginator->total();
-            $numberOfPages = ceil($total / $perPage);
+            $paginator = $data->paginate($perPage);            
+            
             $list = [
-                "perPage" => $perPage,
-                "page" => $page,
-                "items" => $items,
-                "total" => $total,
-                "numberOfPages" => $numberOfPages
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
             ];
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true, "", remove_null($list), $apiId, $version, $queryRunTime, $action, $deviceId);
