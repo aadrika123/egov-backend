@@ -341,6 +341,9 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('get-all-custom-tab-data', 'getCustomDetails');
         Route::post('post-custom-data', 'postCustomDetails');
         Route::post('get-dues-api', 'duesApi');
+        Route::post('post-geo-location', 'tcGeoLocation');
+        Route::post('list-location', 'locationList');
+        Route::post('tc-collection-route', 'tcCollectionRoute');
     });
 
     /**

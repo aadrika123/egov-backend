@@ -1899,7 +1899,7 @@ class ActiveSafController extends Controller
                 'status' => false,
                 'message' => 'validation error',
                 'errors' => $validated->errors()
-            ], 401);
+            ], 422);
         }
         try {
             $propSafsDemand = new PropSafsDemand();
