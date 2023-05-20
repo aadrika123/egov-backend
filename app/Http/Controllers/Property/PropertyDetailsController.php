@@ -429,6 +429,26 @@ class PropertyDetailsController extends Controller
                         ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'latitude', 'longitude')
                         ->get();
                     break;
+
+                case ("land"):
+                    if ($request->khataNo)
+                        $data = $mPropProperty->searchProperty()
+                            ->where('prop_properties.khata_no', 'LIKE', '%' . $parameter . '%')
+                            ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'latitude', 'longitude')
+                            ->get();
+
+                    if ($request->plotNo)
+                        $data = $mPropProperty->searchProperty()
+                            ->where('prop_properties.plot_no', 'LIKE', '%' . $parameter . '%')
+                            ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'latitude', 'longitude')
+                            ->get();
+
+                    if ($request->villageMaujaName)
+                        $data = $mPropProperty->searchProperty()
+                            ->where('prop_properties.village_mauja_name', 'LIKE', '%' . $parameter . '%')
+                            ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'latitude', 'longitude')
+                            ->get();
+                    break;
             }
             // if ($role == 8) {
             //     $canPay = collect(['canPay' => true]);
