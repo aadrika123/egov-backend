@@ -701,11 +701,11 @@ class WaterPaymentController extends Controller
     public function offlineDemandPayment(reqDemandPayment $request)
     {
         try {
-            $user = authUser();
-            $midGeneration      = new IdGeneration;
-            $mWaterAdjustment   = new WaterAdjustment();
-            $mwaterTran         = new waterTran();
-            $mWaterConsumerCollection = new WaterConsumerCollection();
+            $user                       = authUser();
+            $midGeneration              = new IdGeneration;
+            $mWaterAdjustment           = new WaterAdjustment();
+            $mwaterTran                 = new waterTran();
+            $mWaterConsumerCollection   = new WaterConsumerCollection();
 
             $offlinePaymentModes    = Config::get('payment-constants.VERIFICATION_PAYMENT_MODE');
             $adjustmentFor          = Config::get("waterConstaint.ADVANCE_FOR");
@@ -778,13 +778,14 @@ class WaterPaymentController extends Controller
         | Serial No : 05:01
         | Working
         | Common function
+        | Check for the rounding of amount 
      */
     public function preOfflinePaymentParams($request, $startingDate, $endDate)
     {
         $mWaterConsumerDemand   = new WaterConsumerDemand();
         $mWaterConsumer         = new WaterConsumer();
-        $consumerId = $request->consumerId;
-        $refAmount  = $request->amount;
+        $consumerId             = $request->consumerId;
+        $refAmount              = $request->amount;
 
         if ($startingDate > $endDate) {
             throw new Exception("demandFrom Date should not be grater than demandUpto date!");
