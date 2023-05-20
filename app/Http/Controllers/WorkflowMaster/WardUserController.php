@@ -115,7 +115,7 @@ class WardUserController extends Controller
 
             $data = User::select(
                 'users.id',
-                'user_name',
+                'name as user_name',
                 'user_type',
             )
                 ->where('ulb_id', $ulbId)
@@ -125,7 +125,7 @@ class WardUserController extends Controller
             if ($req->wardId) {
                 $data = User::select(
                     'users.id',
-                    'user_name',
+                    'name as user_name',
                     'user_type',
                 )
                     ->join('wf_ward_users', 'wf_ward_users.user_id', 'users.id')
