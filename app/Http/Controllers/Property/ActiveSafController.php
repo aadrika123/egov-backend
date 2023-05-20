@@ -131,7 +131,6 @@ class ActiveSafController extends Controller
         try {
             $method = $req->getMethod();
             $redisConn = Redis::connection();
-            $wards = collect();
             $data = [];
             if ($method == 'GET')
                 $ulbId = auth()->user()->ulb_id;
@@ -168,6 +167,7 @@ class ActiveSafController extends Controller
 
             // Ward Masters
             if (!$wards) {
+                $wards = collect();
                 $wardMaster = $ulbWardMaster->getWardByUlbId($ulbId);   // <----- Get Ward by Ulb ID By Model Function
                 $groupByWards = $wardMaster->groupBy('ward_name');
                 foreach ($groupByWards as $ward) {
