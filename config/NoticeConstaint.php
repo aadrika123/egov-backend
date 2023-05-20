@@ -7,9 +7,9 @@
  */
 
  return [
-    "WHATSAPP_TOKEN"        =>env("WHATSAPP_TOKEN"),
-    "WHATSAPP_NUMBER_ID"    =>env("WHATSAPP_NUMBER_ID"),
-    "WHATSAPP_URL"          =>env("WHATSAPP_URL"),
+    "WHATSAPP_TOKEN"        =>env("WHATSAPP_TOKEN","xxx"),
+    "WHATSAPP_NUMBER_ID"    =>env("WHATSAPP_NUMBER_ID","xxx"),
+    "WHATSAPP_URL"          =>env("WHATSAPP_URL","xxx"),
     
     "CITIZEN"       => "Citizen",
     "NOTICE_REF_TABLE" => "notice_applications",

@@ -9,7 +9,10 @@ use App\MicroServices\DocUpload;
 use App\MicroServices\IdGeneration;
 use App\Models\Citizen\ActiveCitizenUndercare;
 use App\Models\Payment\TempTransaction;
+use App\Models\Water\WaterApplication;
+use App\Models\Water\WaterApprovalApplicationDetail;
 use App\Models\Water\WaterChequeDtl;
+use App\Models\Water\WaterConnectionCharge;
 use App\Models\Water\WaterConsumer as WaterWaterConsumer;
 use App\Models\Water\WaterConsumerDemand;
 use App\Models\Water\WaterConsumerDisconnection;
@@ -18,7 +21,9 @@ use App\Models\Water\WaterConsumerMeter;
 use App\Models\Water\WaterConsumerTax;
 use App\Models\Water\WaterDisconnection;
 use App\Models\Water\WaterMeterReadingDoc;
+use App\Models\Water\WaterPenaltyInstallment;
 use App\Models\Water\WaterTran;
+use App\Models\Water\WaterTranDetail;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWorkflowrolemap;
 use App\Repository\Water\Concrete\WaterNewConnection;
@@ -787,7 +792,9 @@ class WaterConsumer extends Controller
 
     /**
      * | Calculate Final meter reading according to demand upto date and previous upto data 
-     * | @param req
+     * | @param request
+        | Serial No : 09
+        | Working
      */
     public function calculateMeterFixedReading(Request $request)
     {
@@ -831,6 +838,35 @@ class WaterConsumer extends Controller
             $returnData['diffInDays'] = $diffInDays;
 
             return responseMsgs(true, "calculated date difference!", $returnData, "", "01", ".ms", "POST", $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $request->deviceId);
+        }
+    }
+
+
+    /**
+     * | Get Details for memo
+     * | Get all details for the consumer application and consumer both details 
+     * | @param request
+        | Serial No 
+        | Use
+        | Not Finished
+     */
+    public function generateMemo(Request $request)
+    {
+        $request->validate([
+            'consumerNo'  => "required|",
+        ]);
+        try {
+            $refConsumerNo          = $request->consumerNo;
+            $mWaterConsumerDemand   = new WaterConsumerDemand();
+            $mWaterWaterConsumer    = new WaterWaterConsumer();
+            $mWaterTranDetail       = new WaterTranDetail();
+            $mWaterChequeDtl        = new WaterChequeDtl();
+            $mWaterTran             = new WaterTran();
+
+            // $mWaterWaterConsumer->
+
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $request->deviceId);
         }

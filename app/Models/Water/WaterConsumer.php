@@ -2,6 +2,7 @@
 
 namespace App\Models\Water;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -44,6 +45,7 @@ class WaterConsumer extends Model
         $mWaterConsumer->pin                         = $consumerDetails['pin'];
         $mWaterConsumer->user_type                   = $consumerDetails['user_type'];
         $mWaterConsumer->area_sqmt                   = $consumerDetails['area_sqft'];
+        $mWaterConsumer->approve_date                = Carbon::now();
         $mWaterConsumer->save();
         return $mWaterConsumer->id;
     }
@@ -212,7 +214,6 @@ class WaterConsumer extends Model
             ->Join('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_consumers.ward_mstr_id')
             ->where('water_consumers.' . $key, $parameter)
             ->where('water_consumers.status', true)
-            // ->where('water_consumers.ulb_id', auth()->user()->ulb_id)
             ->firstOrFail();
     }
 

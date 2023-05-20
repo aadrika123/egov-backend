@@ -640,7 +640,7 @@ class NewConnectionRepository implements iNewConnection
         # Approval of water application 
         if ($request->status == 1) {
             $now = Carbon::now();
-            $consumerNo = 'CON' . $now->getTimeStamp();
+            $consumerNo = 'CON' . $now->getTimeStamp() . rand(5, 5);
             $this->saveWaterConnInProperty($refWaterDetails, $consumerNo);
             $consumerId = $mWaterApplication->finalApproval($request, $consumerNo, $refJe);
             $mWaterApplicant->finalApplicantApproval($request, $consumerId);
