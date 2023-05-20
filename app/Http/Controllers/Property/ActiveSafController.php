@@ -153,7 +153,7 @@ class ActiveSafController extends Controller
             $mZoneMstrs = new ZoneMaster();
 
             // Getting Masters from Redis Cache
-            $wardMaster = json_decode(Redis::get('wards-ulb-' . $ulbId));
+            $wards = json_decode(Redis::get('wards-ulb-' . $ulbId));
             $ownershipTypes = json_decode(Redis::get('prop-ownership-types'));
             $propertyType = json_decode(Redis::get('property-types'));
             $floorType = json_decode(Redis::get('property-floors'));
@@ -167,7 +167,7 @@ class ActiveSafController extends Controller
             $zoneMstrs = json_decode(Redis::get('zone-ulb-' . $ulbId));
 
             // Ward Masters
-            if (!$wardMaster) {
+            if (!$wards) {
                 $wardMaster = $ulbWardMaster->getWardByUlbId($ulbId);   // <----- Get Ward by Ulb ID By Model Function
                 $groupByWards = $wardMaster->groupBy('ward_name');
                 foreach ($groupByWards as $ward) {
