@@ -123,12 +123,11 @@ trait TradeTrait
         $applicationTypeId = $refApplication->application_type_id;
         $ownershipTypeId = $refApplication->ownership_type_id;
         $firmTypeId = $refApplication->firm_type_id;
-        $categoryTypeId = $refApplication->category_type_id;
-
+        $categoryTypeId = $refApplication->category_type_id;           
         $flip = flipConstants($applicationTypes);
         switch ($applicationTypeId) {
             case $flip['NEW LICENSE']:
-                $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "New_Licences")->requirements;
+                $documentList="" ;//= $mRefReqDocs->getDocsByDocCode($moduleId, "New_Licences")->requirements;
                 break;
             case $flip['RENEWAL']:
                 $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "Reniwal_Licences")->requirements;
@@ -140,36 +139,43 @@ trait TradeTrait
                 $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "Surenderd_Licences")->requirements;    // Function (1.1)
                 break;
         }
-        switch ($ownershipTypeId) {
-            case 1: # OWN PROPERTY
-                $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "Owner_Premises")->requirements;
-                break;
-            case 2: #ON RENT
-                $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "On_Rent")->requirements;
-                break;
-            case 3:# ON LEASE
-                $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "On_Rent")->requirements;
-                break;
-        }
-        switch ($firmTypeId) {
-            case 1: # PROPRIETORSHIP
-                $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "NOC_Individual")->requirements;
-                break;
-            case 2: # PARTNERSHIP
-                $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "NOC_Parter")->requirements;
-                break;
-            case 3:# PVT. LTD.
-                $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "NOC_Pvt_Ltd_Com")->requirements;
-                break;
-            case 4: #PUBLIC LTD.
-                $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "NOC_Pvt_Ltd_Com")->requirements;
-                break;
-                
-        }
-        switch ($categoryTypeId) {
-            case 2: # Dangerous Trade
-                $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "NOC")->requirements;
-                break;
+        if($applicationTypeId == $flip['NEW LICENSE'])
+        {
+        
+            switch ($ownershipTypeId) 
+            {
+                case 1: # OWN PROPERTY
+                    $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "Owner_Premises")->requirements;
+                    break;
+                case 2: #ON RENT
+                    $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "On_Rent")->requirements;
+                    break;
+                case 3:# ON LEASE
+                    $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "On_Rent")->requirements;
+                    break;
+            }
+            switch ($firmTypeId) 
+            {
+                case 1: # PROPRIETORSHIP
+                    $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "NOC_Individual")->requirements;
+                    break;
+                case 2: # PARTNERSHIP
+                    $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "NOC_Parter")->requirements;
+                    break;
+                case 3:# PVT. LTD.
+                    $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "NOC_Pvt_Ltd_Com")->requirements;
+                    break;
+                case 4: #PUBLIC LTD.
+                    $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "NOC_Pvt_Ltd_Com")->requirements;
+                    break;
+                    
+            } 
+            switch ($categoryTypeId) 
+            {
+                case 2: # Dangerous Trade
+                    $documentList .= "";//$mRefReqDocs->getDocsByDocCode($moduleId, "NOC")->requirements;
+                    break;
+            }
         }
         $documentList = $this->filterDocument($documentList,$refApplication);
         // dd($refApplication,$documentList);
@@ -267,9 +273,9 @@ trait TradeTrait
         $applicationTypeId = $refApplication->application_type_id;
         $flip = flipConstants($applicationTypes);
         switch ($applicationTypeId) {
-            case $flip['NEW LICENSE']:
-                $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "New_Licences_Owneres")->requirements;
-                break;
+            // case $flip['NEW LICENSE']:
+            //     $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "New_Licences_Owneres")->requirements;
+            //     break;
             default :  $documentList = collect([]);
         }
         return $documentList;
