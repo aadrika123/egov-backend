@@ -38,7 +38,7 @@ class WaterApplication extends Model
         $saveNewApplication->property_type_id       = $req->propertyTypeId;
         $saveNewApplication->owner_type             = $req->ownerType;
         $saveNewApplication->category               = $req->category;
-        $saveNewApplication->pipeline_type_id       = $req->pipelineTypeId;
+        $saveNewApplication->pipeline_type_id       = $req->pipelineTypeId ?? 1;
         $saveNewApplication->ward_id                = $req->wardId;
         $saveNewApplication->area_sqft              = $req->areaSqft;
         $saveNewApplication->address                = $req->address;
