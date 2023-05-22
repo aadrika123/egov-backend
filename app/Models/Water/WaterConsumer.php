@@ -75,8 +75,8 @@ class WaterConsumer extends Model
             ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_consumers.id')
             ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_consumers.ward_mstr_id')
             ->where('water_consumers.' . $key, 'LIKE', '%' . $refNo . '%')
-            ->where('water_consumers.status', true)
-            ->where('ulb_ward_masters.status', true)
+            ->where('water_consumers.status', 1)
+            // ->where('ulb_ward_masters.status', 1)
             ->where('water_consumers.ulb_id', auth()->user()->ulb_id)
             ->groupBy(
                 'water_consumers.saf_no',

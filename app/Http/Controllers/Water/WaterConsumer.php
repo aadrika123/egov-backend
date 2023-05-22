@@ -141,7 +141,7 @@ class WaterConsumer extends Controller
     {
         $request->validate([
             'consumerId' => "required|digits_between:1,9223372036854775807",
-            'document' => "required|mimes:pdf,jpeg,png,jpg",
+            // 'document' => "required|mimes:pdf,jpeg,png,jpg",
         ]);
         try {
             $mWaterConsumerInitialMeter = new WaterConsumerInitialMeter();
@@ -151,7 +151,7 @@ class WaterConsumer extends Controller
             $meterRefImageName          = config::get('waterConstaint.WATER_METER_CODE');
             $demandIds = array();
 
-            $this->checkDemandGeneration($request); //dd($request->all());                                        // unfinished function
+            $this->checkDemandGeneration($request);                                                    // unfinished function
             $consumerDetails = WaterWaterConsumer::findOrFail($request->consumerId);
             $calculatedDemand = collect($this->Repository->calConsumerDemand($request));
             if ($calculatedDemand['status'] == false) {
@@ -163,6 +163,9 @@ class WaterConsumer extends Controller
                 $demandDetails = collect($calculatedDemand['consumer_tax'])->first();
                 switch ($demandDetails['charge_type']) {
                     case ($refMeterConnectionType['1']):
+                        $request->validate([
+                            'document' => "required|mimes:pdf,jpeg,png,jpg",
+                        ]);
                         $meterDetails = $mWaterConsumerMeter->saveMeterReading($request);
                         $mWaterConsumerInitialMeter->saveConsumerReading($request, $meterDetails);
                         $demandIds = $this->savingDemand($calculatedDemand, $request, $consumerDetails, $demandDetails['charge_type'], $refMeterConnectionType);
@@ -176,6 +179,9 @@ class WaterConsumer extends Controller
                         break;
 
                     case ($refMeterConnectionType['2']):
+                        $request->validate([
+                            'document' => "required|mimes:pdf,jpeg,png,jpg",
+                        ]);
                         $meterDetails = $mWaterConsumerMeter->saveMeterReading($request);
                         $mWaterConsumerInitialMeter->saveConsumerReading($request, $meterDetails);
                         $demandIds = $this->savingDemand($calculatedDemand, $request, $consumerDetails, $demandDetails['charge_type'], $refMeterConnectionType);
@@ -803,11 +809,15 @@ class WaterConsumer extends Controller
             'uptoData'    => "required|date",
         ]);
         try {
+            $todayDate                  = Carbon::now();
             $refConsumerId              = $request->consumerId;
             $mWaterConsumerDemand       = new WaterConsumerDemand();
             $mWaterConsumerTax          = new WaterConsumerTax();
             $mWaterConsumerInitialMeter = new WaterConsumerInitialMeter();
 
+            if ($request->uptoData > $todayDate) {
+                throw new Exception("uptoDate should not be grater than" . " " . $todayDate);
+            }
             $refConsumerDemand = $mWaterConsumerDemand->consumerDemandByConsumerId($refConsumerId);
             if (is_null($refConsumerDemand)) {
                 throw new Exception("There should be last data regarding meter!");
@@ -830,7 +840,7 @@ class WaterConsumer extends Controller
             }
 
             $refTaxUnitConsumed = $refConsumerTax->final_reading - $refConsumerTax->initial_reading;
-            $avgReading         = $refTaxUnitConsumed / $diffInDays;
+            $avgReading         = $diffInDays > 0 ? $refTaxUnitConsumed / $diffInDays : 1;
             $lastMeterReading   = $finalMeterReading->initial_reading;
             $ActualReading      = ($diffInDays * $avgReading) + $lastMeterReading;
 

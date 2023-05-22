@@ -1751,16 +1751,87 @@ class WaterPaymentController extends Controller
     public function paymentHistory(Request $request)
     {
         try {
-            $citizen = authUser();
-            $citizenId = $citizen->id;
-            $mWaterTran = new WaterTran();
-            $refUserType = Config::get("waterConstaint.USER_TYPE");
+            $citizen        = authUser();
+            $citizenId      = $citizen->id;
+            $mWaterTran     = new WaterTran();
+            $refUserType    = Config::get("waterConstaint.USER_TYPE");
 
             if ($citizenId->user_type != $refUserType["Citizen"]) {
                 throw new Exception("You're user type is not citizen!");
             }
             $transactionDetails = $mWaterTran->getTransByCitizenId($citizenId);
             return responseMsgs(true, "List of transactions", remove_null($transactionDetails), "", "01", ".ms", "POST", $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $request->deviceId);
+        }
+    }
+
+
+    /**
+     * | Get water user charges / Bill
+     * | A receipt generated in the time of demand generation 
+        | Serial No : 
+        | Not Finished
+     */
+    public function getWaterUserCharges(Request $request)
+    {
+        $request->validate([
+            'consumerNo' => 'required'
+        ]);
+        try {
+            $mWaterConsumer = new WaterConsumer();
+
+            $mTowards           = $this->_towards;
+            $mAccDescription    = $this->_accDescription;
+            $mDepartmentSection = $this->_departmentSection;
+            $mPaymentModes      = $this->_paymentModes;
+
+            $refRequest = $request->toArray();
+            $key = $request->filterBy;
+            $string = preg_replace("/([A-Z])/", "_$1", $key);
+            $refstring = strtolower($string);
+
+
+            // $mWaterConsumer->getDetailByConsumerNo($refstring,);
+
+            // $returnValues = [
+            //     "departmentSection"     => $mDepartmentSection,
+            //     "accountDescription"    => $mAccDescription,
+            //     "transactionDate"       => $transactionDetails['tran_date'],
+            //     "transactionNo"         => $refTransactionNo,
+            //     "consumerNo"            => $consumerDetails['consumer_no'],
+            //     "customerName"          => $consumerDetails['applicant_name'],
+            //     "customerMobile"        => $consumerDetails['mobile_no'],
+            //     "address"               => $consumerDetails['address'],
+            //     "paidFrom"              => $startingDate->format('Y-m-d'),
+            //     "paidUpto"              => $endingDate->format('Y-m-d'),
+            //     "holdingNo"             => $consumerDetails['holding_no'],
+            //     "safNo"                 => $consumerDetails['saf_no'],
+            //     "paymentMode"           => $transactionDetails['payment_mode'],
+            //     "bankName"              => $chequeDetails['bank_name']   ?? null,                                    // in case of cheque,dd,nfts
+            //     "branchName"            => $chequeDetails['branch_name'] ?? null,                                  // in case of chque,dd,nfts
+            //     "chequeNo"              => $chequeDetails['cheque_no']   ?? null,                                   // in case of chque,dd,nfts
+            //     "chequeDate"            => $chequeDetails['cheque_date'] ?? null,                                  // in case of chque,dd,nfts
+            //     "penaltyAmount"         => $penaltyAmount,
+            //     "demandAmount"          => $transactionDetails->amount,
+            //     "ulbId"                 => $consumerDetails['ulb_id'],
+            //     "ulbName"               => $consumerDetails['ulb_name'],
+            //     "WardNo"                => $consumerDetails['ward_name'],
+            //     "towards"               => $mTowards,
+            //     "description"           => $mAccDescription,
+            //     "totalPaidAmount"       => $transactionDetails->amount,
+            //     "dueAmount"             => $transactionDetails->due_amount,
+            //     "rebate"                => 0,                                                                       // Static
+            //     "waterConsumed"         => (($finalReading ?? 0.00) - ($initialReading ?? 0.00)),
+            //     "fixedPaidFrom"         => (Carbon::createFromFormat('Y-m-d',  $fixedFrom)->startOfMonth())->format('Y-m-d'),
+            //     "fixedPaidUpto"         => (Carbon::createFromFormat('Y-m-d',  $fixedUpto)->endOfMonth())->format('Y-m-d'),
+            //     "paidAmtInWords"        => getIndianCurrency($transactionDetails->amount),
+
+
+            //     "billNo"                => $a,// demand no
+            //     "date"                  => $a,//date of demand generation or current date
+                
+            // ];
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $request->deviceId);
         }

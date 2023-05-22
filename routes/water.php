@@ -82,7 +82,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         # Consumer And Citizen Transaction Operation
         Route::post('master/get-listed-details', 'getWaterMasterData');                                 // Admin/ Citizen
         Route::post('consumer/get-payment-history', 'getConsumerPaymentHistory');                       // Consumer
-        Route::post('generate-payment-receipt', 'generatePaymentReceipt');   // Not used                // Citizen
+        Route::post('generate-payment-receipt', 'generatePaymentReceipt');      // Not used             // Citizen
         Route::post('admin/application/generate-payment-receipt', 'generateOfflinePaymentReceipt');     // Consumer
         Route::post('consumer/calculate-month-demand', 'callDemandByMonth');                            // Admin/Consumer
         Route::post('application/payment/get-payment-history', 'getApplicationPaymentHistory');         // Admin/Consumer
@@ -90,7 +90,8 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('application/payment/offline/pay-connection-charge', 'offlineConnectionPayment');   // Admin
         Route::post('consumer/demand/generate-payment-receipt', 'generateDemandPaymentReceipt');        // Admin/ Citizen
         Route::post('consumer/online-demand-payment', 'initiateOnlineDemandPayment');                   // Citizen
-        Route::post('citizen/payment-history', 'paymentHistory');           // Here 
+        Route::post('citizen/payment-history', 'paymentHistory');               // Here                 // Citizen  
+        Route::post('consumer/water-user-charges', 'getWaterUserCharges');                              // Admin / Citizen
 
         # Site inspection 
         Route::post('site-verification/save-site-details', 'saveSitedetails');                          // Admin

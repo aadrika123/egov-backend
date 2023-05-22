@@ -532,6 +532,8 @@ class PropProperty extends Model
             'longitude',
             'prop_properties.new_holding_no',
             'prop_properties.pt_no',
+            'prop_properties.khata_no',
+            'prop_properties.plot_no',
             'ward_name',
             'prop_address',
             'prop_properties.status as active_status',

@@ -9,6 +9,8 @@ use App\Models\Property\PropProperty;
 use App\Models\Property\PropSafGeotagUpload;
 use App\Models\Property\PropSafVerification;
 use App\Models\Property\PropTransaction;
+use App\Models\QuickAccessMaster;
+use App\Models\QuickaccessUserMap;
 use App\Models\TcTracking;
 use Exception;
 use Illuminate\Support\Facades\Validator;
@@ -135,6 +137,37 @@ class CustomController extends Controller
                 ->get();
 
             return responseMsgs(true, "tc Route", $geoTag, "010203", "1.0", responseTime(), 'POST', "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", responseTime(), 'POST', "");
+        }
+    }
+
+    /**
+     * | quickAccessList
+     */
+    public function quickAccessList(Request $request)
+    {
+        try {
+            $mQuickAccessMaster = new QuickAccessMaster();
+            $list = $mQuickAccessMaster->getList();
+
+            return responseMsgs(true, "quickAccessList",  $list, "010203", "1.0", responseTime(), 'POST', "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", responseTime(), 'POST', "");
+        }
+    }
+
+    /**
+     * | quickAccessList
+     */
+    public function getQuickAccessListByUser(Request $request)
+    {
+        try {
+            $userId = $request->userId ?? authUser()->id;
+            $mQuickaccessUserMap = new QuickaccessUserMap();
+            $list = $mQuickaccessUserMap->getListbyUserId($userId);
+
+            return responseMsgs(true, "Quick Access List by user Id",  $list, "010203", "1.0", responseTime(), 'POST', "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", responseTime(), 'POST', "");
         }
