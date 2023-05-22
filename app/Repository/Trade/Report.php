@@ -1621,6 +1621,7 @@ class Report implements IReport
                     $join->ON("active_trade_licences.current_role", "roles.wf_role_id")
                         ->WHERE("active_trade_licences.ulb_id", $ulbId)
                         ->WHERE("active_trade_licences.is_parked", FALSE)
+                        ->WHERE("active_trade_licences.is_active", TRUE)
                         ->WHEREIN("active_trade_licences.payment_status", [1,2]);                        
                 })
                 ->GROUPBY(["wf_roles.id", "wf_roles.role_name"])
@@ -1644,6 +1645,7 @@ class Report implements IReport
             return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
         }
     }
+    
     public function levelUserPending(Request $request)
     {
         $metaData = collect($request->metaData)->all();
@@ -1736,6 +1738,7 @@ class Report implements IReport
                     }
                 )
                 ->WHERE("active_trade_licences.is_parked", FALSE)
+                ->WHERE("active_trade_licences.is_active", TRUE)
                 ->WHERE("active_trade_licences.ulb_id", $ulbId)
                 ->groupBy(["users_role.user_id", "users_role.user_name", "users_role.wf_role_id", "users_role.role_name"]);
                 if (!in_array($roleId, [8])) 
@@ -1839,7 +1842,8 @@ class Report implements IReport
                 $data = $data->WHEREIN("active_trade_licences.ward_id", $mWardIds);
             }
             $data = $data->WHERE("active_trade_licences.ulb_id", $ulbId)
-                    ->WHERE("active_trade_licences.is_parked", FALSE);
+                    ->WHERE("active_trade_licences.is_parked", FALSE)
+                    ->WHERE("active_trade_licences.is_active", TRUE);
             $data = $data->groupBy(["ward_name","ulb_ward_masters.id"]);
 
             $perPage = $request->perPage ? $request->perPage : 10;
@@ -1884,7 +1888,6 @@ class Report implements IReport
             }
             if (($request->roleId && $request->userId) && ($roleId != $roleId2)) 
             {
-                // dd($roleId,$roleId2,$this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_WF_MASTER_Id),DB::getQueryLog());
                 throw new Exception("Invalid RoleId Pass");
             }
             $roleId = $roleId2 ? $roleId2 : $roleId;
@@ -1935,7 +1938,8 @@ class Report implements IReport
                     ->WHERE("wf_roles.id", $roleId);
             }
             $data = $data->WHERE("active_trade_licences.ulb_id", $ulbId)
-                    ->WHERE("active_trade_licences.is_parked", FALSE);
+                    ->WHERE("active_trade_licences.is_parked", FALSE)
+                    ->WHERE("active_trade_licences.is_active", TRUE);
             if (!in_array($roleId, [11, 8]) && $userId) 
             {
                 $data = $data->WHEREIN("active_trade_licences.ward_id", $mWardIds);
@@ -2286,6 +2290,7 @@ class Report implements IReport
             return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
         }
     }
+
     public function applicationStatus(Request $request)
     {
         $metaData = collect($request->metaData)->all();
