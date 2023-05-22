@@ -546,7 +546,7 @@ class NewConnectionController extends Controller
                             $diffInDays = $endDate->diffInDays($startDate);
                             $refTaxUnitConsumed = collect($refConsumerTax)['final_reading'] - collect($refConsumerTax)['initial_reading'];
 
-                            $consumerDemand['lastConsumedUnit'] = $refTaxUnitConsumed;
+                            $consumerDemand['lastConsumedUnit'] = number_format($refTaxUnitConsumed, 2);
                             $consumerDemand['avgReading'] = number_format(($refTaxUnitConsumed / $diffInDays), 2);
                             $consumerDemand['lastMeterReading'] = $fialMeterReading->initial_reading;
 
