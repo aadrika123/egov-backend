@@ -139,7 +139,7 @@ trait TradeTrait
                 $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "Surenderd_Licences")->requirements;    // Function (1.1)
                 break;
         }
-        if($applicationTypeId != $flip['NEW LICENSE'])
+        if($applicationTypeId == $flip['NEW LICENSE'])
         {
         
             switch ($ownershipTypeId) 
