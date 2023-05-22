@@ -19,7 +19,9 @@ use App\Models\Property\PropProperty;
 use App\Models\Property\PropSaf;
 use App\Models\Property\PropSafMemoDtl;
 use App\Models\Property\PropSafsDemand;
+use App\Models\Property\PropSafTax;
 use App\Models\Property\PropSafVerification;
+use App\Models\Property\PropTax;
 use App\Models\Property\PropTranDtl;
 use App\Models\Property\PropTransaction;
 use App\Models\Workflows\WfRoleusermap;
@@ -160,10 +162,8 @@ class ActiveSafControllerV2 extends Controller
         ]);
         try {
             $mPropSafMemoDtl = new PropSafMemoDtl();
-            $mPropDemands = new PropDemand();
-            $mPropSafDemands = new PropSafsDemand();
-            $mPropSafVerification = new PropSafVerification();
-            $calculationByUlbTc = new CalculationByUlbTc;
+            $propSafTax = new PropSafTax();
+            $propTax = new PropTax();
 
             $details = $mPropSafMemoDtl->getMemoDtlsByMemoId($req->memoId);
             if (collect($details)->isEmpty())
@@ -175,60 +175,35 @@ class ActiveSafControllerV2 extends Controller
             $details = collect($details)->first();
             // Fam Receipt
             if ($details->memo_type == 'FAM') {
-                $memoFyear = $details->from_fyear;
                 $propId = $details->prop_id;
                 $safId = $details->saf_id;
-                $propDemands = $mPropDemands->getFullDemandsByPropId($propId);
-                $safDemands = $mPropSafDemands->getFullDemandsBySafId($safId);
-                $holdingTax2Perc = $propDemands->where('fyear', $memoFyear);
 
-                // Tc Verified List
-                $fieldVerifiedSaf = $mPropSafVerification->getVerificationsBySafId($safId);          // Get fields Verified Saf with all Floor Details
-                if (collect($fieldVerifiedSaf)->isEmpty())
-                    throw new Exception("Site Verification not Exist");
+                $safTaxes = $propSafTax->getSafTaxesBySafId($safId);
+                $propTaxes = $propTax->getPropTaxesByPropId($propId);
 
-                $saf = PropSaf::find($safId);
-                if (collect($saf)->isEmpty())
-                    $saf = PropActiveSaf::findOrFail($safId);
+                $holdingTaxes = $propTaxes->map(function ($propTax) use ($safTaxes) {
+                    $ulbTax = $propTax;
+                    $selfAssessTaxes = $safTaxes->where('fyear', $propTax->fyear)     // Holding Tax Amount without penalty
+                        ->where('qtr', $propTax->qtr)
+                        ->first();
+                    if (is_null($selfAssessTaxes))
+                        $selfAssessQuaterlyTax = 0;
+                    else
+                        $selfAssessQuaterlyTax = $selfAssessTaxes->quarterly_tax * 4;
 
-                $tcVerifyParams = [
-                    'safId' => $safId,
-                    'fieldVerificationDtls' => $fieldVerifiedSaf,
-                    'assessmentType' => $saf->assessment_type,
-                    'ulbId' => $saf->ulb_id,
-                    'activeSafDtls' => $saf,
-                    'propId' => $propId
-                ];
-                $ulbWiseTax = $calculationByUlbTc->calculateTax($tcVerifyParams);
-                if (collect($holdingTax2Perc)->isEmpty())
-                    $holdingTax2Perc = $safDemands->where('fyear', $memoFyear);
+                    $ulbVerifiedQuarterlyTaxes = $ulbTax->quarterly_tax * 4;
 
-                if (collect($holdingTax2Perc)->isEmpty())
-                    throw new Exception("Demand Not Available");
-
-                $mergedDemands = $safDemands->merge($propDemands);
-                $taxDiffs = $mergedDemands->groupBy('arv');
-                $qtrParam = 5;                                                                                                      // For Calculating Qtr
-                $holdingTaxes = collect($taxDiffs)->map(function ($taxDiff) use ($qtrParam, $ulbWiseTax) {
-                    $ulbTax = $ulbWiseTax->where('quarterYear', $taxDiff->first()->fyear)->where('qtr', $taxDiff->first()->qtr)->first();
-                    $totalFirstQtrs = $qtrParam - $taxDiff->first()->qtr;
-                    $selfAssessAmt = ($taxDiff->first()->amount - $taxDiff->first()->additional_tax) * $totalFirstQtrs;               // Holding Tax Amount without penalty
-                    if (!is_null($ulbTax)) {
-                        $ulbAssessAmt = ($ulbTax['balance']) * $totalFirstQtrs;                                                              // Holding Tax Amount Without Panalty
-                        $diffAmt = $ulbAssessAmt - $selfAssessAmt;
-                    } else {
-                        $ulbAssessAmt = 0;
-                        $diffAmt = -$selfAssessAmt;
-                    }
-
-                    return [
-                        'Particulars' => $taxDiff->first()->due_date <= '2021-03-31' ? "Holding Tax @ 2%" : "Holding Tax @ 0.075% or 0.15% or 0.2%",
-                        'quarterFinancialYear' => 'Quarter' . $taxDiff->first()->qtr . '/' . $taxDiff->first()->fyear,
-                        'basedOnSelfAssess' => roundFigure($selfAssessAmt),
-                        'basedOnUlbCalc' => roundFigure($ulbAssessAmt),
+                    $diffAmt = $ulbVerifiedQuarterlyTaxes - $selfAssessQuaterlyTax;
+                    $response = [
+                        'Particulars' => ($ulbTax->fyear == '2022-2023' && $ulbTax->qtr >= 1) ? "Holding Tax @ 0.075% or 0.15% or 0.2%" : "Holding Tax @ 2%",
+                        'quarterFinancialYear' => 'Quarter' . $ulbTax->qtr . '/' . $ulbTax->fyear,
+                        'basedOnSelfAssess' => roundFigure($selfAssessQuaterlyTax),
+                        'basedOnUlbCalc' => roundFigure($ulbVerifiedQuarterlyTaxes),
                         'diffAmt' => roundFigure($diffAmt)
                     ];
+                    return $response;
                 });
+
                 $holdingTaxes = $holdingTaxes->values();
                 $total = collect([
                     'Particulars' => 'Total Amount',
@@ -237,6 +212,7 @@ class ActiveSafControllerV2 extends Controller
                     'basedOnUlbCalc' => roundFigure($holdingTaxes->sum('basedOnUlbCalc')),
                     'diffAmt' => roundFigure($holdingTaxes->sum('diffAmt')),
                 ]);
+
                 $details->taxTable = $holdingTaxes->merge([$total])->values();
             }
             return responseMsgs(true, "", remove_null($details), "011803", 1.0, responseTime(), "POST", $req->deviceId);
