@@ -1774,12 +1774,13 @@ class WaterPaymentController extends Controller
      * | Get water user charges / Bill
      * | A receipt generated in the time of demand generation 
         | Serial No : 
-        | Not Finished
+        | Finished
+        | Use
      */
     public function getWaterUserCharges(Request $request)
     {
         $request->validate([
-            'consumerNo' => 'required|'
+            'consumerNo' => 'required'
         ]);
         try {
             $mWaterConsumer         = new WaterConsumer();
@@ -1794,52 +1795,48 @@ class WaterPaymentController extends Controller
             $key = $flipRequest[$request->consumerNo];
             $string = preg_replace("/([A-Z])/", "_$1", $key);
             $refstring = strtolower($string);
-            $consumerDetails = $mWaterConsumer->getRefDetailByConsumerNo($refstring, $request->consumerNo);
-            $consumerDetails = collect($consumerDetails)->first();
-            if(!collect($consumerDetails)->first())
-            {
+            $consumerDetails = $mWaterConsumer->getRefDetailByConsumerNo($refstring, $request->consumerNo)->first();
+            if (!$consumerDetails) {
                 throw new Exception("Consumer details not found!");
             }
-            // $mWaterConsumerDemand->getConsumerDemand()
-            
-            // $returnValues = [
-            //     "departmentSection"     => $mDepartmentSection,
-            //     "accountDescription"    => $mAccDescription,
-            //     // "transactionDate"       => $transactionDetails['tran_date'],
-            //     // "transactionNo"         => $refTransactionNo,
-            //     "consumerNo"            => $consumerDetails['consumer_no'],
-            //     "customerName"          => $consumerDetails['applicant_name'],
-            //     "customerMobile"        => $consumerDetails['mobile_no'],
-            //     "address"               => $consumerDetails['address'],
-            //     "paidFrom"              => $startingDate->format('Y-m-d'),
-            //     "paidUpto"              => $endingDate->format('Y-m-d'),
-            //     "holdingNo"             => $consumerDetails['holding_no'],
-            //     "safNo"                 => $consumerDetails['saf_no'],
-            //     "paymentMode"           => $transactionDetails['payment_mode'],
-            //     "bankName"              => $chequeDetails['bank_name']   ?? null,                                    // in case of cheque,dd,nfts
-            //     "branchName"            => $chequeDetails['branch_name'] ?? null,                                  // in case of chque,dd,nfts
-            //     "chequeNo"              => $chequeDetails['cheque_no']   ?? null,                                   // in case of chque,dd,nfts
-            //     "chequeDate"            => $chequeDetails['cheque_date'] ?? null,                                  // in case of chque,dd,nfts
-            //     "penaltyAmount"         => $penaltyAmount,
-            //     "demandAmount"          => $transactionDetails->amount,
-            //     "ulbId"                 => $consumerDetails['ulb_id'],
-            //     "ulbName"               => $consumerDetails['ulb_name'],
-            //     "WardNo"                => $consumerDetails['ward_name'],
-            //     "towards"               => $mTowards,
-            //     "description"           => $mAccDescription,
-            //     "totalPaidAmount"       => $transactionDetails->amount,
-            //     "dueAmount"             => $transactionDetails->due_amount,
-            //     "rebate"                => 0,                                                                       // Static
-            //     "waterConsumed"         => (($finalReading ?? 0.00) - ($initialReading ?? 0.00)),
-            //     "fixedPaidFrom"         => (Carbon::createFromFormat('Y-m-d',  $fixedFrom)->startOfMonth())->format('Y-m-d'),
-            //     "fixedPaidUpto"         => (Carbon::createFromFormat('Y-m-d',  $fixedUpto)->endOfMonth())->format('Y-m-d'),
-            //     "paidAmtInWords"        => getIndianCurrency($transactionDetails->amount),
 
+            # Demand Details 
+            $refConsumerDemand = $mWaterConsumerDemand->getConsumerDemand($consumerDetails->id);
+            $latestDemand = collect($refConsumerDemand)->first();
+            $startingDemand = collect($refConsumerDemand)->last();
+            $totalDemandAmount = number_format((collect($refConsumerDemand)->sum('balance_amount')), 2);
+            $totalPenaltyAmount = number_format((collect($refConsumerDemand)->sum('penalty')), 2);
 
-            //     "billNo"                => $a, // demand no
-            //     "date"                  => $a, //date of demand generation or current date
+            $refRequest = new Request([
+                "consumerId" => $consumerDetails->id
+            ]);
+            # Advance Details 
+            $advanceDetails = $this->checkAdvance($refRequest);
 
-            // ];
+            $returnValues = [
+                "departmentSection"     => $mDepartmentSection,
+                "accountDescription"    => $mAccDescription,
+                "consumerNo"            => $consumerDetails['consumer_no'],
+                "customerName"          => $consumerDetails['applicant_name'],
+                "customerMobile"        => $consumerDetails['mobile_no'],
+                "address"               => $consumerDetails['address'],
+                "paidFrom"              => ($startingDemand->demand_from) ?? null,
+                "paidUpto"              => ($latestDemand->demand_upto) ?? null,
+                "holdingNo"             => $consumerDetails['holding_no'],
+                "safNo"                 => $consumerDetails['saf_no'],                                 // in case of chque,dd,nfts
+                "penaltyAmount"         => $totalPenaltyAmount ?? 0,
+                "billAmount"            => $totalDemandAmount ?? 0,
+                "ulbId"                 => $consumerDetails['ulb_id'],
+                "ulbName"               => $consumerDetails['ulb_name'],
+                "WardNo"                => $consumerDetails['ward_name'],
+                "towards"               => $mTowards,
+                "description"           => $mAccDescription,
+                "paidAmtInWords"        => getIndianCurrency($totalDemandAmount),
+                "billNumber"            => $latestDemand->demand_no ?? null,
+                "advanceAmount"         => $advanceDetails['advanceAmount'],
+
+            ];
+            return responseMsgs(true, "water bill details!", remove_null($returnValues), "", "01", "", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $request->deviceId);
         }
