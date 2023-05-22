@@ -346,6 +346,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('tc-collection-route', 'tcCollectionRoute');
         Route::post('list-quick-access', 'quickAccessList');
         Route::post('quick-access-byuserid', 'getQuickAccessListByUser');
+        Route::post('add-update-quickaccess', 'addUpdateQuickAccess');
     });
 
     /**

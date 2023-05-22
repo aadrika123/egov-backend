@@ -172,4 +172,55 @@ class CustomController extends Controller
             return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", responseTime(), 'POST', "");
         }
     }
+
+    /**
+     * | Add Update Quick Access
+     */
+    public function addUpdateQuickAccess(Request $request)
+    {
+        $validate = Validator::make(
+            $request->all(),
+            [
+                'items.*.quickAccessId' => 'required|integer',
+                'items.*.status' => 'required|boolean',
+            ]
+        );
+        if ($validate->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'validation error',
+                'errors' => $validate->errors()
+            ], 422);
+        }
+        try {
+            $user = authUser();
+            $datas = $request->data;
+            $mQuickaccessUserMap = new QuickaccessUserMap();
+            foreach ($datas as $data) {
+
+                $checkExisting = QuickaccessUserMap::where('user_id', $user->id)
+                    ->where('quick_access_id', $data['quickAccessId'])
+                    ->first();
+
+                $mreqs = new Request([
+                    "user_id" => $user->id,
+                    "quick_access_id" => $data['quickAccessId'],
+                    "status" => $data['status']
+                ]);
+
+                if ($checkExisting) {
+                    $mreqs = $mreqs->merge(["id" => $checkExisting->id]);
+                    $mQuickaccessUserMap->edit($mreqs);
+                    $msg = "Quick Access Updated";
+                } else {
+                    $mQuickaccessUserMap->store($mreqs);
+                    $msg = "Quick Access Addedd";
+                }
+            }
+
+            return responseMsgs(true, $msg,  "", "010203", "1.0", responseTime(), 'POST', "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", responseTime(), 'POST', "");
+        }
+    }
 }
