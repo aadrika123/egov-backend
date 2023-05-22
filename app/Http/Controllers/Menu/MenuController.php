@@ -455,8 +455,8 @@ class MenuController extends Controller
             $treeStructure = $mMenuRepo->generateMenuTree($mreqs);
             $menuPermission['permission'] = $menu;
             $menuPermission['userDetails'] = [
-                'userName' => $user->user_name,
-                'ulb'      => $ulbName->ulb_name,
+                'userName' => $user->name,
+                'ulb'      => $ulbName->ulb_name ?? 'No Ulb Assigned',
                 'mobileNo' => $user->mobile,
                 'email'    => $user->email,
                 'imageUrl' => $user->photo_relative_path . '/' . $user->photo,

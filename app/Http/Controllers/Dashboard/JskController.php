@@ -91,12 +91,13 @@ class JskController extends Controller
     public function jskPropDashboard(Request $request)
     {
         try {
-            $userId = authUser()->id;
-            $userType = authUser()->user_type;
-            $ulbId = authUser()->ulb_id;
+            $user     = authUser();
+            $userId   = $user->id;
+            $userType = $user->user_type;
+            $ulbId    = $user->ulb_id;
             $rUserType = array('TC', 'TL', 'JSK');
-            $role = array('Back Office', 'Section Incharge', 'Dealing Assistant');
-            $propertyWorflows = array(3, 4, 5, 106, 169, 182, 183, 212, 197);
+            $role = array('BACK OFFICE', 'SECTION INCHARGE', 'DEALING ASSISTANT');
+            $propertyWorflows = array(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13);
             $date = Carbon::now();
             $mpropActiveSaf =  new PropActiveSaf();
             $mPropActiveObjection = new PropActiveObjection();
@@ -106,7 +107,6 @@ class JskController extends Controller
             $mTempTransaction = new TempTransaction();
             $mWorkflowTrack = new WorkflowTrack();
             $currentRole =  $this->getRoleByUserUlbId($ulbId, $userId);
-
 
             if (in_array($userType, $rUserType)) {
                 $saf = $mpropActiveSaf->todayAppliedApplications($userId);
@@ -121,7 +121,6 @@ class JskController extends Controller
                 $dd = collect($tran)->where('payment_mode', 'DD')->sum('amount');
                 $online = collect($tran)->where('payment_mode', 'Online')->sum('amount');
 
-                // $data['totalApplication'] = ($saf->union($obj)->union($con)->union($har)->union($deactv)->get())->count();
                 $data['totalCollection'] = $total;
                 $data['totalCash'] = $cash;
                 $data['totalCheque'] = $cheque;
@@ -151,8 +150,7 @@ class JskController extends Controller
                 $data['totalForwadedApplication'] = $mWorkflowTrack->todayForwadedApplication($currentRole->id, $ulbId, $propertyWorflows)->count();
             }
 
-
-            if ($currentRole->role_name == 'Executive Officer') {
+            if ($currentRole->role_name == 'EXECUTIVE OFFICER') {
                 $safReceivedApp =  $mpropActiveSaf->todayReceivedApplication($currentRole->id, $ulbId)->count();
                 $objectionReceivedApp =  $mPropActiveObjection->todayReceivedApplication($currentRole->id, $ulbId)->count();
                 $concessionReceivedApp =  $mPropActiveConcession->todayReceivedApplication($currentRole->id, $ulbId)->count();
