@@ -1750,16 +1750,19 @@ class WaterPaymentController extends Controller
      */
     public function paymentHistory(Request $request)
     {
+        $request->validate([
+            'pages' => 'required|int'
+        ]);
         try {
             $citizen        = authUser();
             $citizenId      = $citizen->id;
             $mWaterTran     = new WaterTran();
             $refUserType    = Config::get("waterConstaint.USER_TYPE");
 
-            if ($citizenId->user_type != $refUserType["Citizen"]) {
+            if ($citizen->user_type != $refUserType["Citizen"]) {
                 throw new Exception("You're user type is not citizen!");
             }
-            $transactionDetails = $mWaterTran->getTransByCitizenId($citizenId);
+            $transactionDetails = $mWaterTran->getTransByCitizenId($citizenId)->paginate($request->pages);
             return responseMsgs(true, "List of transactions", remove_null($transactionDetails), "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $request->deviceId);
@@ -1776,29 +1779,34 @@ class WaterPaymentController extends Controller
     public function getWaterUserCharges(Request $request)
     {
         $request->validate([
-            'consumerNo' => 'required'
+            'consumerNo' => 'required|'
         ]);
         try {
-            $mWaterConsumer = new WaterConsumer();
+            $mWaterConsumer         = new WaterConsumer();
+            $mWaterConsumerDemand   = new WaterConsumerDemand();
 
             $mTowards           = $this->_towards;
             $mAccDescription    = $this->_accDescription;
             $mDepartmentSection = $this->_departmentSection;
-            $mPaymentModes      = $this->_paymentModes;
 
             $refRequest = $request->toArray();
-            $key = $request->filterBy;
+            $flipRequest = collect($refRequest)->flip();
+            $key = $flipRequest[$request->consumerNo];
             $string = preg_replace("/([A-Z])/", "_$1", $key);
             $refstring = strtolower($string);
-
-
-            // $mWaterConsumer->getDetailByConsumerNo($refstring,);
-
+            $consumerDetails = $mWaterConsumer->getRefDetailByConsumerNo($refstring, $request->consumerNo);
+            $consumerDetails = collect($consumerDetails)->first();
+            if(!collect($consumerDetails)->first())
+            {
+                throw new Exception("Consumer details not found!");
+            }
+            // $mWaterConsumerDemand->getConsumerDemand()
+            
             // $returnValues = [
             //     "departmentSection"     => $mDepartmentSection,
             //     "accountDescription"    => $mAccDescription,
-            //     "transactionDate"       => $transactionDetails['tran_date'],
-            //     "transactionNo"         => $refTransactionNo,
+            //     // "transactionDate"       => $transactionDetails['tran_date'],
+            //     // "transactionNo"         => $refTransactionNo,
             //     "consumerNo"            => $consumerDetails['consumer_no'],
             //     "customerName"          => $consumerDetails['applicant_name'],
             //     "customerMobile"        => $consumerDetails['mobile_no'],
@@ -1828,9 +1836,9 @@ class WaterPaymentController extends Controller
             //     "paidAmtInWords"        => getIndianCurrency($transactionDetails->amount),
 
 
-            //     "billNo"                => $a,// demand no
-            //     "date"                  => $a,//date of demand generation or current date
-                
+            //     "billNo"                => $a, // demand no
+            //     "date"                  => $a, //date of demand generation or current date
+
             // ];
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $request->deviceId);
