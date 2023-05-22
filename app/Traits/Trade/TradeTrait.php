@@ -141,7 +141,7 @@ trait TradeTrait
         }
         if($applicationTypeId == $flip['NEW LICENSE'])
         {
-        
+            // dd($applicationTypeId,$ownershipTypeId,$firmTypeId,$categoryTypeId);
             switch ($ownershipTypeId) 
             {
                 case 1: # OWN PROPERTY
@@ -157,7 +157,7 @@ trait TradeTrait
             switch ($firmTypeId) 
             {
                 case 1: # PROPRIETORSHIP
-                    $documentList .= "";//$mRefReqDocs->getDocsByDocCode($moduleId, "NOC_Individual")->requirements;
+                    $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "NOC_Individual")->requirements;
                     break;
                 case 2: # PARTNERSHIP
                     $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "NOC_Parter")->requirements;
