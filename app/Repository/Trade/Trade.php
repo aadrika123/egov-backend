@@ -2786,7 +2786,7 @@ class Trade implements ITrade
                 "last_page" => $paginator->lastPage(),
                 "data" => $paginator->items(),
                 "total" => $paginator->total(),
-            ]; dd(DB::getQueryLog());
+            ]; 
             return responseMsg(true, "", remove_null($list));     
             
         } catch (Exception $e) {
