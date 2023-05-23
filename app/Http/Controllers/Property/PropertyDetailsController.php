@@ -382,7 +382,10 @@ class PropertyDetailsController extends Controller
     {
         $request->validate([
             'filteredBy' => "required",
-            'parameter' => "required"
+            'parameter' => "nullable",
+            // 'plotNo' => 'sometimes|required_if:filteredBy=khataNo',
+            // 'plotNo' => 'sometimes|required_if:filteredBy=khataNo'
+            // 'plotNo' => 'sometimes|required_if:filteredBy=khataNo'
         ]);
 
         try {
@@ -430,22 +433,51 @@ class PropertyDetailsController extends Controller
                         ->get();
                     break;
 
-                case ("land"):
+                case ("khataNo"):
                     if ($request->khataNo)
                         $data = $mPropProperty->searchProperty()
-                            ->where('prop_properties.khata_no', 'LIKE', '%' . $parameter . '%')
+                            ->where('prop_properties.khata_no', 'LIKE', '%' . $request->khataNo . '%')
                             ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'latitude', 'longitude')
                             ->get();
 
                     if ($request->plotNo)
                         $data = $mPropProperty->searchProperty()
-                            ->where('prop_properties.plot_no', 'LIKE', '%' . $parameter . '%')
+                            ->where('prop_properties.plot_no', 'LIKE', '%' . $request->plotNo . '%')
                             ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'latitude', 'longitude')
                             ->get();
 
-                    if ($request->villageMaujaName)
+                    if ($request->maujaName)
                         $data = $mPropProperty->searchProperty()
-                            ->where('prop_properties.village_mauja_name', 'LIKE', '%' . $parameter . '%')
+                            ->where('prop_properties.village_mauja_name', 'LIKE', '%' . $request->maujaName . '%')
+                            ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'latitude', 'longitude')
+                            ->get();
+
+                    if ($request->khataNo && $request->plotNo)
+                        $data = $mPropProperty->searchProperty()
+                            ->where('prop_properties.khata_no', 'LIKE', '%' . $request->khataNo . '%')
+                            ->where('prop_properties.plot_no', 'LIKE', '%' . $request->plotNo . '%')
+                            ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'latitude', 'longitude')
+                            ->get();
+
+                    if ($request->khataNo && $request->maujaName)
+                        $data = $mPropProperty->searchProperty()
+                            ->where('prop_properties.khata_no', 'LIKE', '%' . $request->khataNo . '%')
+                            ->where('prop_properties.village_mauja_name', 'LIKE', '%' . $request->maujaName . '%')
+                            ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'latitude', 'longitude')
+                            ->get();
+
+                    if ($request->plotNo && $request->maujaName)
+                        $data = $mPropProperty->searchProperty()
+                            ->where('prop_properties.plot_no', 'LIKE', '%' . $request->plotNo . '%')
+                            ->where('prop_properties.village_mauja_name', 'LIKE', '%' . $request->maujaName . '%')
+                            ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'latitude', 'longitude')
+                            ->get();
+
+                    if ($request->khataNo && $request->plotNo && $request->maujaName)
+                        $data = $mPropProperty->searchProperty()
+                            ->where('prop_properties.khata_no', 'LIKE', '%' . $request->khataNo . '%')
+                            ->where('prop_properties.plot_no', 'LIKE', '%' . $request->plotNo . '%')
+                            ->where('prop_properties.village_mauja_name', 'LIKE', '%' . $request->maujaName . '%')
                             ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'latitude', 'longitude')
                             ->get();
                     break;
