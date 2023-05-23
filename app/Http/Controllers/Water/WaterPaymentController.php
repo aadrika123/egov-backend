@@ -43,6 +43,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
+use Predis\Command\Redis\SELECT;
 
 /**
  * | ----------------------------------------------------------------------------------
@@ -1085,11 +1086,11 @@ class WaterPaymentController extends Controller
                 $this->postOtherPaymentModes($req);
             }
 
-            # Reflect on water Tran Details
+            # Reflect on water Tran Details and for Applications Data saving
             foreach ($charges as $charges) {
                 $this->savePaymentStatus($req, $offlinePaymentModes, $charges, $refWaterApplication, $waterTrans);
             }
-            # Readjust Water Penalties
+            # Readjust Water Penalties 
             $this->updatePenaltyPaymentStatus($req);
             # if payment is for site inspection
             if ($req->chargeCategory == $paramChargeCatagory['SITE_INSPECTON']) {
@@ -1157,25 +1158,39 @@ class WaterPaymentController extends Controller
         | Serial No : 07.04
         | Working
         | Common function
+        | $charges is for the water charges 
      */
     public function savePaymentStatus($req, $offlinePaymentModes, $charges, $refWaterApplication, $waterTrans)
     {
-        $mWaterApplication = new WaterApplication();
-        $waterTranDetail = new WaterTranDetail();
-        $mWaterTran = new WaterTran();
+        $mWaterApplication      = new WaterApplication();
+        $waterTranDetail        = new WaterTranDetail();
+        $mWaterTran             = new WaterTran();
+        $refRole                = Config::get("waterConstaint.ROLE-LABEL");
+        $applyFrom              = Config::get('waterConstaint.APP_APPLY_FROM');
+        $paramChargeCatagory    = Config::get('waterConstaint.CHARGE_CATAGORY');
 
+        # for offline payment mode 
         if (in_array($req['paymentMode'], $offlinePaymentModes)) {
-            $charges->paid_status = 2;                                      // Static
+            $charges->paid_status = 2;                                                          // Static
             $mWaterApplication->updatePendingStatus($req['id']);
             $mWaterTran->saveVerifyStatus($waterTrans['id']);
         } else {
-            $charges->paid_status = 1;                                      // Update Demand Paid Status // Static
-            if ($refWaterApplication['payment_status'] == 0) {              // Update Water Application Payment Status
-                $mWaterApplication->updateOnlyPaymentstatus($req['id']);
+            $charges->paid_status = 1;                                                          // Update Demand Paid Status // Static
+            if ($refWaterApplication['payment_status'] == 0) {                                  // Update Water Application Payment Status
+                $mWaterApplication->updateOnlyPaymentstatus($req['id']);                        // If payment is in cash
             }
         }
-        $mWaterApplication->sendApplicationToBo($req['id']);                // Save current role as Bo
+
+        # saving Details in application table if payment is in JSK
+        if ($req->chargeCategory != $paramChargeCatagory['SITE_INSPECTON']) {
+            if ($refWaterApplication->apply_from == $applyFrom['1'] && $refWaterApplication->doc_upload_status == true) {
+                $mWaterApplication->sendApplicationToRole($req['id'], $refRole['DA']);                // Save current role as Da
+            } else {
+                $mWaterApplication->sendApplicationToRole($req['id'], $refRole['BO']);                // Save current role as Bo
+            }
+        }
         $charges->save();
+
         # Save the trans details 
         $waterTranDetail->saveDefaultTrans(
             $charges->conn_fee,
@@ -1758,11 +1773,22 @@ class WaterPaymentController extends Controller
             $citizenId      = $citizen->id;
             $mWaterTran     = new WaterTran();
             $refUserType    = Config::get("waterConstaint.USER_TYPE");
+            $refTransType   = Config::get("waterConstaint.PAYMENT_FOR");
 
             if ($citizen->user_type != $refUserType["Citizen"]) {
                 throw new Exception("You're user type is not citizen!");
             }
-            $transactionDetails = $mWaterTran->getTransByCitizenId($citizenId)->paginate($request->pages);
+            $transactionDetails = $mWaterTran->getTransByCitizenId($citizenId)
+                ->select(
+                    DB::raw('
+                        CASE
+                            WHEN tran_type = \'Demand Collection\' THEN \'1\'
+                            ELSE \'2\'
+                        END AS age_group
+                    '),
+                    "water_trans.*"
+                )
+                ->paginate($request->pages);
             return responseMsgs(true, "List of transactions", remove_null($transactionDetails), "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $request->deviceId);
