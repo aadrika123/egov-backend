@@ -131,7 +131,7 @@ class TcVerificationDemandAdjust
         $demandDetails = $calculation['details'];
         $quaterlyTax = $this->generateSafDemand($demandDetails);
 
-        if ($this->_reqs['assessmentType'] == 'Reassessment') {
+        if (in_array($this->_reqs['assessmentType'], ['Reassessment', 'Mutation'])) {
             $this->_calculateSafByid->_demandDetails = $quaterlyTax;
             $this->_calculateSafByid->_holdingNo = $activeSafDtls->holding_no;
             $quaterlyTax = $this->_calculateSafByid->adjustAmount();

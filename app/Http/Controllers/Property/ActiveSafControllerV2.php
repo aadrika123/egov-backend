@@ -180,7 +180,6 @@ class ActiveSafControllerV2 extends Controller
 
                 $safTaxes = $propSafTax->getSafTaxesBySafId($safId);
                 $propTaxes = $propTax->getPropTaxesByPropId($propId);
-
                 $holdingTaxes = $propTaxes->map(function ($propTax) use ($safTaxes) {
                     $ulbTax = $propTax;
                     $selfAssessTaxes = $safTaxes->where('fyear', $propTax->fyear)     // Holding Tax Amount without penalty
