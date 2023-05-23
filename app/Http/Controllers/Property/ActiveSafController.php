@@ -6,6 +6,7 @@ use App\BLL\Property\CalculateSafById;
 use App\BLL\Property\HandleTcVerification;
 use App\BLL\Property\PaymentReceiptHelper;
 use App\BLL\Property\PostRazorPayPenaltyRebate;
+use App\BLL\Property\PostSafPropTaxes;
 use App\BLL\Property\PreviousHoldingDeactivation;
 use App\BLL\Property\RazorpayRequest;
 use App\BLL\Property\TcVerificationDemandAdjust;
@@ -39,8 +40,10 @@ use App\Models\Property\PropSafMemoDtl;
 use App\Models\Property\PropSafsDemand;
 use App\Models\Property\PropSafsFloor;
 use App\Models\Property\PropSafsOwner;
+use App\Models\Property\PropSafTax;
 use App\Models\Property\PropSafVerification;
 use App\Models\Property\PropSafVerificationDtl;
+use App\Models\Property\PropTax;
 use App\Models\Property\PropTranDtl;
 use App\Models\Property\PropTransaction;
 use App\Models\Property\RefPropConstructionType;
@@ -112,6 +115,7 @@ class ActiveSafController extends Controller
     protected $_moduleId;
     // Initializing function for Repository
     protected $saf_repository;
+    public $_replicatedPropId;
     public function __construct(iSafRepository $saf_repository)
     {
         $this->Repository = $saf_repository;
@@ -852,6 +856,7 @@ class ActiveSafController extends Controller
             $mWfWorkflows = new WfWorkflow();
             $mWfRoleMaps = new WfWorkflowrolemap();
             $samHoldingDtls = array();
+            $safId = $saf->id;
 
             // Derivative Assignments
             $senderRoleId = $saf->current_role;
@@ -885,7 +890,6 @@ class ActiveSafController extends Controller
                 $metaReqs['verificationStatus'] = 0;
                 $metaReqs['receiverRoleId'] = $forwardBackwardIds->backward_role_id;
             }
-
 
             $saf->save();
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
@@ -927,6 +931,8 @@ class ActiveSafController extends Controller
         $reAssessWfMstrId = Config::get('workflow-constants.SAF_REASSESSMENT_ID');
         $mPropSafDemand = new PropSafsDemand();
         $mPropMemoDtl = new PropSafMemoDtl();
+        $mPropSafTax = new PropSafTax();
+        $mPropTax = new PropTax();
         $todayDate = Carbon::now()->format('Y-m-d');
         $fYear = calculateFYear($todayDate);
 
@@ -962,6 +968,12 @@ class ActiveSafController extends Controller
                 $memoReqs = new Request($mergedDemand);
                 $mPropMemoDtl->postSafMemoDtls($memoReqs);
                 $this->replicateSaf($saf->id);
+                $propId = $this->_replicatedPropId;
+                $ifPropTaxExists = $mPropTax->getPropTaxesByPropId($propId);
+                if ($ifPropTaxExists)
+                    $mPropTax->deactivatePropTax($propId);
+                $safTaxes = $mPropSafTax->getSafTaxesBySafId($saf->id)->toArray();
+                $mPropTax->replicateSafTaxes($propId, $safTaxes);
                 break;
 
             case $wfLevels['TC']:
@@ -1075,6 +1087,7 @@ class ActiveSafController extends Controller
             $propProperties->new_holding_no = $activeSaf->new_holding_no;
             $propProperties->save();
 
+            $this->_replicatedPropId = $propProperties->id;
             // SAF Owners replication
             foreach ($ownerDetails as $ownerDetail) {
                 $approvedOwners = $ownerDetail->replicate();
@@ -1596,6 +1609,7 @@ class ActiveSafController extends Controller
             $mPropRazorpayResponse = new PropRazorpayResponse();
             $mPropTranDtl = new PropTranDtl();
             $previousHoldingDeactivation = new PreviousHoldingDeactivation;
+            $postSafPropTaxes = new PostSafPropTaxes;
 
             $userId = $req['userId'];
             $safId = $req['id'];
@@ -1625,7 +1639,6 @@ class ActiveSafController extends Controller
 
             if (!$demands || collect($demands)->isEmpty())
                 throw new Exception("Demand Not Available for Payment");
-
             // Property Transactions
             $activeSaf->payment_status = 1;             // Paid for Online
             DB::beginTransaction();
@@ -1705,7 +1718,8 @@ class ActiveSafController extends Controller
                 $mPropTranDtl->store($tranReq);
             }
             $previousHoldingDeactivation->deactivateHoldingDemands($activeSaf);  // Deactivate Property Holding
-            $this->sendToWorkflow($activeSaf);        // Send to Workflow(15.2)
+            $this->sendToWorkflow($activeSaf);                                   // Send to Workflow(15.2)
+            $postSafPropTaxes->postSafTaxes($safId, $demands);                  // Save Taxes
             DB::commit();
             return responseMsgs(true, "Payment Successfully Done",  ['TransactionNo' => $tranNo], "010115", "1.0", "567ms", "POST", $req->deviceId);
         } catch (Exception $e) {
