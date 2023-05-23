@@ -532,22 +532,22 @@ class NewConnectionController extends Controller
                             $connectionName = $refConnectionName['4'];
                             $consumerDemand['connectionId'] = $flipConnection['Meter/Fixed'];
                             $refConsumerDemand = $mWaterConsumerDemand->consumerDemandByConsumerId($refConsumerId);
-                            $refConsumerTax = $mWaterConsumerTax->getConsumerByConsumerId($refConsumerId)->first();
                             $fialMeterReading = $mWaterConsumerInitialMeter->getmeterReadingAndDetails($refConsumerId)
                                 ->orderByDesc('id')
                                 ->first();
+                            $finalSecondLastReading = $mWaterConsumerInitialMeter->getSecondLastReading($refConsumerId, $fialMeterReading->id);
                             if (is_null($refConsumerDemand)) {
                                 throw new Exception("There should be demand for the previous meter entry!");
                             }
                             $consumerDemand['demandFrom'] = collect($refConsumerDemand)['demand_from'];
                             $consumerDemand['demandUpto'] = collect($refConsumerDemand)['demand_upto'];
-                            $startDate = Carbon::parse($consumerDemand['demandFrom']);
-                            $endDate = Carbon::parse($consumerDemand['demandUpto']);
+                            $startDate  = Carbon::parse($consumerDemand['demandFrom']);
+                            $endDate    = Carbon::parse($consumerDemand['demandUpto']);
                             $diffInDays = $endDate->diffInDays($startDate);
-                            $refTaxUnitConsumed = collect($refConsumerTax)['final_reading'] - collect($refConsumerTax)['initial_reading'];
+                            $refTaxUnitConsumed = ($fialMeterReading['initial_reading'] ?? 0) - ($finalSecondLastReading['initial_reading'] ?? 0);
 
-                            $consumerDemand['lastConsumedUnit'] = number_format($refTaxUnitConsumed, 2);
-                            $consumerDemand['avgReading'] = number_format(($refTaxUnitConsumed / $diffInDays), 2);
+                            $consumerDemand['lastConsumedUnit'] = round($refTaxUnitConsumed, 2);
+                            $consumerDemand['avgReading'] = round(($refTaxUnitConsumed / $diffInDays), 2);
                             $consumerDemand['lastMeterReading'] = $fialMeterReading->initial_reading;
 
                             break;
