@@ -398,8 +398,6 @@ class PropertyDetailsController extends Controller
             $parameter = $request->parameter;
             $isLegacy = $request->isLegacy;
 
-
-
             switch ($key) {
                 case ("holdingNo"):
                     $data = $mPropProperty->searchProperty()
@@ -463,14 +461,15 @@ class PropertyDetailsController extends Controller
                     break;
             }
 
-            if ($isLegacy == true) {
-                $data->whereNull('prop_properties.new_holding_no')
-                    ->whereNull('prop_properties.pt_no')
-                    ->whereNotNull('prop_properties.holding_no');
-            }
+
 
             $data = $data->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'latitude', 'longitude')
                 ->get();
+            if ($isLegacy == true) {
+                $data = collect($data)->where('new_holding_no', null)
+                    ->where('latitude', null)
+                    ->where('longitude', null);
+            }
             // ->paginate($request->perPage ?? 5);
 
             // if ($role == 8) {

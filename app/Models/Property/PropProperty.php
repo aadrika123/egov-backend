@@ -541,7 +541,7 @@ class PropProperty extends Model
             DB::raw("string_agg(prop_owners.owner_name,',') as owner_name"),
         )
             ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
-            ->join(DB::raw("(select latitude, longitude,  prop_saf_geotag_uploads.saf_id
+            ->leftjoin(DB::raw("(select latitude, longitude,  prop_saf_geotag_uploads.saf_id
                                 from prop_saf_geotag_uploads 
                                 JOIN prop_properties ON prop_properties.saf_id = prop_saf_geotag_uploads.saf_id 
                                 where direction_type ILIKE('%front%')                               
