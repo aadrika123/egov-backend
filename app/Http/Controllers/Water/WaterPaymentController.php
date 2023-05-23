@@ -189,8 +189,7 @@ class WaterPaymentController extends Controller
             $mWaterConsumer         = new WaterConsumer();
             $mWaterConsumerDemand   = new WaterConsumerDemand();
             $mWaterTranDetail       = new WaterTranDetail();
-
-            $transactions = array();
+            $transactions           = array();
 
             # consumer Details
             $waterDtls = $mWaterConsumer->getConsumerDetailById($request->consumerId);
@@ -204,18 +203,20 @@ class WaterPaymentController extends Controller
 
             # if demand transactions exist
             $connectionTran = $mWaterTran->getTransNo($applicationId, null)->get();                        // Water Connection payment History
-            if (!$connectionTran || is_null($connectionTran))
+            $connectionTran = collect($connectionTran)->sortByDesc('id')->values();
+            if (!$connectionTran->first() || is_null($connectionTran))
                 throw new Exception("Water Application Transaction Details not Found!!");
 
+            # Application transactions
             $waterTrans = $mWaterTran->ConsumerTransaction($request->consumerId)->get();         // Water Consumer Payment History
-            $waterTrans = collect($waterTrans)->map(function ($value, $key) use ($mWaterConsumerDemand, $mWaterTranDetail) {
+            $waterTrans = collect($waterTrans)->map(function ($value) use ($mWaterConsumerDemand, $mWaterTranDetail) {
                 $demandId = $mWaterTranDetail->getDetailByTranId($value['id']);
                 $value['demand'] = $mWaterConsumerDemand->getDemandBydemandId($demandId['demand_id']);
                 return $value;
-            });
+            })->sortByDesc('id')->values();
 
-            $transactions['Consumer'] = collect($waterTrans)->sortByDesc('id')->values();
-            $transactions['connection'] = collect($connectionTran)->sortByDesc('id');
+            $transactions['Consumer'] = $waterTrans;
+            $transactions['connection'] = $connectionTran;
 
             return responseMsgs(true, "", remove_null($transactions), "", "01", "ms", "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
@@ -1785,7 +1786,7 @@ class WaterPaymentController extends Controller
                         CASE
                             WHEN tran_type = \'Demand Collection\' THEN \'1\'
                             ELSE \'2\'
-                        END AS age_group
+                        END AS tran_type_id
                     '),
                     "water_trans.*"
                 )
