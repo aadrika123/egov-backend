@@ -291,14 +291,15 @@ trait TradeTrait
             $refWorkflowId = Config::get('workflow-constants.TRADE_MASTER_ID');
             $role = $commonFuction->getUserRoll($user_id, $ulb_id,$refWorkflowId);
             $init_finish = $commonFuction->iniatorFinisher($user_id, $ulb_id, $refWorkflowId);
-            $licence_for_years = $refLicenc->licence_for_years;
+            $licence_for_years = $refLicenc->licence_for_years?$refLicenc->licence_for_years:1;
             # 1	NEW LICENSE
             if ($refLicenc->application_type_id == 1) 
             {
                 $ulbDtl = UlbMaster::find($refLicenc->ulb_id);
                 $ulb_name = explode(' ', $ulbDtl->ulb_name);
                 $short_ulb_name = "";
-                foreach ($ulb_name as $val) {
+                foreach ($ulb_name as $val) 
+                {
                     $short_ulb_name .= $val[0];
                 }
                 $ward_no = UlbWardMaster::select("ward_name")
@@ -356,7 +357,7 @@ trait TradeTrait
             # 4 SURRENDER
             if ($refLicenc->application_type_id == 4) 
             {
-                // Incase of surrender valid upto is previous license validity
+                # Incase of surrender valid upto is previous license validity
                 $prive_licence = TradeLicence::find($refLicenc->trade_id);
                 $license_no = $prive_licence->license_no;
                 $valid_from = $prive_licence->valid_from;
@@ -398,6 +399,118 @@ trait TradeTrait
         $ReniwalLicence->pmt_amount     = null;
         $refTradeLicense->forceDelete();
 
+    }
+
+    #this code use only printable data
+    public function tempCalLicenseForYear($refLicenc)
+    {
+        $licence_for_years = $refLicenc->licence_for_years;
+        
+        if((!$refLicenc->valid_from || !$refLicenc->valid_upto) &&  !$licence_for_years)
+        {
+            $transection = TradeTransaction::select("*")
+                        ->where("temp_id",$refLicenc->id)
+                        ->orderBy("tran_date","DESC")
+                        ->first();
+            $licenseCharge = ($transection->paid_amount??0)-($transection->penalty??0);
+            $area_in_sqft  = $refLicenc->area_in_sqft??0;
+            $data["application_type_id"] = $refLicenc->application_type_id;
+            $data["area_in_sqft"] = $area_in_sqft;
+            $data["curdate"] = $refLicenc->application_date;
+            $data["tobacco_status"] = $refLicenc->is_tobacco?1:0;
+            $char = $this->getrate($data);
+            $testCharge = 0;
+            $testYear = 0;
+            while($licenseCharge>=$testCharge && $testYear <=10 && $char)
+            {
+                $testCharge+=$char->rate??0;
+                $testYear++;
+            }
+            $licence_for_years=$testYear-1;
+
+        }        
+        if(($refLicenc->valid_from && $refLicenc->valid_upto) &&  !$licence_for_years)
+        {
+            $formDate = Carbon::parse($refLicenc->valid_from);
+            $endDate = Carbon::parse($refLicenc->valid_upto);
+            $monthDiff = $endDate->diffInMonths($formDate);
+            if(($monthDiff%12)>=10)
+            {
+                $year_diff = ceil($monthDiff/12);
+            }
+            else
+            {
+                $year_diff = floor($monthDiff/12);
+            }
+            $licence_for_years=$year_diff;
+        }
+        return abs($licence_for_years);
+    }
+
+    #this code use only printable data
+    public function temCalValidity($refLicenc)
+    {
+        $valid_from ="";
+        $valid_upto = "";
+        if(!$refLicenc->licence_for_years)
+        {
+            $refLicenc->licence_for_years=($this->tempCalLicenseForYear($refLicenc));
+        }
+        $licence_for_years = $refLicenc->licence_for_years;
+        
+        # 1	NEW LICENSE
+        if ($refLicenc->application_type_id == 1) 
+        {
+            $valid_from = $refLicenc->application_date;
+            $valid_upto = date("Y-m-d", strtotime("+$licence_for_years years", strtotime($refLicenc->application_date)));
+        }
+        # 2 RENEWAL
+        if ($refLicenc->application_type_id == 2) 
+        {
+            $prive_licence = TradeLicence::find($refLicenc->trade_id);
+            if (!empty($prive_licence)) 
+            {
+                $valid_from = $prive_licence->valid_upto??Carbon::parse(); 
+                $datef = date('Y-m-d', strtotime($valid_from));
+                $datefrom = date_create($datef);
+                $datea = date('Y-m-d', strtotime($refLicenc->application_date));
+                $dateapply = date_create($datea);
+                $year_diff = date_diff($datefrom, $dateapply);
+                $year_diff =  $year_diff->format('%y');
+
+                $priv_m_d = date('m-d', strtotime($valid_from));
+                $date = date('Y', strtotime($valid_from)) . '-' . $priv_m_d;
+                $licence_for_years2 = $licence_for_years + $year_diff;
+                $valid_upto = date('Y-m-d', strtotime($date . "+" . $licence_for_years2 . " years"));
+                $data['valid_upto'] = $valid_upto;
+            }
+        }
+
+        # 3	AMENDMENT
+        if ($refLicenc->application_type_id == 3) 
+        {
+            $prive_licence = TradeLicence::find($refLicenc->trade_id);
+            $oneYear_validity = date("Y-m-d", strtotime("+1 years", strtotime('now')));
+            $previous_validity = $prive_licence->valid_upto??"";
+            if ($previous_validity > $oneYear_validity)
+                $valid_upto = $previous_validity;
+            else
+                $valid_upto = $oneYear_validity;
+            $valid_from = date('Y-m-d');
+        }
+
+        # 4 SURRENDER
+        if ($refLicenc->application_type_id == 4) 
+        {
+            # Incase of surrender valid upto is previous license validity
+            $prive_licence = TradeLicence::find($refLicenc->trade_id);
+            $valid_from = $prive_licence->valid_from??"";
+            $valid_upto = $prive_licence->valid_upto??"";
+        }
+        if(!$refLicenc->valid_from)
+            $refLicenc->valid_from = $valid_from?date("d-m-Y",strtotime($valid_from)):"";
+        if(!$refLicenc->valid_upto)
+            $refLicenc->valid_upto =  $valid_upto?date("d-m-Y",strtotime($valid_upto)):"";
     }
     
 }
