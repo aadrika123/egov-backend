@@ -1832,8 +1832,8 @@ class WaterPaymentController extends Controller
             $refConsumerDemand = $mWaterConsumerDemand->getConsumerDemand($consumerDetails->id);
             $latestDemand = collect($refConsumerDemand)->first();
             $startingDemand = collect($refConsumerDemand)->last();
-            $totalDemandAmount = number_format((collect($refConsumerDemand)->sum('balance_amount')), 2);
-            $totalPenaltyAmount = number_format((collect($refConsumerDemand)->sum('penalty')), 2);
+            $totalDemandAmount = round((collect($refConsumerDemand)->sum('balance_amount')), 2);
+            $totalPenaltyAmount = round((collect($refConsumerDemand)->sum('penalty')), 2);
 
             $refRequest = new Request([
                 "consumerId" => $consumerDetails->id
