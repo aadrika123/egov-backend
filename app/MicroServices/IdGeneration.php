@@ -18,7 +18,7 @@ class IdGeneration
      */
     public function generateTransactionNo()
     {
-        return Carbon::createFromDate()->milli . carbon::now()->diffInMicroseconds().Carbon::now()->format('Y');
+        return Carbon::createFromDate()->milli . carbon::now()->diffInMicroseconds() . Carbon::now()->format('Y');
     }
 
     /**

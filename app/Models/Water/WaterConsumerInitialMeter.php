@@ -14,8 +14,8 @@ class WaterConsumerInitialMeter extends Model
      */
     public function getmeterReadingAndDetails($consumerId)
     {
-        return WaterConsumerInitialMeter::where('water_consumer_initial_meters.status', 1)
-            ->where('water_consumer_initial_meters.consumer_id', $consumerId);
+        return WaterConsumerInitialMeter::where('status', 1)
+            ->where('consumer_id', $consumerId);
     }
 
 
@@ -31,5 +31,17 @@ class WaterConsumerInitialMeter extends Model
         $mWaterConsumerInitialMeter->emp_details_id     = authUser()->id;
         $mWaterConsumerInitialMeter->consumer_meter_id  = $meterDetails['meterId'];
         $mWaterConsumerInitialMeter->save();
+    }
+
+    /**
+     * | Get second last meter details 
+     */
+    public function getSecondLastReading($consumerId, $id)
+    {
+        return WaterConsumerInitialMeter::where("consumer_id", $consumerId)
+            ->where("status", 1)
+            ->where("id", "<", $id)
+            ->orderBy("id", "DESC")
+            ->first();
     }
 }

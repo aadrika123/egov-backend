@@ -592,13 +592,12 @@ class WaterApplication extends Model
      * | Save the application current role as the bo when payament is done offline
      * | @param 
      */
-    public function sendApplicationToBo($applicationId)
+    public function sendApplicationToRole($applicationId, $refRoleId)
     {
-        $refBo = Config::get("waterConstaint.ROLE-LABEL.BO");
         WaterApplication::where('id', $applicationId)
             ->where('status', 1)
             ->update([
-                "current_role" => $refBo
+                "current_role" => $refRoleId
             ]);
     }
 

@@ -89,8 +89,8 @@ class WaterConsumer extends Controller
             if (isset($checkParam)) {
                 $sumDemandAmount = collect($consumerDemand['consumerDemands'])->sum('balance_amount');
                 $totalPenalty = collect($consumerDemand['consumerDemands'])->sum('penalty');
-                $consumerDemand['totalSumDemand'] = number_format($sumDemandAmount, 2);
-                $consumerDemand['totalPenalty'] = number_format($totalPenalty, 2);
+                $consumerDemand['totalSumDemand'] = round($sumDemandAmount, 2);
+                $consumerDemand['totalPenalty'] = round($totalPenalty, 2);
 
                 # meter Details 
                 $refMeterData = $mWaterConsumerMeter->getMeterDetailsByConsumerId($refConsumerId)->first();
@@ -141,7 +141,6 @@ class WaterConsumer extends Controller
     {
         $request->validate([
             'consumerId' => "required|digits_between:1,9223372036854775807",
-            // 'document' => "required|mimes:pdf,jpeg,png,jpg",
         ]);
         try {
             $mWaterConsumerInitialMeter = new WaterConsumerInitialMeter();
@@ -151,15 +150,17 @@ class WaterConsumer extends Controller
             $meterRefImageName          = config::get('waterConstaint.WATER_METER_CODE');
             $demandIds = array();
 
+            # Check and calculate Demand
             $this->checkDemandGeneration($request);                                                    // unfinished function
             $consumerDetails = WaterWaterConsumer::findOrFail($request->consumerId);
             $calculatedDemand = collect($this->Repository->calConsumerDemand($request));
             if ($calculatedDemand['status'] == false) {
                 throw new Exception($calculatedDemand['errors']);
             }
+
+            # Save demand details 
+            DB::beginTransaction();
             if (isset($calculatedDemand)) {
-                # get the demand
-                DB::beginTransaction();
                 $demandDetails = collect($calculatedDemand['consumer_tax'])->first();
                 switch ($demandDetails['charge_type']) {
                     case ($refMeterConnectionType['1']):
@@ -812,7 +813,6 @@ class WaterConsumer extends Controller
             $todayDate                  = Carbon::now();
             $refConsumerId              = $request->consumerId;
             $mWaterConsumerDemand       = new WaterConsumerDemand();
-            $mWaterConsumerTax          = new WaterConsumerTax();
             $mWaterConsumerInitialMeter = new WaterConsumerInitialMeter();
 
             if ($request->uptoData > $todayDate) {
@@ -824,28 +824,31 @@ class WaterConsumer extends Controller
             }
 
             $refOldDemandUpto = $refConsumerDemand->demand_upto;
-            $startDate = Carbon::parse($refOldDemandUpto);
+            $privdayDiff = Carbon::parse($refConsumerDemand->demand_upto)->diffInDays(Carbon::parse($refConsumerDemand->demand_from));
             $endDate = Carbon::parse($request->uptoData);
+            $startDate = Carbon::parse($refOldDemandUpto);
+
             $difference = $endDate->diffInMonths($startDate);
             if ($difference < 1 || $startDate > $endDate) {
                 throw new Exception("current uptoData should be grater than the previous uptoDate! and should have a month difference!");
             }
             $diffInDays = $endDate->diffInDays($startDate);
-            $refConsumerTax = $mWaterConsumerTax->getConsumerByConsumerId($refConsumerId)->first();
             $finalMeterReading = $mWaterConsumerInitialMeter->getmeterReadingAndDetails($refConsumerId)
                 ->orderByDesc('id')
                 ->first();
+            $finalSecondLastReading = $mWaterConsumerInitialMeter->getSecondLastReading($refConsumerId, $finalMeterReading->id);
             if (is_null($refConsumerDemand)) {
                 throw new Exception("There should be demand for the previous meter entry!");
             }
 
-            $refTaxUnitConsumed = $refConsumerTax->final_reading - $refConsumerTax->initial_reading;
-            $avgReading         = $diffInDays > 0 ? $refTaxUnitConsumed / $diffInDays : 1;
+            $refTaxUnitConsumed = ($finalMeterReading['initial_reading'] ?? 0) - ($finalSecondLastReading['initial_reading'] ?? 0);
+            $avgReading         = $privdayDiff > 0 ? $refTaxUnitConsumed / $privdayDiff : 1;
             $lastMeterReading   = $finalMeterReading->initial_reading;
             $ActualReading      = ($diffInDays * $avgReading) + $lastMeterReading;
 
-            $returnData['finalMeterReading'] = number_format($ActualReading, 2);
+            $returnData['finalMeterReading'] = round($ActualReading, 2);
             $returnData['diffInDays'] = $diffInDays;
+            $returnData['previousConsumed'] = $refTaxUnitConsumed;
 
             return responseMsgs(true, "calculated date difference!", $returnData, "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {

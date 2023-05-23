@@ -180,7 +180,6 @@ class ActiveSafControllerV2 extends Controller
 
                 $safTaxes = $propSafTax->getSafTaxesBySafId($safId);
                 $propTaxes = $propTax->getPropTaxesByPropId($propId);
-
                 $holdingTaxes = $propTaxes->map(function ($propTax) use ($safTaxes) {
                     $ulbTax = $propTax;
                     $selfAssessTaxes = $safTaxes->where('fyear', $propTax->fyear)     // Holding Tax Amount without penalty
@@ -195,7 +194,7 @@ class ActiveSafControllerV2 extends Controller
 
                     $diffAmt = $ulbVerifiedQuarterlyTaxes - $selfAssessQuaterlyTax;
                     $response = [
-                        'Particulars' => ($ulbTax->fyear == '2022-2023' && $ulbTax->qtr >= 1) ? "Holding Tax @ 0.075% or 0.15% or 0.2%" : "Holding Tax @ 2%",
+                        'Particulars' => (substr($ulbTax->fyear, 5) > 2023 && $ulbTax->qtr >= 1) ? "Holding Tax @ 0.075% or 0.15% or 0.2%" : "Holding Tax @ 2%",
                         'quarterFinancialYear' => 'Quarter' . $ulbTax->qtr . '/' . $ulbTax->fyear,
                         'basedOnSelfAssess' => roundFigure($selfAssessQuaterlyTax),
                         'basedOnUlbCalc' => roundFigure($ulbVerifiedQuarterlyTaxes),
