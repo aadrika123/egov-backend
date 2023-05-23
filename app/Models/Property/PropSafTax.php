@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class PropSafTax extends Model
 {
     use HasFactory;
+    protected $guarded = [];
 
     /**
      * | Read Saf Taxes by SafId
@@ -17,5 +18,23 @@ class PropSafTax extends Model
         return PropSafTax::where('saf_id', $safId)
             ->where('status', 1)
             ->get();
+    }
+
+    /**
+     * | Post Taxes
+     */
+    public function postTaxes(array $tax)
+    {
+        PropSafTax::create($tax);
+    }
+
+    /**
+     * | Deactivate Saf 
+     */
+    public function deactivateTaxes($safId)
+    {
+        PropSafTax::where('saf_id', $safId)
+            ->where('status', 1)
+            ->update(["status" => 0]);
     }
 }

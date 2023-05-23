@@ -38,6 +38,7 @@ class TcVerificationDemandAdjust
     private $_mPropTransactions;
     protected $_tcId;
     protected $_calculateSafByid;
+    private $_postSafPropTaxes;
 
     public function __construct()
     {
@@ -48,6 +49,7 @@ class TcVerificationDemandAdjust
         $this->_mPropAdvance = new PropAdvance();
         $this->_mPropTransactions = new PropTransaction();
         $this->_calculateSafByid = new CalculateSafById;
+        $this->_postSafPropTaxes = new PostSafPropTaxes;
     }
 
     /** 
@@ -61,6 +63,7 @@ class TcVerificationDemandAdjust
         $this->_quaterlyTax = $this->calculateQuaterlyTax();           // (1.1)
         $this->adjustVerifiedDemand();
         $this->tblUpdateDemandAdjust();
+        $this->_postSafPropTaxes->postPropTaxes($this->_reqs['propId'], $this->_quaterlyTax->toArray());                // Add Property Taxes
     }
 
     /**
@@ -128,7 +131,7 @@ class TcVerificationDemandAdjust
         $demandDetails = $calculation['details'];
         $quaterlyTax = $this->generateSafDemand($demandDetails);
 
-        if ($this->_reqs['assessmentType'] == 'Re Assessment') {
+        if ($this->_reqs['assessmentType'] == 'Reassessment') {
             $this->_calculateSafByid->_demandDetails = $quaterlyTax;
             $this->_calculateSafByid->_holdingNo = $activeSafDtls->holding_no;
             $quaterlyTax = $this->_calculateSafByid->adjustAmount();
