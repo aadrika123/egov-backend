@@ -1027,8 +1027,9 @@ class WaterPaymentController extends Controller
     {
         try {
             # Variable Assignments
-            $userId     = auth()->user()->id;
-            $userType   = authUser()->user_type;
+            $user       = authUser();
+            $userId     = $user->id;
+            $userType   = $user->user_type;
             $todayDate  = Carbon::now();
 
             $waterTran              = new WaterTran();
@@ -1060,7 +1061,7 @@ class WaterPaymentController extends Controller
                 'todayDate' => $todayDate->format('Y-m-d'),
                 'tranNo'    => $tranNo,
                 'id'        => $req->applicationId,
-                'ulbId'     => authUser()->ulb_id,
+                'ulbId'     => $user->ulb_id,
                 'isJsk'     => true                                                                 // Static
             ]);
 
