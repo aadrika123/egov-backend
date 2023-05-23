@@ -141,7 +141,7 @@ trait TradeTrait
         }
         if($applicationTypeId == $flip['NEW LICENSE'])
         {
-        
+            // dd($applicationTypeId,$ownershipTypeId,$firmTypeId,$categoryTypeId);
             switch ($ownershipTypeId) 
             {
                 case 1: # OWN PROPERTY
