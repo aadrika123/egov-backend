@@ -2757,9 +2757,9 @@ class Trade implements ITrade
     public function approvedApplication(Request $request)
     {
         try {
-            $refUser        = Auth()->user();
-            $refUserId      = $refUser->id;
-            $refUlbId       = $refUser->ulb_id;
+            $refUser            = Auth()->user();
+            $refUserId          = $refUser->id;
+            $refUlbId           = $refUser->ulb_id ?? 0;
             $refWorkflowId      = $this->_WF_MASTER_Id;
             $mUserType          = $this->_COMMON_FUNCTION->userType($refWorkflowId);
 
@@ -2868,13 +2868,26 @@ class Trade implements ITrade
                 $license = $license
                     ->where("citizen_id", $refUserId);
             }
-            $license = $license
-                ->get();
-            $data = [
+            $perPage = $request->perPage ? $request->perPage :  10;
+            $paginator = $license->paginate($perPage);             
+            $list = [
                 "wardList" => $mWardPermission,
-                "licence" => $license,
-            ];
-            return responseMsg(true, "", remove_null($data));
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
+            ]; 
+            if (in_array(strtoupper($mUserType), ["ONLINE"])) 
+            {
+                $license = $license
+                    ->get();
+                $list = [
+                    "wardList" => $mWardPermission,
+                    "licence" => $license,
+                ];
+
+            }
+            return responseMsg(true, "", remove_null($list));
         } 
         catch (Exception $e) 
         {
