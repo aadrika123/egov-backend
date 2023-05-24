@@ -307,7 +307,8 @@ class ReportController extends Controller
                 "ulbId" => "nullable|digits_between:1,9223372036854775807",
                 "userId" => "nullable|digits_between:1,9223372036854775807",
                 "areaInsqrFt" => "nullable|numeric",
-                "status" => "nullable|int|in:1,2,3,4,5,6"
+                "status" => "nullable|int|in:1,2,3,4,5,6",
+                "key"   => "nullable|string"
             ]
         );
         $request->request->add(["metaData" => ["tr12.1", 1.1, null, $request->getMethod(), null,]]);
