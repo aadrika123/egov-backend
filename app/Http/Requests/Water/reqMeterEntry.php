@@ -29,7 +29,7 @@ class reqMeterEntry extends FormRequest
         $rules['consumerId']            = "required|digits_between:1,9223372036854775807";
         $rules['connectionDate']        = 'required|date|date_format:Y-m-d';
         $rules['oldMeterFinalReading']  = 'required';
-        $rules['document']              = 'required';
+        $rules['document']              = 'required|mimes:pdf,jpeg,jpg,png|max:2048';
         if (isset($this->connectionType) && $this->connectionType && in_array($this->connectionType, [$refMeterConnectionType['Meter'], $refMeterConnectionType['Gallon']])) {
             $rules['meterNo'] = 'required';
             // $rule['MeterDoc'] = 'required|' # Meter doc should be in pdf only.

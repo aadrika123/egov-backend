@@ -1523,7 +1523,7 @@ class WaterPaymentController extends Controller
             $mWaterChequeDtl        = new WaterChequeDtl();
             $mWaterTran             = new WaterTran();
 
-            $mTowards           = $this->_towards;
+            $mTowardsDemand     = Config::get("waterConstaint.TOWARDS_DEMAND");
             $mAccDescription    = $this->_accDescription;
             $mDepartmentSection = $this->_departmentSection;
             $mPaymentModes      = $this->_paymentModes;
@@ -1553,6 +1553,7 @@ class WaterPaymentController extends Controller
             $uptoDate = collect($consumerDemands)->last()->demand_upto;
             $endingDate = Carbon::createFromFormat('Y-m-d',  $uptoDate)->endOfMonth();
             $penaltyAmount = collect($consumerDemands)->sum('penalty');
+            $refDemandAmount = collect($consumerDemands)->sum('balance_amount');
 
             # water consumer consumed
             $consumerTaxes = $mWaterConsumerDemand->getConsumerTax($demandIds);
@@ -1584,11 +1585,11 @@ class WaterPaymentController extends Controller
                 "chequeNo"              => $chequeDetails['cheque_no']   ?? null,                                   // in case of chque,dd,nfts
                 "chequeDate"            => $chequeDetails['cheque_date'] ?? null,                                  // in case of chque,dd,nfts
                 "penaltyAmount"         => $penaltyAmount,
-                "demandAmount"          => $transactionDetails->amount,
+                "demandAmount"          => $refDemandAmount,
                 "ulbId"                 => $consumerDetails['ulb_id'],
                 "ulbName"               => $consumerDetails['ulb_name'],
                 "WardNo"                => $consumerDetails['ward_name'],
-                "towards"               => $mTowards,
+                "towards"               => $mTowardsDemand,
                 "description"           => $mAccDescription,
                 "totalPaidAmount"       => $transactionDetails->amount,
                 "dueAmount"             => $transactionDetails->due_amount,

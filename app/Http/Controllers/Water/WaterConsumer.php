@@ -282,7 +282,7 @@ class WaterConsumer extends Controller
         | Working  
         | Check the parameter for the autherised person
         | Chack the Demand for the fixed rate 
-        | Rediscuss
+        | Re discuss
      */
     public function saveUpdateMeterDetails(reqMeterEntry $request)
     {
