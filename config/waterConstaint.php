@@ -11,7 +11,8 @@ return [
         "1" => "Meter",
         "2" => "Gallon",
         "3" => "Fixed",
-        "4" => "Meter/Fixed"
+        "4" => "Meter/Fixed",
+        "5" => "Average"
     ],
     "ROLE-LABEL" => [
         "BO" => 11,

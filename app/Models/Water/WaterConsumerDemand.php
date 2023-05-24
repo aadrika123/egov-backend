@@ -63,6 +63,7 @@ class WaterConsumerDemand extends Model
      * | Save the consumer demand while Demand generation
      * | @param demands
      * | @param meterDetails
+        | Create the demand no through id generation
      */
     public function saveConsumerDemand($demands, $meterDetails, $consumerDetails, $request, $taxId)
     {
@@ -80,7 +81,7 @@ class WaterConsumerDemand extends Model
         $mWaterConsumerDemand->penalty                  =  $demands['penalty'] ?? 0;
         $mWaterConsumerDemand->current_meter_reading    =  $request->finalRading;
         $mWaterConsumerDemand->unit_amount              =  $demands['unit_amount'];
-        $mWaterConsumerDemand->connection_type          =  $meterDetails['charge_type'];
+        $mWaterConsumerDemand->connection_type          =  $demands['connection_type'];
         $mWaterConsumerDemand->demand_no                =  "RMC" . random_int(100000, 999999) . "/" . random_int(1, 10);
         $mWaterConsumerDemand->balance_amount           =  $demands['penalty'] ?? 0 + $demands['amount'];
         $mWaterConsumerDemand->created_at               =  Carbon::now();
