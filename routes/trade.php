@@ -158,7 +158,7 @@ Route::controller(TradeApplication::class)->group(function () {
 });
 
 Route::controller(TradeController::class)->group(function () {
-    Route::post('firm-type-add', 'addFirmType');
-    Route::post('firm-type-list', 'firmtypelist');
-    Route::post('firm-type-update', 'updateFirmType');
+    // Route::post('firm-type-add', 'addFirmType');
+    // Route::post('firm-type-list', 'firmTypeList');
+    // Route::post('firm-type-update', 'updateFirmType');
 });

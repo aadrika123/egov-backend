@@ -1803,11 +1803,12 @@ class Trade implements ITrade
                 
             ];
 
-            $ownerDetails = $this->generateOwnerDetails($ownerDetails);
+            $ownerDetailsTable = $this->generateOwnerDetails($ownerDetails);
             $ownerElement = [
                 'headerTitle' => 'Owner Details',
-                'tableHead' => ["#", "Owner Name", "Gender", "DOB", "Guardian Name", "Relation", "Mobile No", "Aadhar", "PAN", "Email", "Address"],
-                'tableData' => $ownerDetails
+                // 'tableHead' => ["#", "Owner Name", "Gender", "DOB", "Guardian Name", "Relation", "Mobile No", "Aadhar", "PAN", "Email", "Address"],
+                'tableHead' => ["#", "Owner Name",  "Guardian Name",  "Mobile No",  "Email", ],
+                'tableData' => $ownerDetailsTable
             ];
 
             $cardDetails = $this->generateCardDetails($licenseDetail, $ownerDetails);

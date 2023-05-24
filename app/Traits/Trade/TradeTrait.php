@@ -86,15 +86,15 @@ trait TradeTrait
             return [
                 $key + 1,
                 $ownerDetail['owner_name'],
-                $ownerDetail['gender'],
-                $ownerDetail['dob'],
+                // $ownerDetail['gender'],
+                // $ownerDetail['dob'],
                 $ownerDetail['guardian_name'],
-                $ownerDetail['relation_type'],
+                // $ownerDetail['relation_type'],
                 $ownerDetail['mobile_no'],
-                $ownerDetail['aadhar_no'],
-                $ownerDetail['pan_no'],
+                // $ownerDetail['aadhar_no'],
+                // $ownerDetail['pan_no'],
                 $ownerDetail['email'],
-                $ownerDetail['address'],
+                // $ownerDetail['address'],
 
             ];
         });
