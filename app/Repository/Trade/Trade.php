@@ -1055,284 +1055,6 @@ class Trade implements ITrade
         }
     }
 
-    # Serial No : 04
-    public function readPaymentReceipt($id, $transectionId) # unauthorised  function
-    {
-        try {
-            $application = ActiveTradeLicence::select(
-                "application_no",
-                "provisional_license_no",
-                "trade_id",
-                "licence_for_years",
-                "application_date",
-                "application_type_id",
-                "valid_from",
-                "valid_upto",
-                "license_no",
-                "firm_name",
-                "holding_no",
-                "address",
-                "owner.owner_name",
-                "owner.guardian_name",
-                "owner.mobile",
-                DB::raw("ulb_ward_masters.ward_name AS ward_no, 
-                                            ulb_masters.id as ulb_id, ulb_masters.ulb_name,ulb_masters.ulb_type
-                                            ")
-            )
-                ->join("ulb_masters", "ulb_masters.id", "active_trade_licences.ulb_id")
-                ->join("ulb_ward_masters", function ($join) {
-                    $join->on("ulb_ward_masters.id", "=", "active_trade_licences.ward_id");
-                })
-                ->leftjoin(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
-                                                STRING_AGG(guardian_name,',') as guardian_name,
-                                                STRING_AGG(mobile_no::text,',') as mobile,
-                                                temp_id
-                                            FROM active_trade_owners 
-                                            WHERE temp_id = $id
-                                                AND is_active  = TRUE
-                                            GROUP BY temp_id
-                                            ) owner"), function ($join) {
-                    $join->on("owner.temp_id", "=", "active_trade_licences.id");
-                })
-                ->where('active_trade_licences.id', $id)
-                ->first();
-            if (!$application) {
-                $application = TradeLicence::select(
-                    "application_no",
-                    "provisional_license_no",
-                    "trade_id",
-                    "licence_for_years",
-                    "application_date",
-                    "application_type_id",
-                    "valid_from",
-                    "valid_upto",
-                    "license_no",
-                    "firm_name",
-                    "holding_no",
-                    "address",
-                    "owner.owner_name",
-                    "owner.guardian_name",
-                    "owner.mobile",
-                    DB::raw("ulb_ward_masters.ward_name AS ward_no, 
-                                        ulb_masters.id as ulb_id, ulb_masters.ulb_name,ulb_masters.ulb_type
-                                        ")
-                )
-                    ->join("ulb_masters", "ulb_masters.id", "trade_licences.ulb_id")
-                    ->join("ulb_ward_masters", function ($join) {
-                        $join->on("ulb_ward_masters.id", "=", "trade_licences.ward_id");
-                    })
-                    ->leftjoin(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
-                                                STRING_AGG(guardian_name,',') as guardian_name,
-                                                STRING_AGG(mobile_no,',') as mobile,
-                                                temp_id
-                                            FROM trade_owners 
-                                            WHERE temp_id = $id
-                                                AND is_active = TRUE
-                                            GROUP BY temp_id
-                                            ) owner"), function ($join) {
-                        $join->on("owner.temp_id", "=", "trade_licences.id");
-                    })
-                    ->where('trade_licences.id', $id)
-                    ->first();
-            }
-            if (!$application) {
-                $application = RejectedTradeLicence::select(
-                    "application_no",
-                    "provisional_license_no",
-                    "trade_id",
-                    "licence_for_years",
-                    "application_date",
-                    "application_type_id",
-                    "valid_from",
-                    "valid_upto",
-                    "license_no",
-                    "firm_name",
-                    "holding_no",
-                    "address",
-                    "owner.owner_name",
-                    "owner.guardian_name",
-                    "owner.mobile",
-                    DB::raw("ulb_ward_masters.ward_name AS ward_no, 
-                                        ulb_masters.id as ulb_id, ulb_masters.ulb_name,ulb_masters.ulb_type
-                                        ")
-                )
-                    ->join("ulb_masters", "ulb_masters.id", "rejected_trade_licences.ulb_id")
-                    ->join("ulb_ward_masters", function ($join) {
-                        $join->on("ulb_ward_masters.id", "=", "rejected_trade_licences.ward_id");
-                    })
-                    ->leftjoin(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
-                                                STRING_AGG(guardian_name,',') as guardian_name,
-                                                STRING_AGG(mobile_no,',') as mobile,
-                                                temp_id
-                                            FROM rejected_trade_owners 
-                                            WHERE temp_id = $id
-                                                AND is_active = TRUE
-                                            GROUP BY temp_id
-                                            ) owner"), function ($join) {
-                        $join->on("owner.temp_id", "=", "rejected_trade_licences.id");
-                    })
-                    ->where('rejected_trade_licences.id', $id)
-                    ->first();
-            }
-            if (!$application) {
-                $application = TradeRenewal::select(
-                    "application_no",
-                    "provisional_license_no",
-                    "trade_id",
-                    "licence_for_years",
-                    "application_date",
-                    "application_type_id",
-                    "valid_from",
-                    "valid_upto",
-                    "license_no",
-                    "firm_name",
-                    "holding_no",
-                    "address",
-                    "owner.owner_name",
-                    "owner.guardian_name",
-                    "owner.mobile",
-                    DB::raw("ulb_ward_masters.ward_name AS ward_no, 
-                                        ulb_masters.id as ulb_id, ulb_masters.ulb_name,ulb_masters.ulb_type
-                                        ")
-                )
-                    ->join("ulb_masters", "ulb_masters.id", "trade_renewals.ulb_id")
-                    ->join("ulb_ward_masters", function ($join) {
-                        $join->on("ulb_ward_masters.id", "=", "trade_renewals.ward_id");
-                    })
-                    ->leftjoin(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
-                                                STRING_AGG(guardian_name,',') as guardian_name,
-                                                STRING_AGG(mobile_no,',') as mobile,
-                                                temp_id
-                                            FROM trade_owners 
-                                            WHERE temp_id = $id
-                                                AND is_active = TRUE
-                                            GROUP BY temp_id
-                                            ) owner"), function ($join) {
-                        $join->on("owner.temp_id", "=", "trade_renewals.id");
-                    })
-                    ->where('trade_renewals.id', $id)
-                    ->first();
-            }
-            if (!$application) {
-                throw new Exception("Application Not Found");
-            }
-            $transaction = TradeTransaction::select(
-                "tran_no",
-                "tran_type",
-                "tran_date",
-                "payment_mode",
-                "paid_amount",
-                "penalty",
-                "trade_cheque_dtls.cheque_no",
-                "trade_cheque_dtls.cheque_date",
-                "trade_cheque_dtls.bank_name",
-                "trade_cheque_dtls.branch_name"
-            )
-                ->leftjoin("trade_cheque_dtls", "trade_cheque_dtls.tran_id", "trade_transactions.id")
-                ->where("trade_transactions.id", $transectionId)
-                ->where("trade_transactions.temp_id", $id)
-                ->whereIn("trade_transactions.status", [1, 2])
-                ->first();
-            if (!$transaction) {
-                throw new Exception("Transaction Not Faound");
-            }
-            $penalty = TradeFineRebete::select("type", "amount")
-                ->where('tran_id', $transectionId)
-                ->where("status", 1)
-                ->orderBy("id")
-                ->get();
-            $pen = 0;
-            $delay_fee = 0;
-            $denial_fee = 0;
-            foreach ($penalty as $val) {
-                if (strtoupper($val->type) == strtoupper("Delay Apply License")) {
-                    $delay_fee = $val->amount;
-                } elseif (strtoupper($val->type) == strtoupper("Denial Apply")) {
-                    $denial_fee = $val->amount;
-                }
-                $pen += $val->amount;
-            }
-            $transaction->rate = number_format(($transaction->paid_amount - $pen), 2);
-            $transaction->delay_fee = $delay_fee;
-            $transaction->denial_fee = $denial_fee;
-            $transaction->paid_amount_in_words = getIndianCurrency($transaction->paid_amount);
-
-            // $licence_for_years = $application->licence_for_years;
-            
-            // # 1	NEW LICENSE
-            // if ($application->application_type_id == 1) 
-            // {
-            //     $valid_from = $application->application_date;
-            //     $valid_upto = date("Y-m-d", strtotime("+$licence_for_years years", strtotime($application->application_date)));
-            // }
-            // # 2 RENEWAL
-            // if ($application->application_type_id == 2) 
-            // {
-            //     $prive_licence = TradeLicence::find($application->trade_id);
-            //     if (!empty($prive_licence)) 
-            //     {
-            //         $valid_from = $prive_licence->valid_upto; 
-            //         $datef = date('Y-m-d', strtotime($valid_from));
-            //         $datefrom = date_create($datef);
-            //         $datea = date('Y-m-d', strtotime($application->application_date));
-            //         $dateapply = date_create($datea);
-            //         $year_diff = date_diff($datefrom, $dateapply);
-            //         $year_diff =  $year_diff->format('%y');
-
-            //         $priv_m_d = date('m-d', strtotime($valid_from));
-            //         $date = date('Y', strtotime($valid_from)) . '-' . $priv_m_d;
-            //         $licence_for_years2 = $licence_for_years + $year_diff;
-            //         $valid_upto = date('Y-m-d', strtotime($date . "+" . $licence_for_years2 . " years"));
-            //         $data['valid_upto'] = $valid_upto;
-            //     } 
-            //     else 
-            //     {
-            //         throw new Exception('licence', 'Some Error Occurred Please Contact to Admin!!!');
-            //     }
-            // }
-
-            // # 3	AMENDMENT
-            // if ($application->application_type_id == 3) 
-            // {
-            //     $prive_licence = TradeLicence::find($application->trade_id);
-            //     $oneYear_validity = date("Y-m-d", strtotime("+1 years", strtotime('now')));
-            //     $previous_validity = $prive_licence->valid_upto;
-            //     if ($previous_validity > $oneYear_validity)
-            //         $valid_upto = $previous_validity;
-            //     else
-            //         $valid_upto = $oneYear_validity;
-            //     $valid_from = date('Y-m-d');
-            // }
-
-            // # 4 SURRENDER
-            // if ($application->application_type_id == 4) 
-            // {
-            //     // Incase of surrender valid upto is previous license validity
-            //     $prive_licence = TradeLicence::find($application->trade_id);                
-            //     $valid_from = $prive_licence->valid_from;
-            //     $valid_upto = $prive_licence->valid_upto;
-            // } 
-            // dd($application->valid_from,$valid_from);           
-            // $valid_from = $application->valid_from?$application->valid_from:$valid_from;
-            // $valid_upto = $application->valid_upto?$application->valid_upto: $valid_upto;
-            // $transaction->from = $valid_from;
-            // $transaction->upto = $valid_upto;
-            
-
-
-            $data = [
-                "application" => $application,
-                "transaction" => $transaction,
-                "penalty"    => $penalty
-            ];
-            $data['paymentReceipt'] = config('app.url') . "/api/trade/paymentReceipt/" . $id . "/" . $transectionId;
-            $data = remove_null($data);
-            return responseMsg(true, "", $data);
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), '');
-        }
-    }
-
     #serial  it to be remove after test
     public function getDocList_t(Request $request)
     {
@@ -3035,9 +2757,9 @@ class Trade implements ITrade
     public function approvedApplication(Request $request)
     {
         try {
-            $refUser        = Auth()->user();
-            $refUserId      = $refUser->id;
-            $refUlbId       = $refUser->ulb_id;
+            $refUser            = Auth()->user();
+            $refUserId          = $refUser->id;
+            $refUlbId           = $refUser->ulb_id ?? 0;
             $refWorkflowId      = $this->_WF_MASTER_Id;
             $mUserType          = $this->_COMMON_FUNCTION->userType($refWorkflowId);
 
@@ -3146,17 +2868,203 @@ class Trade implements ITrade
                 $license = $license
                     ->where("citizen_id", $refUserId);
             }
-            $license = $license
-                ->get();
-            $data = [
+            $perPage = $request->perPage ? $request->perPage :  10;
+            $paginator = $license->paginate($perPage);             
+            $list = [
                 "wardList" => $mWardPermission,
-                "licence" => $license,
-            ];
-            return responseMsg(true, "", remove_null($data));
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
+            ]; 
+            if (in_array(strtoupper($mUserType), ["ONLINE"])) 
+            {
+                $license = $license
+                    ->get();
+                $list = [
+                    "wardList" => $mWardPermission,
+                    "licence" => $license,
+                ];
+
+            }
+            return responseMsg(true, "", remove_null($list));
         } 
         catch (Exception $e) 
         {
             return responseMsg(false, $e->getMessage(), $request->all());
+        }
+    }
+
+    # Serial No : 04
+    public function readPaymentReceipt($id, $transectionId) # unauthorised  function
+    {
+        try {
+            $select = [
+                "licences.*",
+                "application_no",
+                "provisional_license_no",
+                "trade_id",
+                "licence_for_years",
+                "application_type_id",
+                "license_no",
+                "firm_name",
+                "holding_no",
+                "address",
+                "owner.owner_name",
+                "owner.guardian_name",
+                "owner.mobile",
+                DB::raw("ulb_ward_masters.ward_name AS ward_no, 
+                        ulb_masters.id as ulb_id, ulb_masters.ulb_name,ulb_masters.ulb_type,
+                        TO_CHAR(cast(application_date as date), 'DD-MM-YYYY') AS application_date,
+                        TO_CHAR(cast(valid_from as date), 'DD-MM-YYYY') AS valid_from,
+                        TO_CHAR(cast(valid_upto as date), 'DD-MM-YYYY') AS valid_upto
+                        ")
+            ];
+            $application = DB::table("active_trade_licences AS licences")->select($select)
+                ->join("ulb_masters", "ulb_masters.id", "licences.ulb_id")
+                ->join("ulb_ward_masters", function ($join) {
+                    $join->on("ulb_ward_masters.id", "=", "licences.ward_id");
+                })
+                ->leftjoin(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
+                                                STRING_AGG(guardian_name,',') as guardian_name,
+                                                STRING_AGG(mobile_no::text,',') as mobile,
+                                                temp_id
+                                            FROM active_trade_owners 
+                                            WHERE temp_id = $id
+                                                AND is_active  = TRUE
+                                            GROUP BY temp_id
+                                            ) owner"), function ($join) {
+                    $join->on("owner.temp_id", "=", "licences.id");
+                })
+                ->where('licences.id', $id)
+                ->first();
+            if (!$application) 
+            {
+                $application = DB::table("trade_licences AS licences")->select($select)
+                    ->join("ulb_masters", "ulb_masters.id", "licences.ulb_id")
+                    ->join("ulb_ward_masters", function ($join) {
+                        $join->on("ulb_ward_masters.id", "=", "licences.ward_id");
+                    })
+                    ->leftjoin(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
+                                                STRING_AGG(guardian_name,',') as guardian_name,
+                                                STRING_AGG(mobile_no,',') as mobile,
+                                                temp_id
+                                            FROM trade_owners 
+                                            WHERE temp_id = $id
+                                                AND is_active = TRUE
+                                            GROUP BY temp_id
+                                            ) owner"), function ($join) {
+                        $join->on("owner.temp_id", "=", "licences.id");
+                    })
+                    ->where('licences.id', $id)
+                    ->first();
+            }
+            if (!$application) 
+            {
+                $application = DB::table("rejected_trade_licences AS licences")->select($select)
+                    ->join("ulb_masters", "ulb_masters.id", "licences.ulb_id")
+                    ->join("ulb_ward_masters", function ($join) {
+                        $join->on("ulb_ward_masters.id", "=", "licences.ward_id");
+                    })
+                    ->leftjoin(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
+                                                STRING_AGG(guardian_name,',') as guardian_name,
+                                                STRING_AGG(mobile_no,',') as mobile,
+                                                temp_id
+                                            FROM rejected_trade_owners 
+                                            WHERE temp_id = $id
+                                                AND is_active = TRUE
+                                            GROUP BY temp_id
+                                            ) owner"), function ($join) {
+                        $join->on("owner.temp_id", "=", "licences.id");
+                    })
+                    ->where('licences.id', $id)
+                    ->first();
+            }
+            if (!$application) 
+            {
+                $application = DB::table("trade_renewals AS licences")->select($select)
+                    ->join("ulb_masters", "ulb_masters.id", "licences.ulb_id")
+                    ->join("ulb_ward_masters", function ($join) {
+                        $join->on("ulb_ward_masters.id", "=", "licences.ward_id");
+                    })
+                    ->leftjoin(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
+                                                STRING_AGG(guardian_name,',') as guardian_name,
+                                                STRING_AGG(mobile_no,',') as mobile,
+                                                temp_id
+                                            FROM trade_owners 
+                                            WHERE temp_id = $id
+                                                AND is_active = TRUE
+                                            GROUP BY temp_id
+                                            ) owner"), function ($join) {
+                        $join->on("owner.temp_id", "=", "licences.id");
+                    })
+                    ->where('licences.id', $id)
+                    ->first();
+            }
+            if (!$application) 
+            {
+                throw new Exception("Application Not Found");
+            }
+            $transaction = TradeTransaction::select(
+                    "tran_no",
+                    "tran_type",
+                    "payment_mode",
+                    "paid_amount",
+                    "penalty",
+                    "trade_cheque_dtls.cheque_no",
+                    "trade_cheque_dtls.bank_name",
+                    "trade_cheque_dtls.branch_name",
+                    DB::raw("TO_CHAR(cast(tran_date as date), 'DD-MM-YYYY') AS tran_date,
+                             TO_CHAR(cast(cheque_date as date), 'DD-MM-YYYY') AS cheque_date
+                            ")
+                )
+                ->leftjoin("trade_cheque_dtls", "trade_cheque_dtls.tran_id", "trade_transactions.id")
+                ->where("trade_transactions.id", $transectionId)
+                ->where("trade_transactions.temp_id", $id)
+                ->whereIn("trade_transactions.status", [1, 2])
+                ->first();
+            if (!$transaction) {
+                throw new Exception("Transaction Not Faound");
+            }
+            if(!$application->licence_for_years || !$application->valid_from || !$application->valid_upto)
+            {
+                $this->temCalValidity($application);
+            }
+            $penalty = TradeFineRebete::select("type", "amount")
+                ->where('tran_id', $transectionId)
+                ->where("status", 1)
+                ->orderBy("id")
+                ->get();
+            $pen = 0;
+            $delay_fee = 0;
+            $denial_fee = 0;
+            foreach ($penalty as $val) 
+            {
+                if (strtoupper($val->type) == strtoupper("Delay Apply License")) 
+                {
+                    $delay_fee = $val->amount;
+                } 
+                elseif (strtoupper($val->type) == strtoupper("Denial Apply")) 
+                {
+                    $denial_fee = $val->amount;
+                }
+                $pen += $val->amount;
+            }
+            $transaction->rate = number_format(($transaction->paid_amount - $pen), 2);
+            $transaction->delay_fee = number_format($delay_fee, 2);
+            $transaction->denial_fee = number_format($denial_fee, 2);
+            $transaction->paid_amount_in_words = getIndianCurrency($transaction->paid_amount);
+
+            $data = [
+                "application" => $application,
+                "transaction" => $transaction,
+                "penalty"    => $penalty
+            ];
+            $data['paymentReceipt'] = config('app.url') . "/api/trade/payment-receipt/" . $id . "/" . $transectionId;
+            $data = remove_null($data);
+            return responseMsg(true, "", $data);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), '');
         }
     }
 
@@ -3167,10 +3075,8 @@ class Trade implements ITrade
 
             $data = (array)null;
             $data['provisionalCertificate'] = config('app.url') . "/api/trade/provisional-certificate/" . $id;
-            $application = ActiveTradeLicence::select(
-                "active_trade_licences.id",
-                "active_trade_licences.application_date",
-                "active_trade_licences.establishment_date",
+            $select = [
+                "license.*",
                 "application_no",
                 "provisional_license_no",
                 "license_no",
@@ -3182,12 +3088,19 @@ class Trade implements ITrade
                 "owner.guardian_name",
                 "owner.mobile",
                 DB::raw("ulb_ward_masters.ward_name AS ward_no, 
-                                        ulb_masters.id as ulb_id, ulb_masters.ulb_name,ulb_masters.ulb_type
-                                        ")
-            )
-                ->join("ulb_masters", "ulb_masters.id", "active_trade_licences.ulb_id")
+                        ulb_masters.id as ulb_id, ulb_masters.ulb_name,ulb_masters.ulb_type,
+                        TO_CHAR(CAST(license.application_date AS DATE), 'DD-MM-YYYY') as application_date,
+                        TO_CHAR(CAST(license.establishment_date AS DATE), 'DD-MM-YYYY') as establishment_date,
+                        TO_CHAR(CAST(license.license_date AS DATE), 'DD-MM-YYYY') as license_date,
+                        TO_CHAR(CAST(license.valid_from AS DATE), 'DD-MM-YYYY') as valid_from,
+                        TO_CHAR(CAST(license.valid_upto AS DATE), 'DD-MM-YYYY') as valid_upto
+                        ")
+            ];
+            $application = DB::table("active_trade_licences as license")
+                ->select($select)
+                ->join("ulb_masters", "ulb_masters.id", "license.ulb_id")
                 ->join("ulb_ward_masters", function ($join) {
-                    $join->on("ulb_ward_masters.id", "=", "active_trade_licences.ward_id");
+                    $join->on("ulb_ward_masters.id", "=", "license.ward_id");
                 })
                 ->join(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
                                             STRING_AGG(guardian_name,',') as guardian_name,
@@ -3198,32 +3111,17 @@ class Trade implements ITrade
                                             AND is_active =TRUE
                                         GROUP BY temp_id
                                         ) owner"), function ($join) {
-                    $join->on("owner.temp_id", "=", "active_trade_licences.id");
+                    $join->on("owner.temp_id", "=", "license.id");
                 })
-                ->where('active_trade_licences.id', $id)
+                ->where('license.id', $id)
                 ->first();
-            if (!$application) {
-                $application = TradeLicence::select(
-                    "trade_licences.id",
-                    "trade_licences.application_date",
-                    "trade_licences.establishment_date",
-                    "application_no",
-                    "provisional_license_no",
-                    "license_no",
-                    "firm_name",
-                    "holding_no",
-                    "address",
-                    "payment_status",
-                    "owner.owner_name",
-                    "owner.guardian_name",
-                    "owner.mobile",
-                    DB::raw("ulb_ward_masters.ward_name AS ward_no, 
-                                    ulb_masters.id as ulb_id, ulb_masters.ulb_name,ulb_masters.ulb_type
-                                    ")
-                )
-                    ->join("ulb_masters", "ulb_masters.id", "trade_licences.ulb_id")
+            if (!$application) 
+            {
+                $application = DB::table("trade_licences as license")
+                    ->select($select)
+                    ->join("ulb_masters", "ulb_masters.id", "license.ulb_id")
                     ->join("ulb_ward_masters", function ($join) {
-                        $join->on("ulb_ward_masters.id", "=", "trade_licences.ward_id");
+                        $join->on("ulb_ward_masters.id", "=", "license.ward_id");
                     })
                     ->join(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
                                             STRING_AGG(guardian_name,',') as guardian_name,
@@ -3234,33 +3132,18 @@ class Trade implements ITrade
                                             AND is_active =TRUE
                                         GROUP BY temp_id
                                         ) owner"), function ($join) {
-                        $join->on("owner.temp_id", "=", "trade_licences.id");
+                        $join->on("owner.temp_id", "=", "license.id");
                     })
-                    ->where('trade_licences.id', $id)
+                    ->where('license.id', $id)
                     ->first();
             }
-            if (!$application) {
-                $application = RejectedTradeLicence::select(
-                    "rejected_trade_licences.id",
-                    "rejected_trade_licences.application_date",
-                    "rejected_trade_licences.establishment_date",
-                    "application_no",
-                    "provisional_license_no",
-                    "license_no",
-                    "firm_name",
-                    "holding_no",
-                    "address",
-                    "payment_status",
-                    "owner.owner_name",
-                    "owner.guardian_name",
-                    "owner.mobile",
-                    DB::raw("ulb_ward_masters.ward_name AS ward_no, 
-                                    ulb_masters.id as ulb_id, ulb_masters.ulb_name,ulb_masters.ulb_type
-                                    ")
-                )
-                    ->join("ulb_masters", "ulb_masters.id", "rejected_trade_licences.ulb_id")
+            if (!$application) 
+            {
+                $application = DB::table("rejected_trade_licences as license")
+                    ->select($select)
+                    ->join("ulb_masters", "ulb_masters.id", "license.ulb_id")
                     ->join("ulb_ward_masters", function ($join) {
-                        $join->on("ulb_ward_masters.id", "=", "rejected_trade_licences.ward_id");
+                        $join->on("ulb_ward_masters.id", "=", "license.ward_id");
                     })
                     ->join(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
                                             STRING_AGG(guardian_name,',') as guardian_name,
@@ -3271,33 +3154,18 @@ class Trade implements ITrade
                                             AND is_active =TRUE
                                         GROUP BY temp_id
                                         ) owner"), function ($join) {
-                        $join->on("owner.temp_id", "=", "rejected_trade_licences.id");
+                        $join->on("owner.temp_id", "=", "license.id");
                     })
-                    ->where('rejected_trade_licences.id', $id)
+                    ->where('license.id', $id)
                     ->first();
             }
-            if (!$application) {
-                $application = TradeRenewal::select(
-                    "trade_renewals.id",
-                    "trade_renewals.application_date",
-                    "trade_renewals.establishment_date",
-                    "application_no",
-                    "provisional_license_no",
-                    "license_no",
-                    "firm_name",
-                    "holding_no",
-                    "address",
-                    "payment_status",
-                    "owner.owner_name",
-                    "owner.guardian_name",
-                    "owner.mobile",
-                    DB::raw("ulb_ward_masters.ward_name AS ward_no, 
-                                    ulb_masters.id as ulb_id, ulb_masters.ulb_name,ulb_masters.ulb_type
-                                    ")
-                )
-                    ->join("ulb_masters", "ulb_masters.id", "trade_renewals.ulb_id")
+            if (!$application) 
+            {
+                $application = DB::table("trade_renewals as license")
+                    ->select($select)
+                    ->join("ulb_masters", "ulb_masters.id", "license.ulb_id")
                     ->join("ulb_ward_masters", function ($join) {
-                        $join->on("ulb_ward_masters.id", "=", "trade_renewals.ward_id");
+                        $join->on("ulb_ward_masters.id", "=", "license.ward_id");
                     })
                     ->join(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
                                             STRING_AGG(guardian_name,',') as guardian_name,
@@ -3308,37 +3176,43 @@ class Trade implements ITrade
                                             AND is_active =TRUE
                                         GROUP BY temp_id
                                         ) owner"), function ($join) {
-                        $join->on("owner.temp_id", "=", "trade_renewals.id");
+                        $join->on("owner.temp_id", "=", "license.id");
                     })
-                    ->where('trade_renewals.id', $id)
+                    ->where('license.id', $id)
                     ->first();
             }
-            if (!$application) {
+            if (!$application) 
+            {
                 throw new Exception("Application Not Found");
             }
-            if ($application->payment_status == 0) {
+            if ($application->payment_status == 0) 
+            {
                 throw new Exception("Please Payment Of This Application");
             }
             $vUpto = $application->application_date;
             $application->valid_upto = date('Y-m-d', strtotime(date("$vUpto", mktime(time())) . " + 20 day"));            
             $transaction = TradeTransaction::select(
-                "trade_transactions.id",
-                "tran_no",
-                "tran_type",
-                "tran_date",
-                "payment_mode",
-                "paid_amount",
-                "penalty",
-                "trade_cheque_dtls.cheque_no",
-                "trade_cheque_dtls.cheque_date",
-                "trade_cheque_dtls.bank_name",
-                "trade_cheque_dtls.branch_name"
-            )
+                    "trade_transactions.id",
+                    "tran_no",
+                    "tran_type",
+                    "tran_date",
+                    "payment_mode",
+                    "paid_amount",
+                    "penalty",
+                    "trade_cheque_dtls.cheque_no",
+                    "trade_cheque_dtls.cheque_date",
+                    "trade_cheque_dtls.bank_name",
+                    "trade_cheque_dtls.branch_name",
+                    DB::raw("TO_CHAR(CAST(tran_date AS DATE), 'DD-MM-YYYY') as tran_date,
+                            TO_CHAR(CAST(cheque_date AS DATE), 'DD-MM-YYYY') as cheque_date
+                            ")
+                )
                 ->leftjoin("trade_cheque_dtls", "trade_cheque_dtls.tran_id", "trade_transactions.id")
                 ->where("trade_transactions.temp_id", $id)
                 ->whereIn("trade_transactions.status", [1, 2])
                 ->first();
-            if (!$transaction) {
+            if (!$transaction) 
+            {
                 throw new Exception("Transaction Not Faound");
             }
             $penalty = TradeFineRebete::select("type", "amount")
@@ -3347,7 +3221,8 @@ class Trade implements ITrade
                 ->orderBy("id")
                 ->get();
             $pen = 0;
-            foreach ($penalty as $val) {
+            foreach ($penalty as $val) 
+            {
                 $pen += $val->amount;
             }
             $transaction->rate = $transaction->paid_amount - $pen;
@@ -3357,7 +3232,9 @@ class Trade implements ITrade
 
             $data = remove_null($data);
             return  responseMsg(true, "", $data);
-        } catch (Exception $e) {
+        } 
+        catch (Exception $e) 
+        {
             return responseMsg(false, $e->getMessage(), $id);
         }
     }
@@ -3369,21 +3246,15 @@ class Trade implements ITrade
 
             $data = (array)null;
             $data['licenceCertificate'] = config('app.url') . "/api/trade/license-certificate/" . $id;
-            $application = TradeLicence::select(
-                "trade_licences.id",
-                "trade_licences.application_date",
-                "trade_licences.establishment_date",
+            $select= [
+                "license.*",
                 "application_no",
                 "provisional_license_no",
                 "license_no",
                 "firm_name",
                 "holding_no",
-                "address",
-                "license_date",
-                "valid_from",
-                "valid_upto",
+                "address", 
                 "licence_for_years",
-                "establishment_date",
                 "nature_of_bussiness",
                 "firm_description",
                 "brief_firm_desc",
@@ -3393,12 +3264,19 @@ class Trade implements ITrade
                 "owner.guardian_name",
                 "owner.mobile",
                 DB::raw("ulb_ward_masters.ward_name AS ward_no, 
-                                        ulb_masters.id as ulb_id, ulb_masters.ulb_name,ulb_masters.ulb_type
-                                        ")
-            )
-                ->join("ulb_masters", "ulb_masters.id", "trade_licences.ulb_id")
+                        ulb_masters.id as ulb_id, ulb_masters.ulb_name,ulb_masters.ulb_type,
+                        TO_CHAR(CAST(license.application_date AS DATE), 'DD-MM-YYYY') as application_date,
+                        TO_CHAR(CAST(license.establishment_date AS DATE), 'DD-MM-YYYY') as establishment_date,
+                        TO_CHAR(CAST(license.license_date AS DATE), 'DD-MM-YYYY') as license_date,
+                        TO_CHAR(CAST(license.valid_from AS DATE), 'DD-MM-YYYY') as valid_from,
+                        TO_CHAR(CAST(license.valid_upto AS DATE), 'DD-MM-YYYY') as valid_upto
+                        ")
+            ];
+            $application = DB::table("trade_licences AS license")
+                ->select($select)
+                ->join("ulb_masters", "ulb_masters.id", "license.ulb_id")
                 ->join("ulb_ward_masters", function ($join) {
-                    $join->on("ulb_ward_masters.id", "=", "trade_licences.ward_id");
+                    $join->on("ulb_ward_masters.id", "=", "license.ward_id");
                 })
                 ->leftjoin(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
                                             STRING_AGG(guardian_name,',') as guardian_name,
@@ -3409,41 +3287,16 @@ class Trade implements ITrade
                                             AND is_active =TRUE
                                         GROUP BY temp_id
                                         ) owner"), function ($join) {
-                    $join->on("owner.temp_id", "=", "trade_licences.id");
+                    $join->on("owner.temp_id", "=", "license.id");
                 })
-                ->where('trade_licences.id', $id)
+                ->where('license.id', $id)
                 ->first();
-            if (!$application) {
-                $application = TradeRenewal::select(
-                    "trade_renewals.id",
-                    "trade_renewals.establishment_date",
-                    "application_no",
-                    "provisional_license_no",
-                    "license_no",
-                    "firm_name",
-                    "holding_no",
-                    "address",
-                    "application_date",
-                    "license_date",
-                    "valid_from",
-                    "valid_upto",
-                    "licence_for_years",
-                    "establishment_date",
-                    "nature_of_bussiness",
-                    "firm_description",
-                    "brief_firm_desc",
-                    "premises_owner_name",
-                    "pending_status",
-                    "owner.owner_name",
-                    "owner.guardian_name",
-                    "owner.mobile",
-                    DB::raw("ulb_ward_masters.ward_name AS ward_no, 
-                                    ulb_masters.id as ulb_id, ulb_masters.ulb_name,ulb_masters.ulb_type
-                                    ")
-                )
-                    ->join("ulb_masters", "ulb_masters.id", "trade_renewals.ulb_id")
+            if (!$application) 
+            {
+                $application = DB::table("trade_renewals AS license")
+                    ->select($select)->join("ulb_masters", "ulb_masters.id", "license.ulb_id")
                     ->join("ulb_ward_masters", function ($join) {
-                        $join->on("ulb_ward_masters.id", "=", "trade_renewals.ward_id");
+                        $join->on("ulb_ward_masters.id", "=", "license.ward_id");
                     })
                     ->leftjoin(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
                                             STRING_AGG(guardian_name,',') as guardian_name,
@@ -3454,20 +3307,23 @@ class Trade implements ITrade
                                             AND is_active =TRUE
                                         GROUP BY temp_id
                                         ) owner"), function ($join) {
-                        $join->on("owner.temp_id", "=", "trade_renewals.id");
+                        $join->on("owner.temp_id", "=", "license.id");
                     })
-                    ->where('trade_renewals.id', $id)
+                    ->where('license.id', $id)
                     ->first();
-                if (!$application) {
+                if (!$application) 
+                {
                     throw new Exception("Application Not Found");
                 }
             }
-            if ($application->pending_status != 5) {
+            if ($application->pending_status != 5) 
+            {
                 throw new Exception("Application Not Approved");
             }
             $item_name = "";
             $cods = "";
-            if ($application->nature_of_bussiness) {
+            if ($application->nature_of_bussiness) 
+            {
                 $items = TradeParamItemType::itemsById($application->nature_of_bussiness);
                 foreach ($items as $val) {
                     $item_name .= $val->trade_item . ",";
@@ -3478,6 +3334,10 @@ class Trade implements ITrade
             }
             $application->items = $item_name;
             $application->items_code = $cods;
+            if(!$application->licence_for_years || !$application->valid_from || !$application->valid_upto)
+            {
+                $this->temCalValidity($application);
+            }
             $data["application"] = $application;
             $data = remove_null($data);
             return  responseMsg(true, "", $data);
