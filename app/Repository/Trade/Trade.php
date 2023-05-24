@@ -3190,7 +3190,7 @@ class Trade implements ITrade
                 throw new Exception("Please Payment Of This Application");
             }
             $vUpto = $application->application_date;
-            $application->valid_upto = date('Y-m-d', strtotime(date("$vUpto", mktime(time())) . " + 20 day"));            
+            $application->valid_upto = date('d-m-Y', strtotime(date("$vUpto", mktime(time())) . " + 22 day"));            
             $transaction = TradeTransaction::select(
                     "trade_transactions.id",
                     "tran_no",

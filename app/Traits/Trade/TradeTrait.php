@@ -308,7 +308,7 @@ trait TradeTrait
                 $ward_no = $ward_no['ward_name'];
                 $license_no = $short_ulb_name . $ward_no . date("mdY") . $refLicenc->id;
                 $valid_from = $refLicenc->application_date;
-                $valid_upto = date("Y-m-d", strtotime("+$licence_for_years years", strtotime($refLicenc->application_date)));
+                $valid_upto = date("Y-m-d", strtotime("+$licence_for_years years", strtotime("-1 days",strtotime($refLicenc->application_date))));
             }
             # 2 RENEWAL
             if ($refLicenc->application_type_id == 2) 
@@ -329,7 +329,7 @@ trait TradeTrait
                     $priv_m_d = date('m-d', strtotime($valid_from));
                     $date = date('Y', strtotime($valid_from)) . '-' . $priv_m_d;
                     $licence_for_years2 = $licence_for_years + $year_diff;
-                    $valid_upto = date('Y-m-d', strtotime($date . "+" . $licence_for_years2 . " years"));
+                    $valid_upto = date('Y-m-d', strtotime("-1 days",strtotime($date . "+" . $licence_for_years2 . " years")));
                     $data['valid_upto'] = $valid_upto;
                     $this->addReniwalLicense($prive_licence);
                 } 
@@ -344,7 +344,7 @@ trait TradeTrait
             {
                 $prive_licence = TradeLicence::find($refLicenc->trade_id);
                 $license_no = $prive_licence->license_no;
-                $oneYear_validity = date("Y-m-d", strtotime("+1 years", strtotime('now')));
+                $oneYear_validity = date("Y-m-d", strtotime("-1 days",strtotime("+1 years", strtotime('now'))));
                 $previous_validity = $prive_licence->valid_upto;
                 if ($previous_validity > $oneYear_validity)
                     $valid_upto = $previous_validity;
@@ -462,7 +462,7 @@ trait TradeTrait
         if ($refLicenc->application_type_id == 1) 
         {
             $valid_from = $refLicenc->application_date;
-            $valid_upto = date("Y-m-d", strtotime("+$licence_for_years years", strtotime($refLicenc->application_date)));
+            $valid_upto = date("Y-m-d", strtotime("+$licence_for_years years", strtotime("-1 days",strtotime($refLicenc->application_date))));
         }
         # 2 RENEWAL
         if ($refLicenc->application_type_id == 2) 
@@ -481,7 +481,7 @@ trait TradeTrait
                 $priv_m_d = date('m-d', strtotime($valid_from));
                 $date = date('Y', strtotime($valid_from)) . '-' . $priv_m_d;
                 $licence_for_years2 = $licence_for_years + $year_diff;
-                $valid_upto = date('Y-m-d', strtotime($date . "+" . $licence_for_years2 . " years"));
+                $valid_upto = date('Y-m-d', strtotime("-1 days",strtotime($date . "+" . $licence_for_years2 . " years")));
                 $data['valid_upto'] = $valid_upto;
             }
         }
@@ -490,7 +490,7 @@ trait TradeTrait
         if ($refLicenc->application_type_id == 3) 
         {
             $prive_licence = TradeLicence::find($refLicenc->trade_id);
-            $oneYear_validity = date("Y-m-d", strtotime("+1 years", strtotime('now')));
+            $oneYear_validity = date("Y-m-d", strtotime("-1 days",strtotime("+1 years", strtotime('now'))));
             $previous_validity = $prive_licence->valid_upto??"";
             if ($previous_validity > $oneYear_validity)
                 $valid_upto = $previous_validity;

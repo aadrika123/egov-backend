@@ -41,14 +41,15 @@ class TradeController extends Controller
     {
         try{
             $sms = "";
-            $request->validate(["firmType" => "required|unique:trade_param_firm_types|regex:/^[a-zA-Z0-9][a-zA-Z0-9\'\.\-\,\&\s\/]+$/i"]);
+            $request->validate(["firmType" => "required|regex:/^[a-zA-Z0-9][a-zA-Z0-9\'\.\-\,\&\s\/]+$/i"]);
+            
             $firmData = $this->_FIRM_TYPE->SELECT("*")
                         ->WHERE(DB::RAW("UPPER(firm_type)"),trim(strtoupper($request->firmType)))
                         ->ORDERBY("id")
                         ->FIRST();
-
+            
             DB::beginTransaction();                        
-            if($firmData->isEmpty())
+            if(!$firmData)
             {
                 #insert Data
                 $sms="New Recode Added";  
@@ -64,7 +65,7 @@ class TradeController extends Controller
                 $firmData->status       = 1;
                 $firmData->update();
             }
-            DB::rollBack();
+            DB::commit();
             return responseMsg(true,$sms,"");
         }
         catch(Exception $e)
@@ -100,15 +101,24 @@ class TradeController extends Controller
                 ]
             );
             $firmData = $this->_FIRM_TYPE->find($request->id);
+            
             DB::beginTransaction();                        
-            if($firmData->isEmpty())
+            if(!$firmData)
             {
                   throw new Exception("Data Not Found");   
             }
              #update data
             $sms="Updated Recode";
             $firmData->firm_type     =  trim(strtoupper($request->firmType));
-            if(!empty($request->firmType))
+            switch($request->status)
+            {
+                case 0 : dd("0",$request->status==0);
+                        break;
+                case 1 : dd("1");
+                        break;
+            }
+            dd(empty($request->status));
+            if(!empty($request->status))
             {
                 $firmData->status        = 1;
             }
