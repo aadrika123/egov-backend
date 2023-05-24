@@ -96,7 +96,10 @@ class Report implements IReport
             $where .= " AND trade_transactions.ulb_id =  $ulbId ";
 
             $active = TradeTransaction::select(
-                            DB::raw("   ulb_ward_masters.ward_name AS ward_no,
+                            DB::raw("   
+                                        trade_transactions.id as tran_id,
+                                        trade_transactions.temp_id as license_id,
+                                        ulb_ward_masters.ward_name AS ward_no,
                                         active_trade_licences.application_no AS application_no,
                                         (
                                             CASE WHEN active_trade_licences.license_no='' OR active_trade_licences.license_no IS NULL THEN 'N/A' 
@@ -146,7 +149,10 @@ class Report implements IReport
                     ->WHEREBETWEEN("trade_transactions.tran_date",[$fromDate,$uptoDate]);
             
             $approved = TradeTransaction::select(
-                        DB::raw("   ulb_ward_masters.ward_name AS ward_no,
+                        DB::raw("   
+                                    trade_transactions.id as tran_id,
+                                    trade_transactions.temp_id as license_id,
+                                    ulb_ward_masters.ward_name AS ward_no,
                                     trade_licences.application_no AS application_no,
                                     (
                                         CASE WHEN trade_licences.license_no='' OR trade_licences.license_no IS NULL THEN 'N/A' 
@@ -197,7 +203,10 @@ class Report implements IReport
                 ->WHEREBETWEEN("trade_transactions.tran_date",[$fromDate,$uptoDate]);
 
             $rejected = TradeTransaction::select(
-                    DB::raw("   ulb_ward_masters.ward_name AS ward_no,
+                    DB::raw("   
+                                trade_transactions.id as tran_id,
+                                trade_transactions.temp_id as license_id,
+                                ulb_ward_masters.ward_name AS ward_no,
                                 rejected_trade_licences.application_no AS application_no,
                                 (
                                     CASE WHEN rejected_trade_licences.license_no='' OR rejected_trade_licences.license_no IS NULL THEN 'N/A' 
@@ -246,7 +255,10 @@ class Report implements IReport
                 ->WHEREIN("trade_transactions.status",[1,2])
                 ->WHEREBETWEEN("trade_transactions.tran_date",[$fromDate,$uptoDate]);
             $old = TradeTransaction::select(
-                    DB::raw("   ulb_ward_masters.ward_name AS ward_no,
+                    DB::raw("   
+                                trade_transactions.id as tran_id,
+                                trade_transactions.temp_id as license_id,
+                                ulb_ward_masters.ward_name AS ward_no,
                                 trade_renewals.application_no AS application_no,
                                 (
                                     CASE WHEN trade_renewals.license_no='' OR trade_renewals.license_no IS NULL THEN 'N/A' 
