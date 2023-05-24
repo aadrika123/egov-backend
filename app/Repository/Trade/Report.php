@@ -1632,6 +1632,7 @@ class Report implements IReport
                     )
                         ->WHERE("active_trade_licences.ulb_id", $ulbId)
                         ->WHERE("active_trade_licences.is_parked", FALSE)
+                        ->WHERE("active_trade_licences.is_active", TRUE)
                         ->WHERE(function ($where) {
                             $where->WHERE("active_trade_licences.payment_status", "=", 0)
                                 ->ORWHERENULL("active_trade_licences.payment_status");
