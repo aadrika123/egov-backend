@@ -25,6 +25,7 @@ return [
     "ACCOUNT_DESCRIPTION" => "Water",
     "DEPARTMENT_SECTION" => "Revenue Section",
     "TOWARDS" => "Water Connection and Others",
+    "TOWARDS_DEMAND" =>"Water User Charges",
     "WATER_DEPAPRTMENT_ID" => "2",
     "WATER_RELATIVE_PATH" => "Uploads/Water",
 
