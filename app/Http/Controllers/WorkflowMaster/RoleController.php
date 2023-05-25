@@ -13,7 +13,6 @@ class RoleController extends Controller
     public function createRole(Request $req)
     {
         try {
-
             $create = new WfRole();
             $create->addRole($req);
 

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Mdm\TradeController;
 use App\Http\Controllers\Trade\ReportControlle;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Trade\TradeApplication;
@@ -154,4 +155,15 @@ Route::controller(TradeApplication::class)->group(function () {
     Route::get('payment-receipt/{id}/{transectionId}', 'paymentReceipt');
     Route::get('provisional-certificate/{id}', 'provisionalCertificate');
     Route::get('license-certificate/{id}', 'licenceCertificate');
+});
+
+Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {
+    Route::controller(TradeController::class)->group(function () {
+        // Route::post('firm-type-add', 'addFirmType');
+        // Route::post('firm-type-list', 'firmTypeList');
+        // Route::post('firm-type-update', 'updateFirmType');
+        Route::post('rate-add', 'addRate');
+        Route::post('rate-list', 'rateList');
+        Route::post('rate', 'rate');
+    });
 });

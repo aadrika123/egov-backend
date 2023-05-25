@@ -56,7 +56,7 @@ class WfRoleusermap extends Model
     }
 
     /**
-     * | Get role by User and Workflow Id
+     * | Get role by User Id
      */
     public function getRoleByUserId($req)
     {
@@ -69,5 +69,23 @@ class WfRoleusermap extends Model
             ->where('r.user_id', $req->userId)
             ->where('r.is_suspended', false)
             ->first();
+    }
+
+    /**
+     * | Get Tc list
+     */
+    public function getTcList($ulbId)
+    {
+        return WfRoleusermap::select(
+            'users.id',
+            'name',
+            'user_type',
+            'role_name',
+            DB::raw("CONCAT(name,'(',role_name,')') AS user_name"),
+        )
+            ->join('users', 'users.id', 'wf_roleusermaps.user_id')
+            ->join('wf_roles', 'wf_roles.id', 'wf_roleusermaps.wf_role_id')
+            ->where('users.ulb_id', $ulbId)
+            ->orderby('id');
     }
 }
