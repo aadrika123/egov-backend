@@ -18,7 +18,6 @@ class WfRole extends Model
         $role->role_name = $req->roleName;
         $role->created_by = $createdBy;
         $role->stamp_date_time = Carbon::now();
-        $role->created_at = Carbon::now();
         $role->save();
     }
 
