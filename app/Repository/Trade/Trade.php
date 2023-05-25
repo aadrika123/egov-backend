@@ -1803,11 +1803,12 @@ class Trade implements ITrade
                 
             ];
 
-            $ownerDetails = $this->generateOwnerDetails($ownerDetails);
+            $ownerDetailsTable = $this->generateOwnerDetails($ownerDetails);
             $ownerElement = [
                 'headerTitle' => 'Owner Details',
-                'tableHead' => ["#", "Owner Name", "Gender", "DOB", "Guardian Name", "Relation", "Mobile No", "Aadhar", "PAN", "Email", "Address"],
-                'tableData' => $ownerDetails
+                // 'tableHead' => ["#", "Owner Name", "Gender", "DOB", "Guardian Name", "Relation", "Mobile No", "Aadhar", "PAN", "Email", "Address"],
+                'tableHead' => ["#", "Owner Name",  "Guardian Name",  "Mobile No",  "Email", ],
+                'tableData' => $ownerDetailsTable
             ];
 
             $cardDetails = $this->generateCardDetails($licenseDetail, $ownerDetails);
@@ -2757,9 +2758,9 @@ class Trade implements ITrade
     public function approvedApplication(Request $request)
     {
         try {
-            $refUser        = Auth()->user();
-            $refUserId      = $refUser->id;
-            $refUlbId       = $refUser->ulb_id;
+            $refUser            = Auth()->user();
+            $refUserId          = $refUser->id;
+            $refUlbId           = $refUser->ulb_id ?? 0;
             $refWorkflowId      = $this->_WF_MASTER_Id;
             $mUserType          = $this->_COMMON_FUNCTION->userType($refWorkflowId);
 
@@ -2868,13 +2869,26 @@ class Trade implements ITrade
                 $license = $license
                     ->where("citizen_id", $refUserId);
             }
-            $license = $license
-                ->get();
-            $data = [
+            $perPage = $request->perPage ? $request->perPage :  10;
+            $paginator = $license->paginate($perPage);             
+            $list = [
                 "wardList" => $mWardPermission,
-                "licence" => $license,
-            ];
-            return responseMsg(true, "", remove_null($data));
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
+            ]; 
+            if (in_array(strtoupper($mUserType), ["ONLINE"])) 
+            {
+                $license = $license
+                    ->get();
+                $list = [
+                    "wardList" => $mWardPermission,
+                    "licence" => $license,
+                ];
+
+            }
+            return responseMsg(true, "", remove_null($list));
         } 
         catch (Exception $e) 
         {
@@ -3177,7 +3191,7 @@ class Trade implements ITrade
                 throw new Exception("Please Payment Of This Application");
             }
             $vUpto = $application->application_date;
-            $application->valid_upto = date('Y-m-d', strtotime(date("$vUpto", mktime(time())) . " + 20 day"));            
+            $application->valid_upto = date('d-m-Y', strtotime(date("$vUpto", mktime(time())) . " + 22 day"));            
             $transaction = TradeTransaction::select(
                     "trade_transactions.id",
                     "tran_no",

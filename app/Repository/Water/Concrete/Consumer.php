@@ -384,7 +384,7 @@ class Consumer implements IConsumer
     public function averageBulling($refConsumerDetails, $refLastDemandDetails, $refMeterStatus, $demand_from, $upto_date = null, $final_reading = 0)
     {
         $response["consumer_tax"]    = (array)null;
-        $response["consumer_tax"]["consumer_demand"] = (array)null;
+        // $response["consumer_tax"]["consumer_demand"] = (array)null;
         try {
             $conter = 0;
             $last_demand_upto = $refLastDemandDetails->demand_upto;
@@ -430,7 +430,6 @@ class Consumer implements IConsumer
                 $consumer_tax['rate_id'] = null;
                 $consumer_tax['amount'] = $prev_connection_details['rate_per_month'] ?? 0;
                 $consumer_tax['effective_from'] = $i;
-
                 $response["consumer_tax"][$conter] = $consumer_tax;
                 while ($i < $to_date) {
                     $last_date_of_current_month = date('Y-m-t', strtotime($i));
@@ -460,12 +459,14 @@ class Consumer implements IConsumer
                     $consumer_demand['demand_from']     = $i;
                     $consumer_demand['demand_upto']     = $demand_upto;
                     $consumer_demand['connection_type'] = 'Meter';
-                    $response["consumer_tax"][$conter]["consumer_demand"][] = $consumer_demand;
+
+                    $response["consumer_tax"][$conter]["consumer_demand"] = $consumer_demand;
                     // $this->consumer_demand_model->insertData($consumer_demand);
                     $i = date('Y-m-d', strtotime($demand_upto . "+1 days"));
                 }
                 $conter++;
             } elseif ($property_type_id != 3 && $refMeterStatus->connection_type == 1 ||  $refMeterStatus->connection_type == 2 && $refMeterStatus->meter_status == 0) {
+                // print_r($response);
                 $refUser              = Auth()->user();
                 $refUserId            = $refUser->id ?? 0;
                 $refUlbId             = $refUser->ulb_id ?? 0;
@@ -499,9 +500,9 @@ class Consumer implements IConsumer
                 }
 
                 if ($property_type_id == 1) {
-                    $where = " category='$category' and ceil($diff_reading)>=from_unit and celi($diff_reading)<=upto_unit ";
+                    $where = " category='$category' and CEIL($diff_reading)>=from_unit and CEIL($diff_reading)<=upto_unit ";
                 } else {
-                    $where = " ceil($diff_reading)>=from_unit and celi($diff_reading)<=upto_unit ";
+                    $where = " CEIL($diff_reading)>=from_unit and CEIL($diff_reading)<=upto_unit ";
                 }
 
                 $temp_pro = $property_type_id;
@@ -560,6 +561,8 @@ class Consumer implements IConsumer
                     $consumer_tax['effective_from'] = date('Y-m-d');
 
                     // $consumer_tax_id = $this->consumer_tax_model->insertData($consumer_tax);
+                    // $response["consumer_tax"][$conter] = $consumer_tax;
+
                     $response["consumer_tax"][$conter] = $consumer_tax;
 
                     $consumer_demand = array();
@@ -571,7 +574,7 @@ class Consumer implements IConsumer
                     $consumer_demand['demand_upto'] = $to_date;
                     $consumer_demand['connection_type'] = 'Meter';
 
-                    $response["consumer_tax"][$conter]["consumer_demand"][] = $consumer_demand;
+                    $response["consumer_tax"][$conter]["consumer_demand"] = $consumer_demand;
                     $conter++;
                     // $demand_id = $this->consumer_demand_model->insertData($consumer_demand);
                 }
@@ -743,19 +746,15 @@ class Consumer implements IConsumer
     }
     public function getMeterRate($property_type_id, $where)
     {
-        try {
-            DB::enableQueryLog();
-            $rate = WaterMeterRate::select("*")
-                ->where("property_type_id", $property_type_id)
-                ->whereRaw($where)
-                ->where("status", 1)
-                ->orderBy("effective_date")
-                ->get();
-            // dd(DB::getQueryLog());
-            return $rate;
-        } catch (Exception $e) {
-            echo ($e->getMessage());
-        }
+        DB::enableQueryLog();
+        $rate = WaterMeterRate::select("*")
+            ->where("property_type_id", $property_type_id)
+            ->whereRaw($where)
+            ->where("status", 1)
+            ->orderBy("effective_date")
+            ->get();
+        // dd(DB::getQueryLog());
+        return $rate;
     }
 
     public function getDateDiff($from_date, $to_date)
