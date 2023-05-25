@@ -1563,7 +1563,6 @@ class WaterPaymentController extends Controller
 
             # consumer meter details 
             $consumerMeterDetails = $mWaterConsumerMeter->getMeterDetailsByConsumerId($consumerDetails->id)
-            ->where('')
             ->first();
 
             # water consumer consumed

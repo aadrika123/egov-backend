@@ -23,7 +23,7 @@ class WaterConsumerMeter extends Model
             DB::raw("concat(relative_path,'/',meter_doc) as doc_path"),
         )
             ->where('consumer_id', $consumerId)
-            ->where('status', true)
+            ->where('status', 1)
             ->orderByDesc('id');
     }
 
