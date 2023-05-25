@@ -16,10 +16,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
-use function PHPUnit\Framework\isEmpty;
-
 class TradeController extends Controller
 {
+    
+
+    protected $_ALLOW_ROLE_ID;
     protected $_USER_TYPE;
     protected $_USER_ID;
     protected $_ULB_ID;
@@ -49,6 +50,11 @@ class TradeController extends Controller
         $this->_RATES               = new TradeParamLicenceRate();
         $this->_OWNERSHIP_TYPE      = new TradeParamOwnershipType();
 
+        #roleId = 1 -> SUPER ADMIN,
+        #         2 -> ADMIN
+        $this->_ALLOW_ROLE_ID       = [1,2];
+
+
         $this->_WF_MASTER_Id = Config::get('workflow-constants.TRADE_MASTER_ID');
         $this->_WF_NOTICE_MASTER_Id = Config::get('workflow-constants.TRADE_NOTICE_ID');
         $this->_MODULE_ID = Config::get('module-constants.TRADE_MODULE_ID');
@@ -68,9 +74,9 @@ class TradeController extends Controller
             $role = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_WF_MASTER_Id);            
             #roleId = 1 -> SUPER ADMIN,
             #         2 -> ADMIN
-            if(!$role || !in_array($role->role_id,[1,2]))
+            if(!$role || !in_array($role->role_id,$this->_ALLOW_ROLE_ID))
             {
-                throw new Exception("You Are Not Authoried For This Action");
+                throw new Exception(($role?$role->role_name:"You Are")." Not Authoried For This Action");
             }
             $sms = "";
             $request->validate(["firmType" => "required|regex:/^[a-zA-Z0-9][a-zA-Z0-9\'\.\-\,\&\s\/]+$/i"]);
@@ -152,9 +158,9 @@ class TradeController extends Controller
             $role = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_WF_MASTER_Id);            
             #roleId = 1 -> SUPER ADMIN,
             #         2 -> ADMIN
-            if(!$role || !in_array($role->role_id,[1,2]))
+            if(!$role || !in_array($role->role_id,$this->_ALLOW_ROLE_ID))
             {
-                throw new Exception("You Are Not Authoried For This Action");
+                throw new Exception(($role?$role->role_name:"You Are")." Not Authoried For This Action");
             }
             $sms = "";
             $request->validate(
@@ -206,9 +212,9 @@ class TradeController extends Controller
             $role = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_WF_MASTER_Id);            
             #roleId = 1 -> SUPER ADMIN,
             #         2 -> ADMIN
-            if(!$role || !in_array($role->role_id,[1,2]))
+            if(!$role || !in_array($role->role_id,$this->_ALLOW_ROLE_ID))
             {
-                throw new Exception("You Are Not Authoried For This Action");
+                throw new Exception(($role?$role->role_name:"You Are")." Not Authoried For This Action");
             }
             $sms = "";
             $request->validate(["applicationType" => "required|regex:/^[a-zA-Z0-9][a-zA-Z0-9\'\.\-\,\&\s\/]+$/i"]);
@@ -290,9 +296,9 @@ class TradeController extends Controller
             $role = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_WF_MASTER_Id);            
             #roleId = 1 -> SUPER ADMIN,
             #         2 -> ADMIN
-            if(!$role || !in_array($role->role_id,[1,2]))
+            if(!$role || !in_array($role->role_id,$this->_ALLOW_ROLE_ID))
             {
-                throw new Exception("You Are Not Authoried For This Action");
+                throw new Exception(($role?$role->role_name:"You Are")." Not Authoried For This Action");
             }
             $sms = "";
             $request->validate(
@@ -344,9 +350,9 @@ class TradeController extends Controller
             $role = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_WF_MASTER_Id);            
             #roleId = 1 -> SUPER ADMIN,
             #         2 -> ADMIN
-            if(!$role || !in_array($role->role_id,[1,2]))
+            if(!$role || !in_array($role->role_id,$this->_ALLOW_ROLE_ID))
             {
-                throw new Exception("You Are Not Authoried For This Action");
+                throw new Exception(($role?$role->role_name:"You Are")." Not Authoried For This Action");
             }
             $sms = "";
             $request->validate(["categoryType" => "required|regex:/^[a-zA-Z0-9][a-zA-Z0-9\'\.\-\,\&\s\/]+$/i"]);
@@ -428,9 +434,9 @@ class TradeController extends Controller
             $role = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_WF_MASTER_Id);            
             #roleId = 1 -> SUPER ADMIN,
             #         2 -> ADMIN
-            if(!$role || !in_array($role->role_id,[1,2]))
+            if(!$role || !in_array($role->role_id,$this->_ALLOW_ROLE_ID))
             {
-                throw new Exception("You Are Not Authoried For This Action");
+                throw new Exception(($role?$role->role_name:"You Are")." Not Authoried For This Action");
             }
             $sms = "";
             $request->validate(
@@ -483,9 +489,9 @@ class TradeController extends Controller
             $role = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_WF_MASTER_Id);            
             #roleId = 1 -> SUPER ADMIN,
             #         2 -> ADMIN
-            if(!$role || !in_array($role->role_id,[1,2]))
+            if(!$role || !in_array($role->role_id,$this->_ALLOW_ROLE_ID))
             {
-                throw new Exception("You Are Not Authoried For This Action");
+                throw new Exception(($role?$role->role_name:"You Are")." Not Authoried For This Action");
             }
             $sms = "";
             $request->validate(
@@ -573,9 +579,9 @@ class TradeController extends Controller
             $role = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_WF_MASTER_Id);            
             #roleId = 1 -> SUPER ADMIN,
             #         2 -> ADMIN
-            if(!$role || !in_array($role->role_id,[1,2]))
+            if(!$role || !in_array($role->role_id,$this->_ALLOW_ROLE_ID))
             {
-                throw new Exception("You Are Not Authoried For This Action");
+                throw new Exception(($role?$role->role_name:"You Are")." Not Authoried For This Action");
             }
             $sms = "";
             $request->validate(
@@ -629,7 +635,7 @@ class TradeController extends Controller
             $role = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_WF_MASTER_Id);            
             #roleId = 1 -> SUPER ADMIN,
             #         2 -> ADMIN
-            if(!$role || !in_array($role->role_id,[1,2]))
+            if(!$role || !in_array($role->role_id,$this->_ALLOW_ROLE_ID))
             {
                 throw new Exception(($role?$role->role_name:"You Are")." Not Authoried For This Action");
             }
@@ -701,13 +707,7 @@ class TradeController extends Controller
             $user = Auth()->user();
             $userId = $user->id??0;
             $ulbId = $user->ulb_id??0;
-            $role = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_WF_MASTER_Id);            
-            #roleId = 1 -> SUPER ADMIN,
-            #         2 -> ADMIN
-            if(!$role || !in_array($role->role_id,[1,2]))
-            {
-                throw new Exception(($role?$role->role_name:"You Are")." Not Authoried For This Action");
-            }          
+            $role = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_WF_MASTER_Id); 
             $request->validate(
                 [
                     "id" => "required|digits_between:1,9223372036854775807",
@@ -739,9 +739,9 @@ class TradeController extends Controller
             $role = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_WF_MASTER_Id);            
             #roleId = 1 -> SUPER ADMIN,
             #         2 -> ADMIN
-            if(!$role || !in_array($role->role_id,[1,2]))
+            if(!$role || !in_array($role->role_id,$this->_ALLOW_ROLE_ID))
             {
-                throw new Exception("You Are Not Authoried For This Action");
+                throw new Exception(($role?$role->role_name:"You Are")." Not Authoried For This Action");
             }
             $sms = "";
             $request->validate(
@@ -799,9 +799,9 @@ class TradeController extends Controller
             $role = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_WF_MASTER_Id);            
             #roleId = 1 -> SUPER ADMIN,
             #         2 -> ADMIN
-            if(!$role || !in_array($role->role_id,[1,2]))
+            if(!$role || !in_array($role->role_id,$this->_ALLOW_ROLE_ID))
             {
-                throw new Exception("You Are Not Authoried For This Action");
+                throw new Exception(($role?$role->role_name:"You Are")." Not Authoried For This Action");
             }
             $sms = "";
             $request->validate(
@@ -893,9 +893,9 @@ class TradeController extends Controller
             $role = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_WF_MASTER_Id);            
             #roleId = 1 -> SUPER ADMIN,
             #         2 -> ADMIN
-            if(!$role || !in_array($role->role_id,[1,2]))
+            if(!$role || !in_array($role->role_id,$this->_ALLOW_ROLE_ID))
             {
-                throw new Exception("You Are Not Authoried For This Action");
+                throw new Exception(($role?$role->role_name:"You Are")." Not Authoried For This Action");
             }
             $sms = "";
             $request->validate(
