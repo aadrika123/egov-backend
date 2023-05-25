@@ -37,6 +37,19 @@ class WaterConsumerDemand extends Model
             ->get();
     }
 
+    /**
+     * | 
+     */
+    public function getRefConsumerDemand($consumerId)
+    {
+        $this->impos_penalty($consumerId);
+        return WaterConsumerDemand::where('consumer_id', $consumerId)
+            ->where('status', true)
+            ->orderByDesc('id');
+    }
+
+
+
     public function consumerDemandByConsumerId($consumerId)
     {
         return WaterConsumerDemand::where('consumer_id', $consumerId)

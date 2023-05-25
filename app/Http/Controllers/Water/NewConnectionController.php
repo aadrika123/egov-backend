@@ -526,7 +526,7 @@ class NewConnectionController extends Controller
                                 $fialMeterReading = $mWaterConsumerInitialMeter->getmeterReadingAndDetails($refConsumerId)
                                     ->orderByDesc('id')
                                     ->first();
-                                $consumerDemand['lastMeterReading'] = $fialMeterReading->initial_reading;
+                                $consumerDemand['lastMeterReading'] = $fialMeterReading->initial_reading ?? 0;
                                 break;
                             }
                             $connectionName = $refConnectionName['4'];
@@ -548,7 +548,7 @@ class NewConnectionController extends Controller
 
                             $consumerDemand['lastConsumedUnit'] = round($refTaxUnitConsumed, 2);
                             $consumerDemand['avgReading'] = round(($refTaxUnitConsumed / $diffInDays), 2);
-                            $consumerDemand['lastMeterReading'] = $fialMeterReading->initial_reading;
+                            $consumerDemand['lastMeterReading'] = $fialMeterReading->initial_reading ?? 0;
 
                             break;
                         case (2):
@@ -557,7 +557,7 @@ class NewConnectionController extends Controller
                             $fialMeterReading = $mWaterConsumerInitialMeter->getmeterReadingAndDetails($refConsumerId)
                                 ->orderByDesc('id')
                                 ->first();
-                            $consumerDemand['lastMeterReading'] = $fialMeterReading->initial_reading;
+                            $consumerDemand['lastMeterReading'] = $fialMeterReading->initial_reading ?? 0 ;
                             break;
                         case (3):
                             $connectionName = $refConnectionName['3'];

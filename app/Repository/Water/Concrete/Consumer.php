@@ -114,6 +114,9 @@ class Consumer implements IConsumer
             } else {
                 $to_date = date('Y-m-t', strtotime($upto_date . '-1 months'));
             }
+            if ($demand_from >= $to_date) {
+                throw new Exception("Demand Already Genrated");
+            }
             if ($refMeterStatus->connection_type == 3 || $refMeterStatus->connection_type == "") {
 
                 $refFixedRateDetail     = $this->getFixedRateCharge($mPropertyTypeId, $mAreaSqmt, $demand_from);
@@ -416,6 +419,7 @@ class Consumer implements IConsumer
             } else {
                 $demand_from = date('Y-m-d', strtotime($last_demand_upto . "+1 days"));
             }
+
             #for gov property meter Fixed
             if ($property_type_id == 3 && $refMeterStatus->connection_type == 1 && $refMeterStatus->meter_status == 0) {
                 $i = $demand_from;
@@ -424,6 +428,10 @@ class Consumer implements IConsumer
                 } else {
                     $to_date = date('Y-m-t', strtotime($upto_date . '-1 months'));
                 }
+
+                // if ($demand_from >= $to_date) {
+                //     throw new Exception("Demand Already Genrated");
+                // }
 
                 $consumer_tax = array();
                 $consumer_tax['charge_type'] = 'Average';
@@ -485,6 +493,11 @@ class Consumer implements IConsumer
                 } else {
                     $to_date = $upto_date;
                 }
+                
+                // if ($demand_from >= $to_date) {
+                //     throw new Exception("Demand Already Genrated");
+                // }
+
                 $args = $this->getMeterArrvg($refConsumerDetails, $refLastDemandDetails, $to_date);
 
                 $get_initial_reading = $this->getLastMeterReading($mConsumerId);
