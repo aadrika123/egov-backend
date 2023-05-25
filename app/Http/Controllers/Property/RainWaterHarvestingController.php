@@ -1121,7 +1121,7 @@ class RainWaterHarvestingController extends Controller
         $req->validate([
             "applicationId" => "required|numeric",
             "verificationStatus" => "required|In:1,0",
-            // "harvestingImage.*" => "required|image|mimes:jpeg,jpg,png,gif",
+            // "harvestingImage.*" => "required|image|mimes:jpeg,jpg,png",
         ]);
         try {
             $taxCollectorRole = Config::get('PropertyConstaint.SAF-LABEL.TC');
@@ -1155,7 +1155,6 @@ class RainWaterHarvestingController extends Controller
             $readRoleDtls = $mWfRoleUsermap->getRoleByUserWfId($getRoleReq);
             $roleId = $readRoleDtls->wf_role_id;
 
-
             switch ($roleId) {
                 case $taxCollectorRole;
                     if ($verificationStatus == 1) {
@@ -1166,9 +1165,21 @@ class RainWaterHarvestingController extends Controller
                         $req->agencyVerification = false;
                         $msg = "Site Successfully rebuted";
                     }
+
                     //GEO TAGGING
+                    $docReqs = [
+                        'application_id' => $req->applicationId,
+                        'property_id' => $applicationDtls->property_id,
+                        'image_path' => $refImageName,
+                        'longitude' => $req->longitude,
+                        'latitude' => $req->latitude,
+                        'relative_path' => $relativePath,
+                        'user_id' => authUser()->id
+                    ];
+
                     $imageName = $docUpload->upload($refImageName, $images, $relativePath);         // <------- Get uploaded image name and move the image in folder
-                    $geoTagging->add($req, $imageName, $relativePath, $geoTagging);
+                    $geoTagging->add($docReqs);
+                    // $geoTagging->add($req, $imageName, $relativePath, $geoTagging);
 
                     $metaReqs['moduleId'] = $moduleId;
                     $metaReqs['activeId'] = $req->applicationId;
@@ -1199,8 +1210,6 @@ class RainWaterHarvestingController extends Controller
                 default:
                     return responseMsg(false, "Forbidden Access", "");
             }
-
-            // return $applicationDtls;
 
             $req->merge([
                 'propertyId' => $applicationDtls->property_id,
