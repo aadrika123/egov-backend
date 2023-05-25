@@ -743,7 +743,7 @@ class HoldingTaxController extends Controller
             $responseData = [
                 "departmentSection" => $mDepartmentSection,
                 "accountDescription" => $mAccDescription,
-                "transactionDate" => $propTrans->tran_date,
+                "transactionDate" => Carbon::parse($propTrans->tran_date)->format('d-m-Y'),
                 "transactionNo" => $propTrans->tran_no,
                 "transactionTime" => $propTrans->created_at->format('H:i:s'),
                 "applicationNo" => !empty($propProperty['new_holding_no']) ? $propProperty['new_holding_no'] : $propProperty['holding_no'],
@@ -837,7 +837,9 @@ class HoldingTaxController extends Controller
             $responseData = $this->propPaymentReceipt($req);
             $responseData = $responseData->original['data'];                                              // Function propPaymentReceipt(9.1)
             $totalRebate = $responseData['totalRebate'];
-            $responseData['holdingTaxDetails'] = $this->holdingTaxDetails($propTrans, $totalRebate);                    // (9.2)
+            $holdingTaxDetails = $this->holdingTaxDetails($propTrans, $totalRebate);                    // (9.2)
+            $holdingTaxDetails = collect($holdingTaxDetails)->where('amount', '>', 0)->values();
+            $responseData['holdingTaxDetails'] = $holdingTaxDetails;
             return responseMsgs(true, "Payment Receipt", remove_null($responseData), "011609", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011609", "1.0", "", "POST", $req->deviceId);

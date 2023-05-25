@@ -1963,7 +1963,7 @@ class ActiveSafController extends Controller
             $responseData = [
                 "departmentSection" => $mDepartmentSection,
                 "accountDescription" => $mAccDescription,
-                "transactionDate" => $safTrans->tran_date,
+                "transactionDate" => Carbon::parse($safTrans->tran_date)->format('d-m-Y'),
                 "transactionNo" => $safTrans->tran_no,
                 "transactionTime" => $safTrans->created_at->format('H:i:s'),
                 "applicationNo" => $activeSafDetails['saf_no'],

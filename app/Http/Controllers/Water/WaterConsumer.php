@@ -139,8 +139,10 @@ class WaterConsumer extends Controller
      */
     public function saveGenerateConsumerDemand(Request $request)
     {
+        $mNowDate = Carbon::now();
         $request->validate([
-            'consumerId' => "required|digits_between:1,9223372036854775807",
+            'consumerId'    => "required|digits_between:1,9223372036854775807",
+            // "demandUpto"    => "nullable|date|date_format:Y-m-d|before_or_equal:$mNowDate",
         ]);
         try {
             $mWaterConsumerInitialMeter = new WaterConsumerInitialMeter();
@@ -150,9 +152,9 @@ class WaterConsumer extends Controller
             $meterRefImageName          = config::get('waterConstaint.WATER_METER_CODE');
             $demandIds = array();
 
-            # Check and calculate Demand
-            $this->checkDemandGeneration($request);                                                    // unfinished function
+            # Check and calculate Demand                    
             $consumerDetails = WaterWaterConsumer::findOrFail($request->consumerId);
+            $this->checkDemandGeneration($request, $consumerDetails);                                       // unfinished function
             $calculatedDemand = collect($this->Repository->calConsumerDemand($request));
             if ($calculatedDemand['status'] == false) {
                 throw new Exception($calculatedDemand['errors']);
@@ -256,7 +258,7 @@ class WaterConsumer extends Controller
             ];
             switch ($demandType) {
                 case ($refMeterConnectionType['1']):
-                    $refDemands     = $firstValue['consumer_demand'];
+                    $refDemands = $firstValue['consumer_demand'];
                     $check = collect($refDemands)->first();
                     if (is_array($check)) {
                         $refDemandIds = collect($refDemands)->map(function ($secondValue)
@@ -296,11 +298,16 @@ class WaterConsumer extends Controller
                     break;
                 case ($refMeterConnectionType['3']):
                     $refDemands = $firstValue['consumer_demand'];
-                    $refDemandIds = collect($refDemands)->map(function ($secondValue)
-                    use ($mWaterConsumerDemand, $meterDetails, $consumerDetails, $request, $taxId) {
-                        $refDemandId = $mWaterConsumerDemand->saveConsumerDemand($secondValue, $meterDetails, $consumerDetails, $request, $taxId);
-                        return $refDemandId;
-                    });
+                    $check = collect($refDemands)->first();
+                    if (is_array($check)) {
+                        $refDemandIds = collect($refDemands)->map(function ($secondValue)
+                        use ($mWaterConsumerDemand, $meterDetails, $consumerDetails, $request, $taxId) {
+                            $refDemandId = $mWaterConsumerDemand->saveConsumerDemand($secondValue, $meterDetails, $consumerDetails, $request, $taxId);
+                            return $refDemandId;
+                        });
+                        break;
+                    }
+                    $refDemandIds = $mWaterConsumerDemand->saveConsumerDemand($refDemands, $meterDetails, $consumerDetails, $request, $taxId);
                     break;
             }
             return $refDemandIds;
@@ -314,9 +321,26 @@ class WaterConsumer extends Controller
         | Serial No : 03.02
         | Not Used 
      */
-    public function checkDemandGeneration()
+    public function checkDemandGeneration($request, $consumerDetails)
     {
-        // write code for checking the restrictions of demand generation
+        $today = Carbon::now();
+        $refConsumerId = $request->consumerId;
+        $mWaterConsumerDemand = new WaterConsumerDemand();
+        $lastDemand = $mWaterConsumerDemand->getRefConsumerDemand($refConsumerId)->first();
+        $refDemandUpto = Carbon::parse($lastDemand->demand_upto);
+        if ($refDemandUpto > $today) {
+            throw new Exception("the demand is generated till" . "" . $lastDemand->demand_upto);
+        }
+        $startDate = Carbon::parse($refDemandUpto);
+        $uptoMonth = $startDate->format('m');
+        $todayMonth = $today->format('m');
+        if ($uptoMonth >= $todayMonth) {
+            throw new Exception("demand should be generated generate in next month!");
+        }
+        $diffMonth = $startDate->diffInMonths($today);
+        if ($diffMonth < 1) {
+            throw new Exception("there should be a diff of month!");
+        }
     }
 
 

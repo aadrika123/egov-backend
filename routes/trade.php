@@ -157,8 +157,36 @@ Route::controller(TradeApplication::class)->group(function () {
     Route::get('license-certificate/{id}', 'licenceCertificate');
 });
 
-Route::controller(TradeController::class)->group(function () {
-    // Route::post('firm-type-add', 'addFirmType');
-    // Route::post('firm-type-list', 'firmTypeList');
-    // Route::post('firm-type-update', 'updateFirmType');
+Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {
+    Route::controller(TradeController::class)->group(function () {
+        // Route::post('firm-type-add', 'addFirmType');
+        Route::post('firm-type-list', 'firmTypeList');
+        Route::post('firm-typ', 'firmType');
+        // Route::post('firm-type-update', 'updateFirmType');
+
+        // Route::post('application-type-add', 'addApplicationType');
+        Route::post('application-type-list', 'applicationTypeList');
+        Route::post('application-type', 'applicationType');
+        // Route::post('application-type-update', 'updateApplicationType');
+
+        // Route::post('category-type-add', 'addCategoryType');
+        Route::post('category-type-list', 'categoryTypeList');
+        Route::post('category-type', 'categoryType');
+        // Route::post('category-type-update', 'updateCategoryType');
+
+        // Route::post('item-type-add', 'addItemType');
+        Route::post('item-type-list', 'itemTypeList');
+        Route::post('item-type', 'itemType');
+        // Route::post('item-type-update', 'updateItemType');        
+
+        // Route::post('rate-add', 'addRate');
+        Route::post('rate-list', 'rateList');
+        Route::post('rate', 'rate');
+        Route::post('rate-update', 'updateRate');
+
+        // Route::post('ownership-type-add', 'addOwnershipType');
+        Route::post('ownership-type-list', 'ownershipTypeList');
+        Route::post('ownership-type', 'ownershipType');
+        // Route::post('ownership-type-update', 'updateOwnershipType');
+    });
 });

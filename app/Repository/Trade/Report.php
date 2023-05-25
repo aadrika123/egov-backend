@@ -94,44 +94,44 @@ class Report implements IReport
                 $ulbId = $request->ulbId;
             }
             $where .= " AND trade_transactions.ulb_id =  $ulbId ";
-
-            $active = TradeTransaction::select(
-                            DB::raw("   
-                                        trade_transactions.id as tran_id,
-                                        trade_transactions.temp_id as license_id,
-                                        ulb_ward_masters.ward_name AS ward_no,
-                                        active_trade_licences.application_no AS application_no,
-                                        (
-                                            CASE WHEN active_trade_licences.license_no='' OR active_trade_licences.license_no IS NULL THEN 'N/A' 
-                                            ELSE active_trade_licences.license_no END
-                                        ) AS license_no,
-                                        owner_detail.owner_name,
-                                        owner_detail.mobile_no,
-                                        active_trade_licences.firm_name AS firm_name,
-                                        TO_CHAR(trade_transactions.tran_date, 'DD-MM-YYYY') as tran_date ,
-                                        trade_transactions.payment_mode AS transaction_mode,
-                                        trade_transactions.paid_amount,
-                                        (
-                                            CASE WHEN upper(trade_transactions.payment_mode) NOT IN('ONLINE','ONL') THEN users.user_name 
-                                            ELSE 'N/A' END
-                                        ) AS emp_name,
-                                        trade_transactions.tran_no,
-                                        (
-                                            CASE WHEN trade_cheque_dtls.cheque_no IS NULL THEN 'N/A' 
-                                            ELSE trade_cheque_dtls.cheque_no END
-                                        ) AS cheque_no,
-                                        (
-                                            CASE WHEN trade_cheque_dtls.bank_name IS NULL THEN 'N/A' 
-                                            ELSE trade_cheque_dtls.bank_name END
-                                        ) AS bank_name,
-                                        (
-                                            CASE WHEN trade_cheque_dtls.branch_name IS NULL THEN 'N/A' 
-                                            ELSE trade_cheque_dtls.branch_name END
-                                        ) AS branch_name
-                            "),
-                        )
-                    ->JOIN("active_trade_licences","active_trade_licences.id","trade_transactions.temp_id")
-                    ->JOIN("ulb_ward_masters","ulb_ward_masters.id","active_trade_licences.ward_id")
+            $select = [
+                DB::raw("   
+                            trade_transactions.id as tran_id,
+                            trade_transactions.temp_id as license_id,
+                            ulb_ward_masters.ward_name AS ward_no,
+                            licences.application_no AS application_no,
+                            (
+                                CASE WHEN licences.license_no='' OR licences.license_no IS NULL THEN 'N/A' 
+                                ELSE licences.license_no END
+                            ) AS license_no,
+                            owner_detail.owner_name,
+                            owner_detail.mobile_no,
+                            licences.firm_name AS firm_name,
+                            TO_CHAR(trade_transactions.tran_date, 'DD-MM-YYYY') as tran_date ,
+                            trade_transactions.payment_mode AS transaction_mode,
+                            trade_transactions.paid_amount,
+                            (
+                                CASE WHEN upper(trade_transactions.payment_mode) NOT IN('ONLINE','ONL') THEN users.user_name 
+                                ELSE 'N/A' END
+                            ) AS emp_name,
+                            trade_transactions.tran_no,
+                            (
+                                CASE WHEN trade_cheque_dtls.cheque_no IS NULL THEN 'N/A' 
+                                ELSE trade_cheque_dtls.cheque_no END
+                            ) AS cheque_no,
+                            (
+                                CASE WHEN trade_cheque_dtls.bank_name IS NULL THEN 'N/A' 
+                                ELSE trade_cheque_dtls.bank_name END
+                            ) AS bank_name,
+                            (
+                                CASE WHEN trade_cheque_dtls.branch_name IS NULL THEN 'N/A' 
+                                ELSE trade_cheque_dtls.branch_name END
+                            ) AS branch_name
+                "),
+            ];
+            $active = TradeTransaction::select($select)
+                    ->JOIN("active_trade_licences AS licences","licences.id","trade_transactions.temp_id")
+                    ->JOIN("ulb_ward_masters","ulb_ward_masters.id","licences.ward_id")
                     ->LEFTJOIN("trade_cheque_dtls","trade_cheque_dtls.tran_id","trade_transactions.id")
                     ->LEFTJOIN("users","users.id","trade_transactions.emp_dtl_id")
                     ->LEFTJOIN(DB::RAW("(
@@ -148,44 +148,9 @@ class Report implements IReport
                     ->WHEREIN("trade_transactions.status",[1,2])
                     ->WHEREBETWEEN("trade_transactions.tran_date",[$fromDate,$uptoDate]);
             
-            $approved = TradeTransaction::select(
-                        DB::raw("   
-                                    trade_transactions.id as tran_id,
-                                    trade_transactions.temp_id as license_id,
-                                    ulb_ward_masters.ward_name AS ward_no,
-                                    trade_licences.application_no AS application_no,
-                                    (
-                                        CASE WHEN trade_licences.license_no='' OR trade_licences.license_no IS NULL THEN 'N/A' 
-                                        ELSE trade_licences.license_no END
-                                    ) AS license_no,
-                                    owner_detail.owner_name,
-                                    owner_detail.mobile_no,
-                                    trade_licences.firm_name AS firm_name,
-                                    TO_CHAR(trade_transactions.tran_date, 'DD-MM-YYYY') as tran_date ,
-                                    trade_transactions.payment_mode AS transaction_mode,
-                                    trade_transactions.paid_amount,
-                                    (
-                                        CASE WHEN upper(trade_transactions.payment_mode) NOT IN('ONLINE','ONL') THEN users.user_name 
-                                        ELSE 'N/A' END
-                                    ) AS emp_name,
-                                    trade_transactions.tran_no,
-                                    (
-                                        CASE WHEN trade_cheque_dtls.cheque_no IS NULL THEN 'N/A' 
-                                        ELSE trade_cheque_dtls.cheque_no END
-                                    ) AS cheque_no,
-                                    (
-                                        CASE WHEN trade_cheque_dtls.bank_name IS NULL THEN 'N/A' 
-                                        ELSE trade_cheque_dtls.bank_name END
-                                    ) AS bank_name,
-                                    (
-                                        CASE WHEN trade_cheque_dtls.branch_name IS NULL THEN 'N/A' 
-                                        ELSE trade_cheque_dtls.branch_name END
-                                    ) AS branch_name
-                                    
-                        "),
-                    )
-                ->JOIN("trade_licences","trade_licences.id","trade_transactions.temp_id")
-                ->JOIN("ulb_ward_masters","ulb_ward_masters.id","trade_licences.ward_id")
+            $approved = TradeTransaction::select($select)
+                ->JOIN("trade_licences AS licences","licences.id","trade_transactions.temp_id")
+                ->JOIN("ulb_ward_masters","ulb_ward_masters.id","licences.ward_id")
                 ->LEFTJOIN("trade_cheque_dtls","trade_cheque_dtls.tran_id","trade_transactions.id")
                 ->LEFTJOIN("users","users.id","trade_transactions.emp_dtl_id")
                 ->LEFTJOIN(DB::RAW("(
@@ -202,43 +167,9 @@ class Report implements IReport
                 ->WHEREIN("trade_transactions.status",[1,2])
                 ->WHEREBETWEEN("trade_transactions.tran_date",[$fromDate,$uptoDate]);
 
-            $rejected = TradeTransaction::select(
-                    DB::raw("   
-                                trade_transactions.id as tran_id,
-                                trade_transactions.temp_id as license_id,
-                                ulb_ward_masters.ward_name AS ward_no,
-                                rejected_trade_licences.application_no AS application_no,
-                                (
-                                    CASE WHEN rejected_trade_licences.license_no='' OR rejected_trade_licences.license_no IS NULL THEN 'N/A' 
-                                    ELSE rejected_trade_licences.license_no END
-                                ) AS license_no,
-                                owner_detail.owner_name,
-                                owner_detail.mobile_no,
-                                rejected_trade_licences.firm_name AS firm_name,
-                                TO_CHAR(trade_transactions.tran_date, 'DD-MM-YYYY') as tran_date ,
-                                trade_transactions.payment_mode AS transaction_mode,
-                                trade_transactions.paid_amount,
-                                (
-                                    CASE WHEN upper(trade_transactions.payment_mode) NOT IN('ONLINE','ONL') THEN users.user_name 
-                                    ELSE 'N/A' END
-                                ) AS emp_name,
-                                trade_transactions.tran_no,
-                                (
-                                    CASE WHEN trade_cheque_dtls.cheque_no IS NULL THEN 'N/A' 
-                                    ELSE trade_cheque_dtls.cheque_no END
-                                ) AS cheque_no,
-                                (
-                                    CASE WHEN trade_cheque_dtls.bank_name IS NULL THEN 'N/A' 
-                                    ELSE trade_cheque_dtls.bank_name END
-                                ) AS bank_name,
-                                (
-                                    CASE WHEN trade_cheque_dtls.branch_name IS NULL THEN 'N/A' 
-                                    ELSE trade_cheque_dtls.branch_name END
-                                ) AS branch_name
-                    "),
-                )
-                ->JOIN("rejected_trade_licences","rejected_trade_licences.id","trade_transactions.temp_id")
-                ->JOIN("ulb_ward_masters","ulb_ward_masters.id","rejected_trade_licences.ward_id")
+            $rejected = TradeTransaction::select($select)
+                ->JOIN("rejected_trade_licences AS licences","licences.id","trade_transactions.temp_id")
+                ->JOIN("ulb_ward_masters","ulb_ward_masters.id","licences.ward_id")
                 ->LEFTJOIN("trade_cheque_dtls","trade_cheque_dtls.tran_id","trade_transactions.id")
                 ->LEFTJOIN("users","users.id","trade_transactions.emp_dtl_id")
                 ->LEFTJOIN(DB::RAW("(
@@ -254,43 +185,9 @@ class Report implements IReport
                     })
                 ->WHEREIN("trade_transactions.status",[1,2])
                 ->WHEREBETWEEN("trade_transactions.tran_date",[$fromDate,$uptoDate]);
-            $old = TradeTransaction::select(
-                    DB::raw("   
-                                trade_transactions.id as tran_id,
-                                trade_transactions.temp_id as license_id,
-                                ulb_ward_masters.ward_name AS ward_no,
-                                trade_renewals.application_no AS application_no,
-                                (
-                                    CASE WHEN trade_renewals.license_no='' OR trade_renewals.license_no IS NULL THEN 'N/A' 
-                                    ELSE trade_renewals.license_no END
-                                ) AS license_no,
-                                owner_detail.owner_name,
-                                owner_detail.mobile_no,
-                                trade_renewals.firm_name AS firm_name,
-                                TO_CHAR(trade_transactions.tran_date, 'DD-MM-YYYY') as tran_date ,
-                                trade_transactions.payment_mode AS transaction_mode,
-                                trade_transactions.paid_amount,
-                                (
-                                    CASE WHEN upper(trade_transactions.payment_mode) NOT IN('ONLINE','ONL') THEN users.user_name 
-                                    ELSE 'N/A' END
-                                ) AS emp_name,
-                                trade_transactions.tran_no,
-                                (
-                                    CASE WHEN trade_cheque_dtls.cheque_no IS NULL THEN 'N/A' 
-                                    ELSE trade_cheque_dtls.cheque_no END
-                                ) AS cheque_no,
-                                (
-                                    CASE WHEN trade_cheque_dtls.bank_name IS NULL THEN 'N/A' 
-                                    ELSE trade_cheque_dtls.bank_name END
-                                ) AS bank_name,
-                                (
-                                    CASE WHEN trade_cheque_dtls.branch_name IS NULL THEN 'N/A' 
-                                    ELSE trade_cheque_dtls.branch_name END
-                                ) AS branch_name
-                    "),
-                )
-                ->JOIN("trade_renewals","trade_renewals.id","trade_transactions.temp_id")
-                ->JOIN("ulb_ward_masters","ulb_ward_masters.id","trade_renewals.ward_id")
+            $old = TradeTransaction::select($select)
+                ->JOIN("trade_renewals AS licences","licences.id","trade_transactions.temp_id")
+                ->JOIN("ulb_ward_masters","ulb_ward_masters.id","licences.ward_id")
                 ->LEFTJOIN("trade_cheque_dtls","trade_cheque_dtls.tran_id","trade_transactions.id")
                 ->LEFTJOIN("users","users.id","trade_transactions.emp_dtl_id")
                 ->LEFTJOIN(DB::RAW("(
@@ -479,72 +376,67 @@ class Report implements IReport
             {
                 $ulbId = $request->ulbId;
             }
-
-            $data = TradeLicence::select("trade_licences.id","trade_licences.ward_id","trade_licences.application_type_id",
-                        "trade_licences.ulb_id","trade_licences.application_no","trade_licences.provisional_license_no",
-                        "trade_licences.license_no",
-                        "trade_licences.firm_name",
-                        "trade_param_firm_types.firm_type",
-                        "trade_licences.firm_type_id",
-                    DB::raw("ulb_ward_masters.ward_name as ward_no,'approve' as type, ulb_masters.ulb_name,
-                        TO_CHAR(trade_licences.valid_from, 'DD-MM-YYYY') as valid_from ,
-                        TO_CHAR(trade_licences.valid_upto, 'DD-MM-YYYY') as valid_upto,
-                        TO_CHAR(trade_licences.application_date, 'DD-MM-YYYY') as application_date,
-                        TO_CHAR(trade_licences.license_date, 'DD-MM-YYYY') as license_date
-                    ")
-            
-                    )
-                    ->join("ulb_masters","ulb_masters.id","trade_licences.ulb_id")
-                    ->join("ulb_ward_masters","ulb_ward_masters.id","trade_licences.ward_id")
-                    ->leftjoin("trade_param_firm_types", "trade_param_firm_types.id", "trade_licences.firm_type_id");
+            $select = [
+                "licences.id","licences.ward_id","licences.application_type_id",
+                "licences.ulb_id","licences.application_no","licences.provisional_license_no",
+                "licences.license_no",
+                "licences.firm_name",
+                "trade_param_firm_types.firm_type",
+                "licences.firm_type_id",
+                DB::raw("ulb_ward_masters.ward_name as ward_no,
+                    ulb_masters.ulb_name,
+                    TO_CHAR( CAST(licences.valid_from AS DATE), 'DD-MM-YYYY') as valid_from ,
+                    TO_CHAR( CAST(licences.valid_upto AS DATE), 'DD-MM-YYYY') as valid_upto,
+                    TO_CHAR( CAST(licences.application_date AS DATE), 'DD-MM-YYYY') as application_date,
+                    TO_CHAR( CAST(licences.license_date AS DATE), 'DD-MM-YYYY') as license_date
+                ")
+            ];
+            $select1 = $select;
+            $select1[]=DB::raw("'approve' as type ");
+            $data = DB::TABLE("trade_licences AS licences")
+                    ->select($select1)
+                    ->join("ulb_masters","ulb_masters.id","licences.ulb_id")
+                    ->join("ulb_ward_masters","ulb_ward_masters.id","licences.ward_id")
+                    ->leftjoin("trade_param_firm_types", "trade_param_firm_types.id", "licences.firm_type_id");
                     
             if($oprater)
             {
-                $data = $data->where("trade_licences.valid_upto",$oprater,$uptoDate);
+                $data = $data->where("licences.valid_upto",$oprater,$uptoDate);
             }
             if(strtoupper($request->licenseStatus)=="TO BE EXPIRED")
             {
-                $data = $data->whereBetween("trade_licences.valid_upto",[$uptoDate,(new Carbon($uptoDate))->addDays(30)->format("Y-m-d")]);
+                $oprater=true;
+                $data = $data->whereBetween("licences.valid_upto",[$uptoDate,(new Carbon($uptoDate))->addDays(30)->format("Y-m-d")]);
             }
             if($wardId)
             {
-                $data = $data->where("trade_licences.ward_id",$wardId);
+                $data = $data->where("licences.ward_id",$wardId);
             }
             if($ulbId)
             {
-                $data = $data->where("trade_licences.ulb_id",$ulbId);
+                $data = $data->where("licences.ulb_id",$ulbId);
             }
             if($licenseNo)
             {
-                $data = $data->where('trade_licences.license_no', 'ILIKE', "%" . $licenseNo . "%");
+                $data = $data->where('licences.license_no', 'ILIKE', "%" . $licenseNo . "%");
             }
             if((!$oprater) && $licenseNo)
             {
-                $old = TradeRenewal::select("trade_renewals.id","trade_renewals.ward_id","trade_renewals.application_type_id",
-                        "trade_renewals.ulb_id","trade_renewals.application_no","trade_renewals.provisional_license_no",
-                        "trade_renewals.license_no",
-                        "trade_renewals.firm_name",
-                        "trade_param_firm_types.firm_type",
-                        "trade_renewals.firm_type_id",
-                    DB::raw("ulb_ward_masters.ward_name as ward_no,'old' as type , ulb_masters.ulb_name,
-                        TO_CHAR(trade_renewals.valid_from, 'DD-MM-YYYY') as valid_from ,
-                        TO_CHAR(trade_renewals.valid_upto, 'DD-MM-YYYY') as valid_upto,
-                        TO_CHAR(trade_renewals.application_date, 'DD-MM-YYYY') as application_date,
-                        TO_CHAR(trade_renewals.license_date, 'DD-MM-YYYY') as license_date
-                    ")
-            
-                    )
-                    ->join("ulb_masters","ulb_masters.id","trade_renewals.ulb_id")
-                    ->join("ulb_ward_masters","ulb_ward_masters.id","trade_renewals.ward_id") 
-                    ->leftjoin("trade_param_firm_types", "trade_param_firm_types.id", "trade_renewals.firm_type_id")
-                    ->where('trade_renewals.license_no', 'ILIKE', '%' . $licenseNo . '%');
+                $select2 = $select;
+                $select2[]=DB::raw("'old' as type ");
+                $old = DB::TABLE("trade_renewals AS licences")
+                    ->select($select2)
+                    ->join("ulb_masters","ulb_masters.id","licences.ulb_id")
+                    ->join("ulb_ward_masters","ulb_ward_masters.id","licences.ward_id") 
+                    ->leftjoin("trade_param_firm_types", "trade_param_firm_types.id", "licences.firm_type_id")
+                    ->where('licences.license_no', 'ILIKE', '%' . $licenseNo . '%');
                     if($wardId)
                     {
-                        $old = $old->where("trade_renewals.ward_id",$wardId);
+                        $old = $old->where("licences.ward_id",$wardId);
                     }
                     if($ulbId)
                     {
-                        $old = $old->where("trade_renewals.ulb_id",$ulbId);
+                        $old = $old->where("licences.ulb_id",$ulbId);
                     }
                     $data= $data->union($old)->orderBy("application_date");
                     
