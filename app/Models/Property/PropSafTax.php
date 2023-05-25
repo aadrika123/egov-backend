@@ -16,6 +16,7 @@ class PropSafTax extends Model
     public function getSafTaxesBySafId($safId)
     {
         return PropSafTax::where('saf_id', $safId)
+            ->orderBy('created_at')
             ->where('status', 1)
             ->get();
     }

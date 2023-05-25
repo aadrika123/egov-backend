@@ -194,7 +194,7 @@ class ActiveSafControllerV2 extends Controller
 
                     $diffAmt = $ulbVerifiedQuarterlyTaxes - $selfAssessQuaterlyTax;
                     $response = [
-                        'Particulars' => (substr($ulbTax->fyear, 5) > 2023 && $ulbTax->qtr >= 1) ? "Holding Tax @ 0.075% or 0.15% or 0.2%" : "Holding Tax @ 2%",
+                        'Particulars' => (substr($ulbTax->fyear, 5) >= 2023 && $ulbTax->qtr >= 1) ? "Holding Tax @ 0.075% or 0.15% or 0.2%" : "Holding Tax @ 2%",
                         'quarterFinancialYear' => 'Quarter' . $ulbTax->qtr . '/' . $ulbTax->fyear,
                         'basedOnSelfAssess' => roundFigure($selfAssessQuaterlyTax),
                         'basedOnUlbCalc' => roundFigure($ulbVerifiedQuarterlyTaxes),
@@ -211,7 +211,11 @@ class ActiveSafControllerV2 extends Controller
                     'basedOnUlbCalc' => roundFigure($holdingTaxes->sum('basedOnUlbCalc')),
                     'diffAmt' => roundFigure($holdingTaxes->sum('diffAmt')),
                 ]);
-
+                $details->from_qtr = $safTaxes->first()->qtr;
+                $details->from_fyear = $safTaxes->first()->fyear;
+                $details->arv = $safTaxes->first()->arv;
+                $details->quarterly_tax = $safTaxes->first()->quarterly_tax;
+                $details->rule = substr($details->from_fyear, 5) >= 2023 ? "Capital Value Rule property tax" : "Annual Rent Value Rule annual rent value";
                 $details->taxTable = $holdingTaxes->merge([$total])->values();
             }
             return responseMsgs(true, "", remove_null($details), "011803", 1.0, responseTime(), "POST", $req->deviceId);
