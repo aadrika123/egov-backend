@@ -173,6 +173,8 @@ class ActiveSafControllerV2 extends Controller
                 throw new Exception("Memo Details Not Available");
 
             $details = collect($details)->first();
+            $taxTable = collect($details)->only(['holding_tax', 'water_tax', 'latrine_tax', 'education_cess', 'health_cess', 'rwh_penalty']);
+            $details->taxTable = $this->generateTaxTable($taxTable);
             // Fam Receipt
             if ($details->memo_type == 'FAM') {
                 $propId = $details->prop_id;
@@ -215,13 +217,34 @@ class ActiveSafControllerV2 extends Controller
                 $details->from_fyear = $safTaxes->first()->fyear;
                 $details->arv = $safTaxes->first()->arv;
                 $details->quarterly_tax = $safTaxes->first()->quarterly_tax;
-                $details->rule = substr($details->from_fyear, 5) >= 2023 ? "Capital Value Rule property tax" : "Annual Rent Value Rule annual rent value";
+                $details->rule = substr($details->from_fyear, 5) >= 2023 ? "Capital Value Rule, property tax" : "Annual Rent Value Rule, annual rent value";
                 $details->taxTable = $holdingTaxes->merge([$total])->values();
             }
+
             return responseMsgs(true, "", remove_null($details), "011803", 1.0, responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011803", 1.0, responseTime(), "POST", $req->deviceId);
         }
+    }
+
+    /**
+     * | Generate Tax Table
+     */
+    public function generateTaxTable($taxDetails)
+    {
+        $taxes = collect(
+            [
+                'Holding Tax' => $taxDetails['holding_tax'],
+                'Water Tax' => $taxDetails['water_tax'],
+                'Latrine Tax' => $taxDetails['latrine_tax'],
+                'Education Cess' => $taxDetails['education_cess'],
+                'Health Tax' => $taxDetails['health_cess'],
+                'RWH Penalty' => $taxDetails['rwh_penalty'],
+            ]
+        );
+        return $taxes->filter(function ($value, $key) {
+            return $value != 0;
+        });
     }
 
     /**
