@@ -360,10 +360,12 @@ class RainWaterHarvestingController extends Controller
         ]);
         try {
             $mPropActiveHarvesting = new PropActiveHarvesting();
+            $mPropHarvestingGeotagUpload = new PropHarvestingGeotagUpload();
             $mWfActiveDocument =  new WfActiveDocument();
             $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
 
             $details = $mPropActiveHarvesting->getDetailsById($req->applicationId);
+            $geotagDtl = $mPropHarvestingGeotagUpload->getLatLong($req->applicationId);
 
             $docs =  $mWfActiveDocument->getDocByRefIdsDocCode($req->applicationId, $details->workflow_id, $moduleId, ['WATER_HARVESTING'])->last();
             $data = [
@@ -379,6 +381,8 @@ class RainWaterHarvestingController extends Controller
                 'mobileNo' => $details->mobile_no,
                 'dateOfCompletion' => $details->date_of_completion,
                 'harvestingImage' => $docs->doc_path,
+                'latitude' => $geotagDtl->latitude ?? null,
+                'longitude' => $geotagDtl->longitude ?? null,
             ];
 
             return responseMsgs(true, "Static Details!", remove_null($data), 010125, 1.0, "", "POST", $req->deviceId);
