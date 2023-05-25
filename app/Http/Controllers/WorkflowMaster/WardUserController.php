@@ -4,10 +4,13 @@ namespace App\Http\Controllers\WorkflowMaster;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Workflows\WfRoleusermap;
 use Illuminate\Http\Request;
 use App\Models\Workflows\WfWardUser;
 use Exception;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use Svg\Tag\Rect;
 
 /**
  * Controller for Add, Update, View , Delete of Wf Ward User Table
@@ -110,32 +113,32 @@ class WardUserController extends Controller
             'wardId' => 'nullable',
         ]);
         try {
-            $ulbId =  authUser()->ulb_id;
-            $TC = ['TC', 'TL'];
 
-            $data = User::select(
-                'users.id',
-                'name as user_name',
-                'user_type',
-            )
-                ->where('ulb_id', $ulbId)
-                ->whereIN('user_type', $TC)
-                ->get();
+            $user = authUser();
+            $userId =  $user->id;
+            $ulbId  =  $req->ulbId ?? $user->ulb_id;
+            $mWfRoleusermap = new WfRoleusermap();
+            if (!$ulbId)
+                throw new Exception('Ulb Id Required');
+            $tl = Config::get('role-constants.TEAM LEADER');
+            $tc = Config::get('role-constants.TAX COLLECTOR');
+            $jsk = Config::get('role-constants.JSK');
+            $tcIds = [$tl, $tc, $jsk];
+            $mreqs = new Request(['userId' => $userId]);
 
-            if ($req->wardId) {
-                $data = User::select(
-                    'users.id',
-                    'name as user_name',
-                    'user_type',
-                )
-                    ->join('wf_ward_users', 'wf_ward_users.user_id', 'users.id')
-                    ->where('ulb_id', $ulbId)
-                    ->where('ward_id', $req->wardId)
-                    ->whereIN('user_type', $TC)
+            $roleDtls = $mWfRoleusermap->getRoleByUserId($mreqs);
+
+            if ($roleDtls->wf_role_id == $tl) {
+                $tcList =  $mWfRoleusermap->getTcList($ulbId)
+                    ->where('wf_role_id', $tc)
                     ->get();
             }
 
-            return responseMsgs(true, "TC List", remove_null($data), "010201", "1.0", "", "POST", $req->deviceId ?? "");
+            $tcList =  $mWfRoleusermap->getTcList($ulbId)
+                ->whereIn('wf_role_id', $tcIds)
+                ->get();
+
+            return responseMsgs(true, "TC List", remove_null($tcList), "010201", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return response()->json($e, 400);
         }

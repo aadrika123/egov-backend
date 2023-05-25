@@ -461,15 +461,18 @@ class PropertyDetailsController extends Controller
                     break;
             }
 
-
-
             $data = $data->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'latitude', 'longitude')
                 ->get();
             if ($isLegacy == true) {
-                $data = collect($data)->where('new_holding_no', null)
-                    ->where('latitude', null)
-                    ->where('longitude', null);
+                $data = collect($data)->where('new_holding_no', null);
+                // ->where('latitude', null)
+                // ->where('longitude', null);
+                $data = (array_values(objtoarray($data)));
+            } else {
+                $data = collect($data)->where('new_holding_no', '!=', null);
+                $data = (array_values(objtoarray($data)));
             }
+
             // ->paginate($request->perPage ?? 5);
 
             // if ($role == 8) {

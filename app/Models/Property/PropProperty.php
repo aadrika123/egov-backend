@@ -305,7 +305,7 @@ class PropProperty extends Model
         $reqs = [
             'ulb_id' => $req->ulb_id,
             'cluster_id' => $req->cluster_id,
-            'saf_id' => $req->saf_id,
+            'saf_id' => $req->id,
             'holding_no' => $req->holding_no,
             'applicant_name' => $req->applicant_name,
             'application_date' => $req->application_date,
