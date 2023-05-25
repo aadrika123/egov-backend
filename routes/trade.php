@@ -157,7 +157,7 @@ Route::controller(TradeApplication::class)->group(function () {
     Route::get('license-certificate/{id}', 'licenceCertificate');
 });
 
-Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {
+// Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {
     Route::controller(TradeController::class)->group(function () {
         // Route::post('firm-type-add', 'addFirmType');
         Route::post('firm-type-list', 'firmTypeList');
@@ -182,11 +182,11 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         // Route::post('rate-add', 'addRate');
         Route::post('rate-list', 'rateList');
         Route::post('rate', 'rate');
-        // Route::post('rate-update', 'updateRate');
+        Route::post('rate-update', 'updateRate');
 
         // Route::post('ownership-type-add', 'addOwnershipType');
         Route::post('ownership-type-list', 'ownershipTypeList');
         Route::post('ownership-type', 'ownershipType');
         // Route::post('ownership-type-update', 'updateOwnershipType');
     });
-});
+// });

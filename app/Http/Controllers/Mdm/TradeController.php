@@ -750,7 +750,7 @@ class TradeController extends Controller
                     "rangeFrom" => "required|int",
                     "rangeTo" => "required|int",
                     "effectiveDate" => "required|date|date_format:Y-m-d",
-                    "rate" => "required|digits",
+                    "rate" => "required|numeric|min:0",
                     "tobaccoStatus" => "required|bool",                        
                     "id" => "required|digits_between:1,9223372036854775807",
                     "status"=>"nullable|in:0,1"
@@ -765,8 +765,14 @@ class TradeController extends Controller
             }
              #update data
             $sms="Updated Recode";
-            $appData->trade_item     =  trim(strtoupper($request->itemType));
-            $appData->trade_code    =  trim(strtoupper($request->tradeCode));
+            $appData->application_type_id    =  $request->applicationTypeId;
+            $appData->range_from             =  $request->rangeFrom;
+            $appData->range_to               =  $request->rangeTo;
+            $appData->effective_date         =  $request->effectiveDate;
+            $appData->rate                   =  $request->rate;
+            $appData->tobacco_status         =  $request->tobacco_status?1:0;
+            $appData->emp_details_id         =  $userId;
+
             if(isset($request->status))
             {
                 switch($request->status)
