@@ -2916,6 +2916,7 @@ class Trade implements ITrade
                 "owner.mobile",
                 DB::raw("ulb_ward_masters.ward_name AS ward_no, 
                         ulb_masters.id as ulb_id, ulb_masters.ulb_name,ulb_masters.ulb_type,
+                        ulb_masters.logo,
                         TO_CHAR(cast(application_date as date), 'DD-MM-YYYY') AS application_date,
                         TO_CHAR(cast(valid_from as date), 'DD-MM-YYYY') AS valid_from,
                         TO_CHAR(cast(valid_upto as date), 'DD-MM-YYYY') AS valid_upto
@@ -3090,6 +3091,7 @@ class Trade implements ITrade
                 "owner.mobile",
                 DB::raw("ulb_ward_masters.ward_name AS ward_no, 
                         ulb_masters.id as ulb_id, ulb_masters.ulb_name,ulb_masters.ulb_type,
+                        ulb_masters.logo,
                         TO_CHAR(CAST(license.application_date AS DATE), 'DD-MM-YYYY') as application_date,
                         TO_CHAR(CAST(license.establishment_date AS DATE), 'DD-MM-YYYY') as establishment_date,
                         TO_CHAR(CAST(license.license_date AS DATE), 'DD-MM-YYYY') as license_date,
@@ -3266,6 +3268,7 @@ class Trade implements ITrade
                 "owner.mobile",
                 DB::raw("ulb_ward_masters.ward_name AS ward_no, 
                         ulb_masters.id as ulb_id, ulb_masters.ulb_name,ulb_masters.ulb_type,
+                        ulb_masters.logo,
                         TO_CHAR(CAST(license.application_date AS DATE), 'DD-MM-YYYY') as application_date,
                         TO_CHAR(CAST(license.establishment_date AS DATE), 'DD-MM-YYYY') as establishment_date,
                         TO_CHAR(CAST(license.license_date AS DATE), 'DD-MM-YYYY') as license_date,

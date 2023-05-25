@@ -157,8 +157,13 @@ Route::controller(TradeApplication::class)->group(function () {
     Route::get('license-certificate/{id}', 'licenceCertificate');
 });
 
-Route::controller(TradeController::class)->group(function () {
-    // Route::post('firm-type-add', 'addFirmType');
-    // Route::post('firm-type-list', 'firmTypeList');
-    // Route::post('firm-type-update', 'updateFirmType');
+Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {
+    Route::controller(TradeController::class)->group(function () {
+        // Route::post('firm-type-add', 'addFirmType');
+        // Route::post('firm-type-list', 'firmTypeList');
+        // Route::post('firm-type-update', 'updateFirmType');
+        Route::post('rate-add', 'addRate');
+        Route::post('rate-list', 'rateList');
+        Route::post('rate', 'rate');
+    });
 });
