@@ -62,7 +62,7 @@ class Report implements IReport
             $ulbId          = $refUser->ulb_id;
             $wardId = null;
             $userId = null;
-            $paymentMode = null;
+            $paymentMode = $key =null;
             $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
             
             if($request->fromDate)
@@ -88,6 +88,10 @@ class Report implements IReport
             {
                 $paymentMode = strtoupper($request->paymentMode);
                 $where .= " AND upper(trade_transactions.payment_mode) =  upper('$paymentMode') ";
+            }
+            if(trim($request->key))
+            {
+                $key = strtoupper($request->key);
             }
             if($request->ulbId)
             {
@@ -232,6 +236,40 @@ class Report implements IReport
                 $approved=$approved->where("trade_transactions.ulb_id",$ulbId);
                 $rejected=$rejected->where("trade_transactions.ulb_id",$ulbId);
                 $old=$old->where("trade_transactions.ulb_id",$ulbId);
+            }
+            if (trim($key)) 
+            {
+                $active = $active->where(function ($query) use ($key) {
+                    $query->orwhere('trade_transactions.tran_no', 'ILIKE', '%' . $key . '%')
+                        ->orwhere('licences.application_no', 'ILIKE', '%' . $key . '%')
+                        ->orwhere("licences.license_no", 'ILIKE', '%' . $key . '%')
+                        ->orwhere("licences.firm_name", 'ILIKE', '%' . $key . '%')
+                        ->orwhere('owner_detail.mobile_no', 'ILIKE', '%' . $key . '%');
+                });
+
+                $approved = $approved->where(function ($query) use ($key) {
+                    $query->orwhere('trade_transactions.tran_no', 'ILIKE', '%' . $key . '%')
+                        ->orwhere('licences.application_no', 'ILIKE', '%' . $key . '%')
+                        ->orwhere("licences.license_no", 'ILIKE', '%' . $key . '%')
+                        ->orwhere("licences.firm_name", 'ILIKE', '%' . $key . '%')
+                        ->orwhere('owner_detail.mobile_no', 'ILIKE', '%' . $key . '%');
+                });
+
+                $rejected = $rejected->where(function ($query) use ($key) {
+                    $query->orwhere('trade_transactions.tran_no', 'ILIKE', '%' . $key . '%')
+                        ->orwhere('licences.application_no', 'ILIKE', '%' . $key . '%')
+                        ->orwhere("licences.license_no", 'ILIKE', '%' . $key . '%')
+                        ->orwhere("licences.firm_name", 'ILIKE', '%' . $key . '%')
+                        ->orwhere('owner_detail.mobile_no', 'ILIKE', '%' . $key . '%');
+                });
+
+                $old = $old->where(function ($query) use ($key) {
+                    $query->orwhere('trade_transactions.tran_no', 'ILIKE', '%' . $key . '%')
+                        ->orwhere('licences.application_no', 'ILIKE', '%' . $key . '%')
+                        ->orwhere("licences.license_no", 'ILIKE', '%' . $key . '%')
+                        ->orwhere("licences.firm_name", 'ILIKE', '%' . $key . '%')
+                        ->orwhere('owner_detail.mobile_no', 'ILIKE', '%' . $key . '%');
+                });
             }
             $data = $active->union($approved)
                             ->union($rejected)
