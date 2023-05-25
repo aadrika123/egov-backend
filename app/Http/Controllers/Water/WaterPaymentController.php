@@ -20,6 +20,7 @@ use App\Models\Water\WaterConnectionTypeMstr;
 use App\Models\Water\WaterConsumer;
 use App\Models\Water\WaterConsumerCollection;
 use App\Models\Water\WaterConsumerDemand;
+use App\Models\Water\WaterConsumerMeter;
 use App\Models\Water\WaterOwnerTypeMstr;
 use App\Models\Water\WaterParamPipelineType;
 use App\Models\Water\WaterPenaltyInstallment;
@@ -379,15 +380,17 @@ class WaterPaymentController extends Controller
             # transaction Deatils
             $transactionDetails = $mWaterTran->getTransactionByTransactionNo($refTransactionNo)
                 ->first();
-
+            if (!$transactionDetails) {
+                throw new Exception("Data according to transaction no is not found!");
+            }
             #  Data not equal to Cash
             if (!in_array($transactionDetails['payment_mode'], [$mPaymentModes['1'], $mPaymentModes['5']])) {
-                $chequeDetails = $mWaterChequeDtl->getChequeDtlsByTransId($transactionDetails['id'])->first();
+                $chequeDetails = $mWaterChequeDtl->getChequeDtlsByTransId($transactionDetails['id'])->firstOrFail();
             }
             # Application Deatils
             $applicationDetails = $mWaterApplication->getDetailsByApplicationId($transactionDetails->related_id)->first();
             if (is_null($applicationDetails)) {
-                $applicationDetails = $mWaterApprovalApplicationDetail->getApprovedApplicationById($transactionDetails->related_id)->first();
+                $applicationDetails = $mWaterApprovalApplicationDetail->getApprovedApplicationById($transactionDetails->related_id)->firstOrFail();
             }
             # Connection Charges
             $connectionCharges = $mWaterConnectionCharge->getChargesById($transactionDetails->demand_id)
@@ -1522,14 +1525,17 @@ class WaterPaymentController extends Controller
             $mWaterTranDetail       = new WaterTranDetail();
             $mWaterChequeDtl        = new WaterChequeDtl();
             $mWaterTran             = new WaterTran();
+            $mWaterConsumerMeter    = new WaterConsumerMeter();
 
             $mTowardsDemand     = Config::get("waterConstaint.TOWARDS_DEMAND");
+            $mTranType          = Config::get("waterConstaint.PAYMENT_FOR");
             $mAccDescription    = $this->_accDescription;
             $mDepartmentSection = $this->_departmentSection;
             $mPaymentModes      = $this->_paymentModes;
 
             # transaction Deatils
             $transactionDetails = $mWaterTran->getTransactionByTransactionNo($refTransactionNo)
+                ->where('tran_type', $mTranType['1'])
                 ->firstOrFail();
 
             #  Data not equal to Cash
@@ -1554,6 +1560,11 @@ class WaterPaymentController extends Controller
             $endingDate = Carbon::createFromFormat('Y-m-d',  $uptoDate)->endOfMonth();
             $penaltyAmount = collect($consumerDemands)->sum('penalty');
             $refDemandAmount = collect($consumerDemands)->sum('balance_amount');
+
+            # consumer meter details 
+            $consumerMeterDetails = $mWaterConsumerMeter->getMeterDetailsByConsumerId($consumerDetails->id)
+            ->where('')
+            ->first();
 
             # water consumer consumed
             $consumerTaxes = $mWaterConsumerDemand->getConsumerTax($demandIds);
@@ -1594,9 +1605,12 @@ class WaterPaymentController extends Controller
                 "totalPaidAmount"       => $transactionDetails->amount,
                 "dueAmount"             => $transactionDetails->due_amount,
                 "rebate"                => 0,                                                                       // Static
+                "meterNo"               => $consumerMeterDetails->meter_no ?? null,
                 "waterConsumed"         => (($finalReading ?? 0.00) - ($initialReading ?? 0.00)),
-                "fixedPaidFrom"         => (Carbon::createFromFormat('Y-m-d',  $fixedFrom)->startOfMonth())->format('Y-m-d'),
-                "fixedPaidUpto"         => (Carbon::createFromFormat('Y-m-d',  $fixedUpto)->endOfMonth())->format('Y-m-d'),
+                "initialReding"         => $initialReading ?? null,
+                "finalReading"          => $finalReading ?? null,
+                "fixedPaidFrom"         => ($fixedFrom) ? Carbon::createFromFormat('Y-m-d',  $fixedFrom)->startOfMonth() : null,
+                "fixedPaidUpto"         => ($fixedUpto) ? (Carbon::createFromFormat('Y-m-d',  $fixedUpto)->endOfMonth()) : null,
                 "paidAmtInWords"        => getIndianCurrency($transactionDetails->amount),
 
             ];
