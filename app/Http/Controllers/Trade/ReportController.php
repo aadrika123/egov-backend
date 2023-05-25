@@ -44,6 +44,7 @@ class ReportController extends Controller
             [
                 "fromDate" => "required|date|date_format:Y-m-d",
                 "uptoDate" => "required|date|date_format:Y-m-d",
+                "key"    => "nullable|regex:/^[^<>{};:.,~!?@#$%^=&*\"]*$/i",
                 "wardId" => "nullable|digits_between:1,9223372036854775807",
                 "userId" => "nullable|digits_between:1,9223372036854775807",
                 "paymentMode" => "nullable",
