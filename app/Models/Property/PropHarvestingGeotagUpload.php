@@ -16,11 +16,6 @@ class PropHarvestingGeotagUpload extends Model
     public function add($req)
     {
         PropHarvestingGeotagUpload::create($req);
-        // $geoTagging->application_id = $req->applicationId;
-        // $geoTagging->image_path = $imageName;
-        // $geoTagging->relative_path = $relativePath;
-        // $geoTagging->user_id = authUser()->id;
-        // $geoTagging->save();
     }
 
     public function getLatLong($applicationId)

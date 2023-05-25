@@ -1240,16 +1240,21 @@ class RainWaterHarvestingController extends Controller
             $data = array();
             $mPropRwhVerification = new PropRwhVerification();
             $mWfActiveDocument = new WfActiveDocument();
+            $mPropHarvestingGeotagUpload = new PropHarvestingGeotagUpload();
             $mPropActiveHarvesting = new PropActiveHarvesting();
             $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
 
             $applicationDtls = $mPropActiveHarvesting->getDetailsById($req->applicationId);
             $data = $mPropRwhVerification->getVerificationsData($req->applicationId);
+            $geotagDtl = $mPropHarvestingGeotagUpload->getLatLong($req->applicationId);
+
             if (collect($data)->isEmpty())
                 throw new Exception("Tc Verification Not Done");
 
             $document = $mWfActiveDocument->getDocByRefIdsDocCode($req->applicationId, $applicationDtls->workflow_id, $moduleId, ['WATER_HARVESTING_FIELD_IMAGE'])->first();
             $data->doc_path = $document->doc_path;
+            $data->latitude = $geotagDtl->latitude;
+            $data->longitude = $geotagDtl->longitude;
 
             return responseMsgs(true, "TC Verification Details", remove_null($data), "010120", "1.0", "258ms", "POST", $req->deviceId);
         } catch (Exception $e) {
