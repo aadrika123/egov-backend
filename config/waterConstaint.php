@@ -26,7 +26,7 @@ return [
     "ACCOUNT_DESCRIPTION" => "Water",
     "DEPARTMENT_SECTION" => "Revenue Section",
     "TOWARDS" => "Water Connection and Others",
-    "TOWARDS_DEMAND" =>"Water User Charges",
+    "TOWARDS_DEMAND" => "Water User Charges",
     "WATER_DEPAPRTMENT_ID" => "2",
     "WATER_RELATIVE_PATH" => "Uploads/Water",
 
@@ -44,7 +44,8 @@ return [
 
     "CONNECTION_TYPE" => [
         "NEW_CONNECTION"    => 1,
-        "REGULAIZATION"     => 2
+        "REGULAIZATION"     => 2,
+        "SITE_INSPECTON"    => 5,                                       // static
     ],
 
     "REF_CONNECTION_TYPE" => [
