@@ -1262,7 +1262,7 @@ class WaterPaymentController extends Controller
                                 throw new Exception("Connection Amount Not Matched!");
                             }
                         }
-                        if ($refPenaltySumAmount != ($req->amount - $refAmount)) {
+                        if ($refPenaltySumAmount != ($req->amount - ($refAmount ?? 0))) {
                             throw new Exception("Respective Penalty Amount Not Matched!");
                         }
                         break;
