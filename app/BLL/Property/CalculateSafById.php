@@ -126,7 +126,8 @@ class CalculateSafById
                     "buildupArea" => $floor['builtup_area'],
                     "dateFrom" => $floor['date_from'],
                     "dateUpto" => $floor['date_upto'],
-                    "carpetArea" => $floor['carpet_area']
+                    "carpetArea" => $floor['carpet_area'],
+                    "propFloorDetailId" => $floor['prop_floor_details_id']
                 ];
                 array_push($safFloors, $floorReq);
             }
