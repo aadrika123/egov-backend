@@ -92,7 +92,6 @@ class ApplySafController extends Controller
     {
         try {
             // Variable Assignments
-            $assessmentId = $request->assessmentType;
             $mApplyDate = Carbon::now()->format("Y-m-d");
             $user_id = auth()->user()->id;
             $ulb_id = $request->ulbId ?? auth()->user()->ulb_id;
@@ -130,7 +129,7 @@ class ApplySafController extends Controller
 
             // Generate Calculation
             $calculateSafById->_calculatedDemand = $safTaxes->original['data'];
-            $calculateSafById->_safDetails['assessment_type'] = $assessmentId;
+            $calculateSafById->_safDetails['assessment_type'] = $request->assessmentType;
 
             if (isset($request->holdingNo))
                 $calculateSafById->_holdingNo = $request->holdingNo;
