@@ -289,7 +289,6 @@ class CalculateSafById
             throw new Exception("Previous Saf Id Not Available");
 
         $safDemandList = $mSafDemand->getFullDemandsBySafId($safId);
-
         if ($safDemandList->isEmpty())
             throw new Exception("Previous Saf Demand is Not Available");
 
@@ -299,13 +298,15 @@ class CalculateSafById
 
         // Demand Adjustment
         foreach ($generatedDemand as $item) {
-            $demand = $fullDemandList->where('due_date', $item['due_date'])->first();
+            $itemDueDate = $item['due_date'] ?? $item['dueDate'];
+            $demand = $fullDemandList->where('due_date', $itemDueDate)->first();
             if (collect($demand)->isEmpty())
                 $item['adjust_amount'] = 0;
             else
                 $item['adjust_amount'] = $demand->amount - $demand->balance;
 
-            $item['balance'] = roundFigure($item['amount'] - $item['adjust_amount']);
+            $itemAmt = $item['amount'] ?? $item['totalTax'];
+            $item['balance'] = roundFigure($itemAmt - $item['adjust_amount']);
             if ($item['balance'] == 0)
                 $item['onePercPenaltyTax'] = 0;
         }
