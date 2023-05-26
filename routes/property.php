@@ -254,7 +254,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('harvesting/btc-inbox', 'btcInboxList');
     Route::post('harvesting/site-verification', 'siteVerification');
     Route::post('harvesting/get-tc-verifications', 'getTcVerifications');
-    // Route::post('harvesting/geotagging', 'geoTagging');
   });
 
   /**
@@ -282,7 +281,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
   /**
    * | Property Document Operation
-       | Serial No : 13
+     | Serial No : 13
    */
   Route::controller(DocumentOperationController::class)->group(function () {
     Route::post('get-all-documents', 'getAllDocuments');

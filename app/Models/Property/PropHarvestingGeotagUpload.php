@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class PropHarvestingGeotagUpload extends Model
 {
     use HasFactory;
-    protected $guarded = ['*'];
+    protected $guarded = [''];
 
     /**
      * |
@@ -16,10 +16,12 @@ class PropHarvestingGeotagUpload extends Model
     public function add($req)
     {
         PropHarvestingGeotagUpload::create($req);
-        // $geoTagging->application_id = $req->applicationId;
-        // $geoTagging->image_path = $imageName;
-        // $geoTagging->relative_path = $relativePath;
-        // $geoTagging->user_id = authUser()->id;
-        // $geoTagging->save();
+    }
+
+    public function getLatLong($applicationId)
+    {
+        return PropHarvestingGeotagUpload::where('application_id', $applicationId)
+            ->orderbydesc('id')
+            ->first();
     }
 }
