@@ -14,6 +14,7 @@ use App\Traits\Property\SAF;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Config;
 
 /**
  * | Calculate Saf By Saf Id Service
@@ -42,6 +43,7 @@ class CalculateSafById
     public $_holdingNo;
     public $_firstOwner;
     public $_mPropActiveSafOwners;
+    private $_adjustmentAssessmentTypes;
 
     public function __construct()
     {
@@ -52,6 +54,7 @@ class CalculateSafById
         $this->_penaltyRebateCalc = new PenaltyRebateCalculation;
         $this->_todayDate = Carbon::now();
         $this->_mPropActiveSafOwners = new PropActiveSafsOwner();
+        $this->_adjustmentAssessmentTypes = Config::get('PropertyConstaint.REASSESSMENT_TYPES');
     }
 
     /**
@@ -123,7 +126,8 @@ class CalculateSafById
                     "buildupArea" => $floor['builtup_area'],
                     "dateFrom" => $floor['date_from'],
                     "dateUpto" => $floor['date_upto'],
-                    "carpetArea" => $floor['carpet_area']
+                    "carpetArea" => $floor['carpet_area'],
+                    "propFloorDetailId" => $floor['prop_floor_details_id']
                 ];
                 array_push($safFloors, $floorReq);
             }
@@ -181,7 +185,7 @@ class CalculateSafById
     {
         $this->generateDemand();
 
-        if (in_array($this->_safDetails['assessment_type'], ['Re Assessment', 'ReAssessment', 'Mutation', '2', '3']))     // In Case of Reassessment Adjust the Amount
+        if (in_array($this->_safDetails['assessment_type'], $this->_adjustmentAssessmentTypes))     // In Case of Reassessment Adjust the Amount
             $this->adjustAmount();         // (1.2.1)
 
         $this->calculateOnePercPenalty();   // (1.2.2)

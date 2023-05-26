@@ -162,10 +162,9 @@ class CalculatorController extends Controller
                         $quaters['vacantRentalRates'] = $vacantRentalRates;
                     }
                     $quaterlyTaxes = collect();
-                    $i = 1;
-                    collect($ruleSetWiseCollection)->map(function ($floors) use ($quaterlyTaxes, $i) {
+                    collect($ruleSetWiseCollection)->map(function ($floors, $key) use ($quaterlyTaxes) {
                         $taxes = [
-                            'key' => $i,
+                            'key' => $key + 1,
                             'effectingFrom' => $floors->first()['fyear'] . '/' . $floors->first()['qtr'],
                             'qtr' => $floors->first()['qtr'],
                             'area' => $floors->first()['area'] ?? null,
@@ -181,7 +180,6 @@ class CalculatorController extends Controller
                         $quaterlyTaxes->push($taxes);
                     });
                     $quaters['totalQtrTaxes'] = $quaterlyTaxes;
-                    $i += 1;
                     return $quaters;
                 });
             });
