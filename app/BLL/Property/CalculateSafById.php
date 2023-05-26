@@ -175,45 +175,11 @@ class CalculateSafById
 
     /**
      * | Generated SAF Demand to push the value in propSafsDemand Table // (1.2)
+     * | Used in Apply Saf , Review Calculation
      */
     public function generateSafDemand()
     {
-        $collection = $this->_calculatedDemand['details'];
-        $filtered = collect($collection)->map(function ($value) {
-            return collect($value)->only([
-                'qtr', 'holdingTax', 'waterTax', 'educationTax',
-                'healthTax', 'latrineTax', 'quarterYear', 'dueDate', 'totalTax', 'arv', 'rwhPenalty', 'onePercPenalty', 'onePercPenaltyTax', 'ruleSet'
-            ]);
-        });
-
-        $groupBy = $filtered->groupBy(['quarterYear', 'qtr']);
-
-        $taxes = $groupBy->map(function ($values) {
-            return $values->map(function ($collection) {
-                $amount = roundFigure($collection->sum('totalTax'));
-                return collect([
-                    'qtr' => $collection->first()['qtr'],
-                    'holding_tax' => roundFigure($collection->sum('holdingTax')),
-                    'water_tax' => roundFigure($collection->sum('waterTax')),
-                    'education_cess' => roundFigure($collection->sum('educationTax')),
-                    'health_cess' => roundFigure($collection->sum('healthTax')),
-                    'latrine_tax' => roundFigure($collection->sum('latrineTax')),
-                    'additional_tax' => roundFigure($collection->sum('rwhPenalty')),
-                    'fyear' => $collection->first()['quarterYear'],
-                    'due_date' => $collection->first()['dueDate'],
-                    'amount' => $amount,
-                    'arv' => roundFigure($collection->sum('arv')),
-                    'adjust_amount' => 0,
-                    'ruleSet' => $collection->first()['ruleSet'],
-                    'balance' => $amount,
-                    'rwhPenalty' => roundFigure($collection->sum('rwhPenalty'))
-                ]);
-            });
-        });
-
-        $demandDetails = $taxes->values()->collapse();
-
-        $this->_demandDetails = $demandDetails;
+        $this->generateDemand();
 
         if (in_array($this->_safDetails['assessment_type'], ['Re Assessment', 'ReAssessment', 'Mutation', '2', '3']))     // In Case of Reassessment Adjust the Amount
             $this->adjustAmount();         // (1.2.1)
@@ -252,6 +218,49 @@ class CalculateSafById
         $this->generateTaxDtls();        // (1.2.3)
     }
 
+    /**
+     * | Generate Demand
+     */
+
+    public function generateDemand()
+    {
+        $collection = $this->_calculatedDemand['details'];
+        $filtered = collect($collection)->map(function ($value) {
+            return collect($value)->only([
+                'qtr', 'holdingTax', 'waterTax', 'educationTax',
+                'healthTax', 'latrineTax', 'quarterYear', 'dueDate', 'totalTax', 'arv', 'rwhPenalty', 'onePercPenalty', 'onePercPenaltyTax', 'ruleSet'
+            ]);
+        });
+
+        $groupBy = $filtered->groupBy(['quarterYear', 'qtr']);
+
+        $taxes = $groupBy->map(function ($values) {
+            return $values->map(function ($collection) {
+                $amount = roundFigure($collection->sum('totalTax'));
+                return collect([
+                    'qtr' => $collection->first()['qtr'],
+                    'holding_tax' => roundFigure($collection->sum('holdingTax')),
+                    'water_tax' => roundFigure($collection->sum('waterTax')),
+                    'education_cess' => roundFigure($collection->sum('educationTax')),
+                    'health_cess' => roundFigure($collection->sum('healthTax')),
+                    'latrine_tax' => roundFigure($collection->sum('latrineTax')),
+                    'additional_tax' => roundFigure($collection->sum('rwhPenalty')),
+                    'fyear' => $collection->first()['quarterYear'],
+                    'due_date' => $collection->first()['dueDate'],
+                    'amount' => $amount,
+                    'arv' => roundFigure($collection->sum('arv')),
+                    'adjust_amount' => 0,
+                    'ruleSet' => $collection->first()['ruleSet'],
+                    'balance' => $amount,
+                    'rwhPenalty' => roundFigure($collection->sum('rwhPenalty'))
+                ]);
+            });
+        });
+
+        $demandDetails = $taxes->values()->collapse();
+
+        $this->_demandDetails = $demandDetails;
+    }
 
     /**
      * | Adjust Amount In Case of Reassessment (1.2.1)

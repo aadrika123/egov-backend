@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\property;
 
+use App\BLL\Property\CalculateSafById;
 use App\EloquentClass\Property\SafCalculation;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Property\reqApplySaf;
@@ -50,6 +51,7 @@ class CalculatorController extends Controller
             $this->_reqs = $req;
             $calculation = new SafCalculation;
             $refPropOccupancyFactor = new RefPropOccupancyFactor();
+            $calculateSafById = new CalculateSafById;
 
             $this->_occupancyFactors = $refPropOccupancyFactor->getOccupancyFactors();
             if ($req->propertyType != 4) {
@@ -67,6 +69,9 @@ class CalculatorController extends Controller
             $response = $calculation->calculateTax($req);
             if ($response->original['status'] == false)
                 throw new Exception($response->original['message']);
+            $demandDetails = $response->original['data']['details'];
+            $calculateSafById->_calculatedDemand['details'] = $demandDetails;
+            $calculateSafById->generateDemand();
             $finalResponse['demand'] = $response->original['data']['demand'];
             $reviewDetails = collect($response->original['data']['details'])->groupBy(['floorKey', 'ruleSet']);
             $finalTaxReview = collect();
@@ -102,20 +107,22 @@ class CalculatorController extends Controller
                         'calculationFactor',
                         'matrixFactor',
                         'area',
-                        'yearlyTax'
+                        'yearlyTax',
+                        'dueDate'
                     ]);
                     $finalTaxReview->push($response);
                     return $response;
                 });
             });
-
-            $totalTaxDetails = collect($response->original['data']['details']);
+            $totalTaxDetails = $calculateSafById->_demandDetails;                   // This is the generated Tax with associating all the floors
             $ruleSetCollections = collect($finalTaxReview)->groupBy(['ruleSet']);
             $reviewCalculation = collect($ruleSetCollections)->map(function ($collection) use ($totalTaxDetails, $calculation) {
                 return collect($collection)->pipe(function ($collect) use ($totalTaxDetails, $calculation) {
                     $quaters['floors'] = $collect;
                     $ruleSetWiseCollection = $totalTaxDetails
                         ->where('ruleSet', $collect->first()['ruleSet'])
+                        ->sortBy('due_date')
+                        ->groupBy('amount')
                         ->values();
                     // Calculation Parameters
                     if ($collect->first()['ruleSet'] == 'RuleSet1' && $this->_reqs->propertyType != 4)              // If Property Type is Building
@@ -154,23 +161,22 @@ class CalculatorController extends Controller
                             ->values();
                         $quaters['vacantRentalRates'] = $vacantRentalRates;
                     }
-                    $groupByDateFrom = $collect->groupBy('dateFrom');
                     $quaterlyTaxes = collect();
                     $i = 1;
-                    collect($groupByDateFrom)->map(function ($floors) use ($quaterlyTaxes, $i) {
+                    collect($ruleSetWiseCollection)->map(function ($floors) use ($quaterlyTaxes, $i) {
                         $taxes = [
                             'key' => $i,
-                            'effectingFrom' => $floors->first()['quarterYear'] . '/' . $floors->first()['qtr'],
+                            'effectingFrom' => $floors->first()['fyear'] . '/' . $floors->first()['qtr'],
                             'qtr' => $floors->first()['qtr'],
                             'area' => $floors->first()['area'] ?? null,
-                            'arv' => roundFigure($floors->sum('arv') + $quaterlyTaxes->sum('arv')),
-                            'holdingTax' => roundFigure($floors->sum('holdingTax') + $quaterlyTaxes->sum('holdingTax')),
-                            'waterTax' => roundFigure($floors->sum('waterTax') + $quaterlyTaxes->sum('waterTax')),
-                            'latrineTax' => roundFigure($floors->sum('latrineTax') + $quaterlyTaxes->sum('latrineTax')),
-                            'educationTax' => roundFigure($floors->sum('educationTax') + $quaterlyTaxes->sum('educationTax')),
-                            'healthTax' => roundFigure($floors->sum('healthTax') + $quaterlyTaxes->sum('healthTax')),
-                            'rwhPenalty' => roundFigure($floors->sum('rwhPenalty') + $quaterlyTaxes->sum('rwhPenalty')),
-                            'quaterlyTax' => roundFigure($floors->sum('totalTax') + $quaterlyTaxes->sum('quaterlyTax')),
+                            'arv' => roundFigure($floors->first()['arv']),
+                            'holdingTax' => roundFigure($floors->first()['holding_tax']),
+                            'waterTax' => roundFigure($floors->first()['water_tax']),
+                            'latrineTax' => roundFigure($floors->first()['latrine_tax']),
+                            'educationTax' => roundFigure($floors->first()['education_cess']),
+                            'healthTax' => roundFigure($floors->first()['health_cess']),
+                            'rwhPenalty' => roundFigure($floors->first()['rwhPenalty']),
+                            'quaterlyTax' => roundFigure($floors->first()['amount']),
                         ];
                         $quaterlyTaxes->push($taxes);
                     });
