@@ -1058,8 +1058,9 @@ class WaterPaymentController extends Controller
                 ->where('paid_status', 0)
                 ->get();                                                                                        # get water User connectin charges
 
-            if (!$charges || collect($charges)->isEmpty())
-                throw new Exception("Connection Not Available for Payment!");
+            if (!$charges || collect($charges)->isEmpty()) {
+                $this->checkForCharges($req);
+            }
             # Water Transactions
             $req->merge([
                 'userId'    => $userId,
@@ -1110,6 +1111,32 @@ class WaterPaymentController extends Controller
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+
+
+    /**
+     * | Check for the payment done 
+     */
+    public function checkForCharges($req)
+    {
+        $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
+        $paramChargeCatagory = Config::get('waterConstaint.CHARGE_CATAGORY');
+
+        if ($req->chargeCategory == $paramChargeCatagory['REGULAIZATION']) {
+            $penaltyDetails = $mWaterPenaltyInstallment->getPenaltyByApplicationId($req->applicationId)->get();
+            $checkPenalty = collect($penaltyDetails)->first();
+            if (!$checkPenalty) {
+                throw new Exception("Connection Not Available for Payment!");
+            }
+            $checkPenaltyPayment = collect($penaltyDetails)->pluck('paid_status');
+            $containsOnlyOnes = $checkPenaltyPayment->every(function ($value) {
+                return $value === 1;
+            });
+            if ($containsOnlyOnes) {
+                throw new Exception("All Payment is done for penalty as well!");
+            }
+        }
+    }
+
 
 
     /**
