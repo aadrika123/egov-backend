@@ -743,31 +743,39 @@ class TradeCitizenController extends Controller
                     return "'".$val."'";
                 });
                 $rowLicenseNo = ($rowLicenseNo->implode(","));
-
-                $ActiveLicence = ActiveTradeLicence::select(
-                    "active_trade_licences.id",
-                    "active_trade_licences.application_no",
-                    "active_trade_licences.provisional_license_no",
-                    "active_trade_licences.license_no",
-                    "active_trade_licences.license_date",
-                    "active_trade_licences.valid_from",
-                    "active_trade_licences.valid_upto",
-                    "active_trade_licences.document_upload_status",
-                    "active_trade_licences.payment_status",
-                    "active_trade_licences.pending_status",
-                    "active_trade_licences.firm_name",
-                    "active_trade_licences.application_date",
-                    "active_trade_licences.apply_from",
-                    "active_trade_licences.application_type_id",
-                    "active_trade_licences.ulb_id",
+                $select = [
+                    "licences.id",
+                    "licences.application_no",
+                    "licences.provisional_license_no",
+                    "licences.license_no",
+                    "licences.license_date",
+                    "licences.valid_from",
+                    "licences.valid_upto",
+                    "licences.document_upload_status",
+                    "licences.payment_status",
+                    "licences.pending_status",
+                    "licences.firm_name",
+                    "licences.application_date",
+                    "licences.apply_from",
+                    "licences.application_type_id",
+                    "licences.ulb_id",
                     "owner.owner_name",
                     "owner.guardian_name",
                     "owner.mobile_no",
                     "owner.email_id",
                     "ulb_masters.ulb_name",
-                    DB::raw("'active' as license_type"),
-                )
-                    ->join("ulb_masters","ulb_masters.id","active_trade_licences.ulb_id")
+                    DB::RAW("TO_CHAR( CAST(licences.license_date AS DATE), 'DD-MM-YYYY') as license_date,
+                            TO_CHAR( CAST(licences.valid_from AS DATE), 'DD-MM-YYYY') as valid_from,
+                            TO_CHAR( CAST(licences.valid_upto AS DATE), 'DD-MM-YYYY') as valid_upto,
+                            TO_CHAR( CAST(licences.application_date AS DATE), 'DD-MM-YYYY') as application_date
+                    "),
+                ];
+    
+                $ActiveSelect = $select;
+                $ActiveSelect[] = DB::raw("'active' as license_type");
+                $ActiveLicence = DB::TABLE("active_trade_licences AS licences")
+                    ->select($ActiveSelect)
+                    ->join("ulb_masters","ulb_masters.id","licences.ulb_id")
                     ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
                                         STRING_AGG(guardian_name,',') AS guardian_name,
                                         STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
@@ -782,38 +790,19 @@ class TradeCitizenController extends Controller
                                         WHERE active_trade_owners.is_active = true
                                         GROUP BY active_trade_owners.temp_id
                                         )owner"), function ($join) {
-                        $join->on("owner.temp_id", "active_trade_licences.id");
+                        $join->on("owner.temp_id", "licences.id");
                     })
-                    ->where("active_trade_licences.is_active", true)
+                    ->where("licences.is_active", true)
                     ->WHERE(FUNCTION($where) use( $licenseNo){
-                        $where->WHEREIN("active_trade_licences.application_no", $licenseNo)
-                        ->ORWHEREIN("active_trade_licences.license_no", $licenseNo);
+                        $where->WHEREIN("licences.application_no", $licenseNo)
+                        ->ORWHEREIN("licences.license_no", $licenseNo);
                     });
 
-                $RejectedLicence = RejectedTradeLicence::select(
-                    "rejected_trade_licences.id",
-                    "rejected_trade_licences.application_no",
-                    "rejected_trade_licences.provisional_license_no",
-                    "rejected_trade_licences.license_no",
-                    "rejected_trade_licences.license_date",
-                    "rejected_trade_licences.valid_from",
-                    "rejected_trade_licences.valid_upto",
-                    "rejected_trade_licences.document_upload_status",
-                    "rejected_trade_licences.payment_status",
-                    "rejected_trade_licences.pending_status",
-                    "rejected_trade_licences.firm_name",
-                    "rejected_trade_licences.application_date",
-                    "rejected_trade_licences.apply_from",
-                    "rejected_trade_licences.application_type_id",
-                    "rejected_trade_licences.ulb_id",
-                    "owner.owner_name",
-                    "owner.guardian_name",
-                    "owner.mobile_no",
-                    "owner.email_id",
-                    "ulb_masters.ulb_name",
-                    DB::raw("'rejected' as license_type"),
-                )
-                    ->join("ulb_masters","ulb_masters.id","rejected_trade_licences.ulb_id")
+                $RejectedSelect = $select;        
+                $RejectedSelect[] = DB::raw("'rejected' as license_type");
+                $RejectedLicence = DB::TABLE("rejected_trade_licences AS licences")
+                    ->select($RejectedSelect)
+                    ->join("ulb_masters","ulb_masters.id","licences.ulb_id")
                     ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
                                         STRING_AGG(guardian_name,',') AS guardian_name,
                                         STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
@@ -828,39 +817,21 @@ class TradeCitizenController extends Controller
                                         WHERE rejected_trade_owners.is_active = true
                                         GROUP BY rejected_trade_owners.temp_id
                                         )owner"), function ($join) {
-                        $join->on("owner.temp_id", "rejected_trade_licences.id");
+                        $join->on("owner.temp_id", "licences.id");
                     })
-                    ->where("rejected_trade_licences.is_active", true)
+                    ->where("licences.is_active", true)
                     ->WHERE(FUNCTION($where) use( $licenseNo){
-                        $where->WHEREIN("rejected_trade_licences.application_no", $licenseNo)
-                        ->ORWHEREIN("rejected_trade_licences.license_no", $licenseNo);
+                        $where->WHEREIN("licences.application_no", $licenseNo)
+                        ->ORWHEREIN("licences.license_no", $licenseNo);
                     });
                     
                     // ->get();
-                $ApprovedLicence = TradeLicence::select(
-                    "trade_licences.id",
-                    "trade_licences.application_no",
-                    "trade_licences.provisional_license_no",
-                    "trade_licences.license_no",
-                    "trade_licences.license_date",
-                    "trade_licences.valid_from",
-                    "trade_licences.valid_upto",
-                    "trade_licences.document_upload_status",
-                    "trade_licences.payment_status",
-                    "trade_licences.pending_status",
-                    "trade_licences.firm_name",
-                    "trade_licences.application_date",
-                    "trade_licences.apply_from",
-                    "trade_licences.application_type_id",
-                    "trade_licences.ulb_id",
-                    "owner.owner_name",
-                    "owner.guardian_name",
-                    "owner.mobile_no",
-                    "owner.email_id",
-                    "ulb_masters.ulb_name",
-                    DB::raw("'approved' as license_type"),
-                )
-                    ->join("ulb_masters","ulb_masters.id","trade_licences.ulb_id")
+
+                $ApprovedSelect = $select;        
+                $ApprovedSelect[] = DB::raw("'approved' as license_type");
+                $ApprovedLicence = DB::TABLE("trade_licences AS licences")
+                    ->select($ApprovedSelect)
+                    ->join("ulb_masters","ulb_masters.id","licences.ulb_id")
                     ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
                                             STRING_AGG(guardian_name,',') AS guardian_name,
                                             STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
@@ -875,37 +846,19 @@ class TradeCitizenController extends Controller
                                             WHERE trade_owners.is_active = true
                                             GROUP BY trade_owners.temp_id
                                             )owner"), function ($join) {
-                        $join->on("owner.temp_id", "trade_licences.id");
+                        $join->on("owner.temp_id", "licences.id");
                     })
-                    ->where("trade_licences.is_active", true)                    
+                    ->where("licences.is_active", true)                    
                     ->WHERE(FUNCTION($where) use( $licenseNo){
-                        $where->WHEREIN("trade_licences.application_no", $licenseNo)
-                        ->ORWHEREIN("trade_licences.license_no", $licenseNo);
+                        $where->WHEREIN("licences.application_no", $licenseNo)
+                        ->ORWHEREIN("licences.license_no", $licenseNo);
                     });
-                $OldLicence = TradeRenewal::select(
-                    "trade_renewals.id",
-                    "trade_renewals.application_no",
-                    "trade_renewals.provisional_license_no",
-                    "trade_renewals.license_no",
-                    "trade_renewals.license_date",
-                    "trade_renewals.valid_from",
-                    "trade_renewals.valid_upto",
-                    "trade_renewals.document_upload_status",
-                    "trade_renewals.payment_status",
-                    "trade_renewals.pending_status",
-                    "trade_renewals.firm_name",
-                    "trade_renewals.application_date",
-                    "trade_renewals.apply_from",
-                    "trade_renewals.application_type_id",
-                    "trade_renewals.ulb_id",
-                    "owner.owner_name",
-                    "owner.guardian_name",
-                    "owner.mobile_no",
-                    "owner.email_id",
-                    "ulb_masters.ulb_name",
-                    DB::raw("'old' as license_type"),
-                )
-                    ->join("ulb_masters","ulb_masters.id","trade_renewals.ulb_id")
+
+                $OldSelect = $select;        
+                $OldSelect[] = DB::raw("'old' as license_type");
+                $OldLicence = DB::TABLE("trade_renewals AS licences")
+                    ->select($OldSelect)
+                    ->join("ulb_masters","ulb_masters.id","licences.ulb_id")
                     ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
                                             STRING_AGG(guardian_name,',') AS guardian_name,
                                             STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
@@ -920,12 +873,12 @@ class TradeCitizenController extends Controller
                                             WHERE trade_owners.is_active = true
                                             GROUP BY trade_owners.temp_id
                                             )owner"), function ($join) {
-                        $join->on("owner.temp_id", "trade_renewals.id");
+                        $join->on("owner.temp_id", "licences.id");
                     })
-                    ->where("trade_renewals.is_active", true)
+                    ->where("licences.is_active", true)
                     ->WHERE(FUNCTION($where) use( $licenseNo){
-                        $where->WHEREIN("trade_renewals.application_no", $licenseNo)
-                        ->ORWHEREIN("trade_renewals.license_no", $licenseNo);
+                        $where->WHEREIN("licences.application_no", $licenseNo)
+                        ->ORWHEREIN("licences.license_no", $licenseNo);
                     });
             
                 $data = $ActiveLicence->union($RejectedLicence)
@@ -934,11 +887,16 @@ class TradeCitizenController extends Controller
                 $data->map(function($val){
                     $option = [];
                     $nextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
-                    if(trim($val->license_type)=="approved" && $val->pending_status == 5 && $val->valid_upto < $nextMonth)
+                    $validUpto="";
+                    if($val->valid_upto)
+                    {
+                        $validUpto = Carbon::createFromFormat("d-m-Y",$val->valid_upto)->format('Y-m-d');
+                    }
+                    if(trim($val->license_type)=="approved" && $val->pending_status == 5 && $validUpto < $nextMonth)
                     {
                         $option[]="RENEWAL";
                     }
-                    if(trim($val->license_type)=="approved" && $val->pending_status == 5 && $val->valid_upto >= Carbon::now()->format('Y-m-d'))
+                    if(trim($val->license_type)=="approved" && $val->pending_status == 5 && $validUpto >= Carbon::now()->format('Y-m-d'))
                     {
                         $option[]="AMENDMENT";
                         $option[]="SURRENDER";

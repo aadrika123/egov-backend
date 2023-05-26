@@ -2403,7 +2403,7 @@ class Trade implements ITrade
                         "trade_param_application_types.application_type",
                         "trade_param_firm_types.firm_type",
                         "active_trade_licences.firm_type_id",
-                        DB::raw("TO_CHAR(active_trade_licences.application_date, 'DD-MM-YYYY') as application_date"),
+                        DB::raw("TO_CHAR(CAST(active_trade_licences.application_date AS DATE), 'DD-MM-YYYY') as application_date"),
                     )
                     ->WHERE("active_trade_licences.is_active",TRUE);
     }
