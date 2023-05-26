@@ -51,7 +51,7 @@ class GbSafController extends Controller
     /**
      * | Inbox for GB Saf
      */
-    public function inbox()
+    public function inbox(Request $req)
     {
         try {
             $mWfRoleUser = new WfRoleusermap();
@@ -61,8 +61,9 @@ class GbSafController extends Controller
 
             $userId = auth()->user()->id;
             $ulbId = auth()->user()->ulb_id;
-            $occupiedWards = $mWfWardUser->getWardsByUserId($userId)->pluck('ward_id');                       // Model () to get Occupied Wards of Current User
+            $perPage = $req->perPage ?? 10;
 
+            $occupiedWards = $mWfWardUser->getWardsByUserId($userId)->pluck('ward_id');                       // Model () to get Occupied Wards of Current User
             $roleIds = $mWfRoleUser->getRoleIdByUserId($userId)->pluck('wf_role_id');                      // Model to () get Role By User Id
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleIds)->pluck('workflow_id');
 
@@ -73,8 +74,9 @@ class GbSafController extends Controller
                 ->whereIn('current_role', $roleIds)
                 ->whereIn('ward_mstr_id', $occupiedWards)
                 ->orderByDesc('id')
-                ->get();
-            return responseMsgs(true, "Data Fetched", remove_null($safInbox->values()), "010103", "1.0", responseTime(), "POST", "");
+                ->paginate($perPage);
+
+            return responseMsgs(true, "Data Fetched", remove_null($safInbox), "010103", "1.0", responseTime(), "POST", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -83,7 +85,7 @@ class GbSafController extends Controller
     /**
      * | Outbox for GB Saf
      */
-    public function outbox()
+    public function outbox(Request $req)
     {
         try {
             $mWfRoleUser = new WfRoleusermap();
@@ -93,6 +95,7 @@ class GbSafController extends Controller
 
             $userId = auth()->user()->id;
             $ulbId = auth()->user()->ulb_id;
+            $perPage = $req->perPage ?? 10;
 
             $roleIds = $mWfRoleUser->getRoleIdByUserId($userId)->pluck('wf_role_id');
             $wardId = $mWfWardUser->getWardsByUserId($userId)->pluck('ward_id');
@@ -103,8 +106,9 @@ class GbSafController extends Controller
                 ->whereNotIn('current_role', $roleIds)
                 ->whereIn('ward_mstr_id', $wardId)
                 ->orderByDesc('id')
-                ->get();
-            return responseMsgs(true, "Data Fetched", remove_null($safData->values()), "010104", "1.0", responseTime(), "POST", "");
+                ->paginate($perPage);
+
+            return responseMsgs(true, "Data Fetched", remove_null($safData), "010104", "1.0", responseTime(), "POST", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -124,6 +128,7 @@ class GbSafController extends Controller
             $mUserId = authUser()->id;
             $mUlbId = authUser()->ulb_id;
             $mDeviceId = $req->deviceId ?? "";
+            $perPage = $req->perPage ?? 10;
 
             $occupiedWardsId = $mWfWardUser->getWardsByUserId($mUserId)->pluck('ward_id');                  // Model function to get ward list
             $roleIds = $mWfRoleUser->getRoleIdByUserId($mUserId)->pluck('wf_role_id');                 // Model function to get Role By User Id
@@ -136,7 +141,7 @@ class GbSafController extends Controller
                 ->whereIn('current_role', $roleIds)
                 ->whereIn('ward_mstr_id', $occupiedWardsId)
                 ->orderByDesc('id')
-                ->get();
+                ->perPage($perPage);
 
             return responseMsgs(true, "field Verified Inbox!", remove_null($safInbox), 010125, 1.0, responseTime(), "POST", $mDeviceId);
         } catch (Exception $e) {
@@ -649,6 +654,7 @@ class GbSafController extends Controller
             $mUserId = authUser()->id;
             $mUlbId = authUser()->ulb_id;
             $mDeviceId = $req->deviceId ?? "";
+            $perPage = $req->perPage ?? 10;
 
             $occupiedWardsId = $mWfWardUser->getWardsByUserId($mUserId)->pluck('ward_id');                  // Model function to get ward list
             $roleIds = $mWfRoleUser->getRoleIdByUserId($mUserId)->pluck('wf_role_id');                 // Model function to get Role By User Id
@@ -666,7 +672,7 @@ class GbSafController extends Controller
                 ->whereIn('current_role', $roleIds)
                 ->whereIn('ward_mstr_id', $occupiedWardsId)
                 ->orderByDesc('id')
-                ->get();
+                ->paginate($perPage);
 
             return responseMsgs(true, "BTC Inbox List", remove_null($safInbox), 010123, 1.0, responseTime(), "POST", $mDeviceId);
         } catch (Exception $e) {
@@ -699,7 +705,7 @@ class GbSafController extends Controller
     /**
      * | Escalatee Inbox
      */
-    public function specialInbox()
+    public function specialInbox(Request $req)
     {
         try {
             $mWfWardUser = new WfWardUser();
@@ -708,6 +714,7 @@ class GbSafController extends Controller
             $mpropActiveSafs = new PropActiveSaf();
             $userId = authUser()->id;
             $ulbId = authUser()->ulb_id;
+            $perPage = $req->perPage ?? 10;
 
             $wardIds = $mWfWardUser->getWardsByUserId($userId)->pluck('ward_id');                        // Get All Occupied Ward By user id using trait
             $roleIds = $mWfRoleUserMaps->getRoleIdByUserId($userId)->pluck('wf_role_id');
@@ -718,7 +725,8 @@ class GbSafController extends Controller
                 ->where('prop_active_safs.ulb_id', $ulbId)
                 ->whereIn('ward_mstr_id', $wardIds)
                 ->orderByDesc('id')
-                ->get();
+                ->paginate($perPage);
+
             return responseMsgs(true, "Data Fetched", remove_null($safData), "010107", "1.0", responseTime(), "POST", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");

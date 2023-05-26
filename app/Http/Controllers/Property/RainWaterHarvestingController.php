@@ -190,13 +190,14 @@ class RainWaterHarvestingController extends Controller
      * | Rating : 2
      * |status :closed
      */
-    public function harvestingInbox()
+    public function harvestingInbox(Request $req)
     {
         try {
             $userId = authUser()->id;
             $ulbId = authUser()->ulb_id;
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
             $harvestingList = new PropActiveHarvesting();
+            $perPage = $req->perPage ?? 10;
 
             $occupiedWards = $this->getWardByUserId($userId)->pluck('ward_id');
 
@@ -208,7 +209,7 @@ class RainWaterHarvestingController extends Controller
                 ->whereIn('prop_active_harvestings.current_role', $roleId)
                 ->whereIn('a.ward_mstr_id', $occupiedWards)
                 ->orderByDesc('prop_active_harvestings.id')
-                ->get();
+                ->paginate($perPage);
 
             return responseMsgs(true, "Inbox List", remove_null($harvesting), '011108', 01, '364ms', 'Post', '');
         } catch (Exception $e) {
@@ -221,13 +222,14 @@ class RainWaterHarvestingController extends Controller
      * |@param ulbId
      * | Rating : 2
      */
-    public function specialInbox()
+    public function specialInbox(Request $req)
     {
         try {
             $userId = authUser()->id;
             $ulbId = authUser()->ulb_id;
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
             $harvestingList = new PropActiveHarvesting();
+            $perPage = $req->perPage ?? 10;
 
             $occupiedWards = $this->getWardByUserId($userId)->pluck('ward_id');
 
@@ -239,7 +241,7 @@ class RainWaterHarvestingController extends Controller
                 ->where('prop_active_harvestings.is_escalated', true)
                 ->whereIn('a.ward_mstr_id', $occupiedWards)
                 ->orderByDesc('prop_active_harvestings.id')
-                ->get();
+                ->paginate($perPage);
 
             return responseMsg(true, "Inbox List", remove_null($harvesting));
         } catch (Exception $e) {
@@ -257,6 +259,7 @@ class RainWaterHarvestingController extends Controller
             $ulbId = authUser()->ulb_id;
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
             $harvestingList = new PropActiveHarvesting();
+            $perPage = $req->perPage ?? 10;
 
             $occupiedWards = $this->getWardByUserId($userId)->pluck('ward_id');
 
@@ -269,7 +272,7 @@ class RainWaterHarvestingController extends Controller
                 ->whereIn('prop_active_harvestings.current_role', $roleId)
                 ->whereIn('a.ward_mstr_id', $occupiedWards)
                 ->orderByDesc('prop_active_harvestings.id')
-                ->get();
+                ->paginate($perPage);
 
             return responseMsgs(true, "field Verified Inbox!", remove_null($harvesting), 010125, 1.0, "", "POST", $req->deviceId);
         } catch (Exception $e) {
@@ -288,13 +291,14 @@ class RainWaterHarvestingController extends Controller
      * | Rating : 2
      * | status :closed
      */
-    public function harvestingOutbox()
+    public function harvestingOutbox(Request $req)
     {
         try {
             $userId = authUser()->id;
             $ulbId = authUser()->ulb_id;
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
             $harvestingList = new PropActiveHarvesting();
+            $perPage = $req->perPage ?? 10;
 
             $occupiedWards = $this->getWardByUserId($userId)->pluck('ward_id');
 
@@ -306,7 +310,7 @@ class RainWaterHarvestingController extends Controller
                 ->whereNotIn('prop_active_harvestings.current_role', $roleId)
                 ->whereIn('a.ward_mstr_id', $occupiedWards)
                 ->orderByDesc('prop_active_harvestings.id')
-                ->get();
+                ->paginate($perPage);
 
             return responseMsg(true, "Outbox List", remove_null($harvesting), '011109', 01, '446ms', 'Post', '');
         } catch (Exception $e) {
@@ -902,13 +906,14 @@ class RainWaterHarvestingController extends Controller
     /**
      * | Back To Citizen Inbox
      */
-    public function btcInboxList()
+    public function btcInboxList(Request $req)
     {
         try {
             $userId = authUser()->id;
             $ulbId = authUser()->ulb_id;
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
             $harvestingList = new PropActiveHarvesting();
+            $perPage = $req->perPage ?? 10;
 
             $occupiedWards = $this->getWardByUserId($userId)->pluck('ward_id');
 
@@ -921,7 +926,7 @@ class RainWaterHarvestingController extends Controller
                 ->whereIn('a.ward_mstr_id', $occupiedWards)
                 ->where('parked', true)
                 ->orderByDesc('prop_active_harvestings.id')
-                ->get();
+                ->paginate($perPage);
 
             return responseMsgs(true, "BTC Inbox List", remove_null($harvesting), 010717, 1.0, "271ms", "POST", "", "");
         } catch (Exception $e) {
