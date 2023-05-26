@@ -146,7 +146,6 @@ class ApplySafController extends Controller
             $generatedDemand = $calculateSafById->_generatedDemand;
             $isResidential = $safTaxes->original['data']['demand']['isResidential'];
             $demandResponse = $generateSafApplyDemandResponse->generateResponse($generatedDemand, $isResidential);
-
             $metaReqs['isTrust'] = $this->isPropTrust($request['floor']);
             $metaReqs['holdingType'] = $this->holdingType($request['floor']);
             $request->merge($metaReqs);
