@@ -173,6 +173,8 @@ class ActiveSafControllerV2 extends Controller
                 throw new Exception("Memo Details Not Available");
 
             $details = collect($details)->first();
+            $taxTable = collect($details)->only(['holding_tax', 'water_tax', 'latrine_tax', 'education_cess', 'health_cess', 'rwh_penalty']);
+            $details->taxTable = $this->generateTaxTable($taxTable);
             // Fam Receipt
             if ($details->memo_type == 'FAM') {
                 $propId = $details->prop_id;
@@ -194,7 +196,7 @@ class ActiveSafControllerV2 extends Controller
 
                     $diffAmt = $ulbVerifiedQuarterlyTaxes - $selfAssessQuaterlyTax;
                     $response = [
-                        'Particulars' => (substr($ulbTax->fyear, 5) > 2023 && $ulbTax->qtr >= 1) ? "Holding Tax @ 0.075% or 0.15% or 0.2%" : "Holding Tax @ 2%",
+                        'Particulars' => (substr($ulbTax->fyear, 5) >= 2023 && $ulbTax->qtr >= 1) ? "Holding Tax @ 0.075% or 0.15% or 0.2%" : "Holding Tax @ 2%",
                         'quarterFinancialYear' => 'Quarter' . $ulbTax->qtr . '/' . $ulbTax->fyear,
                         'basedOnSelfAssess' => roundFigure($selfAssessQuaterlyTax),
                         'basedOnUlbCalc' => roundFigure($ulbVerifiedQuarterlyTaxes),
@@ -211,13 +213,38 @@ class ActiveSafControllerV2 extends Controller
                     'basedOnUlbCalc' => roundFigure($holdingTaxes->sum('basedOnUlbCalc')),
                     'diffAmt' => roundFigure($holdingTaxes->sum('diffAmt')),
                 ]);
-
+                $details->from_qtr = $safTaxes->first()->qtr;
+                $details->from_fyear = $safTaxes->first()->fyear;
+                $details->arv = $safTaxes->first()->arv;
+                $details->quarterly_tax = $safTaxes->first()->quarterly_tax;
+                $details->rule = substr($details->from_fyear, 5) >= 2023 ? "Capital Value Rule, property tax" : "Annual Rent Value Rule, annual rent value";
                 $details->taxTable = $holdingTaxes->merge([$total])->values();
             }
+
             return responseMsgs(true, "", remove_null($details), "011803", 1.0, responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011803", 1.0, responseTime(), "POST", $req->deviceId);
         }
+    }
+
+    /**
+     * | Generate Tax Table
+     */
+    public function generateTaxTable($taxDetails)
+    {
+        $taxes = collect(
+            [
+                'Holding Tax' => $taxDetails['holding_tax'],
+                'Water Tax' => $taxDetails['water_tax'],
+                'Latrine Tax' => $taxDetails['latrine_tax'],
+                'Education Cess' => $taxDetails['education_cess'],
+                'Health Tax' => $taxDetails['health_cess'],
+                'RWH Penalty' => $taxDetails['rwh_penalty'],
+            ]
+        );
+        return $taxes->filter(function ($value, $key) {
+            return $value != 0;
+        });
     }
 
     /**

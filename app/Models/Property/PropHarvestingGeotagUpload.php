@@ -8,16 +8,20 @@ use Illuminate\Database\Eloquent\Model;
 class PropHarvestingGeotagUpload extends Model
 {
     use HasFactory;
+    protected $guarded = [''];
 
     /**
      * |
      */
-    public function add($req, $imageName, $relativePath, $geoTagging)
+    public function add($req)
     {
-        $geoTagging->application_id = $req->applicationId;
-        $geoTagging->image_path = $imageName;
-        $geoTagging->relative_path = $relativePath;
-        $geoTagging->user_id = authUser()->id;
-        $geoTagging->save();
+        PropHarvestingGeotagUpload::create($req);
+    }
+
+    public function getLatLong($applicationId)
+    {
+        return PropHarvestingGeotagUpload::where('application_id', $applicationId)
+            ->orderbydesc('id')
+            ->first();
     }
 }

@@ -1910,9 +1910,9 @@ class ActiveSafController extends Controller
         );
         if ($validated->fails()) {
             return response()->json([
-                'status' => false,
+                'status'  => false,
                 'message' => 'validation error',
-                'errors' => $validated->errors()
+                'errors'  => $validated->errors()
             ], 422);
         }
         try {
@@ -1963,7 +1963,7 @@ class ActiveSafController extends Controller
             $responseData = [
                 "departmentSection" => $mDepartmentSection,
                 "accountDescription" => $mAccDescription,
-                "transactionDate" => $safTrans->tran_date,
+                "transactionDate" => Carbon::parse($safTrans->tran_date)->format('d-m-Y'),
                 "transactionNo" => $safTrans->tran_no,
                 "transactionTime" => $safTrans->created_at->format('H:i:s'),
                 "applicationNo" => $activeSafDetails['saf_no'],
@@ -2228,7 +2228,7 @@ class ActiveSafController extends Controller
             $safDtls->save();
 
             DB::commit();
-            return responseMsgs(true, "Geo Tagging Done Successfully", "", "010119", "1.0", "289ms", "POST", $req->deviceId);
+            return responseMsgs(true, "Geo Tagging Done Successfully", "", "010119", "1.0", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
@@ -2283,6 +2283,7 @@ class ActiveSafController extends Controller
             $mWfRoleusermap = new WfRoleusermap();
             $mPropTransactions = new PropTransaction();
             $jskRole = Config::get('PropertyConstaint.JSK_ROLE');
+            $tcRole = 5;
             $user = authUser();
             $userId = $user->id;
             $safDetails = $this->details($req);
@@ -2298,7 +2299,7 @@ class ActiveSafController extends Controller
             // $role = $mWfRoleusermap->getRoleByUserWfId($mreqs);
             $role = $mWfRoleusermap->getRoleByUserId($mreqs);
 
-            if (isset($role) && $role->wf_role_id == $jskRole)
+            if (isset($role) && in_array($role->wf_role_id, [$jskRole, $tcRole]))
                 $demand['can_pay'] = true;
             else
                 $demand['can_pay'] = false;

@@ -428,45 +428,45 @@ class PropertyDetailsController extends Controller
                 case ("khataNo"):
                     if ($request->khataNo)
                         $data = $mPropProperty->searchProperty()
-                            ->where('prop_properties.khata_no', 'LIKE', '%' . $request->khataNo . '%');
+                            ->where('prop_properties.khata_no', $request->khataNo);
 
                     if ($request->plotNo)
                         $data = $mPropProperty->searchProperty()
-                            ->where('prop_properties.plot_no', 'LIKE', '%' . $request->plotNo . '%');
+                            ->where('prop_properties.plot_no',  $request->plotNo);
 
                     if ($request->maujaName)
                         $data = $mPropProperty->searchProperty()
-                            ->where('prop_properties.village_mauja_name', 'LIKE', '%' . $request->maujaName . '%');
+                            ->where('prop_properties.village_mauja_name',  $request->maujaName);
 
                     if ($request->khataNo && $request->plotNo)
                         $data = $mPropProperty->searchProperty()
-                            ->where('prop_properties.khata_no', 'LIKE', '%' . $request->khataNo . '%')
-                            ->where('prop_properties.plot_no', 'LIKE', '%' . $request->plotNo . '%');
+                            ->where('prop_properties.khata_no',  $request->khataNo)
+                            ->where('prop_properties.plot_no',  $request->plotNo);
 
                     if ($request->khataNo && $request->maujaName)
                         $data = $mPropProperty->searchProperty()
-                            ->where('prop_properties.khata_no', 'LIKE', '%' . $request->khataNo . '%')
-                            ->where('prop_properties.village_mauja_name', 'LIKE', '%' . $request->maujaName . '%');
+                            ->where('prop_properties.khata_no',  $request->khataNo)
+                            ->where('prop_properties.village_mauja_name',  $request->maujaName);
 
                     if ($request->plotNo && $request->maujaName)
                         $data = $mPropProperty->searchProperty()
-                            ->where('prop_properties.plot_no', 'LIKE', '%' . $request->plotNo . '%')
-                            ->where('prop_properties.village_mauja_name', 'LIKE', '%' . $request->maujaName . '%');
+                            ->where('prop_properties.plot_no',  $request->plotNo)
+                            ->where('prop_properties.village_mauja_name',  $request->maujaName);
 
                     if ($request->khataNo && $request->plotNo && $request->maujaName)
                         $data = $mPropProperty->searchProperty()
-                            ->where('prop_properties.khata_no', 'LIKE', '%' . $request->khataNo . '%')
-                            ->where('prop_properties.plot_no', 'LIKE', '%' . $request->plotNo . '%')
-                            ->where('prop_properties.village_mauja_name', 'LIKE', '%' . $request->maujaName . '%');
+                            ->where('prop_properties.khata_no',  $request->khataNo)
+                            ->where('prop_properties.plot_no',  $request->plotNo)
+                            ->where('prop_properties.village_mauja_name',  $request->maujaName);
                     break;
             }
 
             $data = $data->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'latitude', 'longitude')
                 ->get();
             if ($isLegacy == true) {
-                $data = collect($data)->where('new_holding_no', null);
-                // ->where('latitude', null)
-                // ->where('longitude', null);
+                $data = collect($data)->where('new_holding_no', null)
+                    ->where('latitude', null)
+                    ->where('longitude', null);
                 $data = (array_values(objtoarray($data)));
             } else {
                 $data = collect($data)->where('new_holding_no', '!=', null);
