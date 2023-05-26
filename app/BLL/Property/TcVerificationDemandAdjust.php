@@ -39,6 +39,7 @@ class TcVerificationDemandAdjust
     protected $_tcId;
     protected $_calculateSafByid;
     private $_postSafPropTaxes;
+    private $_adjustmentAssessmentTypes;
 
     public function __construct()
     {
@@ -50,6 +51,7 @@ class TcVerificationDemandAdjust
         $this->_mPropTransactions = new PropTransaction();
         $this->_calculateSafByid = new CalculateSafById;
         $this->_postSafPropTaxes = new PostSafPropTaxes;
+        $this->_adjustmentAssessmentTypes = Config::get('PropertyConstaint.REASSESSMENT_TYPES');
     }
 
     /** 
@@ -131,7 +133,7 @@ class TcVerificationDemandAdjust
         $demandDetails = $calculation['details'];
         $quaterlyTax = $this->generateSafDemand($demandDetails);
 
-        if (in_array($this->_reqs['assessmentType'], ['Reassessment', 'Mutation'])) {
+        if (in_array($this->_reqs['assessmentType'], $this->_adjustmentAssessmentTypes)) {
             $this->_calculateSafByid->_demandDetails = $quaterlyTax;
             $this->_calculateSafByid->_holdingNo = $activeSafDtls->holding_no;
             $quaterlyTax = $this->_calculateSafByid->adjustAmount();

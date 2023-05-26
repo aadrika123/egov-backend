@@ -557,7 +557,7 @@ class NewConnectionController extends Controller
                             $fialMeterReading = $mWaterConsumerInitialMeter->getmeterReadingAndDetails($refConsumerId)
                                 ->orderByDesc('id')
                                 ->first();
-                            $consumerDemand['lastMeterReading'] = $fialMeterReading->initial_reading ?? 0 ;
+                            $consumerDemand['lastMeterReading'] = $fialMeterReading->initial_reading ?? 0;
                             break;
                         case (3):
                             $connectionName = $refConnectionName['3'];
@@ -1928,10 +1928,12 @@ class NewConnectionController extends Controller
             'applicationId' => 'required|integer',
         ]);
         try {
-            $mWaterConnectionCharge  = new WaterConnectionCharge();
-            $mWaterApplication = new WaterApplication();
-            $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
-            $mWaterTran = new WaterTran();
+            $mWaterConnectionCharge     = new WaterConnectionCharge();
+            $mWaterApplication          = new WaterApplication();
+            $mWaterPenaltyInstallment   = new WaterPenaltyInstallment();
+            $mWaterTran                 = new WaterTran();
+            $refChargeCatagory          = Config::get("waterConstaint.CHARGE_CATAGORY");
+            $refChargeCatagoryValue     = Config::get("waterConstaint.CONNECTION_TYPE");
 
             # Application Details
             $applicationDetails['applicationDetails'] = $mWaterApplication->fullWaterDetails($request)->first();
@@ -1950,12 +1952,25 @@ class NewConnectionController extends Controller
                 ->orderByDesc('id')
                 ->firstOrFail();
 
+            switch ($charges['charge_category']) {
+                case ($refChargeCatagory['SITE_INSPECTON']):
+                    $chargeId = $refChargeCatagoryValue['SITE_INSPECTON'];
+                    break;
+                case ($refChargeCatagory['NEW_CONNECTION']):
+                    $chargeId = $refChargeCatagoryValue['NEW_CONNECTION'];
+                    break;
+                case ($refChargeCatagory['REGULAIZATION']):
+                    $chargeId = $refChargeCatagoryValue['REGULAIZATION'];
+                    break;
+            }
+
             if ($charges['paid_status'] == 0) {
                 $calculation['calculation'] = [
                     'connectionFee'     => $charges['conn_fee'],
                     'penalty'           => $charges['penalty'],
                     'totalAmount'       => $charges['amount'],
                     'chargeCatagory'    => $charges['charge_category'],
+                    'chargeCatagoryId'  => $chargeId,
                     'paidStatus'        => $charges['paid_status']
                 ];
                 $waterTransDetail = array_merge($calculation, $waterTransDetail);
@@ -1974,6 +1989,7 @@ class NewConnectionController extends Controller
                         'penalty'           => $penaltyAmount,
                         'totalAmount'       => $penaltyAmount,
                         'chargeCatagory'    => $charges['charge_category'],
+                        'chargeCatagoryId'  => $chargeId,
                         'paidStatus'        => $charges['paid_status']
                     ];
                     $waterTransDetail = array_merge($calculation, $waterTransDetail);

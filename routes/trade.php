@@ -182,7 +182,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         // Route::post('rate-add', 'addRate');
         Route::post('rate-list', 'rateList');
         Route::post('rate', 'rate');
-        Route::post('rate-update', 'updateRate');
+        // Route::post('rate-update', 'updateRate');
 
         // Route::post('ownership-type-add', 'addOwnershipType');
         Route::post('ownership-type-list', 'ownershipTypeList');

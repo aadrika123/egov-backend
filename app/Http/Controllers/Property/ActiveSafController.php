@@ -1829,6 +1829,7 @@ class ActiveSafController extends Controller
             // Update SAF Payment Status
             $activeSaf->save();
             $this->sendToWorkflow($activeSaf);        // Send to Workflow(15.2)
+
             DB::commit();
             return responseMsgs(true, "Payment Successfully Done",  ['TransactionNo' => $tranNo], "010115", "1.0", "567ms", "POST", $req->deviceId);
         } catch (Exception $e) {

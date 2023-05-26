@@ -327,19 +327,21 @@ class WaterConsumer extends Controller
         $refConsumerId = $request->consumerId;
         $mWaterConsumerDemand = new WaterConsumerDemand();
         $lastDemand = $mWaterConsumerDemand->getRefConsumerDemand($refConsumerId)->first();
-        $refDemandUpto = Carbon::parse($lastDemand->demand_upto);
-        if ($refDemandUpto > $today) {
-            throw new Exception("the demand is generated till" . "" . $lastDemand->demand_upto);
-        }
-        $startDate = Carbon::parse($refDemandUpto);
-        $uptoMonth = $startDate->format('m');
-        $todayMonth = $today->format('m');
-        if ($uptoMonth >= $todayMonth) {
-            throw new Exception("demand should be generated generate in next month!");
-        }
-        $diffMonth = $startDate->diffInMonths($today);
-        if ($diffMonth < 1) {
-            throw new Exception("there should be a diff of month!");
+        if ($lastDemand) {
+            $refDemandUpto = Carbon::parse($lastDemand->demand_upto);
+            if ($refDemandUpto > $today) {
+                throw new Exception("the demand is generated till" . "" . $lastDemand->demand_upto);
+            }
+            $startDate = Carbon::parse($refDemandUpto);
+            $uptoMonth = $startDate->format('m');
+            $todayMonth = $today->format('m');
+            if ($uptoMonth >= $todayMonth) {
+                throw new Exception("demand should be generated generate in next month!");
+            }
+            $diffMonth = $startDate->diffInMonths($today);
+            if ($diffMonth < 1) {
+                throw new Exception("there should be a diff of month!");
+            }
         }
     }
 

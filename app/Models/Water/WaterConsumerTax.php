@@ -41,4 +41,14 @@ class WaterConsumerTax extends Model
             ->where('status', 1)
             ->orderByDesc('id');
     }
+
+    /**
+     * | Get consumer tax deatils according to tax id 
+     * | @param taxId 
+     */
+    public function getTaxById($taxIds)
+    {
+        return WaterConsumerTax::whereIn('id', $taxIds)
+            ->where('status', 1);
+    }
 }

@@ -14,6 +14,7 @@ use App\Traits\Property\SAF;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Config;
 
 /**
  * | Calculate Saf By Saf Id Service
@@ -42,6 +43,7 @@ class CalculateSafById
     public $_holdingNo;
     public $_firstOwner;
     public $_mPropActiveSafOwners;
+    private $_adjustmentAssessmentTypes;
 
     public function __construct()
     {
@@ -52,6 +54,7 @@ class CalculateSafById
         $this->_penaltyRebateCalc = new PenaltyRebateCalculation;
         $this->_todayDate = Carbon::now();
         $this->_mPropActiveSafOwners = new PropActiveSafsOwner();
+        $this->_adjustmentAssessmentTypes = Config::get('PropertyConstaint.REASSESSMENT_TYPES');
     }
 
     /**
@@ -123,7 +126,8 @@ class CalculateSafById
                     "buildupArea" => $floor['builtup_area'],
                     "dateFrom" => $floor['date_from'],
                     "dateUpto" => $floor['date_upto'],
-                    "carpetArea" => $floor['carpet_area']
+                    "carpetArea" => $floor['carpet_area'],
+                    "propFloorDetailId" => $floor['prop_floor_details_id']
                 ];
                 array_push($safFloors, $floorReq);
             }
@@ -175,8 +179,54 @@ class CalculateSafById
 
     /**
      * | Generated SAF Demand to push the value in propSafsDemand Table // (1.2)
+     * | Used in Apply Saf , Review Calculation
      */
     public function generateSafDemand()
+    {
+        $this->generateDemand();
+
+        if (in_array($this->_safDetails['assessment_type'], $this->_adjustmentAssessmentTypes))     // In Case of Reassessment Adjust the Amount
+            $this->adjustAmount();         // (1.2.1)
+
+        $this->calculateOnePercPenalty();   // (1.2.2)
+
+        $demandDetails = $this->_demandDetails;
+        $dueFrom = "Quarter " . $demandDetails->first()['qtr'] . '/' . 'Year ' . $demandDetails->first()['fyear'];
+        $dueTo = "Quarter " . $demandDetails->last()['qtr'] . '/' . 'Year ' . $demandDetails->last()['fyear'];
+
+        $totalTax = roundFigure($demandDetails->sum('balance'));
+        $totalOnePercPenalty = roundFigure($demandDetails->sum('onePercPenaltyTax'));
+        $totalDemand = $totalTax + $totalOnePercPenalty + $this->_calculatedDemand['demand']['lateAssessmentStatus'] + $this->_calculatedDemand['demand']['lateAssessmentPenalty'];
+        $this->_generatedDemand['demand'] = [
+            'dueFromFyear' => $demandDetails->first()['fyear'],
+            'dueToFyear' => $demandDetails->last()['fyear'],
+            'dueFromQtr' => $demandDetails->first()['qtr'],
+            'dueToQtr' => $demandDetails->last()['qtr'],
+            'totalTax' => $totalTax,
+            'totalOnePercPenalty' => $totalOnePercPenalty,
+            'totalQuarters' => $demandDetails->count(),
+            'duesFrom' => $dueFrom,
+            'duesTo' => $dueTo,
+            'lateAssessmentStatus' => $this->_calculatedDemand['demand']['lateAssessmentStatus'],
+            'lateAssessmentPenalty' => $this->_calculatedDemand['demand']['lateAssessmentPenalty'],
+            'totalDemand' => roundFigure($totalDemand)
+        ];
+
+        $this->_generatedDemand['details'] = $this->_demandDetails;
+
+        $this->readRebates();                                               // (1.2.3)
+
+        $payableAmount = $totalDemand - ($this->_generatedDemand['demand']['rebateAmt'] + $this->_generatedDemand['demand']['specialRebateAmt']);   // Final Payable Amount Calculation
+        $this->_generatedDemand['demand']['payableAmount'] = round($payableAmount);
+
+        $this->generateTaxDtls();        // (1.2.3)
+    }
+
+    /**
+     * | Generate Demand
+     */
+
+    public function generateDemand()
     {
         $collection = $this->_calculatedDemand['details'];
         $filtered = collect($collection)->map(function ($value) {
@@ -214,44 +264,7 @@ class CalculateSafById
         $demandDetails = $taxes->values()->collapse();
 
         $this->_demandDetails = $demandDetails;
-
-        if (in_array($this->_safDetails['assessment_type'], ['Re Assessment', 'ReAssessment', 'Mutation', '2', '3']))     // In Case of Reassessment Adjust the Amount
-            $this->adjustAmount();         // (1.2.1)
-
-        $this->calculateOnePercPenalty();   // (1.2.2)
-
-        $demandDetails = $this->_demandDetails;
-        $dueFrom = "Quarter " . $demandDetails->first()['qtr'] . '/' . 'Year ' . $demandDetails->first()['fyear'];
-        $dueTo = "Quarter " . $demandDetails->last()['qtr'] . '/' . 'Year ' . $demandDetails->last()['fyear'];
-
-        $totalTax = roundFigure($demandDetails->sum('balance'));
-        $totalOnePercPenalty = roundFigure($demandDetails->sum('onePercPenaltyTax'));
-        $totalDemand = $totalTax + $totalOnePercPenalty + $this->_calculatedDemand['demand']['lateAssessmentStatus'] + $this->_calculatedDemand['demand']['lateAssessmentPenalty'];
-        $this->_generatedDemand['demand'] = [
-            'dueFromFyear' => $demandDetails->first()['fyear'],
-            'dueToFyear' => $demandDetails->last()['fyear'],
-            'dueFromQtr' => $demandDetails->first()['qtr'],
-            'dueToQtr' => $demandDetails->last()['qtr'],
-            'totalTax' => $totalTax,
-            'totalOnePercPenalty' => $totalOnePercPenalty,
-            'totalQuarters' => $demandDetails->count(),
-            'duesFrom' => $dueFrom,
-            'duesTo' => $dueTo,
-            'lateAssessmentStatus' => $this->_calculatedDemand['demand']['lateAssessmentStatus'],
-            'lateAssessmentPenalty' => $this->_calculatedDemand['demand']['lateAssessmentPenalty'],
-            'totalDemand' => roundFigure($totalDemand)
-        ];
-
-        $this->_generatedDemand['details'] = $this->_demandDetails;
-
-        $this->readRebates();                                               // (1.2.3)
-
-        $payableAmount = $totalDemand - ($this->_generatedDemand['demand']['rebateAmt'] + $this->_generatedDemand['demand']['specialRebateAmt']);   // Final Payable Amount Calculation
-        $this->_generatedDemand['demand']['payableAmount'] = round($payableAmount);
-
-        $this->generateTaxDtls();        // (1.2.3)
     }
-
 
     /**
      * | Adjust Amount In Case of Reassessment (1.2.1)

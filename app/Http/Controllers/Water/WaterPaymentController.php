@@ -20,7 +20,9 @@ use App\Models\Water\WaterConnectionTypeMstr;
 use App\Models\Water\WaterConsumer;
 use App\Models\Water\WaterConsumerCollection;
 use App\Models\Water\WaterConsumerDemand;
+use App\Models\Water\WaterConsumerInitialMeter;
 use App\Models\Water\WaterConsumerMeter;
+use App\Models\Water\WaterConsumerTax;
 use App\Models\Water\WaterOwnerTypeMstr;
 use App\Models\Water\WaterParamPipelineType;
 use App\Models\Water\WaterPenaltyInstallment;
@@ -1056,8 +1058,9 @@ class WaterPaymentController extends Controller
                 ->where('paid_status', 0)
                 ->get();                                                                                        # get water User connectin charges
 
-            if (!$charges || collect($charges)->isEmpty())
-                throw new Exception("Connection Not Available for Payment!");
+            if (!$charges || collect($charges)->isEmpty()) {
+                $this->checkForCharges($req);
+            }
             # Water Transactions
             $req->merge([
                 'userId'    => $userId,
@@ -1108,6 +1111,32 @@ class WaterPaymentController extends Controller
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+
+
+    /**
+     * | Check for the payment done 
+     */
+    public function checkForCharges($req)
+    {
+        $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
+        $paramChargeCatagory = Config::get('waterConstaint.CHARGE_CATAGORY');
+
+        if ($req->chargeCategory == $paramChargeCatagory['REGULAIZATION']) {
+            $penaltyDetails = $mWaterPenaltyInstallment->getPenaltyByApplicationId($req->applicationId)->get();
+            $checkPenalty = collect($penaltyDetails)->first();
+            if (!$checkPenalty) {
+                throw new Exception("Connection Not Available for Payment!");
+            }
+            $checkPenaltyPayment = collect($penaltyDetails)->pluck('paid_status');
+            $containsOnlyOnes = $checkPenaltyPayment->every(function ($value) {
+                return $value === 1;
+            });
+            if ($containsOnlyOnes) {
+                throw new Exception("All Payment is done for penalty as well!");
+            }
+        }
+    }
+
 
 
     /**
@@ -1262,7 +1291,7 @@ class WaterPaymentController extends Controller
                                 throw new Exception("Connection Amount Not Matched!");
                             }
                         }
-                        if ($refPenaltySumAmount != ($req->amount - $refAmount)) {
+                        if ($refPenaltySumAmount != ($req->amount - ($refAmount ?? 0))) {
                             throw new Exception("Respective Penalty Amount Not Matched!");
                         }
                         break;
@@ -1526,6 +1555,7 @@ class WaterPaymentController extends Controller
             $mWaterChequeDtl        = new WaterChequeDtl();
             $mWaterTran             = new WaterTran();
             $mWaterConsumerMeter    = new WaterConsumerMeter();
+            $mWaterConsumerTax      = new WaterConsumerTax();
 
             $mTowardsDemand     = Config::get("waterConstaint.TOWARDS_DEMAND");
             $mTranType          = Config::get("waterConstaint.PAYMENT_FOR");
@@ -1553,13 +1583,21 @@ class WaterPaymentController extends Controller
             $consumerDemands = $mWaterConsumerDemand->getDemandCollectively($demandIds)
                 ->orderBy('demand_from')
                 ->get();
+            $taxids = collect($consumerDemands)->pluck('consumer_tax_id')->filter();
+            if (!empty($taxids) || !is_null($taxids)) {
+                $meterReadings = $mWaterConsumerTax->getTaxById($taxids)
+                    ->orderByDesc('id')
+                    ->get();
+                $lastDemand = collect($meterReadings)->first()['initial_reading'];
+                $currentDemand = collect($meterReadings)->first()['final_reading'];
+            }
 
-            $fromDate = collect($consumerDemands)->first()->demand_from;
-            $startingDate = Carbon::createFromFormat('Y-m-d',  $fromDate)->startOfMonth();
-            $uptoDate = collect($consumerDemands)->last()->demand_upto;
-            $endingDate = Carbon::createFromFormat('Y-m-d',  $uptoDate)->endOfMonth();
-            $penaltyAmount = collect($consumerDemands)->sum('penalty');
-            $refDemandAmount = collect($consumerDemands)->sum('balance_amount');
+            $fromDate           = collect($consumerDemands)->first()->demand_from;
+            $startingDate       = Carbon::createFromFormat('Y-m-d',  $fromDate)->startOfMonth();
+            $uptoDate           = collect($consumerDemands)->last()->demand_upto;
+            $endingDate         = Carbon::createFromFormat('Y-m-d',  $uptoDate)->endOfMonth();
+            $penaltyAmount      = collect($consumerDemands)->sum('penalty');
+            $refDemandAmount    = collect($consumerDemands)->sum('balance_amount');
 
             # consumer meter details 
             $consumerMeterDetails = $mWaterConsumerMeter->getMeterDetailsByConsumerId($consumerDetails->id)
@@ -1610,6 +1648,10 @@ class WaterPaymentController extends Controller
                 "finalReading"          => $finalReading ?? null,
                 "fixedPaidFrom"         => ($fixedFrom) ? Carbon::createFromFormat('Y-m-d',  $fixedFrom)->startOfMonth() : null,
                 "fixedPaidUpto"         => ($fixedUpto) ? (Carbon::createFromFormat('Y-m-d',  $fixedUpto)->endOfMonth()) : null,
+                "lastMeterReadingDate"    => $fromDate ?? null,
+                "currentMeterReadingDate" => $uptoDate ?? null,
+                "lastMeterReading"      => $lastDemand ?? null,
+                "currentMeterReading"   => $currentDemand ?? null,
                 "paidAmtInWords"        => getIndianCurrency($transactionDetails->amount),
 
             ];
