@@ -207,8 +207,17 @@ class ClusterController extends Controller
             'holdingNo'     => 'required',
         ]);
         try {
+            $perPage = $request->perPage ?? 10;
             $mPropProperty = new PropProperty();
-            $holdingDetails = $mPropProperty->searchHolding($request->holdingNo);
+            $holdingDtls = $mPropProperty->searchHolding()
+                ->where('prop_properties.holding_no', 'LIKE', '%' . $request->holdingNo);
+
+            $newHoldingDtls = $mPropProperty->searchHolding()
+                ->where('prop_properties.new_holding_no', 'LIKE', '%' . $request->holdingNo);
+
+            $holdingDetails = $holdingDtls->union($newHoldingDtls)
+                ->paginate($perPage);
+
             return responseMsgs(true, "List of holding!", $holdingDetails, "", "02", "", "POST", "");
         } catch (Exception $error) {
             return responseMsg(false, $error->getMessage(), "");
@@ -226,16 +235,16 @@ class ClusterController extends Controller
             $mPropProperty = new PropProperty();
             $mCluster = new Cluster();
             $mPropDemand = new PropDemand();
-            $notActive = "Not a valid cluter ID!";
+            $notActive = "Not a valid cluster ID!";
 
             $uniqueValues = collect($request->holdingNo)->unique();
             if ($uniqueValues->count() !== count($request->holdingNo)) {
-                throw new Exception("holding should no Contain Dublicate Value!");
+                throw new Exception("Holding should not Contain Duplicate Value!");
             }
 
             $results = $mPropProperty->searchCollectiveHolding($request->holdingNo);
             if ($results->count() != count($request->holdingNo)) {
-                throw new Exception("the holding details contain invalid data");
+                throw new Exception("The holding details contain invalid data");
             }
 
             $checkActiveCluster =  $mCluster->checkActiveCluster($request->clusterId);

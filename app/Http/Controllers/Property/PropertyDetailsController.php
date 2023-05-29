@@ -11,6 +11,7 @@ use App\Models\Property\PropActiveObjection;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Property\PropConcession;
+use App\Models\Property\PropDeactivationRequest;
 use App\Models\Property\PropDemand;
 use App\Models\Property\PropGbofficer;
 use App\Models\Property\PropHarvesting;
@@ -54,21 +55,18 @@ class PropertyDetailsController extends Controller
             ]);
 
             $mPropActiveSaf = new PropActiveSaf();
-            $mPropActiveSafOwners = new PropActiveSafsOwner();
-            $mPropActiveGbOfficer = new PropActiveGbOfficer();
             $mPropActiveConcessions = new PropActiveConcession();
             $mPropActiveObjection = new PropActiveObjection();
             $mPropActiveHarvesting = new PropActiveHarvesting();
             $mPropActiveDeactivationRequest = new PropActiveDeactivationRequest();
             $mPropSafs = new PropSaf();
-            $mPropOwners = new PropOwner();
-            $mPropSafOwners = new PropSafsOwner();
-            $mPropGbofficer = new PropGbofficer();
             $mPropConcessions = new PropConcession();
             $mPropObjection = new PropObjection();
             $mPropHarvesting = new PropHarvesting();
+            $mPropDeactivationRequest = new PropDeactivationRequest();
             $searchBy = $request->searchBy;
             $key = $request->filteredBy;
+            $perPage = $request->perPage ?? 10;
 
             //search by application no.
             if ($searchBy == 'applicationNo') {
@@ -76,67 +74,65 @@ class PropertyDetailsController extends Controller
                 switch ($key) {
 
                     case ("saf"):
-                        $propSaf  = $mPropSafs->searchSafs()
-                            ->where('prop_safs.saf_no', $applicationNo)
+                        $approved  = $mPropSafs->searchSafs()
+                            ->where('prop_safs.saf_no', strtoupper($applicationNo))
                             ->groupby('prop_safs.id', 'u.ward_name', 'uu.ward_name', 'wf_roles.role_name');
 
-                        $activeSaf = $mPropActiveSaf->searchSafs()
-                            ->where('prop_active_safs.saf_no', $applicationNo)
+                        $active = $mPropActiveSaf->searchSafs()
+                            ->where('prop_active_safs.saf_no', strtoupper($applicationNo))
                             ->groupby('prop_active_safs.id', 'u.ward_name', 'uu.ward_name', 'wf_roles.role_name');
 
-                        $details =  $propSaf->union($activeSaf)->get();
+                        // $details = $approved->union($active)->get();
                         break;
 
                     case ("gbsaf"):
-                        $propGbSaf =  $mPropSafs->searchGbSafs()
-                            ->where('prop_safs.saf_no', $applicationNo);
+                        $approved =  $mPropSafs->searchGbSafs()
+                            ->where('prop_safs.saf_no', strtoupper($applicationNo));
 
-                        $activeGbSaf =  $mPropActiveSaf->searchGbSafs()
-                            ->where('prop_active_safs.saf_no', $applicationNo);
+                        $active =  $mPropActiveSaf->searchGbSafs()
+                            ->where('prop_active_safs.saf_no', strtoupper($applicationNo));
 
-                        $details = $propGbSaf->union($activeGbSaf)->get();
+                        // $details = $approved->union($active)->get();
                         break;
 
                     case ("concession"):
-                        $approvedConcession = $mPropConcessions->searchConcessions()
-                            ->where('prop_concessions.application_no', $applicationNo);
+                        $approved = $mPropConcessions->searchConcessions()
+                            ->where('prop_concessions.application_no', strtoupper($applicationNo));
 
-                        $activeConcession = $mPropActiveConcessions->searchConcessions()
-                            ->where('prop_active_concessions.application_no', $applicationNo);
+                        $active = $mPropActiveConcessions->searchConcessions()
+                            ->where('prop_active_concessions.application_no', strtoupper($applicationNo));
 
-                        $details = $approvedConcession->union($activeConcession)->get();
+                        // $details = $approved->union($active)->get();
                         break;
 
                     case ("objection"):
-                        $approvedObjection = $mPropObjection->searchObjections()
-                            ->where('prop_objections.objection_no', $applicationNo);
+                        $approved = $mPropObjection->searchObjections()
+                            ->where('prop_objections.objection_no', strtoupper($applicationNo));
 
-                        $activeObjection = $mPropActiveObjection->searchObjections()
-                            ->where('prop_active_objections.objection_no', $applicationNo);
+                        $active = $mPropActiveObjection->searchObjections()
+                            ->where('prop_active_objections.objection_no', strtoupper($applicationNo));
 
-                        $details = $approvedObjection->union($activeObjection)->get();
+                        // $details = $approved->union($active)->get();
                         break;
 
                     case ("harvesting"):
-                        $approvedHarvesting = $mPropHarvesting->searchHarvesting()
+                        $approved = $mPropHarvesting->searchHarvesting()
                             ->where('application_no', strtoupper($applicationNo));
 
-                        $activeHarvesting = $mPropActiveHarvesting->searchHarvesting()
+                        $active = $mPropActiveHarvesting->searchHarvesting()
                             ->where('application_no', strtoupper($applicationNo));
 
-                        $details = $approvedHarvesting->union($activeHarvesting)->get();
+                        // $details = $approved->union($active)->get();
                         break;
 
                     case ('holdingDeactivation'):
-                        $application = collect($mPropActiveDeactivationRequest->getDeactivationApplication($applicationNo));
-                        $application['application_no'] = "dummy";
-                        $refowners = collect($mPropOwners->getOwnerByPropId($application['property_id']));
-                        $owners = collect($refowners)->map(function ($value) {
-                            $returnVal['ownerName'] = $value['ownerName'];
-                            $returnVal['mobileNo'] = $value['mobileNo'];
-                            return $returnVal;
-                        })->first();
-                        $details[] = $application->merge($owners);
+                        $approved = $mPropDeactivationRequest->getDeactivationApplication()
+                            ->where('prop_deactivation_requests.application_no', strtoupper($applicationNo));
+
+                        $active = $mPropActiveDeactivationRequest->getDeactivationApplication()
+                            ->where('prop_active_deactivation_requests.application_no', strtoupper($applicationNo));
+
+                        // $details = $approved->union($active)->get();
                         break;
                 }
             }
@@ -146,52 +142,52 @@ class PropertyDetailsController extends Controller
                 $ownerName = $request->value;
                 switch ($key) {
                     case ("saf"):
-                        $propSaf  = $mPropSafs->searchSafs()
+                        $approved  = $mPropSafs->searchSafs()
                             ->where('so.owner_name', 'LIKE', '%' . strtoupper($ownerName) . '%')
                             ->groupby('prop_safs.id', 'u.ward_name', 'uu.ward_name', 'wf_roles.role_name');
 
-                        $activeSaf = $mPropActiveSaf->searchSafs()
+                        $active = $mPropActiveSaf->searchSafs()
                             ->where('so.owner_name', 'LIKE', '%' . strtoupper($ownerName) . '%')
                             ->groupby('prop_active_safs.id', 'u.ward_name', 'uu.ward_name', 'wf_roles.role_name');
 
-                        $details =  $propSaf->union($activeSaf)->get();
+                        // $details = $approved->union($active)->get();
                         break;
 
                     case ("gbsaf"):
-                        $propGbSaf =  $mPropSafs->searchGbSafs()
+                        $approved =  $mPropSafs->searchGbSafs()
                             ->where('gbo.officer_name', 'LIKE', '%' . strtoupper($ownerName) . '%');
 
-                        $activeGbSaf =  $mPropActiveSaf->searchGbSafs()
+                        $active =  $mPropActiveSaf->searchGbSafs()
                             ->where('gbo.officer_name', 'LIKE', '%' . strtoupper($ownerName) . '%');
 
-                        $details = $propGbSaf->union($activeGbSaf)->get();
+                        // $details = $approved->union($active)->get();
                         break;
                     case ("concession"):
-                        $approvedConcession = $mPropConcessions->searchConcessions()
+                        $approved = $mPropConcessions->searchConcessions()
                             ->where('prop_owners.owner_name', 'LIKE', '%' . strtoupper($ownerName) . '%');
 
-                        $activeConcession = $mPropActiveConcessions->searchConcessions()
+                        $active = $mPropActiveConcessions->searchConcessions()
                             ->where('prop_owners.owner_name', 'LIKE', '%' . strtoupper($ownerName) . '%');
 
-                        $details = $approvedConcession->union($activeConcession)->get();
+                        // $details = $approved->union($active)->get();
                         break;
                     case ("objection"):
-                        $approvedObjection = $mPropObjection->searchObjections()
+                        $approved = $mPropObjection->searchObjections()
                             ->where('prop_owners.owner_name', 'LIKE', '%' . strtoupper($ownerName) . '%');
 
-                        $activeObjection = $mPropActiveObjection->searchObjections()
+                        $active = $mPropActiveObjection->searchObjections()
                             ->where('prop_owners.owner_name', 'LIKE', '%' . strtoupper($ownerName) . '%');
 
-                        $details = $approvedObjection->union($activeObjection)->get();
+                        // $details = $approved->union($active)->get();
                         break;
                     case ("harvesting"):
-                        $approvedHarvesting = $mPropHarvesting->searchHarvesting()
+                        $approved = $mPropHarvesting->searchHarvesting()
                             ->where('prop_owners.owner_name', 'LIKE', '%' . strtoupper($ownerName) . '%');
 
-                        $activeHarvesting = $mPropActiveHarvesting->searchHarvesting()
+                        $active = $mPropActiveHarvesting->searchHarvesting()
                             ->where('prop_owners.owner_name', 'LIKE', '%' . strtoupper($ownerName) . '%');
 
-                        $details = $approvedHarvesting->union($activeHarvesting)->get();
+                        // $details = $approved->union($active)->get();
                         break;
                     case ('holdingDeactivation'):
                         $details = 'No Data Found';
@@ -204,52 +200,52 @@ class PropertyDetailsController extends Controller
                 $mobileNo = $request->value;
                 switch ($key) {
                     case ("saf"):
-                        $propSaf  = $mPropSafs->searchSafs()
+                        $approved  = $mPropSafs->searchSafs()
                             ->where('so.mobile_no', 'LIKE', '%' . $mobileNo . '%')
                             ->groupby('prop_safs.id', 'u.ward_name', 'uu.ward_name', 'wf_roles.role_name');
 
-                        $activeSaf = $mPropActiveSaf->searchSafs()
+                        $active = $mPropActiveSaf->searchSafs()
                             ->where('so.mobile_no', 'LIKE', '%' . $mobileNo . '%')
                             ->groupby('prop_active_safs.id', 'u.ward_name', 'uu.ward_name', 'wf_roles.role_name');
 
-                        $details = ($propSaf->union($activeSaf)->get());
-                        $details = (object)$details;
+                        // $details = $approved->union($active)->get();
+                        // $details = (object)$details;
                         break;
                     case ("gbsaf"):
-                        $propGbSaf =  $mPropSafs->searchGbSafs()
+                        $approved =  $mPropSafs->searchGbSafs()
                             ->where('gbo.mobile_no', 'LIKE', '%' . $mobileNo . '%');
 
-                        $activeGbSaf = $mPropActiveSaf->searchGbSafs()
+                        $active = $mPropActiveSaf->searchGbSafs()
                             ->where('gbo.mobile_no', 'LIKE', '%' . $mobileNo . '%');
 
-                        $details = $propGbSaf->union($activeGbSaf)->get();
+                        // $details = $approved->union($active)->get();
                         break;
                     case ("concession"):
-                        $approvedConcession = $mPropConcessions->searchConcessions()
+                        $approved = $mPropConcessions->searchConcessions()
                             ->where('prop_owners.mobile_no', 'LIKE', '%' . $mobileNo . '%');
 
-                        $activeConcession = $mPropActiveConcessions->searchConcessions()
+                        $active = $mPropActiveConcessions->searchConcessions()
                             ->where('prop_owners.mobile_no', 'LIKE', '%' . $mobileNo . '%');
 
-                        $details = $approvedConcession->union($activeConcession)->get();
+                        // $details = $approved->union($active)->get();
                         break;
                     case ("objection"):
-                        $approvedObjection = $mPropObjection->searchObjections()
+                        $approved = $mPropObjection->searchObjections()
                             ->where('prop_owners.mobile_no', 'LIKE', '%' . $mobileNo . '%');
 
-                        $activeObjection = $mPropActiveObjection->searchObjections()
+                        $active = $mPropActiveObjection->searchObjections()
                             ->where('prop_owners.mobile_no', 'LIKE', '%' . $mobileNo . '%');
 
-                        $details = $approvedObjection->union($activeObjection)->get();
+                        // $details = $approved->union($active)->get();
                         break;
                     case ("harvesting"):
-                        $approvedHarvesting = $mPropHarvesting->searchHarvesting()
+                        $approved = $mPropHarvesting->searchHarvesting()
                             ->where('prop_owners.mobile_no', 'LIKE', '%' . $mobileNo . '%');
 
-                        $activeHarvesting = $mPropActiveHarvesting->searchHarvesting()
+                        $active = $mPropActiveHarvesting->searchHarvesting()
                             ->where('prop_owners.mobile_no', 'LIKE', '%' . $mobileNo . '%');
 
-                        $details = $approvedHarvesting->union($activeHarvesting)->get();
+                        // $details = $approved->union($active)->get();
                         break;
                     case ('holdingDeactivation'):
                         $details = 'No Data Found';
@@ -262,51 +258,51 @@ class PropertyDetailsController extends Controller
                 $ptn = $request->value;
                 switch ($key) {
                     case ("saf"):
-                        $propSaf = $mPropSafs->searchSafs()
+                        $approved = $mPropSafs->searchSafs()
                             ->where('prop_safs.pt_no', $ptn)
                             ->groupby('prop_safs.id', 'u.ward_name', 'uu.ward_name', 'wf_roles.role_name');
 
-                        $activeSaf = $mPropActiveSaf->searchSafs()
+                        $active = $mPropActiveSaf->searchSafs()
                             ->where('prop_active_safs.pt_no', $ptn)
                             ->groupby('prop_active_safs.id', 'u.ward_name', 'uu.ward_name', 'wf_roles.role_name');
 
-                        $details =  $propSaf->union($activeSaf)->get();
+                        // $details = $approved->union($active)->get();
                         break;
                     case ("gbsaf"):
-                        $propGbSaf = $mPropSafs->searchGbSafs()
+                        $approved = $mPropSafs->searchGbSafs()
                             ->where('prop_active_safs.pt_no',  $ptn);
 
-                        $activeGbSaf = $mPropActiveSaf->searchGbSafs()
+                        $active = $mPropActiveSaf->searchGbSafs()
                             ->where('prop_active_safs.pt_no',  $ptn);
 
-                        $details = $propGbSaf->union($activeGbSaf)->get();
+                        // $details = $approved->union($active)->get();
                         break;
                     case ("concession"):
-                        $approvedConcession =  $mPropConcessions->searchConcessions()
+                        $approved =  $mPropConcessions->searchConcessions()
                             ->where('pp.pt_no', $ptn);
 
-                        $activeConcession =  $mPropActiveConcessions->searchConcessions()
+                        $active =  $mPropActiveConcessions->searchConcessions()
                             ->where('pp.pt_no', $ptn);
 
-                        $details = $approvedConcession->union($activeConcession)->get();
+                        // $details = $approved->union($active)->get();
                         break;
                     case ("objection"):
-                        $approvedObjection = $mPropObjection->searchObjections()
+                        $approved = $mPropObjection->searchObjections()
                             ->where('pp.pt_no', $ptn);
 
-                        $activeObjection = $mPropActiveObjection->searchObjections()
+                        $active = $mPropActiveObjection->searchObjections()
                             ->where('pp.pt_no', $ptn);
 
-                        $details = $approvedObjection->union($activeObjection)->get();
+                        // $details = $approved->union($active)->get();
                         break;
                     case ("harvesting"):
-                        $approvedHarvesting = $mPropHarvesting->searchHarvesting()
+                        $approved = $mPropHarvesting->searchHarvesting()
                             ->where('pp.pt_no', $ptn);
 
-                        $activeHarvesting = $mPropActiveHarvesting->searchHarvesting()
+                        $active = $mPropActiveHarvesting->searchHarvesting()
                             ->where('pp.pt_no', $ptn);
 
-                        $details = $approvedHarvesting->union($activeHarvesting)->get();
+                        // $details = $approved->union($active)->get();
                         break;
                     case ('holdingDeactivation'):
                         $details = 'No Data Found';
@@ -319,63 +315,65 @@ class PropertyDetailsController extends Controller
                 $holding = $request->value;
                 switch ($key) {
                     case ("saf"):
-                        $propSaf  = $mPropSafs->searchSafs()
+                        $approved  = $mPropSafs->searchSafs()
                             ->where('prop_active_safs.holding_no', $holding)
                             ->groupby('prop_safs.id', 'u.ward_name', 'uu.ward_name', 'wf_roles.role_name');
 
-                        $activeSaf = $mPropActiveSaf->searchSafs()
+                        $active = $mPropActiveSaf->searchSafs()
                             ->where('prop_active_safs.holding_no', $holding)
                             ->groupby('prop_active_safs.id', 'u.ward_name', 'uu.ward_name', 'wf_roles.role_name');
 
-                        $details =  $propSaf->union($activeSaf)->get();
+                        // $details = $approved->union($active)->get();
                         break;
                     case ("gbsaf"):
-                        $propGbSaf = $mPropSafs->searchGbSafs()
+                        $approved = $mPropSafs->searchGbSafs()
                             ->where('prop_active_safs.holding_no', $holding);
 
-                        $activeGbSaf = $mPropActiveSaf->searchGbSafs()
+                        $active = $mPropActiveSaf->searchGbSafs()
                             ->where('prop_active_safs.holding_no', $holding);
 
-                        $details = $propGbSaf->union($activeGbSaf)->get();
+                        // $details = $approved->union($active)->get();
                         break;
                     case ("concession"):
-                        $approvedConcession = $mPropConcessions->searchConcessions()
+                        $approved = $mPropConcessions->searchConcessions()
                             ->where('pp.holding_no',  $holding)
                             ->orWhere('pp.new_holding_no',  $holding);
 
-                        $activeConcession = $mPropActiveConcessions->searchConcessions()
+                        $active = $mPropActiveConcessions->searchConcessions()
                             ->where('pp.holding_no',  $holding)
                             ->orWhere('pp.new_holding_no',  $holding);
 
-                        $details = $approvedConcession->union($activeConcession)->get();
+                        // $details = $approved->union($active)->get();
                         break;
                     case ("objection"):
-                        $approvedObjection =  $mPropObjection->searchObjections()
+                        $approved =  $mPropObjection->searchObjections()
                             ->where('pp.holding_no',  $holding)
                             ->orWhere('pp.new_holding_no',  $holding);
 
-                        $activeObjection =  $mPropActiveObjection->searchObjections()
+                        $active =  $mPropActiveObjection->searchObjections()
                             ->where('pp.holding_no',  $holding)
                             ->orWhere('pp.new_holding_no',  $holding);
 
-                        $details = $approvedObjection->union($activeObjection)->get();
+                        // $details = $approved->union($active)->get();
                         break;
                     case ("harvesting"):
-                        $approvedHarvesting = $mPropHarvesting->searchHarvesting()
+                        $approved = $mPropHarvesting->searchHarvesting()
                             ->where('pp.holding_no',  $holding)
                             ->orWhere('pp.new_holding_no',  $holding);
 
-                        $activeHarvesting = $mPropActiveHarvesting->searchHarvesting()
+                        $active = $mPropActiveHarvesting->searchHarvesting()
                             ->where('pp.holding_no',  $holding)
                             ->orWhere('pp.new_holding_no',  $holding);
 
-                        $details = $approvedHarvesting->union($activeHarvesting)->get();
+                        // $details = $approved->union($active)->get();
                         break;
                     case ('holdingDeactivation'):
                         $details = 'No Data Found';
                         break;
                 }
             }
+            $details = $approved->union($active)->paginate($perPage);
+
             return responseMsgs(true, "Application Details", remove_null($details), "010501", "1.0", "", "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010501", "1.0", "", "POST", $request->deviceId ?? "");
