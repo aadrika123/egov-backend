@@ -96,7 +96,8 @@ class PropOwner extends Model
      */
     public function getOwnerByPropOwnerId($propOwnerId)
     {
-        return PropOwner::where('prop_owner_id', $propOwnerId)
+        return PropOwner::where('id', $propOwnerId)
+            ->where('status', 1)
             ->get();
     }
 

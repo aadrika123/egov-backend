@@ -1127,9 +1127,11 @@ class ActiveSafController extends Controller
             foreach ($ownerDetails as $ownerDetail) {
                 if ($assessmentType == 'Reassessment') {            // In Case of Reassessment Edit Owners
                     if (!is_null($ownerDetail->prop_owner_id))
-                        $ifOwnerExist = $mPropOwners->propOwnerId($ownerDetail->prop_owner_id);
+                        $ifOwnerExist = $mPropOwners->getOwnerByPropOwnerId($ownerDetail->prop_owner_id);
+
                     if ($ifOwnerExist) {
-                        $ownerDetail = new Request($ownerDetail->toArray());
+                        $ownerDetail = array_merge($ownerDetail->toArray(), ['property_id' => $propId]);
+                        $ownerDetail = new Request($ownerDetail);
                         $mPropOwners->editOwner($ownerDetail);
                     }
                 }
