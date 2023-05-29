@@ -366,7 +366,7 @@ class ActiveSafControllerV2 extends Controller
                 ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name')
                 ->paginate($perPage);
 
-            return responseMsgs(true, "Data Fetched", remove_null($safInbox->values()), "011806", "1.0", "", "POST", "");
+            return responseMsgs(true, "Data Fetched", remove_null($safInbox), "011806", "1.0", "", "POST", "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011806", "1.0", "", "POST", $req->deviceId ?? "");
         }
