@@ -403,6 +403,7 @@ class PropertyDetailsController extends Controller
             $key = $request->filteredBy;
             $parameter = $request->parameter;
             $isLegacy = $request->isLegacy;
+            $perPage = $request->perPage ?? 10;
 
             switch ($key) {
                 case ("holdingNo"):
@@ -467,24 +468,24 @@ class PropertyDetailsController extends Controller
                     break;
             }
 
-            $paginator = $data->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'latitude', 'longitude')
-                ->paginate(10);
-            $data = $paginator->items();
-
             if ($isLegacy == true) {
-                $data = collect($data)->where('new_holding_no', null)
+                $paginator = $data->where('new_holding_no', null)
                     ->where('latitude', null)
-                    ->where('longitude', null);
+                    ->where('longitude', null)
+                    ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'latitude', 'longitude')
+                    ->paginate($perPage);
                 // $data = (array_values(objtoarray($data)));
             } else {
-                $data = collect($data)->where('new_holding_no', '!=', null);
+                $paginator = $data->where('new_holding_no', '!=', null)
+                    ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'latitude', 'longitude')
+                    ->paginate($perPage);
                 // $data = (array_values(objtoarray($data)));
             }
 
             $list = [
                 "current_page" => $paginator->currentPage(),
                 "last_page" => $paginator->lastPage(),
-                "data" => $data,
+                "data" => $paginator->items(),
                 "total" => $paginator->total(),
             ];
 
