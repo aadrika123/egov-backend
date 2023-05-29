@@ -127,9 +127,21 @@ class WaterPenaltyInstallment extends Model
      */
     public function getPenaltyByChargeId($chargeId)
     {
-        return WaterPenaltyInstallment::where('related_demand_id',$chargeId)
-        ->where('paid_status',0)
-        ->where('status',1)
-        ->orderByDesc('id');
+        return WaterPenaltyInstallment::where('related_demand_id', $chargeId)
+            ->where('paid_status', 0)
+            ->where('status', 1)
+            ->orderByDesc('id');
+    }
+
+    /**
+     * | save the penalty payment status using penalty ids
+     */
+    public function savePenaltyStatusByIds($penaltyIds, $status)
+    {
+        WaterPenaltyInstallment::whereIn('id', $penaltyIds)
+            ->where('status', 1)
+            ->update([
+                'paid_status' => $status
+            ]);
     }
 }

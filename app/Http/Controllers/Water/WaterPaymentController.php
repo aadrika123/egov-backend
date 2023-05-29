@@ -1050,7 +1050,7 @@ class WaterPaymentController extends Controller
                 ->firstOrFail();
 
             # check the pre requirement 
-            $this->verifyPaymentRules($req, $refWaterApplication);
+            $refCharges = $this->verifyPaymentRules($req, $refWaterApplication);
 
             # Derivative Assignments
             $tranNo = $idGeneration->generateTransactionNo();
@@ -1095,8 +1095,12 @@ class WaterPaymentController extends Controller
             }
 
             # Reflect on water Tran Details and for Applications Data saving
-            foreach ($charges as $charges) {
-                $this->savePaymentStatus($req, $offlinePaymentModes, $charges, $refWaterApplication, $waterTrans);
+            if (!(collect($charges)->isEmpty())) {
+                foreach ($charges as $charges) {
+                    $this->savePaymentStatus($req, $offlinePaymentModes, $charges, $refWaterApplication, $waterTrans);
+                }
+            } else {
+                $this->saveRegulaizePaymentStatus($req, $offlinePaymentModes, $refCharges['charges'], $waterTrans);
             }
             # Readjust Water Penalties 
             $this->updatePenaltyPaymentStatus($req);
@@ -1111,6 +1115,45 @@ class WaterPaymentController extends Controller
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+
+
+    /**
+     * | Save the regulization second payament details 
+     */
+    public function saveRegulaizePaymentStatus($req, $offlinePaymentModes, $refCharges, $waterTrans)
+    {
+        $waterTranDetail            = new WaterTranDetail();
+        $mWaterTran                 = new WaterTran();
+        $mWaterPenaltyInstallment   = new WaterPenaltyInstallment();
+
+        $penatydetails = $mWaterPenaltyInstallment->getPenaltyByArrayOfId($req->penaltyIds);
+        $checkPenalty = collect($penatydetails)->first();
+        if (!$checkPenalty) {
+            throw new Exception("penaty Not found for REGULAIZATION!");
+        }
+
+        # for offline payment mode 
+        $penaltyIds = collect($penatydetails)->pluck('id');
+        if (in_array($req['paymentMode'], $offlinePaymentModes)) {
+            $penaltyStatus = 2;                                                          // Static
+            $mWaterTran->saveVerifyStatus($waterTrans['id']);
+        } else {
+            $penaltyStatus = 1;                                                          // Update Demand Paid Status // Static
+        }
+        $mWaterPenaltyInstallment->savePenaltyStatusByIds($penaltyIds, $penaltyStatus);
+
+        # Save the trans details 
+        $penaltyCharges = collect($penatydetails)->sum('balance_amount');
+        $waterTranDetail->saveDefaultTrans(
+            $penaltyCharges,
+            $req->applicationId,
+            $waterTrans['id'],
+            $refCharges['id'],
+        );
+    }
+
+
+
 
 
     /**
@@ -1365,6 +1408,9 @@ class WaterPaymentController extends Controller
                 }
                 break;
         }
+        return [
+            'charges' => $actualCharge
+        ];
     }
 
 
