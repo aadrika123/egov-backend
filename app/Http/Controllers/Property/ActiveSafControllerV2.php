@@ -350,6 +350,7 @@ class ActiveSafControllerV2 extends Controller
             $mWorkflowRoleMap = new WfWorkflowrolemap();
             $userId = auth()->user()->id;
             $ulbId = auth()->user()->ulb_id;
+            $perPage = $req->perPage ?? 10;
 
             $workflowIds = $mWorkflowRoleMap->getWfByRoleId([$agencyTcRole])->pluck('workflow_id');
             $readWards = $mWfWardUser->getWardsByUserId($userId);                       // Model () to get Occupied Wards of Current User
@@ -363,7 +364,7 @@ class ActiveSafControllerV2 extends Controller
                 ->whereIn('ward_mstr_id', $occupiedWards)
                 ->orderByDesc('id')
                 ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name')
-                ->get();
+                ->paginate($perPage);
 
             return responseMsgs(true, "Data Fetched", remove_null($safInbox->values()), "011806", "1.0", "", "POST", "");
         } catch (Exception $e) {
