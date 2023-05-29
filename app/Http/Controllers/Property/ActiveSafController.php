@@ -965,6 +965,7 @@ class ActiveSafController extends Controller
                     $saf->pt_no = $ptNo;                        // Generate New Property Tax No for All Conditions
                     $saf->save();
                 }
+                $ptNo = $saf->pt_no;
                 $samIdGeneration = new PrefixIdGenerator($samParamId, $saf->ulb_id);
                 $samNo = $samIdGeneration->generate();                 // Generate SAM No
                 $mergedDemand = array_merge($demand->toArray(), [
