@@ -276,7 +276,11 @@ class ClusterController extends Controller
         ]);
         try {
             $mPropActiveSaf = new PropActiveSaf();
-            $application = collect($mPropActiveSaf->searchSafDtlsBySafNo($request->safNo));
+            $perPage = $request->perPage ?? 10;
+            $application = $mPropActiveSaf->searchSafDtlsBySafNo()
+                ->where('s.saf_no', 'LIKE', '%' . $request->safNo)->get();
+            // ->paginate($perPage);
+
             return responseMsgs(true, "Listed Saf!", $application, "", "02", "", "POST", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
@@ -321,15 +325,6 @@ class ClusterController extends Controller
             return responseMsg(false, $error->getMessage(), "");
         }
     }
-
-
-
-
-    /**
-     * |----------------------------------- Common functions ----------------------------------------|
-     * |date : 21-11-22
-     */
-
 
     /**
      * | ----------------- Common funtion for the return component in failer ------------------------------- |

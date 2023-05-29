@@ -403,7 +403,7 @@ class  PropActiveSaf extends Model
     /**
      * | Serch Saf 
      */
-    public function searchSafDtlsBySafNo($safNo)
+    public function searchSafDtlsBySafNo()
     {
         return DB::table('prop_active_safs as s')
             ->select(
@@ -422,9 +422,7 @@ class  PropActiveSaf extends Model
             )
             ->join('prop_active_safs_owners', 'prop_active_safs_owners.saf_id', '=', 's.id')
             ->join('ref_prop_types', 'ref_prop_types.id', '=', 's.prop_type_mstr_id')
-            ->where('s.saf_no', 'LIKE', '%' . $safNo)
-            ->where('ulb_id', auth()->user()->ulb_id)
-            ->get();
+            ->where('ulb_id', auth()->user()->ulb_id);
     }
 
     /**
