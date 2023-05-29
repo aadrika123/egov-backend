@@ -10,6 +10,7 @@ use App\Models\Property\PropProperty;
 use App\Models\Property\PropSafsDemand;
 use App\Models\Property\PropTransaction;
 use App\Traits\Property\SAF;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
@@ -266,7 +267,9 @@ class TcVerificationDemandAdjust
             'balance' => $balance,
             'adjust_type' => $this->_adjustmentType,
             'ulb_id' => $this->_reqs['ulbId'],
-            'user_id' => $this->_tcId
+            'user_id' => $this->_tcId,
+            'created_at' => Carbon::now(),
+            'updated_at' => Carbon::now()
         ];
     }
 }

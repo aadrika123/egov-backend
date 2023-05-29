@@ -1124,13 +1124,19 @@ class ActiveSafController extends Controller
             $mProperty->editPropBySaf($propId, $activeSaf);
             // Edit Owners 
             foreach ($ownerDetails as $ownerDetail) {
-                $ifOwnerExist = $mPropOwners->getPropOwnerByOwnerId($ownerDetail->id);
-                $ownerDetail = array_merge($ownerDetail->toArray(), ['property_id' => $propId]);
-                $ownerDetail = new Request($ownerDetail);
-                if ($ifOwnerExist)
-                    $mPropOwners->editOwner($ownerDetail);
-                else
+                if ($assessmentType == 'Reassessment') {            // In Case of Reassessment Edit Owners
+                    if (!is_null($ownerDetail->prop_owner_id))
+                        $ifOwnerExist = $mPropOwners->propOwnerId($ownerDetail->prop_owner_id);
+                    if ($ifOwnerExist) {
+                        $ownerDetail = new Request($ownerDetail->toArray());
+                        $mPropOwners->editOwner($ownerDetail);
+                    }
+                }
+                if ($assessmentType == 'Mutation') {            // In Case of Mutation Add Owners
+                    $ownerDetail = array_merge($ownerDetail->toArray(), ['property_id' => $propId]);
+                    $ownerDetail = new Request($ownerDetail);
                     $mPropOwners->postOwner($ownerDetail);
+                }
             }
             // Edit Floors
             foreach ($floorDetails as $floorDetail) {

@@ -92,6 +92,15 @@ class PropOwner extends Model
     }
 
     /**
+     * | Get Owner Details by Property Owner Id
+     */
+    public function getOwnerByPropOwnerId($propOwnerId)
+    {
+        return PropOwner::where('prop_owner_id', $propOwnerId)
+            ->get();
+    }
+
+    /**
      * | Get Owner by Owner Id
      * | function used in replicate saf function
      */
