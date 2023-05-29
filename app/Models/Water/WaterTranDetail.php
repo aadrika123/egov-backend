@@ -49,18 +49,14 @@ class WaterTranDetail extends Model
 
     /**
      * | Save the transaction details for a transaction
-     * | @param 
-     * | @param
-     * | @param
-     * | @param 
+     * | @param waterTrans
+     * | @param charges
+     * | @param applicationId
+     * | @param amount
         | Not used 
      */
-    public function saveTransactionDetails(
-        $waterTrans,
-        $charges,
-        $applicationId,
-        $amount
-    ) {
+    public function saveTransactionDetails($waterTrans, $charges, $applicationId, $amount)
+    {
         $waterTranDetail = new WaterTranDetail();
         $waterTranDetail->tran_id           = $waterTrans;
         $waterTranDetail->demand_id         = $charges;

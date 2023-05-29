@@ -63,7 +63,7 @@ class WaterTran extends Model
             'water_trans.*',
             'water_tran_details.demand_id'
         )
-            ->join('water_tran_details', 'water_tran_details.tran_id', '=', 'water_trans.id')
+            ->leftjoin('water_tran_details', 'water_tran_details.tran_id', '=', 'water_trans.id')
             ->where('tran_no', $transactionNo)
             ->where('water_trans.status', 1)
             ->where('water_tran_details.status', 1);

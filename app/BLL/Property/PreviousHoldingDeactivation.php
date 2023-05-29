@@ -28,7 +28,7 @@ class PreviousHoldingDeactivation
     {
         $assessmentType = $safDetails->assessment_type;
         // Deactivate for the kind of properties reassessment,mutation,amalgamation,bifurcation
-        if (in_array($assessmentType, $this->_reassessmentTypes)) {
+        if (in_array($assessmentType, ['Bifurcation'])) {
             $explodedPreviousHoldingIds = explode(',', $safDetails->previous_holding_id);
             $this->_mPropProperty->deactivateHoldingByIds($explodedPreviousHoldingIds);     // Deactivation of Holding
         }
