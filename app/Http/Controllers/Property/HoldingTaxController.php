@@ -245,6 +245,8 @@ class HoldingTaxController extends Controller
             $totalDuesList = $penaltyRebateCalc->readRebates($currentQuarter, $loggedInUserType, $mLastQuarterDemand, $ownerDetails, $dues, $totalDuesList);
 
             $finalPayableAmt = ($dues + $onePercTax + $balance) - ($totalDuesList['rebateAmt'] + $totalDuesList['specialRebateAmt']) - $advanceAmt;
+            if ($finalPayableAmt < 0)
+                $finalPayableAmt = 0;
             $totalDuesList['payableAmount'] = round($finalPayableAmt);
             $totalDuesList['paymentUptoYrs'] = [$paymentUptoYrs->first()];
             $totalDuesList['paymentUptoQtrs'] = $pendingQtrs->unique()->values()->sort()->values();
@@ -255,10 +257,12 @@ class HoldingTaxController extends Controller
             $demand['basicDetails'] = $basicDtls;
             $demand['can_pay'] = true;
 
+            // Calculations for showing demand receipt without any rebate
             $total = roundFigure($dues - $advanceAmt);
+            if ($total < 0)
+                $total = 0;
             $totalPayable = round($total + $onePercTax);
             $totalPayable = roundFigure($totalPayable);
-
             $demand['dueReceipt'] = [
                 'holdingNo' => $basicDtls['holding_no'],
                 'new_holding_no' => $basicDtls['new_holding_no'],

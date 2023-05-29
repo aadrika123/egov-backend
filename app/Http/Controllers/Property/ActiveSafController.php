@@ -958,10 +958,13 @@ class ActiveSafController extends Controller
                 if ($saf->doc_verify_status == 0)
                     throw new Exception("Document Not Fully Verified");
                 $idGeneration = new PrefixIdGenerator($ptParamId, $saf->ulb_id);
-                $ptNo = $idGeneration->generate();
-                $saf->pt_no = $ptNo;                        // Generate New Property Tax No for All Conditions
-                $saf->save();
 
+
+                if (in_array($saf->assessmentType, ['New Assessment', 'Bifurcation', 'Amalgamation'])) { // Make New Property For New Assessment,Bifurcation and Amalgamation
+                    $ptNo = $idGeneration->generate();
+                    $saf->pt_no = $ptNo;                        // Generate New Property Tax No for All Conditions
+                    $saf->save();
+                }
                 $samIdGeneration = new PrefixIdGenerator($samParamId, $saf->ulb_id);
                 $samNo = $samIdGeneration->generate();                 // Generate SAM No
                 $mergedDemand = array_merge($demand->toArray(), [
@@ -1113,6 +1116,7 @@ class ActiveSafController extends Controller
         // Edit In Case of Reassessment,Mutation
         if (in_array($assessmentType, ['Reassessment', 'Mutation'])) {         // Edit Property In case of Reassessment, Mutation
             $propId = $activeSaf->previous_holding_id;
+            $this->_replicatedPropId = $propId;
             $mProperty = new PropProperty();
             $mPropOwners = new PropOwner();
             $mPropFloors = new PropFloor();
