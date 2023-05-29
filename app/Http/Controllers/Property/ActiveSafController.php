@@ -1748,7 +1748,7 @@ class ActiveSafController extends Controller
             $verifyPaymentModes = Config::get('payment-constants.VERIFICATION_PAYMENT_MODES');
             $mPropTranDtl = new PropTranDtl();
             $previousHoldingDeactivation = new PreviousHoldingDeactivation;
-
+            $postSafPropTaxes = new PostSafPropTaxes;
             $safId = $req['id'];
 
             $activeSaf = PropActiveSaf::findOrFail($req['id']);
@@ -1829,7 +1829,7 @@ class ActiveSafController extends Controller
             // Update SAF Payment Status
             $activeSaf->save();
             $this->sendToWorkflow($activeSaf);        // Send to Workflow(15.2)
-
+            $postSafPropTaxes->postSafTaxes($safId, $demands);                  // Save Taxes
             DB::commit();
             return responseMsgs(true, "Payment Successfully Done",  ['TransactionNo' => $tranNo], "010115", "1.0", "567ms", "POST", $req->deviceId);
         } catch (Exception $e) {

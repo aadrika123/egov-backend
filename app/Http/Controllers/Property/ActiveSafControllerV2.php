@@ -181,7 +181,11 @@ class ActiveSafControllerV2 extends Controller
                 $safId = $details->saf_id;
 
                 $safTaxes = $propSafTax->getSafTaxesBySafId($safId);
+                if ($safTaxes->isEmpty())
+                    throw new Exception("Saf Taxes Not Available");
                 $propTaxes = $propTax->getPropTaxesByPropId($propId);
+                if ($propTaxes->isEmpty())
+                    throw new Exception("Prop Taxes Not Available");
                 $holdingTaxes = $propTaxes->map(function ($propTax) use ($safTaxes) {
                     $ulbTax = $propTax;
                     $selfAssessTaxes = $safTaxes->where('fyear', $propTax->fyear)     // Holding Tax Amount without penalty
