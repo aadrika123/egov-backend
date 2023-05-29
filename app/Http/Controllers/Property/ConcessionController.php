@@ -310,8 +310,8 @@ class ConcessionController extends Controller
                 ->whereIn('prop_active_concessions.current_role', $roleIds)
                 ->whereIn('a.ward_mstr_id', $occupiedWards)
                 ->orderByDesc('prop_active_concessions.id')
-                // ->paginate($perPage);
-                ->get();
+                ->paginate($perPage);
+
             return responseMsgs(true, "Inbox List", remove_null($concessions), '010703', '01', responseTime(), 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
@@ -327,12 +327,13 @@ class ConcessionController extends Controller
      * | Rating-3
      * | Status-Closed
      */
-    public function outbox()
+    public function outbox(Request $req)
     {
         try {
             $mWfRoleUser = new WfRoleusermap();
             $mWfWardUser = new WfWardUser();
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
+            $perPage = $req->perPage ?? 10;
 
             $userId = auth()->user()->id;
             $ulbId = auth()->user()->ulb_id;
@@ -346,7 +347,7 @@ class ConcessionController extends Controller
                 ->whereNotIn('prop_active_concessions.current_role', $roleIds)
                 ->whereIn('a.ward_mstr_id', $occupiedWards)
                 ->orderByDesc('prop_active_concessions.id')
-                ->get();
+                ->paginate($perPage);
 
             return responseMsgs(true, "Outbox List", remove_null($concessions), '010704', '01', '355ms-419ms', 'Post', '');
         } catch (Exception $e) {
@@ -463,12 +464,13 @@ class ConcessionController extends Controller
      * | Rating-2
      * | Status-Closed
      */
-    public function specialInbox()
+    public function specialInbox(Request $req)
     {
         try {
             $mWfRoleUser = new WfRoleusermap();
             $mWfWardUser = new WfWardUser();
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
+            $perPage = $req->perPage ?? 10;
 
             $userId = auth()->user()->id;
             $ulbId = auth()->user()->ulb_id;
@@ -482,7 +484,7 @@ class ConcessionController extends Controller
                 ->where('prop_active_concessions.is_escalate', true)
                 ->whereIn('a.ward_mstr_id', $occupiedWards)
                 ->orderByDesc('prop_active_concessions.id')
-                ->get();
+                ->paginate($perPage);
 
             return responseMsg(true, "Inbox List", remove_null($concessions), "", '010707', '01', '303ms', 'Post', '');
         } catch (Exception $e) {
@@ -499,6 +501,7 @@ class ConcessionController extends Controller
             $mWfRoleUser = new WfRoleusermap();
             $mWfWardUser = new WfWardUser();
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
+            $perPage = $req->perPage ?? 10;
 
             $userId = auth()->user()->id;
             $ulbId = auth()->user()->ulb_id;
@@ -513,7 +516,8 @@ class ConcessionController extends Controller
                 ->whereIn('a.ward_mstr_id', $occupiedWards)
                 ->where('parked', true)
                 ->orderByDesc('prop_active_concessions.id')
-                ->get();
+                ->paginate($perPage);
+
             return responseMsgs(true, "BTC Inbox List", remove_null($concessions), 010717, 1.0, "271ms", "POST", "", "");;
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", 010717, 1.0, "271ms", "POST", "", "");

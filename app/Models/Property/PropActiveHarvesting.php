@@ -251,7 +251,7 @@ class PropActiveHarvesting extends Model
 
             ->join('wf_roles', 'wf_roles.id', 'prop_active_harvestings.current_role')
             ->join('prop_properties as pp', 'pp.id', 'prop_active_harvestings.property_id')
-            ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'pp.ward_mstr_id')
+            ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'pp.ward_mstr_id')
             ->join('prop_owners', 'prop_owners.property_id', 'pp.id');
     }
 }

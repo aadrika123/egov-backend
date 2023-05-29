@@ -50,6 +50,8 @@ class ApplySafController extends Controller
     protected $_currentFYear;
     protected $_penaltyRebateCalc;
     protected $_currentQuarter;
+    private $_demandAdjustAssessmentTypes;
+
     public function __construct()
     {
         $this->_todayDate = Carbon::now();
@@ -59,6 +61,7 @@ class ApplySafController extends Controller
         $this->_currentFYear = getFY();
         $this->_penaltyRebateCalc = new PenaltyRebateCalculation;
         $this->_currentQuarter = calculateQtr($this->_todayDate->format('Y-m-d'));
+        $this->_demandAdjustAssessmentTypes = Config::get('PropertyConstaint.REASSESSMENT_TYPES');
     }
     /**
      * | Created On-17-02-2022 
@@ -92,7 +95,6 @@ class ApplySafController extends Controller
     {
         try {
             // Variable Assignments
-            $assessmentId = $request->assessmentType;
             $mApplyDate = Carbon::now()->format("Y-m-d");
             $user_id = auth()->user()->id;
             $ulb_id = $request->ulbId ?? auth()->user()->ulb_id;
@@ -130,7 +132,7 @@ class ApplySafController extends Controller
 
             // Generate Calculation
             $calculateSafById->_calculatedDemand = $safTaxes->original['data'];
-            $calculateSafById->_safDetails['assessment_type'] = $assessmentId;
+            $calculateSafById->_safDetails['assessment_type'] = $request->assessmentType;
 
             if (isset($request->holdingNo))
                 $calculateSafById->_holdingNo = $request->holdingNo;
@@ -231,7 +233,7 @@ class ApplySafController extends Controller
         $req = $this->_REQUEST;
         $assessmentType = $req->assessmentType;
 
-        if (in_array($assessmentType, ["Re Assessment", "Mutation", "Bifurcation"])) {
+        if (in_array($assessmentType, $this->_demandAdjustAssessmentTypes)) {
             $propertyDtls = $mPropProperty->getPropertyId($req->holdingNo);
 
             if (collect($propertyDtls)->isEmpty())
@@ -243,7 +245,7 @@ class ApplySafController extends Controller
                 'previousHoldingId' => $propId
             ]);
             switch ($assessmentType) {
-                case "Re Assessment":                                 // Bifurcation
+                case "Reassessment":                                 // Bifurcation
                     $req->merge([
                         'propDtl' => $propId
                     ]);

@@ -76,49 +76,55 @@ class PropertyDetailsController extends Controller
                 switch ($key) {
 
                     case ("saf"):
-                        $application = collect($mPropActiveSaf->getSafDtlsBySafNo($applicationNo));
-                        if ($application->isEmpty()) {
-                            $application = collect($mPropSafs->getSafDtlsBySafNo($applicationNo));
-                            $owners = collect($mPropSafOwners->getOwnerDtlsBySafId1($application['id']));
-                            $details[] = $application->merge($owners);
-                            break;
-                        }
-                        $owners = collect($mPropActiveSafOwners->getOwnerDtlsBySafId1($application['id']));
-                        $details[] = $application->merge($owners);
+                        $propSaf  = $mPropSafs->searchSafs()
+                            ->where('prop_safs.saf_no', $applicationNo)
+                            ->groupby('prop_safs.id', 'u.ward_name', 'uu.ward_name', 'wf_roles.role_name');
+
+                        $activeSaf = $mPropActiveSaf->searchSafs()
+                            ->where('prop_active_safs.saf_no', $applicationNo)
+                            ->groupby('prop_active_safs.id', 'u.ward_name', 'uu.ward_name', 'wf_roles.role_name');
+
+                        $details =  $propSaf->union($activeSaf)->get();
                         break;
 
                     case ("gbsaf"):
-                        $application = collect($mPropActiveSaf->getGbSafDtlsBySafNo($applicationNo));
-                        if ($application->isEmpty()) {
-                            $application = collect($mPropSafs->getGbSafDtlsBySafNo($applicationNo));
-                            $owners = collect($mPropGbofficer->getOfficerBySafId($application['id']));
-                            $details[] = $application->merge($owners);
-                            break;
-                        }
-                        $owners = collect($mPropActiveGbOfficer->getOfficerBySafId($application['id']));
-                        $details[] = $application->merge($owners);
+                        $propGbSaf =  $mPropSafs->searchGbSafs()
+                            ->where('prop_safs.saf_no', $applicationNo);
+
+                        $activeGbSaf =  $mPropActiveSaf->searchGbSafs()
+                            ->where('prop_active_safs.saf_no', $applicationNo);
+
+                        $details = $propGbSaf->union($activeGbSaf)->get();
                         break;
 
                     case ("concession"):
-                        $details[] = $mPropActiveConcessions->getDtlsByConcessionNo($applicationNo);
-                        if (!$details)
-                            $details[] =  $mPropConcessions->getDtlsByConcessionNo($applicationNo);
+                        $approvedConcession = $mPropConcessions->searchConcessions()
+                            ->where('prop_concessions.application_no', $applicationNo);
+
+                        $activeConcession = $mPropActiveConcessions->searchConcessions()
+                            ->where('prop_active_concessions.application_no', $applicationNo);
+
+                        $details = $approvedConcession->union($activeConcession)->get();
                         break;
 
                     case ("objection"):
-                        $application = collect($mPropActiveObjection->getObjByObjNo($applicationNo));
-                        if ($application->isEmpty())
-                            $application = collect($mPropObjection->getObjByObjNo($applicationNo));
-                        $owners = collect($mPropOwners->getfirstOwner($application['property_id']));
-                        $details[] = $application->merge($owners);
+                        $approvedObjection = $mPropObjection->searchObjections()
+                            ->where('prop_objections.objection_no', $applicationNo);
+
+                        $activeObjection = $mPropActiveObjection->searchObjections()
+                            ->where('prop_active_objections.objection_no', $applicationNo);
+
+                        $details = $approvedObjection->union($activeObjection)->get();
                         break;
 
                     case ("harvesting"):
-                        $application = collect($mPropActiveHarvesting->getDtlsByHarvestingNo($applicationNo));
-                        if ($application->isEmpty())
-                            $application = collect($mPropHarvesting->getDtlsByHarvestingNo($applicationNo));
-                        $owners = collect($mPropOwners->getfirstOwner($application['property_id']));
-                        $details[] = $application->merge($owners);
+                        $approvedHarvesting = $mPropHarvesting->searchHarvesting()
+                            ->where('application_no', strtoupper($applicationNo));
+
+                        $activeHarvesting = $mPropActiveHarvesting->searchHarvesting()
+                            ->where('application_no', strtoupper($applicationNo));
+
+                        $details = $approvedHarvesting->union($activeHarvesting)->get();
                         break;
 
                     case ('holdingDeactivation'):
@@ -461,32 +467,28 @@ class PropertyDetailsController extends Controller
                     break;
             }
 
-            $data = $data->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'latitude', 'longitude')
-                ->get();
+            $paginator = $data->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'latitude', 'longitude')
+                ->paginate(10);
+            $data = $paginator->items();
+
             if ($isLegacy == true) {
                 $data = collect($data)->where('new_holding_no', null)
                     ->where('latitude', null)
                     ->where('longitude', null);
-                $data = (array_values(objtoarray($data)));
+                // $data = (array_values(objtoarray($data)));
             } else {
                 $data = collect($data)->where('new_holding_no', '!=', null);
-                $data = (array_values(objtoarray($data)));
+                // $data = (array_values(objtoarray($data)));
             }
 
-            // ->paginate($request->perPage ?? 5);
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $data,
+                "total" => $paginator->total(),
+            ];
 
-            // if ($role == 8) {
-            //     $canPay = collect(['canPay' => true]);
-            //     $data = collect($data)->merge($canPay);
-            //     $data = (array_values(objtoarray($data)));
-            //     $data[]["canPay"] = true;
-            // } else {
-            //     $canPay = collect(['canPay' => false]);
-            //     $data = collect($data)->merge($canPay);
-            //     $data = (array_values(objtoarray($data)));
-            // }
-
-            return responseMsgs(true, "Application Details", remove_null($data), "010501", "1.0", "", "POST", $request->deviceId ?? "");
+            return responseMsgs(true, "Application Details", remove_null($list), "010501", "1.0", "", "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010502", "1.0", "", "POST", $request->deviceId ?? "");
         }

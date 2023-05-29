@@ -304,6 +304,14 @@ return [
         "5" => "Amalgamation"
     ],
 
+    // Property Assessment Types for kind of properties in which old prop id required
+    "REASSESSMENT_TYPES" =>
+    [
+        "Reassessment",
+        "Mutation",
+        "Bifurcation"
+    ],
+
     "ULB-TYPE-ID" => [
         "Municipal Carporation" => 1,
         "Nagar Parishad" => 2,
@@ -515,16 +523,6 @@ return [
 
     // Doc Codes
     "TRUST_DOC_CODE" => "TRUST_DOCUMENT",
-
-    // Property Assessment Types for kind of properties in which old prop id required
-    "REASSESSMENT_TYPES" =>
-    [
-        "Reassessment",
-        "Re Assessment",
-        "Mutation",
-        "Bifurcation",
-        "Amalgamation"
-    ],
 
     // Property Payment Receipts Rebate Penalty Key Strings
     "PENALTY_REBATE_KEY_STRINGS" => [

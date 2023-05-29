@@ -106,14 +106,15 @@ class ObjectionController extends Controller
     /**
      * | Get Inbox List of Objection Workflow
      */
-    public function inbox()
+    public function inbox(Request $req)
     {
         try {
             $userId = authUser()->id;
             $ulbId = authUser()->ulb_id;
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
-            $occupiedWards = $this->getWardByUserId($userId)->pluck('ward_id');
+            $perPage = $req->perPage ?? 10;
 
+            $occupiedWards = $this->getWardByUserId($userId)->pluck('ward_id');
             $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
 
@@ -122,7 +123,7 @@ class ObjectionController extends Controller
                 ->whereIn('prop_active_objections.current_role', $roleId)
                 ->whereIn('p.ward_mstr_id', $occupiedWards)
                 ->orderByDesc('prop_active_objections.id')
-                ->get();
+                ->paginate($perPage);
 
             return responseMsgs(true, "", remove_null($objection), '010805', '01', responseTime(), 'Post', '');
         } catch (Exception $e) {
@@ -133,14 +134,15 @@ class ObjectionController extends Controller
     /**
      * | Get the Objection Outbox
      */
-    public function outbox()
+    public function outbox(Request $req)
     {
         try {
             $userId = authUser()->id;
             $ulbId = authUser()->ulb_id;
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
-            $occupiedWards = $this->getWardByUserId($userId)->pluck('ward_id');
+            $perPage = $req->perPage ?? 10;
 
+            $occupiedWards = $this->getWardByUserId($userId)->pluck('ward_id');
             $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
 
@@ -149,7 +151,7 @@ class ObjectionController extends Controller
                 ->whereNotIn('prop_active_objections.current_role', $roleId)
                 ->whereIn('p.ward_mstr_id', $occupiedWards)
                 ->orderByDesc('prop_active_objections.id')
-                ->get();
+                ->paginate($perPage);
 
             return responseMsgs(true, "Outbox List", remove_null($objections), '010806', '01', responseTime(), 'Post', '');
         } catch (Exception $e) {
@@ -386,14 +388,15 @@ class ObjectionController extends Controller
     }
 
     // List of the Escalated Application
-    public function specialInbox()
+    public function specialInbox(Request $req)
     {
         try {
             $userId = authUser()->id;
             $ulbId = authUser()->ulb_id;
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
-            $occupiedWards = $this->getWardByUserId($userId)->pluck('ward_id');
+            $perPage = $req->perPage ?? 10;
 
+            $occupiedWards = $this->getWardByUserId($userId)->pluck('ward_id');
             $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
 
@@ -402,7 +405,8 @@ class ObjectionController extends Controller
                 ->where('prop_active_objections.is_escalated', true)
                 ->whereIn('prop_active_objections.current_role', $roleId)
                 ->whereIn('p.ward_mstr_id', $occupiedWards)
-                ->get();
+                ->paginate($perPage);
+
             return responseMsgs(true, "Data Fetched", remove_null($objections), '010809', '01', responseTime(), 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
@@ -418,8 +422,9 @@ class ObjectionController extends Controller
             $userId = authUser()->id;
             $ulbId = authUser()->ulb_id;
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
-            $occupiedWards = $this->getWardByUserId($userId)->pluck('ward_id');
+            $perPage = $req->perPage ?? 10;
 
+            $occupiedWards = $this->getWardByUserId($userId)->pluck('ward_id');
             $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
 
@@ -427,7 +432,8 @@ class ObjectionController extends Controller
                 ->where('prop_active_objections.ulb_id', $ulbId)
                 ->whereIn('p.ward_mstr_id', $occupiedWards)
                 ->where('prop_active_objections.parked', true)
-                ->get();
+                ->paginate($perPage);
+
             return responseMsgs(true, "Data Fetched", remove_null($objections), '010809', '01', responseTime(), 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
