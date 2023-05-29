@@ -503,7 +503,6 @@ class  PropActiveSaf extends Model
     {
         $reqs = [
             'previous_ward_mstr_id' => $req->previousWard,
-            'is_owner_changed' => $req->isOwnerChanged,
             'transfer_mode_mstr_id' => $req->transferModeId ?? null,
             'ward_mstr_id' => $req->ward,
             'ownership_type_mstr_id' => $req->ownershipType,
@@ -551,9 +550,7 @@ class  PropActiveSaf extends Model
             'land_occupation_date' => $req->landOccupationDate,
             'doc_verify_cancel_remarks' => $req->docVerifyCancelRemark,
             'application_date' =>  Carbon::now()->format('Y-m-d'),
-            'assessment_type' => $req->assessmentType,
             'saf_distributed_dtl_id' => $req->safDistributedDtl,
-            'prop_dtl_id' => $req->propDtl,
             'prop_state' => $req->propState,
             'corr_state' => $req->corrState,
             'holding_type' => $req->holdingType,
