@@ -156,14 +156,16 @@ class WaterNewConnection implements IWaterNewConnection
         use ($mWaterPenaltyInstallment, $refChargeCatagoryValue, $refChargeCatagory, $mWaterTran, $mWaterParamConnFee, $mWaterConnectionCharge, $mWaterSiteInspection, $mWaterSiteInspectionsScheduling, $roleDetails) {
 
             # checking Penalty payment
-            $penaltyDetails = $mWaterPenaltyInstallment->getPenaltyByApplicationId($value['id'])
-                ->where('paid_status', 0)
-                ->get();
-            $checkPenalty = collect($penaltyDetails)->first();
-            if (is_null($checkPenalty)) {
-                $value['actualPaymentStatus'] = 1;
-            } else {
-                $value['actualPaymentStatus'] = 0;
+            if ($value['payment_status'] == 1 && $value['connection_type_id'] == $refChargeCatagoryValue['REGULAIZATION']) {
+                $penaltyDetails = $mWaterPenaltyInstallment->getPenaltyByApplicationId($value['id'])
+                    ->where('paid_status', 0)
+                    ->get();
+                $checkPenalty = collect($penaltyDetails)->first();
+                if (is_null($checkPenalty)) {
+                    $value['actualPaymentStatus'] = 1;
+                } else {
+                    $value['actualPaymentStatus'] = 0;
+                }
             }
 
             $value['transDetails'] = $mWaterTran->getTransNo($value['id'], null)->first();
@@ -351,6 +353,9 @@ class WaterNewConnection implements IWaterNewConnection
                 case "New Connection":
                     $response = $this->waterConnectionPayment($args);
                     break;
+                case "Regulaization":
+                    $response = $this->waterConnectionPayment($args);
+                    break;
                 case "Site Inspection":
                     $response = $this->waterConnectionPayment($args);
                     break;
@@ -501,12 +506,13 @@ class WaterNewConnection implements IWaterNewConnection
                 $val->paid_status = 1;
                 $val->update();
             }
-
-            $application->payment_status = 1;
-            $application->update();
             ////////////////////////////////////////
             # Check 
             if ($RazorPayRequest->payment_from == "New Connection") {
+                $application->current_role = !$application->current_role ? $this->_dealingAssistent : $application->current_role;
+                $application->update();
+            }
+            if ($RazorPayRequest->payment_from == $refConnectionCharge['REGULAIZATION'] && $application->payment_status == 0) {
                 $application->current_role = !$application->current_role ? $this->_dealingAssistent : $application->current_role;
                 $application->update();
             }
@@ -515,6 +521,8 @@ class WaterNewConnection implements IWaterNewConnection
                 $mWaterSiteInspection = new WaterSiteInspection();
                 $mWaterSiteInspection->saveSitePaymentStatus($applicationId);
             }
+            $application->payment_status = 1;
+            $application->update();
 
             DB::commit();
             #----------End transaction------------------------
