@@ -12,7 +12,9 @@ use App\Models\Payment\DepartmentMaster;
 use App\Models\Payment\PaymentGatewayDetail;
 use App\Models\Payment\PaymentGatewayMaster;
 use App\Models\Payment\PaymentReconciliation;
+use App\Models\Payment\PaymentReject;
 use App\Models\Payment\PaymentRequest;
+use App\Models\Payment\PaymentSuccess;
 use App\Models\Payment\WebhookPaymentData;
 use App\Models\Property\PropTransaction;
 use Illuminate\Http\Request;
@@ -28,7 +30,10 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
 
 use Exception;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
+use Razorpay\Api\Api;
+use Razorpay\Api\Errors\SignatureVerificationError;
 
 /**
  * |--------------------------------------------------------------------------------------------------------|
@@ -191,19 +196,42 @@ class PaymentRepository implements iPayment
      * | @param error collecting the operation error
      * | @var mAttributes
      * | @var mVerification
-     * |
-     * | Rating :
-     * | Time :
-        | USE
+        | Use for payment verificaton
      */
-    public function verifyPaymentStatus(Request $request)
+    public function verifyPaymentStatus($request)
     {
+        // $mVerification = $this->paymentVerify($request, $mAttributes);
+        $attributes     = null;
+        $success        = false;
+        $successData    = new PaymentSuccess();
+        $rejectData     = new PaymentReject();
+        $refRazorpayId  = Config::get('razorpay.RAZORPAY_ID');
+        $refRazorpayKey = Config::get('razorpay.RAZORPAY_KEY');
+
+        # verify the existence of the razerpay Id
+        $api = new Api($refRazorpayId, $refRazorpayKey);
         try {
-            $mAttributes = null;
-            $mVerification = $this->paymentVerify($request, $mAttributes);
-            return responseMsg(true, "Operation Success!", $mVerification);
-        } catch (Exception $error) {
-            return responseMsg(false, "Error listed Below!", $error->getMessage());
+            $attributes = [
+                'razorpay_order_id'     => $request->razorpayOrderId,
+                'razorpay_payment_id'   => $request->razorpayPaymentId,
+                'razorpay_signature'    => $request->razorpaySignature
+            ];
+            $api->utility->verifyPaymentSignature($attributes);
+            $success = true;
+        } catch (SignatureVerificationError $exception) {
+            $success = false;
+            $messsage = $exception->getMessage();
+        }
+
+        if ($success === true) {
+            # Update database with success data
+            $successData->saveSuccessDetails($request);
+            $messsage = "Payment Successfully done!";
+            return responseMsgs(true, $messsage, [], "", "01", "", "POST", $request->deviceId);
+        } else {
+            # Update database with error data
+            $rejectData->saveRejectedData($request);
+            return responseMsgs(false, $messsage, [], "", "01", "", "POST", $request->deviceId);
         }
     }
 
@@ -254,47 +282,45 @@ class PaymentRepository implements iPayment
     {
         try {
             # Variable Defining Section
-            $webhookEntity = $request->payload['payment']['entity'];
-
-            $contains = json_encode($request->contains);
-            $notes = json_encode($webhookEntity['notes']);
-
-            $depatmentId = $webhookEntity['notes']['departmentId']; // ModuleId
-            $status = $webhookEntity['status'];
-            $captured = $webhookEntity['captured'];
-            $aCard = $webhookEntity['card_id'];
-            $amount = $webhookEntity['amount'];
+            $webhookEntity  = $request->payload['payment']['entity'];
+            $contains       = json_encode($request->contains);
+            $notes          = json_encode($webhookEntity['notes']);
+            $depatmentId    = $webhookEntity['notes']['departmentId'];  // ModuleId
+            $status         = $webhookEntity['status'];
+            $captured       = $webhookEntity['captured'];
+            $aCard          = $webhookEntity['card_id'];
+            $amount         = $webhookEntity['amount'];
             $arrayInAquirer = $webhookEntity['acquirer_data'];
 
             $actulaAmount = $amount / 100;
             $firstKey = array_key_first($arrayInAquirer);
             $actualTransactionNo = $this->generatingTransactionId();
 
+            # Save card details 
             if (!is_null($aCard)) {
-
                 $webhookCardDetails = $webhookEntity['card'];
                 $objcard = new CardDetail();
                 $objcard->saveCardDetails($webhookCardDetails);
             }
 
-            # data to be stored in the database 
+            # Data to be stored in webhook table
             $webhookData = new WebhookPaymentData();
             $webhookData = $webhookData->saveWebhookData($request, $captured, $actulaAmount, $status, $notes, $firstKey, $contains, $actualTransactionNo, $webhookEntity);
 
-            # data transfer to the respective module dataBase 
+            # data transfer to the respective module's database 
             $transfer = [
-                'paymentMode' => $webhookData->payment_method,
-                'id' => $webhookEntity['notes']['applicationId'],
-                'amount' => $actulaAmount,
-                'workflowId' =>  $webhookData->workflow_id,
+                'paymentMode'   => $webhookData->payment_method,
+                'id'            => $webhookEntity['notes']['applicationId'],
+                'amount'        => $actulaAmount,
+                'workflowId'    =>  $webhookData->workflow_id,
                 'transactionNo' => $actualTransactionNo,
-                'userId' => $webhookData->user_id,
-                'ulbId' => $webhookData->ulb_id,
-                'departmentId' => $webhookData->department_id,    //ModuleId
-                'orderId' => $webhookData->payment_order_id,
-                'paymentId' => $webhookData->payment_id,
-                'tranDate' => $request->created_at,
-                'gatewayType' => 1,                                 // Razorpay
+                'userId'        => $webhookData->user_id,
+                'ulbId'         => $webhookData->ulb_id,
+                'departmentId'  => $webhookData->department_id,         //ModuleId
+                'orderId'       => $webhookData->payment_order_id,
+                'paymentId'     => $webhookData->payment_id,
+                'tranDate'      => $request->created_at,
+                'gatewayType'   => 1,                                   // Razorpay Id
             ];
 
             # conditionaly upadting the request data
@@ -329,7 +355,6 @@ class PaymentRepository implements iPayment
                         $api = $mApiMaster->getAdvApi();
                         Http::withHeaders([])
                             ->post("$api->end_point", $transfer);
-                        $check = $api;
                         break;
                 }
             }

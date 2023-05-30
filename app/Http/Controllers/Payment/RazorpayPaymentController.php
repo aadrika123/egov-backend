@@ -88,22 +88,25 @@ class RazorpayPaymentController extends Controller
         return $this->Prepository->getWebhookDetails();
     }
 
-    //verify the payment status
+
+    /**
+     * | Verify the payment status 
+     * | Use to check the actual paymetn from the server 
+        | Testing
+     */
     public function verifyPaymentStatus(Request $req)
     {
         # validation 
-        return true;
-        $validated = Validator::make(
-            $req->all(),
-            [
-                'razorpayOrderId' => 'required',
-                'razorpayPaymentId' => 'required'
-            ]
-        );
-        if ($validated->fails()) {
-            return responseMsg(false, "validation error", $validated->errors(), 401);
+        // return true;
+        $req->validate([
+            'razorpayOrderId' => 'required',
+            'razorpayPaymentId' => 'required',
+        ]);
+        try {
+            return $this->Prepository->verifyPaymentStatus($req);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], "", "01", "", "POST", $req->deviceId);
         }
-        return $this->Prepository->verifyPaymentStatus($req);
     }
 
     //verify the payment status
@@ -133,7 +136,7 @@ class RazorpayPaymentController extends Controller
     {
         // return $req;
         try {
-            return  $this->saveGenerateOrderid($req);  
+            return  $this->saveGenerateOrderid($req);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }

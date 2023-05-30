@@ -186,10 +186,10 @@ class WebhookPaymentData extends Model
             ->where('department_id', $depId)
             ->orderByDesc('id')
             ->get();
-        return collect($ref)->map(function ($value, $key) {
+        return collect($ref)->map(function ($value) {
             $notes = json_decode($value['payment_notes']);
             $applicationId = $notes->applicationId;
-            return $returnValue = [
+            return [
                 'applicationId' => $applicationId,
                 'payment_transaction_id' => $value['payment_transaction_id']
             ];
