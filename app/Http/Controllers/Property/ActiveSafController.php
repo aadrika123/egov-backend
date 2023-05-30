@@ -63,6 +63,9 @@ use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\Workflows\WfWorkflowrolemap;
 use App\Models\WorkflowTrack;
+use App\Pipelines\SafInbox\SearchByApplicationNo;
+use App\Pipelines\SafInbox\SearchByMobileNo;
+use App\Pipelines\SafInbox\SearchByName;
 use Illuminate\Http\Request;
 use App\Repository\Property\Interfaces\iSafRepository;
 use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
@@ -74,6 +77,7 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pipeline\Pipeline;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
@@ -352,14 +356,25 @@ class ActiveSafController extends Controller
             $roleIds = $mWfRoleUser->getRoleIdByUserId($userId)->pluck('wf_role_id');                      // Model to () get Role By User Id
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleIds)->pluck('workflow_id');
 
-            $safInbox = $this->Repository->getSaf($workflowIds)                                          // Repository function to get SAF Details
+            $safDtl = $this->Repository->getSaf($workflowIds)                                          // Repository function to get SAF Details
                 ->where('parked', false)
                 ->where('prop_active_safs.ulb_id', $ulbId)
                 ->where('prop_active_safs.status', 1)
                 ->whereIn('current_role', $roleIds)
                 ->whereIn('ward_mstr_id', $occupiedWards)
                 ->orderByDesc('id')
-                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name')
+                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name');
+
+            $safInbox = app(Pipeline::class)
+                ->send(
+                    $safDtl
+                )
+                ->through([
+                    SearchByApplicationNo::class,
+                    SearchByMobileNo::class,
+                    SearchByName::class
+                ])
+                ->thenReturn()
                 ->paginate($perPage);
 
             return responseMsgs(true, "Data Fetched", remove_null($safInbox), "010103", "1.0", responseTime(), "POST", "");
@@ -1146,12 +1161,12 @@ class ActiveSafController extends Controller
                 $ifFloorExist = $mPropFloors->getFloorByFloorId($floorDetail->prop_floor_details_id);
                 $floorReqs = new Request([
                     'floor_mstr_id' => $floorDetail->floor_mstr_id,
-                    'usage_type_mstr_id' => $floorDetail->usage_type_id,
-                    'const_type_mstr_id' => $floorDetail->construction_type_id,
-                    'occupancy_type_mstr_id' => $floorDetail->occupancy_type_id,
+                    'usage_type_mstr_id' => $floorDetail->usage_type_mstr_id,
+                    'const_type_mstr_id' => $floorDetail->const_type_mstr_id,
+                    'occupancy_type_mstr_id' => $floorDetail->occupancy_type_mstr_id,
                     'builtup_area' => $floorDetail->builtup_area,
                     'date_from' => $floorDetail->date_from,
-                    'date_upto' => $floorDetail->date_to,
+                    'date_upto' => $floorDetail->date_upto,
                     'carpet_area' => $floorDetail->carpet_area,
                     'property_id' => $propId,
                     'saf_id' => $safId
@@ -1220,8 +1235,8 @@ class ActiveSafController extends Controller
 
             $roleId = $readRoleDtls->wf_role_id;
 
-            if ($safDetails->finisher_role_id != $roleId)
-                throw new Exception("Forbidden Access");
+            // if ($safDetails->finisher_role_id != $roleId)
+            //     throw new Exception("Forbidden Access");
             $activeSaf = PropActiveSaf::query()
                 ->where('id', $req->applicationId)
                 ->first();

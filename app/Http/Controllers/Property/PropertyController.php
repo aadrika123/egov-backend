@@ -14,8 +14,6 @@ use App\Models\Property\PropTransaction;
 use App\Models\Workflows\WfActiveDocument;
 use App\Pipelines\SearchHolding;
 use App\Pipelines\SearchPtn;
-use App\Repository\Property\Interfaces\iSafRepository;
-use App\Repository\Water\Concrete\WaterNewConnection;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;

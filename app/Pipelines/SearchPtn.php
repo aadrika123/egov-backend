@@ -12,6 +12,6 @@ class SearchPtn
             return $next($request);
         }
         return $next($request)
-            ->where('pt_no', request()->input('ptNo'));
+            ->where('pt_no', "ilike", request()->input('ptNo'));
     }
 }

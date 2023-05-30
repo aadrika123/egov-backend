@@ -121,6 +121,7 @@ class MenuRepo implements iMenuRepo
             $return['id'] = $value['id'];
             $return['parentId'] = $value['parent_serial'];
             $return['path'] = $value['route'];
+            $return['icon'] = config('app.url') . '/api/getImageLink?path=' . $value['icon'];
             $return['name'] = $value['menu_string'];
             $return['order'] = $value['serial'];
             $return['children'] = array();

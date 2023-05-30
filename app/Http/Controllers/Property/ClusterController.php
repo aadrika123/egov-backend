@@ -278,8 +278,8 @@ class ClusterController extends Controller
             $mPropActiveSaf = new PropActiveSaf();
             $perPage = $request->perPage ?? 10;
             $application = $mPropActiveSaf->searchSafDtlsBySafNo()
-                ->where('s.saf_no', 'LIKE', '%' . $request->safNo)->get();
-            // ->paginate($perPage);
+                ->where('s.saf_no', 'LIKE', '%' . $request->safNo)
+                ->paginate($perPage);
 
             return responseMsgs(true, "Listed Saf!", $application, "", "02", "", "POST", "");
         } catch (Exception $e) {

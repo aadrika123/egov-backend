@@ -154,11 +154,9 @@ class TcVerificationDemandAdjust
         $quaterlyTax = $this->_quaterlyTax;
         $propSafsDemands = $mPropSafsDemands->getPaidDemandBySafId($this->_activeSafDtls['id']);
         $propDemands = $mPropDemands->getFullDemandsByPropId($this->_reqs['propId']);
-
         foreach ($quaterlyTax as $tax) {
             $safQtrDemand = $propSafsDemands->where('due_date', $tax['dueDate'])->first();
             $propQtrDemand = $propDemands->where('due_date', $tax['dueDate'])->first();
-
             // For Saf
             if (collect($safQtrDemand)->isNotEmpty()) {
                 if ($tax['totalTax'] > $safQtrDemand->amount) {                                         // Case IF The Demand is Increasing
@@ -172,7 +170,6 @@ class TcVerificationDemandAdjust
                     $collectAdvanceAmt->push($advanceAmt);
                 }
             }
-
             // For Property Demand
             if (collect($propQtrDemand)->isNotEmpty()) {
                 if ($tax['totalTax'] > $propQtrDemand->amount) {
@@ -259,6 +256,7 @@ class TcVerificationDemandAdjust
             'health_cess' => $tax['healthCess'],
             'latrine_tax' => $tax['latrineTax'],
             'additional_tax' => $tax['additionTax'],
+            'ward_mstr_id' => $this->_activeSafDtls->ward_mstr_id,
             'fyear' => $tax['quarterYear'],
             'due_date' => $tax['dueDate'],
             'amount' => $tax['totalTax'],
