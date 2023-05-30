@@ -82,8 +82,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         # Consumer And Citizen Transaction Operation
         Route::post('master/get-listed-details', 'getWaterMasterData');                                 // Admin/ Citizen
         Route::post('consumer/get-payment-history', 'getConsumerPaymentHistory');                       // Consumer
-        Route::post('generate-payment-receipt', 'generatePaymentReceipt');      // Not used             // Citizen
-        Route::post('admin/application/generate-payment-receipt', 'generateOfflinePaymentReceipt');     // Consumer
+        Route::post('admin/application/generate-payment-receipt', 'generateOfflinePaymentReceipt');     // Citizen / Admin
         Route::post('consumer/calculate-month-demand', 'callDemandByMonth');                            // Admin/Consumer
         Route::post('application/payment/get-payment-history', 'getApplicationPaymentHistory');         // Admin/Consumer
         Route::post('consumer/offline-demand-payment', 'offlineDemandPayment');                         // Consumer

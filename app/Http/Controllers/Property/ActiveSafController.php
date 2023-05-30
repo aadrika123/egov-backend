@@ -980,6 +980,7 @@ class ActiveSafController extends Controller
                     $saf->pt_no = $ptNo;                        // Generate New Property Tax No for All Conditions
                     $saf->save();
                 }
+                $ptNo = $saf->pt_no;
                 $samIdGeneration = new PrefixIdGenerator($samParamId, $saf->ulb_id);
                 $samNo = $samIdGeneration->generate();                 // Generate SAM No
                 $mergedDemand = array_merge($demand->toArray(), [
@@ -1139,13 +1140,21 @@ class ActiveSafController extends Controller
             $mProperty->editPropBySaf($propId, $activeSaf);
             // Edit Owners 
             foreach ($ownerDetails as $ownerDetail) {
-                $ifOwnerExist = $mPropOwners->getPropOwnerByOwnerId($ownerDetail->id);
-                $ownerDetail = array_merge($ownerDetail->toArray(), ['property_id' => $propId]);
-                $ownerDetail = new Request($ownerDetail);
-                if ($ifOwnerExist)
-                    $mPropOwners->editOwner($ownerDetail);
-                else
+                if ($assessmentType == 'Reassessment') {            // In Case of Reassessment Edit Owners
+                    if (!is_null($ownerDetail->prop_owner_id))
+                        $ifOwnerExist = $mPropOwners->getOwnerByPropOwnerId($ownerDetail->prop_owner_id);
+
+                    if ($ifOwnerExist) {
+                        $ownerDetail = array_merge($ownerDetail->toArray(), ['property_id' => $propId]);
+                        $ownerDetail = new Request($ownerDetail);
+                        $mPropOwners->editOwner($ownerDetail);
+                    }
+                }
+                if ($assessmentType == 'Mutation') {            // In Case of Mutation Add Owners
+                    $ownerDetail = array_merge($ownerDetail->toArray(), ['property_id' => $propId]);
+                    $ownerDetail = new Request($ownerDetail);
                     $mPropOwners->postOwner($ownerDetail);
+                }
             }
             // Edit Floors
             foreach ($floorDetails as $floorDetail) {

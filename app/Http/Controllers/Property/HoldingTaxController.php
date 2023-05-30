@@ -203,7 +203,11 @@ class HoldingTaxController extends Controller
             });
 
             $dues = roundFigure($demandList->sum('balance'));
+            $dues = ($dues > 0) ? $dues : 0;
+
             $onePercTax = roundFigure($demandList->sum('onePercPenaltyTax'));
+            $onePercTax = ($onePercTax > 0) ? $onePercTax : 0;
+
             $rwhPenaltyTax = roundFigure($demandList->sum('additional_tax'));
             $advanceAdjustments = $mPropAdvance->getPropAdvanceAdjustAmt($req->propId);
 
@@ -256,13 +260,14 @@ class HoldingTaxController extends Controller
 
             $demand['basicDetails'] = $basicDtls;
             $demand['can_pay'] = true;
-
             // Calculations for showing demand receipt without any rebate
             $total = roundFigure($dues - $advanceAmt);
             if ($total < 0)
                 $total = 0;
             $totalPayable = round($total + $onePercTax);
             $totalPayable = roundFigure($totalPayable);
+            if ($totalPayable < 0)
+                $totalPayable = 0;
             $demand['dueReceipt'] = [
                 'holdingNo' => $basicDtls['holding_no'],
                 'new_holding_no' => $basicDtls['new_holding_no'],

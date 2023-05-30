@@ -35,6 +35,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use App\Repository\Property\Interfaces\iSafRepository;
+use App\Traits\Property\SAF;
 use Carbon\Carbon;
 use Illuminate\Pipeline\Pipeline;
 
@@ -45,7 +46,7 @@ use Illuminate\Pipeline\Pipeline;
 
 class ActiveSafControllerV2 extends Controller
 {
-
+    use SAF;
     /**
      * | Edit Applied Saf by SAF Id for BackOffice
      * | @param request $req
@@ -85,6 +86,10 @@ class ActiveSafControllerV2 extends Controller
                 $existingOwnerIds = $existingOwners->pluck('safOwnerId');
                 $toDeleteOwners = $refSafOwners->whereNotIn('id', $existingOwnerIds)->values();
                 $toDeleteOwnerIds = $toDeleteOwners->pluck('id');
+
+                $roadWidthType = $this->readRoadWidthType($req->roadType);          // Read Road Width Type
+                $req = $req->merge(['road_type_mstr_id' => $roadWidthType]);
+
                 DB::beginTransaction();
                 // Edit Active Saf
                 $mActiveSaf->safEdit($req, $mPropActiveSaf, $citizenId);

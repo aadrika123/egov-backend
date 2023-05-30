@@ -39,6 +39,7 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
+use Predis\Configuration\Option\Exceptions;
 
 use function PHPUnit\Framework\isEmpty;
 use function PHPUnit\Framework\isNull;
@@ -88,7 +89,10 @@ class WaterNewConnection implements IWaterNewConnection
         $mWaterParamConnFee     = new WaterParamConnFee();
         $mWaterConnectionCharge = new WaterConnectionCharge();
         $mWaterSiteInspection   = new WaterSiteInspection();
-        $mWaterSiteInspectionsScheduling = new WaterSiteInspectionsScheduling();
+
+        $mWaterSiteInspectionsScheduling    = new WaterSiteInspectionsScheduling();
+        $refChargeCatagory                  = Config::get("waterConstaint.CHARGE_CATAGORY");
+        $refChargeCatagoryValue             = Config::get("waterConstaint.CONNECTION_TYPE");
 
 
         $connection = WaterApplication::select(
@@ -107,6 +111,7 @@ class WaterNewConnection implements IWaterNewConnection
             "water_applications.current_role",
             "water_applications.parked",
             "water_applications.category",
+            "water_applications.connection_type_id",
             "ulb_ward_masters.ward_name",
             "charges.amount",
             "wf_roles.role_name as current_role_name",
@@ -147,21 +152,38 @@ class WaterNewConnection implements IWaterNewConnection
             throw new Exception("Water Applications not found!");
 
         $returnValue = collect($connection)->map(function ($value)
-        use ($mWaterTran, $mWaterParamConnFee, $mWaterConnectionCharge, $mWaterSiteInspection, $connection, $mWaterSiteInspectionsScheduling, $roleDetails) {
+        use ($refChargeCatagoryValue, $refChargeCatagory, $mWaterTran, $mWaterParamConnFee, $mWaterConnectionCharge, $mWaterSiteInspection, $mWaterSiteInspectionsScheduling, $roleDetails) {
             $value['transDetails'] = $mWaterTran->getTransNo($value['id'], null)->first();
             $value['calcullation'] = $mWaterParamConnFee->getCallParameter($value['property_type_id'], $value['area_sqft'])->first();
             $refConnectionCharge = $mWaterConnectionCharge->getWaterchargesById($value['id'])
                 ->where('paid_status', 0)
                 ->first();
+            # Formating connection type id 
+            if (!is_null($refConnectionCharge)) {
+                switch ($refConnectionCharge['charge_category']) {
+                    case ($refChargeCatagory['SITE_INSPECTON']):
+                        $chargeId = $refChargeCatagoryValue['SITE_INSPECTON'];
+                        break;
+                    case ($refChargeCatagory['NEW_CONNECTION']):
+                        $chargeId = $refChargeCatagoryValue['NEW_CONNECTION'];
+                        break;
+                    case ($refChargeCatagory['REGULAIZATION']):
+                        $chargeId = $refChargeCatagoryValue['REGULAIZATION'];
+                        break;
+                }
+                $refConnectionCharge['connectionTypeId'] = $chargeId;
+            }
             $refConnectionCharge['type'] = $value['type'];
             $refConnectionCharge['applicationId'] = $value['id'];
             $refConnectionCharge['applicationNo'] = $value['application_no'];
             $value['connectionCharges'] = $refConnectionCharge;
+
+            # Site Details 
             $siteDetails = $mWaterSiteInspection->getInspectionById($value['id'])
                 ->where('order_officer', $roleDetails['JE'])
                 ->first();
             $checkEmpty = collect($siteDetails)->first();
-            if (!empty($checkEmpty) || !isNull($checkEmpty)) {
+            if (!is_null($checkEmpty)) {
                 $value['siteInspectionCall'] = $mWaterParamConnFee->getCallParameter(
                     $siteDetails['site_inspection_property_type_id'],
                     $siteDetails['site_inspection_area_sqft']
@@ -192,9 +214,12 @@ class WaterNewConnection implements IWaterNewConnection
             $refUser            = Auth()->user();
             $refUserId          = $refUser->id;
             $refUlbId           = $refUser->ulb_id;
+            $paramChargeCatagory = Config::get('waterConstaint.CONNECTION_TYPE');
+            $refRegulization = Config::get('waterConstaint.CHARGE_CATAGORY');
+
             $rules = [
                 'id'                => 'required|digits_between:1,9223372036854775807',
-                'applycationType'  => 'required|string|in:connection,consumer',
+                'applycationType'   => 'required|string|in:connection,consumer',
             ];
             $validator = Validator::make($request->all(), $rules,);
             if ($validator->fails()) {
@@ -217,15 +242,37 @@ class WaterNewConnection implements IWaterNewConnection
                 $amount = 0;
                 $penalty = 0;
                 $rebat = 0;
+                if (isset($request->isInstallment)) {
+                    $request->validate([
+                        'isInstallment' => 'nullable|in:yes,no'
+                    ]);
+                }
                 switch ($request->isInstallment) {
-                    case 1:
+                    case ("no"):
+                        if ($application->connection_type_id != $paramChargeCatagory['REGULAIZATION']) {
+                            throw new Exceptions("Payment is not under Regulaization!");
+                        }
                         $amount = $cahges["amount"];
                         $rebat = $cahges["rabate"];
                         break;
-                    case 0:
-                        $amount = $cahges["conn_fee"];
-                        $penalty = $cahges["balance_amount"] ?? 0;
+                    case ("yes"):
+                        $request->validate([
+                            'penaltyIds' => 'required|array',
+                        ]);
+                        if ($application->connection_type_id != $paramChargeCatagory['REGULAIZATION']) {
+                            throw new Exceptions("Payment is not under Regulaization!");
+                        }
+                        $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
+                        $peanltyDetails = $mWaterPenaltyInstallment->getPenaltyByArrayOfId($request->penaltyIds);
+                        $refPenaltyAmount = collect($peanltyDetails)->sum('balance_amount');
+                        $amount = $cahges['conn_fee'];
+                        $penalty = $refPenaltyAmount;
+                        $cahges["ids"] = implode(',', $request->penaltyIds);
                         break;
+                }
+                if ($cahges['charge_for'] == $refRegulization['SITE_INSPECTON']) {
+                    $amount = $cahges["amount"];
+                    $cahges["ids"] = $cahges['installment_ids'];
                 }
                 $totalAmount = $amount + $penalty - $rebat;
                 if (!$totalAmount) {
@@ -237,14 +284,14 @@ class WaterNewConnection implements IWaterNewConnection
                 $myRequest->request->add(['departmentId' => 2]);
                 $temp = $this->saveGenerateOrderid($myRequest);
                 $RazorPayRequest = new WaterRazorPayRequest;
-                $RazorPayRequest->related_id   = $application->id;
-                $RazorPayRequest->payment_from = $cahges['charge_for'];
-                $RazorPayRequest->amount       = $totalAmount;
-                $RazorPayRequest->demand_from_upto = $cahges["ids"];
-                $RazorPayRequest->penalty_id = $cahges["ids"];
-                $RazorPayRequest->ip_address   = $request->ip();
-                $RazorPayRequest->order_id        = $temp["orderId"];
-                $RazorPayRequest->department_id = $temp["departmentId"];
+                $RazorPayRequest->related_id        = $application->id;
+                $RazorPayRequest->payment_from      = $cahges['charge_for'];
+                $RazorPayRequest->amount            = $totalAmount;
+                $RazorPayRequest->demand_from_upto  = $cahges["ids"];
+                $RazorPayRequest->penalty_id        = $cahges["ids"];
+                $RazorPayRequest->ip_address        = $request->ip();
+                $RazorPayRequest->order_id          = $temp["orderId"];
+                $RazorPayRequest->department_id     = $temp["departmentId"];
                 $RazorPayRequest->save();
             }
             #--------------------water Consumer----------------------
@@ -339,7 +386,7 @@ class WaterNewConnection implements IWaterNewConnection
                     $mDemands = WaterConnectionCharge::select("*")
                         ->whereIn("id", $id)
                         ->get();
-                    $cahges = $cahges + ($mDemands->sum("amount"));
+                    $cahges = $cahges + ($mDemands->sum("amount") ?? 0);
                 }
                 if ($penalty_id) {
 
@@ -1092,16 +1139,15 @@ class WaterNewConnection implements IWaterNewConnection
                 })
                 ->count("id");
             $cahges = collect([
-                "charge_for" => $charge_for->charge_category ?? "New Connection",
-                "amount" => $conn_fee_charge->amount ?? 0,
-                "amount" => $conn_fee_charge->amount ?? 0,
-                "conn_fee" => $conn_fee_charge->conn_fee ?? 0,
-                "ids" => $conn_fee_charge->ids ?? "",
-                "balance_amount" => $penalty_installment->balance_amount ?? 0,
-                "installment_amount" => $penalty_installment->installment_amount ?? 0,
-                "installment_ids" => $penalty_installment->ids ?? "",
-                "is_rebate" => $paid_penalty > 0 ? false : true,
-                "rabate" => $paid_penalty > 0 ? 0.0 : round((($penalty_installment->balance_amount ?? 0) / 10), 2),
+                "charge_for"            => $charge_for->charge_category ?? "New Connection",
+                "amount"                => $conn_fee_charge->amount ?? 0,
+                "conn_fee"              => $conn_fee_charge->conn_fee ?? 0,
+                "ids"                   => $conn_fee_charge->ids ?? "",
+                "balance_amount"        => $penalty_installment->balance_amount ?? 0,
+                "installment_amount"    => $penalty_installment->installment_amount ?? 0,
+                "installment_ids"       => $penalty_installment->ids ?? "",
+                "is_rebate"             => $paid_penalty > 0 ? false : true,
+                "rabate"                => $paid_penalty > 0 ? 0.0 : round((($penalty_installment->balance_amount ?? 0) / 10), 2),
             ]);
             return $cahges;
         } catch (Exception $e) {

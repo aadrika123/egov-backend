@@ -229,114 +229,6 @@ class WaterPaymentController extends Controller
 
 
     /**
-     * | Generate the payment Recipt Using transactionId
-     * | @param req  transactionId
-     * | @var mPaymentData 
-     * | @var mWaterApplication
-     * | @var mWaterTransaction
-     * | @var mTowards
-     * | @var mAccDescription
-     * | @var mDepartmentSection
-     * | @var applicationDtls
-     * | @var applicationId
-     * | @var applicationDetails
-     * | @var webhookData
-     * | @var webhookDetails
-     * | @var transactionDetails
-     * | @var waterTrans
-     * | @var epoch
-     * | @var dateTime
-     * | @var transactionTime
-     * | @var responseData
-     * | @return responseData  Data for the payment Recipt
-        | Serial No : 02
-        | Recheck 
-        | Search From Water trans table Not in webhook table 
-        | Do not used
-     */
-    public function generatePaymentReceipt(Request $req)
-    {
-        $req->validate([
-            'transactionNo' => 'required'
-        ]);
-
-        try {
-            $mPaymentData           = new WebhookPaymentData();
-            $mWaterConnectionCharge = new WaterConnectionCharge();
-            $mWaterApplication      = new WaterApplication();
-            $mWaterTransaction      = new WaterTran();
-
-            $mTowards           = $this->_towards;
-            $mAccDescription    = $this->_accDescription;
-            $mDepartmentSection = $this->_departmentSection;
-
-            $applicationDtls = $mPaymentData->getApplicationId($req->transactionNo);
-            $applicationId = json_decode($applicationDtls)->applicationId;
-
-            $applicationDetails = $mWaterApplication->getWaterApplicationsDetails($applicationId);
-            $webhookData = $mPaymentData->getPaymentDetailsByPId($req->transactionNo);
-            $webhookDetails = collect($webhookData)->last();
-
-            $transactionDetails = $mWaterTransaction->getTransactionDetailsById($applicationId);
-            $waterTrans = collect($transactionDetails)->last();
-
-            $epoch = $webhookDetails->payment_created_at;
-            $dateTime = new DateTime("@$epoch");
-            $transactionTime = $dateTime->format('H:i:s');
-
-            $demandDetails = $mWaterConnectionCharge->getWaterchargesById($applicationId)
-                ->whereIn('charge_category', ["New Connection", "Regulaization"])
-                ->first();
-            if ($demandDetails) {
-                $fee = [
-                    "conn_fee"  => $demandDetails->conn_fee,
-                    "penalty"   => $demandDetails->penalty
-                ];
-            }
-
-            $responseData = [
-                "departmentSection"     => $mDepartmentSection,
-                "accountDescription"    => $mAccDescription,
-                "transactionDate"       => $waterTrans->tran_date,
-                "transactionNo"         => $waterTrans->tran_no,
-                "transactionTime"       => $transactionTime,
-                "applicationNo"         => $applicationDetails->application_no,
-                "customerName"          => $applicationDetails->applicant_name,
-                "customerMobile"        => $applicationDetails->mobile_no,
-                "address"               => $applicationDetails->address,
-                "paidFrom"              => "",
-                "paidFromQtr"           => "",
-                "paidUpto"              => "",
-                "paidUptoQtr"           => "",
-                "paymentMode"           => $waterTrans->payment_mode,
-                "bankName"              => $webhookDetails->payment_bank ?? null,
-                "branchName"            => "",
-                "chequeNo"              => "",
-                "chequeDate"            => "",
-                "noOfFlats"             => "",
-                "monthlyRate"           => "",
-                "demandAmount"          => "",                                  // if the trans is diff
-                "taxDetails"            => "",
-                "holdingNo"             => $applicationDetails->holding_no,
-                "safNo"                 => $applicationDetails->saf_no,
-                "connectionFee"         => $fee->conn_fee ?? $webhookDetails->payment_amount,
-                "connectionPenalty"     => $fee->penalty ?? "0.0",
-                "ulbId"                 => $webhookDetails->ulb_id,
-                "WardNo"                => $applicationDetails->ward_name,
-                "towards"               => $mTowards,
-                "rebate"                => 0,                                   // Static
-                "description"           => $waterTrans->tran_type,
-                "totalPaidAmount"       => $webhookDetails->payment_amount,
-                "paidAmtInWords"        => getIndianCurrency($webhookDetails->payment_amount),
-            ];
-            return responseMsgs(true, "Payment Receipt", remove_null($responseData), "", "1.0", "", "POST", $req->deviceId ?? "");
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "", "", "1.0", "", "POST", $req->deviceId ?? "");
-        }
-    }
-
-
-    /**
      * | Generate the payment Receipt for Demand / In Bulk amd Indipendent
      * | @param request
      * | @var refTransactionNo
@@ -653,7 +545,9 @@ class WaterPaymentController extends Controller
                     $newConnectionCharges['conn_fee_charge']['amount'] = $unpaidPenalty;
                     $connectionId = $mWaterConnectionCharge->saveWaterCharge($applicationId, $request, $newConnectionCharges);
                     $mWaterPenaltyInstallment->saveWaterPenelty($applicationId, $refInstallment, $chargeCatagory['SITE_INSPECTON'], $connectionId);
+                    $mWaterApplication->updatePaymentStatus($applicationId, false);
                     $refPaymentStatus = 0;                                              // Static
+                    break;
                 }
                 $refPaymentStatus = 1;                                                  // Static
                 break;
@@ -1153,9 +1047,6 @@ class WaterPaymentController extends Controller
     }
 
 
-
-
-
     /**
      * | Check for the payment done 
      */
@@ -1314,6 +1205,10 @@ class WaterPaymentController extends Controller
                     case ($req->isInstallment == "yes"):
                         $penaltyIds = $req->penaltyIds;
                         $refPenallty = $mWaterPenaltyInstallment->getPenaltyByArrayOfId($penaltyIds);
+                        $checkPenalty = collect($refPenallty)->first();
+                        if (is_null($checkPenalty)) {
+                            throw new Exception("Penalty Details not found!");
+                        }
                         collect($refPenallty)->map(function ($value) {
                             if ($value['paid_status'] == 1) {
                                 throw new Exception("payment for the respoctive Penaty has been done!");
