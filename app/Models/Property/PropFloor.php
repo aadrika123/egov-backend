@@ -41,6 +41,19 @@ class PropFloor extends Model
     }
 
     /**
+     * | Deactivate Floors By Prop ID
+     */
+    public function deactivateFloorsByPropId($propId)
+    {
+        DB::table('prop_floors')
+            ->where('property_id', $propId)
+            ->where('status', 1)
+            ->update([
+                'status' => 0
+            ]);
+    }
+
+    /**
      * | Get occupancy type according to holding id
      */
     public function getOccupancyType($propertyId, $refTenanted)

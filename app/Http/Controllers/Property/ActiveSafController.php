@@ -1262,8 +1262,8 @@ class ActiveSafController extends Controller
 
             $roleId = $readRoleDtls->wf_role_id;
 
-            // if ($safDetails->finisher_role_id != $roleId)
-            //     throw new Exception("Forbidden Access");
+            if ($safDetails->finisher_role_id != $roleId)
+                throw new Exception("Forbidden Access");
             $activeSaf = PropActiveSaf::query()
                 ->where('id', $req->applicationId)
                 ->first();
@@ -1398,7 +1398,7 @@ class ActiveSafController extends Controller
         // Deactivate Existing Prop Floors by Saf Id
         $existingFloors = $mPropFloors->getFloorsByPropId($propId);
         if ($existingFloors)
-            $existingFloors->update(['status' => 0]);
+            $mPropFloors->deactivateFloorsByPropId($propId);
 
         foreach ($fieldVerifiedSaf as $key) {
             $floorReqs = new Request([
@@ -2387,7 +2387,7 @@ class ActiveSafController extends Controller
                 "ownership_type" => $req['ownership_type']
             ];
             $demand['amounts'] = $safTaxes->original['data']['demand'];
-            $demand['details'] = collect($safTaxes->original['data']['details']);
+            $demand['details'] = collect($safTaxes->original['data']['details'])->values();
             $demand['taxDetails'] = collect($safTaxes->original['data']['taxDetails']);
             $demand['paymentStatus'] = $safDetails['payment_status'];
             $demand['applicationNo'] = $safDetails['saf_no'];
