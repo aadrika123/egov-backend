@@ -1161,12 +1161,12 @@ class ActiveSafController extends Controller
                 $ifFloorExist = $mPropFloors->getFloorByFloorId($floorDetail->prop_floor_details_id);
                 $floorReqs = new Request([
                     'floor_mstr_id' => $floorDetail->floor_mstr_id,
-                    'usage_type_mstr_id' => $floorDetail->usage_type_id,
-                    'const_type_mstr_id' => $floorDetail->construction_type_id,
-                    'occupancy_type_mstr_id' => $floorDetail->occupancy_type_id,
+                    'usage_type_mstr_id' => $floorDetail->usage_type_mstr_id,
+                    'const_type_mstr_id' => $floorDetail->const_type_mstr_id,
+                    'occupancy_type_mstr_id' => $floorDetail->occupancy_type_mstr_id,
                     'builtup_area' => $floorDetail->builtup_area,
                     'date_from' => $floorDetail->date_from,
-                    'date_upto' => $floorDetail->date_to,
+                    'date_upto' => $floorDetail->date_upto,
                     'carpet_area' => $floorDetail->carpet_area,
                     'property_id' => $propId,
                     'saf_id' => $safId
@@ -1235,8 +1235,8 @@ class ActiveSafController extends Controller
 
             $roleId = $readRoleDtls->wf_role_id;
 
-            if ($safDetails->finisher_role_id != $roleId)
-                throw new Exception("Forbidden Access");
+            // if ($safDetails->finisher_role_id != $roleId)
+            //     throw new Exception("Forbidden Access");
             $activeSaf = PropActiveSaf::query()
                 ->where('id', $req->applicationId)
                 ->first();
