@@ -133,9 +133,6 @@ class CitizenRepository implements iCitizenRepository
         $propertyApplications = DB::table('prop_active_safs')
             ->Join('wf_roles as r', 'r.id', '=', 'prop_active_safs.current_role')
             ->leftJoin('prop_transactions as t', 't.saf_id', '=', 'prop_active_safs.id')
-            // ->leftJoin('prop_saf_verifications as v', function ($query) {
-            //     $query->on('prop_active_safs.id', '=', 'v.saf_id')->where('v.agency_verification', true)->orderByDesc('v.id')->limit(1);
-            // })
             ->select(
                 'prop_active_safs.id as application_id',
                 'saf_no',
@@ -153,8 +150,6 @@ class CitizenRepository implements iCitizenRepository
                 'prop_active_safs.updated_at',
                 't.tran_no as transaction_no',
                 't.tran_date as transaction_date',
-                // DB::raw("(CASE WHEN v.agency_verification=true and v.agency_verification  notnull THEN 'true' ELSE 'false' END) as is_agency_verified"),
-                // DB::raw("(CASE WHEN is_field_verified=true and is_field_verified  notnull THEN 'true' ELSE 'false' END) as is_ulb_verified"),
             )
             ->where('prop_active_safs.citizen_id', $userId)
             ->where('prop_active_safs.status', 1)
@@ -228,22 +223,6 @@ class CitizenRepository implements iCitizenRepository
             ->groupBy('prop_active_harvestings.id', 'p.id', 'r.role_name')
             ->get();
         $applications['harvestings'] = $harvestingApplications;
-
-        //
-        $deactivationDetails = DB::table('prop_active_deactivation_requests')
-            ->join('wf_roles as r', 'r.id', '=', 'prop_active_deactivation_requests.current_role')
-            ->join('prop_properties as p', 'p.id', '=', 'prop_active_deactivation_requests.property_id')
-            ->select(
-                'prop_active_deactivation_requests.id as application_id',
-                // 'prop_active_deactivation_requests.application_no',
-                'prop_active_deactivation_requests.apply_date',
-                'p.holding_no',
-                'r.role_name as pending_at',
-                'prop_active_deactivation_requests.workflow_id'
-            )
-            ->where('prop_active_deactivation_requests.emp_detail_id', $userId)
-            ->get();
-        $applications['deactivation'] = $deactivationDetails;
 
         return collect($applications);
     }
