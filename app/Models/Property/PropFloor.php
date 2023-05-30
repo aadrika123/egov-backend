@@ -23,7 +23,7 @@ class PropFloor extends Model
             ->join('ref_prop_occupancy_types as o', 'o.id', '=', 'prop_floors.occupancy_type_mstr_id')
             ->join('ref_prop_construction_types as c', 'c.id', '=', 'prop_floors.const_type_mstr_id')
             ->where('property_id', $propertyId)
-            ->where('status', 1)
+            ->where('prop_floors.status', 1)
             ->get();
     }
 
