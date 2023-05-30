@@ -1399,7 +1399,6 @@ class ActiveSafController extends Controller
         $existingFloors = $mPropFloors->getFloorsByPropId($propId);
         if ($existingFloors)
             $mPropFloors->deactivateFloorsByPropId($propId);
-
         foreach ($fieldVerifiedSaf as $key) {
             $floorReqs = new Request([
                 'floor_mstr_id' => $key->floor_mstr_id,
@@ -1779,6 +1778,7 @@ class ActiveSafController extends Controller
             }
             $previousHoldingDeactivation->deactivateHoldingDemands($activeSaf);  // Deactivate Property Holding
             $this->sendToWorkflow($activeSaf);                                   // Send to Workflow(15.2)
+            $demands = collect($demands)->toArray();
             $postSafPropTaxes->postSafTaxes($safId, $demands);                  // Save Taxes
             DB::commit();
             return responseMsgs(true, "Payment Successfully Done",  ['TransactionNo' => $tranNo], "010115", "1.0", "567ms", "POST", $req->deviceId);
@@ -1884,6 +1884,7 @@ class ActiveSafController extends Controller
             // Update SAF Payment Status
             $activeSaf->save();
             $this->sendToWorkflow($activeSaf);        // Send to Workflow(15.2)
+            $demands = collect($demands)->toArray();
             $postSafPropTaxes->postSafTaxes($safId, $demands);                  // Save Taxes
             DB::commit();
             return responseMsgs(true, "Payment Successfully Done",  ['TransactionNo' => $tranNo], "010115", "1.0", "567ms", "POST", $req->deviceId);

@@ -1198,8 +1198,9 @@ class SafCalculation
                     $fromDate = Carbon::parse($dateFrom->format('Y-m-d'));
                     $usageType = $value['useType'];
                     if ($usageType != $this->_religiousPlaceUsageType) {                                                                     // Late Assessment Not Applicable for the Religious Floors
-                        $diffInDays = $toDate->diffInDays($fromDate);
-                        return $diffInDays > 90;
+                        $floorAhead3Months = $fromDate->addMonth(3)->format('Y-m-d');
+                        $lateStatus = $toDate >= $floorAhead3Months;
+                        return $lateStatus;
                     }
                 }
             });
@@ -1212,13 +1213,12 @@ class SafCalculation
 
         // Check Late Assessment Penalty for Vacant Land
         if ($this->_propertyDetails['propertyType'] == $this->_vacantPropertyTypeId) {
-            $currentDate = Carbon::now()->floorMonth();
-            $dateFrom = Carbon::createFromFormat('Y-m-d', $this->_propertyDetails['landOccupationDate'])->floorMonth();
-            $diffInMonths = $currentDate->diffInMonths($dateFrom);
-            $this->_lateAssessmentStatus = $diffInMonths > 3 ? true : false;
-            if ($this->_lateAssessmentStatus == true) {
+            $currentDate = Carbon::now();
+            $dateFrom = Carbon::createFromFormat('Y-m-d', $this->_propertyDetails['landOccupationDate']);
+            $floorAhead3Months = $dateFrom->addMonth(3)->format('Y-m-d');
+            $this->_lateAssessmentStatus = $currentDate >= $floorAhead3Months;
+            if ($this->_lateAssessmentStatus == true)
                 $fine = $this->_isResidential == true ? 2000 : 5000;
-            }
         }
         return $fine;
     }
