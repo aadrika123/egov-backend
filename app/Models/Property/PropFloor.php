@@ -23,6 +23,7 @@ class PropFloor extends Model
             ->join('ref_prop_occupancy_types as o', 'o.id', '=', 'prop_floors.occupancy_type_mstr_id')
             ->join('ref_prop_construction_types as c', 'c.id', '=', 'prop_floors.const_type_mstr_id')
             ->where('property_id', $propertyId)
+            ->where('status', 1)
             ->get();
     }
 
@@ -35,6 +36,7 @@ class PropFloor extends Model
     {
         return DB::table('prop_floors')
             ->where('property_id', $propertyId)
+            ->where('status', 1)
             ->get();
     }
 
@@ -82,6 +84,16 @@ class PropFloor extends Model
     {
         return PropFloor::where('saf_id', $safId)
             ->where('id', $safFloorId)
+            ->first();
+    }
+
+    /**
+     * | Get Floor by Saf Floor Id
+     */
+    public function getFloorBySafFloorId($safId, $safFloorId)
+    {
+        return PropFloor::where('saf_id', $safId)
+            ->where('saf_floor_id', $safFloorId)
             ->first();
     }
 

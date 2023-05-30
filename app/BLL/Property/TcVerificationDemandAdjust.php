@@ -173,18 +173,21 @@ class TcVerificationDemandAdjust
             // For Property Demand
             if (collect($propQtrDemand)->isNotEmpty()) {
                 if ($tax['totalTax'] > $propQtrDemand->amount) {
-                    if ($propQtrDemand->paid_status == 0) {                         // Deactivate the unpaid Demand for Creating New
+                    if ($propQtrDemand->paid_status == 0) {                                         // Deactivate the unpaid Demand for Creating New
                         $propQtrDemand->status = 0;
                         $propQtrDemand->save();
                     }
                     $adjustAmt = roundFigure($propQtrDemand->balance - $propQtrDemand->adjust_amount);
                     $balance = roundFigure($tax['balance'] - $adjustAmt);
-                    $taxes = $this->generatePropDemandTax($tax, $adjustAmt, $balance);              // Saf Demand details generation to be saved on table (1.2.3)
-                    $newDemand->push($taxes);
+                    if ($balance > 0) {
+                        $taxes = $this->generatePropDemandTax($tax, $adjustAmt, $balance);              // Saf Demand details generation to be saved on table (1.2.3)
+                        $newDemand->push($taxes);
+                    }
                 }
                 if ($tax['totalTax'] < $propQtrDemand->amount) {                                       // Case if the Demand is Decreasing
                     $advanceAmt = roundFigure($propQtrDemand->amount - $tax['totalTax']);
-                    $collectAdvanceAmt->push($advanceAmt);
+                    if ($advanceAmt > 0)
+                        $collectAdvanceAmt->push($advanceAmt);
                 }
             }
         }
