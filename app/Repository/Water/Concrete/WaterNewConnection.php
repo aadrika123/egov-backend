@@ -316,7 +316,7 @@ class WaterNewConnection implements IWaterNewConnection
                 $RazorPayRequest->related_id        = $application->id;
                 $RazorPayRequest->payment_from      = $cahges['charge_for'];
                 $RazorPayRequest->amount            = $totalAmount;
-                $RazorPayRequest->demand_from_upto  = $cahges["ids"] ?? null;
+                $RazorPayRequest->demand_from_upto  = $cahges["ids"] == "" ? null : $cahges["ids"];
                 $RazorPayRequest->penalty_id        = $cahges["penaltyIds"];
                 $RazorPayRequest->ip_address        = $request->ip();
                 $RazorPayRequest->order_id          = $temp["orderId"];
@@ -407,6 +407,7 @@ class WaterNewConnection implements IWaterNewConnection
                 ->where("related_id", $args["id"])
                 ->where("status", 2)
                 ->first();
+            // $RazorPayRequest = collect($RazorPayRequest)->filter();
             if (!$RazorPayRequest) {
                 throw new Exception("Data Not Found");
             }
