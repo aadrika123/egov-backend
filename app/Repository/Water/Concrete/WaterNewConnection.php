@@ -168,6 +168,17 @@ class WaterNewConnection implements IWaterNewConnection
                 }
             }
 
+            # show connection charges
+            switch ($value['connection_type_id']) {
+                case ($refChargeCatagoryValue['REGULAIZATION']):
+                    $value['connection_type_name'] = $refChargeCatagory['REGULAIZATION'];
+                    break;
+
+                case ($refChargeCatagoryValue['NEW_CONNECTION']):
+                    $value['connection_type_name'] = $refChargeCatagory['NEW_CONNECTION'];
+                    break;
+            }
+
             $value['transDetails'] = $mWaterTran->getTransNo($value['id'], null)->first();
             $value['calcullation'] = $mWaterParamConnFee->getCallParameter($value['property_type_id'], $value['area_sqft'])->first();
             $refConnectionCharge = $mWaterConnectionCharge->getWaterchargesById($value['id'])
