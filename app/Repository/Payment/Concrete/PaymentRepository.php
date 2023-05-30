@@ -336,21 +336,21 @@ class PaymentRepository implements iPayment
                             $objHoldingTaxController = new HoldingTaxController($this->_safRepo);
                             $transfer = new ReqPayment($transfer);
                             $objHoldingTaxController->paymentHolding($transfer);
-                        } else {                                        //<------------------ (SAF PAYMENT)
+                        } else {                                            //<------------------ (SAF PAYMENT)
                             $obj = new ActiveSafController($this->_safRepo);
                             $transfer = new ReqPayment($transfer);
                             $obj->paymentSaf($transfer);
                         }
                         break;
-                    case ('2'):                                         //<------------------- (Water)
+                    case ('2'):                                             //<------------------- (Water)
                         $objWater = new WaterNewConnection();
                         $objWater->razorPayResponse($transfer);
                         break;
-                    case ('3'):                                         //<------------------- (TRADE)
+                    case ('3'):                                             //<------------------- (TRADE)
                         $objTrade = new TradeCitizen();
                         $objTrade->razorPayResponse($transfer);
                         break;
-                    case ('5'):                                         //<-------------------- (Advertisment) 
+                    case ('5'):                                             //<-------------------- (Advertisment) 
                         $mApiMaster = new ApiMaster();
                         $api = $mApiMaster->getAdvApi();
                         Http::withHeaders([])

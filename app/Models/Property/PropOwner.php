@@ -34,6 +34,7 @@ class PropOwner extends Model
     {
         return DB::table('prop_owners')
             ->where('property_id', $propertyId)
+            ->where('status', 1)
             ->orderBy('id')
             ->get();
     }
@@ -45,6 +46,7 @@ class PropOwner extends Model
     {
         return PropOwner::where('property_id', $propId)
             ->select(
+                'id',
                 'owner_name as ownerName',
                 'mobile_no as mobileNo',
                 'guardian_name as guardianName',
@@ -53,6 +55,7 @@ class PropOwner extends Model
                 'is_armed_force',
                 'is_specially_abled'
             )
+            ->where('status', 1)
             ->orderBy('id')
             ->get();
     }
@@ -131,6 +134,7 @@ class PropOwner extends Model
             'is_armed_force' => $req->is_armed_force,
             'is_specially_abled' => $req->is_specially_abled,
             'user_id' => $req->user_id,
+            'saf_owner_id' => $req->id
         ];
     }
 

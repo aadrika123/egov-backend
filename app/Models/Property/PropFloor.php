@@ -23,6 +23,7 @@ class PropFloor extends Model
             ->join('ref_prop_occupancy_types as o', 'o.id', '=', 'prop_floors.occupancy_type_mstr_id')
             ->join('ref_prop_construction_types as c', 'c.id', '=', 'prop_floors.const_type_mstr_id')
             ->where('property_id', $propertyId)
+            ->where('prop_floors.status', 1)
             ->get();
     }
 
@@ -35,6 +36,7 @@ class PropFloor extends Model
     {
         return DB::table('prop_floors')
             ->where('property_id', $propertyId)
+            ->where('status', 1)
             ->get();
     }
 
@@ -85,6 +87,16 @@ class PropFloor extends Model
             ->first();
     }
 
+    /**
+     * | Get Floor by Saf Floor Id
+     */
+    public function getFloorBySafFloorId($safId, $safFloorId)
+    {
+        return PropFloor::where('saf_id', $safId)
+            ->where('saf_floor_id', $safFloorId)
+            ->first();
+    }
+
     /***
      * | Get Floor By Floor Id
      */
@@ -106,7 +118,11 @@ class PropFloor extends Model
             'builtup_area' => $req->builtup_area,
             'date_from' => $req->date_from,
             'date_upto' => $req->date_upto,
-            'carpet_area' => $req->carpet_area
+            'carpet_area' => $req->carpet_area,
+            'property_id' => $req->property_id,
+            'saf_id' => $req->saf_id,
+            'saf_floor_id' => $req->saf_floor_id,
+            'prop_floor_details_id' => $req->prop_floor_details_id
         ];
     }
 
@@ -124,11 +140,7 @@ class PropFloor extends Model
      */
     public function postFloor($req)
     {
-        $metaReqs = array_merge($this->metaFloorReqs($req), [
-            'property_id' => $req->property_id,
-            'saf_id' => $req->saf_id
-        ]);
-
+        $metaReqs = $this->metaFloorReqs($req);
         PropFloor::create($metaReqs);
     }
 
