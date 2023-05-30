@@ -316,7 +316,7 @@ class WaterNewConnection implements IWaterNewConnection
                 $RazorPayRequest->related_id        = $application->id;
                 $RazorPayRequest->payment_from      = $cahges['charge_for'];
                 $RazorPayRequest->amount            = $totalAmount;
-                $RazorPayRequest->demand_from_upto  = $cahges["ids"];
+                $RazorPayRequest->demand_from_upto  = $cahges["ids"] ?? null;
                 $RazorPayRequest->penalty_id        = $cahges["penaltyIds"];
                 $RazorPayRequest->ip_address        = $request->ip();
                 $RazorPayRequest->order_id          = $temp["orderId"];
