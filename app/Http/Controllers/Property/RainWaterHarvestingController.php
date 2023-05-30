@@ -18,6 +18,10 @@ use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\Workflows\WfWorkflowrolemap;
 use App\Models\WorkflowTrack;
+use App\Pipelines\HarvestingInbox\HarvestingByApplicationNo;
+use App\Pipelines\HarvestingInbox\HarvestingByName;
+use App\Pipelines\SearchHolding;
+use App\Pipelines\SearchPtn;
 use App\Repository\Property\Concrete\PropertyBifurcation;
 use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
 use Illuminate\Http\Request;
@@ -30,6 +34,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
 use Exception;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pipeline\Pipeline;
 use Illuminate\Support\Facades\Redis;
 
 /**
@@ -208,10 +213,22 @@ class RainWaterHarvestingController extends Controller
                 ->where('prop_active_harvestings.ulb_id', $ulbId)
                 ->whereIn('prop_active_harvestings.current_role', $roleId)
                 ->whereIn('a.ward_mstr_id', $occupiedWards)
-                ->orderByDesc('prop_active_harvestings.id')
+                ->orderByDesc('prop_active_harvestings.id');
+
+            $inboxList = app(Pipeline::class)
+                ->send(
+                    $harvesting
+                )
+                ->through([
+                    HarvestingByApplicationNo::class,
+                    HarvestingByName::class,
+                    SearchPtn::class,
+                    SearchHolding::class
+                ])
+                ->thenReturn()
                 ->paginate($perPage);
 
-            return responseMsgs(true, "Inbox List", remove_null($harvesting), '011108', 01, '364ms', 'Post', '');
+            return responseMsgs(true, "Inbox List", remove_null($inboxList), '011108', 01, '364ms', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }

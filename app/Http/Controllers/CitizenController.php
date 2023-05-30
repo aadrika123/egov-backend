@@ -6,10 +6,6 @@ use App\Http\Requests\Auth\ChangePassRequest;
 use App\Http\Requests\Auth\OtpChangePass;
 use App\MicroServices\DocUpload;
 use App\Models\ActiveCitizen;
-use App\Models\Property\PropProperty;
-use App\Pipelines\ModulePermissions;
-use App\Pipelines\SearchHolding;
-use App\Pipelines\SearchPtn;
 use Illuminate\Http\Request;
 use App\Repository\Citizen\iCitizenRepository;
 use Carbon\Carbon;
@@ -19,9 +15,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Pipeline\Pipeline;
-
-use function PHPUnit\Framework\isEmpty;
 
 /**
  * | Created On-08-08-2022 

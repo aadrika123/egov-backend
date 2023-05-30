@@ -5,27 +5,17 @@ namespace App\Http\Controllers\WorkflowMaster;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Property\ActiveSafController;
 use App\Http\Controllers\Property\ConcessionController;
-use App\Http\Controllers\Property\GbSafController;
 use App\Http\Controllers\Property\ObjectionController;
-use App\Http\Controllers\Property\RainWaterHarvestingController;
 use App\Models\User;
 use App\Models\Workflows\WfWorkflow;
 use Illuminate\Http\Request;
 use App\Models\Workflows\WfWorkflowrolemap;
-use App\Pipelines\SearchPtn;
-use App\Pipelines\Waterinbox;
-use App\Repository\Property\Concrete\PropertyDeactivate;
 use App\Repository\Property\Interfaces\iConcessionRepository;
 use App\Repository\Property\Interfaces\iObjectionRepository;
 use App\Repository\Property\Interfaces\iSafRepository;
-use App\Repository\Trade\Trade;
-use App\Repository\Water\Concrete\NewConnectionRepository;
 use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
-use Exception;
 use App\Traits\Workflow\Workflow;
-use Illuminate\Pipeline\Pipeline;
-use Illuminate\Support\Facades\Config;
-use Svg\Tag\Rect;
+use Exception;
 
 /**
  * Created On-14-10-2022 

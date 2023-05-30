@@ -27,13 +27,16 @@ use App\Models\Property\PropTransaction;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfWorkflowrolemap;
+use App\Pipelines\SafInbox\SearchByApplicationNo;
+use App\Pipelines\SafInbox\SearchByMobileNo;
+use App\Pipelines\SafInbox\SearchByName;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use App\Repository\Property\Interfaces\iSafRepository;
 use Carbon\Carbon;
-
+use Illuminate\Pipeline\Pipeline;
 
 /**
  * | Created On-10-02-2023 
@@ -355,7 +358,8 @@ class ActiveSafControllerV2 extends Controller
             $workflowIds = $mWorkflowRoleMap->getWfByRoleId([$agencyTcRole])->pluck('workflow_id');
             $readWards = $mWfWardUser->getWardsByUserId($userId);                       // Model () to get Occupied Wards of Current User
             $occupiedWards = collect($readWards)->pluck('ward_id');
-            $safInbox = $iSafRepo->getSaf($workflowIds)                                 // Repository function to get SAF Details
+
+            $safDtl = $iSafRepo->getSaf($workflowIds)                                 // Repository function to get SAF Details
                 ->where('parked', false)
                 ->where('is_geo_tagged', false)
                 ->where('prop_active_safs.ulb_id', $ulbId)
@@ -363,7 +367,18 @@ class ActiveSafControllerV2 extends Controller
                 ->where('current_role', $agencyTcRole)
                 ->whereIn('ward_mstr_id', $occupiedWards)
                 ->orderByDesc('id')
-                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name')
+                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name');
+
+            $safInbox = app(Pipeline::class)
+                ->send(
+                    $safDtl
+                )
+                ->through([
+                    SearchByApplicationNo::class,
+                    SearchByMobileNo::class,
+                    SearchByName::class
+                ])
+                ->thenReturn()
                 ->paginate($perPage);
 
             return responseMsgs(true, "Data Fetched", remove_null($safInbox), "011806", "1.0", "", "POST", "");

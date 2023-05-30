@@ -27,6 +27,9 @@ use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\Workflows\WfWorkflowrolemap;
 use App\Models\WorkflowTrack;
+use App\Pipelines\GbSafInbox\GbSafByApplicationNo;
+use App\Pipelines\GbSafInbox\GbSafByMobileNo;
+use App\Pipelines\GbSafInbox\GbSafByName;
 use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
 use App\Traits\Property\SAF;
 use App\Traits\Property\SafDetailsTrait;
@@ -36,6 +39,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Database\Eloquent\Collection;
 use Exception;
+use Illuminate\Pipeline\Pipeline;
 
 /**
  * | Created On-13-03-2023
@@ -67,13 +71,24 @@ class GbSafController extends Controller
             $roleIds = $mWfRoleUser->getRoleIdByUserId($userId)->pluck('wf_role_id');                      // Model to () get Role By User Id
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleIds)->pluck('workflow_id');
 
-            $safInbox = $mpropActiveSafs->getGbSaf($workflowIds)                                          // Repository function to get SAF Details
+            $safDtl = $mpropActiveSafs->getGbSaf($workflowIds)                                          // Repository function to get SAF Details
                 ->where('parked', false)
                 ->where('prop_active_safs.ulb_id', $ulbId)
                 ->where('prop_active_safs.status', 1)
                 ->whereIn('current_role', $roleIds)
                 ->whereIn('ward_mstr_id', $occupiedWards)
-                ->orderByDesc('id')
+                ->orderByDesc('id');
+
+            $safInbox = app(Pipeline::class)
+                ->send(
+                    $safDtl
+                )
+                ->through([
+                    GbSafByApplicationNo::class,
+                    GbSafByMobileNo::class,
+                    GbSafByName::class
+                ])
+                ->thenReturn()
                 ->paginate($perPage);
 
             return responseMsgs(true, "Data Fetched", remove_null($safInbox), "010103", "1.0", responseTime(), "POST", "");

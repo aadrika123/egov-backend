@@ -63,6 +63,9 @@ use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\Workflows\WfWorkflowrolemap;
 use App\Models\WorkflowTrack;
+use App\Pipelines\SafInbox\SearchByApplicationNo;
+use App\Pipelines\SafInbox\SearchByMobileNo;
+use App\Pipelines\SafInbox\SearchByName;
 use Illuminate\Http\Request;
 use App\Repository\Property\Interfaces\iSafRepository;
 use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
@@ -74,6 +77,7 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pipeline\Pipeline;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
@@ -352,14 +356,25 @@ class ActiveSafController extends Controller
             $roleIds = $mWfRoleUser->getRoleIdByUserId($userId)->pluck('wf_role_id');                      // Model to () get Role By User Id
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleIds)->pluck('workflow_id');
 
-            $safInbox = $this->Repository->getSaf($workflowIds)                                          // Repository function to get SAF Details
+            $safDtl = $this->Repository->getSaf($workflowIds)                                          // Repository function to get SAF Details
                 ->where('parked', false)
                 ->where('prop_active_safs.ulb_id', $ulbId)
                 ->where('prop_active_safs.status', 1)
                 ->whereIn('current_role', $roleIds)
                 ->whereIn('ward_mstr_id', $occupiedWards)
                 ->orderByDesc('id')
-                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name')
+                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name');
+
+            $safInbox = app(Pipeline::class)
+                ->send(
+                    $safDtl
+                )
+                ->through([
+                    SearchByApplicationNo::class,
+                    SearchByMobileNo::class,
+                    SearchByName::class
+                ])
+                ->thenReturn()
                 ->paginate($perPage);
 
             return responseMsgs(true, "Data Fetched", remove_null($safInbox), "010103", "1.0", responseTime(), "POST", "");
