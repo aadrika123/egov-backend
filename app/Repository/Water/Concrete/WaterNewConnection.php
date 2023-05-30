@@ -367,6 +367,7 @@ class WaterNewConnection implements IWaterNewConnection
             $application    = null;
             $mDemands       = (array) null;
             $mPenalty       = (array) null;
+            $refConnectionCharge = Config::get("waterConstaint.CHARGE_CATAGORY");
 
             #-----------valication------------------- 
             $RazorPayRequest = WaterRazorPayRequest::select("*")
@@ -388,12 +389,19 @@ class WaterNewConnection implements IWaterNewConnection
                         ->get();
                     $cahges = $cahges + ($mDemands->sum("amount") ?? 0);
                 }
+                if ($RazorPayRequest['payment_from'] == $refConnectionCharge['SITE_INSPECTON']) {
+                    $mDemands = WaterConnectionCharge::select("*")
+                        ->where("application_id", $args['id'])
+                        ->where("charge_category", $refConnectionCharge['SITE_INSPECTON'])
+                        ->get();
+                    $cahges = $mDemands->sum("conn_fee") ?? 0;
+                }
                 if ($penalty_id) {
 
                     $mPenalty = WaterPenaltyInstallment::select("*")
                         ->whereIn("id", $penalty_id)
                         ->get();
-                    $cahges = $cahges + ($mDemands->sum("balance_amount"));
+                    $cahges = $cahges + ($mPenalty->sum("balance_amount"));
                 }
                 $chargeData["total_charge"] = $cahges;
             }
