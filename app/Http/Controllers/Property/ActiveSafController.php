@@ -1169,7 +1169,8 @@ class ActiveSafController extends Controller
                     'date_upto' => $floorDetail->date_upto,
                     'carpet_area' => $floorDetail->carpet_area,
                     'property_id' => $propId,
-                    'saf_id' => $safId
+                    'saf_id' => $safId,
+                    'saf_floor_id' => $floorDetail->id
 
                 ]);
                 if ($ifFloorExist) {
@@ -1368,8 +1369,12 @@ class ActiveSafController extends Controller
             $floorDetail->delete();
         }
 
+        // Deactivate Existing Prop Floors by Saf Id
+        $existingFloors = $mPropFloors->getFloorsByPropId($propId);
+        if ($existingFloors)
+            $existingFloors->update(['status' => 0]);
+
         foreach ($fieldVerifiedSaf as $key) {
-            $ifFloorExist = $mPropFloors->getFloorBySafFloorIdSafId($safId, $key->saf_floor_id);
             $floorReqs = new Request([
                 'floor_mstr_id' => $key->floor_mstr_id,
                 'usage_type_mstr_id' => $key->usage_type_id,
@@ -1383,10 +1388,7 @@ class ActiveSafController extends Controller
                 'saf_id' => $safId
 
             ]);
-            if ($ifFloorExist) {
-                $mPropFloors->editFloor($ifFloorExist, $floorReqs);
-            } else
-                $mPropFloors->postFloor($floorReqs);
+            $mPropFloors->postFloor($floorReqs);
         }
     }
 
