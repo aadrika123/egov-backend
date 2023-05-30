@@ -20,6 +20,8 @@ use App\MicroServices\IdGeneration;
 use App\MicroServices\IdGenerator\PrefixIdGenerator;
 use App\Models\CustomDetail;
 use App\Models\Payment\TempTransaction;
+use App\Models\Property\Logs\LogPropFloor;
+use App\Models\Property\Logs\LogPropOwner;
 use App\Models\Property\PaymentPropPenaltyrebate;
 use App\Models\Property\PaymentPropPenalty;
 use App\Models\Property\PropActiveSaf;
@@ -1136,11 +1138,19 @@ class ActiveSafController extends Controller
             $mProperty = new PropProperty();
             $mPropOwners = new PropOwner();
             $mPropFloors = new PropFloor();
+            $mLogPropFloors = new LogPropFloor();
+            $mLogPropOwner = new LogPropOwner();
             // Edit Property
             $mProperty->editPropBySaf($propId, $activeSaf);
             // Edit Owners 
             foreach ($ownerDetails as $ownerDetail) {
                 if ($assessmentType == 'Reassessment') {            // In Case of Reassessment Edit Owners
+                    // Logging of Prop Owners
+                    $ownerExists = $mPropOwners->getOwnerByPropId($propId);
+                    foreach ($ownerExists as $ownerExist) {
+                        $mLogPropOwner->replicateOwnerByPropOwners($ownerExist->id);
+                    }
+
                     if (!is_null($ownerDetail->prop_owner_id))
                         $ifOwnerExist = $mPropOwners->getOwnerByPropOwnerId($ownerDetail->prop_owner_id);
 
@@ -1157,8 +1167,17 @@ class ActiveSafController extends Controller
                 }
             }
             // Edit Floors
+            /**
+             * | Existing Floors Logs Before Updation
+             */
+            $floorExists = $mPropFloors->getFloorsByPropId($propId);
+            foreach ($floorExists as $floorExist) {
+                $mLogPropFloors->replicateFloorByPropFloors($floorExist->id);
+            }
+
             foreach ($floorDetails as $floorDetail) {
-                $ifFloorExist = $mPropFloors->getFloorByFloorId($floorDetail->prop_floor_details_id);
+                if (!is_null($floorDetail->prop_floor_details_id))
+                    $ifFloorExist = $mPropFloors->getFloorByFloorId($floorDetail->prop_floor_details_id);
                 $floorReqs = new Request([
                     'floor_mstr_id' => $floorDetail->floor_mstr_id,
                     'usage_type_mstr_id' => $floorDetail->usage_type_mstr_id,
@@ -1170,13 +1189,20 @@ class ActiveSafController extends Controller
                     'carpet_area' => $floorDetail->carpet_area,
                     'property_id' => $propId,
                     'saf_id' => $safId,
-                    'saf_floor_id' => $floorDetail->id
+                    'saf_floor_id' => $floorDetail->id,
+                    'prop_floor_details_id' => $floorDetail->prop_floor_details_id
 
                 ]);
-                if ($ifFloorExist) {
+                if (isset($ifFloorExist))
                     $mPropFloors->editFloor($ifFloorExist, $floorReqs);
-                } else
-                    $mPropFloors->postFloor($floorReqs);
+                else                      // If floor Not Exist by Prop Saf Id
+                {
+                    $isFloorBySafFloorId = $mPropFloors->getFloorBySafFloorId($safId, $floorDetail->id);        // Check the Floor Existance by Saf Floor Id
+                    if ($isFloorBySafFloorId)       // If Floor Exist By Saf Floor Id
+                        $mPropFloors->editFloor($isFloorBySafFloorId, $floorReqs);
+                    else
+                        $mPropFloors->postFloor($floorReqs);
+                }
             }
         }
     }
@@ -1236,8 +1262,8 @@ class ActiveSafController extends Controller
 
             $roleId = $readRoleDtls->wf_role_id;
 
-            // if ($safDetails->finisher_role_id != $roleId)
-            //     throw new Exception("Forbidden Access");
+            if ($safDetails->finisher_role_id != $roleId)
+                throw new Exception("Forbidden Access");
             $activeSaf = PropActiveSaf::query()
                 ->where('id', $req->applicationId)
                 ->first();
@@ -1372,7 +1398,7 @@ class ActiveSafController extends Controller
         // Deactivate Existing Prop Floors by Saf Id
         $existingFloors = $mPropFloors->getFloorsByPropId($propId);
         if ($existingFloors)
-            $existingFloors->update(['status' => 0]);
+            $mPropFloors->deactivateFloorsByPropId($propId);
 
         foreach ($fieldVerifiedSaf as $key) {
             $floorReqs = new Request([
@@ -1386,7 +1412,6 @@ class ActiveSafController extends Controller
                 'carpet_area' => $key->carpet_area,
                 'property_id' => $propId,
                 'saf_id' => $safId
-
             ]);
             $mPropFloors->postFloor($floorReqs);
         }
@@ -2362,7 +2387,7 @@ class ActiveSafController extends Controller
                 "ownership_type" => $req['ownership_type']
             ];
             $demand['amounts'] = $safTaxes->original['data']['demand'];
-            $demand['details'] = collect($safTaxes->original['data']['details']);
+            $demand['details'] = collect($safTaxes->original['data']['details'])->values();
             $demand['taxDetails'] = collect($safTaxes->original['data']['taxDetails']);
             $demand['paymentStatus'] = $safDetails['payment_status'];
             $demand['applicationNo'] = $safDetails['saf_no'];

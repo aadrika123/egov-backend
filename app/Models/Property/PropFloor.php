@@ -41,6 +41,19 @@ class PropFloor extends Model
     }
 
     /**
+     * | Deactivate Floors By Prop ID
+     */
+    public function deactivateFloorsByPropId($propId)
+    {
+        DB::table('prop_floors')
+            ->where('property_id', $propId)
+            ->where('status', 1)
+            ->update([
+                'status' => 0
+            ]);
+    }
+
+    /**
      * | Get occupancy type according to holding id
      */
     public function getOccupancyType($propertyId, $refTenanted)
@@ -118,7 +131,11 @@ class PropFloor extends Model
             'builtup_area' => $req->builtup_area,
             'date_from' => $req->date_from,
             'date_upto' => $req->date_upto,
-            'carpet_area' => $req->carpet_area
+            'carpet_area' => $req->carpet_area,
+            'property_id' => $req->property_id,
+            'saf_id' => $req->saf_id,
+            'saf_floor_id' => $req->saf_floor_id,
+            'prop_floor_details_id' => $req->prop_floor_details_id
         ];
     }
 
@@ -136,11 +153,7 @@ class PropFloor extends Model
      */
     public function postFloor($req)
     {
-        $metaReqs = array_merge($this->metaFloorReqs($req), [
-            'property_id' => $req->property_id,
-            'saf_id' => $req->saf_id
-        ]);
-
+        $metaReqs = $this->metaFloorReqs($req);
         PropFloor::create($metaReqs);
     }
 

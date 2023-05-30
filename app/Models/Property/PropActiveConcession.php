@@ -162,7 +162,7 @@ class PropActiveConcession extends Model
         )
 
             ->join('workflow_tracks', 'workflow_tracks.ref_table_id_value', 'prop_active_concessions.id')
-            ->where('prop_active_concessions.current_role', $currentRole)
+            ->where('workflow_tracks.receiver_role_id', $currentRole)
             ->where('workflow_tracks.ulb_id', $ulbId)
             ->where('ref_table_dot_id', 'prop_active_concessions.id')
             ->whereRaw("date(track_date) = '$date'")
