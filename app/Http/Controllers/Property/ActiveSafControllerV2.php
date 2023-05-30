@@ -32,6 +32,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use App\Repository\Property\Interfaces\iSafRepository;
+use App\Traits\Property\SAF;
 use Carbon\Carbon;
 
 
@@ -42,7 +43,7 @@ use Carbon\Carbon;
 
 class ActiveSafControllerV2 extends Controller
 {
-
+    use SAF;
     /**
      * | Edit Applied Saf by SAF Id for BackOffice
      * | @param request $req
@@ -82,6 +83,10 @@ class ActiveSafControllerV2 extends Controller
                 $existingOwnerIds = $existingOwners->pluck('safOwnerId');
                 $toDeleteOwners = $refSafOwners->whereNotIn('id', $existingOwnerIds)->values();
                 $toDeleteOwnerIds = $toDeleteOwners->pluck('id');
+
+                $roadWidthType = $this->readRoadWidthType($req->roadType);          // Read Road Width Type
+                $req = $req->merge(['road_type_mstr_id' => $roadWidthType]);
+
                 DB::beginTransaction();
                 // Edit Active Saf
                 $mActiveSaf->safEdit($req, $mPropActiveSaf, $citizenId);
@@ -181,7 +186,11 @@ class ActiveSafControllerV2 extends Controller
                 $safId = $details->saf_id;
 
                 $safTaxes = $propSafTax->getSafTaxesBySafId($safId);
+                if ($safTaxes->isEmpty())
+                    throw new Exception("Saf Taxes Not Available");
                 $propTaxes = $propTax->getPropTaxesByPropId($propId);
+                if ($propTaxes->isEmpty())
+                    throw new Exception("Prop Taxes Not Available");
                 $holdingTaxes = $propTaxes->map(function ($propTax) use ($safTaxes) {
                     $ulbTax = $propTax;
                     $selfAssessTaxes = $safTaxes->where('fyear', $propTax->fyear)     // Holding Tax Amount without penalty
@@ -346,6 +355,7 @@ class ActiveSafControllerV2 extends Controller
             $mWorkflowRoleMap = new WfWorkflowrolemap();
             $userId = auth()->user()->id;
             $ulbId = auth()->user()->ulb_id;
+            $perPage = $req->perPage ?? 10;
 
             $workflowIds = $mWorkflowRoleMap->getWfByRoleId([$agencyTcRole])->pluck('workflow_id');
             $readWards = $mWfWardUser->getWardsByUserId($userId);                       // Model () to get Occupied Wards of Current User
@@ -359,9 +369,9 @@ class ActiveSafControllerV2 extends Controller
                 ->whereIn('ward_mstr_id', $occupiedWards)
                 ->orderByDesc('id')
                 ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name')
-                ->get();
+                ->paginate($perPage);
 
-            return responseMsgs(true, "Data Fetched", remove_null($safInbox->values()), "011806", "1.0", "", "POST", "");
+            return responseMsgs(true, "Data Fetched", remove_null($safInbox), "011806", "1.0", "", "POST", "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011806", "1.0", "", "POST", $req->deviceId ?? "");
         }

@@ -207,8 +207,17 @@ class ClusterController extends Controller
             'holdingNo'     => 'required',
         ]);
         try {
+            $perPage = $request->perPage ?? 10;
             $mPropProperty = new PropProperty();
-            $holdingDetails = $mPropProperty->searchHolding($request->holdingNo);
+            $holdingDtls = $mPropProperty->searchHolding()
+                ->where('prop_properties.holding_no', 'LIKE', '%' . $request->holdingNo);
+
+            $newHoldingDtls = $mPropProperty->searchHolding()
+                ->where('prop_properties.new_holding_no', 'LIKE', '%' . $request->holdingNo);
+
+            $holdingDetails = $holdingDtls->union($newHoldingDtls)
+                ->paginate($perPage);
+
             return responseMsgs(true, "List of holding!", $holdingDetails, "", "02", "", "POST", "");
         } catch (Exception $error) {
             return responseMsg(false, $error->getMessage(), "");
@@ -226,16 +235,16 @@ class ClusterController extends Controller
             $mPropProperty = new PropProperty();
             $mCluster = new Cluster();
             $mPropDemand = new PropDemand();
-            $notActive = "Not a valid cluter ID!";
+            $notActive = "Not a valid cluster ID!";
 
             $uniqueValues = collect($request->holdingNo)->unique();
             if ($uniqueValues->count() !== count($request->holdingNo)) {
-                throw new Exception("holding should no Contain Dublicate Value!");
+                throw new Exception("Holding should not Contain Duplicate Value!");
             }
 
             $results = $mPropProperty->searchCollectiveHolding($request->holdingNo);
             if ($results->count() != count($request->holdingNo)) {
-                throw new Exception("the holding details contain invalid data");
+                throw new Exception("The holding details contain invalid data");
             }
 
             $checkActiveCluster =  $mCluster->checkActiveCluster($request->clusterId);
@@ -267,7 +276,11 @@ class ClusterController extends Controller
         ]);
         try {
             $mPropActiveSaf = new PropActiveSaf();
-            $application = collect($mPropActiveSaf->searchSafDtlsBySafNo($request->safNo));
+            $perPage = $request->perPage ?? 10;
+            $application = $mPropActiveSaf->searchSafDtlsBySafNo()
+                ->where('s.saf_no', 'LIKE', '%' . $request->safNo)->get();
+            // ->paginate($perPage);
+
             return responseMsgs(true, "Listed Saf!", $application, "", "02", "", "POST", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
@@ -312,15 +325,6 @@ class ClusterController extends Controller
             return responseMsg(false, $error->getMessage(), "");
         }
     }
-
-
-
-
-    /**
-     * |----------------------------------- Common functions ----------------------------------------|
-     * |date : 21-11-22
-     */
-
 
     /**
      * | ----------------- Common funtion for the return component in failer ------------------------------- |

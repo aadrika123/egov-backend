@@ -113,8 +113,8 @@ class Cluster extends Model
             ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'clusters.ward_mstr_id')
             ->leftJoin('ulb_ward_masters as u', 'u.id', '=', 'clusters.new_ward_mstr_id')
             ->where('clusters.status', 1)
-            ->where('clusters.ulb_id', auth()->user()->ulb_id)
-            ->orderBy('clusters.id')
+            ->where('clusters.ulb_id', auth()->user()->ulb_id ?? 2)
+            ->orderBy('cluster_name')
             ->get();
     }
 

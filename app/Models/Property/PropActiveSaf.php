@@ -403,7 +403,7 @@ class  PropActiveSaf extends Model
     /**
      * | Serch Saf 
      */
-    public function searchSafDtlsBySafNo($safNo)
+    public function searchSafDtlsBySafNo()
     {
         return DB::table('prop_active_safs as s')
             ->select(
@@ -422,9 +422,7 @@ class  PropActiveSaf extends Model
             )
             ->join('prop_active_safs_owners', 'prop_active_safs_owners.saf_id', '=', 's.id')
             ->join('ref_prop_types', 'ref_prop_types.id', '=', 's.prop_type_mstr_id')
-            ->where('s.saf_no', 'LIKE', '%' . $safNo)
-            ->where('ulb_id', auth()->user()->ulb_id)
-            ->get();
+            ->where('ulb_id', auth()->user()->ulb_id);
     }
 
     /**
@@ -504,12 +502,8 @@ class  PropActiveSaf extends Model
     public function safEdit($req, $mPropActiveSaf, $citizenId)
     {
         $reqs = [
-            'has_previous_holding_no' => $req->hasPreviousHoldingNo,
-            'previous_holding_id' => $req->previousHoldingId,
             'previous_ward_mstr_id' => $req->previousWard,
-            'is_owner_changed' => $req->isOwnerChanged,
             'transfer_mode_mstr_id' => $req->transferModeId ?? null,
-            'holding_no' => $req->holdingNo,
             'ward_mstr_id' => $req->ward,
             'ownership_type_mstr_id' => $req->ownershipType,
             'prop_type_mstr_id' => $req->propertyType,
@@ -556,9 +550,7 @@ class  PropActiveSaf extends Model
             'land_occupation_date' => $req->landOccupationDate,
             'doc_verify_cancel_remarks' => $req->docVerifyCancelRemark,
             'application_date' =>  Carbon::now()->format('Y-m-d'),
-            'assessment_type' => $req->assessmentType,
             'saf_distributed_dtl_id' => $req->safDistributedDtl,
-            'prop_dtl_id' => $req->propDtl,
             'prop_state' => $req->propState,
             'corr_state' => $req->corrState,
             'holding_type' => $req->holdingType,

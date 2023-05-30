@@ -958,10 +958,14 @@ class ActiveSafController extends Controller
                 if ($saf->doc_verify_status == 0)
                     throw new Exception("Document Not Fully Verified");
                 $idGeneration = new PrefixIdGenerator($ptParamId, $saf->ulb_id);
-                $ptNo = $idGeneration->generate();
-                $saf->pt_no = $ptNo;                        // Generate New Property Tax No for All Conditions
-                $saf->save();
 
+
+                if (in_array($saf->assessmentType, ['New Assessment', 'Bifurcation', 'Amalgamation'])) { // Make New Property For New Assessment,Bifurcation and Amalgamation
+                    $ptNo = $idGeneration->generate();
+                    $saf->pt_no = $ptNo;                        // Generate New Property Tax No for All Conditions
+                    $saf->save();
+                }
+                $ptNo = $saf->pt_no;
                 $samIdGeneration = new PrefixIdGenerator($samParamId, $saf->ulb_id);
                 $samNo = $samIdGeneration->generate();                 // Generate SAM No
                 $mergedDemand = array_merge($demand->toArray(), [
@@ -1113,6 +1117,7 @@ class ActiveSafController extends Controller
         // Edit In Case of Reassessment,Mutation
         if (in_array($assessmentType, ['Reassessment', 'Mutation'])) {         // Edit Property In case of Reassessment, Mutation
             $propId = $activeSaf->previous_holding_id;
+            $this->_replicatedPropId = $propId;
             $mProperty = new PropProperty();
             $mPropOwners = new PropOwner();
             $mPropFloors = new PropFloor();
@@ -1120,13 +1125,21 @@ class ActiveSafController extends Controller
             $mProperty->editPropBySaf($propId, $activeSaf);
             // Edit Owners 
             foreach ($ownerDetails as $ownerDetail) {
-                $ifOwnerExist = $mPropOwners->getPropOwnerByOwnerId($ownerDetail->id);
-                $ownerDetail = array_merge($ownerDetail->toArray(), ['property_id' => $propId]);
-                $ownerDetail = new Request($ownerDetail);
-                if ($ifOwnerExist)
-                    $mPropOwners->editOwner($ownerDetail);
-                else
+                if ($assessmentType == 'Reassessment') {            // In Case of Reassessment Edit Owners
+                    if (!is_null($ownerDetail->prop_owner_id))
+                        $ifOwnerExist = $mPropOwners->getOwnerByPropOwnerId($ownerDetail->prop_owner_id);
+
+                    if ($ifOwnerExist) {
+                        $ownerDetail = array_merge($ownerDetail->toArray(), ['property_id' => $propId]);
+                        $ownerDetail = new Request($ownerDetail);
+                        $mPropOwners->editOwner($ownerDetail);
+                    }
+                }
+                if ($assessmentType == 'Mutation') {            // In Case of Mutation Add Owners
+                    $ownerDetail = array_merge($ownerDetail->toArray(), ['property_id' => $propId]);
+                    $ownerDetail = new Request($ownerDetail);
                     $mPropOwners->postOwner($ownerDetail);
+                }
             }
             // Edit Floors
             foreach ($floorDetails as $floorDetail) {
@@ -1748,7 +1761,7 @@ class ActiveSafController extends Controller
             $verifyPaymentModes = Config::get('payment-constants.VERIFICATION_PAYMENT_MODES');
             $mPropTranDtl = new PropTranDtl();
             $previousHoldingDeactivation = new PreviousHoldingDeactivation;
-
+            $postSafPropTaxes = new PostSafPropTaxes;
             $safId = $req['id'];
 
             $activeSaf = PropActiveSaf::findOrFail($req['id']);
@@ -1829,7 +1842,7 @@ class ActiveSafController extends Controller
             // Update SAF Payment Status
             $activeSaf->save();
             $this->sendToWorkflow($activeSaf);        // Send to Workflow(15.2)
-
+            $postSafPropTaxes->postSafTaxes($safId, $demands);                  // Save Taxes
             DB::commit();
             return responseMsgs(true, "Payment Successfully Done",  ['TransactionNo' => $tranNo], "010115", "1.0", "567ms", "POST", $req->deviceId);
         } catch (Exception $e) {

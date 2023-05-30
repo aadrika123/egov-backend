@@ -46,7 +46,7 @@ class WorkflowRoleRepository implements iWorkflowRoleRepository
     {
         try {
             $data = WfRole::where('status', 1)
-                ->orderByDesc('id')
+                ->orderBy('id')
                 ->get();
             return responseMsg(true, "Successfully Saved", $data);
         } catch (Exception $e) {
