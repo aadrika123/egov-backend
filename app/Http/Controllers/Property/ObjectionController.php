@@ -27,6 +27,7 @@ use App\Models\Workflows\WfWorkflowrolemap;
 use App\Models\WorkflowTrack;
 use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
 use App\Traits\Property\SafDetailsTrait;
+use App\Traits\Property\SafDoc;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Config;
@@ -42,6 +43,7 @@ use Illuminate\Support\Facades\Redis;
 
 class ObjectionController extends Controller
 {
+    use SafDoc;
     use WorkflowTrait;
     use Objection;
     use SafDetailsTrait;
@@ -862,6 +864,9 @@ class ObjectionController extends Controller
             if (!$refApplication)
                 throw new Exception("Application Not Found for this id");
             $objectionDoc['listDocs'] = $this->getDocList($refApplication, $ownerDetails, $objectionType);
+            // $objectionDoc['ownerDocs'] = collect($ownerDetails)->map(function ($owner) use ($refApplication) {
+            //     return $this->getOwnerDocLists($owner, $refApplication);
+            // });
 
             return responseMsgs(true, "", remove_null($objectionDoc), "010203", "", "", 'POST', "");
         } catch (Exception $e) {
@@ -909,6 +914,34 @@ class ObjectionController extends Controller
             $filteredDocs = $this->filterDocument($documentList, $refApplication);                                     // function(1.2)
         else
             $filteredDocs = [];
+        return $filteredDocs;
+    }
+
+    /**
+     * | Get Owner Document Lists
+     */
+    public function getOwnerDocLists($refOwners, $refSafs)
+    {
+        $mWfActiveDocument = new WfActiveDocument();
+        $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
+        $documentList = $this->getOwnerDocs($refOwners);
+
+        if (!empty($documentList)) {
+            $ownerPhoto = $mWfActiveDocument->getOwnerPhotograph($refSafs['id'], $refSafs->workflow_id, $moduleId, $refOwners['id']);
+            $filteredDocs['ownerDetails'] = [
+                'ownerId' => $refOwners['id'],
+                'name' => $refOwners['owner_name'],
+                'mobile' => $refOwners['mobile_no'],
+                'guardian' => $refOwners['guardian_name'],
+                'uploadedDoc' => $ownerPhoto->doc_path ?? "",
+                'verifyStatus' => $ownerPhoto->verify_status ?? ""
+            ];
+            $filteredDocs['documents'] = $this->filterDocument($documentList, $refSafs, $refOwners['id']);                                     // function(1.2)
+        } else
+            $filteredDocs = [];
+
+        $filteredDocs['ownerDetails']['reqDocCount'] = $filteredDocs['documents']->count();
+        $filteredDocs['ownerDetails']['uploadedDocCount'] = $filteredDocs['documents']->whereNotNull('uploadedDoc')->count();
         return $filteredDocs;
     }
 
