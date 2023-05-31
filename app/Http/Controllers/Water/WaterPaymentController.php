@@ -291,17 +291,6 @@ class WaterPaymentController extends Controller
                 ->first();
 
             # if penalty Charges
-            if ($connectionCharges) {
-                $individulePenaltyCharges = $mWaterPenaltyInstallment->getPenaltyByApplicationId($transactionDetails->related_id)
-                    ->where('paid_status', 1)
-                    ->get();
-                $checkPenaltyExist = collect($individulePenaltyCharges)->first();
-                if ($checkPenaltyExist) {
-                    $totalPenaltyAmount = collect($individulePenaltyCharges)->map(function ($value) {
-                        return $value['balance_amount'];
-                    })->sum();
-                }
-            }
             if ($transactionDetails->penalty_ids) {
                 $penaltyIds = explode(',', $transactionDetails->penalty_ids);
                 $refPenalty = $mWaterPenaltyInstallment->getPenaltyByArrayOfId($penaltyIds);
