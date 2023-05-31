@@ -69,7 +69,6 @@ trait SafDoc
         $transferModes = $this->_refSafs->transfer_mode_mstr_id;
         switch ($transferModes) {
             case 1:
-
                 $this->_documentLists .=  collect($this->_propDocList)->where('code', 'PROP_MUTATION_SALE_TRANSFER')->first()->requirements;                     // Sale Document Add
                 break;
             case 2:
@@ -85,7 +84,7 @@ trait SafDoc
                 $this->_documentLists .= collect($this->_propDocList)->where('code', 'PROP_MUTATION_PARTITION_TRANSFER')->first()->requirements;                    // Partition Document Add
                 break;
             case 6:
-                $this->_documentLists .=  $this->_documentLists .= collect($this->_propDocList)->where('code', 'PROP_MUTATION_SUCCESSION_TRANSFER')->first()->requirements;                     // Succession Document Add
+                $this->_documentLists .=  collect($this->_propDocList)->where('code', 'PROP_MUTATION_SUCCESSION_TRANSFER')->first()->requirements;                     // Succession Document Add
                 break;
         }
     }
