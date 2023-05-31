@@ -1154,7 +1154,7 @@ class ActiveSafController extends Controller
                     if (!is_null($ownerDetail->prop_owner_id))
                         $ifOwnerExist = $mPropOwners->getOwnerByPropOwnerId($ownerDetail->prop_owner_id);
 
-                    if ($ifOwnerExist) {
+                    if (isset($ifOwnerExist)) {
                         $ownerDetail = array_merge($ownerDetail->toArray(), ['property_id' => $propId]);
                         $ownerDetail = new Request($ownerDetail);
                         $mPropOwners->editOwner($ownerDetail);
