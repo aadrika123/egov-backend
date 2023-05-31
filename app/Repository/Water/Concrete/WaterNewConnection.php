@@ -281,6 +281,7 @@ class WaterNewConnection implements IWaterNewConnection
                         $amount = $cahges["amount"];
                         $rebat = $cahges["rabate"];
                         $cahges["penaltyIds"] = $cahges['installment_ids'];
+                        $cahges['charge_for'] = $refRegulization['REGULAIZATION'];
                         break;
                     case ("yes"):
                         $request->validate([
@@ -295,6 +296,7 @@ class WaterNewConnection implements IWaterNewConnection
                         $amount = $cahges['conn_fee'];
                         $penalty = $refPenaltyAmount;
                         $cahges["penaltyIds"] = implode(',', $request->penaltyIds);
+                        $cahges['charge_for'] = $refRegulization['REGULAIZATION'];
                         break;
                 }
                 if ($cahges['charge_for'] == $refRegulization['SITE_INSPECTON']) {
@@ -314,7 +316,7 @@ class WaterNewConnection implements IWaterNewConnection
                 $RazorPayRequest->related_id        = $application->id;
                 $RazorPayRequest->payment_from      = $cahges['charge_for'];
                 $RazorPayRequest->amount            = $totalAmount;
-                $RazorPayRequest->demand_from_upto  = $cahges["ids"];
+                $RazorPayRequest->demand_from_upto  = $cahges["ids"] == "" ? null : $cahges["ids"];
                 $RazorPayRequest->penalty_id        = $cahges["penaltyIds"];
                 $RazorPayRequest->ip_address        = $request->ip();
                 $RazorPayRequest->order_id          = $temp["orderId"];
@@ -405,6 +407,7 @@ class WaterNewConnection implements IWaterNewConnection
                 ->where("related_id", $args["id"])
                 ->where("status", 2)
                 ->first();
+            // $RazorPayRequest = collect($RazorPayRequest)->filter();
             if (!$RazorPayRequest) {
                 throw new Exception("Data Not Found");
             }
@@ -517,7 +520,6 @@ class WaterNewConnection implements IWaterNewConnection
                 $val->paid_status = 1;
                 $val->update();
             }
-            ////////////////////////////////////////
             # Check 
             if ($RazorPayRequest->payment_from == "New Connection") {
                 $application->current_role = !$application->current_role ? $this->_dealingAssistent : $application->current_role;
@@ -527,7 +529,6 @@ class WaterNewConnection implements IWaterNewConnection
                 $application->current_role = !$application->current_role ? $this->_dealingAssistent : $application->current_role;
                 $application->update();
             }
-            /////////////////////////////////////////
             if ($RazorPayRequest->payment_from == "Site Inspection") {
                 $mWaterSiteInspection = new WaterSiteInspection();
                 $mWaterSiteInspection->saveSitePaymentStatus($applicationId);
