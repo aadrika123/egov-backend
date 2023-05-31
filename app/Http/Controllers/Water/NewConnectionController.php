@@ -698,14 +698,13 @@ class NewConnectionController extends Controller
         ]);
         try {
             $user                       = authUser();
-            $userId                     = $user->id;
             $mWaterApplication          = new WaterApplication();
             $mWaterApplicant            = new WaterApplicant();
             $mWaterConnectionCharge     = new WaterConnectionCharge();
             $mWaterPenaltyInstallment   = new WaterPenaltyInstallment();
 
             $applicantDetals = $mWaterApplication->getWaterApplicationsDetails($req->applicationId);
-            $this->checkParamsForApplicationDelete($applicantDetals, $userId);
+            $this->checkParamsForApplicationDelete($applicantDetals, $user);
 
             DB::beginTransaction();
             $mWaterApplication->deleteWaterApplication($req->applicationId);

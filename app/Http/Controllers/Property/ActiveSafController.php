@@ -977,7 +977,7 @@ class ActiveSafController extends Controller
                 $idGeneration = new PrefixIdGenerator($ptParamId, $saf->ulb_id);
 
 
-                if (in_array($saf->assessmentType, ['New Assessment', 'Bifurcation', 'Amalgamation'])) { // Make New Property For New Assessment,Bifurcation and Amalgamation
+                if (in_array($saf->assessmentType, ['New Assessment', 'Bifurcation', 'Amalgamation', 'Mutation'])) { // Make New Property For New Assessment,Bifurcation and Amalgamation & Mutation
                     $ptNo = $idGeneration->generate();
                     $saf->pt_no = $ptNo;                        // Generate New Property Tax No for All Conditions
                     $saf->save();
@@ -1106,7 +1106,7 @@ class ActiveSafController extends Controller
 
         $assessmentType = $activeSaf->assessment_type;
 
-        if (in_array($assessmentType, ['New Assessment', 'Bifurcation', 'Amalgamation'])) { // Make New Property For New Assessment,Bifurcation and Amalgamation
+        if (in_array($assessmentType, ['New Assessment', 'Bifurcation', 'Amalgamation', 'Mutation'])) { // Make New Property For New Assessment,Bifurcation and Amalgamation
             $propProperties = $toBeProperties->replicate();
             $propProperties->setTable('prop_properties');
             $propProperties->saf_id = $activeSaf->id;
@@ -1132,7 +1132,7 @@ class ActiveSafController extends Controller
         }
 
         // Edit In Case of Reassessment,Mutation
-        if (in_array($assessmentType, ['Reassessment', 'Mutation'])) {         // Edit Property In case of Reassessment, Mutation
+        if (in_array($assessmentType, ['Reassessment'])) {         // Edit Property In case of Reassessment, Mutation
             $propId = $activeSaf->previous_holding_id;
             $this->_replicatedPropId = $propId;
             $mProperty = new PropProperty();
@@ -1566,6 +1566,8 @@ class ActiveSafController extends Controller
             $req->request->add(['workflowId' => $safDetails->workflow_id, 'ghostUserId' => 0, 'amount' => $totalAmount]);
             DB::beginTransaction();
             $orderDetails = $this->saveGenerateOrderid($req);                                      //<---------- Generate Order ID Trait
+            if ($orderDetails->original['status'] == false)
+                return $orderDetails->original;
             $demands = array_merge($demands->toArray(), [
                 'orderId' => $orderDetails['orderId']
             ]);

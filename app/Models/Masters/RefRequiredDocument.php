@@ -21,6 +21,16 @@ class RefRequiredDocument extends Model
     }
 
     /**
+     * | Get Documents where module Id
+     */
+    public function getDocsByModuleId($moduleId)
+    {
+        return RefRequiredDocument::select('code', 'requirements')
+            ->where('module_id', $moduleId)
+            ->get();
+    }
+
+    /**
      * | Get  All Document Collictively For Array Of DocCode
      */
     public function getCollectiveDocByCode($moduldId, $docCodes)
