@@ -15,37 +15,79 @@ use Illuminate\Support\Facades\Config;
  */
 trait SafDoc
 {
-    public function getPropTypeDocList($refSafs)
+    private $_refSafs;
+    private $_documentLists;
+    private $_mRefReqDocs;
+    private $_moduleId;
+    private $_propLists;
+    private $_propDocList;
+
+    public function __construct()
     {
-        $mRefReqDocs = new RefRequiredDocument();
-        $propTypes = Config::get('PropertyConstaint.PROPERTY-TYPE');
-        $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
-        $propType = $refSafs->prop_type_mstr_id;
-
-        $flip = flipConstants($propTypes);
-        switch ($propType) {
-            case $flip['FLATS / UNIT IN MULTI STORIED BUILDING']:
-                $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PROP_FLATS")->requirements;
-                break;
-            case $flip['INDEPENDENT BUILDING']:
-                $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PROP_INDEPENDENT_BUILDING")->requirements;
-                break;
-            case $flip['SUPER STRUCTURE']:
-                $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PROP_SUPER_STRUCTURE")->requirements;
-                break;
-            case $flip['VACANT LAND']:
-                $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PROP_VACANT_LAND")->requirements;     // Function (1.1)
-                break;
-            case $flip['OCCUPIED PROPERTY']:
-                $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PROP_OCCUPIED_PROPERTY")->requirements;     // Function (1.1)
-                break;
-        }
-        if ($refSafs->is_trust == true)
-            $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "PROP_TRUST")->requirements;
-
-        return $documentList;
+        $this->_moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
+        $this->_mRefReqDocs = new RefRequiredDocument();
+        $this->_propDocList = $this->_mRefReqDocs->getDocsByModuleId($this->_moduleId);
     }
 
+    public function getPropTypeDocList($refSafs)
+    {
+        $propTypes = Config::get('PropertyConstaint.PROPERTY-TYPE');
+        $propType = $refSafs->prop_type_mstr_id;
+        $flip = flipConstants($propTypes);
+        $this->_refSafs = $refSafs;
+        switch ($propType) {
+            case $flip['FLATS / UNIT IN MULTI STORIED BUILDING']:
+                $this->_documentLists = collect($this->_propDocList)->where('code', 'PROP_FLATS')->first()->requirements;
+                break;
+            case $flip['INDEPENDENT BUILDING']:
+                $this->_documentLists = collect($this->_propDocList)->where('code', 'PROP_INDEPENDENT_BUILDING')->first()->requirements;
+                break;
+            case $flip['SUPER STRUCTURE']:
+                $this->_documentLists = collect($this->_propDocList)->where('code', 'PROP_SUPER_STRUCTURE')->first()->requirements;
+                break;
+            case $flip['VACANT LAND']:
+                $this->_documentLists = collect($this->_propDocList)->where('code', 'PROP_VACANT_LAND')->first()->requirements;
+                break;
+            case $flip['OCCUPIED PROPERTY']:
+                $this->_documentLists = collect($this->_propDocList)->where('code', 'PROP_OCCUPIED_PROPERTY')->first()->requirements;
+                break;
+        }
+        if ($refSafs->assessment_type == 'Mutation')
+            $this->mutationReqDocuments();
+
+        if ($refSafs->is_trust == true)
+            $this->_documentLists .= collect($this->_propDocList)->where('code', 'PROP_TRUST')->first()->requirements;
+
+        return $this->_documentLists;
+    }
+
+    /**
+     * | Mutation Required Documents
+     */
+    public function mutationReqDocuments()
+    {
+        $transferModes = $this->_refSafs->transfer_mode_mstr_id;
+        switch ($transferModes) {
+            case 1:
+                $this->_documentLists .=  collect($this->_propDocList)->where('code', 'PROP_MUTATION_SALE_TRANSFER')->first()->requirements;                     // Sale Document Add
+                break;
+            case 2:
+                $this->_documentLists .= collect($this->_propDocList)->where('code', 'PROP_MUTATION_GIFT_TRANSFER')->first()->requirements;                     // Gift Document Add
+                break;
+            case 3:
+                $this->_documentLists .= collect($this->_propDocList)->where('code', 'PROP_MUTATION_WILL_TRANSFER')->first()->requirements;                    // Will Document Add
+                break;
+            case 4:
+                $this->_documentLists .=  collect($this->_propDocList)->where('code', 'PROP_MUTATION_LEASE_TRANSFER')->first()->requirements;                     // Lease Document Add
+                break;
+            case 5:
+                $this->_documentLists .= collect($this->_propDocList)->where('code', 'PROP_MUTATION_PARTITION_TRANSFER')->first()->requirements;                    // Partition Document Add
+                break;
+            case 6:
+                $this->_documentLists .=  collect($this->_propDocList)->where('code', 'PROP_MUTATION_SUCCESSION_TRANSFER')->first()->requirements;                     // Succession Document Add
+                break;
+        }
+    }
 
     /**
      * | Get Owner Document Lists

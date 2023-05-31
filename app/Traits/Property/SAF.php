@@ -7,6 +7,9 @@ use App\Models\Property\ActiveSaf;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropActiveSafsOwner;
+use App\Models\Property\PropSaf;
+use App\Models\Property\PropSafsFloor;
+use App\Models\Property\PropSafsOwner;
 use App\Models\UlbWardMaster;
 use App\Models\WorkflowTrack;
 use App\Repository\Property\Concrete\PropertyBifurcation;
@@ -428,27 +431,45 @@ trait SAF
         $mPropActiveSaf = new PropActiveSaf();
         $mPropActiveSafOwner = new PropActiveSafsOwner();
         $mActiveSafsFloors = new PropActiveSafsFloor();
+
+        $mPropSaf = new PropSaf();
+        $mPropSafOwners = new PropSafsOwner();
+        $mPropSafFloors = new PropSafsFloor();
         // Saf Details
         $data = [];
         if ($req->id) {                                       //<------- Search By SAF ID
             $data = $mPropActiveSaf->getActiveSafDtls()      // <------- Model function Active SAF Details
                 ->where('prop_active_safs.id', $req->id)
                 ->first();
+            if (!$data) {
+                $data = $mPropSaf->getSafDtls()
+                    ->where('prop_safs.id', $req->id)
+                    ->first();
+            }
         }
 
         if ($req->safNo) {                                  // <-------- Search By SAF No
             $data = $mPropActiveSaf->getActiveSafDtls()    // <------- Model Function Active SAF Details
                 ->where('prop_active_safs.saf_no', $req->safNo)
                 ->first();
+            if (!$data) {
+                $data = $mPropSaf->getSafDtls()
+                    ->where('prop_safs.saf_no', $req->safNo)
+                    ->first();
+            }
         }
+
         $data = json_decode(json_encode($data), true);
         if (collect($data)->isEmpty())
             throw new Exception("Saf Data Not Available");
-
         $ownerDetails = $mPropActiveSafOwner->getOwnersBySafId($data['id']);    // Model function to get Owner Details
+        if ($ownerDetails->isEmpty())
+            $ownerDetails = $mPropSafOwners->getOwnersBySafId($data['id']);
         $data['owners'] = $ownerDetails;
 
         $floorDetails = $mActiveSafsFloors->getFloorsBySafId($data['id']);      // Model Function to Get Floor Details
+        if ($floorDetails->isEmpty())
+            $floorDetails = $mPropSafFloors->getFloorsBySafId($data['id']);
         $data['floors'] = $floorDetails;
 
         return $data;
