@@ -504,7 +504,7 @@ class WaterNewConnection implements IWaterNewConnection
             $watertransaction->user_type        = $refUserDetails->user_type;
             $watertransaction->pg_response_id   = $RazorPayResponse->id ?? null;
             $watertransaction->pg_id            = $args['gatewayType'] ?? null;
-            $watertransaction->penalty_ids      = $penalty_id ?? null;
+            $watertransaction->penalty_ids      = $RazorPayRequest->penalty_id ?? null;
             $watertransaction->is_penalty       = $isPenalty ?? 0;
             $watertransaction->save();
             $transaction_id                     = $watertransaction->id;
