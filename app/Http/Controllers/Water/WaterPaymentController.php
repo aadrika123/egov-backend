@@ -288,17 +288,26 @@ class WaterPaymentController extends Controller
             }
             # Connection Charges
             $connectionCharges = $mWaterConnectionCharge->getChargesById($transactionDetails->demand_id)
-                ->firstOrFail();
+                ->first();
 
             # if penalty Charges
-            $individulePenaltyCharges = $mWaterPenaltyInstallment->getPenaltyByApplicationId($transactionDetails->related_id)
-                ->where('paid_status', 1)
-                ->get();
-            if ($individulePenaltyCharges) {
-                $totalPenaltyAmount = collect($individulePenaltyCharges)->map(function ($value) {
-                    return $value['balance_amount'];
-                })->sum();
+            if ($connectionCharges) {
+                $individulePenaltyCharges = $mWaterPenaltyInstallment->getPenaltyByApplicationId($transactionDetails->related_id)
+                    ->where('paid_status', 1)
+                    ->get();
+                $checkPenaltyExist = collect($individulePenaltyCharges)->first();
+                if ($checkPenaltyExist) {
+                    $totalPenaltyAmount = collect($individulePenaltyCharges)->map(function ($value) {
+                        return $value['balance_amount'];
+                    })->sum();
+                }
             }
+            if ($transactionDetails->penalty_ids) {
+                $penaltyIds = explode(',', $transactionDetails->penalty_ids);
+                $refPenalty = $mWaterPenaltyInstallment->getPenaltyByArrayOfId($penaltyIds);
+                $totalPenaltyAmount = collect($refPenalty)->sum('balance_amount');
+            }
+
 
             # Transaction Date
             $refDate = $transactionDetails->tran_date;
@@ -313,7 +322,7 @@ class WaterPaymentController extends Controller
                 "customerName"          => $applicationDetails['applicantname'],
                 "customerMobile"        => $applicationDetails['mobileno'],
                 "address"               => $applicationDetails['address'],
-                "paidFrom"              => $connectionCharges['charge_category'],
+                "paidFrom"              => $connectionCharges['charge_category'] ?? $transactionDetails['tran_type'],
                 "holdingNo"             => $applicationDetails['holding_no'],
                 "safNo"                 => $applicationDetails['saf_no'],
                 "paidUpto"              => "",
@@ -331,9 +340,9 @@ class WaterPaymentController extends Controller
                 "towards"               => $mTowards,
                 "description"           => $mAccDescription,
                 "rebate"                => 0,                                                           // Static
-                "connectionFee"         => $connectionCharges['conn_fee'],
+                "connectionFee"         => $connectionCharges['conn_fee'] ?? 0,
                 "totalPaidAmount"       => $transactionDetails->amount,
-                "penaltyAmount"         => $totalPenaltyAmount,
+                "penaltyAmount"         => $totalPenaltyAmount ?? 0,
                 "paidAmtInWords"        => getIndianCurrency($transactionDetails->amount),
             ];
             return responseMsgs(true, "Payment Receipt", remove_null($returnValues), "", "1.0", "", "POST", $req->deviceId ?? "");
@@ -994,7 +1003,7 @@ class WaterPaymentController extends Controller
                     $this->savePaymentStatus($req, $offlinePaymentModes, $charges, $refWaterApplication, $waterTrans);
                 }
             } else {
-                $this->saveRegulaizePaymentStatus($req, $offlinePaymentModes, $refCharges['charges'], $waterTrans);
+                $this->saveRegulaizePaymentStatus($req, $offlinePaymentModes, $waterTrans);
             }
             # Readjust Water Penalties 
             $this->updatePenaltyPaymentStatus($req);
@@ -1014,9 +1023,8 @@ class WaterPaymentController extends Controller
     /**
      * | Save the regulization second payament details 
      */
-    public function saveRegulaizePaymentStatus($req, $offlinePaymentModes, $refCharges, $waterTrans)
+    public function saveRegulaizePaymentStatus($req, $offlinePaymentModes, $waterTrans)
     {
-        $waterTranDetail            = new WaterTranDetail();
         $mWaterTran                 = new WaterTran();
         $mWaterPenaltyInstallment   = new WaterPenaltyInstallment();
 
@@ -1034,16 +1042,9 @@ class WaterPaymentController extends Controller
         } else {
             $penaltyStatus = 1;                                                          // Update Demand Paid Status // Static
         }
+        $penaltyIds = implode(",", $req->penaltyIds);
+        $mWaterTran->saveIsPenalty($waterTrans['id'], $penaltyIds);
         $mWaterPenaltyInstallment->savePenaltyStatusByIds($penaltyIds, $penaltyStatus);
-
-        # Save the trans details 
-        $penaltyCharges = collect($penatydetails)->sum('balance_amount');
-        $waterTranDetail->saveDefaultTrans(
-            $penaltyCharges,
-            $req->applicationId,
-            $waterTrans['id'],
-            $refCharges['id'],
-        );
     }
 
 

@@ -65,8 +65,8 @@ class WaterTran extends Model
         )
             ->leftjoin('water_tran_details', 'water_tran_details.tran_id', '=', 'water_trans.id')
             ->where('tran_no', $transactionNo)
-            ->where('water_trans.status', 1)
-            ->where('water_tran_details.status', 1);
+            ->where('water_trans.status', 1);
+        // ->where('water_tran_details.status', 1);
     }
 
     /**
@@ -155,6 +155,11 @@ class WaterTran extends Model
         $waterTrans->adjustment_amount  = $req['adjustedAmount'] ?? 0;
         $waterTrans->pg_response_id     = $req['pgResponseId'] ?? null;
         $waterTrans->pg_id              = $req['pgId'] ?? null;
+        if ($req->penaltyIds) {
+            $refPenaltyIds              = explode(",", $req->penaltyIds);
+            $waterTrans->pg_id          = $refPenaltyIds;
+            $waterTrans->is_penalty     = 1;                                            // Static
+        }
         $waterTrans->save();
 
         return [
@@ -223,5 +228,19 @@ class WaterTran extends Model
             ->where('status', 1)
             ->whereBetween('tran_date', [$fromDate, $toDate])
             ->orderByDesc('id');
+    }
+
+    /**
+     * | Save if the payment is penalty or not 
+     * | and the peanlty ids of it 
+     */
+    public function saveIsPenalty($transactionId, $penaltyIds)
+    {
+        WaterTran::where('id', $transactionId)
+            ->where('status', 1)
+            ->update([
+                'is_penalty' => 1,
+                'penalty_ids' => $penaltyIds
+            ]);
     }
 }

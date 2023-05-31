@@ -438,10 +438,15 @@ class WaterNewConnection implements IWaterNewConnection
                     }
                 }
                 if ($RazorPayRequest['payment_from'] == $refConnectionCharge['REGULAIZATION']) {
-                    if ($id) {
+                    $isPenalty = 1;
+                    $filteredArray = array_filter($id, function ($value, $key) {
+                        return ($key !== 0) || ($value !== '');
+                    }, ARRAY_FILTER_USE_BOTH);
+                    if ($filteredArray) {
                         $mDemands = WaterConnectionCharge::select("*")
                             ->whereIn("id", $id)
                             ->get();
+                        $isPenalty = 0;
                     }
                     if ($penalty_id) {
                         $mPenalty = WaterPenaltyInstallment::select("*")
@@ -499,6 +504,8 @@ class WaterNewConnection implements IWaterNewConnection
             $watertransaction->user_type        = $refUserDetails->user_type;
             $watertransaction->pg_response_id   = $RazorPayResponse->id ?? null;
             $watertransaction->pg_id            = $args['gatewayType'] ?? null;
+            $watertransaction->penalty_ids      = $penalty_id ?? null;
+            $watertransaction->is_penalty       = $isPenalty ?? 0;
             $watertransaction->save();
             $transaction_id                     = $watertransaction->id;
             $watertransaction->tran_no          = $args["transactionNo"];
