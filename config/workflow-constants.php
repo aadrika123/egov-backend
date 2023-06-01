@@ -7,6 +7,7 @@
  */
 
 return [
+    "PROPERTY_WORKFLOW_ID" => "0",
     // SAF Workflow Masters
     "SAF_WORKFLOW_ID"           => "1",
     "SAF_REASSESSMENT_ID"       => "2",

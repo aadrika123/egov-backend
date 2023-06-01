@@ -10,6 +10,7 @@ use App\Models\Property\PropDemand;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropSaf;
+use App\Models\Property\PropSafsDemand;
 use App\Models\Property\PropTransaction;
 use App\Models\Workflows\WfActiveDocument;
 use App\Pipelines\SearchHolding;
@@ -22,6 +23,7 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\Validator;
 
 /**
  * | Created On - 11-03-2023
