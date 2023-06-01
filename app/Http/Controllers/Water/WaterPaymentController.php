@@ -1262,7 +1262,7 @@ class WaterPaymentController extends Controller
                     throw new Exception("The respective application in not for New Connection!");
                 }
                 switch ($req) {
-                    case (is_null($req->isInstallment) || !$req->isInstallment):
+                    case (is_null($req->isInstallment) || !$req->isInstallment || $req->isInstallment == "no"):
                         $actualCharge = $mWaterConnectionCharge->getWaterchargesById($req->applicationId)
                             ->where('charge_category', $req->chargeCategory)
                             ->firstOrFail();

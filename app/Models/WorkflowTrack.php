@@ -25,25 +25,25 @@ class WorkflowTrack extends Model
 
     public function saveTrack($request)
     {
-        $userId = $request->user_id;
-        $ulbId = $request->ulb_id ?? authUser()->ulb_id;
+        $track      = new WorkflowTrack;
+        $userId     = $request->user_id;
+        $ulbId      = $request->ulb_id ?? authUser()->ulb_id;
         $mTrackDate = $request->trackDate ?? Carbon::now()->format('Y-m-d H:i:s');
-        
-        $track = new WorkflowTrack;
-        $track->workflow_id = $request->workflowId;
-        $track->citizen_id = $request->citizenId;
-        $track->module_id = $request->moduleId;
-        $track->ref_table_dot_id = $request->refTableDotId;
-        $track->ref_table_id_value = $request->refTableIdValue;
-        $track->track_date = $mTrackDate;
-        $track->message = $request->comment;
-        $track->forward_date = $request->forwardDate ?? null;
-        $track->forward_time = $request->forwardTime ?? null;
-        $track->sender_role_id = $request->senderRoleId ?? null;
-        $track->receiver_role_id = $request->receiverRoleId ?? null;
+
+        $track->workflow_id         = $request->workflowId;
+        $track->citizen_id          = $request->citizenId;
+        $track->module_id           = $request->moduleId;
+        $track->ref_table_dot_id    = $request->refTableDotId;
+        $track->ref_table_id_value  = $request->refTableIdValue;
+        $track->track_date          = $mTrackDate;
+        $track->message             = $request->comment;
+        $track->forward_date        = $request->forwardDate ?? null;
+        $track->forward_time        = $request->forwardTime ?? null;
+        $track->sender_role_id      = $request->senderRoleId ?? null;
+        $track->receiver_role_id    = $request->receiverRoleId ?? null;
         $track->verification_status = $request->verificationStatus ?? 0;
-        $track->user_id = $userId;
-        $track->ulb_id = $ulbId;
+        $track->user_id             = $userId;
+        $track->ulb_id              = $ulbId;
         return  $track->save();
     }
 
