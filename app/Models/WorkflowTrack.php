@@ -109,7 +109,7 @@ class WorkflowTrack extends Model
             ->where('ref_table_dot_id', $mRefTable)
             ->where('ref_table_id_value', $tableId)
             ->where('citizen_id', $citizenId)
-            ->leftJoin('users as u', 'u.id', '=', 'workflow_tracks.citizen_id')
+            ->Join('active_citizens as u', 'u.id', '=', 'workflow_tracks.citizen_id')
             ->get();
     }
 

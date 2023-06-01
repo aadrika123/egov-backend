@@ -687,7 +687,7 @@ class ActiveSafController extends Controller
             $levelComment = $mWorkflowTracks->getTracksByRefId($mRefTable, $data['id']);
             $fullDetailsData['levelComment'] = $levelComment;
 
-            $citizenComment = $mWorkflowTracks->getCitizenTracks($mRefTable, $data['id'], $data['user_id']);
+            $citizenComment = $mWorkflowTracks->getCitizenTracks($mRefTable, $data['id'], $data['citizen_id']);
             $fullDetailsData['citizenComment'] = $citizenComment;
 
             $req->request->add($metaReqs);
