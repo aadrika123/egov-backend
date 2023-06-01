@@ -1565,8 +1565,10 @@ class ActiveSafController extends Controller
             $totalAmount = $demands['payableAmount'];
             $req->request->add(['workflowId' => $safDetails->workflow_id, 'ghostUserId' => 0, 'amount' => $totalAmount]);
             DB::beginTransaction();
-            $orderDetails = $this->saveGenerateOrderid($req);                                      //<---------- Generate Order ID Trait
-            if ($orderDetails->original['status'] == false)
+            $orderDetails = $this->saveGenerateOrderid($req);
+            $status = isset($orderDetails->original['status']) ? $orderDetails->original['status'] : true;                                      //<---------- Generate Order ID Trait
+
+            if ($status == false)
                 return $orderDetails->original;
             $demands = array_merge($demands->toArray(), [
                 'orderId' => $orderDetails['orderId']
