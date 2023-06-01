@@ -27,10 +27,12 @@ class PostSafPropTaxes
     {
         $groupByQuaterlyTax = collect($demands)->groupBy('amount');
         $isTaxesExists = $this->_mPropSafTaxes->getSafTaxesBySafId($safId);
-        if ($isTaxesExists)
+        if ($isTaxesExists->isNotEmpty())
             $this->_mPropSafTaxes->deactivateTaxes($safId);            // Deactivate Already Existing Saf Details
         foreach ($groupByQuaterlyTax as $item) {
             $firstTax = $item->first();
+            if (is_array($firstTax))
+                $firstTax = (object) $firstTax;
             $reqPost = [
                 'saf_id' => $safId,
                 'arv' => $firstTax->arv,
