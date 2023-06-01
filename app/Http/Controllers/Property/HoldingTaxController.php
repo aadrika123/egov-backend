@@ -8,6 +8,7 @@ use App\EloquentClass\Property\PenaltyRebateCalculation;
 use App\EloquentClass\Property\SafCalculation;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Property\ReqPayment;
+use App\MicroServices\DocUpload;
 use App\MicroServices\IdGeneration;
 use App\Models\Cluster\Cluster;
 use App\Models\Payment\TempTransaction;
@@ -30,6 +31,7 @@ use App\Models\Property\PropSaf;
 use App\Models\Property\PropSafsDemand;
 use App\Models\Property\PropTranDtl;
 use App\Models\Property\PropTransaction;
+use App\Models\Workflows\WfActiveDocument;
 use App\Models\Workflows\WfRoleusermap;
 use App\Repository\Property\Interfaces\iSafRepository;
 use App\Traits\Payment\Razorpay;
@@ -168,6 +170,9 @@ class HoldingTaxController extends Controller
                     });
                     $demandList = $demandList->values();
                 }
+
+                if (collect($demandTillQtr)->isEmpty())
+                    $demandList = collect();                                    // Demand List blank in case of fyear and qtr         
             }
             $propDtls = $mPropProperty->getPropById($req->propId);
             $balance = $propDtls->balance ?? 0;
@@ -584,8 +589,8 @@ class HoldingTaxController extends Controller
                 throw new Exception($propCalculation->original['message']);
 
             $demands = $propCalculation->original['data']['demandList'];
-
             $dueList = $propCalculation->original['data']['duesList'];
+
             $advanceAmt = $dueList['advanceAmt'];
             if ($demands->isEmpty())
                 throw new Exception("No Dues For this Property");
@@ -693,6 +698,67 @@ class HoldingTaxController extends Controller
             // 'cluster_id' => $clusterId
         ];
         $mTempTransaction->tempTransaction($tranReqs);
+    }
+
+    /**
+     * | Legacy Payment Holding
+     */
+    public function legacyPaymentHolding(ReqPayment $req)
+    {
+        $req->validate([
+            'document' => 'required|mimes:pdf,jpeg,png,jpg'
+        ]);
+        try {
+            $mPropDemand = new PropDemand();
+            $mPropProperty = new PropProperty();
+            $propWfId = Config::get('workflow-constants.PROPERTY_WORKFLOW_ID');
+            $docUpload = new DocUpload;
+            $refImageName = "LEGACY_PAYMENT";
+            $propModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $relativePath = Config::get('PropertyConstaint.SAF_RELATIVE_PATH');
+            $mWfActiveDocument = new WfActiveDocument();
+
+            $propCalReq = new Request([
+                'propId' => $req['id'],
+                'fYear' => $req['fYear'],
+                'qtr' => $req['qtr']
+            ]);
+
+            $properties = $mPropProperty::findOrFail($req['id']);
+            $propCalculation = $this->getHoldingDues($propCalReq);
+            if ($propCalculation->original['status'] == false)
+                throw new Exception($propCalculation->original['message']);
+
+            // Image Upload
+            $imageName = $docUpload->upload($refImageName, $req->document, $relativePath);
+            $demands = $propCalculation->original['data']['demandList'];
+
+            $wfActiveDocReqs = [
+                'active_id' => $req['id'],
+                'workflow_id' => $propWfId,
+                'ulb_id' => $properties->ulb_id,
+                'module_id' => $propModuleId,
+                'doc_code' => $refImageName,
+                'relative_path' => $relativePath,
+                'document' => $imageName,
+                'uploaded_by' => authUser()->id,
+                'uploaded_by_type' => authUser()->user_type,
+                'doc_category' => $refImageName,
+            ];
+            DB::beginTransaction();
+            $mWfActiveDocument->create($wfActiveDocReqs);
+            foreach ($demands as $demand) {
+                $tblDemand = $mPropDemand->getDemandById($demand['id']);
+                $tblDemand->paid_status = 9;
+                $tblDemand->adjust_type = "Legacy Payment Adjustment";
+                $tblDemand->save();
+            }
+            DB::commit();
+            return responseMsgs(true, "Payment Successfully Done", ['TransactionNo' => ""], "011604", "1.0", "", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), "", "011604", "1.0", "", "POST", $req->deviceId ?? "");
+        }
     }
 
     /**

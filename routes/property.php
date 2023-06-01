@@ -331,6 +331,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('prop/get-cluster-holding-due', 'getClusterHoldingDues');         // (11) Property Cluster Dues
     Route::post('prop/cluster-payment', 'clusterPayment');                        // (12) Cluster Payment
     Route::post('prop-dues', 'propertyDues');                                     // (13) Property Dues Dynamic
+    Route::post('legacy-payment-holding', 'legacyPaymentHolding');                 // (14) Legacy Property Payment
   });
 
   /**
