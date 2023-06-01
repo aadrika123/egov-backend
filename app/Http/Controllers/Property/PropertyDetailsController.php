@@ -112,7 +112,7 @@ class PropertyDetailsController extends Controller
                         $active = $mPropActiveObjection->searchObjections()
                             ->where('prop_active_objections.objection_no', strtoupper($applicationNo));
 
-                        // $details = $approved->union($active)->get();
+                        // $detailfgfs = $approved->union($active)->get();
                         break;
 
                     case ("harvesting"):
