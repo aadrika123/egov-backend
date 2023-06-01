@@ -19,15 +19,17 @@ class PropActiveSafObserver
     {
         $paramId = Config::get('PropertyConstaint.PARAM_ID');
         $gbParamId = Config::get('PropertyConstaint.GB_PARAM');
-        if ($propActiveSaf->is_gb_saf == false) {
-            $idGeneration = new PrefixIdGenerator($paramId, $propActiveSaf->ulb_id);
-            $safNo = $idGeneration->generate();
-        } else {
-            $idGeneration = new PrefixIdGenerator($gbParamId, $propActiveSaf->ulb_id);
-            $safNo = $idGeneration->generate();
+        if (is_null($propActiveSaf->saf_no)) {
+            if ($propActiveSaf->is_gb_saf == false) {
+                $idGeneration = new PrefixIdGenerator($paramId, $propActiveSaf->ulb_id);
+                $safNo = $idGeneration->generate();
+            } else {
+                $idGeneration = new PrefixIdGenerator($gbParamId, $propActiveSaf->ulb_id);
+                $safNo = $idGeneration->generate();
+            }
+            $propActiveSaf->saf_no = $safNo;
+            $propActiveSaf->save();
         }
-        $propActiveSaf->saf_no = $safNo;
-        $propActiveSaf->save();
     }
 
     /**

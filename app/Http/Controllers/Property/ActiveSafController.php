@@ -977,7 +977,7 @@ class ActiveSafController extends Controller
                 $idGeneration = new PrefixIdGenerator($ptParamId, $saf->ulb_id);
 
 
-                if (in_array($saf->assessmentType, ['New Assessment', 'Bifurcation', 'Amalgamation', 'Mutation'])) { // Make New Property For New Assessment,Bifurcation and Amalgamation & Mutation
+                if (in_array($saf->assessment_type, ['New Assessment', 'Bifurcation', 'Amalgamation', 'Mutation'])) { // Make New Property For New Assessment,Bifurcation and Amalgamation & Mutation
                     $ptNo = $idGeneration->generate();
                     $saf->pt_no = $ptNo;                        // Generate New Property Tax No for All Conditions
                     $saf->save();
@@ -1033,9 +1033,9 @@ class ActiveSafController extends Controller
             ->where('saf_id', $safId)
             ->get();
 
-        $toBeProperties = PropActiveSaf::query()
-            ->where('id', $safId)
+        $toBeProperties = PropActiveSaf::where('id', $safId)
             ->select(
+                'saf_no',
                 'ulb_id',
                 'cluster_id',
                 'holding_no',
