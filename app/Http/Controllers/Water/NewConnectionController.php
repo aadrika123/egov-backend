@@ -178,19 +178,16 @@ class NewConnectionController extends Controller
      * | Repositiory Call
         | Serial No :
         | Working
-        | Remove the repository
      */
-    public function waterInbox()
+    public function waterInbox(Request $request)
     {
         try {
-            // return $this->newConnection->waterInbox();                       // repoRemove
-            $user = authUser();
+            $user   = authUser();
             $userId = $user->id;
-            $ulbId = $user->ulb_id;
+            $ulbId  = $user->ulb_id;
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
 
             $occupiedWards = $this->getWardByUserId($userId)->pluck('ward_id');
-
             $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
 
@@ -214,17 +211,16 @@ class NewConnectionController extends Controller
      * | Reposotory Call
         | Serial No :
         | Working
-        | Remove repo
      */
     public function waterOutbox()
     {
         try {
-            // return $this->newConnection->waterOutbox();                              // repoRemove
-            $mWfWardUser = new WfWardUser();
-            $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
-            $user = authUser();
+            $mWfWardUser            = new WfWardUser();
+            $mWfWorkflowRoleMaps    = new WfWorkflowrolemap();
+
+            $user   = authUser();
             $userId = $user->id;
-            $ulbId = $user->ulb_id;
+            $ulbId  = $user->ulb_id;
 
             $workflowRoles = $this->getRoleIdByUserId($userId);
             $roleId = $workflowRoles->map(function ($value) {                         // Get user Workflow Roles
@@ -237,7 +233,6 @@ class NewConnectionController extends Controller
             });
 
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
-
             $waterList = $this->getWaterApplicatioList($workflowIds, $ulbId)
                 ->whereNotIn('water_applications.current_role', $roleId)
                 ->whereIn('water_applications.ward_id', $wardId)
@@ -301,18 +296,19 @@ class NewConnectionController extends Controller
         }
     }
 
-    // Water Special Inbox
+
     /**
-        | Remove repo
+     * | Water Special Inbox
+     * | excalated applications
+        | Serial No :
      */
     public function waterSpecialInbox(Request $request)
     {
         try {
-            // return $this->newConnection->waterSpecialInbox($request);                    // repoRemove
-            $mWfWardUser = new WfWardUser();
-            $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
+            $mWfWardUser            = new WfWardUser();
+            $mWfWorkflowRoleMaps    = new WfWorkflowrolemap();
             $userId = authUser()->id;
-            $ulbId = authUser()->ulb_id;
+            $ulbId  = authUser()->ulb_id;
 
             $occupiedWard = $mWfWardUser->getWardsByUserId($userId);                        // Get All Occupied Ward By user id using trait
             $wardId = $occupiedWard->map(function ($item, $key) {                           // Filter All ward_id in an array using laravel collections
@@ -334,7 +330,11 @@ class NewConnectionController extends Controller
         }
     }
 
-    // Post Next Level
+
+    /**
+     * | Post next level 
+        | Serial No : 
+     */
     public function postNextLevel(Request $request)
     {
         $wfLevels = Config::get('waterConstaint.ROLE-LABEL');
@@ -353,7 +353,11 @@ class NewConnectionController extends Controller
         }
     }
 
-    // Water Application details for the view in workflow
+
+    /**
+     * | Water Application details for the view in workflow
+        | Serial No :
+     */
     public function getApplicationsDetails(Request $request)
     {
         $request->validate([
@@ -366,9 +370,10 @@ class NewConnectionController extends Controller
         }
     }
 
-    // Application's Post Escalated
+
     /**
-        | Remove repo 
+     * | Application's Post Escalated
+        | Serial No :
      */
     public function postEscalate(Request $request)
     {
@@ -377,7 +382,6 @@ class NewConnectionController extends Controller
             "applicationId" => "required|int",
         ]);
         try {
-            // return $this->newConnection->postEscalate($request);                             // repoRemove
             $userId = authUser()->id;
             $applicationId = $request->applicationId;
             $applicationsData = WaterApplication::find($applicationId);
@@ -391,20 +395,22 @@ class NewConnectionController extends Controller
     }
 
 
-    // final Approval or Rejection of the Application
+
     /**
+     * | final Approval or Rejection of the Application
+        | Serial No :
         | Recheck
      */
     public function approvalRejectionWater(Request $request)
     {
         $request->validate([
             "applicationId" => "required",
-            "status" => "required",
-            "comment" => "required"
+            "status"        => "required",
+            "comment"       => "required"
         ]);
         try {
-            $waterDetails = WaterApplication::findOrFail($request->applicationId);
             $mWfRoleUsermap = new WfRoleusermap();
+            $waterDetails = WaterApplication::findOrFail($request->applicationId);
 
             # check the login user is EO or not
             $userId = authUser()->id;
@@ -418,19 +424,23 @@ class NewConnectionController extends Controller
             if ($roleId != $waterDetails->finisher) {
                 throw new Exception("You are not the Finisher!");
             }
+            DB::beginTransaction();
             if ($waterDetails) {
-                return $this->newConnection->approvalRejectionWater($request, $roleId);
+                $returnData = $this->newConnection->approvalRejectionWater($request, $roleId);
             }
             throw new Exception("Application dont exist!");
+            DB::commit();
+            return $returnData;
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
     }
 
-    // Indipendent Comment on the Water Applications
+
     /**
-        | Remove repo 
+     * | Indipendent Comment on the Water Applications
+        | Serial No :  
         | Recheck
         | Use
      */
@@ -442,7 +452,6 @@ class NewConnectionController extends Controller
             'senderRoleId'  => 'nullable|integer'
         ]);
         try {
-            // return $this->newConnection->commentIndependent($request);
             $metaReqs       = array();
             $user           = authUser();
             $userType       = $user->user_type;
@@ -490,8 +499,10 @@ class NewConnectionController extends Controller
         }
     }
 
-    // Get Approved Water Appliction 
+
     /**
+     * | Get Approved Water Appliction 
+        | Serial No :  
         | Recheck / Updated 
      */
     public function approvedWaterApplications(Request $request)
@@ -501,10 +512,10 @@ class NewConnectionController extends Controller
                 $request->validate([
                     "id" => "nullable|int",                                     // Consumer ID
                 ]);
+
                 $refConsumerId              = $request->id;
                 $mWaterConsumerMeter        = new WaterConsumerMeter();
                 $mWaterConsumerInitialMeter = new WaterConsumerInitialMeter();
-                $mWaterConsumerTax          = new WaterConsumerTax();
                 $mWaterConsumerDemand       = new WaterConsumerDemand();
                 $refConnectionName          = Config::get('waterConstaint.METER_CONN_TYPE');
                 $flipConnection             = collect($refConnectionName)->flip();
@@ -585,14 +596,14 @@ class NewConnectionController extends Controller
         }
     }
 
-    // Get the Field fieldVerifiedInbox // recheck
+
     /**
-        | Remove repo
+     * | Get the Field fieldVerifiedInbox 
+        | Serial No : 
      */
     public function fieldVerifiedInbox(Request $request)
     {
         try {
-            // return $this->newConnection->fieldVerifiedInbox($request);
             $mWfWardUser            = new WfWardUser();
             $mWfWorkflowRoleMaps    = new WfWorkflowrolemap();
             $userId                 = auth()->user()->id;

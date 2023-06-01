@@ -136,9 +136,9 @@ class NewConnectionRepository implements iNewConnection
             throw new Exception("Respective Ulb is not maped to Water Workflow!");
         }
         $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);
-        $refFinisherRoleId = $this->getFinisherId($ulbWorkflowId->id);
-        $finisherRoleId = DB::select($refFinisherRoleId);
-        $initiatorRoleId = DB::select($refInitiatorRoleId);
+        $refFinisherRoleId  = $this->getFinisherId($ulbWorkflowId->id);
+        $finisherRoleId     = DB::select($refFinisherRoleId);
+        $initiatorRoleId    = DB::select($refInitiatorRoleId);
 
         # Generating Demand 
         $newConnectionCharges = objToArray($mWaterNewConnection->calWaterConCharge($req));
@@ -147,8 +147,8 @@ class NewConnectionRepository implements iNewConnection
                 $newConnectionCharges['errors']
             );
         }
-        $installment = $newConnectionCharges['installment_amount'];
-        $waterFeeId = $newConnectionCharges['water_fee_mstr_id'];
+        $installment            = $newConnectionCharges['installment_amount'];
+        $waterFeeId             = $newConnectionCharges['water_fee_mstr_id'];
         $totalConnectionCharges = $newConnectionCharges['conn_fee_charge']['amount'];
 
         # Generating Application No
@@ -239,7 +239,7 @@ class NewConnectionRepository implements iNewConnection
      * | @var propetySafCheck
      * | @var propetyHoldingCheck
      * | Operation : check if the applied application is in vacant land 
-        | Serial No : 01.2
+        | Serial No : 01.02
      */
     public function checkVacantLand($req, $vacantLand)
     {
@@ -283,7 +283,7 @@ class NewConnectionRepository implements iNewConnection
      * | @var safCheck
      * | @var holdingCheck
      * | @return value : true or nothing 
-        | Serial No : 01.2.1
+        | Serial No : 01.02.01
      */
     public function checkPropertyExist($req)
     {
@@ -317,9 +317,10 @@ class NewConnectionRepository implements iNewConnection
     }
 
     /**
-     * | Get the user Role details and the details of forword and backword details
-     * | @var
-    | Serial No : 01.03  
+     * |---------------------------------------- Get the user Role details and the details of forword and backword details ------------------------------------------------|
+     * | @param user
+     * | @param ulbWorkflowId
+        | Serial No : 01.03  
      */
     public function getUserRolesDetails($user, $ulbWorkflowId)
     {
@@ -338,93 +339,6 @@ class NewConnectionRepository implements iNewConnection
 
 
     /**
-     * |----------------------------------------- water Workflow Functions Listed Below ------------------------------------------------------------|
-     */
-
-
-    /**
-     * |------------------------------------------ water Inbox -------------------------------------|
-     * | @var userId
-     * | @var ulbId
-     * | @var occupiedWards 
-     * | @var roleIds
-     * | @var readRoles
-     * | @var mWfWardUser
-     * | @var mWfRoleUser
-     * | @var waterList : using the function to fetch the list of the respective water application details according to (ulbId, roleId and ward) 
-     * | @return waterList : Details to be displayed in the inbox of the offices in water workflow. 
-        | Serila No : 02
-        | Working
-        | Remove 
-     */
-    public function waterInbox()
-    {
-        $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
-        $user = authUser();
-        $userId = $user->id;
-        $ulbId = $user->ulb_id;
-
-        $occupiedWards = $this->getWardByUserId($userId)->pluck('ward_id');
-
-        $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
-        $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
-
-        $waterList = $this->getWaterApplicatioList($workflowIds, $ulbId)
-            ->whereIn('water_applications.current_role', $roleId)
-            ->whereIn('water_applications.ward_id', $occupiedWards)
-            ->where('water_applications.is_escalate', false)
-            ->where('water_applications.parked', false)
-            ->orderByDesc('water_applications.id')
-            ->get();
-        $filterWaterList = collect($waterList)->unique('id')->values();
-        return responseMsgs(true, "Inbox List Details!", remove_null($filterWaterList), '', '02', '', 'Post', '');
-    }
-
-
-
-    /**
-     * |----------------------------------------- Water Outbox ------------------------------------------------|
-     * | @var userId
-     * | @var ulbId
-     * | @var workflowRoles : using the function to fetch the list of the respective water application details according to (ulbId, roleId and ward) 
-     * | @var wardId : using the Workflow trait's function (getWardUserId($userId)) for respective wardId.
-     * | @var refWard
-     * | @var roleId : using the Workflow trait's function (getRoleIdByUserId($userID)) for  respective roles.
-     * | @return waterList : Details to be displayed in the inbox of the offices in water workflow. 
-        | Serial No : 03
-        | Working 
-     */
-    public function waterOutbox()
-    {
-        $mWfWardUser = new WfWardUser();
-        $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
-        $user = authUser();
-        $userId = $user->id;
-        $ulbId = $user->ulb_id;
-
-        $workflowRoles = $this->getRoleIdByUserId($userId);
-        $roleId = $workflowRoles->map(function ($value) {                         // Get user Workflow Roles
-            return $value->wf_role_id;
-        });
-
-        $refWard = $mWfWardUser->getWardsByUserId($userId);
-        $wardId = $refWard->map(function ($value) {
-            return $value->ward_id;
-        });
-
-        $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
-
-        $waterList = $this->getWaterApplicatioList($workflowIds, $ulbId)
-            ->whereNotIn('water_applications.current_role', $roleId)
-            ->whereIn('water_applications.ward_id', $wardId)
-            ->orderByDesc('water_applications.id')
-            ->get();
-        $filterWaterList = collect($waterList)->unique('id')->values();
-        return responseMsgs(true, "Outbox List", remove_null($filterWaterList), '', '01', '.ms', 'Post', '');
-    }
-
-
-    /**
      * |------------------------------------------ Post Application to the next level ---------------------------------------|
      * | @param req
      * | @var metaReqs
@@ -436,11 +350,11 @@ class NewConnectionRepository implements iNewConnection
      */
     public function postNextLevel($req)
     {
-        $mWfWorkflows = new WfWorkflow();
-        $mWfRoleMaps = new WfWorkflowrolemap();
-        $wfLevels = Config::get('waterConstaint.ROLE-LABEL');
-        $waterApplication = WaterApplication::find($req->applicationId);
-        $current = Carbon::now();
+        $mWfWorkflows       = new WfWorkflow();
+        $mWfRoleMaps        = new WfWorkflowrolemap();
+        $current            = Carbon::now();
+        $wfLevels           = Config::get('waterConstaint.ROLE-LABEL');
+        $waterApplication   = WaterApplication::find($req->applicationId);
 
         # Derivative Assignments
         $senderRoleId = $waterApplication->current_role;
@@ -500,7 +414,6 @@ class NewConnectionRepository implements iNewConnection
      * | check Post Condition for backward forward
         | Serial No : 04.01
         | working 
-        | Uncoment
      */
     public function checkPostCondition($senderRoleId, $wfLevels, $application)
     {
@@ -552,69 +465,6 @@ class NewConnectionRepository implements iNewConnection
         }
     }
 
-    /**
-     * |---------------------------------------------- Special Inbox -----------------------------------------|
-     * | @param request
-     * | @var mWfWardUser
-     * | @var userId
-     * | @var wardID
-     * | @var ulbId
-     * | @var occupiedWards
-     * | @var waterList
-     * | @var waterData
-     * | @return waterData :
-     * |
-        | Serial No : 05
-        | Woking 
-        | Remove
-     */
-    public function waterSpecialInbox($request)
-    {
-        $mWfWardUser = new WfWardUser();
-        $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
-        $userId = authUser()->id;
-        $ulbId = authUser()->ulb_id;
-
-        $occupiedWard = $mWfWardUser->getWardsByUserId($userId);                        // Get All Occupied Ward By user id using trait
-        $wardId = $occupiedWard->map(function ($item, $key) {                           // Filter All ward_id in an array using laravel collections
-            return $item->ward_id;
-        });
-
-        $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
-        $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
-
-        $waterData = $this->getWaterApplicatioList($workflowIds, $ulbId)                              // Repository function to get SAF Details
-            ->where('water_applications.is_escalate', 1)
-            ->whereIn('water_applications.ward_id', $wardId)
-            ->orderByDesc('water_applications.id')
-            ->get();
-        $filterWaterList = collect($waterData)->unique('id')->values();
-        return responseMsgs(true, "Data Fetched", remove_null($filterWaterList), "010107", "1.0", "251ms", "POST", "");
-    }
-
-
-    /**
-     * |--------------------------- post Escalate -----------------------------|
-     * | @param request
-     * | @var userId
-     * | @var applicationId
-     * | @var applicationsData
-     * | @var 
-        | Serial No : 06 
-        | working
-        | Remove
-     */
-    public function postEscalate($request)
-    {
-        $userId = auth()->user()->id;
-        $applicationId = $request->applicationId;
-        $applicationsData = WaterApplication::find($applicationId);
-        $applicationsData->is_escalate = $request->escalateStatus;
-        $applicationsData->escalate_by = $userId;
-        $applicationsData->save();
-        return responseMsgs(true, $request->escalateStatus == 1 ? 'Water is Escalated' : "Water is removed from Escalated", '', "", "1.0", ".ms", "POST", $request->deviceId);
-    }
-
 
     /**
      * |------------------------------ Approval Rejection Water -------------------------------|
@@ -625,8 +475,8 @@ class NewConnectionRepository implements iNewConnection
      * | @var msg
         | Serial No : 07 
         | Working / Check it / remove the comment ?? for delete / save the Details of the site inspection
-        | Use the micrervice for the consumerId 
-        | Save it inthe track 
+        | Use the microservice for the consumerId 
+        | Save it in the track 
      */
     public function approvalRejectionWater($request, $roleId)
     {
@@ -636,7 +486,6 @@ class NewConnectionRepository implements iNewConnection
         $refJe = Config::get("waterConstaint.ROLE-LABEL.JE");
         $refWaterDetails = $this->preApprovalConditionCheck($request, $roleId);
 
-        DB::beginTransaction();
         # Approval of water application 
         if ($request->status == 1) {
             $now = Carbon::now();
@@ -652,7 +501,6 @@ class NewConnectionRepository implements iNewConnection
             $mWaterApplicant->finalOwnerRejection($request);
             $msg = "Application Successfully Rejected !!";
         }
-        DB::commit();
         return responseMsgs(true, $msg, $consumerNo ?? "Empty", '', 01, '.ms', 'Post', $request->deviceId);
     }
 
@@ -773,14 +621,13 @@ class NewConnectionRepository implements iNewConnection
      */
     public function getApplicationsDetails($request)
     {
-        # ref
+        # object assigning
         $waterObj               = new WaterApplication();
         $ownerObj               = new WaterApplicant();
         $forwardBackward        = new WorkflowMap;
         $mWorkflowTracks        = new WorkflowTrack();
         $mCustomDetails         = new CustomDetail();
         $mUlbNewWardmap         = new UlbWardMaster();
-        // $mWaterNewConnection    = new WaterNewConnection();
 
         # application details
         $applicationDetails = $waterObj->fullWaterDetails($request)->get();
@@ -791,13 +638,11 @@ class NewConnectionRepository implements iNewConnection
         # Ward Name
         $refApplication = collect($applicationDetails)->first();
         $wardDetails = $mUlbNewWardmap->getWard($refApplication->ward_id);
-
         # owner Details
         $ownerDetails = $ownerObj->ownerByApplication($request)->get();
         $ownerDetail = collect($ownerDetails)->map(function ($value, $key) {
             return $value;
         });
-
         $aplictionList = [
             'application_no' => collect($applicationDetails)->first()->application_no,
             'apply_date' => collect($applicationDetails)->first()->apply_date
@@ -807,16 +652,15 @@ class NewConnectionRepository implements iNewConnection
         $basicDetails = $this->getBasicDetails($applicationDetails, $wardDetails);
         $propertyDetails = $this->getpropertyDetails($applicationDetails, $wardDetails);
         $electricDetails = $this->getElectricDetails($applicationDetails);
+
         $firstView = [
             'headerTitle' => 'Basic Details',
             'data' => $basicDetails
         ];
-
         $secondView = [
             'headerTitle' => 'Applicant Property Details',
             'data' => $propertyDetails
         ];
-
         $thirdView = [
             'headerTitle' => 'Applicant Electricity Details',
             'data' => $electricDetails
@@ -879,6 +723,7 @@ class NewConnectionRepository implements iNewConnection
      * | @param applicationDetails
      * | @var collectionApplications
         | Serial No : 08.01
+        | Workinig 
      */
     public function getBasicDetails($applicationDetails, $wardDetails)
     {
@@ -902,6 +747,7 @@ class NewConnectionRepository implements iNewConnection
      * | @var propertyDetails
      * | @var collectionApplications
         | Serial No : 08.02
+        | Workinig 
      */
     public function getpropertyDetails($applicationDetails, $wardDetails)
     {
@@ -930,6 +776,7 @@ class NewConnectionRepository implements iNewConnection
      * | @param applicationDetails
      * | @var collectionApplications
         | Serial No : 08.03
+        | Workinig 
         | May Not used
      */
     public function getElectricDetails($applicationDetails)
@@ -947,6 +794,7 @@ class NewConnectionRepository implements iNewConnection
      * |------------------ Owner details ------------------|
      * | @param ownerDetails
         | Serial No : 08.04
+        | Workinig 
      */
     public function getOwnerDetails($ownerDetails)
     {
@@ -970,6 +818,7 @@ class NewConnectionRepository implements iNewConnection
      * | @var ownerDetail
      * | @var collectionApplications
         | Serial No : 08.05
+        | Workinig 
      */
     public function getCardDetails($applicationDetails, $ownerDetails, $wardDetails)
     {
@@ -990,61 +839,6 @@ class NewConnectionRepository implements iNewConnection
         ]);
     }
 
-    /**
-     * |----------------------- comment Indipendent -----------------------|
-     * | @param request
-     * | @var applicationId
-     * | @var workflowTrack
-     * | @var mSafWorkflowId
-     * | @var mModuleId
-     * | @var metaReqs
-        | Serial No : 09
-        | Working 
-        | Remove 
-     */
-    public function commentIndependent($request)
-    {
-        $metaReqs = array();
-        $user = authUser();
-        $userType = $user->user_type;
-        $userId = $user->id;
-        $workflowTrack = new WorkflowTrack();
-        $mWfRoleUsermap = new WfRoleusermap();
-        $mModuleId = $this->_waterModulId;
-
-        $applicationId = WaterApplication::find($request->applicationId);
-        if (!$applicationId) {
-            throw new Exception("Application Don't Exist!");
-        }
-
-        # Save On Workflow Track
-        $metaReqs = [
-            'workflowId' => $applicationId->workflow_id,
-            'moduleId' => $mModuleId,
-            'refTableDotId' => "water_applications.id",
-            'refTableIdValue' => $applicationId->id,
-            'message' => $request->comment
-        ];
-
-        if ($userType != 'Citizen') {
-            $roleReqs = new Request([
-                'workflowId' => $applicationId->workflow_id,
-                'userId' => $userId,
-            ]);
-            $wfRoleId = $mWfRoleUsermap->getRoleByUserWfId($roleReqs);
-            $metaReqs = array_merge($metaReqs, ['senderRoleId' => $wfRoleId->wf_role_id]);
-            $metaReqs = array_merge($metaReqs, ['user_id' => $userId]);
-        }
-        # For Citizen Independent Comment
-        if ($userType == 'Citizen') {
-            $metaReqs = array_merge($metaReqs, ['citizenId' => $userId]);
-            $metaReqs = array_merge($metaReqs, ['ulb_id' => $applicationId->ulb_id]);
-            $metaReqs = array_merge($metaReqs, ['user_id' => NULL]);
-        }
-        $request->request->add($metaReqs);
-        $workflowTrack->saveTrack($request);
-        return responseMsgs(true, "You Have Commented Successfully!!", ['Comment' => $request->comment], "010108", "1.0", "427ms", "POST", "");
-    }
 
     /**
      * |-------------------------- Get Approved Application Details According to Consumer No -----------------------|
@@ -1080,42 +874,4 @@ class NewConnectionRepository implements iNewConnection
         return remove_null($consumerDetails);
     }
 
-    /**
-     * |-------------------- field Verified Inbox list ----------------------------|
-     * | @param req
-     * | @var mWfWardUser
-     * | @var userId
-     * | @var ulbId
-     * | @var roleId
-     * | @var refWard
-     * | @var wardId
-     * | @var waterList
-     * | @return waterList 
-        | Serial No : 11
-        | Working
-        | Remove
-     */
-    public function fieldVerifiedInbox($req)
-    {
-        $mWfWardUser = new WfWardUser();
-        $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
-        $userId = auth()->user()->id;
-        $ulbId = auth()->user()->ulb_id;
-
-        $refWard = $mWfWardUser->getWardsByUserId($userId);
-        $wardId = $refWard->map(function ($value, $key) {
-            return $value->ward_id;
-        });
-
-        $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
-        $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
-
-        $waterList = $this->getWaterApplicatioList($workflowIds, $ulbId)
-            ->whereIn('water_applications.ward_id', $wardId)
-            ->where('is_field_verified', true)
-            ->orderByDesc('water_applications.id')
-            ->get();
-
-        return responseMsgs(true, "field Verified Inbox", remove_null($waterList), 010125, 1.0, "", "POST", "");
-    }
 }
