@@ -115,7 +115,7 @@ class CalculateSafById
     {
         $safFloors = array();
         // Building Case
-        if ($this->_safDetails['property_type'] != 4) {
+        if ($this->_safDetails['prop_type_mstr_id'] != 4) {
             $floors = $this->_mPropActiveSafFloors->getSafFloorsBySafId($this->_safId);
             foreach ($floors as $floor) {
                 $floorReq = [

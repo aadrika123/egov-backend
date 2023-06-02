@@ -221,7 +221,7 @@ class EloquentAuthRepository implements AuthRepository
             $user->remember_token = null;
             $user->save();
 
-            $user->tokens()->delete();
+            $user->currentAccessToken()->delete();
 
             Redis::connection();
             $redis = Redis::del(['user:' . $id, 'workflow_candidate:' . $id]);                              // Deleting Key from Redis Database  Deleting Workflow_candidate from Redis Database

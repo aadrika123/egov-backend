@@ -687,7 +687,7 @@ class ActiveSafController extends Controller
             $levelComment = $mWorkflowTracks->getTracksByRefId($mRefTable, $data['id']);
             $fullDetailsData['levelComment'] = $levelComment;
 
-            $citizenComment = $mWorkflowTracks->getCitizenTracks($mRefTable, $data['id'], $data['user_id']);
+            $citizenComment = $mWorkflowTracks->getCitizenTracks($mRefTable, $data['id'], $data['citizen_id']);
             $fullDetailsData['citizenComment'] = $citizenComment;
 
             $req->request->add($metaReqs);
@@ -977,7 +977,7 @@ class ActiveSafController extends Controller
                 $idGeneration = new PrefixIdGenerator($ptParamId, $saf->ulb_id);
 
 
-                if (in_array($saf->assessmentType, ['New Assessment', 'Bifurcation', 'Amalgamation', 'Mutation'])) { // Make New Property For New Assessment,Bifurcation and Amalgamation & Mutation
+                if (in_array($saf->assessment_type, ['New Assessment', 'Bifurcation', 'Amalgamation', 'Mutation'])) { // Make New Property For New Assessment,Bifurcation and Amalgamation & Mutation
                     $ptNo = $idGeneration->generate();
                     $saf->pt_no = $ptNo;                        // Generate New Property Tax No for All Conditions
                     $saf->save();
@@ -1033,9 +1033,9 @@ class ActiveSafController extends Controller
             ->where('saf_id', $safId)
             ->get();
 
-        $toBeProperties = PropActiveSaf::query()
-            ->where('id', $safId)
+        $toBeProperties = PropActiveSaf::where('id', $safId)
             ->select(
+                'saf_no',
                 'ulb_id',
                 'cluster_id',
                 'holding_no',
@@ -1565,8 +1565,10 @@ class ActiveSafController extends Controller
             $totalAmount = $demands['payableAmount'];
             $req->request->add(['workflowId' => $safDetails->workflow_id, 'ghostUserId' => 0, 'amount' => $totalAmount]);
             DB::beginTransaction();
-            $orderDetails = $this->saveGenerateOrderid($req);                                      //<---------- Generate Order ID Trait
-            if ($orderDetails->original['status'] == false)
+            $orderDetails = $this->saveGenerateOrderid($req);
+            $status = isset($orderDetails->original['status']) ? $orderDetails->original['status'] : true;                                      //<---------- Generate Order ID Trait
+
+            if ($status == false)
                 return $orderDetails->original;
             $demands = array_merge($demands->toArray(), [
                 'orderId' => $orderDetails['orderId']
