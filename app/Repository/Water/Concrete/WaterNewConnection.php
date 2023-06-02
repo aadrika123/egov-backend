@@ -268,6 +268,7 @@ class WaterNewConnection implements IWaterNewConnection
                 $amount = 0;
                 $penalty = 0;
                 $rebat = 0;
+                $amount = $cahges["amount"];
                 if (isset($request->isInstallment)) {
                     $request->validate([
                         'isInstallment' => 'nullable|in:yes,no'

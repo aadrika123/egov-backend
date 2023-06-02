@@ -64,7 +64,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
         # Site Inspection
         Route::post('admin/search-application', 'searchApplicationByParameter');                        // Admin
-        Route::post('admin/site-verification/comparision', 'listComparision');                          // Admin / notused
         Route::post('admin/application/save-inspection-date', 'saveInspectionDateTime');                // Workflow/Admin
         Route::post('admin/application/site-inspection-details', 'getSiteInspectionDetails');           // Workflow/Admin
         Route::post('admin/application/cancel-inspection-scheduling', 'cancelSiteInspection');          // Workflow/Admin
@@ -89,7 +88,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('application/payment/offline/pay-connection-charge', 'offlineConnectionPayment');   // Admin
         Route::post('consumer/demand/generate-payment-receipt', 'generateDemandPaymentReceipt');        // Admin/ Citizen
         Route::post('consumer/online-demand-payment', 'initiateOnlineDemandPayment');                   // Citizen
-        Route::post('citizen/payment-history', 'paymentHistory');               // Here                 // Citizen  
+        Route::post('citizen/payment-history', 'paymentHistory');                                       // Citizen  
         Route::post('consumer/water-user-charges', 'getWaterUserCharges');                              // Admin / Citizen
 
         # Site inspection 
@@ -109,12 +108,12 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('admin/consumer/get-meter-list', 'getMeterList');                                   // Admin
         Route::post('consumer/caretaken-connections', 'viewCaretakenConnection');                       // Citiizen
         Route::post('consumer/calculate/meter-fixed-reading', 'calculateMeterFixedReading');            // Admin
-        Route::post('admin/consumer/add-fixed-rate', 'addFixedRate');      // Here                      // Admin
-        Route::post('consumer/generate-memo', 'generateMemo');                                           // Admin / Citizen
+        Route::post('admin/consumer/add-fixed-rate', 'addFixedRate');      // Here                      // Admin / Not used
+        Route::post('consumer/generate-memo', 'generateMemo');                                          // Admin / Citizen
 
         # Deactivation
         Route::post('admin/consumer/apply-deactivation', 'applyDeactivation');                          // Admin / Not Used
-        Route::post('admin/consumer/demand-deactivation', 'consumerDemandDeactivation');
+        Route::post('admin/consumer/demand-deactivation', 'consumerDemandDeactivation');                // Admin / Not used
     });
 
 

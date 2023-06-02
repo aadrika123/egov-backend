@@ -698,8 +698,8 @@ class NewConnectionController extends Controller
     }
 
 
-    // Delete the Application
     /**
+     * | Delete the Application
         | Caution Dont Perform Delete Operation
      */
     public function deleteWaterApplication(Request $req)
@@ -754,9 +754,8 @@ class NewConnectionController extends Controller
 
 
 
-
-    // Edit the Water Application
     /**
+     * | Edit the Water Application
         | Not / validate the payment status / Check the use / Not used
         | 00 ->
      */
@@ -885,7 +884,11 @@ class NewConnectionController extends Controller
         $mWaterPenaltyInstallment->deactivatePenalty($refWaterApplicationId);
     }
 
-    // Citizen view : Get Application Details of viewind
+
+    /**
+     * | Citizen view : Get Application Details of viewind
+        | Serial No : 
+     */
     public function getApplicationDetails(Request $request)
     {
         $request->validate([
@@ -953,6 +956,7 @@ class NewConnectionController extends Controller
     /**
      * | Upload Application Documents 
      * | @param req
+        | Serial No :
         | Working 
         | Look on the concept of deactivation of the rejected documents 
         | Put the static "verify status" 2 in config  
@@ -971,18 +975,17 @@ class NewConnectionController extends Controller
             $user               = authUser();
             $metaReqs           = array();
             $applicationId      = $req->applicationId;
+            $document           = $req->document;
             $docUpload          = new DocUpload;
             $mWfActiveDocument  = new WfActiveDocument();
             $mWaterApplication  = new WaterApplication();
             $relativePath       = Config::get('waterConstaint.WATER_RELATIVE_PATH');
             $refmoduleId        = Config::get('module-constants.WATER_MODULE_ID');
 
-
-            $getWaterDetails = $mWaterApplication->getWaterApplicationsDetails($applicationId);
-            $refImageName = $req->docRefName;
-            $refImageName = $getWaterDetails->id . '-' . str_replace(' ', '_', $refImageName);
-            $document = $req->document;
-            $imageName = $docUpload->upload($refImageName, $document, $relativePath);
+            $getWaterDetails    = $mWaterApplication->getWaterApplicationsDetails($applicationId);
+            $refImageName       = $req->docRefName;
+            $refImageName       = $getWaterDetails->id . '-' . str_replace(' ', '_', $refImageName);
+            $imageName          = $docUpload->upload($refImageName, $document, $relativePath);
 
             $metaReqs = [
                 'moduleId'      => $refmoduleId,
@@ -1048,7 +1051,10 @@ class NewConnectionController extends Controller
 
     /**
      * | Check if the params for document upload
-     * | @param 
+     * | @param isCitizen
+     * | @param applicantDetals
+     * | @param user
+        | Serial No : 
      */
     public function checkParamForDocUpload($isCitizen, $applicantDetals, $user)
     {
@@ -1083,7 +1089,8 @@ class NewConnectionController extends Controller
     /**
      * | Caheck the Document if Fully Upload or not
      * | @param req
-    | Up
+        | Up
+        | Serial No :
      */
     public function checkFullDocUpload($req)
     {
@@ -1119,6 +1126,7 @@ class NewConnectionController extends Controller
      * | Updating the water Application Status
      * | @param req
      * | @param application
+        | Serial No :  
         | Up 
         | Check the concept of auto forward
      */
@@ -1143,7 +1151,7 @@ class NewConnectionController extends Controller
 
     /**
      * | Auto forward process 
-     * | 
+        | Serial No : 
      */
     public function autoForwardProcess($waterTransaction, $req, $application)
     {
@@ -1159,8 +1167,9 @@ class NewConnectionController extends Controller
     }
 
 
-    // Get the upoaded docunment
     /**
+     * |Get the upoaded docunment
+        | Serial No : 
         | Working
      */
     public function getUploadDocuments(Request $req)
@@ -1190,8 +1199,10 @@ class NewConnectionController extends Controller
         }
     }
 
-    // Get the document to be upoaded with list of dock uploaded 
+
     /**
+     * | Get the document to be upoaded with list of dock uploaded 
+        | Serial No :  
         | Working / Citizen Upload
      */
     public function getDocToUpload(Request $request)
@@ -1307,6 +1318,7 @@ class NewConnectionController extends Controller
      * | Serch the property details for filling the water Application Form
      * | @param request
      * | 01
+        | Serial No : 
      */
     public function getSafHoldingDetails(Request $request)
     {
@@ -1316,14 +1328,14 @@ class NewConnectionController extends Controller
             'ulbId' => 'required'
         ]);
         try {
-            $mPropProperty = new PropProperty();
-            $mPropOwner = new PropOwner();
-            $mPropFloor = new PropFloor();
-            $mPropActiveSafOwners = new PropActiveSafsOwner();
-            $mPropActiveSafsFloor = new PropActiveSafsFloor();
-            $mPropActiveSaf = new PropActiveSaf();
-            $key = $request->connectionThrough;
-            $refTenanted = Config::get('PropertyConstaint.OCCUPANCY-TYPE.TENANTED');
+            $mPropProperty          = new PropProperty();
+            $mPropOwner             = new PropOwner();
+            $mPropFloor             = new PropFloor();
+            $mPropActiveSafOwners   = new PropActiveSafsOwner();
+            $mPropActiveSafsFloor   = new PropActiveSafsFloor();
+            $mPropActiveSaf         = new PropActiveSaf();
+            $key                    = $request->connectionThrough;
+            $refTenanted            = Config::get('PropertyConstaint.OCCUPANCY-TYPE.TENANTED');
 
             switch ($key) {
                 case ("1"):
@@ -1381,17 +1393,19 @@ class NewConnectionController extends Controller
     /**
      * | Get Usage type according to holding
      * | Calling function : for the search of the property usage type 01.02
+        | Serial No : 
      */
     public function getPropUsageType($request, $id)
     {
-        $refPropertyTypeId = config::get('waterConstaint.PROPERTY_TYPE');
+        $mPropActiveSafsFloor   = new PropActiveSafsFloor();
+        $mPropFloor             = new PropFloor();
+        $refPropertyTypeId      = config::get('waterConstaint.PROPERTY_TYPE');
+
         switch ($request->connectionThrough) {
             case ('1'):
-                $mPropFloor = new PropFloor();
                 $usageCatagory = $mPropFloor->getPropUsageCatagory($id);
                 break;
             case ('2'):
-                $mPropActiveSafsFloor = new PropActiveSafsFloor();
                 $usageCatagory = $mPropActiveSafsFloor->getSafUsageCatagory($id);
         }
 
@@ -1401,37 +1415,37 @@ class NewConnectionController extends Controller
                 case ($var == 'A'):
                     return [
                         'id'        => $refPropertyTypeId['Residential'],
-                        'usageType' => 'Residential'
+                        'usageType' => 'Residential'                                        // Static
                     ];
                     break;
                 case ($var == 'F'):
                     return [
                         'id'        => $refPropertyTypeId['Industrial'],
-                        'usageType' => 'Industrial'
+                        'usageType' => 'Industrial'                                         // Static
                     ];
                     break;
                 case ($var == 'G' || $var == 'I'):
                     return [
                         'id'        => $refPropertyTypeId['Government'],
-                        'usageType' => 'Government & PSU'
+                        'usageType' => 'Government & PSU'                                   // Static
                     ];
                     break;
                 case ($var == 'B' || $var == 'C' || $var == 'D' || $var == 'E'):
                     return [
                         'id'        => $refPropertyTypeId['Commercial'],
-                        'usageType' => 'Commercial'
+                        'usageType' => 'Commercial'                                         // Static
                     ];
                     break;
                 case ($var == 'H' || $var == 'J' || $var == 'K' || $var == 'L'):
                     return [
                         'id'        => $refPropertyTypeId['Institutional'],
-                        'usageType' => 'Institutional'
+                        'usageType' => 'Institutional'                                      // Static
                     ];
                     break;
-                case ($var == 'M'):   //<---------------- Check wether the property (M) belongs to the commercial catagory
+                case ($var == 'M'):                                                         // Check wether the property (M) belongs to the commercial catagory
                     return [
                         'id'        => $refPropertyTypeId['Commercial'],
-                        'usageType' => 'Other / Commercial'
+                        'usageType' => 'Other / Commercial'                                 // Static
                     ];
                     break;
             }
@@ -1444,6 +1458,7 @@ class NewConnectionController extends Controller
      * | Get appartment details 
      * | @param propData
      * | @param request
+        | Serial No : 
      */
     public function getAppartmentDetails($key, $propData)
     {
@@ -1517,8 +1532,9 @@ class NewConnectionController extends Controller
             'applicationId' => 'required|numeric'
         ]);
         try {
-            $mWaterApplication = new WaterApplication();
-            $mWaterApplicant = new WaterApplicant();
+            $mWaterApplication  = new WaterApplication();
+            $mWaterApplicant    = new WaterApplicant();
+
             $refWaterApplication = $mWaterApplication->getApplicationById($req->applicationId)->first();                      // Get Saf Details
             if (!$refWaterApplication) {
                 throw new Exception("Application Not Found for this id");
@@ -1555,21 +1571,24 @@ class NewConnectionController extends Controller
      * | @var moduleId
      * | @var uploadedDocs
      * | Calling Function 01.01.01/ 01.02.01
+        | Serial No : 
      */
     public function filterDocument($documentList, $refWaterApplication, $ownerId = null)
     {
-        $mWfActiveDocument = new WfActiveDocument();
-        $applicationId = $refWaterApplication->id;
-        $workflowId = $refWaterApplication->workflow_id;
-        $moduleId = Config::get('module-constants.WATER_MODULE_ID');
-        $uploadedDocs = $mWfActiveDocument->getDocByRefIds($applicationId, $workflowId, $moduleId);
+        $mWfActiveDocument  = new WfActiveDocument();
+        $applicationId      = $refWaterApplication->id;
+        $workflowId         = $refWaterApplication->workflow_id;
+        $moduleId           = Config::get('module-constants.WATER_MODULE_ID');
+        $uploadedDocs       = $mWfActiveDocument->getDocByRefIds($applicationId, $workflowId, $moduleId);
 
         $explodeDocs = collect(explode('#', $documentList->requirements));
         $filteredDocs = $explodeDocs->map(function ($explodeDoc) use ($uploadedDocs, $ownerId, $documentList) {
-            $document = explode(',', $explodeDoc);
-            $key = array_shift($document);
-            $label = array_shift($document);
-            $documents = collect();
+
+            # var defining
+            $document   = explode(',', $explodeDoc);
+            $key        = array_shift($document);
+            $label      = array_shift($document);
+            $documents  = collect();
 
             collect($document)->map(function ($item) use ($uploadedDocs, $documents, $ownerId, $documentList) {
                 $uploadedDoc = $uploadedDocs->where('doc_code', $item)
@@ -1580,18 +1599,18 @@ class NewConnectionController extends Controller
                     $fullDocPath = !empty(trim($uploadedDoc->doc_path)) ? $path : null;
                     $response = [
                         "uploadedDocId" => $uploadedDoc->id ?? "",
-                        "documentCode" => $item,
-                        "ownerId" => $uploadedDoc->owner_dtl_id ?? "",
-                        "docPath" => $fullDocPath ?? "",
-                        "verifyStatus" => $uploadedDoc->verify_status ?? "",
-                        "remarks" => $uploadedDoc->remarks ?? "",
+                        "documentCode"  => $item,
+                        "ownerId"       => $uploadedDoc->owner_dtl_id ?? "",
+                        "docPath"       => $fullDocPath ?? "",
+                        "verifyStatus"  => $uploadedDoc->verify_status ?? "",
+                        "remarks"       => $uploadedDoc->remarks ?? "",
                     ];
                     $documents->push($response);
                 }
             });
-            $reqDoc['docType'] = $key;
-            $reqDoc['uploadedDoc'] = $documents->last();
-            $reqDoc['docName'] = substr($label, 1, -1);
+            $reqDoc['docType']      = $key;
+            $reqDoc['uploadedDoc']  = $documents->last();
+            $reqDoc['docName']      = substr($label, 1, -1);
             // $reqDoc['refDocName'] = substr($label, 1, -1);
 
             $reqDoc['masters'] = collect($document)->map(function ($doc) use ($uploadedDocs) {
@@ -1603,12 +1622,12 @@ class NewConnectionController extends Controller
                     $fullDocPath = !empty(trim($uploadedDoc->doc_path)) ? $path : null;
                 }
                 $arr = [
-                    "documentCode" => $doc,
-                    "docVal" => ucwords($strReplace),
-                    "uploadedDoc" => $fullDocPath ?? "",
+                    "documentCode"  => $doc,
+                    "docVal"        => ucwords($strReplace),
+                    "uploadedDoc"   => $fullDocPath ?? "",
                     "uploadedDocId" => $uploadedDoc->id ?? "",
                     "verifyStatus'" => $uploadedDoc->verify_status ?? "",
-                    "remarks" => $uploadedDoc->remarks ?? "",
+                    "remarks"       => $uploadedDoc->remarks ?? "",
                 ];
                 return $arr;
             });
@@ -1621,34 +1640,35 @@ class NewConnectionController extends Controller
      * |---------------------------- List of the doc to upload ----------------------------|
      * | Calling function
      * | 01.01
+        | Serial No :  
      */
     public function getWaterDocLists($application)
     {
-        $mRefReqDocs = new RefRequiredDocument();
-        $moduleId = Config::get('module-constants.WATER_MODULE_ID');
+        $mRefReqDocs    = new RefRequiredDocument();
+        $moduleId       = Config::get('module-constants.WATER_MODULE_ID');
 
-        $type   = ["METER_BILL", "ADDRESS_PROOF", "OTHER"];
-        if (in_array($application->connection_through, [1, 2]))      // Holding No, SAF No
+        $type = ["METER_BILL", "ADDRESS_PROOF", "OTHER"];
+        if (in_array($application->connection_through, [1, 2]))         // Holding No, SAF No // Static
         {
             $type[] = "HOLDING_PROOF";
         }
-        if (strtoupper($application->category) == "BPL")                // FOR BPL APPLICATION
+        if (strtoupper($application->category) == "BPL")                // FOR BPL APPLICATION // Static
         {
             $type[] = "BPL";
         }
-        if ($application->property_type_id == 2)                        // FOR COMERCIAL APPLICATION
+        if ($application->property_type_id == 2)                        // FOR COMERCIAL APPLICATION // Static
         {
             $type[] = "COMMERCIAL";
         }
-        if ($application->apply_from != "Online")                       // Online
+        if ($application->apply_from != "Online")                       // Online // Static
         {
             $type[]  = "FORM_SCAN_COPY";
         }
-        if ($application->owner_type == 2)                              // In case of Tanent
+        if ($application->owner_type == 2)                              // In case of Tanent // Static
         {
             $type[]  = "TENANT";
         }
-        if ($application->property_type_id == 7)                        // Appartment
+        if ($application->property_type_id == 7)                        // Appartment // Static
         {
             $type[]  = "APPARTMENT";
         }
@@ -1660,13 +1680,14 @@ class NewConnectionController extends Controller
      * |---------------------------- Get owner Doc list ----------------------------|
      * | Calling Function
      * | 01.02
+        | Serial No :
      */
     public function getOwnerDocLists($refOwners, $application)
     {
-        $mRefReqDocs = new RefRequiredDocument();
-        $mWfActiveDocument = new WfActiveDocument();
-        $moduleId = Config::get('module-constants.WATER_MODULE_ID');
-        $type   = ["ID_PROOF", "CONSUMER_PHOTO"];
+        $mRefReqDocs        = new RefRequiredDocument();
+        $mWfActiveDocument  = new WfActiveDocument();
+        $moduleId           = Config::get('module-constants.WATER_MODULE_ID');
+        $type               = ["ID_PROOF", "CONSUMER_PHOTO"];
 
         $documentList = $mRefReqDocs->getCollectiveDocByCode($moduleId, $type);
         $ownerDocList['documents'] = collect($documentList)->map(function ($value, $key) use ($application, $refOwners) {
@@ -1679,12 +1700,12 @@ class NewConnectionController extends Controller
                 $fullDocPath = !empty(trim($ownerPhoto->doc_path)) ? $path : null;
             }
             $ownerDocList['ownerDetails'] = [
-                'ownerId' => $refOwners['id'],
-                'name' => $refOwners['applicant_name'],
-                'mobile' => $refOwners['mobile_no'],
-                'guardian' => $refOwners['guardian_name'],
-                'uploadedDoc' => $fullDocPath ?? "",
-                'verifyStatus' => $ownerPhoto->verify_status ?? ""
+                'ownerId'       => $refOwners['id'],
+                'name'          => $refOwners['applicant_name'],
+                'mobile'        => $refOwners['mobile_no'],
+                'guardian'      => $refOwners['guardian_name'],
+                'uploadedDoc'   => $fullDocPath ?? "",
+                'verifyStatus'  => $ownerPhoto->verify_status ?? ""
             ];
             $ownerDocList['ownerDetails']['reqDocCount'] = $ownerDocList['documents']->count();
             $ownerDocList['ownerDetails']['uploadedDocCount'] = $ownerDocList['documents']->whereNotNull('uploadedDoc')->count();
@@ -1694,6 +1715,7 @@ class NewConnectionController extends Controller
 
     /**
      * |----------------------------- Read the server url ------------------------------|
+        | Serial No : 
      */
     public function readDocumentPath($path)
     {
@@ -1705,46 +1727,49 @@ class NewConnectionController extends Controller
     /**
      * |---------------------------- Search Application ----------------------------|
      * | Search Application using provided condition For the Admin 
+        | Serial No : 
      */
     public function searchWaterConsumer(Request $request)
     {
         $request->validate([
-            'filterBy' => 'required',
+            'filterBy'  => 'required',
             'parameter' => 'required'
         ]);
         try {
             $mWaterConsumer = new WaterConsumer();
-            $key = $request->filterBy;
-            $paramenter = $request->parameter;
-            $string = preg_replace("/([A-Z])/", "_$1", $key);
-            $refstring = strtolower($string);
+            $key            = $request->filterBy;
+            $paramenter     = $request->parameter;
+            $string         = preg_replace("/([A-Z])/", "_$1", $key);
+            $refstring      = strtolower($string);
 
             switch ($key) {
-                case ("consumerNo"):
+                case ("consumerNo"):                                                                        // Static
                     $waterReturnDetails = $mWaterConsumer->getDetailByConsumerNo($refstring, $paramenter);
                     $checkVal = collect($waterReturnDetails)->first();
                     if (!$checkVal)
                         throw new Exception("Data according to " . $key . " not Found!");
                     break;
-                case ("holdingNo"):
+                case ("holdingNo"):                                                                         // Static
                     $waterReturnDetails = $mWaterConsumer->getDetailByConsumerNo($refstring, $paramenter);
                     $checkVal = collect($waterReturnDetails)->first();
                     if (!$checkVal)
                         throw new Exception("Data according to " . $key . " not Found!");
                     break;
-                case ("safNo"):
+                case ("safNo"):                                                                             // Static
                     $waterReturnDetails = $mWaterConsumer->getDetailByConsumerNo($refstring, $paramenter);
                     $checkVal = collect($waterReturnDetails)->first();
                     if (!$checkVal)
                         throw new Exception("Data according to " . $key . " not Found!");
                     break;
-                case ("applicantName"):
+                case ("applicantName"):                                                                     // Static
+                    $paramenter = strtoupper($paramenter);
                     $waterReturnDetails = $mWaterConsumer->getDetailByOwnerDetails($refstring, $paramenter);
                     $checkVal = collect($waterReturnDetails)->first();
                     if (!$checkVal)
                         throw new Exception("Data according to " . $key . " not Found!");
                     break;
-                case ('mobileNo'):
+                case ('mobileNo'):                                                                          // Static
+                    $paramenter = strtoupper($paramenter);
                     $waterReturnDetails = $mWaterConsumer->getDetailByOwnerDetails($refstring, $paramenter);
                     $checkVal = collect($waterReturnDetails)->first();
                     if (!$checkVal)
@@ -1762,44 +1787,44 @@ class NewConnectionController extends Controller
     /**
      * | Search the Active Application 
      * | @param request
-     * | @var 
-     * | @return  
+        | Serial No :  
      */
     public function getActiveApplictaions(Request $request)
     {
         $request->validate([
-            'filterBy' => 'required|in:newConnection,regularization,name,mobileNo,safNo,holdingNo',
+            'filterBy'  => 'required|in:newConnection,regularization,name,mobileNo,safNo,holdingNo',
             'parameter' => $request->filterBy == 'mobileNo' ? 'required|numeric|digits:10' : "required",
         ]);
 
         try {
-            $key = $request->filterBy;
-            $parameter = $request->parameter;
-            $mWaterApplicant = new WaterApplication();
-            $connectionTypes = Config::get('waterConstaint.CONNECTION_TYPE');
+            $key                = $request->filterBy;
+            $parameter          = $request->parameter;
+            $mWaterApplicant    = new WaterApplication();
+            $connectionTypes    = Config::get('waterConstaint.CONNECTION_TYPE');
+
             switch ($key) {
-                case ("newConnection"):
+                case ("newConnection"):                                                                     // Static
                     $returnData = $mWaterApplicant->getDetailsByApplicationNo($connectionTypes['NEW_CONNECTION'], $parameter);
                     break;
-                case ("regularization"):
+                case ("regularization"):                                                                    // Static
                     $returnData = $mWaterApplicant->getDetailsByApplicationNo($connectionTypes['REGULAIZATION'], $parameter);
                     break;
-                case ("name"):
+                case ("name"):                                                                              // Static
                     $returnData = $mWaterApplicant->getDetailsByParameters()
                         ->where("water_applicants.applicant_name", 'ILIKE', '%' . $parameter . '%')
                         ->get();
                     break;
-                case ("mobileNo"):
+                case ("mobileNo"):                                                                          // Static
                     $returnData = $mWaterApplicant->getDetailsByParameters()
                         ->where("water_applicants.mobile_no", $parameter)
                         ->get();
                     break;
-                case ("safNo"):
+                case ("safNo"):                                                                             // Static
                     $returnData = $mWaterApplicant->getDetailsByParameters()
                         ->where("water_applications.saf_no", 'LIKE', '%' . $parameter . '%')
                         ->get();
                     break;
-                case ("holdingNo"):
+                case ("holdingNo"):                                                                         // Static
                     $returnData = $mWaterApplicant->getDetailsByParameters()
                         ->where("water_applications.holding_no", 'LIKE', '%' . $parameter . '%')
                         ->get();
@@ -1815,6 +1840,7 @@ class NewConnectionController extends Controller
     /**
      * | Document Verify Reject
      * | @param req
+        | Serial No :  
         | Discuss about the doc_upload_status should be 0 or not 
      */
     public function docVerifyRejects(Request $req)
@@ -1828,13 +1854,13 @@ class NewConnectionController extends Controller
 
         try {
             # Variable Assignments
-            $mWfDocument = new WfActiveDocument();
-            $mWaterApplication = new WaterApplication();
-            $mWfRoleusermap = new WfRoleusermap();
-            $wfDocId = $req->id;
-            $userId = authUser()->id;
-            $applicationId = $req->applicationId;
-            $wfLevel = Config::get('waterConstaint.ROLE-LABEL');
+            $mWfDocument        = new WfActiveDocument();
+            $mWaterApplication  = new WaterApplication();
+            $mWfRoleusermap     = new WfRoleusermap();
+            $wfDocId            = $req->id;
+            $applicationId      = $req->applicationId;
+            $userId             = authUser()->id;
+            $wfLevel            = Config::get('waterConstaint.ROLE-LABEL');
 
             # validating application
             $waterApplicationDtl = $mWaterApplication->getApplicationById($applicationId)
@@ -1899,7 +1925,8 @@ class NewConnectionController extends Controller
      * | @param
      * | @var 
      * | @return
-        | Use
+        | Serial No :  
+        | Working 
      */
     public function ifFullDocVerified($applicationId)
     {
@@ -2041,12 +2068,12 @@ class NewConnectionController extends Controller
             'toDate'   => 'required|date_format:Y-m-d',
         ]);
         try {
-            $mWaterConnectionCharge  = new WaterConnectionCharge();
-            $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
-            $mWaterApplication = new WaterApplication();
+            $mWaterConnectionCharge     = new WaterConnectionCharge();
+            $mWaterPenaltyInstallment   = new WaterPenaltyInstallment();
+            $mWaterApplication          = new WaterApplication();
             $refTimeDate = [
-                "refStartTime" => date($request->fromDate),
-                "refEndTime" => date($request->toDate)
+                "refStartTime"  => date($request->fromDate),
+                "refEndTime"    => date($request->toDate)
             ];
             #application Details according to date
             $refApplications = $mWaterApplication->getapplicationByDate($refTimeDate)
@@ -2114,44 +2141,19 @@ class NewConnectionController extends Controller
 
 
     #----------------------------------------- Site Inspection ----------------------------------------|
-    /**
-     * | Site Comparision Screen 
-     * | Je comparision data
-        | Recheck 
-        | Not used 
-     * | @param request
-     */
-    public function listComparision(Request $request)
-    {
-        $request->validate([
-            'applicationId' => 'required'
-        ]);
-        try {
-            # Site inspection Details
-            $mWaterSiteInspection = new WaterSiteInspection();
-            $mWaterApplication = new WaterApplication();
-            $applicationDetails = $mWaterApplication->getApplicationById($request->applicationId)->firstOrFail();
-            // $siteInspectiondetails = $mWaterSiteInspection->getInspectionById($request->applicationId)->first();
-            $returnData = [
-                "applicationDetails" => $applicationDetails,
-                // "siteInspectiondetails" => $siteInspectiondetails
-            ];
-            return responseMsgs(true, "Comparative data!", remove_null($returnData), "", "01", "ms", "POST", "");
-        } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", "ms", "POST", "");
-        }
-    }
+
 
     /**
      * | Search Application for Site Inspection
      * | @param request
      * | @var 
+        | Serial No : 
         | Recheck
      */
     public function searchApplicationByParameter(Request $request)
     {
-        $filterBy = Config::get('waterConstaint.FILTER_BY');
-        $roleId = Config::get('waterConstaint.ROLE-LABEL.JE');
+        $filterBy   = Config::get('waterConstaint.FILTER_BY');
+        $roleId     = Config::get('waterConstaint.ROLE-LABEL.JE');
         $request->validate([
             'filterBy'  => 'required',
             'parameter' => $request->filterBy == $filterBy['APPLICATION'] ? 'required' : 'nullable',
@@ -2159,13 +2161,12 @@ class NewConnectionController extends Controller
             'toDate'    => $request->filterBy == $filterBy['DATE'] ? 'required|date_format:Y-m-d' : 'nullable',
         ]);
         try {
-            $mWaterApplicant = new WaterApplication();
-            $mWaterSiteInspection = new WaterSiteInspection();
-            $mWaterSiteInspectionsScheduling = new WaterSiteInspectionsScheduling();
             $key = $request->filterBy;
+            $mWaterApplicant = new WaterApplication();
+            $mWaterSiteInspectionsScheduling = new WaterSiteInspectionsScheduling();
 
             switch ($key) {
-                case ("byApplication"):
+                case ("byApplication"):                                                 // Static
                     $refSiteDetails['SiteInspectionDate'] = null;
                     $refApplication = $mWaterApplicant->getApplicationByNo($request->parameter, $roleId)->get();
                     $returnData = collect($refApplication)->map(function ($value) use ($mWaterSiteInspectionsScheduling) {
@@ -2180,10 +2181,10 @@ class NewConnectionController extends Controller
                     });
 
                     break;
-                case ("byDate"):
+                case ("byDate"):                                                         // Static
                     $refTimeDate = [
-                        "refStartTime" => Carbon::parse($request->fromDate)->format('Y-m-d'),
-                        "refEndTime" => Carbon::parse($request->toDate)->format('Y-m-d')
+                        "refStartTime"  => Carbon::parse($request->fromDate)->format('Y-m-d'),
+                        "refEndTime"    => Carbon::parse($request->toDate)->format('Y-m-d')
                     ];
                     $refData = $mWaterApplicant->getapplicationByDate($refTimeDate)->get();
                     $returnData = collect($refData)->map(function ($value) use ($roleId, $mWaterSiteInspectionsScheduling) {
@@ -2211,7 +2212,8 @@ class NewConnectionController extends Controller
     /**
      * | Can View Site Details 
      * | Check if the provided date is matchin to the current date
-     * | @param sitDetails  
+     * | @param sitDetails 
+        | Serial No :   
         | Recheck
      */
     public function canViewSiteDetails($sitDetails)
@@ -2228,7 +2230,7 @@ class NewConnectionController extends Controller
      * | @param request
      * | @var
      * | @return  
-        | Make Route
+        | Serial No :
         | Working
      */
     public function cancelSiteInspection(Request $request)
@@ -2257,7 +2259,7 @@ class NewConnectionController extends Controller
             $mWaterSiteInspectionsScheduling->cancelInspectionDateTime($refApplicationId);
             $mWaterConnectionCharge->deactivateSiteCharges($refApplicationId, $refSiteInspection);
             $mWaterPenaltyInstallment->deactivateSitePenalty($refApplicationId, $refSiteInspection);
-            $mWaterApplication->updateOnlyPaymentstatus($refApplicationId);
+            $mWaterApplication->updateOnlyPaymentstatus($refApplicationId);                                 // make the payment status of the application true
             if (!is_null($refSiteInspection)) {
                 $mWaterSiteInspection->deactivateSiteDetails($refSiteInspection->site_inspection_id);
             }
@@ -2273,6 +2275,7 @@ class NewConnectionController extends Controller
     /**
      * | Check the param for cancel of site inspection date and corresponding data 
      * | @param request
+        | Serial No :
         | Recheck
      */
     public function checkforPaymentStatus($request)
@@ -2293,27 +2296,32 @@ class NewConnectionController extends Controller
      * | @param request
      * | @var 
      * | @return 
+        | Serial No : 
         | Working
      */
     public function saveInspectionDateTime(Request $request)
     {
         try {
             $request->validate([
-                'applicationId' => 'required',
-                'inspectionDate' => 'required|date|date_format:Y-m-d',
-                'inspectionTime' => 'required|date_format:H:i'
+                'applicationId'     => 'required',
+                'inspectionDate'    => 'required|date|date_format:Y-m-d',
+                'inspectionTime'    => 'required|date_format:H:i'
             ]);
+            $this->checkForSaveDateTime($request);
             $mWaterSiteInspectionsScheduling = new WaterSiteInspectionsScheduling();
             $refDate = Carbon::now()->format('Y-m-d');
-            $this->checkForSaveDateTime($request);
+
+            DB::beginTransaction();
             $mWaterSiteInspectionsScheduling->saveSiteDateTime($request);
             if ($request->inspectionDate == $refDate) {
                 $canView['canView'] = true;
             } else {
                 $canView['canView'] = false;
             }
+            DB::commit();
             return responseMsgs(true, "Date for the Site Inspection is Saved!", $canView, "", "01", ".ms", "POST", "");
         } catch (Exception $e) {
+            DB::rollBack();
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", "");
         }
     }
@@ -2321,6 +2329,7 @@ class NewConnectionController extends Controller
     /**
      * | Check the validation for saving the site inspection 
      * | @param request
+        | Serial No :
         | Working
         | Add more Validation 
      */
@@ -2349,6 +2358,7 @@ class NewConnectionController extends Controller
     /**
      * | Get the Date/Time alog with site details 
      * | Site Details  
+        | Serial No :
         | Working
         | Recheck
      */
@@ -2381,6 +2391,7 @@ class NewConnectionController extends Controller
      * | Checking the sheduled Date for inspection
      * | @param
      * | @var 
+        | Serial No : 
         | Working
      */
     public function checkCanInspect($siteInspection)
@@ -2401,9 +2412,10 @@ class NewConnectionController extends Controller
      * | @param request
      * | @var 
      * | @return 
+        | Serial No :
         | Working
         | Check for deactivation of technical site inspection details 
-        | opration shoul be adding new record
+        | opration should be adding a new record
      */
     public function onlineSiteInspection(Request $request)
     {
@@ -2416,12 +2428,13 @@ class NewConnectionController extends Controller
             'ferruleType'   => 'required|in:6,10,12,16'
         ]);
         try {
-            $user = authUser();
-            $current = Carbon::now();
-            $currentDate = $current->format('Y-m-d');
-            $currentTime = $current->format('H:i:s');
-            $mWaterSiteInspection = new WaterSiteInspection();
-            $refAeRole = Config::get("waterConstaint.ROLE-LABEL.AE");
+            $user                   = authUser();
+            $current                = Carbon::now();
+            $currentDate            = $current->format('Y-m-d');
+            $currentTime            = $current->format('H:i:s');
+            $mWaterSiteInspection   = new WaterSiteInspection();
+            $refAeRole              = Config::get("waterConstaint.ROLE-LABEL.AE");
+
             $refDetails = $this->onlineSitePreConditionCheck($request);
             $refTechnicalDetails = $mWaterSiteInspection->getSiteDetails($request->applicationId)
                 ->where('order_officer', $refAeRole)
@@ -2452,14 +2465,16 @@ class NewConnectionController extends Controller
      * | pre conditional Check for the AE online Site inspection
      * | @param
      * | @var mWfRoleUser
+        | Serial No :
         | Working 
      */
     public function onlineSitePreConditionCheck($request)
     {
-        $mWfRoleUser = new WfRoleusermap();
+        $mWfRoleUser    = new WfRoleusermap();
+        $WaterRoles     = Config::get('waterConstaint.ROLE-LABEL');
         $refApplication = WaterApplication::findOrFail($request->applicationId);
-        $WaterRoles = Config::get('waterConstaint.ROLE-LABEL');
-        $workflowId = $refApplication->workflow_id;
+        $workflowId     = $refApplication->workflow_id;
+
         $metaReqs =  new Request([
             'userId'        => authUser()->id,
             'workflowId'    => $workflowId
@@ -2489,19 +2504,21 @@ class NewConnectionController extends Controller
      * | @param request
      * | @var 
      * | @return 
+        | Serial No : 
         | Working
      */
     public function getJeSiteDetails(Request $request)
     {
+        $request->validate([
+            'applicationId' => 'required',
+        ]);
         try {
-            $request->validate([
-                'applicationId' => 'required',
-            ]);
             # variable defining
-            $returnData['final_verify'] = false;
-            $mWaterSiteInspection = new WaterSiteInspection();
-            $mWaterSiteInspectionsScheduling = new WaterSiteInspectionsScheduling();
-            $refJe = Config::get("waterConstaint.ROLE-LABEL.JE");
+            $returnData['final_verify']         = false;
+            $mWaterSiteInspection               = new WaterSiteInspection();
+            $mWaterSiteInspectionsScheduling    = new WaterSiteInspectionsScheduling();
+            $refJe                              = Config::get("waterConstaint.ROLE-LABEL.JE");
+
             # level logic
             $sheduleDate = $mWaterSiteInspectionsScheduling->getInspectionData($request->applicationId)->first();
             if (!is_null($sheduleDate) && $sheduleDate->site_verify_status == true) {
@@ -2523,17 +2540,18 @@ class NewConnectionController extends Controller
      * | @param request
      * | @var 
      * | @return 
+        | Serial No :
         | Working
      */
     public function getTechnicalInsDetails(Request $request)
     {
+        $request->validate([
+            'applicationId' => 'required',
+        ]);
         try {
-            $request->validate([
-                'applicationId' => 'required',
-            ]);
             # variable defining
-            $mWaterSiteInspection = new WaterSiteInspection();
-            $refRole = Config::get("waterConstaint.ROLE-LABEL");
+            $mWaterSiteInspection   = new WaterSiteInspection();
+            $refRole                = Config::get("waterConstaint.ROLE-LABEL");
             # level logic
             $returnData['aeData'] = $mWaterSiteInspection->getSiteDetails($request->applicationId)
                 ->where('order_officer', $refRole['AE'])
@@ -2549,13 +2567,14 @@ class NewConnectionController extends Controller
     /**
      * | Check and get the je site inspection details
      * | @param request
+        | Serial No :
         | Working
      */
     public function jeSiteInspectDetails($request, $refRole)
     {
-        $mWaterApplication = new WaterApplication();
-        $mWaterSiteInspection = new WaterSiteInspection();
-        $applicationId = $request->applicationId;
+        $mWaterApplication      = new WaterApplication();
+        $mWaterSiteInspection   = new WaterSiteInspection();
+        $applicationId          = $request->applicationId;
 
         $applicationDetails = $mWaterApplication->getApplicationById($applicationId)
             ->where('is_field_verified', true)
