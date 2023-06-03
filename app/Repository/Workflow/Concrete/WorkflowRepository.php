@@ -19,7 +19,6 @@ class WorkflowRepository implements iWorkflowRepository
 {
     use Workflow;
 
-
     /*
     * Get Workflow Current User
     */
