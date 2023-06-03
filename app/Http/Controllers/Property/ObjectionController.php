@@ -668,14 +668,16 @@ class ObjectionController extends Controller
                 $metaReqs['verificationStatus'] = 0;
             }
 
-            $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
-            $metaReqs['workflowId'] = $activeObjection->workflow_id;
-            $metaReqs['refTableDotId'] = 'prop_active_objections.id';
-            $metaReqs['refTableIdValue'] = $req->applicationId;
-            $metaReqs['senderRoleId'] = $senderRoleId;
-            $metaReqs['user_id'] = $userId;
-            $metaReqs['trackDate'] = $this->_todayDate->format('Y-m-d H:i:s');
-            $req->request->add($metaReqs);
+            $metaReqs  = [
+                'moduleId' => Config::get('module-constants.PROPERTY_MODULE_ID'),
+                'workflowId' => $activeObjection->workflow_id,
+                'refTableDotId' => 'prop_active_objections.id',
+                'refTableIdValue' => $req->applicationId,
+                'senderRoleId' => $senderRoleId,
+                'user_id' => $userId,
+                'trackDate' => $this->_todayDate->format('Y-m-d H:i:s'),
+            ];
+            $req->merge($metaReqs);
             $track->saveTrack($req);
 
             // Updation of Received Date
