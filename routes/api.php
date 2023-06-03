@@ -43,7 +43,7 @@ use Illuminate\Http\Request;
  * Code Test
  * -------------------------------------------------------------------------
  * Code Tested By-Anil Mishra Sir
- * Code Testing Date:-25-06-2022 
+ * Code Testing Date:-25-06-2022
  * -------------------------------------------------------------------------
  */
 
@@ -159,7 +159,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('save-ulb', 'store');
         Route::put('edit-ulb/{id}', 'edit');
         Route::get('get-ulb/{id}', 'view');
-        // Route::get('get-all-ulb', 'getAllUlb');
         Route::delete('delete-ulb/{id}', 'deleteUlb');
     });
 
