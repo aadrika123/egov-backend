@@ -215,4 +215,17 @@ class WebhookPaymentData extends Model
             ->orderByDesc('id')
             ->first();
     }
+
+
+    /**
+     * | Get details according to given data to check the record in webhook table
+     */
+    public function getWebhookRecord($request, $captured, $webhookEntity, $status)
+    {
+        return WebhookPaymentData::where("account_id", $request->account_id)
+            ->where("payment_order_id", $webhookEntity['order_id'])
+            ->where("payment_id", $webhookEntity['id'])
+            ->where("payment_status", $status)
+            ->where("payment_captured", $captured);
+    }
 }

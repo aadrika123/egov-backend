@@ -466,6 +466,7 @@ class WaterApplication extends Model
             'water_applications.saf_no',
             'ulb_ward_masters.ward_name',
             'ulb_masters.ulb_name',
+            'ulb_masters.logo',
             DB::raw("string_agg(water_applicants.applicant_name,',') as applicantName"),
             DB::raw("string_agg(water_applicants.mobile_no::VARCHAR,',') as mobileNo"),
             DB::raw("string_agg(water_applicants.guardian_name,',') as guardianName"),
@@ -486,7 +487,8 @@ class WaterApplication extends Model
                 'water_applications.ulb_id',
                 'ulb_ward_masters.ward_name',
                 'ulb_masters.id',
-                'ulb_masters.ulb_name'
+                'ulb_masters.ulb_name',
+                'ulb_masters.logo',
             );
     }
 
