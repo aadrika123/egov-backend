@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Property;
 
 use App\BLL\Property\CalculationByUlbTc;
+use App\BLL\Property\EditSafBll;
 use App\EloquentClass\Property\PenaltyRebateCalculation;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Property\reqApplySaf;
@@ -596,11 +597,13 @@ class ActiveSafControllerV2 extends Controller
         ]);
 
         try {
-            $mPropActiveSaf = new PropActiveSaf();
-            $safDtls = $mPropActiveSaf::findOrFail($req->id);
-            return $safDtls;
+            $editSafBll = new EditSafBll;
+            $editSafBll->_reqs = $req;
+            $editSafBll->edit();
+            DB::commit();
             return responseMsgs(true, "Application Edited Successfully", [], "011809", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
+            DB::rollBack();
             return responseMsgs(false, $e->getMessage(), [], "011809", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         }
     }
