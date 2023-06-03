@@ -957,29 +957,30 @@ class WaterConsumer extends Controller
                 throw new Exception("consumer Details not found!");
             }
 
-            $returnValues = [
-                "consumerNo"            => $mDepartmentSection,
-                "applicationNo"         => $mAccDescription,
-                "year"            => $consumerDetails['consumer_no'],
-                "receivingDate"          => $consumerDetails['applicant_name'],
-                "ApprovalDate"        => $consumerDetails['mobile_no'],
-                "receiptNo"               => $consumerDetails['address'],
-                "paymentDate"              => ($startingDemand->demand_from) ?? null,
-                "wardNo"              => ($latestDemand->demand_upto) ?? null,
-                "applicantName"             => $consumerDetails['holding_no'],
-                "guardianName"                 => $consumerDetails['saf_no'],                                 // in case of chque,dd,nfts
-                "correspondingAddress"         => $totalPenaltyAmount ?? 0,
-                "mobileNo"            => $totalDemandAmount ?? 0,
-                "email"                 => $consumerDetails['ulb_id'],
-                "holdingNo"               => $consumerDetails['ulb_name'],
-                "safNo"                => $consumerDetails['ward_name'],
-                "builUpArea"               => $mTowards,
-                "description"           => $mAccDescription,
-                "paidAmtInWords"        => getIndianCurrency($totalDemandAmount),
-                "billNumber"            => $latestDemand->demand_no ?? null,
-                "advanceAmount"         => $advanceDetails['advanceAmount'],
+            // $returnValues = [
+            //     "consumerNo"            => $mDepartmentSection,
+            //     "applicationNo"         => $mAccDescription,
+            //     "year"            => $consumerDetails['consumer_no'],
+            //     "receivingDate"          => $consumerDetails['applicant_name'],
+            //     "ApprovalDate"        => $consumerDetails['mobile_no'],
+            //     "receiptNo"               => $consumerDetails['address'],
+            //     "paymentDate"              => ($startingDemand->demand_from) ?? null,
+            //     "wardNo"              => ($latestDemand->demand_upto) ?? null,
+            //     "applicantName"             => $consumerDetails['holding_no'],
+            //     "guardianName"                 => $consumerDetails['saf_no'],                                 // in case of chque,dd,nfts
+            //     "correspondingAddress"         => $totalPenaltyAmount ?? 0,
+            //     "mobileNo"            => $totalDemandAmount ?? 0,
+            //     "email"                 => $consumerDetails['ulb_id'],
+            //     "holdingNo"               => $consumerDetails['ulb_name'],
+            //     "safNo"                => $consumerDetails['ward_name'],
+            //     "builUpArea"               => $mTowards,
+            //     "connectionThrough"           => $mAccDescription,
+            //     "AppliedFrom"       => 
+            //     "ownersDetails" => 
+            //     "siteInspectionDetails" =>  
 
-            ];
+
+            // ];
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $request->deviceId);
         }
