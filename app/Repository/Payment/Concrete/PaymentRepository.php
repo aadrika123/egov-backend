@@ -197,20 +197,39 @@ class PaymentRepository implements iPayment
      * | @var mAttributes
      * | @var mVerification
         | Use for payment verificaton
+        | $mVerification = $this->paymentVerify($request, $mAttributes); (Calling the trait function)
      */
-    public function verifyPaymentStatus($request)
+    public function verifyPaymentStatus(Request $request)
     {
-        // $mVerification = $this->paymentVerify($request, $mAttributes);
+
+        # test code 
         $attributes     = null;
         $success        = false;
-        $successData    = new PaymentSuccess();
-        $rejectData     = new PaymentReject();
+        $refRazorpayId  = Config::get('razorpay.RAZORPAY_ID');
+        $refRazorpayKey = Config::get('razorpay.RAZORPAY_KEY');
+
+        $refPaymentId = $request->razorpayPaymentId;
+        $api = new Api($refRazorpayKey, $refRazorpayId);
+        $paymentId = $_POST['razorpayPaymentId'];
+        $payment = $api->payment->fetch($paymentId);
+        if ($payment->status === 'captured') {
+            return  $payment;
+        } else {
+            return $payment;
+        }
+
+        return false;
+
+
+        # variable and model declaration 
+        $attributes     = null;
+        $success        = false;
         $refRazorpayId  = Config::get('razorpay.RAZORPAY_ID');
         $refRazorpayKey = Config::get('razorpay.RAZORPAY_KEY');
 
         # verify the existence of the razerpay Id
-        $api = new Api($refRazorpayId, $refRazorpayKey);
         try {
+            $api = new Api($refRazorpayId, $refRazorpayKey);
             $attributes = [
                 'razorpay_order_id'     => $request->razorpayOrderId,
                 'razorpay_payment_id'   => $request->razorpayPaymentId,
@@ -223,15 +242,17 @@ class PaymentRepository implements iPayment
             $messsage = $exception->getMessage();
         }
 
-        if ($success === true) {
-            # Update database with success data
-            $successData->saveSuccessDetails($request);
-            $messsage = "Payment Successfully done!";
-            return responseMsgs(true, $messsage, [], "", "01", "", "POST", $request->deviceId);
-        } else {
-            # Update database with error data
-            $rejectData->saveRejectedData($request);
-            return responseMsgs(false, $messsage, [], "", "01", "", "POST", $request->deviceId);
+        try {
+            if ($success === true) {
+                # Check the webhook transaction data
+                $messsage = "Payment Successfully done!";
+                return responseMsgs(true, $messsage, [], "", "01", "", "POST", $request->deviceId);
+            } else {
+                # Update database with error data
+                return responseMsgs(false, $messsage, [], "", "01", "", "POST", $request->deviceId);
+            }
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], "", "04", ".ms", "POST", $request->deviceId);
         }
     }
 
@@ -304,9 +325,12 @@ class PaymentRepository implements iPayment
             }
 
             # Data to be stored in webhook table
-            $webhookData = new WebhookPaymentData();
-            $webhookData = $webhookData->saveWebhookData($request, $captured, $actulaAmount, $status, $notes, $firstKey, $contains, $actualTransactionNo, $webhookEntity);
 
+            $webhookData = new WebhookPaymentData();
+            $refWebhookDetails = $webhookData->getWebhookRecord($request, $captured, $webhookEntity, $status)->first();
+            if (is_null($refWebhookDetails)) {
+                $webhookData = $webhookData->saveWebhookData($request, $captured, $actulaAmount, $status, $notes, $firstKey, $contains, $actualTransactionNo, $webhookEntity);
+            }
             # data transfer to the respective module's database 
             $transfer = [
                 'paymentMode'   => $webhookData->payment_method,
@@ -342,15 +366,15 @@ class PaymentRepository implements iPayment
                             $obj->paymentSaf($transfer);
                         }
                         break;
-                    case ('2'):                                             //<------------------- (Water)
+                    case ('2'):                                             //<------------------ (Water)
                         $objWater = new WaterNewConnection();
                         $objWater->razorPayResponse($transfer);
                         break;
-                    case ('3'):                                             //<------------------- (TRADE)
+                    case ('3'):                                             //<------------------ (TRADE)
                         $objTrade = new TradeCitizen();
                         $objTrade->razorPayResponse($transfer);
                         break;
-                    case ('5'):                                             //<-------------------- (Advertisment) 
+                    case ('5'):                                             //<------------------ (Advertisment) 
                         $mApiMaster = new ApiMaster();
                         $api = $mApiMaster->getAdvApi();
                         Http::withHeaders([])

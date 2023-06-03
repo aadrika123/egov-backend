@@ -297,7 +297,6 @@ class WaterPaymentController extends Controller
                 $totalPenaltyAmount = collect($refPenalty)->sum('balance_amount');
             }
 
-
             # Transaction Date
             $refDate = $transactionDetails->tran_date;
             $transactionDate = Carbon::parse($refDate)->format('Y-m-d');
@@ -326,6 +325,7 @@ class WaterPaymentController extends Controller
                 "ulbId"                 => $transactionDetails['ulb_id'],
                 "ulbName"               => $applicationDetails['ulb_name'],
                 "WardNo"                => $applicationDetails['ward_name'],
+                "logo"                  => $applicationDetails['logo'],
                 "towards"               => $mTowards,
                 "description"           => $mAccDescription,
                 "rebate"                => 0,                                                           // Static
@@ -1568,6 +1568,7 @@ class WaterPaymentController extends Controller
                 "ulbId"                 => $consumerDetails['ulb_id'],
                 "ulbName"               => $consumerDetails['ulb_name'],
                 "WardNo"                => $consumerDetails['ward_name'],
+                "logo"                  => $consumerDetails['logo'],
                 "towards"               => $mTowardsDemand,
                 "description"           => $mAccDescription,
                 "totalPaidAmount"       => $transactionDetails->amount,

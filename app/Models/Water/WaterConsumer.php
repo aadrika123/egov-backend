@@ -319,6 +319,7 @@ class WaterConsumer extends Model
             'water_consumers.ulb_id',
             'ulb_ward_masters.ward_name',
             'ulb_masters.ulb_name',
+            'ulb_masters.logo',
             DB::raw("string_agg(water_consumer_owners.applicant_name,',') as applicant_name"),
             DB::raw("string_agg(water_consumer_owners.mobile_no::VARCHAR,',') as mobile_no"),
             DB::raw("string_agg(water_consumer_owners.guardian_name,',') as guardian_name"),
@@ -340,7 +341,8 @@ class WaterConsumer extends Model
                 'water_consumer_owners.consumer_id',
                 'water_consumers.consumer_no',
                 'water_consumers.ward_mstr_id',
-                'ulb_ward_masters.ward_name'
+                'ulb_ward_masters.ward_name',
+                'ulb_masters.logo',
             );
     }
 
