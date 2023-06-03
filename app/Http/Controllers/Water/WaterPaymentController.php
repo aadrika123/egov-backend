@@ -1857,7 +1857,7 @@ class WaterPaymentController extends Controller
                 "description"           => $refAccDescription,
                 "paidAmtInWords"        => getIndianCurrency($totalDemandAmount),
                 "billNumber"            => $latestDemand->demand_no ?? null,
-                "advanceAmount"         => $advanceDetails['advanceAmount'],
+                "advanceAmount"         => $advanceDetails['advanceAmount'] ?? 0,
 
             ];
             return responseMsgs(true, "water bill details!", remove_null($returnValues), "", "01", "", "POST", $request->deviceId);
