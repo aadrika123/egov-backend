@@ -331,7 +331,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('prop/get-cluster-holding-due', 'getClusterHoldingDues');         // (11) Property Cluster Dues
     Route::post('prop/cluster-payment', 'clusterPayment');                        // (12) Cluster Payment
     Route::post('prop-dues', 'propertyDues');                                     // (13) Property Dues Dynamic
-    Route::post('legacy-payment-holding', 'legacyPaymentHolding');                 // (14) Legacy Property Payment
+    Route::post('legacy-payment-holding', 'legacyPaymentHolding');                // (14) Legacy Property Payment
   });
 
   /**
@@ -346,6 +346,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('saf/pending-geotagging-list', 'pendingGeoTaggingList');      // 06
     Route::post('saf/get-cluster-saf-due', 'getClusterSafDues');              // (07) Saf Cluster Dues
     Route::post('saf/cluster-saf-payment', 'clusterSafPayment');              // (08) Saf Cluster Dues
+    Route::post('saf/edit-active-saf', 'editActiveSaf');                      // (09) Edit Active Saf
   });
 
   /**

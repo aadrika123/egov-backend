@@ -89,7 +89,7 @@ class WaterApplicant extends Model
     }
 
     /**
-     * |
+     * | final approval and the replication of the application details 
      */
     public function finalApplicantApproval($request, $consumerId)
     {

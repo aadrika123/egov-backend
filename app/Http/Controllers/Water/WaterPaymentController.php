@@ -1600,6 +1600,7 @@ class WaterPaymentController extends Controller
      * | @param request
         | Working
         | Serial No : 10
+        | Collect the error occure while order id is generated
      */
     public function initiateOnlineDemandPayment(reqDemandPayment $request)
     {
@@ -1654,6 +1655,7 @@ class WaterPaymentController extends Controller
     public function endOnlineDemandPayment($webhookData, $RazorPayRequest)
     {
         try {
+            # ref var assigning
             $refUser        = Auth()->user();
             $today          = Carbon::now();
             $refUserId      = $refUser->id ?? $webhookData["userId"];
@@ -1751,6 +1753,7 @@ class WaterPaymentController extends Controller
      * | @param request 
         | Selail No : 12
         | Use 
+        | Show the payment from jsk also
      */
     public function paymentHistory(Request $request)
     {
@@ -1762,7 +1765,6 @@ class WaterPaymentController extends Controller
             $citizenId      = $citizen->id;
             $mWaterTran     = new WaterTran();
             $refUserType    = Config::get("waterConstaint.USER_TYPE");
-            $refTransType   = Config::get("waterConstaint.PAYMENT_FOR");
 
             if ($citizen->user_type != $refUserType["Citizen"]) {
                 throw new Exception("You're user type is not citizen!");
@@ -1776,8 +1778,7 @@ class WaterPaymentController extends Controller
                         END AS tran_type_id
                     '),
                     "water_trans.*"
-                )
-                ->paginate($request->pages);
+                )->paginate($request->pages);
             return responseMsgs(true, "List of transactions", remove_null($transactionDetails), "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $request->deviceId);
@@ -1805,21 +1806,22 @@ class WaterPaymentController extends Controller
             $mAccDescription    = $this->_accDescription;
             $mDepartmentSection = $this->_departmentSection;
 
-            $refRequest = $request->toArray();
-            $flipRequest = collect($refRequest)->flip();
-            $key = $flipRequest[$request->consumerNo];
-            $string = preg_replace("/([A-Z])/", "_$1", $key);
-            $refstring = strtolower($string);
+            $refRequest     = $request->toArray();
+            $flipRequest    = collect($refRequest)->flip();
+            $key            = $flipRequest[$request->consumerNo];
+            $string         = preg_replace("/([A-Z])/", "_$1", $key);
+            $refstring      = strtolower($string);
+
             $consumerDetails = $mWaterConsumer->getRefDetailByConsumerNo($refstring, $request->consumerNo)->first();
             if (!$consumerDetails) {
                 throw new Exception("Consumer details not found!");
             }
 
             # Demand Details 
-            $refConsumerDemand = $mWaterConsumerDemand->getConsumerDemand($consumerDetails->id);
-            $latestDemand = collect($refConsumerDemand)->first();
-            $startingDemand = collect($refConsumerDemand)->last();
-            $totalDemandAmount = round((collect($refConsumerDemand)->sum('balance_amount')), 2);
+            $refConsumerDemand  = $mWaterConsumerDemand->getConsumerDemand($consumerDetails->id);
+            $latestDemand       = collect($refConsumerDemand)->first();
+            $startingDemand     = collect($refConsumerDemand)->last();
+            $totalDemandAmount  = round((collect($refConsumerDemand)->sum('balance_amount')), 2);
             $totalPenaltyAmount = round((collect($refConsumerDemand)->sum('penalty')), 2);
 
             $refRequest = new Request([

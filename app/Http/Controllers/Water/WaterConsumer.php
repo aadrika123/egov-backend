@@ -139,7 +139,7 @@ class WaterConsumer extends Controller
      */
     public function saveGenerateConsumerDemand(Request $request)
     {
-        $mNowDate = Carbon::now();
+        // $mNowDate = Carbon::now();
         $request->validate([
             'consumerId'    => "required|digits_between:1,9223372036854775807",
             // "demandUpto"    => "nullable|date|date_format:Y-m-d|before_or_equal:$mNowDate",
@@ -323,9 +323,10 @@ class WaterConsumer extends Controller
      */
     public function checkDemandGeneration($request, $consumerDetails)
     {
-        $today = Carbon::now();
-        $refConsumerId = $request->consumerId;
-        $mWaterConsumerDemand = new WaterConsumerDemand();
+        $today                  = Carbon::now();
+        $refConsumerId          = $request->consumerId;
+        $mWaterConsumerDemand   = new WaterConsumerDemand();
+
         $lastDemand = $mWaterConsumerDemand->getRefConsumerDemand($refConsumerId)->first();
         if ($lastDemand) {
             $refDemandUpto = Carbon::parse($lastDemand->demand_upto);
@@ -374,7 +375,7 @@ class WaterConsumer extends Controller
                 $this->saveGenerateConsumerDemand($metaRequest);
             }
             $documentPath = $this->saveDocument($request, $meterRefImageName);
-            // $fixedRate = $this->getFixedRate($request);                             // Manul Entry of fixed rate
+            // $fixedRate = $this->getFixedRate($request);                                          // Manul Entry of fixed rate
             $mWaterConsumerMeter->saveMeterDetails($request, $documentPath, $fixedRate = null);
             DB::commit();
             return responseMsgs(true, "Meter Detail Entry Success !", "", "", "01", ".ms", "POST", $request->deviceId);
@@ -520,16 +521,16 @@ class WaterConsumer extends Controller
                 switch ($value['connection_type']) {
                     case ($refMeterConnType['Meter']):
                         if ($value['meter_status'] == 0) {
-                            $meterConnectionType = "Metre/Fixed";
+                            $meterConnectionType = "Metre/Fixed";                               // Static
                         }
-                        $meterConnectionType = "Meter";
+                        $meterConnectionType = "Meter";                                         // Static
                         break;
 
                     case ($refMeterConnType['Gallon']):
-                        $meterConnectionType = "Gallon";
+                        $meterConnectionType = "Gallon";                                        // Static
                         break;
                     case ($refMeterConnType['Fixed']):
-                        $meterConnectionType = "Fixed";
+                        $meterConnectionType = "Fixed";                                         // Static
                         break;
                 }
                 $value['meter_connection_type'] = $meterConnectionType;
@@ -587,7 +588,7 @@ class WaterConsumer extends Controller
             $metaRequest = [
                 'id'                => $deactivatedDetails['id'],
                 'amount'            => $request->amount,
-                'chargeCategory'    => "Demand Deactivation",
+                'chargeCategory'    => "Demand Deactivation",                                   // Static
                 'todayDate'         => $currentDate->format('Y-m-d'),
                 'tranNo'            => $transactionNo,
                 'paymentMode'       => $request->paymentMode,
@@ -654,7 +655,7 @@ class WaterConsumer extends Controller
                 'tranId'        => $transactionId['id'],
                 'id'            => $request->consumerId,
                 'applicationNo' => $consumerDetails->consumer_no,
-                'workflowId'    => null,
+                'workflowId'    => null,                                                        // Static
                 'ward_no'       => $consumerDetails->ward_mstr_id
             ]);
             $this->postOtherPaymentModes($request);
@@ -783,8 +784,8 @@ class WaterConsumer extends Controller
     public function viewCaretakenConnection(Request $request)
     {
         try {
-            $mWaterWaterConsumer = new WaterWaterConsumer();
-            $mActiveCitizenUndercare = new ActiveCitizenUndercare();
+            $mWaterWaterConsumer        = new WaterWaterConsumer();
+            $mActiveCitizenUndercare    = new ActiveCitizenUndercare();
 
             $connectionDetails = $mActiveCitizenUndercare->getDetailsByCitizenId();
             $checkDemand = collect($connectionDetails)->first();
@@ -895,10 +896,10 @@ class WaterConsumer extends Controller
                 throw new Exception("There should be last data regarding meter!");
             }
 
-            $refOldDemandUpto = $refConsumerDemand->demand_upto;
-            $privdayDiff = Carbon::parse($refConsumerDemand->demand_upto)->diffInDays(Carbon::parse($refConsumerDemand->demand_from));
-            $endDate = Carbon::parse($request->uptoData);
-            $startDate = Carbon::parse($refOldDemandUpto);
+            $refOldDemandUpto   = $refConsumerDemand->demand_upto;
+            $privdayDiff        = Carbon::parse($refConsumerDemand->demand_upto)->diffInDays(Carbon::parse($refConsumerDemand->demand_from));
+            $endDate            = Carbon::parse($request->uptoData);
+            $startDate          = Carbon::parse($refOldDemandUpto);
 
             $difference = $endDate->diffInMonths($startDate);
             if ($difference < 1 || $startDate > $endDate) {
@@ -918,9 +919,9 @@ class WaterConsumer extends Controller
             $lastMeterReading   = $finalMeterReading->initial_reading;
             $ActualReading      = ($diffInDays * $avgReading) + $lastMeterReading;
 
-            $returnData['finalMeterReading'] = round($ActualReading, 2);
-            $returnData['diffInDays'] = $diffInDays;
-            $returnData['previousConsumed'] = $refTaxUnitConsumed;
+            $returnData['finalMeterReading']    = round($ActualReading, 2);
+            $returnData['diffInDays']           = $diffInDays;
+            $returnData['previousConsumed']     = $refTaxUnitConsumed;
 
             return responseMsgs(true, "calculated date difference!", $returnData, "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
@@ -940,7 +941,7 @@ class WaterConsumer extends Controller
     public function generateMemo(Request $request)
     {
         $request->validate([
-            'consumerNo'  => "required|",
+            'consumerNo'  => "required",
         ]);
         try {
             $refConsumerNo          = $request->consumerNo;
@@ -950,8 +951,35 @@ class WaterConsumer extends Controller
             $mWaterChequeDtl        = new WaterChequeDtl();
             $mWaterTran             = new WaterTran();
 
-            // $mWaterWaterConsumer->
+            $dbKey = "consumer_no";
+            $consumerDetails = $mWaterWaterConsumer->getRefDetailByConsumerNo($dbKey, $refConsumerNo)->first();
+            if (is_null($consumerDetails)) {
+                throw new Exception("consumer Details not found!");
+            }
 
+            $returnValues = [
+                "consumerNo"            => $mDepartmentSection,
+                "applicationNo"         => $mAccDescription,
+                "year"            => $consumerDetails['consumer_no'],
+                "receivingDate"          => $consumerDetails['applicant_name'],
+                "ApprovalDate"        => $consumerDetails['mobile_no'],
+                "receiptNo"               => $consumerDetails['address'],
+                "paymentDate"              => ($startingDemand->demand_from) ?? null,
+                "wardNo"              => ($latestDemand->demand_upto) ?? null,
+                "applicantName"             => $consumerDetails['holding_no'],
+                "guardianName"                 => $consumerDetails['saf_no'],                                 // in case of chque,dd,nfts
+                "correspondingAddress"         => $totalPenaltyAmount ?? 0,
+                "mobileNo"            => $totalDemandAmount ?? 0,
+                "email"                 => $consumerDetails['ulb_id'],
+                "holdingNo"               => $consumerDetails['ulb_name'],
+                "safNo"                => $consumerDetails['ward_name'],
+                "builUpArea"               => $mTowards,
+                "description"           => $mAccDescription,
+                "paidAmtInWords"        => getIndianCurrency($totalDemandAmount),
+                "billNumber"            => $latestDemand->demand_no ?? null,
+                "advanceAmount"         => $advanceDetails['advanceAmount'],
+
+            ];
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $request->deviceId);
         }

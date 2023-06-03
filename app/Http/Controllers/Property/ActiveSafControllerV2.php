@@ -585,4 +585,23 @@ class ActiveSafControllerV2 extends Controller
             return responseMsgs(false, $e->getMessage(), "", "011612", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
+
+    /**
+     * | Edit Active Saf
+     */
+    public function editActiveSaf(reqApplySaf $req)
+    {
+        $req->validate([
+            "id" => 'required|integer'
+        ]);
+
+        try {
+            $mPropActiveSaf = new PropActiveSaf();
+            $safDtls = $mPropActiveSaf::findOrFail($req->id);
+            return $safDtls;
+            return responseMsgs(true, "Application Edited Successfully", [], "011809", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], "011809", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+        }
+    }
 }

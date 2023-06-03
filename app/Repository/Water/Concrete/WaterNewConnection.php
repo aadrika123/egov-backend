@@ -268,6 +268,7 @@ class WaterNewConnection implements IWaterNewConnection
                 $amount = 0;
                 $penalty = 0;
                 $rebat = 0;
+                $amount = $cahges["amount"];
                 if (isset($request->isInstallment)) {
                     $request->validate([
                         'isInstallment' => 'nullable|in:yes,no'
@@ -317,7 +318,7 @@ class WaterNewConnection implements IWaterNewConnection
                 $RazorPayRequest->payment_from      = $cahges['charge_for'];
                 $RazorPayRequest->amount            = $totalAmount;
                 $RazorPayRequest->demand_from_upto  = $cahges["ids"] == "" ? null : $cahges["ids"];
-                $RazorPayRequest->penalty_id        = $cahges["penaltyIds"];
+                $RazorPayRequest->penalty_id        = $cahges["penaltyIds"] ?? null;
                 $RazorPayRequest->ip_address        = $request->ip();
                 $RazorPayRequest->order_id          = $temp["orderId"];
                 $RazorPayRequest->department_id     = $temp["departmentId"];
