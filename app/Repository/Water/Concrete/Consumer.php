@@ -3,6 +3,7 @@
 namespace App\Repository\Water\Concrete;
 
 use App\Models\UlbMaster;
+use App\Models\Water\WaterApprovalApplicationDetail;
 use App\Models\Water\WaterConsumer;
 use App\Models\Water\WaterConsumerDemand;
 use App\Models\Water\WaterConsumerInitialMeter;
@@ -16,6 +17,7 @@ use App\Traits\Property\WardPermission;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
@@ -493,7 +495,7 @@ class Consumer implements IConsumer
                 } else {
                     $to_date = $upto_date;
                 }
-                
+
                 // if ($demand_from >= $to_date) {
                 //     throw new Exception("Demand Already Genrated");
                 // }
@@ -782,5 +784,61 @@ class Consumer implements IConsumer
         $data["month_diff"] = $date[1];
         $data["day_diff"] = $date[2];
         return ($data);
+    }
+
+
+    /**
+     * | get consumer details , owners details , and site inspection details 
+     */
+    public function getconsumerRelatedData($applicationId)
+    {
+        $refJe = Config::get("waterConstaint.ROLE-LABEL");
+        return $data =  WaterApprovalApplicationDetail::select(
+            'water_approval_application_details.id',
+            'water_approval_application_details.application_no',
+            'water_approval_application_details.ward_id',
+            'water_approval_application_details.address',
+            'water_approval_application_details.holding_no',
+            'water_approval_application_details.saf_no',
+            'ulb_ward_masters.ward_name',
+            'ulb_masters.ulb_name',
+            // 'site.property_type_id AS site_property_type_id',
+            // 'site.pipeline_type_id AS site_pipeline_type_id',
+            DB::raw("string_agg(water_approval_applicants.applicant_name,',') as applicantName"),
+            DB::raw("string_agg(water_approval_applicants.mobile_no::VARCHAR,',') as mobileNo"),
+            DB::raw("string_agg(water_approval_applicants.guardian_name,',') as guardianName"),
+        )
+            ->join('ulb_masters', 'ulb_masters.id', '=', 'water_approval_application_details.ulb_id')
+            ->join('water_approval_applicants', 'water_approval_applicants.application_id', '=', 'water_approval_application_details.id')
+            ->join(
+                DB::raw("(SELECT * FROM water_site_inspections
+                                WHERE order_officer = '" . $refJe['JE'] . "'
+                                AND apply_connection_id = $applicationId
+            	                ORDER BY id DESC 
+            	                LIMIT 1
+                        )as site "),
+                function ($join) {
+                    $join->on("site.apply_connection_id", "=", "water_approval_application_details.id");
+                }
+            )
+            ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_approval_application_details.ward_id')
+            ->where('water_approval_application_details.status', true)
+            ->where('water_approval_application_details.id', $applicationId)
+            ->groupBy(
+                'water_approval_application_details.saf_no',
+                'water_approval_application_details.holding_no',
+                'water_approval_application_details.address',
+                'water_approval_application_details.id',
+                'water_approval_applicants.application_id',
+                'water_approval_application_details.application_no',
+                'water_approval_application_details.ward_id',
+                'water_approval_application_details.ulb_id',
+                'ulb_ward_masters.ward_name',
+                'ulb_masters.id',
+                'ulb_masters.ulb_name',
+                // 'site.property_type_id',
+                // 'site.pipeline_type_id'
+            )
+            ->first();
     }
 }
