@@ -22,6 +22,7 @@ use App\Models\Water\WaterConsumerTax;
 use App\Models\Water\WaterDisconnection;
 use App\Models\Water\WaterMeterReadingDoc;
 use App\Models\Water\WaterPenaltyInstallment;
+use App\Models\Water\WaterSiteInspection;
 use App\Models\Water\WaterTran;
 use App\Models\Water\WaterTranDetail;
 use App\Models\Workflows\WfRoleusermap;
@@ -944,12 +945,13 @@ class WaterConsumer extends Controller
             'consumerNo'  => "required",
         ]);
         try {
-            $refConsumerNo          = $request->consumerNo;
-            $mWaterConsumerDemand   = new WaterConsumerDemand();
-            $mWaterWaterConsumer    = new WaterWaterConsumer();
-            $mWaterTranDetail       = new WaterTranDetail();
-            $mWaterChequeDtl        = new WaterChequeDtl();
-            $mWaterTran             = new WaterTran();
+            $refConsumerNo                      = $request->consumerNo;
+            $mWaterWaterConsumer                = new WaterWaterConsumer();
+            $mWaterApprovalApplicationDetail    = new WaterApprovalApplicationDetail();
+            $mWaterSiteInspection               = new WaterSiteInspection();
+            $mWaterTranDetail                   = new WaterTranDetail();
+            $mWaterChequeDtl                    = new WaterChequeDtl();
+            $mWaterTran                         = new WaterTran();
 
             $dbKey = "consumer_no";
             $consumerDetails = $mWaterWaterConsumer->getRefDetailByConsumerNo($dbKey, $refConsumerNo)->first();
@@ -957,10 +959,25 @@ class WaterConsumer extends Controller
                 throw new Exception("consumer Details not found!");
             }
 
+           return $applicationDetails = $this->Repository->getconsumerRelatedData(1116);
+            if (is_null($applicationDetails)) {
+                throw new Exception("Application Details not found!");
+            }
+
+            $transactionDetails = $mWaterTran->getTransNo($consumerDetails->apply_connection_id, null)->get();
+            $checkTransaction = collect($transactionDetails)->first();
+            if ($checkTransaction) {
+                throw new Exception("transactions not found!");
+            }
+
+
+
+
+
             // $returnValues = [
-            //     "consumerNo"            => $mDepartmentSection,
+            //     "consumerNo"            => $consumerDetails['consumer_no'],
             //     "applicationNo"         => $mAccDescription,
-            //     "year"            => $consumerDetails['consumer_no'],
+            //     "year"                  => $consumerDetails['consumer_no'],
             //     "receivingDate"          => $consumerDetails['applicant_name'],
             //     "ApprovalDate"        => $consumerDetails['mobile_no'],
             //     "receiptNo"               => $consumerDetails['address'],

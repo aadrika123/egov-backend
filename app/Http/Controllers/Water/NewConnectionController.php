@@ -425,10 +425,7 @@ class NewConnectionController extends Controller
                 throw new Exception("You are not the Finisher!");
             }
             DB::beginTransaction();
-            if ($waterDetails) {
-                $returnData = $this->newConnection->approvalRejectionWater($request, $roleId);
-            }
-            throw new Exception("Application dont exist!");
+            $returnData = $this->newConnection->approvalRejectionWater($request, $roleId);
             DB::commit();
             return $returnData;
         } catch (Exception $e) {
