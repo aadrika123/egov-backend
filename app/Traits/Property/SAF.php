@@ -259,24 +259,30 @@ trait SAF
         return $array;
     }
 
-    // Assessment Type 
-    public function readAssessmentType($safInbox)
+    /**
+     * | Read Assessment Types
+     */
+    public function readAssessmentType($assessmentType)
     {
-        $GRID = collect($safInbox)->map(function ($value) {
-            switch ($value->assessment_type) {
-                case 1;
-                    $value->assessment_type = Config::get('PropertyConstaint.ASSESSMENT-TYPE.1');
-                    break;
-                case 2;
-                    $value->assessment_type = Config::get('PropertyConstaint.ASSESSMENT-TYPE.2');
-                    break;
-                case 3;
-                    $value->assessment_type = Config::get('PropertyConstaint.ASSESSMENT-TYPE.3');
-                    break;
-            }
-            return $value;
-        });
-        return $GRID;
+        if ($assessmentType == 1)                                                     // New Assessment 
+            $assessmentType = Config::get('PropertyConstaint.ASSESSMENT-TYPE.1');
+
+        if ($assessmentType == 2)                                                   // Reassessment
+            $assessmentType = Config::get('PropertyConstaint.ASSESSMENT-TYPE.2');
+
+
+        if ($assessmentType == 3)                                                     // Mutation
+            $assessmentType = Config::get('PropertyConstaint.ASSESSMENT-TYPE.3');
+
+
+        if ($assessmentType == 4)                                                    // Bifurcation
+            $assessmentType = Config::get('PropertyConstaint.ASSESSMENT-TYPE.4');
+
+
+        if ($assessmentType == 5)                                                    // Amalgamation
+            $assessmentType = Config::get('PropertyConstaint.ASSESSMENT-TYPE.5');
+
+        return $assessmentType;
     }
 
     /**

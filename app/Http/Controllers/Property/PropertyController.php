@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Property;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\ThirdPartyController;
 use App\Models\ActiveCitizen;
+use App\Models\Citizen\ActiveCitizenUndercare;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropDemand;
 use App\Models\Property\PropOwner;
@@ -137,9 +138,21 @@ class PropertyController extends Controller
             $mPropSafs = new PropSaf();
             $mPropActiveSafs = new PropActiveSaf();
             $mPropProperty = new PropProperty();
+            $mActiveCitizenUndercare = new ActiveCitizenUndercare();
+            $caretakerProperty =  $mActiveCitizenUndercare->getTaggedPropsByCitizenId($citizenId);
+
+            if ($type == 'saf') {
+                $data = $mPropActiveSafs->getCitizenSafs($citizenId, $ulbId);
+                $msg = 'Citizen Safs';
+            }
 
             if ($type == 'holding') {
                 $data = $mPropProperty->getCitizenHoldings($citizenId, $ulbId);
+                if ($caretakerProperty->isNotEmpty()) {
+                    $propertyId = collect($caretakerProperty)->pluck('property_id');
+                    $data2 = $mPropProperty->getNewholding($propertyId);
+                    $data = $data->merge($data2);
+                }
                 $data = collect($data)->map(function ($value) {
                     if (isset($value['new_holding_no'])) {
                         return $value;
@@ -148,14 +161,22 @@ class PropertyController extends Controller
                 $msg = 'Citizen Holdings';
             }
 
-            if ($type == 'saf') {
-                $data = $mPropActiveSafs->getCitizenSafs($citizenId, $ulbId);
-                $msg = 'Citizen Safs';
-            }
             if ($type == 'ptn') {
                 $data = $mPropProperty->getCitizenPtn($citizenId, $ulbId);
                 $msg = 'Citizen Ptn';
+
+                if ($caretakerProperty->isNotEmpty()) {
+                    $propertyId = collect($caretakerProperty)->pluck('property_id');
+                    $data2 = $mPropProperty->getPtn($propertyId);
+                    $data = $data->merge($data2);
+                }
+                $data = collect($data)->map(function ($value) {
+                    if (isset($value['pt_no'])) {
+                        return $value;
+                    }
+                })->filter()->values();
             }
+
             if ($data->isEmpty())
                 throw new Exception('No Data Found');
 

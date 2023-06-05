@@ -393,7 +393,7 @@ class PropProperty extends Model
     {
         return PropProperty::select('*')
             ->where('holding_no', $req->holdingNo)
-            ->ORwhere('new_holding_no', $req->holdingNo)
+            ->orWhere('new_holding_no', $req->holdingNo)
             ->where('ulb_id', $req->ulbId)
             ->first();
     }
@@ -663,6 +663,28 @@ class PropProperty extends Model
             ->orderByDesc('prop_properties.id')
             ->skip(0)
             ->take(200)
+            ->get();
+    }
+
+    /**
+     * | get New Holding
+     */
+    public function getNewholding($propertyId)
+    {
+        return PropProperty::select('id', 'new_holding_no', 'citizen_id')
+            ->whereIn('id', $propertyId)
+            ->orderByDesc('id')
+            ->get();
+    }
+
+    /**
+     * | get New Holding
+     */
+    public function getPtn($propertyId)
+    {
+        return PropProperty::select('id', 'pt_no', 'citizen_id')
+            ->whereIn('id', $propertyId)
+            ->orderByDesc('id')
             ->get();
     }
 }

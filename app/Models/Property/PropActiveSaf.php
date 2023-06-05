@@ -8,6 +8,7 @@ use Exception;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class  PropActiveSaf extends Model
 {
@@ -82,7 +83,7 @@ class  PropActiveSaf extends Model
             'new_ward_mstr_id' => $req->newWard,
             'percentage_of_property_transfer' => $req->percOfPropertyTransfer,
             'apartment_details_id' => $req->apartmentId,
-            'applicant_name' => collect($req->owner)->first()['ownerName'],
+            'applicant_name' => Str::upper(collect($req->owner)->first()['ownerName']),
             'road_width' => $req->roadType,
             'user_id' => $req->userId,
             'workflow_id' => $req->workflowId,
