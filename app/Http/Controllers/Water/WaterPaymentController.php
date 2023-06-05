@@ -67,6 +67,7 @@ class WaterPaymentController extends Controller
     private $_waterRoles;
     private $_waterMasterData;
     private $_towards;
+    private $_consumerTowards;
     private $_accDescription;
     private $_departmentSection;
     private $_paymentModes;
@@ -76,6 +77,7 @@ class WaterPaymentController extends Controller
         $this->_waterRoles          = Config::get('waterConstaint.ROLE-LABEL');
         $this->_waterMasterData     = Config::get('waterConstaint.WATER_MASTER_DATA');
         $this->_towards             = Config::get('waterConstaint.TOWARDS');
+        $this->_consumerTowards     = Config::get('waterConstaint.TOWARDS_DEMAND');
         $this->_accDescription      = Config::get('waterConstaint.ACCOUNT_DESCRIPTION');
         $this->_departmentSection   = Config::get('waterConstaint.DEPARTMENT_SECTION');
         $this->_paymentModes        = Config::get('payment-constants.PAYMENT_OFFLINE_MODE');
@@ -1117,6 +1119,7 @@ class WaterPaymentController extends Controller
         | Working
         | Common function
         | $charges is for the water charges 
+        | Write the code to send data in the track table (1146,1149)
      */
     public function savePaymentStatus($req, $offlinePaymentModes, $charges, $refWaterApplication, $waterTrans)
     {
@@ -1142,8 +1145,10 @@ class WaterPaymentController extends Controller
         # saving Details in application table if payment is in JSK
         if ($req->chargeCategory != $paramChargeCatagory['SITE_INSPECTON']) {
             if ($refWaterApplication->apply_from == $applyFrom['1'] && $refWaterApplication->doc_upload_status == true) {
+                # write code for track table
                 $mWaterApplication->sendApplicationToRole($req['id'], $refRole['DA']);                // Save current role as Da
             } else {
+                # write code for track table
                 $mWaterApplication->sendApplicationToRole($req['id'], $refRole['BO']);                // Save current role as Bo
             }
         }
@@ -1803,9 +1808,9 @@ class WaterPaymentController extends Controller
             $mWaterConsumer         = new WaterConsumer();
             $mWaterConsumerDemand   = new WaterConsumerDemand();
 
-            $mTowards           = $this->_towards;
-            $mAccDescription    = $this->_accDescription;
-            $mDepartmentSection = $this->_departmentSection;
+            $refconsumerTowards   = $this->_consumerTowards;
+            $refAccDescription    = $this->_accDescription;
+            $refDepartmentSection = $this->_departmentSection;
 
             $refRequest     = $request->toArray();
             $flipRequest    = collect($refRequest)->flip();
@@ -1832,8 +1837,8 @@ class WaterPaymentController extends Controller
             $advanceDetails = $this->checkAdvance($refRequest);
 
             $returnValues = [
-                "departmentSection"     => $mDepartmentSection,
-                "accountDescription"    => $mAccDescription,
+                "departmentSection"     => $refDepartmentSection,
+                "accountDescription"    => $refAccDescription,
                 "consumerNo"            => $consumerDetails['consumer_no'],
                 "customerName"          => $consumerDetails['applicant_name'],
                 "customerMobile"        => $consumerDetails['mobile_no'],
@@ -1847,11 +1852,12 @@ class WaterPaymentController extends Controller
                 "ulbId"                 => $consumerDetails['ulb_id'],
                 "ulbName"               => $consumerDetails['ulb_name'],
                 "WardNo"                => $consumerDetails['ward_name'],
-                "towards"               => $mTowards,
-                "description"           => $mAccDescription,
+                "logo"                  => $consumerDetails['logo'],
+                "towards"               => $refconsumerTowards,
+                "description"           => $refAccDescription,
                 "paidAmtInWords"        => getIndianCurrency($totalDemandAmount),
                 "billNumber"            => $latestDemand->demand_no ?? null,
-                "advanceAmount"         => $advanceDetails['advanceAmount'],
+                "advanceAmount"         => $advanceDetails['advanceAmount'] ?? 0,
 
             ];
             return responseMsgs(true, "water bill details!", remove_null($returnValues), "", "01", "", "POST", $request->deviceId);

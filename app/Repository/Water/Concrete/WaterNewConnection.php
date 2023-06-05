@@ -528,7 +528,7 @@ class WaterNewConnection implements IWaterNewConnection
                 $val->paid_status = 1;
                 $val->update();
             }
-            # Check 
+            # Check and write code to save data in the track table
             if ($RazorPayRequest->payment_from == "New Connection") {
                 $application->current_role = !$application->current_role ? $this->_dealingAssistent : $application->current_role;
                 $application->update();
