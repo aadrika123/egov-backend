@@ -536,6 +536,13 @@ class TradeApplication extends Controller
             }
             $activeLicence = ActiveTradeLicence::find($req->applicationId);
             $track = new WorkflowTrack();
+            $lastworkflowtrack = $track->select("*")
+                                ->where('ref_table_id_value', $req->applicationId)
+                                ->where('module_id',$this->_MODULE_ID)
+                                ->where('ref_table_dot_id', "active_trade_licences")
+                                ->whereNotNull('sender_role_id')
+                                ->orderBy("track_date",'DESC')
+                                ->first();
             DB::beginTransaction();
             $initiatorRoleId = $activeLicence->initiator_role;
             $activeLicence->current_role = $initiatorRoleId;
@@ -546,6 +553,10 @@ class TradeApplication extends Controller
             $metaReqs['workflowId'] = $activeLicence->workflow_id;
             $metaReqs['refTableDotId'] = 'active_trade_licences.id';
             $metaReqs['refTableIdValue'] = $req->applicationId;
+            $metaReqs['trackDate']= $lastworkflowtrack && $lastworkflowtrack->forward_date?($lastworkflowtrack->forward_date." ".$lastworkflowtrack->forward_time):Carbon::now()->format('Y-m-d H:i:s');
+            $metaReqs['forwardDate'] = Carbon::now()->format('Y-m-d');
+            $metaReqs['forwardTime'] = Carbon::now()->format('H:i:s');  
+            $metaReqs['verificationStatus'] =2; 
             $req->request->add($metaReqs);
             $track->saveTrack($req);
 
@@ -708,16 +719,27 @@ class TradeApplication extends Controller
             }
             $licence->update();
 
-
+            $track = new WorkflowTrack();
+            $lastworkflowtrack = $track->select("*")
+                                ->where('ref_table_id_value', $request->applicationId)
+                                ->where('module_id',$this->_MODULE_ID)
+                                ->where('ref_table_dot_id', "active_trade_licences")
+                                ->whereNotNull('sender_role_id')
+                                ->orderBy("track_date",'DESC')
+                                ->first();
+            
+            
             $metaReqs['moduleId'] = $this->_MODULE_ID;
             $metaReqs['workflowId'] = $licence->workflow_id;
             $metaReqs['refTableDotId'] = 'active_trade_licences';
             $metaReqs['refTableIdValue'] = $request->applicationId;
             $metaReqs['user_id']=$user_id;
             $metaReqs['ulb_id']=$ulb_id;
+            $metaReqs['trackDate']= $lastworkflowtrack && $lastworkflowtrack->forward_date?($lastworkflowtrack->forward_date." ".$lastworkflowtrack->forward_time):Carbon::now()->format('Y-m-d H:i:s');
+            $metaReqs['forwardDate'] = Carbon::now()->format('Y-m-d');
+            $metaReqs['forwardTime'] = Carbon::now()->format('H:i:s');  
+            $metaReqs['verificationStatus'] =1;          
             $request->request->add($metaReqs);
-
-            $track = new WorkflowTrack();
             $track->saveTrack($request);
 
             DB::commit();
@@ -770,15 +792,29 @@ class TradeApplication extends Controller
                     $req->request->add(["receiverRoleId"=>$role->backward_role_id??0]);
                 }
             }
+            $track = new WorkflowTrack();
+            $lastworkflowtrack = $track->select("*")
+                            ->where('ref_table_id_value', $req->applicationId)
+                            ->where('module_id',$this->_MODULE_ID)
+                            ->where('ref_table_dot_id', "active_trade_licences")
+                            ->whereNotNull('sender_role_id')
+                            ->orderBy("track_date",'DESC')
+                            ->first();
             $metaReqs['moduleId'] = $this->_MODULE_ID;
             $metaReqs['workflowId'] = $activeLicence->workflow_id;
             $metaReqs['refTableDotId'] = 'active_trade_licences';
             $metaReqs['refTableIdValue'] = $req->applicationId;
             $metaReqs['user_id']=$user_id;
             $metaReqs['ulb_id']=$ulb_id;
+            $metaReqs['trackDate']= $lastworkflowtrack && $lastworkflowtrack->forward_date?($lastworkflowtrack->forward_date." ".$lastworkflowtrack->forward_time):Carbon::now()->format('Y-m-d H:i:s');
+            $metaReqs['forwardDate'] = Carbon::now()->format('Y-m-d');
+            $metaReqs['forwardTime'] = Carbon::now()->format('H:i:s'); 
+            $metaReqs['verificationStatus'] =1;
             $req->request->add($metaReqs);
+
             DB::beginTransaction();
-            
+
+            $track->saveTrack($req);
             // Approval
             if ($req->status == 1) 
             {
