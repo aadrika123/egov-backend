@@ -107,6 +107,7 @@ return [
     ],
 
     "WATER_METER_CODE" => "Meter",
+    "WATER_FIXED_CODE" => "MeterFixed",
     "PENALTY_HEAD" => [
         "1" => "1 Installment",
         "2" => "2 Installment",
