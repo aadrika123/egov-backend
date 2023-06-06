@@ -938,6 +938,7 @@ class WaterConsumer extends Controller
         | Serial No 
         | Use
         | Not Finished
+        | Get the card details 
      */
     public function generateMemo(Request $request)
     {
@@ -947,10 +948,6 @@ class WaterConsumer extends Controller
         try {
             $refConsumerNo                      = $request->consumerNo;
             $mWaterWaterConsumer                = new WaterWaterConsumer();
-            $mWaterApprovalApplicationDetail    = new WaterApprovalApplicationDetail();
-            $mWaterSiteInspection               = new WaterSiteInspection();
-            $mWaterTranDetail                   = new WaterTranDetail();
-            $mWaterChequeDtl                    = new WaterChequeDtl();
             $mWaterTran                         = new WaterTran();
 
             $dbKey = "consumer_no";
@@ -958,46 +955,46 @@ class WaterConsumer extends Controller
             if (is_null($consumerDetails)) {
                 throw new Exception("consumer Details not found!");
             }
-
-           return $applicationDetails = $this->Repository->getconsumerRelatedData(1116);
+            $applicationDetails = $this->Repository->getconsumerRelatedData(1116);
             if (is_null($applicationDetails)) {
                 throw new Exception("Application Details not found!");
             }
-
             $transactionDetails = $mWaterTran->getTransNo($consumerDetails->apply_connection_id, null)->get();
             $checkTransaction = collect($transactionDetails)->first();
             if ($checkTransaction) {
                 throw new Exception("transactions not found!");
             }
 
+            $consumerDetails;           // consumer related details 
+            $applicationDetails;        // application / owners / siteinspection related details 
+            $transactionDetails;        // all transactions details 
+            $var = null;
+
+            $returnValues = [
+                "consumerNo"            => $var,
+                "applicationNo"         => $var,
+                "year"                  => $var,
+                "receivingDate"         => $var,
+                "ApprovalDate"          => $var,
+                "receiptNo"             => $var,
+                "paymentDate"           => $var,
+                "wardNo"                => $var,
+                "applicantName"         => $var,
+                "guardianName"          => $var,
+                "correspondingAddress"  => $var,
+                "mobileNo"              => $var,
+                "email"                 => $var,
+                "holdingNo"             => $var,
+                "safNo"                 => $var,
+                "builUpArea"            => $var,
+                "connectionThrough"     => $var,
+                "AppliedFrom"           => $var,
+                "ownersDetails"         => $var,
+                "siteInspectionDetails" => $var,
 
 
-
-
-            // $returnValues = [
-            //     "consumerNo"            => $consumerDetails['consumer_no'],
-            //     "applicationNo"         => $mAccDescription,
-            //     "year"                  => $consumerDetails['consumer_no'],
-            //     "receivingDate"          => $consumerDetails['applicant_name'],
-            //     "ApprovalDate"        => $consumerDetails['mobile_no'],
-            //     "receiptNo"               => $consumerDetails['address'],
-            //     "paymentDate"              => ($startingDemand->demand_from) ?? null,
-            //     "wardNo"              => ($latestDemand->demand_upto) ?? null,
-            //     "applicantName"             => $consumerDetails['holding_no'],
-            //     "guardianName"                 => $consumerDetails['saf_no'],                                 // in case of chque,dd,nfts
-            //     "correspondingAddress"         => $totalPenaltyAmount ?? 0,
-            //     "mobileNo"            => $totalDemandAmount ?? 0,
-            //     "email"                 => $consumerDetails['ulb_id'],
-            //     "holdingNo"               => $consumerDetails['ulb_name'],
-            //     "safNo"                => $consumerDetails['ward_name'],
-            //     "builUpArea"               => $mTowards,
-            //     "connectionThrough"           => $mAccDescription,
-            //     "AppliedFrom"       => 
-            //     "ownersDetails" => 
-            //     "siteInspectionDetails" =>  
-
-
-            // ];
+            ];
+            return responseMsgs(true, "successfully fetched memo details!", remove_null($returnValues), "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $request->deviceId);
         }

@@ -655,14 +655,13 @@ class NewConnectionController extends Controller
                 $mWaterApplication->current_role = $mWaterApplication->initiator_role_id;
                 $mWaterApplication->parked = true;                          //  Pending Status true
                 $mWaterApplication->doc_upload_status = false;              //  Docupload Status false
-                $mWaterApplication->save();
             }
             # if citizen applied 
             else {
                 $mWaterApplication->parked = true;                          //  Pending Status true
                 $mWaterApplication->doc_upload_status = false;              //  Docupload Status false
             }
-
+            $mWaterApplication->save();
             $metaReqs['moduleId']           = Config::get('module-constants.WATER_MODULE_ID');
             $metaReqs['workflowId']         = $mWaterApplication->workflow_id;
             $metaReqs['refTableDotId']      = 'water_applications.id';

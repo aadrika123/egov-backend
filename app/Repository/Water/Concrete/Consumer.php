@@ -793,7 +793,7 @@ class Consumer implements IConsumer
     public function getconsumerRelatedData($applicationId)
     {
         $refJe = Config::get("waterConstaint.ROLE-LABEL");
-        return $data =  WaterApprovalApplicationDetail::select(
+        return WaterApprovalApplicationDetail::select(
             'water_approval_application_details.id',
             'water_approval_application_details.application_no',
             'water_approval_application_details.ward_id',
@@ -802,8 +802,8 @@ class Consumer implements IConsumer
             'water_approval_application_details.saf_no',
             'ulb_ward_masters.ward_name',
             'ulb_masters.ulb_name',
-            // 'site.property_type_id AS site_property_type_id',
-            // 'site.pipeline_type_id AS site_pipeline_type_id',
+            'site.property_type_id AS site_property_type_id',
+            'site.pipeline_type_id AS site_pipeline_type_id',
             DB::raw("string_agg(water_approval_applicants.applicant_name,',') as applicantName"),
             DB::raw("string_agg(water_approval_applicants.mobile_no::VARCHAR,',') as mobileNo"),
             DB::raw("string_agg(water_approval_applicants.guardian_name,',') as guardianName"),
@@ -836,8 +836,8 @@ class Consumer implements IConsumer
                 'ulb_ward_masters.ward_name',
                 'ulb_masters.id',
                 'ulb_masters.ulb_name',
-                // 'site.property_type_id',
-                // 'site.pipeline_type_id'
+                'site.property_type_id',
+                'site.pipeline_type_id'
             )
             ->first();
     }
