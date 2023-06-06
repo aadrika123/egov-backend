@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Carbon;
 use Exception;
+use Illuminate\Support\Facades\Config;
 
 class CustomDetail extends Model
 {
@@ -38,7 +39,7 @@ class CustomDetail extends Model
                 ->where('ref_type', trim(strtoupper($request->customFor)))
                 ->get();
             $customDetails = $customDetails->map(function ($val) {
-                $path = $this->_bifuraction->readDocumentPath($val->relative_path . $val->docUrl);
+                $path = $this->_bifuraction->readDocumentPath($val->relative_path . '/' . $val->docUrl);
                 $val->docUrl = $path;
                 return $val;
             });
@@ -53,115 +54,117 @@ class CustomDetail extends Model
     {
         try {
             $customFor = trim(strtoupper($request->customFor));
+            $path = Config::get('PropertyConstaint.CUSTOM_RELATIVE_PATH');
+
             $customDetails = new CustomDetail;
             $filename = NULL;
 
             if ($file = $request->file('document')) {
                 $filename = time() .  '.' . $file->getClientOriginalExtension();
-                $path = storage_path('app/public/custom');
+                // $path = storage_path('app/public/custom');
                 $file->move($path, $filename);
             }
 
             $customDetails = new CustomDetail;
             if ($customFor == 'PROPERTY-CONCESSION') {
                 $customDetails->ref_type = 'PROPERTY-CONCESSION';
-                $this->saveCustomDetail($request, $filename, $customDetails);
+                $this->saveCustomDetail($request, $filename, $customDetails, $path);
                 $customDetails->save();
             }
 
             if ($customFor == 'SAF') {
                 $customDetails->ref_type = 'SAF';
-                $this->saveCustomDetail($request, $filename, $customDetails);
+                $this->saveCustomDetail($request, $filename, $customDetails, $path);
                 $customDetails->save();
             }
 
             if ($customFor == 'PROPERTY-OBJECTION') {
                 $customDetails->ref_type = 'PROPERTY-OBJECTION';
-                $this->saveCustomDetail($request, $filename, $customDetails);
+                $this->saveCustomDetail($request, $filename, $customDetails, $path);
                 $customDetails->save();
             }
 
             if ($customFor == 'PROPERTY-HARVESTING') {
                 $customDetails->ref_type = 'PROPERTY-HARVESTING';
-                $this->saveCustomDetail($request, $filename, $customDetails);
+                $this->saveCustomDetail($request, $filename, $customDetails, $path);
                 $customDetails->save();
             }
 
-            if ($customFor == 'Water') {
-                $customDetails->ref_type = 'Water';
-                $this->saveCustomDetail($request, $filename, $customDetails);
+            if ($customFor == 'WATER') {
+                $customDetails->ref_type = 'WATER';
+                $this->saveCustomDetail($request, $filename, $customDetails, $path);
                 $customDetails->save();
             }
 
             if ($customFor == 'TRADE') {
                 $customDetails->ref_type = 'TRADE';
-                $this->saveCustomDetail($request, $filename, $customDetails);
+                $this->saveCustomDetail($request, $filename, $customDetails, $path);
                 $customDetails->save();
             }
 
             if ($customFor == 'PROPERTY DEACTIVATION') {
                 $customDetails->ref_type = 'PROPERTY DEACTIVATION';
-                $this->saveCustomDetail($request, $filename, $customDetails);
+                $this->saveCustomDetail($request, $filename, $customDetails, $path);
                 $customDetails->save();
             }
 
             if ($customFor == 'GBSAF') {
                 $customDetails->ref_type = 'GBSAF';
-                $this->saveCustomDetail($request, $filename, $customDetails);
+                $this->saveCustomDetail($request, $filename, $customDetails, $path);
                 $customDetails->save();
             }
 
             if ($customFor == 'SELF') {
                 $customDetails->ref_type = 'SELF';
-                $this->saveCustomDetail($request, $filename, $customDetails);
+                $this->saveCustomDetail($request, $filename, $customDetails, $path);
                 $customDetails->save();
             }
 
             if ($customFor == 'MOVABLE') {
                 $customDetails->ref_type = 'MOVABLE';
-                $this->saveCustomDetail($request, $filename, $customDetails);
+                $this->saveCustomDetail($request, $filename, $customDetails, $path);
                 $customDetails->save();
             }
 
             if ($customFor == 'PRIVATE') {
                 $customDetails->ref_type = 'PRIVATE';
-                $this->saveCustomDetail($request, $filename, $customDetails);
+                $this->saveCustomDetail($request, $filename, $customDetails, $path);
                 $customDetails->save();
             }
 
             if ($customFor == 'AGENCY') {
                 $customDetails->ref_type = 'AGENCY';
-                $this->saveCustomDetail($request, $filename, $customDetails);
+                $this->saveCustomDetail($request, $filename, $customDetails, $path);
                 $customDetails->save();
             }
 
             if ($customFor == 'HOARDING') {
                 $customDetails->ref_type = 'HOARDING';
-                $this->saveCustomDetail($request, $filename, $customDetails);
+                $this->saveCustomDetail($request, $filename, $customDetails, $path);
                 $customDetails->save();
             }
 
             if ($customFor == 'BANQUET') {
                 $customDetails->ref_type = 'BANQUET';
-                $this->saveCustomDetail($request, $filename, $customDetails);
+                $this->saveCustomDetail($request, $filename, $customDetails, $path);
                 $customDetails->save();
             }
 
             if ($customFor == 'LODGE') {
                 $customDetails->ref_type = 'LODGE';
-                $this->saveCustomDetail($request, $filename, $customDetails);
+                $this->saveCustomDetail($request, $filename, $customDetails, $path);
                 $customDetails->save();
             }
 
             if ($customFor == 'HOSTEL') {
                 $customDetails->ref_type = 'HOSTEL';
-                $this->saveCustomDetail($request, $filename, $customDetails);
+                $this->saveCustomDetail($request, $filename, $customDetails, $path);
                 $customDetails->save();
             }
 
             if ($customFor == 'DHARAMSHALA') {
                 $customDetails->ref_type = 'DHARAMSHALA';
-                $this->saveCustomDetail($request, $filename, $customDetails);
+                $this->saveCustomDetail($request, $filename, $customDetails, $path);
                 $customDetails->save();
             }
 
@@ -172,20 +175,20 @@ class CustomDetail extends Model
     }
 
     // save custom details
-    public function saveCustomDetail($request, $filename, $customDetails)
+    public function saveCustomDetail($request, $filename, $customDetails, $path)
     {
         if ($request->remarks && $request->document) {
 
             $customDetails->ref_id = $request->applicationId;
             $customDetails->doc_name = $filename;
             $customDetails->remarks = $request->remarks;
-            $customDetails->relative_path = '/custom/';
+            $customDetails->relative_path = $path;
             $customDetails->type = "both";
         } elseif ($request->document) {
 
             $customDetails->ref_id = $request->applicationId;
             $customDetails->doc_name = $filename;
-            $customDetails->relative_path = '/custom/';
+            $customDetails->relative_path = $path;
             $customDetails->type = "file";
         } elseif ($request->remarks) {
 
