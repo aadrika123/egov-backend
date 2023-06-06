@@ -72,7 +72,6 @@ trait Auth
     /**
      * Saving Extra User Credentials
      */
-
     public function savingExtras($user, $request)
     {
         if ($request->suspended) {

@@ -96,7 +96,7 @@ class WaterApplicant extends Model
         $approvedWaterApplicant = WaterApplicant::query()
             ->where('application_id', $request->applicationId)
             ->get();
-        $checkOwner = WaterConsumerOwner::where('consumer_id', $request->applicationId)->first();
+        $checkOwner = WaterConsumerOwner::where('consumer_id', $consumerId)->first();
         if ($checkOwner) {
             throw new Exception("Water Owner Already Exist!");
         }

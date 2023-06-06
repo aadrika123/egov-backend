@@ -425,10 +425,7 @@ class NewConnectionController extends Controller
                 throw new Exception("You are not the Finisher!");
             }
             DB::beginTransaction();
-            if ($waterDetails) {
-                $returnData = $this->newConnection->approvalRejectionWater($request, $roleId);
-            }
-            throw new Exception("Application dont exist!");
+            $returnData = $this->newConnection->approvalRejectionWater($request, $roleId);
             DB::commit();
             return $returnData;
         } catch (Exception $e) {
@@ -658,14 +655,13 @@ class NewConnectionController extends Controller
                 $mWaterApplication->current_role = $mWaterApplication->initiator_role_id;
                 $mWaterApplication->parked = true;                          //  Pending Status true
                 $mWaterApplication->doc_upload_status = false;              //  Docupload Status false
-                $mWaterApplication->save();
             }
             # if citizen applied 
             else {
                 $mWaterApplication->parked = true;                          //  Pending Status true
                 $mWaterApplication->doc_upload_status = false;              //  Docupload Status false
             }
-
+            $mWaterApplication->save();
             $metaReqs['moduleId']           = Config::get('module-constants.WATER_MODULE_ID');
             $metaReqs['workflowId']         = $mWaterApplication->workflow_id;
             $metaReqs['refTableDotId']      = 'water_applications.id';
