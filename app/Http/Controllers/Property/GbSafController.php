@@ -634,6 +634,7 @@ class GbSafController extends Controller
             $saf = PropActiveSaf::find($req->applicationId);
             $track = new WorkflowTrack();
             DB::beginTransaction();
+            $senderRoleId = $saf->current_role;
             $initiatorRoleId = $saf->initiator_role_id;
             $saf->current_role = $initiatorRoleId;
             $saf->parked = true;                        //<------ SAF Pending Status true
@@ -644,6 +645,8 @@ class GbSafController extends Controller
             $metaReqs['refTableDotId'] = 'prop_active_safs.id';
             $metaReqs['refTableIdValue'] = $req->applicationId;
             $metaReqs['user_id'] = authUser()->id;
+            $metaReqs['verificationStatus'] = 2;
+            $metaReqs['senderRoleId'] = $senderRoleId;
             $req->request->add($metaReqs);
             $track->saveTrack($req);
 

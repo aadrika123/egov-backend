@@ -37,6 +37,20 @@ if (!function_exists("responseMsgs")) {
     }
 }
 
+/**
+ * | To through Validation Error
+ */
+if (!function_exists("validationError")) {
+    function validationError($validator)
+    {
+        return response()->json([
+            'status'  => false,
+            'message' => 'validation error',
+            'errors'  => $validator->errors()
+        ], 422);
+    }
+}
+
 
 if (!function_exists("print_var")) {
     function print_var($data = '')
