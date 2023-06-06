@@ -74,68 +74,58 @@ class TradeApplication extends Controller
     }
     public function getMstrForNewLicense(Request $request)
     {
-        try{
-            $request->request->add(["applicationType"=>"NEWLICENSE"]);
+        try {
+            $request->request->add(["applicationType" => "NEWLICENSE"]);
             return $this->getApplyData($request);
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
     public function getMstrForRenewal(Request $request)
     {
-        try{
-            $request->request->add(["applicationType"=>"RENEWAL"]);
+        try {
+            $request->request->add(["applicationType" => "RENEWAL"]);
             return $this->getApplyData($request);
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
     public function getMstrForAmendment(Request $request)
     {
-        try{
-            $request->request->add(["applicationType"=>"AMENDMENT"]);
+        try {
+            $request->request->add(["applicationType" => "AMENDMENT"]);
             return $this->getApplyData($request);
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
     public function getMstrForSurender(Request $request)
     {
-        try{
-            $request->request->add(["applicationType"=>"SURRENDER"]);
+        try {
+            $request->request->add(["applicationType" => "SURRENDER"]);
             return $this->getApplyData($request);
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
     public function getApplyData(Request $request)
     {
-        try {           
+        try {
             $refUser            = Auth()->user();
             $refUserId          = $refUser->id;
             $refUlbId           = $refUser->ulb_id ?? $request->ulbId;
             $refWorkflowId      = $this->_WF_MASTER_Id;
             $mUserType          = $this->_COMMON_FUNCTION->userType($refWorkflowId);
-            $mApplicationTypeId = $this->_TRADE_CONSTAINT["APPLICATION-TYPE"][$request->applicationType]??null;
+            $mApplicationTypeId = $this->_TRADE_CONSTAINT["APPLICATION-TYPE"][$request->applicationType] ?? null;
             $mnaturOfBusiness   = null;
             $data               = array();
             $rules["applicationType"] = "required|string|in:NEWLICENSE,RENEWAL,AMENDMENT,SURRENDER";
-            if (!in_array($mApplicationTypeId, [1])) 
-            {
+            if (!in_array($mApplicationTypeId, [1])) {
                 $rules["licenseId"] = "required|digits_between:1,9223372036854775807";
             }
-            
+
             $validator = Validator::make($request->all(), $rules,);
-            if ($validator->fails()) 
-            {
+            if ($validator->fails()) {
                 return responseMsg(false, $validator->errors(), $request->all());
             }
             #------------------------End Declaration-----------------------
@@ -145,8 +135,7 @@ class TradeApplication extends Controller
             $data["ownershipTypeList"]  = TradeParamOwnershipType::List();
             $data["categoryTypeList"]   = TradeParamCategoryType::List();
             $data["natureOfBusiness"]   = TradeParamItemType::List(true);
-            if (isset($request->licenseId) && $request->licenseId  && $mApplicationTypeId != 1) 
-            {
+            if (isset($request->licenseId) && $request->licenseId  && $mApplicationTypeId != 1) {
                 $mOldLicenceId = $request->licenseId;
                 $nextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
                 $refOldLicece = $this->_REPOSITORY->getLicenceById($mOldLicenceId); //TradeLicence::find($mOldLicenceId)
@@ -159,12 +148,11 @@ class TradeApplication extends Controller
                         ->first();
                     throw new Exception("Application Already Apply Please Track  " . $newLicense->application_no);
                 }
-                if ($refOldLicece->valid_upto > $nextMonth && !in_array($mApplicationTypeId,[3,4])) {
+                if ($refOldLicece->valid_upto > $nextMonth && !in_array($mApplicationTypeId, [3, 4])) {
                     throw new Exception("Licence Valice Upto " . $refOldLicece->valid_upto);
                 }
-                if($refOldLicece->valid_upto < (Carbon::now()->format('Y-m-d')) && in_array($mApplicationTypeId,[3,4]))
-                {
-                    throw new Exception("Licence Was Expired Please Renewal First" );
+                if ($refOldLicece->valid_upto < (Carbon::now()->format('Y-m-d')) && in_array($mApplicationTypeId, [3, 4])) {
+                    throw new Exception("Licence Was Expired Please Renewal First");
                 }
                 if ($refOldLicece->pending_status != 5) {
                     throw new Exception("Application not approved Please Track  " . $refOldLicece->application_no);
@@ -183,17 +171,14 @@ class TradeApplication extends Controller
                 $data["ownerDtl"]       = $refOldOwneres;
                 $refUlbId = $refOldLicece->ulb_id;
             }
-            
-            if (in_array(strtoupper($mUserType), ["ONLINE", "JSK", "SUPER ADMIN", "TL"])) 
-            {
+
+            if (in_array(strtoupper($mUserType), ["ONLINE", "JSK", "SUPER ADMIN", "TL"])) {
                 $data['wardList'] = $this->_MODEL_WARD->getOldWard($refUlbId)->map(function ($val) {
                     $val->ward_no = $val->ward_name;
                     return $val;
                 });
                 $data['wardList'] = objToArray($data['wardList']);
-            } 
-            else 
-            {
+            } else {
                 $data['wardList'] = $this->_COMMON_FUNCTION->oldWardPermission($refUserId);
             }
             return responseMsg(true, "", remove_null($data));
@@ -207,18 +192,16 @@ class TradeApplication extends Controller
         $refUser            = Auth()->user();
         $refUserId          = $refUser->id;
         $refUlbId           = $refUser->ulb_id;
-        if ($refUser->user_type == $this->_TRADE_CONSTAINT["CITIZEN"]) 
-        {
+        if ($refUser->user_type == $this->_TRADE_CONSTAINT["CITIZEN"]) {
             $refUlbId = $request->ulbId ?? 0;
         }
         $refWorkflowId      = $this->_WF_MASTER_Id;
         $mUserType          = $this->_COMMON_FUNCTION->userType($refWorkflowId);
         $refWorkflows       = $this->_COMMON_FUNCTION->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
-        $mApplicationTypeId = ($this->_TRADE_CONSTAINT["APPLICATION-TYPE"][$request->applicationType]??null);
+        $mApplicationTypeId = ($this->_TRADE_CONSTAINT["APPLICATION-TYPE"][$request->applicationType] ?? null);
         try {
-            if((!$this->_COMMON_FUNCTION->checkUsersWithtocken("users"))&& (strtoupper($mUserType)=="ONLINE"))
-            {
-                throw New Exception("Citizen Not Allowed");
+            if ((!$this->_COMMON_FUNCTION->checkUsersWithtocken("users")) && (strtoupper($mUserType) == "ONLINE")) {
+                throw new Exception("Citizen Not Allowed");
             }
             if (!in_array(strtoupper($mUserType), ["ONLINE", "JSK", "UTC", "TC", "SUPER ADMIN", "TL"])) {
                 throw new Exception("You Are Not Authorized For This Action !");
@@ -238,7 +221,7 @@ class TradeApplication extends Controller
             // return $request->applicationType;
             if (in_array($mApplicationTypeId, ["2", "3", "4"]) && (!$request->licenseId || !is_numeric($request->licenseId))) {
                 throw new Exception("Old licence Id Requird");
-            }            
+            }
             return $this->_REPOSITORY->addRecord($request);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
@@ -246,18 +229,14 @@ class TradeApplication extends Controller
     }
     public function paymentCounter(paymentCounter $request)
     {
-        try{
-            if(!$this->_COMMON_FUNCTION->checkUsersWithtocken("users"))
-            {
-                throw New Exception("Citizen Not Allowed");
+        try {
+            if (!$this->_COMMON_FUNCTION->checkUsersWithtocken("users")) {
+                throw new Exception("Citizen Not Allowed");
             }
             return $this->_REPOSITORY->paymentCounter($request);
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
-        
     }
     # Serial No : 02
     public function updateLicenseBo(ReqUpdateBasicDtl $request)
@@ -273,47 +252,44 @@ class TradeApplication extends Controller
     public function getDocList(Request $request)
     {
         $tradC = new Trade();
-        $response =  $tradC->getLicenseDocLists($request);       
-        if($response->original["status"])
-        {
+        $response =  $tradC->getLicenseDocLists($request);
+        if ($response->original["status"]) {
             $ownerDoc = $response->original["data"]["ownerDocs"];
             $Wdocuments = collect();
-            $ownerDoc->map(function($val) use($Wdocuments){                
-                $ownerId = $val["ownerDetails"]["ownerId"]??"";           
-                $val["documents"]->map(function($val1)use($Wdocuments,$ownerId){
+            $ownerDoc->map(function ($val) use ($Wdocuments) {
+                $ownerId = $val["ownerDetails"]["ownerId"] ?? "";
+                $val["documents"]->map(function ($val1) use ($Wdocuments, $ownerId) {
                     $val1["ownerId"] = $ownerId;
-                    $val1["is_uploded"] = (in_array($val1["docType"],["R","OR"]))  ? ((!empty($val1["uploadedDoc"])) ? true : false ) :true;
-                    $val1["is_docVerify"] = !empty($val1["uploadedDoc"]) ?  (((collect($val1["uploadedDoc"])->all())["verifyStatus"] !=0 ) ? true : false ) :true;
-                    
-                    collect($val1["masters"])->map(function($v) use($Wdocuments){
+                    $val1["is_uploded"] = (in_array($val1["docType"], ["R", "OR"]))  ? ((!empty($val1["uploadedDoc"])) ? true : false) : true;
+                    $val1["is_docVerify"] = !empty($val1["uploadedDoc"]) ?  (((collect($val1["uploadedDoc"])->all())["verifyStatus"] != 0) ? true : false) : true;
+
+                    collect($val1["masters"])->map(function ($v) use ($Wdocuments) {
                         $Wdocuments->push($v);
                     });
                 });
             });
-            if($Wdocuments->isEmpty())
-            {
-                $newrespons =[];
-                foreach($response->original["data"] as $key =>$val)
-                {
-                    if($key!="ownerDocs")
-                    {
+            if ($Wdocuments->isEmpty()) {
+                $newrespons = [];
+                foreach ($response->original["data"] as $key => $val) {
+                    if ($key != "ownerDocs") {
                         $newrespons[$key] = $val;
                     }
                 }
-                
+
                 $response->original["data"] = $newrespons;
-                $response = responseMsgs($response->original["status"],
+                $response = responseMsgs(
+                    $response->original["status"],
                     $response->original["message"],
                     $response->original["data"],
-                    $response->original["meta-data"]["apiId"]??"",
-                    $response->original["meta-data"]["version"]??"",
-                    $response->original["meta-data"]["responsetime"]??"",
-                    $response->original["meta-data"]["action"]??"",
-                    $response->original["meta-data"]["deviceId"]??""
+                    $response->original["meta-data"]["apiId"] ?? "",
+                    $response->original["meta-data"]["version"] ?? "",
+                    $response->original["meta-data"]["responsetime"] ?? "",
+                    $response->original["meta-data"]["action"] ?? "",
+                    $response->original["meta-data"]["deviceId"] ?? ""
                 );
             }
         }
-       return $response;
+        return $response;
     }
 
 
@@ -323,14 +299,13 @@ class TradeApplication extends Controller
         $id = $request->id;
         $transectionId =  $request->transectionId;
         $request->setMethod('POST');
-        $request->request->add(["id"=>$id,"transectionId"=>$transectionId]);       
-        $rules =[
+        $request->request->add(["id" => $id, "transectionId" => $transectionId]);
+        $rules = [
             "id" => "required|digits_between:1,9223372036854775807",
             "transectionId" => "required|digits_between:1,9223372036854775807",
         ];
         $validator = Validator::make($request->all(), $rules,);
-        if ($validator->fails()) 
-        {
+        if ($validator->fails()) {
             return responseMsg(false, $validator->errors(), $request->all());
         }
         return $this->_REPOSITORY->readPaymentReceipt($id, $transectionId);
@@ -340,7 +315,7 @@ class TradeApplication extends Controller
     {
         // return $this->_REPOSITORY->documentUpload($request);
     }
-    
+
     # Serial No : 07
     public function documentVerify(Request $request)
     {
@@ -351,15 +326,14 @@ class TradeApplication extends Controller
             'docStatus' => 'required|in:Verified,Rejected'
         ]);
         try {
-            if((!$this->_COMMON_FUNCTION->checkUsersWithtocken("users")))
-            {
-                throw New Exception("Citizen Not Allowed");
+            if ((!$this->_COMMON_FUNCTION->checkUsersWithtocken("users"))) {
+                throw new Exception("Citizen Not Allowed");
             }
             // Variable Assignments
             $user = Auth()->user();
             $userId = $user->id;
             $ulbId = $user->ulb_id;
-            $mWfDocument = new WfActiveDocument();            
+            $mWfDocument = new WfActiveDocument();
             $workflow_id = $this->_WF_MASTER_Id;
             $rolles = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $workflow_id);
             if (!$rolles || !$rolles->can_verify_document) {
@@ -371,8 +345,7 @@ class TradeApplication extends Controller
             if ($request->docStatus == "Verified") {
                 $status = 1;
             }
-            if ($request->docStatus == "Rejected") 
-            {
+            if ($request->docStatus == "Rejected") {
                 $status = 2;
             }
 
@@ -384,12 +357,11 @@ class TradeApplication extends Controller
             $mWfDocument->docVerifyReject($wfDocId, $myRequest);
             DB::commit();
             $tradR = new Trade();
-            $doc =$tradR->getLicenseDocLists($request); 
-            $docVerifyStatus = $doc->original["data"]["docVerifyStatus"]??0;
-            
-            return responseMsgs(true, ["docVerifyStatus"=>$docVerifyStatus], "", "tc7.1", "1.0", "", "POST", $request->deviceId ?? "");
-        } catch (Exception $e) 
-        {
+            $doc = $tradR->getLicenseDocLists($request);
+            $docVerifyStatus = $doc->original["data"]["docVerifyStatus"] ?? 0;
+
+            return responseMsgs(true, ["docVerifyStatus" => $docVerifyStatus], "", "tc7.1", "1.0", "", "POST", $request->deviceId ?? "");
+        } catch (Exception $e) {
             DB::rollBack();
             return responseMsgs(false, $e->getMessage(), "", "tc7.1", "1.0", "", "POST", $request->deviceId ?? "");
         }
@@ -441,8 +413,8 @@ class TradeApplication extends Controller
     }
     public function workflowDashordDetails(Request $request)
     {
-        try{
-            
+        try {
+
             $track = new WorkflowTrack();
             $mWfWorkflow = new WfWorkflow();
             $tradC = new Trade();
@@ -450,47 +422,42 @@ class TradeApplication extends Controller
             $refUserId = $refUser->id;
             $refUlbId = $refUser->ulb_id;
             $refWorkflowId      = $this->_WF_MASTER_Id;
-            $userRole = $this->_COMMON_FUNCTION->getUserRoll($refUserId,$refUlbId,$refWorkflowId);
-            $wfAllRoles         = $this->_COMMON_FUNCTION->getWorkFlowAllRoles($refUserId,$refUlbId,$refWorkflowId,true);
+            $userRole = $this->_COMMON_FUNCTION->getUserRoll($refUserId, $refUlbId, $refWorkflowId);
+            $wfAllRoles         = $this->_COMMON_FUNCTION->getWorkFlowAllRoles($refUserId, $refUlbId, $refWorkflowId, true);
             $workflow           = $mWfWorkflow->getulbWorkflowId($refWorkflowId, $refUlbId);
-            if(!$userRole)
-            {
+            if (!$userRole) {
                 throw new Exception("Access Denied! No Role");
-                
             }
             $canView = true;
-            if (((!$userRole->forward_role_id??false) && !$userRole->backward_role_id)) 
-            {
+            if (((!$userRole->forward_role_id ?? false) && !$userRole->backward_role_id)) {
                 $canView = false;
             }
-            
+
             $metaRequest = new Request([
                 'workflowId'    => $workflow->id,
                 'ulbId'         => $refUlbId,
                 'moduleId'      => $this->_MODULE_ID
             ]);
             $dateWiseData = $track->getWfDashbordData($metaRequest)->get();
-            $request->request->add(["all"=>true]);
+            $request->request->add(["all" => true]);
             $inboxData = $this->_REPOSITORY->inbox($request);
             $returnData = [
-                'canView'               => $canView ,
+                'canView'               => $canView,
                 'userDetails'           => $refUser,
                 'roleId'                => $userRole->role_id,
                 'roleName'              => $userRole->role_name,
-                "shortRole"             => ($this->_TRADE_CONSTAINT['USER-TYPE-SHORT-NAME'][strtoupper($userRole->role_name)])??"N/A",
+                "shortRole"             => ($this->_TRADE_CONSTAINT['USER-TYPE-SHORT-NAME'][strtoupper($userRole->role_name)]) ?? "N/A",
                 'todayForwardCount'     => collect($dateWiseData)->where('sender_role_id', $userRole->role_idd)->count(),
                 'todayReceivedCount'    => collect($dateWiseData)->where('receiver_role_id', $userRole->role_id)->count(),
-                'pendingApplication'    => $inboxData->original['data']->count()??0,
-                'newLicense'            => $inboxData->original['data']->where("application_type_id",1)->count()??0,
-                'renewalLicense'        => $inboxData->original['data']->where("application_type_id",2)->count()??0,
-                'amendmentLicense'      => $inboxData->original['data']->where("application_type_id",3)->count()??0,
-                'surenderLicense'       => $inboxData->original['data']->where("application_type_id",4)->count()??0
+                'pendingApplication'    => $inboxData->original['data']->count() ?? 0,
+                'newLicense'            => $inboxData->original['data']->where("application_type_id", 1)->count() ?? 0,
+                'renewalLicense'        => $inboxData->original['data']->where("application_type_id", 2)->count() ?? 0,
+                'amendmentLicense'      => $inboxData->original['data']->where("application_type_id", 3)->count() ?? 0,
+                'surenderLicense'       => $inboxData->original['data']->where("application_type_id", 4)->count() ?? 0
             ];
 
             return responseMsgs(true, "", remove_null($returnData), "", "01", ".ms", "POST", $request->deviceId);
-        } 
-        catch (Exception $e) 
-        {
+        } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "01", ".ms", "POST", "");
         }
     }
@@ -530,12 +497,18 @@ class TradeApplication extends Controller
         ]);
 
         try {
-            if(!$this->_COMMON_FUNCTION->checkUsersWithtocken("users"))
-            {
-                throw New Exception("Citizen Not Allowed");
+            if (!$this->_COMMON_FUNCTION->checkUsersWithtocken("users")) {
+                throw new Exception("Citizen Not Allowed");
             }
             $activeLicence = ActiveTradeLicence::find($req->applicationId);
             $track = new WorkflowTrack();
+            $lastworkflowtrack = $track->select("*")
+                ->where('ref_table_id_value', $req->applicationId)
+                ->where('module_id', $this->_MODULE_ID)
+                ->where('ref_table_dot_id', "active_trade_licences")
+                ->whereNotNull('sender_role_id')
+                ->orderBy("track_date", 'DESC')
+                ->first();
             DB::beginTransaction();
             $initiatorRoleId = $activeLicence->initiator_role;
             $activeLicence->current_role = $initiatorRoleId;
@@ -546,6 +519,10 @@ class TradeApplication extends Controller
             $metaReqs['workflowId'] = $activeLicence->workflow_id;
             $metaReqs['refTableDotId'] = 'active_trade_licences.id';
             $metaReqs['refTableIdValue'] = $req->applicationId;
+            $metaReqs['trackDate'] = $lastworkflowtrack && $lastworkflowtrack->forward_date ? ($lastworkflowtrack->forward_date . " " . $lastworkflowtrack->forward_time) : Carbon::now()->format('Y-m-d H:i:s');
+            $metaReqs['forwardDate'] = Carbon::now()->format('Y-m-d');
+            $metaReqs['forwardTime'] = Carbon::now()->format('H:i:s');
+            $metaReqs['verificationStatus'] = 2;
             $req->request->add($metaReqs);
             $track->saveTrack($req);
 
@@ -567,157 +544,144 @@ class TradeApplication extends Controller
         $ulb_id = $user->ulb_id;
 
         $refWorkflowId = $this->_WF_MASTER_Id;
-        $role = $this->_COMMON_FUNCTION->getUserRoll($user_id,$ulb_id,$refWorkflowId);
-       
+        $role = $this->_COMMON_FUNCTION->getUserRoll($user_id, $ulb_id, $refWorkflowId);
+
         $request->validate([
-            "action"        =>'required|in:forward,backward',
+            "action"        => 'required|in:forward,backward',
             'applicationId' => 'required|digits_between:1,9223372036854775807',
             'senderRoleId' => 'nullable|integer',
             'receiverRoleId' => 'nullable|integer',
-            'comment' => ($role->is_initiator??false)?"nullable":'required',
+            'comment' => ($role->is_initiator ?? false) ? "nullable" : 'required',
         ]);
 
         try {
-            if(!$request->senderRoleId)
-            {
-                $request->request->add(["senderRoleId"=>$role->role_id??0]);
+            if (!$request->senderRoleId) {
+                $request->request->add(["senderRoleId" => $role->role_id ?? 0]);
             }
-            if(!$request->receiverRoleId)
-            {
-                if($request->action=='forward')
-                {
-                    $request->request->add(["receiverRoleId"=>$role->forward_role_id??0]);
+            if (!$request->receiverRoleId) {
+                if ($request->action == 'forward') {
+                    $request->request->add(["receiverRoleId" => $role->forward_role_id ?? 0]);
                 }
-                if($request->action=='backward')
-                {
-                    $request->request->add(["receiverRoleId"=>$role->backward_role_id??0]);
+                if ($request->action == 'backward') {
+                    $request->request->add(["receiverRoleId" => $role->backward_role_id ?? 0]);
                 }
             }
-            
-            
+
+
             #if finisher forward then
-            if(($role->is_finisher??0) && $request->action=='forward')
-            {
-                $request->request->add(["status"=>1]);                
+            if (($role->is_finisher ?? 0) && $request->action == 'forward') {
+                $request->request->add(["status" => 1]);
                 return $this->approveReject($request);
             }
-            
-            if(!$this->_COMMON_FUNCTION->checkUsersWithtocken("users"))
-            {
-                throw New Exception("Citizen Not Allowed");
+
+            if (!$this->_COMMON_FUNCTION->checkUsersWithtocken("users")) {
+                throw new Exception("Citizen Not Allowed");
             }
-            
+
             #Trade Application Update Current Role Updation
-           
+
             $workflowId = WfWorkflow::where('wf_master_id', $refWorkflowId)
                 ->where('ulb_id', $ulb_id)
                 ->first();
-            if (!$workflowId) 
-            {
+            if (!$workflowId) {
                 throw new Exception("Workflow Not Available");
             }
-            
+
             $licence = ActiveTradeLicence::find($request->applicationId);
-            if(!$licence)
-            {
+            if (!$licence) {
                 throw new Exception("Data Not Found");
             }
-            if($licence->is_parked && $request->action=='forward')
-            {
-                 $request->request->add(["receiverRoleId"=>$licence->current_role??0]);
-            }
-            $allRolse     = collect($this->_COMMON_FUNCTION->getAllRoles($user_id,$ulb_id,$refWorkflowId,0,true));
-            
+            // if($licence->is_parked && $request->action=='forward')
+            // {
+            //      $request->request->add(["receiverRoleId"=>$licence->current_role??0]);
+            // }
+            $allRolse     = collect($this->_COMMON_FUNCTION->getAllRoles($user_id, $ulb_id, $refWorkflowId, 0, true));
+
             $initFinish   = $this->_COMMON_FUNCTION->iniatorFinisher($user_id, $ulb_id, $refWorkflowId);
-            $receiverRole = array_values(objToArray($allRolse->where("id",$request->receiverRoleId)))[0]??[];
-            $senderRole   = array_values(objToArray($allRolse->where("id",$request->senderRoleId)))[0]??[];
-            
-            if($licence->payment_status!=1 && ($role->serial_no  < $receiverRole["serial_no"]??0))
-            {
+            $receiverRole = array_values(objToArray($allRolse->where("id", $request->receiverRoleId)))[0] ?? [];
+            $senderRole   = array_values(objToArray($allRolse->where("id", $request->senderRoleId)))[0] ?? [];
+
+            if ($licence->payment_status != 1 && ($role->serial_no  < $receiverRole["serial_no"] ?? 0)) {
                 throw new Exception("Payment Not Clear");
             }
-            
-            if($licence->current_role != $role->role_id && (!$licence->is_parked))
-            {
+
+            if ($licence->current_role != $role->role_id && (!$licence->is_parked)) {
                 throw new Exception("You Have Not Pending This Application");
             }
-            if($licence->is_parked && !$role->is_initiator)
-            {
+            if ($licence->is_parked && !$role->is_initiator) {
                 throw new Exception("You Aer Not Authorized For Forword BTC Application");
             }
-            
-            $sms ="Application BackWord To ".$receiverRole["role_name"]??"";
-            
-            if($role->serial_no  < $receiverRole["serial_no"]??0)
-            {
-                $sms ="Application Forward To ".$receiverRole["role_name"]??"";
+
+            $sms = "Application BackWord To " . $receiverRole["role_name"] ?? "";
+
+            if ($role->serial_no  < $receiverRole["serial_no"] ?? 0) {
+                $sms = "Application Forward To " . $receiverRole["role_name"] ?? "";
             }
             $tradC = new Trade();
-            $documents = $tradC->checkWorckFlowForwardBackord($request);  
-            
-            if((($senderRole["serial_no"]??0) < ($receiverRole["serial_no"]??0)) && !$documents)
-            {
-                if (($role->can_upload_document ?? false) && $licence->is_parked) 
-                {
+            $documents = $tradC->checkWorckFlowForwardBackord($request);
+
+            if ((($senderRole["serial_no"] ?? 0) < ($receiverRole["serial_no"] ?? 0)) && !$documents) {
+                if (($role->can_upload_document ?? false) && $licence->is_parked) {
                     throw new Exception("Rejected Document Are Not Uploaded");
                 }
-                if (($role->can_upload_document ?? false)) 
-                {
+                if (($role->can_upload_document ?? false)) {
                     throw new Exception("No Every Madetry Documents are Uploaded");
                 }
-                if ($role->can_verify_document ?? false) 
-                {
+                if ($role->can_verify_document ?? false) {
                     throw new Exception("No Every Documents are Veryfied Or Madetory Document is Rejected");
                 }
                 throw new Exception("Not Every Actoin Are Performed");
             }
-            if($role->can_upload_document)
-            {
-                if(($role->serial_no < $receiverRole["serial_no"]??0))
-                {
+            if ($role->can_upload_document) {
+                if (($role->serial_no < $receiverRole["serial_no"] ?? 0)) {
                     $licence->document_upload_status = true;
                     $licence->pending_status = 1;
                     $licence->is_parked = false;
                 }
-                if(($role->serial_no > $receiverRole["serial_no"]??0))
-                {
+                if (($role->serial_no > $receiverRole["serial_no"] ?? 0)) {
                     $licence->document_upload_status = false;
                 }
             }
-            if($role->can_verify_document)
-            {
-                if(($role->serial_no < $receiverRole["serial_no"]??0))
-                {
+            if ($role->can_verify_document) {
+                if (($role->serial_no < $receiverRole["serial_no"] ?? 0)) {
                     $licence->is_doc_verified = true;
                     $licence->doc_verified_by = $user_id;
                     $licence->doc_verify_date = Carbon::now()->format("Y-m-d");
                 }
-                if(($role->serial_no > $receiverRole["serial_no"]??0))
-                {
+                if (($role->serial_no > $receiverRole["serial_no"] ?? 0)) {
                     $licence->is_doc_verified = false;
                 }
-                
             }
 
             DB::beginTransaction();
-            $licence->max_level_attained = ($licence->max_level_attained < ($receiverRole["serial_no"]??0)) ? ($receiverRole["serial_no"]??0) : $licence->max_level_attained;
+            $licence->max_level_attained = ($licence->max_level_attained < ($receiverRole["serial_no"] ?? 0)) ? ($receiverRole["serial_no"] ?? 0) : $licence->max_level_attained;
             $licence->current_role = $request->receiverRoleId;
-            if($licence->is_parked && $request->action=='forward')
-            {
-                 $licence->is_parked = false;
+            if ($licence->is_parked && $request->action == 'forward') {
+                $licence->is_parked = false;
             }
             $licence->update();
+
+            $track = new WorkflowTrack();
+            $lastworkflowtrack = $track->select("*")
+                ->where('ref_table_id_value', $request->applicationId)
+                ->where('module_id', $this->_MODULE_ID)
+                ->where('ref_table_dot_id', "active_trade_licences")
+                ->whereNotNull('sender_role_id')
+                ->orderBy("track_date", 'DESC')
+                ->first();
 
 
             $metaReqs['moduleId'] = $this->_MODULE_ID;
             $metaReqs['workflowId'] = $licence->workflow_id;
             $metaReqs['refTableDotId'] = 'active_trade_licences';
             $metaReqs['refTableIdValue'] = $request->applicationId;
-            $metaReqs['user_id']=$user_id;
-            $metaReqs['ulb_id']=$ulb_id;
+            $metaReqs['user_id'] = $user_id;
+            $metaReqs['ulb_id'] = $ulb_id;
+            $metaReqs['trackDate'] = $lastworkflowtrack && $lastworkflowtrack->forward_date ? ($lastworkflowtrack->forward_date . " " . $lastworkflowtrack->forward_time) : Carbon::now()->format('Y-m-d H:i:s');
+            $metaReqs['forwardDate'] = Carbon::now()->format('Y-m-d');
+            $metaReqs['forwardTime'] = Carbon::now()->format('H:i:s');
+            $metaReqs['verificationStatus'] = 1;
             $request->request->add($metaReqs);
-
-            $track = new WorkflowTrack();
             $track->saveTrack($request);
 
             DB::commit();
@@ -736,69 +700,75 @@ class TradeApplication extends Controller
             $req->validate([
                 "applicationId" => "required",
                 "status" => "required",
-                "comment" => $req->status==0?"required":"nullable",
+                "comment" => $req->status == 0 ? "required" : "nullable",
             ]);
-            if(!$this->_COMMON_FUNCTION->checkUsersWithtocken("users"))
-            {
-                throw New Exception("Citizen Not Allowed");
+            if (!$this->_COMMON_FUNCTION->checkUsersWithtocken("users")) {
+                throw new Exception("Citizen Not Allowed");
             }
-            
+
             $user = Auth()->user();
             $user_id = $user->id;
             $ulb_id = $user->ulb_id;
             $refWorkflowId = $this->_WF_MASTER_Id;
 
             $activeLicence = ActiveTradeLicence::find($req->applicationId);
-            
-            $role = $this->_COMMON_FUNCTION->getUserRoll($user_id,$ulb_id,$refWorkflowId);
-            
+
+            $role = $this->_COMMON_FUNCTION->getUserRoll($user_id, $ulb_id, $refWorkflowId);
+
             if ($activeLicence->finisher_role != $role->role_id) {
                 return responseMsg(false, "Forbidden Access", "");
             }
-            if(!$req->senderRoleId)
-            {
-                $req->request->add(["senderRoleId"=>$role->role_id??0]);
+            if (!$req->senderRoleId) {
+                $req->request->add(["senderRoleId" => $role->role_id ?? 0]);
             }
-            if(!$req->receiverRoleId)
-            {
-                if($req->action=='forward')
-                {
-                    $req->request->add(["receiverRoleId"=>$role->forward_role_id??0]);
+            if (!$req->receiverRoleId) {
+                if ($req->action == 'forward') {
+                    $req->request->add(["receiverRoleId" => $role->forward_role_id ?? 0]);
                 }
-                if($req->action=='backward')
-                {
-                    $req->request->add(["receiverRoleId"=>$role->backward_role_id??0]);
+                if ($req->action == 'backward') {
+                    $req->request->add(["receiverRoleId" => $role->backward_role_id ?? 0]);
                 }
             }
+            $track = new WorkflowTrack();
+            $lastworkflowtrack = $track->select("*")
+                ->where('ref_table_id_value', $req->applicationId)
+                ->where('module_id', $this->_MODULE_ID)
+                ->where('ref_table_dot_id', "active_trade_licences")
+                ->whereNotNull('sender_role_id')
+                ->orderBy("track_date", 'DESC')
+                ->first();
             $metaReqs['moduleId'] = $this->_MODULE_ID;
             $metaReqs['workflowId'] = $activeLicence->workflow_id;
             $metaReqs['refTableDotId'] = 'active_trade_licences';
             $metaReqs['refTableIdValue'] = $req->applicationId;
-            $metaReqs['user_id']=$user_id;
-            $metaReqs['ulb_id']=$ulb_id;
+            $metaReqs['user_id'] = $user_id;
+            $metaReqs['ulb_id'] = $ulb_id;
+            $metaReqs['trackDate'] = $lastworkflowtrack && $lastworkflowtrack->forward_date ? ($lastworkflowtrack->forward_date . " " . $lastworkflowtrack->forward_time) : Carbon::now()->format('Y-m-d H:i:s');
+            $metaReqs['forwardDate'] = Carbon::now()->format('Y-m-d');
+            $metaReqs['forwardTime'] = Carbon::now()->format('H:i:s');
+            $metaReqs['verificationStatus'] = 1;
             $req->request->add($metaReqs);
+
             DB::beginTransaction();
-            
+
+            $track->saveTrack($req);
             // Approval
-            if ($req->status == 1) 
-            {
+            if ($req->status == 1) {
                 $refUlbDtl          = UlbMaster::find($activeLicence->ulb_id);
                 // Objection Application replication
                 $approvedLicence = $activeLicence->replicate();
                 $approvedLicence->setTable('trade_licences');
-                $approvedLicence->pending_status =5;
+                $approvedLicence->pending_status = 5;
                 $approvedLicence->id = $activeLicence->id;
                 $status = $this->giveValidity($approvedLicence);
-                if(!$status)
-                {
+                if (!$status) {
                     throw new Exception("Some Error Occurs");
                 }
                 $approvedLicence->save();
                 $owneres = ActiveTradeOwner::select("*")
-                            ->where("temp_id",$activeLicence->id)
-                            ->get();
-                foreach($owneres as $val)
-                {                 
+                    ->where("temp_id", $activeLicence->id)
+                    ->get();
+                foreach ($owneres as $val) {
                     $refOwners = $val->replicate();
                     $refOwners->id = $val->id;
                     $refOwners->setTable('trade_owners');
@@ -807,26 +777,24 @@ class TradeApplication extends Controller
                 }
                 $activeLicence->delete();
                 $licenseNo = $approvedLicence->license_no;
-                $msg =  "Application Successfully Approved !!. Your License No Is ".$licenseNo;
-                $sms = trade(["application_no"=>$approvedLicence->application_no,"licence_no"=>$approvedLicence->license_no,"ulb_name"=>$refUlbDtl->ulb_name??""],"Application Approved");
+                $msg =  "Application Successfully Approved !!. Your License No Is " . $licenseNo;
+                $sms = trade(["application_no" => $approvedLicence->application_no, "licence_no" => $approvedLicence->license_no, "ulb_name" => $refUlbDtl->ulb_name ?? ""], "Application Approved");
             }
 
             // Rejection
-            if ($req->status == 0) 
-            {
+            if ($req->status == 0) {
                 $track = new WorkflowTrack();
                 $d = $track->saveTrack($req);
                 // Objection Application replication
                 $approvedLicence = $activeLicence->replicate();
                 $approvedLicence->setTable('rejected_trade_licences');
                 $approvedLicence->id = $activeLicence->id;
-                $approvedLicence->pending_status =4;
+                $approvedLicence->pending_status = 4;
                 $approvedLicence->save();
                 $owneres = ActiveTradeOwner::select("*")
-                            ->where("temp_id",$activeLicence->id)
-                            ->get();
-                foreach($owneres as $val)
-                {
+                    ->where("temp_id", $activeLicence->id)
+                    ->get();
+                foreach ($owneres as $val) {
                     $refOwners = $val->replicate();
                     $refOwners->id = $val->id;
                     $refOwners->setTable('rejected_trade_owners');
@@ -837,15 +805,12 @@ class TradeApplication extends Controller
                 $msg = "Application Successfully Rejected !!";
                 // $sms = trade(["application_no"=>$approvedLicence->application_no,"licence_no"=>$approvedLicence->license_no,"ulb_name"=>$refUlbDtl->ulb_name??""],"Application Approved");
             }
-            if(($sms["status"]??false))
-            {
+            if (($sms["status"] ?? false)) {
                 $tradC = new Trade();
                 $owners = $tradC->getAllOwnereDtlByLId($req->applicationId);
-                foreach($owners as $val)
-                {
+                foreach ($owners as $val) {
                     // $respons=send_sms($val["mobile_no"],$sms["sms"],$sms["temp_id"]);
                 }
-
             }
             DB::commit();
 
@@ -860,36 +825,34 @@ class TradeApplication extends Controller
     # Serial No : 19
     public function provisionalCertificate(Request $request)
     {
-        $id=$request->id;
+        $id = $request->id;
         $request->setMethod('POST');
-        $request->request->add(["id"=>$id]);       
-        $rules =[
+        $request->request->add(["id" => $id]);
+        $rules = [
             "id" => "required|digits_between:1,9223372036854775807",
         ];
         $validator = Validator::make($request->all(), $rules,);
-        if ($validator->fails()) 
-        {
+        if ($validator->fails()) {
             return responseMsg(false, $validator->errors(), $request->all());
         }
         return $this->_REPOSITORY->provisionalCertificate($request->id);
     }
     # Serial No : 20
     public function licenceCertificate(Request $request)
-    { 
-        $id=$request->id;
+    {
+        $id = $request->id;
         $request->setMethod('POST');
-        $request->request->add(["id"=>$id]);       
-        $rules =[
+        $request->request->add(["id" => $id]);
+        $rules = [
             "id" => "required|digits_between:1,9223372036854775807",
         ];
         $validator = Validator::make($request->all(), $rules,);
-        if ($validator->fails()) 
-        {
+        if ($validator->fails()) {
             return responseMsg(false, $validator->errors(), $request->all());
         }
         return $this->_REPOSITORY->licenceCertificate($request->id);
     }
-    
+
     # Serial No : 22
     public function addIndependentComment(Request $request)
     {
@@ -900,20 +863,20 @@ class TradeApplication extends Controller
     {
         return $this->_REPOSITORY->readIndipendentComment($request);
     }
-    
+
     # Serial No : 26
     public function approvedApplication(Request $request)
     {
         return $this->_REPOSITORY->approvedApplication($request);
     }
 
-    
+
 
     /**
      *  get uploaded documents
      */
     public function getUploadDocuments(Request $req)
-    { 
+    {
         $req->validate([
             'applicationId' => 'required|digits_between:1,9223372036854775807'
         ]);
@@ -927,11 +890,11 @@ class TradeApplication extends Controller
 
             $appNo = $licenceDetails->application_no;
             $tradR = new Trade();
-            $documents = $mWfActiveDocument->getTradeDocByAppNo($licenceDetails->id,$licenceDetails->workflow_id,$modul_id);
-            
-            $doc =$tradR->getLicenseDocLists($req);
-            $docVerifyStatus = $doc->original["data"]["docVerifyStatus"]??0;
-            return responseMsgs(true, ["docVerifyStatus"=>$docVerifyStatus], remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");
+            $documents = $mWfActiveDocument->getTradeDocByAppNo($licenceDetails->id, $licenceDetails->workflow_id, $modul_id);
+
+            $doc = $tradR->getLicenseDocLists($req);
+            $docVerifyStatus = $doc->original["data"]["docVerifyStatus"] ?? 0;
+            return responseMsgs(true, ["docVerifyStatus" => $docVerifyStatus], remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
         }
@@ -943,7 +906,7 @@ class TradeApplication extends Controller
      */
     public function uploadDocument(Request $req)
     {
-        
+
         try {
             $req->validate([
                 "applicationId" => "required|digits_between:1,9223372036854775807",
@@ -958,61 +921,54 @@ class TradeApplication extends Controller
             $mActiveTradeLicence = new ActiveTradeLicence();
             $relativePath = $this->_TRADE_CONSTAINT["TRADE_RELATIVE_PATH"];
             $getLicenceDtls = $mActiveTradeLicence->getLicenceNo($req->applicationId);
-            if(!$getLicenceDtls)
-            {
+            if (!$getLicenceDtls) {
                 throw new Exception("Data Not Found!!!!!");
             }
-            if($getLicenceDtls->is_doc_verified)
-            {
+            if ($getLicenceDtls->is_doc_verified) {
                 throw new Exception("Document Are Verifed You Cant Reupload Documents");
             }
             $documents = $tradC->getLicenseDocLists($req);
-            if(!$documents->original["status"])
-            {
+            if (!$documents->original["status"]) {
                 throw new Exception($documents->original["message"]);
             };
             $applicationDoc = $documents->original["data"]["listDocs"];
-            $applicationDocName = $applicationDoc->implode("docName",",");
-            $applicationDocCode = $applicationDoc->where("docName",$req->docName)->first();
-            $applicationCode = $applicationDocCode?$applicationDocCode["masters"]->implode("documentCode",","):"";
+            $applicationDocName = $applicationDoc->implode("docName", ",");
+            $applicationDocCode = $applicationDoc->where("docName", $req->docName)->first();
+            $applicationCode = $applicationDocCode ? $applicationDocCode["masters"]->implode("documentCode", ",") : "";
             // $mandetoryDoc = $applicationDoc->whereIn("docType",["R","OR"]);
 
             $ownerDoc = $documents->original["data"]["ownerDocs"];
-            $ownerDocsName = $ownerDoc->map(function($val){
-                $doc = $val["documents"]->map(function($val1){
-                    return["docType"=>$val1["docType"],"docName"=>$val1["docName"],"documentCode"=>$val1["masters"]->implode("documentCode",",")];
+            $ownerDocsName = $ownerDoc->map(function ($val) {
+                $doc = $val["documents"]->map(function ($val1) {
+                    return ["docType" => $val1["docType"], "docName" => $val1["docName"], "documentCode" => $val1["masters"]->implode("documentCode", ",")];
                 });
                 $ownereId = $val["ownerDetails"]["ownerId"];
-                $docNames = $val["documents"]->implode("docName",",");
-                return ["ownereId"=>$ownereId,"docNames"=>$docNames,"doc"=>$doc];
+                $docNames = $val["documents"]->implode("docName", ",");
+                return ["ownereId" => $ownereId, "docNames" => $docNames, "doc" => $doc];
             });
-            $ownerDocNames = $ownerDocsName->implode("docNames",",");
-            
-            $ownerIds = $ownerDocsName->implode("ownereId",",");
-            $particuler = (collect($ownerDocsName)->where("ownereId",$req->ownerId)->values())->first();
-           
-            $ownereDocCode = $particuler?collect($particuler["doc"])->where("docName",$req->docName)->all():"";
-            
-            $particulerDocCode = collect($ownereDocCode)->implode("documentCode",",");
-            if(!(in_array($req->docName,explode(",",$applicationDocName))==true || in_array($req->docName,explode(",",$ownerDocNames)) ==true))
-            {
+            $ownerDocNames = $ownerDocsName->implode("docNames", ",");
+
+            $ownerIds = $ownerDocsName->implode("ownereId", ",");
+            $particuler = (collect($ownerDocsName)->where("ownereId", $req->ownerId)->values())->first();
+
+            $ownereDocCode = $particuler ? collect($particuler["doc"])->where("docName", $req->docName)->all() : "";
+
+            $particulerDocCode = collect($ownereDocCode)->implode("documentCode", ",");
+            if (!(in_array($req->docName, explode(",", $applicationDocName)) == true || in_array($req->docName, explode(",", $ownerDocNames)) == true)) {
                 throw new Exception("Invalid Doc Name Pass");
             }
-            if(in_array($req->docName,explode(",",$applicationDocName)) && (empty($applicationDocCode) || !(in_array($req->docCode,explode(",",$applicationCode)))))
-            {
+            if (in_array($req->docName, explode(",", $applicationDocName)) && (empty($applicationDocCode) || !(in_array($req->docCode, explode(",", $applicationCode))))) {
                 throw new Exception("Invalid Application Doc Code Pass");
             }
-            if(in_array($req->docName,explode(",",$ownerDocNames)) && (!(in_array($req->ownerId,explode(",",$ownerIds)))))
-            {
+            if (in_array($req->docName, explode(",", $ownerDocNames)) && (!(in_array($req->ownerId, explode(",", $ownerIds))))) {
                 throw new Exception("Invalid ownerId Pass");
             }
-            if(in_array($req->docName,explode(",",$ownerDocNames)) && ($ownereDocCode && !(in_array($req->docCode,explode(",",$particulerDocCode)))))
-            {
+            if (in_array($req->docName, explode(",", $ownerDocNames)) && ($ownereDocCode && !(in_array($req->docCode, explode(",", $particulerDocCode))))) {
                 throw new Exception("Invalid Ownere Doc Code Pass");
             }
-            
-            $metaReqs = array();            
-            
+
+            $metaReqs = array();
+
             $refImageName = $req->docCode;
             $refImageName = $getLicenceDtls->id . '-' . str_replace(' ', '_', $refImageName);
             $document = $req->document;
@@ -1025,43 +981,36 @@ class TradeApplication extends Controller
             $metaReqs['ulbId'] = $getLicenceDtls->ulb_id;
             $metaReqs['relativePath'] = $relativePath;
             $metaReqs['document'] = $imageName;
-            $metaReqs['docCode'] = $req->docName;//$req->docCode;
-            
-            if(in_array($req->docName,explode(",",$ownerDocNames)) ) 
-            {
+            $metaReqs['docCode'] = $req->docName; //$req->docCode;
+
+            if (in_array($req->docName, explode(",", $ownerDocNames))) {
                 $metaReqs['ownerDtlId'] = $req->ownerId;
             }
-            
+
             #reupload documents;
-            if($privDoc = $mWfActiveDocument->getTradeAppByAppNoDocId($getLicenceDtls->id,$getLicenceDtls->ulb_id, collect($req->docName), $getLicenceDtls->workflow_id,$metaReqs['ownerDtlId']??null))
-            {
-                if($privDoc->verify_status!=2)
-                {
+            if ($privDoc = $mWfActiveDocument->getTradeAppByAppNoDocId($getLicenceDtls->id, $getLicenceDtls->ulb_id, collect($req->docName), $getLicenceDtls->workflow_id, $metaReqs['ownerDtlId'] ?? null)) {
+                if ($privDoc->verify_status != 2) {
                     // dd("update");
                     $arr["verify_status"] = 0;
                     $arr['relative_path'] = $relativePath;
                     $arr['document'] = $imageName;
                     $arr['doc_code'] = $req->docName;
-                    $arr['owner_dtl_id'] = $metaReqs['ownerDtlId']??null;
-                    $mWfActiveDocument->docVerifyReject($privDoc->id,$arr);
-                }
-                else
-                {
+                    $arr['owner_dtl_id'] = $metaReqs['ownerDtlId'] ?? null;
+                    $mWfActiveDocument->docVerifyReject($privDoc->id, $arr);
+                } else {
                     // dd("reupload");
-                    $mWfActiveDocument->docVerifyReject($privDoc->id,["status"=>0]);
+                    $mWfActiveDocument->docVerifyReject($privDoc->id, ["status" => 0]);
                     $metaReqs = new Request($metaReqs);
                     $mWfActiveDocument->postDocuments($metaReqs);
                 }
-                return responseMsgs(true, $req->docName." Update Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
+                return responseMsgs(true, $req->docName . " Update Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
             }
             #new documents;
-            
+
             $metaReqs = new Request($metaReqs);
             $mWfActiveDocument->postDocuments($metaReqs);
-            return responseMsgs(true,  $req->docName." Uploadation Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
-        } 
-        catch (Exception $e) 
-        {
+            return responseMsgs(true,  $req->docName . " Uploadation Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }

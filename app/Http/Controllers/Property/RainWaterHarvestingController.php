@@ -890,6 +890,7 @@ class RainWaterHarvestingController extends Controller
         try {
             $redis = Redis::connection();
             $harvesting = PropActiveHarvesting::find($req->applicationId);
+            $senderRoleId = $harvesting->current_role;
 
             $workflowId = $harvesting->workflow_id;
             $backId = json_decode(Redis::get('workflow_initiator_' . $workflowId));
@@ -908,8 +909,8 @@ class RainWaterHarvestingController extends Controller
             $metaReqs['workflowId'] = $harvesting->workflow_id;
             $metaReqs['refTableDotId'] = 'prop_active_concessions.id';
             $metaReqs['refTableIdValue'] = $req->concessionId;
-            $metaReqs['verificationStatus'] = $req->verificationStatus;
-            $metaReqs['senderRoleId'] = $req->currentRoleId;
+            $metaReqs['verificationStatus'] = 2;
+            $metaReqs['senderRoleId'] = $senderRoleId;
             $req->request->add($metaReqs);
             $track = new WorkflowTrack();
             $track->saveTrack($req);

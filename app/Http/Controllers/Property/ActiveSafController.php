@@ -1469,6 +1469,7 @@ class ActiveSafController extends Controller
             $safRefTableName = Config::get('PropertyConstaint.SAF_REF_TABLE');
             $saf = PropActiveSaf::findOrFail($req->applicationId);
             $track = new WorkflowTrack();
+            $senderRoleId = $saf->current_role;
 
             if (is_null($saf->citizen_id)) {                // If the Application has been applied from Jsk or Ulb Employees
                 $initiatorRoleId = $saf->initiator_role_id;
@@ -1485,6 +1486,8 @@ class ActiveSafController extends Controller
             $metaReqs['refTableDotId'] = $safRefTableName;
             $metaReqs['refTableIdValue'] = $req->applicationId;
             $metaReqs['user_id'] = authUser()->id;
+            $metaReqs['verificationStatus'] = 2;
+            $metaReqs['senderRoleId'] = $senderRoleId;
             $req->request->add($metaReqs);
             $track->saveTrack($req);
 

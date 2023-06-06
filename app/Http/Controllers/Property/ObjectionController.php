@@ -712,6 +712,7 @@ class ObjectionController extends Controller
             $redis = Redis::connection();
             $objection = PropActiveObjection::find($req->applicationId);
             $workflowId = $objection->workflow_id;
+            $senderRoleId = $objection->current_role;
             $mRefTable = Config::get('PropertyConstaint.SAF_OBJECTION_REF_TABLE');
             $backId = json_decode(Redis::get('workflow_initiator_' . $workflowId));
             if (!$backId) {
@@ -729,8 +730,8 @@ class ObjectionController extends Controller
             $metaReqs['workflowId'] = $objection->workflow_id;
             $metaReqs['refTableDotId'] = $mRefTable;
             $metaReqs['refTableIdValue'] = $req->applicationId;
-            $metaReqs['verificationStatus'] = $req->verificationStatus;
-            $metaReqs['senderRoleId'] = $req->currentRoleId;
+            $metaReqs['verificationStatus'] = 2;
+            $metaReqs['senderRoleId'] = $senderRoleId;
             $req->request->add($metaReqs);
             $track = new WorkflowTrack();
             $track->saveTrack($req);

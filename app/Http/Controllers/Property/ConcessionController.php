@@ -746,6 +746,7 @@ class ConcessionController extends Controller
         try {
             $redis = Redis::connection();
             $concession = PropActiveConcession::find($req->applicationId);
+            $senderRoleId = $concession->current_role;
 
             $workflowId = $concession->workflow_id;
             $backId = json_decode(Redis::get('workflow_initiator_' . $workflowId));
@@ -764,8 +765,8 @@ class ConcessionController extends Controller
             $metaReqs['workflowId'] = $concession->workflow_id;
             $metaReqs['refTableDotId'] = 'prop_active_concessions.id';
             $metaReqs['refTableIdValue'] = $req->applicationId;
-            $metaReqs['verificationStatus'] = $req->verificationStatus;
-            $metaReqs['senderRoleId'] = $req->currentRoleId;
+            $metaReqs['verificationStatus'] = 2;
+            $metaReqs['senderRoleId'] = $senderRoleId;
             $req->request->add($metaReqs);
             $track = new WorkflowTrack();
             $track->saveTrack($req);
