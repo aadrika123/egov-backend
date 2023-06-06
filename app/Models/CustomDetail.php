@@ -39,7 +39,8 @@ class CustomDetail extends Model
                 ->where('ref_type', trim(strtoupper($request->customFor)))
                 ->get();
             $customDetails = $customDetails->map(function ($val) {
-                $path = $this->_bifuraction->readDocumentPath($val->relative_path . '/' . $val->docUrl);
+                // $path = $this->_bifuraction->readDocumentPath($val->relative_path . '/' . $val->docUrl);
+                $path = config('app.url') . '/' . $val->relative_path . '/' . $val->docUrl;
                 $val->docUrl = $path;
                 return $val;
             });
