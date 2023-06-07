@@ -35,6 +35,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Symfony\Component\CssSelector\Node\FunctionNode;
 
 class WaterConsumer extends Controller
@@ -817,11 +818,39 @@ class WaterConsumer extends Controller
     {
         $request->validate([
             'consumerId'    => "required|digits_between:1,9223372036854775807",
+            'document'      => "required|mimes:pdf,jpg,jpeg,png",
             'ratePerMonth'  => "required|numeric"
         ]);
+
+
+
+
+        // $api = "http://192.168.0.106:8001/myDoc/upload";
+        // $transfer = [
+        //     "file" => $request->document,
+        //     "tag" => "good",
+        //     "token" => 245
+        // ];
+        // $data = Http::withHeaders([
+        //     "content-type" => "multipart/form-data",
+        //     "x-digest" => "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3"
+        // ])->post("$api",'multipart' => [
+        //     [
+        //         'name' => 'field1',
+        //         'contents' => $formData['field1'],
+        //     ],
+        // ],
+        // ],);
+
+        // return $data;
+        // return true;
+
+
         try {
-            $consumerId = $request->consumerId;
-            $mWaterConsumerMeter = new WaterConsumerMeter();
+            $consumerId             = $request->consumerId;
+            $mWaterConsumerMeter    = new WaterConsumerMeter();
+            $fixedMeterCode         = Config::get("waterConstaint.WATER_FIXED_CODE");
+
             $relatedDetails = $this->checkParamForFixedEntry($consumerId);
             $metaRequest = new Request([
                 'consumerId'                => $consumerId,
@@ -829,9 +858,11 @@ class WaterConsumer extends Controller
                 'connectionType'            => $relatedDetails['meterDetails']['connection_type'],
                 'newMeterInitialReading'    => $relatedDetails['meterDetails']['initial_reading']
             ]);
+
+            $refDocument = $this->saveDocument($request, $fixedMeterCode);
             $document = [
-                'relaivePath'   => $relatedDetails['meterDetails']['relative_path'],
-                'document'      => $relatedDetails['meterDetails']['meter_doc']
+                'relaivePath'   => $refDocument['relaivePath'],
+                'document'      => $refDocument['document']
             ];
             $mWaterConsumerMeter->saveMeterDetails($metaRequest, $document, $request->ratePerMonth);
             return responseMsgs(true, "Fixed rate entered successfully!", "", "", "01", ".ms", "POST", $request->deviceId);
@@ -860,12 +891,12 @@ class WaterConsumer extends Controller
 
         $meterConnectionDetails = $mWaterConsumerMeter->getMeterDetailsByConsumerId($consumerId)->first();
         if (!$meterConnectionDetails)
-            throw new Exception("Consumer not found!");
+            throw new Exception("Consumer meter details not found!");
 
         if ($meterConnectionDetails->connection_type != $refConnectionType['Fixed'])
             throw new Exception("Consumer meter's connection type is not fixed!");
 
-        return $returnData = [
+        return [
             "meterDetails" => $meterConnectionDetails
         ];
     }

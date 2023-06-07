@@ -58,6 +58,8 @@ class PropActiveObjection extends Model
         return  DB::table('prop_active_objections')
             ->select(
                 'prop_active_objections.*',
+                'prop_active_objections.date',
+                DB::raw("TO_CHAR(prop_active_objections.date, 'DD-MM-YYYY') as date"),
                 'prop_active_objections.id as objection_id',
                 'objection_for',
                 'prop_active_objections.objection_no',
