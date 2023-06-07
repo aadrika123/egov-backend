@@ -270,6 +270,15 @@ class PropProperty extends Model
     }
 
     /**
+     * | Get Property By Saf id
+     */
+    public function readPropBySafId($safId)
+    {
+        return PropProperty::where('saf_id', $safId)
+            ->first();
+    }
+
+    /**
      * | Replicate Saf 
      */
     public function replicateVerifiedSaf($propId, $fieldVerifiedSaf)

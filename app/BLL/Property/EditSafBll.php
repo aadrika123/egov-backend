@@ -141,8 +141,11 @@ class EditSafBll
             $updateReqs = array_merge($updateReqs, ['has_previous_holding_no' => true, 'previous_holding_id' => $property->id, 'prop_dtl_id' => $property->id]);
         }
 
+        $property = $this->_mPropProperty->readPropBySafId($this->_safId);
         DB::beginTransaction();
         $this->_safDtls->update($updateReqs);               // Update Saf Table
+        if ($property->isNotEmpty())                        // Deactivate the Property if created at approval of DA
+            $property->update(['status' => 0]);
     }
 
     /**
@@ -212,7 +215,7 @@ class EditSafBll
      * | Create New Demand(1.5)
      * | Creation of New Demand in Saf Demands Table
      */
-    public function adjustNewDemand()
+    public function adjustNewDemand(): void
     {
         $newDemand = collect();
         $this->_calculateSafById->_safId = $this->_safId;
