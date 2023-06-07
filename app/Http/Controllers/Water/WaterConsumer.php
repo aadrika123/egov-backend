@@ -863,7 +863,7 @@ class WaterConsumer extends Controller
 
         $consumerDetails = $mWaterWaterConsumer->getConsumerDetailById($consumerId);
         if ($consumerDetails->property_type_id != $refPropertyType['Government'])
-            throw new Exception("Consumer's property type is not under Government!");
+            // throw new Exception("Consumer's property type is not under Government!");
 
         $meterConnectionDetails = $mWaterConsumerMeter->getMeterDetailsByConsumerId($consumerId)->first();
         if (!$meterConnectionDetails)
@@ -1015,12 +1015,100 @@ class WaterConsumer extends Controller
         | use
         | Not finished
      */
-    public function searchGovConsumers(Request $request)
+    public function searchFixedConsumers(Request $request)
     {
+        $request->validate([
+            // 'filterBy'  => 'required',
+            // 'parameter' => 'required'
+        ]);
         try {
+
+            return $waterReturnDetails = $this->getDetailByConsumerNo('consumer_no', 35008);
+            return false;
+            
+            $mWaterConsumer = new WaterWaterConsumer();
+            $key            = $request->filterBy;
+            $paramenter     = $request->parameter;
+            $string         = preg_replace("/([A-Z])/", "_$1", $key);
+            $refstring      = strtolower($string);
+
+            switch ($key) {
+                case ("consumerNo"):                                                                        // Static
+                    $waterReturnDetails = $this->getDetailByConsumerNo($refstring, $paramenter);
+                    $checkVal = collect($waterReturnDetails)->first();
+                    if (!$checkVal)
+                        throw new Exception("Data according to " . $key . " not Found!");
+                    break;
+                case ("holdingNo"):                                                                         // Static
+                    $waterReturnDetails = $mWaterConsumer->getDetailByConsumerNo($refstring, $paramenter);
+                    $checkVal = collect($waterReturnDetails)->first();
+                    if (!$checkVal)
+                        throw new Exception("Data according to " . $key . " not Found!");
+                    break;
+                case ("safNo"):                                                                             // Static
+                    $waterReturnDetails = $mWaterConsumer->getDetailByConsumerNo($refstring, $paramenter);
+                    $checkVal = collect($waterReturnDetails)->first();
+                    if (!$checkVal)
+                        throw new Exception("Data according to " . $key . " not Found!");
+                    break;
+                case ("applicantName"):                                                                     // Static
+                    $paramenter = strtoupper($paramenter);
+                    $waterReturnDetails = $mWaterConsumer->getDetailByOwnerDetails($refstring, $paramenter);
+                    $checkVal = collect($waterReturnDetails)->first();
+                    if (!$checkVal)
+                        throw new Exception("Data according to " . $key . " not Found!");
+                    break;
+                case ('mobileNo'):                                                                          // Static
+                    $paramenter = strtoupper($paramenter);
+                    $waterReturnDetails = $mWaterConsumer->getDetailByOwnerDetails($refstring, $paramenter);
+                    $checkVal = collect($waterReturnDetails)->first();
+                    if (!$checkVal)
+                        throw new Exception("Data according to " . $key . " not Found!");
+                    break;
+                default:
+                    throw new Exception("Data provided in filterBy is not valid!");
+            }
+            return responseMsgs(true, "Water Consumer Data According To Parameter!", remove_null($waterReturnDetails), "", "01", "652 ms", "POST", "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $request->deviceId);
+            return responseMsg(false, $e->getMessage(), "");
         }
+    }
+
+    /////////////////////////
+    public function getDetailByConsumerNo($key, $refNo)
+    {
+        $refConnectionType = Config::get('waterConstaint.WATER_MASTER_DATA.METER_CONNECTION_TYPE');
+        return WaterWaterConsumer::select(
+            'water_consumers.id',
+            'water_consumers.consumer_no',
+            'water_consumers.ward_mstr_id',
+            'water_consumers.address',
+            'water_consumers.holding_no',
+            'water_consumers.saf_no',
+            'water_consumers.ulb_id',
+            'ulb_ward_masters.ward_name',
+            DB::raw("string_agg(water_consumer_owners.applicant_name,',') as applicant_name"),
+            DB::raw("string_agg(water_consumer_owners.mobile_no::VARCHAR,',') as mobile_no"),
+            DB::raw("string_agg(water_consumer_owners.guardian_name,',') as guardian_name"),
+        )
+            ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_consumers.id')
+            ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_consumers.ward_mstr_id')
+            ->leftjoin('water_consumer_meter', 'water_consumer_meter.consumer_id', 'water_consumers.id')
+            ->where('water_consumers.' . $key, 'LIKE', '%' . $refNo . '%')
+            ->where('water_consumers.status', 1)
+            ->where('water_consumers.ulb_id', auth()->user()->ulb_id)
+            ->where('water_consumer_meter.connection_type', $refConnectionType['Fixed'])
+            ->groupBy(
+                'water_consumers.saf_no',
+                'water_consumers.holding_no',
+                'water_consumers.address',
+                'water_consumers.id',
+                'water_consumers.ulb_id',
+                'water_consumer_owners.consumer_id',
+                'water_consumers.consumer_no',
+                'water_consumers.ward_mstr_id',
+                'ulb_ward_masters.ward_name'
+            );
     }
 
 

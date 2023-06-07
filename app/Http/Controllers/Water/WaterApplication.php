@@ -8,6 +8,7 @@ use App\Models\Water\WaterApplication as WaterWaterApplication;
 use App\Models\Water\WaterTran;
 use App\Models\Workflows\WfRole;
 use App\Models\Workflows\WfWorkflow;
+use App\Models\Workflows\WfWorkflowrolemap;
 use App\Models\WorkflowTrack;
 use App\Repository\Water\Interfaces\iNewConnection;
 use App\Repository\Water\Interfaces\IWaterNewConnection;
@@ -171,12 +172,13 @@ class WaterApplication extends Controller
             if (in_array($user->user_type, ['JSK', 'TC'])) {
                 $canView = false;
             }
-            $ulbId = $user->ulb_id;
-            $wfMstId = Config::get("workflow-constants.WATER_MASTER_ID");
-            $moduleId = Config::get("module-constants.WATER_MODULE_ID");
-            $WorkflowTrack = new WorkflowTrack();
-            $mWfWorkflow = new WfWorkflow();
+            $ulbId                  = $user->ulb_id;
+            $wfMstId                = Config::get("workflow-constants.WATER_MASTER_ID");
+            $moduleId               = Config::get("module-constants.WATER_MODULE_ID");
+            $WorkflowTrack          = new WorkflowTrack();
+            $mWfWorkflow            = new WfWorkflow();
             $mWaterWaterApplication = new WaterWaterApplication();
+            $mWfWorkflowRoleMaps    = new WfWorkflowrolemap();
 
             $workflow = $mWfWorkflow->getulbWorkflowId($wfMstId, $ulbId);
             $metaRequest = new Request([
@@ -190,9 +192,12 @@ class WaterApplication extends Controller
                 return responseMsgs(false, "Access Denied! No Role", $returnData, "", "01", ".ms", "POST", "");
             }
             $roleId = $roleDetails['wf_role_id'];
+            $occupiedWards = $this->getWardByUserId($user->id)->pluck('ward_id');
 
             $dateWiseData = $WorkflowTrack->getWfDashbordData($metaRequest)->get();
-            $applicationCount = $mWaterWaterApplication->getApplicationByRole($roleId)->count();
+            $applicationCount = $mWaterWaterApplication->getApplicationByRole($roleId)
+                ->whereIn('ward_id', $occupiedWards)
+                ->count('id');
             $roleData = WfRole::findOrFail($roleId);
 
             $returnData = [
