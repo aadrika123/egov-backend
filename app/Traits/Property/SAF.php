@@ -11,6 +11,7 @@ use App\Models\Property\PropSaf;
 use App\Models\Property\PropSafsFloor;
 use App\Models\Property\PropSafsOwner;
 use App\Models\UlbWardMaster;
+use App\Models\Workflows\WfWorkflow;
 use App\Models\WorkflowTrack;
 use App\Repository\Property\Concrete\PropertyBifurcation;
 use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
@@ -515,5 +516,35 @@ trait SAF
             return "PURE_COMMERCIAL";
         else
             return "MIX_COMMERCIAL";
+    }
+
+
+    /**
+     * | Read Assessment Type and Ulb Workflow Id(2.1)
+     */
+    public function readAssessUlbWfId($assessmentType, $ulb_id)
+    {
+        if ($assessmentType == 1)                                                    // New Assessment 
+            $workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');
+
+
+        if ($assessmentType == 2)                                                     // Reassessment
+            $workflow_id = Config::get('workflow-constants.SAF_REASSESSMENT_ID');
+
+
+        if ($assessmentType == 3)                                                    // Mutation
+            $workflow_id = Config::get('workflow-constants.SAF_MUTATION_ID');
+
+
+        if ($assessmentType == 4)                                                     // Bifurcation
+            $workflow_id = Config::get('workflow-constants.SAF_BIFURCATION_ID');
+
+
+        if ($assessmentType == 5)                                                     // Amalgamation
+            $workflow_id = Config::get('workflow-constants.SAF_AMALGAMATION_ID');
+
+        return WfWorkflow::where('wf_master_id', $workflow_id)
+            ->where('ulb_id', $ulb_id)
+            ->first();
     }
 }

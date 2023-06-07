@@ -19,6 +19,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon as SupportCarbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use stdClass;
 
 /**
@@ -55,15 +56,30 @@ class StateDashboardController extends Controller
             $toDate   = $financialYearStart + 1 . '-03-31';
             $collection = collect();
 
-            $ulbIds = $ulbs->pluck('id');
+            // $ulbIds = $ulbs->pluck('id');
 
-            foreach ($ulbIds as $ulbId) {
-                $data['ulbId'] = $ulbId;
-                $data['ulb'] = $ulbs->where('id', $ulbId)->firstOrFail()->ulb_name;
-                $data['collection'] = $this->collection($ulbId, $fromDate, $toDate);
+            // foreach ($ulbIds as $ulbId) {
+            //     $data['ulbId'] = $ulbId;
+            //     $data['ulb'] = $ulbs->where('id', $ulbId)->firstOrFail()->ulb_name;
+            //     $data['collection'] = $this->collection($ulbId, $fromDate, $toDate);
+            //     $collection->push($data);
+            // }
+            // $collection = $collection->sortBy('ulbId')->values();
+
+            ###################################################################################################
+            # to be removed after akola project
+            // $ward = UlbWardMaster::all();
+            $ward = DB::table('akola_wards')->get();
+            $wardIds = $ward->pluck('id');
+
+            foreach ($wardIds as $wardId) {
+                $data['ulbId'] = $wardId;
+                $data['ulb'] = $ward->where('id', $wardId)->firstOrFail()->ward_name;
+                $data['collection'] = $ward->where('id', $wardId)->firstOrFail()->old_ward_name;
                 $collection->push($data);
             }
             $collection = $collection->sortBy('ulbId')->values();
+
             return responseMsgs(true, "Ulb Wise Collection", remove_null($collection), "", '', '01', '314ms-451ms', 'Post', '');
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "", '', '01', '314ms-451ms', 'Post', '');

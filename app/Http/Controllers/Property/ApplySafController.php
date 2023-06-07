@@ -19,6 +19,7 @@ use App\Models\Property\PropProperty;
 use App\Models\Property\PropSafsDemand;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\WorkflowTrack;
+use App\Repository\Auth\EloquentAuthRepository;
 use App\Traits\Property\SAF;
 use App\Traits\Workflow\Workflow;
 use Carbon\Carbon;
@@ -112,10 +113,10 @@ class ApplySafController extends Controller
             $request->request->add(['road_type_mstr_id' => $roadWidthType]);
 
             $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);                                // Get Current Initiator ID
-            $initiatorRoleId = DB::select($refInitiatorRoleId);
+            $initiatorRoleId = collect(DB::select($refInitiatorRoleId))->first();
 
             $refFinisherRoleId = $this->getFinisherId($ulbWorkflowId->id);
-            $finisherRoleId = DB::select($refFinisherRoleId);
+            $finisherRoleId = collect(DB::select($refFinisherRoleId))->first();
 
             $metaReqs['roadWidthType'] = $roadWidthType;
             $metaReqs['workflowId'] = $ulbWorkflowId->id;
@@ -176,6 +177,19 @@ class ApplySafController extends Controller
                     $floor->addfloor($floorDetails, $safId, $user_id);
                 }
             }
+
+            // Citizen Notification
+            if ($userType == 'Citizen') {
+                $mreq['userType']  = 'Citizen';
+                $mreq['citizenId'] = $user_id;
+                $mreq['category']  = 'Recent Application';
+                $mreq['ulbId']     = $ulb_id;
+                $mreq['ephameral'] = 0;
+                $mreq['notification'] = "Successfully Submitted Your Application Your SAF No. $safNo";
+                $rEloquentAuthRepository = new EloquentAuthRepository();
+                $rEloquentAuthRepository->addNotification($mreq);
+            }
+
             DB::commit();
             return responseMsgs(true, "Successfully Submitted Your Application Your SAF No. $safNo", [
                 "safNo" => $safNo,
