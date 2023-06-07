@@ -161,7 +161,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::controller(TradeController::class)->group(function () {
         // Route::post('firm-type-add', 'addFirmType');
         Route::post('firm-type-list', 'firmTypeList');
-        Route::post('firm-typ', 'firmType');
+        Route::post('firm-type', 'firmType');
         // Route::post('firm-type-update', 'updateFirmType');
 
         // Route::post('application-type-add', 'addApplicationType');
