@@ -112,8 +112,11 @@ class ApplySafController extends Controller
 
             $request->request->add(['road_type_mstr_id' => $roadWidthType]);
 
-            $initiatorRoleId = $ulbWorkflowId->initiator_role_id;
-            $finisherRoleId =  $ulbWorkflowId->finisher_role_id;
+            $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);                                // Get Current Initiator ID
+            $initiatorRoleId = collect(DB::select($refInitiatorRoleId))->first();
+
+            $refFinisherRoleId = $this->getFinisherId($ulbWorkflowId->id);
+            $finisherRoleId = collect(DB::select($refFinisherRoleId))->first();
 
             $metaReqs['roadWidthType'] = $roadWidthType;
             $metaReqs['workflowId'] = $ulbWorkflowId->id;
