@@ -122,13 +122,13 @@ class ApplySafController extends Controller
             $metaReqs['workflowId'] = $ulbWorkflowId->id;
             $metaReqs['ulbId'] = $ulb_id;
             $metaReqs['userId'] = $user_id;
-            $metaReqs['initiatorRoleId'] = collect($initiatorRoleId)->first()->role_id;
+            $metaReqs['initiatorRoleId'] = collect($initiatorRoleId)['role_id'];
             if ($userType == $this->_citizenUserType) {
-                $metaReqs['initiatorRoleId'] = collect($initiatorRoleId)->first()->forward_role_id;         // Send to DA in Case of Citizen
+                $metaReqs['initiatorRoleId'] = collect($initiatorRoleId)['forward_role_id'];         // Send to DA in Case of Citizen
                 $metaReqs['userId'] = null;
                 $metaReqs['citizenId'] = $user_id;
             }
-            $metaReqs['finisherRoleId'] = collect($finisherRoleId)->first()->role_id;
+            $metaReqs['finisherRoleId'] = collect($finisherRoleId)['role_id'];
             $safTaxes = $safCalculation->calculateTax($request);
 
             // Generate Calculation

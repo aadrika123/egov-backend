@@ -11,7 +11,7 @@ class UserNotification extends Model
     use HasFactory;
     protected $updated_at = false;
     protected $fillable = [
-        'user_id', 'citizen_id', 'category', 'notification', 'send_by', 'require_acknowledgment',
+        'user_id', 'user_type', 'citizen_id', 'category', 'notification', 'send_by', 'require_acknowledgment',
         'sender_id', 'ulb_id', 'module_id', 'event_id', 'generation_time', 'expected_delivery_time',
         'ephameral', 'created_at'
     ];
