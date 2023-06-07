@@ -31,6 +31,7 @@ use App\Repository\Water\Concrete\WaterNewConnection;
 use App\Repository\Water\Interfaces\IConsumer;
 use App\Traits\Workflow\Workflow;
 use Carbon\Carbon;
+use Illuminate\Support\Str;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
@@ -821,31 +822,6 @@ class WaterConsumer extends Controller
             'document'      => "required|mimes:pdf,jpg,jpeg,png",
             'ratePerMonth'  => "required|numeric"
         ]);
-
-
-
-
-        // $api = "http://192.168.0.106:8001/myDoc/upload";
-        // $transfer = [
-        //     "file" => $request->document,
-        //     "tag" => "good",
-        //     "token" => 245
-        // ];
-        // $data = Http::withHeaders([
-        //     "content-type" => "multipart/form-data",
-        //     "x-digest" => "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3"
-        // ])->post("$api",'multipart' => [
-        //     [
-        //         'name' => 'field1',
-        //         'contents' => $formData['field1'],
-        //     ],
-        // ],
-        // ],);
-
-        // return $data;
-        // return true;
-
-
         try {
             $consumerId             = $request->consumerId;
             $mWaterConsumerMeter    = new WaterConsumerMeter();
@@ -977,9 +953,9 @@ class WaterConsumer extends Controller
             'consumerNo'  => "required",
         ]);
         try {
-            $refConsumerNo                      = $request->consumerNo;
-            $mWaterWaterConsumer                = new WaterWaterConsumer();
-            $mWaterTran                         = new WaterTran();
+            $refConsumerNo          = $request->consumerNo;
+            $mWaterWaterConsumer    = new WaterWaterConsumer();
+            $mWaterTran             = new WaterTran();
 
             $dbKey = "consumer_no";
             $consumerDetails = $mWaterWaterConsumer->getRefDetailByConsumerNo($dbKey, $refConsumerNo)->first();
@@ -1028,6 +1004,66 @@ class WaterConsumer extends Controller
             return responseMsgs(true, "successfully fetched memo details!", remove_null($returnValues), "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $request->deviceId);
+        }
+    }
+
+
+    /**
+     * | Search the governmental prop water commention 
+     * | Search only the Gov water connections 
+        | Serial No :
+        | use
+        | Not finished
+     */
+    public function searchGovConsumers(Request $request)
+    {
+        try {
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $request->deviceId);
+        }
+    }
+
+
+    /**
+     * | Doc upload through document upload service 
+        | Type test
+     */
+    public function checkDoc(Request $request)
+    {
+        try {
+            // $contentType = (collect(($request->headers->all())['content-type'] ?? "")->first());
+            $file = $request->document;
+            $filePath = $file->getPathname();
+            $hashedFile = hash_file('sha256', $filePath);
+            $filename = ($request->document)->getClientOriginalExtension();
+            $api = "http://192.168.0.106:8001/myDoc/upload";
+            $transfer = [
+                "file" => $request->document,
+                "tags" => "good",
+                "token" => 425
+            ];
+            $returnData = Http::withHeaders([
+                "x-digest" => "$hashedFile"
+            ])->attach([
+                [
+                    'file',
+                    file_get_contents($request->file('document')->getRealPath()),
+                    $filename
+                ]
+            ])->post("$api", $transfer);
+
+            if ($returnData->successful()) {
+                $statusCode = $returnData->status();
+                $responseBody = $returnData->body();
+                return $returnData;
+            } else {
+                $statusCode = $returnData->status();
+                $responseBody = $returnData->body();
+                return $responseBody;
+            }
+            return false;
+        } catch (Exception $e) {
+            return $e->getMessage();
         }
     }
 }
