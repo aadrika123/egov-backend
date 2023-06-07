@@ -30,7 +30,7 @@ class CalculateSafById
     private $_mPropActiveSafFloors;
     private $_mPropActiveSafOwner;
     private $_penaltyRebateCalc;
-    private $_safId;
+    public $_safId;
     public $_safDetails;
     private $_safFloorDetails;
     private $_safCalculation;
@@ -276,12 +276,9 @@ class CalculateSafById
         $propProperty = new PropProperty();
         $mPropDemands = new PropDemand();
         $generatedDemand = $this->_demandDetails;
-        $holdingNo = $this->_holdingNo;
+        $previousHoldingId = $this->_safDetails->prop_dtl_id;
 
-        if (is_null($holdingNo))
-            throw new Exception("Previous Holding No Not Available");
-
-        $propDtls = $propProperty->getSafIdByHoldingNo($holdingNo);
+        $propDtls = $propProperty->getPropById($previousHoldingId);
         $propertyId = $propDtls->id;
         $safId = $propDtls->saf_id;
 

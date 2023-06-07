@@ -5,7 +5,11 @@ namespace App\BLL\Property;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropActiveSafsOwner;
+use App\Models\Property\PropProperty;
+use App\Models\Property\PropSafsDemand;
 use App\Traits\Property\SAF;
+use App\Traits\Workflow\Workflow;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -17,19 +21,30 @@ use Illuminate\Support\Str;
 
 class EditSafBll
 {
-    use SAF;
+    use SAF, Workflow;
     public $_reqs;
     private $_assessmentType;
     private $_safId;
     private $_mPropActiveSafFloors;
     private $_mPropActiveSaf;
     private $_mPropActiveOwners;
+    private $_calculateSafById;
+    private $_mPropProperty;
+    private $_mPropSafsDemands;
+    private $_safDtls;
+    private $_ulbWfId;
+    private $_roadTypeMstrId;
+    private $_initiatorRoleId;
+    private $_finisherRoleId;
 
     public function __construct()
     {
         $this->_mPropActiveSaf = new PropActiveSaf();
         $this->_mPropActiveSafFloors = new PropActiveSafsFloor();
         $this->_mPropActiveOwners = new PropActiveSafsOwner();
+        $this->_calculateSafById = new CalculateSafById;
+        $this->_mPropProperty = new PropProperty();
+        $this->_mPropSafsDemands = new PropSafsDemand();
     }
 
     /**
@@ -41,6 +56,7 @@ class EditSafBll
         $this->updateSafTbl();                  // (1.2)
         $this->updateSafFloorTbl();             // (1.3)
         $this->updateSafOwnerTbl();             // (1.4)
+        $this->adjustNewDemand();               // (1.5)
     }
 
     /**
@@ -50,6 +66,9 @@ class EditSafBll
     {
         $this->_assessmentType = $this->readAssessmentType($this->_reqs->assessmentType);
         $this->_safId = $this->_reqs->id;
+        $this->_safDtls = PropActiveSaf::findOrFail($this->_safId);
+        $this->_roadTypeMstrId = $this->readRoadWidthType($this->_reqs->roadType);
+        $this->_ulbWfId = $this->readAssessUlbWfId($this->_reqs->assessmentType, $this->_reqs->ulbId);
     }
 
     /**
@@ -106,14 +125,24 @@ class EditSafBll
             'ulb_id' => $this->_reqs->ulbId,
             'applicant_name' => Str::upper(collect($this->_reqs->owner)->first()['ownerName']),
             'road_width' => $this->_reqs->roadType,
+            'road_type_mstr_id' => $this->_roadTypeMstrId,
             'building_name' => $this->_reqs->buildingName,
             'street_name' => $this->_reqs->streetName,
             'location' => $this->_reqs->location,
-            'landmark' => $this->_reqs->landmark
+            'landmark' => $this->_reqs->landmark,
+            'workflow_id' => $this->_ulbWfId->id,
+            'initiator_role_id' => $this->_ulbWfId->initiator_role_id,
+            'finisher_role_id' => $this->_ulbWfId->finisher_role_id,
+            'current_role' => $this->_ulbWfId->initiator_role_id
         ];
+        if (in_array($this->_assessmentType, ['Mutation', 'Reassessment'])) {
+            $holdingNo = $this->_reqs->holdingNo;
+            $property = $this->_mPropProperty->getPropertyId($holdingNo);
+            $updateReqs = array_merge($updateReqs, ['has_previous_holding_no' => true, 'previous_holding_id' => $property->id, 'prop_dtl_id' => $property->id]);
+        }
+
         DB::beginTransaction();
-        $this->_mPropActiveSaf::where('id', $this->_reqs->id)
-            ->update($updateReqs);
+        $this->_safDtls->update($updateReqs);               // Update Saf Table
     }
 
     /**
@@ -168,7 +197,7 @@ class EditSafBll
                 "dob" => $owner['dob'],
                 "is_armed_force" => $owner['isArmedForce'],
                 "is_specially_abled" => $owner['isSpeciallyAbled'],
-                "user_id" => $owner,
+                "user_id" => authUser()->id,
                 "prop_owner_id" => $owner['propOwnerDetailId'] ?? null,
             ];
             if (!is_null($owner['safOwnerId']))                                                                       // Update Existing Owners
@@ -176,6 +205,61 @@ class EditSafBll
 
             if (is_null($owner['safOwnerId']) && in_array($this->_reqs->assessmentType, [1, 3, 4, 5]))            // Addition of the Owner in case of these assessment types only
                 $this->_mPropActiveOwners::create($ownerReqs);                                                        // Add New Owner
+        }
+    }
+
+    /**
+     * | Create New Demand(1.5)
+     * | Creation of New Demand in Saf Demands Table
+     */
+    public function adjustNewDemand()
+    {
+        $newDemand = collect();
+        $this->_calculateSafById->_safId = $this->_safId;
+        $calculateDemandReq = new Request([
+            'id' => $this->_safId
+        ]);
+        $calculatedDemand = $this->_calculateSafById->calculateTax($calculateDemandReq);
+        $demands = $calculatedDemand['details'];
+
+        // Demands Adjustment On Saf Table
+        $safPaidDemands = $this->_mPropSafsDemands->getFullDemandsBySafId($this->_safId);
+        foreach ($demands as $demand) {
+            // dd($demand->toArray());
+            $safTblDemand = $safPaidDemands->where('due_date', $demand['due_date'])->first();
+            if ($demand['amount'] > $safTblDemand['amount']) {
+                if ($safTblDemand['paid_status'] == 0)
+                    $safTblDemand->update(['status' => 0]);                 // Deactivate Demand In Case of Not Paid
+                $newDemand->push($demand);
+            }
+        }
+
+        if ($newDemand->isNotEmpty()) {
+            // Payment Status Update
+            $this->_safDtls->update(['payment_status' => 3]);
+            // Generate New Demand
+            foreach ($newDemand as $demand) {
+                $demandReqs = [
+                    "saf_id" => $this->_safId,
+                    "qtr" => $demand['qtr'],
+                    "holding_tax" => $demand['holding_tax'],
+                    "water_tax" => $demand['water_tax'],
+                    "education_cess" => $demand['education_cess'],
+                    "health_cess" => $demand['health_cess'],
+                    "latrine_tax" => $demand['latrine_tax'],
+                    "additional_tax" => $demand['additional_tax'],
+                    "fyear" => $demand['fyear'],
+                    "due_date" => $demand['due_date'],
+                    "amount" => $demand['amount'],
+                    "user_id" => authUser()->id ?? null,
+                    "ulb_id" => $this->_safDtls->ulb_id,
+                    "arv" => $demand['arv'],
+                    "adjust_amount" => $demand['adjust_amount'],
+                    "balance" => $demand['balance'],
+                    "cluster_id" => $this->_safDtls->cluster_id,
+                ];
+                $this->_mPropSafsDemands::create($demandReqs);
+            }
         }
     }
 }

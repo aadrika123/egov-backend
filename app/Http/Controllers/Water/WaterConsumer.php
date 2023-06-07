@@ -337,8 +337,8 @@ class WaterConsumer extends Controller
                 throw new Exception("the demand is generated till" . "" . $lastDemand->demand_upto);
             }
             $startDate = Carbon::parse($refDemandUpto);
-            $uptoMonth = $startDate->format('m');
-            $todayMonth = $today->format('m');
+            $uptoMonth = $startDate;
+            $todayMonth = $today;
             if ($uptoMonth >= $todayMonth) {
                 throw new Exception("demand should be generated generate in next month!");
             }
