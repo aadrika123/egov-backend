@@ -19,6 +19,7 @@ use App\Models\Property\PropProperty;
 use App\Models\Property\PropSafsDemand;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\WorkflowTrack;
+use App\Repository\Auth\EloquentAuthRepository;
 use App\Traits\Property\SAF;
 use App\Traits\Workflow\Workflow;
 use Carbon\Carbon;
@@ -176,6 +177,12 @@ class ApplySafController extends Controller
                     $floor->addfloor($floorDetails, $safId, $user_id);
                 }
             }
+
+            // // Citizen Notification
+            // if ($userType == 'Citizen') {
+            //     $rEloquentAuthRepository = new EloquentAuthRepository();
+            // }
+
             DB::commit();
             return responseMsgs(true, "Successfully Submitted Your Application Your SAF No. $safNo", [
                 "safNo" => $safNo,
