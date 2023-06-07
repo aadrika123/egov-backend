@@ -467,7 +467,8 @@ class BankReconcillationController extends Controller
                             [
                                 'is_verified' => 1,
                                 'verify_date' => Carbon::now(),
-                                'verify_by' => $userId
+                                'verify_by' => $userId,
+                                'status' => 1,
                             ]
                         );
                 }
@@ -479,7 +480,8 @@ class BankReconcillationController extends Controller
                             [
                                 'is_verified' => 1,
                                 'verify_date' => Carbon::now(),
-                                'verify_by' => $userId
+                                'verify_by' => $userId,
+                                'status' => 3,
                             ]
                         );
                 }
