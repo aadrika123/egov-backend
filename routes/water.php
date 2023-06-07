@@ -93,7 +93,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
         # Site inspection 
         Route::post('site-verification/save-site-details', 'saveSitedetails');                          // Admin
-
     });
 
     /**
@@ -109,8 +108,9 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('consumer/caretaken-connections', 'viewCaretakenConnection');                       // Citiizen
         Route::post('consumer/calculate/meter-fixed-reading', 'calculateMeterFixedReading');            // Admin
         Route::post('admin/consumer/add-fixed-rate', 'addFixedRate');           // Here                 // Admin / Not used
-        Route::post('consumer/generate-memo', 'generateMemo');                                          // Admin / Citizen
+        Route::post('consumer/generate-memo', 'generateMemo');                  // Here                 // Admin / Citizen
         Route::post('consumer/search-gov-conections', 'searchGovConsumers');    // Here                 // Admin / Not used
+        Route::post('check-doc', 'checkDoc'); // testing document service
 
         # Deactivation
         Route::post('admin/consumer/apply-deactivation', 'applyDeactivation');                          // Admin / Not Used

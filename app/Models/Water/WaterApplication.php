@@ -180,7 +180,7 @@ class WaterApplication extends Model
     public function getApplicationById($applicationId)
     {
         return  WaterApplication::where('id', $applicationId)
-            ->where('status', true);
+            ->where('status', 1);
     }
 
 
