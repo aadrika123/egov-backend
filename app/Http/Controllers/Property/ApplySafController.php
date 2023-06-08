@@ -131,9 +131,15 @@ class ApplySafController extends Controller
             $metaReqs['finisherRoleId'] = collect($finisherRoleId)['role_id'];
             $safTaxes = $safCalculation->calculateTax($request);
 
+            $metaReqs['isTrust'] = $this->isPropTrust($request['floor']);
+            $metaReqs['holdingType'] = $this->holdingType($request['floor']);
+            $request->merge($metaReqs);
+            $this->_REQUEST = $request;
+            $this->mergeAssessedExtraFields();                                          // Merge Extra Fields for Property Reassessment,Mutation,Bifurcation & Amalgamation(2.2)
             // Generate Calculation
             $calculateSafById->_calculatedDemand = $safTaxes->original['data'];
             $calculateSafById->_safDetails['assessment_type'] = $request->assessmentType;
+            $calculateSafById->_safDetails['prop_dtl_id'] = $request->previousHoldingId;
 
             if (isset($request->holdingNo))
                 $calculateSafById->_holdingNo = $request->holdingNo;
@@ -149,11 +155,7 @@ class ApplySafController extends Controller
             $generatedDemand = $calculateSafById->_generatedDemand;
             $isResidential = $safTaxes->original['data']['demand']['isResidential'];
             $demandResponse = $generateSafApplyDemandResponse->generateResponse($generatedDemand, $isResidential);
-            $metaReqs['isTrust'] = $this->isPropTrust($request['floor']);
-            $metaReqs['holdingType'] = $this->holdingType($request['floor']);
-            $request->merge($metaReqs);
-            $this->_REQUEST = $request;
-            $this->mergeAssessedExtraFields();                                          // Merge Extra Fields for Property Reassessment,Mutation,Bifurcation & Amalgamation(2.2)
+
             DB::beginTransaction();
             $createSaf = $saf->store($request);                                         // Store SAF Using Model function 
             $safId = $createSaf->original['safId'];
