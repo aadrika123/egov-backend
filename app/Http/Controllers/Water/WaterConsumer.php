@@ -865,9 +865,9 @@ class WaterConsumer extends Controller
         if ($consumerDetails->property_type_id != $refPropertyType['Government'])
             // throw new Exception("Consumer's property type is not under Government!");
 
-        $meterConnectionDetails = $mWaterConsumerMeter->getMeterDetailsByConsumerId($consumerId)->first();
+            $meterConnectionDetails = $mWaterConsumerMeter->getMeterDetailsByConsumerId($consumerId)->first();
         if (!$meterConnectionDetails)
-            throw new Exception("Consumer meter details not found!");
+            throw new Exception("Consumer meter details not found maybe meter is not installed!");
 
         if ($meterConnectionDetails->connection_type != $refConnectionType['Fixed'])
             throw new Exception("Consumer meter's connection type is not fixed!");
@@ -1023,9 +1023,9 @@ class WaterConsumer extends Controller
         ]);
         try {
 
-            return $waterReturnDetails = $this->getDetailByConsumerNo('consumer_no', 35008);
+            return $waterReturnDetails = $this->getDetailByConsumerNo('consumer_no', '2016000500');
             return false;
-            
+
             $mWaterConsumer = new WaterWaterConsumer();
             $key            = $request->filterBy;
             $paramenter     = $request->parameter;
@@ -1093,11 +1093,11 @@ class WaterConsumer extends Controller
         )
             ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_consumers.id')
             ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_consumers.ward_mstr_id')
-            ->leftjoin('water_consumer_meter', 'water_consumer_meter.consumer_id', 'water_consumers.id')
+            ->leftjoin('water_consumer_meters', 'water_consumer_meters.consumer_id', 'water_consumers.id')
             ->where('water_consumers.' . $key, 'LIKE', '%' . $refNo . '%')
             ->where('water_consumers.status', 1)
             ->where('water_consumers.ulb_id', auth()->user()->ulb_id)
-            ->where('water_consumer_meter.connection_type', $refConnectionType['Fixed'])
+            ->where('water_consumer_meters.connection_type', $refConnectionType['Fixed'])
             ->groupBy(
                 'water_consumers.saf_no',
                 'water_consumers.holding_no',
@@ -1108,7 +1108,7 @@ class WaterConsumer extends Controller
                 'water_consumers.consumer_no',
                 'water_consumers.ward_mstr_id',
                 'ulb_ward_masters.ward_name'
-            );
+            )->first();
     }
 
 

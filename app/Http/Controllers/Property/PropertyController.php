@@ -268,22 +268,22 @@ class PropertyController extends Controller
                 $refUnpaidPropDemands = $mPropDemand->getDueDemandByPropId($value['property_id']);
                 $checkPropDemand = collect($refUnpaidPropDemands)->first();
                 if (is_null($checkPropDemand)) {
-                    $currentStatus = 3;
-                    $statusName = "Arrear";
+                    $currentStatus = 3;                                 // Static
+                    $statusName = "Arrear";                             // Static
                 }
                 if ($checkPropDemand) {
                     $lastDemand = collect($refUnpaidPropDemands)->first();
                     if (is_null($lastDemand->due_date)) {
-                        $currentStatus = 3;
-                        $statusName = "Arrear";
+                        $currentStatus = 3;                             // Static
+                        $statusName = "Arrear";                         // Static
                     }
                     $refDate = Carbon::createFromFormat('Y-m-d', $lastDemand->due_date)->toDateString();
                     if ($currentDate < $refDate) {
-                        $currentStatus = 1;
-                        $statusName = "No Dues";
+                        $currentStatus = 1;                             // Static
+                        $statusName = "No Dues";                        // Static
                     } else {
-                        $currentStatus = 2;
-                        $statusName = "Current Dues";
+                        $currentStatus = 2;                             // Static
+                        $statusName = "Current Dues";                   // Static
                     }
                 }
                 $value['statusName'] = $statusName;
@@ -295,7 +295,10 @@ class PropertyController extends Controller
                 }
                 $value['full_doc'] = !empty(trim($value['doc_path'])) ? $path : null;
                 return $value;
-            });
+            })
+                ->filter(function ($refValues) {
+                    return $refValues['new_holding_no'] != null;
+                });
             return responseMsgs(true, "latLong Details", remove_null($propDetails), "", "01", ".ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", $req->deviceId);
@@ -310,10 +313,5 @@ class PropertyController extends Controller
     {
         $path = (config('app.url') . "/" . $path);
         return $path;
-    }
-
-    public function uploadDocument(Request $req)
-    {
-        $mWfActiveDocuments = new WfActiveDocument();
     }
 }
