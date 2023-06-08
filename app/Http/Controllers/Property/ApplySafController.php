@@ -122,18 +122,24 @@ class ApplySafController extends Controller
             $metaReqs['workflowId'] = $ulbWorkflowId->id;
             $metaReqs['ulbId'] = $ulb_id;
             $metaReqs['userId'] = $user_id;
-            $metaReqs['initiatorRoleId'] = collect($initiatorRoleId)->first()->role_id;
+            $metaReqs['initiatorRoleId'] = collect($initiatorRoleId)['role_id'];
             if ($userType == $this->_citizenUserType) {
-                $metaReqs['initiatorRoleId'] = collect($initiatorRoleId)->first()->forward_role_id;         // Send to DA in Case of Citizen
+                $metaReqs['initiatorRoleId'] = collect($initiatorRoleId)['forward_role_id'];         // Send to DA in Case of Citizen
                 $metaReqs['userId'] = null;
                 $metaReqs['citizenId'] = $user_id;
             }
-            $metaReqs['finisherRoleId'] = collect($finisherRoleId)->first()->role_id;
+            $metaReqs['finisherRoleId'] = collect($finisherRoleId)['role_id'];
             $safTaxes = $safCalculation->calculateTax($request);
 
+            $metaReqs['isTrust'] = $this->isPropTrust($request['floor']);
+            $metaReqs['holdingType'] = $this->holdingType($request['floor']);
+            $request->merge($metaReqs);
+            $this->_REQUEST = $request;
+            $this->mergeAssessedExtraFields();                                          // Merge Extra Fields for Property Reassessment,Mutation,Bifurcation & Amalgamation(2.2)
             // Generate Calculation
             $calculateSafById->_calculatedDemand = $safTaxes->original['data'];
             $calculateSafById->_safDetails['assessment_type'] = $request->assessmentType;
+            $calculateSafById->_safDetails['prop_dtl_id'] = $request->previousHoldingId;
 
             if (isset($request->holdingNo))
                 $calculateSafById->_holdingNo = $request->holdingNo;
@@ -149,11 +155,7 @@ class ApplySafController extends Controller
             $generatedDemand = $calculateSafById->_generatedDemand;
             $isResidential = $safTaxes->original['data']['demand']['isResidential'];
             $demandResponse = $generateSafApplyDemandResponse->generateResponse($generatedDemand, $isResidential);
-            $metaReqs['isTrust'] = $this->isPropTrust($request['floor']);
-            $metaReqs['holdingType'] = $this->holdingType($request['floor']);
-            $request->merge($metaReqs);
-            $this->_REQUEST = $request;
-            $this->mergeAssessedExtraFields();                                          // Merge Extra Fields for Property Reassessment,Mutation,Bifurcation & Amalgamation(2.2)
+
             DB::beginTransaction();
             $createSaf = $saf->store($request);                                         // Store SAF Using Model function 
             $safId = $createSaf->original['safId'];

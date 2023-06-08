@@ -38,9 +38,11 @@ class MirrorUserNotification extends Model
     /**
      * | Add Notifications 
      */
-    public function editNotification($req)
+    public function editNotification($req, $id)
     {
         $req = $req->toarray();
-        MirrorUserNotification::update($req);
+
+        $notification = MirrorUserNotification::find($id);
+        $notification->update($req);
     }
 }

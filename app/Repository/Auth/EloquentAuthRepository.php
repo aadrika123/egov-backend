@@ -479,36 +479,42 @@ class EloquentAuthRepository implements AuthRepository
         $user = authUser();
         $userId = $user->id;
         $ulbId = $user->ulb_id;
+        $citizenId = $req['citizenId'];
         $muserNotification = new UserNotification();
+        $mMirrorUserNotification = new MirrorUserNotification();
 
         $mreq = new Request([
-            "user_id"       => $req->userId,
-            "citizen_id"    => $req->citizenId,
-            "notification"  => $req->notification,
-            "send_by"       => $req->sender,
-            "category"      => $req->category,
-            "sender_id"     => $userId,
-            "ulb_id"        => $ulbId,
-            "module_id"     => $req->moduleId,
-            "event_id"      => $req->eventId,
-            "ephameral"     => $req->ephameral,
+            "user_id"       => $req['userId'] ?? null,
+            "citizen_id"    => $req['citizenId'] ?? null,
+            "notification"  => $req['notification'] ?? null,
+            "send_by"       => $req['sender'] ?? null,
+            "category"      => $req['category'] ?? null,
+            "module_id"     => $req['moduleId'] ?? null,
+            "event_id"      => $req['eventId'] ?? null,
+            "ephameral"     => $req['ephameral'] ?? null,
+            "require_acknowledgment" => $req['requireAcknowledgment'] ?? null,
+            "sender_id"     => $userId ?? null,
+            "ulb_id"        => $req['ulbId'] ?? null,
             "generation_time" => Carbon::now(),
-            "require_acknowledgment" => $req->requireAcknowledgment,
             "expected_delivery_time" => null,
             "created_at" => Carbon::now(),
         ]);
         $id = $muserNotification->addNotification($mreq);
 
-        if ($req->citizenId) {
-            $data = $muserNotification->notificationByUserId($userId)
-                ->where('citizen_id', $req->citizenId)
+        if ($citizenId) {
+            $data = $mMirrorUserNotification->notificationByUserId($userId)
+                ->where('citizen_id', $citizenId)
                 ->get();
         } else
-            $data = $muserNotification->notificationByUserId($userId)
-                ->where('user_id', $req->userId)
-                ->take(10);
+            $data = $mMirrorUserNotification->notificationByUserId($userId)
+                ->where('user_id', $userId)
+                ->get();
 
-        $this->addMirrorNotification($mreq, $id, $user);
+        // if (collect($data)->count() < 10)
+        //     $this->addMirrorNotification($mreq, $id, $user);
+
+        // if (collect($data)->count() > 10)
+        $this->updateMirrorNotification($mreq, $id, $user);
 
         return responseMsgs(true, "Notificationn Addedd", '', "010108", "1.0", "", "POST", "");
     }
@@ -540,7 +546,33 @@ class EloquentAuthRepository implements AuthRepository
     }
 
     /**
-     * | Get user Notification
+     * | Update Mirror Notification
+     */
+    public function updateMirrorNotification($req, $id, $user)
+    {
+        $mMirrorUserNotification = new MirrorUserNotification();
+        $mreq = new Request([
+            "user_id" => $req->user_id,
+            "citizen_id" => $req->citizen_id,
+            "notification" => $req->notification,
+            "send_by" => $req->send_by,
+            "category" => $req->category,
+            "sender_id" => $user->id,
+            "ulb_id" => $user->ulb_id,
+            "module_id" => $req->module_id,
+            "event_id" => $req->event_id,
+            "generation_time" => Carbon::now(),
+            "ephameral" => $req->ephameral,
+            "require_acknowledgment" => $req->require_acknowledgment,
+            "expected_delivery_time" => $req->expected_delivery_time,
+            "created_at" => Carbon::now(),
+            "notification_id" => $id,
+        ]);
+        $mMirrorUserNotification->editNotification($mreq, 31);
+    }
+
+    /**
+     * | Deactivate user Notification
      */
     public function deactivateNotification($req)
     {
