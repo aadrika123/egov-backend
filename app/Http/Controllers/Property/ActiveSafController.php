@@ -1982,14 +1982,10 @@ class ActiveSafController extends Controller
     {
         $validated = Validator::make(
             $req->all(),
-            ['tranNo' => 'required']
+            ['tranNo' => 'required|string']
         );
         if ($validated->fails()) {
-            return response()->json([
-                'status'  => false,
-                'message' => 'validation error',
-                'errors'  => $validated->errors()
-            ], 422);
+            return validationError($validated);
         }
         try {
             $propSafsDemand = new PropSafsDemand();

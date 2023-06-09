@@ -13,12 +13,23 @@ use App\Models\QuickAccessMaster;
 use App\Models\QuickaccessUserMap;
 use App\Models\TcTracking;
 use Exception;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class CustomController extends Controller
 {
     public function getCustomDetails(Request $request)
     {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                "applicationId" => "required|numeric",
+                "customFor" => "required|string"
+            ]
+        );
+        if ($validated->fails()) {
+            return validationError($validated);
+        }
         $mCustomDetail = new CustomDetail();
         return $mCustomDetail->getCustomDetails($request);
     }
@@ -26,8 +37,26 @@ class CustomController extends Controller
     //post custom details
     public function postCustomDetails(Request $request)
     {
-        $mCustomDetail = new CustomDetail();
-        return $mCustomDetail->postCustomDetails($request);
+        try {
+            $validated = Validator::make(
+                $request->all(),
+                [
+                    "applicationId" => "required|numeric",
+                    "customFor" => "required|string",
+                    'document' => "nullable|mimes:pdf,jpeg,png,jpg",
+                    'remarks' => "nullable|regex:/^[a-zA-Z0-9\s]+$/",
+                ]
+            );
+            if ($validated->fails()) {
+                return validationError($validated);
+            }
+            $mCustomDetail = new CustomDetail();
+            $mCustomDetail->postCustomDetails($request);
+
+            return responseMsg(true, "Successfully Saved", "");
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
     }
 
     /**

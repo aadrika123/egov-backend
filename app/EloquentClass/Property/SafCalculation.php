@@ -310,7 +310,6 @@ class SafCalculation
     {
         $ulbId = $this->_ulbId;
         $aptId = $this->_propertyDetails['apartmentId'];
-
         $aptDtls = json_decode(Redis::get('apt-dtl-ulb-' . $ulbId . '-apt-' . $aptId));
         if (!$aptDtls) {
             $mPropApartmentDtls = new PropApartmentDtl();

@@ -23,8 +23,8 @@ class WaterChequeDtl extends Model
      */
     public function getChequeDtlsByTransId($transId)
     {
-        return WaterChequeDtl::where('id', $transId)
-            ->where('status', 2);
+        return WaterChequeDtl::where('transaction_id', $transId)
+            ->where('status', '!=', 0);
     }
 
     /**

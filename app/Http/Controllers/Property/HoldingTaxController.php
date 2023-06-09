@@ -794,7 +794,6 @@ class HoldingTaxController extends Controller
             $onlineRebate = $rebatePenalMstrs->where('id', 3)->first()['value'];
 
             $propTrans = $mTransaction->getPropByTranPropId($req->tranNo);
-
             $reqPropId = new Request(['propertyId' => $propTrans->property_id]);
             $propProperty = $safController->getPropByHoldingNo($reqPropId)->original['data'];
             if (empty($propProperty))
@@ -910,6 +909,8 @@ class HoldingTaxController extends Controller
             $mTransaction = new PropTransaction();
             $propTrans = $mTransaction->getPropTransFullDtlsByTranNo($req->tranNo);
             $responseData = $this->propPaymentReceipt($req);
+            if ($responseData->original['status'] == false)
+                return $responseData;
             $responseData = $responseData->original['data'];                                              // Function propPaymentReceipt(9.1)
             $totalRebate = $responseData['totalRebate'];
             $holdingTaxDetails = $this->holdingTaxDetails($propTrans, $totalRebate);                    // (9.2)

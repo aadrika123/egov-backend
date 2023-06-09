@@ -181,16 +181,17 @@ class ApplySafController extends Controller
             }
 
             // Citizen Notification
-            if ($userType == 'Citizen') {
-                $mreq['userType']  = 'Citizen';
-                $mreq['citizenId'] = $user_id;
-                $mreq['category']  = 'Recent Application';
-                $mreq['ulbId']     = $ulb_id;
-                $mreq['ephameral'] = 0;
-                $mreq['notification'] = "Successfully Submitted Your Application Your SAF No. $safNo";
-                $rEloquentAuthRepository = new EloquentAuthRepository();
-                $rEloquentAuthRepository->addNotification($mreq);
-            }
+            // if ($userType == 'Citizen') {
+            //     $mreq['userType']  = 'Citizen';
+            //     $mreq['citizenId'] = $user_id;
+            //     $mreq['category']  = 'Recent Application';
+            //     $mreq['ulbId']     = $ulb_id;
+            //     $mreq['ephameral'] = 0;
+            //     $mreq['notification'] = "Successfully Submitted Your Application Your SAF No. $safNo";
+            //     $rEloquentAuthRepository = new EloquentAuthRepository();
+            //     $rEloquentAuthRepository->addNotification($mreq);
+            // }
+
             DB::commit();
             return responseMsgs(true, "Successfully Submitted Your Application Your SAF No. $safNo", [
                 "safNo" => $safNo,
