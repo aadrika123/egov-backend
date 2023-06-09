@@ -139,7 +139,7 @@ class ApplySafController extends Controller
             // Generate Calculation
             $calculateSafById->_calculatedDemand = $safTaxes->original['data'];
             $calculateSafById->_safDetails['assessment_type'] = $request->assessmentType;
-            $calculateSafById->_safDetails['prop_dtl_id'] = $request->previousHoldingId;
+            $calculateSafById->_safDetails['previous_holding_id'] = $request->previousHoldingId;
 
             if (isset($request->holdingNo))
                 $calculateSafById->_holdingNo = $request->holdingNo;
@@ -249,9 +249,8 @@ class ApplySafController extends Controller
         $req = $this->_REQUEST;
         $assessmentType = $req->assessmentType;
 
-        if (in_array($assessmentType, $this->_demandAdjustAssessmentTypes)) {
-            $propertyDtls = $mPropProperty->getPropertyId($req->holdingNo);
-
+        if (in_array($assessmentType, $this->_demandAdjustAssessmentTypes)) {           // Reassessment,Mutation and Others
+            $propertyDtls = $mPropProperty->getPropertyId($req->holdingNo);             // Need to be changed during Reassessment,Mutation
             if (collect($propertyDtls)->isEmpty())
                 throw new Exception("Property Not Found For This Holding");
 
