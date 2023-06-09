@@ -985,16 +985,20 @@ class ActiveSafController extends Controller
                 $ptNo = $saf->pt_no;
                 $samIdGeneration = new PrefixIdGenerator($samParamId, $saf->ulb_id);
                 $samNo = $samIdGeneration->generate();                 // Generate SAM No
-                $mergedDemand = array_merge($demand->toArray(), [
+
+                $this->replicateSaf($saf->id);
+                $propId = $this->_replicatedPropId;
+
+                $mergedDemand = array_merge($demand->toArray(), [       // SAM Memo Generation
                     'memo_type' => 'SAM',
                     'memo_no' => $samNo,
                     'pt_no' => $ptNo,
-                    'ward_id' => $saf->ward_mstr_id
+                    'ward_id' => $saf->ward_mstr_id,
+                    'prop_id' => $propId
                 ]);
                 $memoReqs = new Request($mergedDemand);
                 $mPropMemoDtl->postSafMemoDtls($memoReqs);
-                $this->replicateSaf($saf->id);
-                $propId = $this->_replicatedPropId;
+
                 $ifPropTaxExists = $mPropTax->getPropTaxesByPropId($propId);
                 if ($ifPropTaxExists)
                     $mPropTax->deactivatePropTax($propId);
@@ -1518,7 +1522,6 @@ class ActiveSafController extends Controller
             $safDtls = PropActiveSaf::findOrFail($req->id);
             if (in_array($safDtls->assessment_type, ['New Assessment', 'Reassessment', 'Re Assessment', 'Mutation']))
                 $req = $req->merge(['holdingNo' => $safDtls->holding_no]);
-
             $calculateSafById = new CalculateSafById;
             $demand = $calculateSafById->calculateTax($req);
             return responseMsgs(true, "Demand Details", remove_null($demand));

@@ -131,9 +131,15 @@ class ApplySafController extends Controller
             $metaReqs['finisherRoleId'] = collect($finisherRoleId)['role_id'];
             $safTaxes = $safCalculation->calculateTax($request);
 
+            $metaReqs['isTrust'] = $this->isPropTrust($request['floor']);
+            $metaReqs['holdingType'] = $this->holdingType($request['floor']);
+            $request->merge($metaReqs);
+            $this->_REQUEST = $request;
+            $this->mergeAssessedExtraFields();                                          // Merge Extra Fields for Property Reassessment,Mutation,Bifurcation & Amalgamation(2.2)
             // Generate Calculation
             $calculateSafById->_calculatedDemand = $safTaxes->original['data'];
             $calculateSafById->_safDetails['assessment_type'] = $request->assessmentType;
+            $calculateSafById->_safDetails['previous_holding_id'] = $request->previousHoldingId;
 
             if (isset($request->holdingNo))
                 $calculateSafById->_holdingNo = $request->holdingNo;
@@ -149,11 +155,7 @@ class ApplySafController extends Controller
             $generatedDemand = $calculateSafById->_generatedDemand;
             $isResidential = $safTaxes->original['data']['demand']['isResidential'];
             $demandResponse = $generateSafApplyDemandResponse->generateResponse($generatedDemand, $isResidential);
-            $metaReqs['isTrust'] = $this->isPropTrust($request['floor']);
-            $metaReqs['holdingType'] = $this->holdingType($request['floor']);
-            $request->merge($metaReqs);
-            $this->_REQUEST = $request;
-            $this->mergeAssessedExtraFields();                                          // Merge Extra Fields for Property Reassessment,Mutation,Bifurcation & Amalgamation(2.2)
+
             DB::beginTransaction();
             $createSaf = $saf->store($request);                                         // Store SAF Using Model function 
             $safId = $createSaf->original['safId'];
@@ -247,13 +249,12 @@ class ApplySafController extends Controller
         $req = $this->_REQUEST;
         $assessmentType = $req->assessmentType;
 
-        if (in_array($assessmentType, $this->_demandAdjustAssessmentTypes)) {
-            $propertyDtls = $mPropProperty->getPropertyId($req->holdingNo);
-
-            if (collect($propertyDtls)->isEmpty())
+        if (in_array($assessmentType, $this->_demandAdjustAssessmentTypes)) {           // Reassessment,Mutation and Others
+            $property = $mPropProperty->getPropById($req->previousHoldingId);
+            if (collect($property)->isEmpty())
                 throw new Exception("Property Not Found For This Holding");
-
-            $propId = $propertyDtls->id;
+            $req->holdingNo = $property->new_holding_no ?? $property->holding_no;
+            $propId = $property->id;
             $req->merge([
                 'hasPreviousHoldingNo' => true,
                 'previousHoldingId' => $propId
@@ -267,6 +268,7 @@ class ApplySafController extends Controller
             }
         }
 
+        // Amalgamation
         if (in_array($assessmentType, ["Amalgamation"])) {
             $previousHoldingIds = array();
             $previousHoldingLists = array();
