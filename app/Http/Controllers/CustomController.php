@@ -26,8 +26,26 @@ class CustomController extends Controller
     //post custom details
     public function postCustomDetails(Request $request)
     {
-        $mCustomDetail = new CustomDetail();
-        return $mCustomDetail->postCustomDetails($request);
+        try {
+            $validated = Validator::make(
+                $request->all(),
+                [
+                    "applicationId" => "required|numeric",
+                    "customFor" => "required|string",
+                    'document' => "nullable|mimes:pdf,jpeg,png,jpg",
+                    'remarks' => "nullable|regex:/^[a-zA-Z0-9\s]+$/",
+                ]
+            );
+            if ($validated->fails()) {
+                return validationError($validated);
+            }
+            $mCustomDetail = new CustomDetail();
+            $mCustomDetail->postCustomDetails($request);
+
+            return responseMsg(true, "Successfully Saved", "");
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
     }
 
     /**

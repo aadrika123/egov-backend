@@ -19,7 +19,7 @@ class MirrorUserNotification extends Model
     /**
      * | Get notification of logged in user
      */
-    public function notificationByUserId()
+    public function mirrorNotification()
     {
         return MirrorUserNotification::select('*', DB::raw("Replace(category, ' ', '_') AS category"))
             ->where('status', 1)

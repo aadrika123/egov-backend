@@ -153,6 +153,7 @@ class PropProperty extends Model
             ->leftJoin('ulb_ward_masters as u', 'u.id', '=', 'prop_properties.new_ward_mstr_id')
             ->where('prop_properties.holding_no', $holdingNo)
             ->where('prop_properties.ulb_id', $ulbId)
+            ->where('status', 1)
             ->first();
 
         if ($oldHolding) {
@@ -534,6 +535,7 @@ class PropProperty extends Model
     {
         return PropProperty::select(
             'prop_properties.id',
+            'prop_properties.ulb_id',
             'prop_properties.holding_no',
             'latitude',
             'longitude',
@@ -556,7 +558,7 @@ class PropProperty extends Model
                            ) as geotag"), function ($join) {
                 $join->on("geotag.saf_id", "=", "prop_properties.saf_id");
             })
-            ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id');
+            ->leftjoin('prop_owners', 'prop_owners.property_id', 'prop_properties.id');
     }
 
     /**
