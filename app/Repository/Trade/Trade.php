@@ -1754,6 +1754,13 @@ class Trade implements ITrade
             $finisher['short_user_name'] = $this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][strtoupper($init_finish['finisher']['role_name'])];
             $mUserType      = $this->_COMMON_FUNCTION->userType($refWorkflowId);
             $refApplication = $this->getAllLicenceById($id);
+            
+            $refApplication->application_date = $refApplication->application_date?Carbon::parse($refApplication->application_date)->format("d-m-Y"):"";
+            $refApplication->license_date = $refApplication->license_date?Carbon::parse($refApplication->license_date)->format("d-m-Y"):"";
+            $refApplication->valid_from = $refApplication->valid_from?Carbon::parse($refApplication->valid_from)->format("d-m-Y"):"";
+            $refApplication->valid_upto = $refApplication->valid_upto?Carbon::parse($refApplication->valid_upto)->format("d-m-Y"):"";
+            $refApplication->establishment_date = $refApplication->establishment_date?Carbon::parse($refApplication->establishment_date)->format("d-m-Y"):"";
+            
             $mStatus = $this->applicationStatus($id);
             $mItemName      = "";
             $mCods          = "";
@@ -1770,7 +1777,10 @@ class Trade implements ITrade
             $refApplication->items      = $mItemName;
             $refApplication->items_code = $mCods;
             $refOwnerDtl                = $this->getAllOwnereDtlByLId($id);
-            $refTransactionDtl          = TradeTransaction::listByLicId($id);
+            $refTransactionDtl          = TradeTransaction::listByLicId($id)->map(function($val){
+                $val->tran_date = $val->tran_date?Carbon::parse($val->tran_date)->format("d-m-Y"):"";
+                return $val;
+            });
             $refTimeLine                = $this->getTimelin($id);
             
             $mworkflowRoles = $this->_COMMON_FUNCTION->getWorkFlowAllRoles($refUserId, $refUlbId, $refWorkflowId, true);
@@ -1827,7 +1837,11 @@ class Trade implements ITrade
             $metaReqs['wfRoleId'] = $licenseDetail->current_role;
             $metaReqs['workflowId'] = $licenseDetail->workflow_id;
             $metaReqs['lastRoleId'] = $licenseDetail->last_role_id;
-            $levelComment = $mWorkflowTracks->getTracksByRefId($mRefTable, $licenseDetail->id);
+            $levelComment = $mWorkflowTracks->getTracksByRefId($mRefTable, $licenseDetail->id)->map(function($val){  
+                $val->forward_date = $val->forward_date?Carbon::parse($val->forward_date)->format("d-m-Y"):"";
+                $val->track_date = $val->track_date?Carbon::parse($val->track_date)->format("d-m-Y"):"";
+                return $val;
+            });
             $fullDetailsData['levelComment'] = $levelComment;
 
             $citizenComment = $mWorkflowTracks->getCitizenTracks($mRefTable, $licenseDetail->id, $licenseDetail->user_id);
