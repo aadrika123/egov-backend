@@ -447,7 +447,7 @@ class TradeApplication extends Controller
                 'roleId'                => $userRole->role_id,
                 'roleName'              => $userRole->role_name,
                 "shortRole"             => ($this->_TRADE_CONSTAINT['USER-TYPE-SHORT-NAME'][strtoupper($userRole->role_name)]) ?? "N/A",
-                'todayForwardCount'     => collect($dateWiseData)->where('sender_role_id', $userRole->role_idd)->count(),
+                'todayForwardCount'     => collect($dateWiseData)->where('sender_role_id', $userRole->role_id)->count(),
                 'todayReceivedCount'    => collect($dateWiseData)->where('receiver_role_id', $userRole->role_id)->count(),
                 'pendingApplication'    => $inboxData->original['data']->count() ?? 0,
                 'newLicense'            => $inboxData->original['data']->where("application_type_id", 1)->count() ?? 0,
