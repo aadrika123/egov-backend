@@ -683,6 +683,9 @@ class NewConnectionController extends Controller
         if ($applicationDetails->user_id != $user->id) {
             throw new Exception("You'r not the user of this form!");
         }
+        if (!is_null($applicationDetails->current_role)) {
+            throw new Exception("application is under process can't be deleted!");
+        }
     }
 
 

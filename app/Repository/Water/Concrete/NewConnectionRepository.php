@@ -89,7 +89,7 @@ class NewConnectionRepository implements iNewConnection
         | Serila No : 01
         | Check the ulb_id
         | make Application No using id generation
-        | send it in track
+        | send it in track / while sending the record to track through jsk check the role id
      */
     public function store(Request $req)
     {
@@ -190,8 +190,8 @@ class NewConnectionRepository implements iNewConnection
             $receiverRoleId = $waterRoles['DA'];
         }
         if ($user->user_type != "Citizen") {                                                        // Static
-            $roleDetails = $this->getUserRolesDetails($user, $ulbWorkflowId['id']);
-            $senderRoleId = $roleDetails->wf_role_id;
+            // $roleDetails = $this->getUserRolesDetails($user, $ulbWorkflowId['id']);
+            // $senderRoleId = $roleDetails->wf_role_id;
             $receiverRoleId = collect($initiatorRoleId)->first()->role_id;
         }
         $metaReqs = new Request(
@@ -210,17 +210,17 @@ class NewConnectionRepository implements iNewConnection
         $waterTrack->saveTrack($metaReqs);
 
         # watsapp message
-        $whatsapp2 = (Whatsapp_Send(
-            "",
-            "trn_2_var",
-            [
-                "conten_type" => "text",
-                [
-                    $owner[0]["ownerName"],
-                    $applicationNo,
-                ]
-            ]
-        ));
+        // $whatsapp2 = (Whatsapp_Send(
+        //     "",
+        //     "trn_2_var",
+        //     [
+        //         "conten_type" => "text",
+        //         [
+        //             $owner[0]["ownerName"],
+        //             $applicationNo,
+        //         ]
+        //     ]
+        // ));
         DB::commit();
 
         $returnResponse = [
@@ -873,5 +873,4 @@ class NewConnectionRepository implements iNewConnection
         $consumerDetails = collect($approvedWater)->merge($connectionCharge)->merge($waterOwner)->merge($water);
         return remove_null($consumerDetails);
     }
-
 }
