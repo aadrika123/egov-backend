@@ -466,6 +466,9 @@ class PropertyDetailsController extends Controller
                     break;
             }
 
+            // return $data
+            //     ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'latitude', 'longitude')
+            //     ->get();
             if ($isLegacy == true) {
                 $paginator = $data->where('new_holding_no', null)
                     ->where('latitude', null)

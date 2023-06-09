@@ -985,16 +985,20 @@ class ActiveSafController extends Controller
                 $ptNo = $saf->pt_no;
                 $samIdGeneration = new PrefixIdGenerator($samParamId, $saf->ulb_id);
                 $samNo = $samIdGeneration->generate();                 // Generate SAM No
-                $mergedDemand = array_merge($demand->toArray(), [
+
+                $this->replicateSaf($saf->id);
+                $propId = $this->_replicatedPropId;
+
+                $mergedDemand = array_merge($demand->toArray(), [       // SAM Memo Generation
                     'memo_type' => 'SAM',
                     'memo_no' => $samNo,
                     'pt_no' => $ptNo,
-                    'ward_id' => $saf->ward_mstr_id
+                    'ward_id' => $saf->ward_mstr_id,
+                    'prop_id' => $propId
                 ]);
                 $memoReqs = new Request($mergedDemand);
                 $mPropMemoDtl->postSafMemoDtls($memoReqs);
-                $this->replicateSaf($saf->id);
-                $propId = $this->_replicatedPropId;
+
                 $ifPropTaxExists = $mPropTax->getPropTaxesByPropId($propId);
                 if ($ifPropTaxExists)
                     $mPropTax->deactivatePropTax($propId);
@@ -1518,7 +1522,6 @@ class ActiveSafController extends Controller
             $safDtls = PropActiveSaf::findOrFail($req->id);
             if (in_array($safDtls->assessment_type, ['New Assessment', 'Reassessment', 'Re Assessment', 'Mutation']))
                 $req = $req->merge(['holdingNo' => $safDtls->holding_no]);
-
             $calculateSafById = new CalculateSafById;
             $demand = $calculateSafById->calculateTax($req);
             return responseMsgs(true, "Demand Details", remove_null($demand));
@@ -1561,8 +1564,10 @@ class ActiveSafController extends Controller
             $mPropRazorPayRequest = new PropRazorpayRequest();
             $postRazorPayPenaltyRebate = new PostRazorPayPenaltyRebate;
             $req->merge(['departmentId' => 1]);
+            $safDetails = PropActiveSaf::findOrFail($req->id);
+            if ($safDetails->payment_status == 1)
+                throw new Exception("Payment already done");
             $calculateSafById = $this->calculateSafBySafId($req);
-            $safDetails = PropActiveSaf::find($req->id);
             $demands = $calculateSafById->original['data']['demand'];
             $details = $calculateSafById->original['data']['details'];
             $totalAmount = $demands['payableAmount'];
@@ -1677,11 +1682,13 @@ class ActiveSafController extends Controller
             $previousHoldingDeactivation = new PreviousHoldingDeactivation;
             $postSafPropTaxes = new PostSafPropTaxes;
 
+            $activeSaf = PropActiveSaf::findOrFail($req['id']);
+            if ($activeSaf->payment_status == 1)
+                throw new Exception("Payment Already Done");
             $userId = $req['userId'];
             $safId = $req['id'];
             $orderId = $req['orderId'];
             $paymentId = $req['paymentId'];
-            $activeSaf = PropActiveSaf::findOrFail($req['id']);
 
             if ($activeSaf->payment_status == 1)
                 throw new Exception("Payment Already Done");
@@ -1975,14 +1982,10 @@ class ActiveSafController extends Controller
     {
         $validated = Validator::make(
             $req->all(),
-            ['tranNo' => 'required']
+            ['tranNo' => 'required|string']
         );
         if ($validated->fails()) {
-            return response()->json([
-                'status'  => false,
-                'message' => 'validation error',
-                'errors'  => $validated->errors()
-            ], 422);
+            return validationError($validated);
         }
         try {
             $propSafsDemand = new PropSafsDemand();
@@ -2082,11 +2085,15 @@ class ActiveSafController extends Controller
     {
         try {
             $propTransaction = new PropTransaction();
-            $userId = auth()->user()->id;
-            $propTrans = $propTransaction->getPropTransByUserId($userId);
+            $auth = authUser();
+            $userId = $auth->id;
+            if ($auth->user_type == 'Citizen')
+                $propTrans = $propTransaction->getPropTransByCitizenId($userId);
+            else
+                $propTrans = $propTransaction->getPropTransByUserId($userId);               // Get Transaction History for Citizen or User
             return responseMsgs(true, "Transactions History", remove_null($propTrans), "010117", "1.0", "265ms", "POST", $req->deviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "010117", "1.0", "265ms", "POST", $req->deviceId);
+            return responseMsgs(false, $e->getMessage(), "", "010117", "1.0", responseTime(), "POST", $req->deviceId);
         }
     }
 

@@ -276,7 +276,7 @@ class CalculateSafById
         $propProperty = new PropProperty();
         $mPropDemands = new PropDemand();
         $generatedDemand = $this->_demandDetails;
-        $previousHoldingId = $this->_safDetails->prop_dtl_id ?? $this->_safDetails['prop_dtl_id'];
+        $previousHoldingId = $this->_safDetails->previous_holding_id ?? $this->_safDetails['previous_holding_id'];
 
         $propDtls = $propProperty->getPropById($previousHoldingId);
         $propertyId = $propDtls->id;

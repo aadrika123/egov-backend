@@ -2,6 +2,7 @@
 
 namespace App\Repository\Auth;
 
+use App\BLL\AddNotification;
 use App\Http\Requests\Auth\AuthUserRequest;
 use App\Http\Requests\Auth\LoginUserRequest;
 use App\Http\Requests\Auth\ChangePassRequest;
@@ -482,6 +483,7 @@ class EloquentAuthRepository implements AuthRepository
         $citizenId = $req['citizenId'];
         $muserNotification = new UserNotification();
         $mMirrorUserNotification = new MirrorUserNotification();
+        $addNotification = new AddNotification();
 
         $mreq = new Request([
             "user_id"       => $req['userId'] ?? null,
@@ -500,13 +502,14 @@ class EloquentAuthRepository implements AuthRepository
             "created_at" => Carbon::now(),
         ]);
         $id = $muserNotification->addNotification($mreq);
+        $addNotification->notificationAddition($mreq);           #calling BLL
 
         if ($citizenId) {
-            $data = $mMirrorUserNotification->notificationByUserId($userId)
+            $data = $mMirrorUserNotification->mirrorNotification()
                 ->where('citizen_id', $citizenId)
                 ->get();
         } else
-            $data = $mMirrorUserNotification->notificationByUserId($userId)
+            $data = $mMirrorUserNotification->mirrorNotification()
                 ->where('user_id', $userId)
                 ->get();
 

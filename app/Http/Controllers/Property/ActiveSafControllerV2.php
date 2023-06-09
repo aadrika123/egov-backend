@@ -208,8 +208,15 @@ class ActiveSafControllerV2 extends Controller
                     $ulbVerifiedQuarterlyTaxes = $ulbTax->quarterly_tax * 4;
 
                     $diffAmt = $ulbVerifiedQuarterlyTaxes - $selfAssessQuaterlyTax;
+                    if (substr($ulbTax->fyear, 5) >= 2023 && $ulbTax->qtr >= 1)
+                        $particulars = "Holding Tax @ 0.075% or 0.15% or 0.2%";         // Ruleset1
+                    if (substr($ulbTax->fyear, 5) >= 2017 && $ulbTax->qtr >= 1)
+                        $particulars = "Holding Tax @ 2%";                              // Ruleset2
+                    else
+                        $particulars = "Holding Tax @ 43.75% or 38.75%";                // Ruleset3
+
                     $response = [
-                        'Particulars' => (substr($ulbTax->fyear, 5) >= 2023 && $ulbTax->qtr >= 1) ? "Holding Tax @ 0.075% or 0.15% or 0.2%" : "Holding Tax @ 2%",
+                        'Particulars' => $particulars,
                         'quarterFinancialYear' => 'Quarter' . $ulbTax->qtr . '/' . $ulbTax->fyear,
                         'basedOnSelfAssess' => roundFigure($selfAssessQuaterlyTax),
                         'basedOnUlbCalc' => roundFigure($ulbVerifiedQuarterlyTaxes),
