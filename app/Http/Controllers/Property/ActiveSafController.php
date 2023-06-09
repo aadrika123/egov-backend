@@ -2087,7 +2087,10 @@ class ActiveSafController extends Controller
             $propTransaction = new PropTransaction();
             $auth = authUser();
             $userId = $auth->id;
-            $propTrans = $propTransaction->getPropTransByUserId($userId);               // Get Transaction History for Citizen or User
+            if ($auth->user_type == 'Citizen')
+                $propTrans = $propTransaction->getPropTransByCitizenId($userId);
+            else
+                $propTrans = $propTransaction->getPropTransByUserId($userId);               // Get Transaction History for Citizen or User
             return responseMsgs(true, "Transactions History", remove_null($propTrans), "010117", "1.0", "265ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010117", "1.0", responseTime(), "POST", $req->deviceId);

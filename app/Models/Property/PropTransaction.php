@@ -53,12 +53,20 @@ class PropTransaction extends Model
             ->where('prop_transactions.status', 1);
     }
 
+    // Get Property Transaction by citizen id
+    public function getPropTransByCitizenId($citizenId)
+    {
+        return $this->getPropTransTrait()
+            ->where('prop_transactions.citizen_id', $citizenId)
+            ->orderByDesc('prop_transactions.id')
+            ->get();
+    }
+
     // Get Property Transaction by User Id
     public function getPropTransByUserId($userId)
     {
         return $this->getPropTransTrait()
             ->where('prop_transactions.user_id', $userId)
-            ->orWhere('prop_transactions.citizen_id', $userId)
             ->orderByDesc('prop_transactions.id')
             ->get();
     }
