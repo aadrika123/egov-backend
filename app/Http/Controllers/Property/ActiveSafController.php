@@ -1564,8 +1564,10 @@ class ActiveSafController extends Controller
             $mPropRazorPayRequest = new PropRazorpayRequest();
             $postRazorPayPenaltyRebate = new PostRazorPayPenaltyRebate;
             $req->merge(['departmentId' => 1]);
+            $safDetails = PropActiveSaf::findOrFail($req->id);
+            if ($safDetails->payment_status == 1)
+                throw new Exception("Payment already done");
             $calculateSafById = $this->calculateSafBySafId($req);
-            $safDetails = PropActiveSaf::find($req->id);
             $demands = $calculateSafById->original['data']['demand'];
             $details = $calculateSafById->original['data']['details'];
             $totalAmount = $demands['payableAmount'];
@@ -1680,11 +1682,13 @@ class ActiveSafController extends Controller
             $previousHoldingDeactivation = new PreviousHoldingDeactivation;
             $postSafPropTaxes = new PostSafPropTaxes;
 
+            $activeSaf = PropActiveSaf::findOrFail($req['id']);
+            if ($activeSaf->payment_status == 1)
+                throw new Exception("Payment Already Done");
             $userId = $req['userId'];
             $safId = $req['id'];
             $orderId = $req['orderId'];
             $paymentId = $req['paymentId'];
-            $activeSaf = PropActiveSaf::findOrFail($req['id']);
 
             if ($activeSaf->payment_status == 1)
                 throw new Exception("Payment Already Done");
