@@ -58,6 +58,7 @@ class PropTransaction extends Model
     {
         return $this->getPropTransTrait()
             ->where('prop_transactions.user_id', $userId)
+            ->orWhere('prop_transactions.citizen_id', $userId)
             ->orderByDesc('prop_transactions.id')
             ->get();
     }
