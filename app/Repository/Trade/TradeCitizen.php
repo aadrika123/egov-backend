@@ -438,7 +438,7 @@ class TradeCitizen implements ITradeCitizen
             $final = $ActiveLicence->union($RejectedLicence)
                     ->union($ApprovedLicence)->union($OldLicence)
                     ->get();
-            $final->map(function($val){
+            $final->map(function($val) use($refUserId){
                 $option = [];
                 $nextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
                 $validUpto="";
@@ -456,6 +456,11 @@ class TradeCitizen implements ITradeCitizen
                     $option[]="SURRENDER";
                 }
                 $val->option = $option;
+                $val->pending_at = $this->_REPOSITORY_TRADE->applicationStatus($val->id);                
+                if(str_contains(strtoupper($val->pending_at),strtoupper("All Required Documents Are Uploaded")))
+                {
+                    $val->document_upload_status =1; 
+                }
                 return $val;
             });
             return responseMsg(true, "", remove_null($final));
