@@ -47,10 +47,29 @@ class PropTransaction extends Model
     public function getPropTransTrait()
     {
         return DB::table('prop_transactions')
-            ->select('prop_transactions.*', 'a.saf_no', 'p.holding_no')
+            ->select(
+                'prop_transactions.*',
+                'a.saf_no',
+                'p.holding_no',
+                DB::raw("CASE
+                            WHEN (prop_transactions.saf_id IS NULL) THEN 'PROPERTY'
+                            WHEN (prop_transactions.property_id IS NULL) THEN 'SAF'
+                        END
+                        AS application_type
+                        ")
+            )
             ->leftJoin('prop_active_safs as a', 'a.id', '=', 'prop_transactions.saf_id')
             ->leftJoin('prop_properties as p', 'p.id', '=', 'prop_transactions.property_id')
             ->where('prop_transactions.status', 1);
+    }
+
+    // Get Property Transaction by citizen id
+    public function getPropTransByCitizenId($citizenId)
+    {
+        return $this->getPropTransTrait()
+            ->where('prop_transactions.citizen_id', $citizenId)
+            ->orderByDesc('prop_transactions.id')
+            ->get();
     }
 
     // Get Property Transaction by User Id

@@ -43,6 +43,9 @@ use App\Http\Controllers\Property\ZoneController;
  * ----------------------------------------------------------------------------------------
  */
 
+Route::post('api-test', function () {
+  return "Welcome to Property Module";
+})->middleware('api.key');
 
 // Inside Middleware Routes with API Authenticate 
 Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger', 'expireBearerToken']], function () {

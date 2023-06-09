@@ -30,7 +30,7 @@ class reqApplySaf extends FormRequest
         $userType = auth()->user()->user_type ?? 'Citizen';
         $mNowDate     = Carbon::now()->format("Y-m-d");
         $mNowDateYm   = Carbon::now()->format("Y-m");
-        $religiousTrustUsageType = "42";
+        $religiousTrustUsageType = "43";
 
         if ($userType == 'Citizen')
             $rules['ulbId'] = "required|int";
@@ -59,7 +59,7 @@ class reqApplySaf extends FormRequest
         $rules['propertyType']  = "required|int";
         $rules['ownershipType'] = "required|int";
         $rules['roadType']      = "required|numeric";
-        $rules['areaOfPlot']    = "required|numeric";
+        $rules['areaOfPlot']    = "required|numeric|not_in:0";
         $rules['isMobileTower'] = "required|bool";
         $rules['owner'] = "required|array";
         if (isset($this->owner) && $this->owner) {
@@ -94,7 +94,7 @@ class reqApplySaf extends FormRequest
                 $rules["floor.*.constructionType"]  =   "required|int|in:1,2,3";
                 $rules["floor.*.occupancyType"]     =   "required|int";
 
-                $rules["floor.*.buildupArea"]       =   "required|numeric";
+                $rules["floor.*.buildupArea"]       =   "required|numeric|not_in:0";
                 $rules["floor.*.dateFrom"]          =   "required|date|date_format:Y-m-d|before_or_equal:$mNowDate";
                 $rules["floor.*.dateUpto"]          =   "nullable|date|date_format:Y-m-d|before_or_equal:$mNowDate";
             }
@@ -112,7 +112,7 @@ class reqApplySaf extends FormRequest
             $rules['rwhDateFrom'] = 'required|date|date_format:Y-m-d|before_or_equal:$mNowDate';
 
         if (isset($this->assessmentType) && $this->assessmentType != 1 && $this->assessmentType != 5) {           // Holding No Required for Reassess,Mutation,Bifurcation,Amalgamation
-            $rules['holdingNo']         = "required|string";
+            $rules['previousHoldingId'] = "required|numeric";
         }
         $rules['zone']           = "required|int|in:1,2";
         if (isset($this->assessmentType) && $this->assessmentType == 1 || ($this->assessmentType == 3 && $this->isOwnerChanged)) {

@@ -109,7 +109,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('consumer/calculate/meter-fixed-reading', 'calculateMeterFixedReading');            // Admin
         Route::post('admin/consumer/add-fixed-rate', 'addFixedRate');           // Here                 // Admin / Not used
         Route::post('consumer/generate-memo', 'generateMemo');                  // Here                 // Admin / Citizen
-        Route::post('consumer/search-gov-conections', 'searchGovConsumers');    // Here                 // Admin / Not used
+        Route::post('consumer/search-fixed-connections', 'searchFixedConsumers');    // Here                 // Admin / Not used
         Route::post('check-doc', 'checkDoc'); // testing document service
 
         # Deactivation

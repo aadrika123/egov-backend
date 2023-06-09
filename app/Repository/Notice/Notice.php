@@ -723,7 +723,7 @@ use Barryvdh\DomPDF\Facade\PDF;
                 $whatsapp2=(Whatsapp_Send($noticeData->mobile_no,"trn_2_var",
                 ["conten_type"=>"text",
                     [
-                        "https://modernulb.com/RMCDMC/getImageLink.php?path=RANCHI/water_consumer_deactivation/26dd0dbc6e3f4c8043749885523d6a25.pdf",
+                        "https://www.smartulb.co.in/RMCDMC/getImageLink.php?path=RANCHI/water_consumer_deactivation/26dd0dbc6e3f4c8043749885523d6a25.pdf",
                         "notice.pdf"
                     ]
                 ]));
