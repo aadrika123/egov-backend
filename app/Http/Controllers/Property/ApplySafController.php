@@ -250,11 +250,11 @@ class ApplySafController extends Controller
         $assessmentType = $req->assessmentType;
 
         if (in_array($assessmentType, $this->_demandAdjustAssessmentTypes)) {           // Reassessment,Mutation and Others
-            $propertyDtls = $mPropProperty->getPropertyId($req->holdingNo);             // Need to be changed during Reassessment,Mutation
-            if (collect($propertyDtls)->isEmpty())
+            $property = $mPropProperty->getPropById($req->previousHoldingId);
+            if (collect($property)->isEmpty())
                 throw new Exception("Property Not Found For This Holding");
-
-            $propId = $propertyDtls->id;
+            $req->holdingNo = $property->new_holding_no ?? $property->holding_no;
+            $propId = $property->id;
             $req->merge([
                 'hasPreviousHoldingNo' => true,
                 'previousHoldingId' => $propId
@@ -268,6 +268,7 @@ class ApplySafController extends Controller
             }
         }
 
+        // Amalgamation
         if (in_array($assessmentType, ["Amalgamation"])) {
             $previousHoldingIds = array();
             $previousHoldingLists = array();

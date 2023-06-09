@@ -30,7 +30,7 @@ class reqApplySaf extends FormRequest
         $userType = auth()->user()->user_type ?? 'Citizen';
         $mNowDate     = Carbon::now()->format("Y-m-d");
         $mNowDateYm   = Carbon::now()->format("Y-m");
-        $religiousTrustUsageType = "42";
+        $religiousTrustUsageType = "43";
 
         if ($userType == 'Citizen')
             $rules['ulbId'] = "required|int";
@@ -112,7 +112,7 @@ class reqApplySaf extends FormRequest
             $rules['rwhDateFrom'] = 'required|date|date_format:Y-m-d|before_or_equal:$mNowDate';
 
         if (isset($this->assessmentType) && $this->assessmentType != 1 && $this->assessmentType != 5) {           // Holding No Required for Reassess,Mutation,Bifurcation,Amalgamation
-            $rules['holdingNo']         = "required|string";
+            $rules['previousHoldingId'] = "required|numeric";
         }
         $rules['zone']           = "required|int|in:1,2";
         if (isset($this->assessmentType) && $this->assessmentType == 1 || ($this->assessmentType == 3 && $this->isOwnerChanged)) {
