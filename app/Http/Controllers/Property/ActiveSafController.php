@@ -1564,8 +1564,10 @@ class ActiveSafController extends Controller
             $mPropRazorPayRequest = new PropRazorpayRequest();
             $postRazorPayPenaltyRebate = new PostRazorPayPenaltyRebate;
             $req->merge(['departmentId' => 1]);
+            $safDetails = PropActiveSaf::findOrFail($req->id);
+            if ($safDetails->payment_status == 1)
+                throw new Exception("Payment already done");
             $calculateSafById = $this->calculateSafBySafId($req);
-            $safDetails = PropActiveSaf::find($req->id);
             $demands = $calculateSafById->original['data']['demand'];
             $details = $calculateSafById->original['data']['details'];
             $totalAmount = $demands['payableAmount'];
@@ -1680,11 +1682,13 @@ class ActiveSafController extends Controller
             $previousHoldingDeactivation = new PreviousHoldingDeactivation;
             $postSafPropTaxes = new PostSafPropTaxes;
 
+            $activeSaf = PropActiveSaf::findOrFail($req['id']);
+            if ($activeSaf->payment_status == 1)
+                throw new Exception("Payment Already Done");
             $userId = $req['userId'];
             $safId = $req['id'];
             $orderId = $req['orderId'];
             $paymentId = $req['paymentId'];
-            $activeSaf = PropActiveSaf::findOrFail($req['id']);
 
             if ($activeSaf->payment_status == 1)
                 throw new Exception("Payment Already Done");
@@ -2085,11 +2089,15 @@ class ActiveSafController extends Controller
     {
         try {
             $propTransaction = new PropTransaction();
-            $userId = auth()->user()->id;
-            $propTrans = $propTransaction->getPropTransByUserId($userId);
+            $auth = authUser();
+            $userId = $auth->id;
+            if ($auth->user_type == 'Citizen')
+                $propTrans = $propTransaction->getPropTransByCitizenId($userId);
+            else
+                $propTrans = $propTransaction->getPropTransByUserId($userId);               // Get Transaction History for Citizen or User
             return responseMsgs(true, "Transactions History", remove_null($propTrans), "010117", "1.0", "265ms", "POST", $req->deviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "010117", "1.0", "265ms", "POST", $req->deviceId);
+            return responseMsgs(false, $e->getMessage(), "", "010117", "1.0", responseTime(), "POST", $req->deviceId);
         }
     }
 
