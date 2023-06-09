@@ -794,9 +794,9 @@ class HoldingTaxController extends Controller
             $onlineRebate = $rebatePenalMstrs->where('id', 3)->first()['value'];
 
             $propTrans = $mTransaction->getPropByTranPropId($req->tranNo);
-
             $reqPropId = new Request(['propertyId' => $propTrans->property_id]);
             $propProperty = $safController->getPropByHoldingNo($reqPropId)->original['data'];
+            return $propProperty;
             if (empty($propProperty))
                 throw new Exception("Property Not Found");
 
