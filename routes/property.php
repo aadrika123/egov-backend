@@ -103,7 +103,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
        | Serial No : 04
    */
   Route::controller(SafCalculatorController::class)->group(function () {
-    Route::post('saf-calculation', 'calculateSaf');
+    // Route::post('saf-calculation', 'calculateSaf');
   });
 
   /**
