@@ -2866,12 +2866,12 @@ class Trade implements ITrade
             $role_id = 0;
             $refWorkflowId = $this->_WF_MASTER_Id;
             $role = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $refWorkflowId);
-            if ($role) {
-                $role_id = $role->role_id;
+            if ($role && auth()->user()->gettable()=='users') {
+                $role_id = $role->role_id??0;
             }
 
             $rules["comment"] = "required|min:10|regex:$mRegex";
-            $rules["id"] = "required||digits_between:1,9223372036854775807";
+            $rules["applicationId"] = "required||digits_between:1,9223372036854775807";
             $validator = Validator::make($request->all(), $rules,);
 
             if ($validator->fails()) 
@@ -2891,7 +2891,14 @@ class Trade implements ITrade
             $metaReqs['refTableDotId'] = 'active_trade_licences';
             $metaReqs['refTableIdValue'] = $refLicense->id;
             $metaReqs['senderRoleId'] = $role_id;
-            $metaReqs['citizenId'] = $userId;
+            if(auth()->user()->gettable()=='users')
+            {
+                $metaReqs['user_id'] = $userId;
+            }
+            else
+            {
+                $metaReqs['citizenId'] = $userId;
+            }
             $metaReqs['ulb_id'] = $refLicense->ulb_id;
             $request->request->add($metaReqs);
 
