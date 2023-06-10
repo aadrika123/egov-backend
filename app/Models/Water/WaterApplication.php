@@ -63,11 +63,11 @@ class WaterApplication extends Model
             $saveNewApplication->prop_id = $propertyId->id;
             $saveNewApplication->holding_no = $req->holdingNo;
         }
-        if (!is_null($req->saf_no)) {
+        if (!is_null($req->safNo)) {
             $safId = new PropActiveSaf();
-            $safId = $safId->getSafId($req->saf_no);
+            $safId = $safId->getSafId($req->safNo);
             $saveNewApplication->saf_id = $safId->id;
-            $saveNewApplication->saf_no = $req->saf_no;
+            $saveNewApplication->saf_no = $req->safNo;
         }
 
         switch ($saveNewApplication->user_type) {
@@ -576,8 +576,7 @@ class WaterApplication extends Model
             ->groupBy(
                 'water_applications.id',
                 'water_applicants.application_id',
-            )
-            ->get();
+            );
     }
 
     /**

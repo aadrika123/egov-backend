@@ -1260,8 +1260,8 @@ class NewConnectionController extends Controller
     {
         $request->validate([
             'connectionThrough' => 'required|int|in:1,2',
-            'id' => 'required',
-            'ulbId' => 'required'
+            'id'                => 'required',
+            'ulbId'             => 'required'
         ]);
         try {
             $mPropProperty          = new PropProperty();
@@ -1286,12 +1286,12 @@ class NewConnectionController extends Controller
                         break;
                     }
                     # collecting all data 
-                    $floorDetails = $mPropFloor->getFloorsByPropId($application['id']);
-                    $builtupArea = collect($floorDetails)->sum('builtup_area');
-                    $areaInSqft['areaInSqFt'] = $builtupArea;
-                    $propUsageType = $this->getPropUsageType($request, $application['id']);
-                    $occupancyOwnerType = collect($mPropFloor->getOccupancyType($application['id'], $refTenanted));
-                    $owners['owners'] = collect($mPropOwner->getOwnerByPropId($application['id']));
+                    $floorDetails               = $mPropFloor->getFloorsByPropId($application['id']);
+                    $builtupArea                = collect($floorDetails)->sum('builtup_area');
+                    $areaInSqft['areaInSqFt']   = $builtupArea;
+                    $propUsageType              = $this->getPropUsageType($request, $application['id']);
+                    $occupancyOwnerType         = collect($mPropFloor->getOccupancyType($application['id'], $refTenanted));
+                    $owners['owners']           = collect($mPropOwner->getOwnerByPropId($application['id']));
 
                     # merge all data for return 
                     $details = $application->merge($areaInSqft)->merge($owners)->merge($occupancyOwnerType)->merge($propUsageType);
@@ -1310,11 +1310,11 @@ class NewConnectionController extends Controller
                         break;
                     }
                     # collecting all data 
-                    $floorDetails = $mPropActiveSafsFloor->getSafFloorsBySafId($application['id']);
-                    $areaInSqft['areaInSqFt'] = collect($floorDetails)->sum('builtup_area');
-                    $safUsageType = $this->getPropUsageType($request, $application['id']);
-                    $occupancyOwnerType = collect($mPropActiveSafsFloor->getOccupancyType($application['id'], $refTenanted));
-                    $owners['owners'] = collect($mPropActiveSafOwners->getOwnerDtlsBySafId($application['id']));
+                    $floorDetails               = $mPropActiveSafsFloor->getSafFloorsBySafId($application['id']);
+                    $areaInSqft['areaInSqFt']   = collect($floorDetails)->sum('builtup_area');
+                    $safUsageType               = $this->getPropUsageType($request, $application['id']);
+                    $occupancyOwnerType         = collect($mPropActiveSafsFloor->getOccupancyType($application['id'], $refTenanted));
+                    $owners['owners']           = collect($mPropActiveSafOwners->getOwnerDtlsBySafId($application['id']));
 
                     # merge all data for return 
                     $details = $application->merge($areaInSqft)->merge($owners)->merge($occupancyOwnerType)->merge($safUsageType);
@@ -1409,10 +1409,10 @@ class NewConnectionController extends Controller
 
         switch ($key) {
             case ('1'): # For holdingNo
-                $propertyDetails = $mPropProperty->getPropByApartmentId($apartmentId)->get();
-                $propertyIds = collect($propertyDetails)->pluck('id');
-                $floorDetails = $mPropFloor->getAppartmentFloor($propertyIds)->get();
-                $totalBuildupArea = collect($floorDetails)->sum('builtup_area');
+                $propertyDetails    = $mPropProperty->getPropByApartmentId($apartmentId)->get();    # here 
+                $propertyIds        = collect($propertyDetails)->pluck('id');
+                $floorDetails       = $mPropFloor->getAppartmentFloor($propertyIds)->get();
+                $totalBuildupArea   = collect($floorDetails)->sum('builtup_area');
 
                 $returnData['areaInSqFt'] = $totalBuildupArea;
                 $returnData['usageType'][] = [
@@ -1425,10 +1425,10 @@ class NewConnectionController extends Controller
                 break;
 
             case ('2'): # For SafNo
-                $safDetails = $mPropActiveSaf->getSafByApartmentId($apartmentId)->get(); # here
-                $safIds = collect($safDetails)->pluck('id');
-                $floorDetails = $mPropActiveSafsFloor->getSafAppartmentFloor($safIds)->get();
-                $totalBuildupArea = collect($floorDetails)->sum('builtup_area');
+                $safDetails         = $mPropActiveSaf->getSafByApartmentId($apartmentId)->get();    # here
+                $safIds             = collect($safDetails)->pluck('id');
+                $floorDetails       = $mPropActiveSafsFloor->getSafAppartmentFloor($safIds)->get();
+                $totalBuildupArea   = collect($floorDetails)->sum('builtup_area');
 
                 $returnData['areaInSqFt'] = $totalBuildupArea;
                 $returnData['usageType'][] = [

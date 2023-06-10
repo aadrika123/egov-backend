@@ -385,7 +385,7 @@ class  PropActiveSaf extends Model
             )
             ->join('ulb_ward_masters as u', 's.ward_mstr_id', '=', 'u.id')
             ->leftJoin('ulb_ward_masters as u1', 's.new_ward_mstr_id', '=', 'u1.id')
-            ->where('status', 1)
+            ->where('s.status', 1)
             ->first();
     }
 

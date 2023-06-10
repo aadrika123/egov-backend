@@ -23,19 +23,26 @@ class newApplyRules extends FormRequest
      */
     public function rules()
     {
-        $rules['connectionTypeId'] = 'required|int|in:1,2';
-        $rules['propertyTypeId'] = 'required|int|in:1,2,3,4,6,7';
-        $rules['ownerType'] = 'required|int|in:1,2';
-        $rules['wardId'] = 'required|int';
-        $rules['areaSqft'] = 'required|numeric';
-        $rules['pin'] = "required|digits:6|regex:/^([0-9\s\-\+\(\)]*)$/|";
-        $rules['connection_through'] = 'required|int|in:1,2';
-        $rules['ulbId'] = 'required|int';
-        $rules['owners'] = "required|array";
+        $rules['connectionTypeId']      = 'required|int|in:1,2';
+        $rules['propertyTypeId']        = 'required|int|in:1,2,3,4,6,7';
+        $rules['ownerType']             = 'required|int|in:1,2';
+        $rules['wardId']                = 'required|int';
+        $rules['areaSqft']              = 'required|numeric';
+        $rules['pin']                   = "required|digits:6|regex:/^([0-9\s\-\+\(\)]*)$/|";
+        $rules['connection_through']    = 'required|int|in:1,2';
+        $rules['ulbId']                 = 'required|int';
+        $rules['owners']                = "required|array";
+
         if (isset($this->owners) && $this->owners) {
-            $rules["owners.*.ownerName"] = "required";
-            $rules["owners.*.mobileNo"] = "required|digits:10|regex:/[0-9]{10}/";
-            $rules["owners.*.email"] = "nullable|email";
+            $rules["owners.*.ownerName"]    = "required";
+            $rules["owners.*.mobileNo"]     = "required|digits:10|regex:/[0-9]{10}/";
+            $rules["owners.*.email"]        = "nullable|email";
+        }
+        if (isset($this->connection_through) && $this->connection_through == 1) {
+            $rules['holdingNo'] = 'required|';
+        }
+        if (isset($this->connection_through) && $this->connection_through == 2) {
+            $rules['safNo'] = 'required|';
         }
         return $rules;
     }
