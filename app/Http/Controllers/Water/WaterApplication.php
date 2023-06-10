@@ -82,12 +82,13 @@ class WaterApplication extends Controller
             if (!in_array($user->user_type, ['JSK', 'TC'])) {
                 $canView = false;
             }
-            $mWaterApplication = new WaterWaterApplication();
-            $mWaterTran = new WaterTran();
-            $mWfWorkflow = new WfWorkflow();
-            $refConnectionType = Config::get("waterConstaint.CONNECTION_TYPE");
-            $wfMstId = Config::get("workflow-constants.WATER_MASTER_ID");
-            $applicationDetails = $mWaterApplication->getJskAppliedApplications();
+            $mWaterApplication  = new WaterWaterApplication();
+            $mWaterTran         = new WaterTran();
+            $mWfWorkflow        = new WfWorkflow();
+            $refConnectionType  = Config::get("waterConstaint.CONNECTION_TYPE");
+            $wfMstId            = Config::get("workflow-constants.WATER_MASTER_ID");
+
+            $applicationDetails = $mWaterApplication->getJskAppliedApplications()->get();
             $transactionDetails = $mWaterTran->tranDetailByDate();
             $workflow = $mWfWorkflow->getulbWorkflowId($wfMstId, $user->ulb_id);
             $metaRequest = new Request([
@@ -142,6 +143,7 @@ class WaterApplication extends Controller
             ];
 
             $returnData = [
+                'refNumber'             => 1,                               // Static
                 'canView'               => $canView ?? true,
                 'userDetails'           => $user,
                 'roleId'                => $roleDetails['wf_role_id'],
