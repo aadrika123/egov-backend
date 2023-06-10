@@ -72,13 +72,13 @@ class WaterApplication extends Model
 
         switch ($saveNewApplication->user_type) {
             case ('Citizen'):
-                $saveNewApplication->apply_from = "Online";
+                $saveNewApplication->apply_from = "Online";                                             // Static
                 if ($newConnectionCharges['conn_fee_charge']['amount'] == 0) {
                     $saveNewApplication->payment_status = 1;
                 }
                 break;
             case ('JSK'):
-                $saveNewApplication->apply_from = "JSK";
+                $saveNewApplication->apply_from = "JSK";                                                // Static
                 if ($newConnectionCharges['conn_fee_charge']['amount'] == 0) {
                     $saveNewApplication->payment_status = 1;
                 }

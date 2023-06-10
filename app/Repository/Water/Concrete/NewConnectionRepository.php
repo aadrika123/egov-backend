@@ -37,6 +37,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
+use Illuminate\Validation\Rules\Exists;
 use Nette\Utils\Random;
 
 /**
@@ -163,7 +164,7 @@ class NewConnectionRepository implements iNewConnection
             $mWaterApplicant->saveWaterApplicant($applicationId, $owners, null);
         }
         # water applicant in case of tenant
-        if (!is_null($tenant) || !empty($tenant)) {
+        if (!empty($tenant)) {
             foreach ($tenant as $tenants) {
                 $mWaterApplicant->saveWaterApplicant($applicationId, $tenants, $reftenant);
             }
@@ -171,7 +172,7 @@ class NewConnectionRepository implements iNewConnection
         # connection charges
         $connectionId = $mWaterConnectionCharge->saveWaterCharge($applicationId, $req, $newConnectionCharges);
         # water penalty
-        if (!is_null($installment)) {
+        if (!empty($installment)) {
             foreach ($installment as $installments) {
                 $mWaterPenaltyInstallment->saveWaterPenelty($applicationId, $installments, $connectionType, $connectionId);
             }
