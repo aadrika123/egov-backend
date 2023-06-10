@@ -23,6 +23,10 @@ return [
         "EO" => 10
     ],
 
+    "PARAM_IDS" => [
+        "WAPP" => 15,
+        "WCON" => 16
+    ],
     "ACCOUNT_DESCRIPTION" => "Water",
     "DEPARTMENT_SECTION" => "Revenue Section",
     "TOWARDS" => "Water Connection and Others",
