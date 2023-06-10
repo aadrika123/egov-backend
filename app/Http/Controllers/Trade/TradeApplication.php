@@ -310,11 +310,7 @@ class TradeApplication extends Controller
         }
         return $this->_REPOSITORY->readPaymentReceipt($id, $transectionId);
     }
-    # Serial No : 05 it to be remove after test
-    public function documentUpload(Request $request)
-    {
-        // return $this->_REPOSITORY->documentUpload($request);
-    }
+    
 
     # Serial No : 07
     public function documentVerify(Request $request)
