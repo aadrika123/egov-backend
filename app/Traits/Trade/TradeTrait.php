@@ -54,8 +54,7 @@ trait TradeTrait
 
     public function generatePropertyDetails($data)
     {
-        return new Collection([
-            // ['displayString' => 'Khata No.', 'key' => 'khataNo', 'value' => $data->address],
+        return new Collection([            
             ['displayString' => 'Application No', 'key' => 'applicationNo', 'value' => $data->application_no],
             ['displayString' => 'Licence For Years', 'key' => 'district', 'value' => $data->licence_for_years],
             ['displayString' => 'Holding No', 'key' => 'state', 'value' => $data->holding_no],
@@ -102,16 +101,22 @@ trait TradeTrait
 
     public function generateCardDetails($req, $ownerDetails)
     {
-        $owners = collect($ownerDetails)->implode('owner_name', ',');
-        return new Collection([
+        $owners = collect($ownerDetails)->implode('owner_name', ','); 
+        $data = new Collection([
             ['displayString' => 'Ward No', 'key' => 'wardNo', 'value' => $req->ward_no],
             ['displayString' => 'Owner Name', 'key' => 'ownerName', 'value' => $owners],
-            ['displayString' => 'Property Type', 'key' => 'propertyType', 'value' => $req->property_type],
             ['displayString' => 'Application Type', 'key' => 'applicationType', 'value' => $req->application_type],
             ['displayString' => 'Ownership Type', 'key' => 'ownershipType', 'value' => $req->ownership_type],
             ['displayString' => 'Apply-Date', 'key' => 'applyDate', 'value' => $req->application_date],
             ['displayString' => 'Area In Sqft.', 'key' => 'area', 'value' => $req->area_in_sqft],
         ]);
+        if(trim($req->license_no))
+        {
+            $data->push(
+                ['displayString' => 'License No', 'key' => 'LicenseNo', 'value' => $req->license_no]
+            );
+        }
+        return $data;
     }
 
 
