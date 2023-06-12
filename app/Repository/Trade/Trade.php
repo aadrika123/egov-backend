@@ -404,8 +404,7 @@ class Trade implements ITrade
                 return responseMsg(true, $mAppNo, $res);
             }
         } catch (Exception $e) {
-            DB::rollBack();
-            // dd($e->getMessage(),$e->getFile(),$e->getLine());          
+            DB::rollBack();                 
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
