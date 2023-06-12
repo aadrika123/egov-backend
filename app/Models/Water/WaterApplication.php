@@ -57,13 +57,13 @@ class WaterApplication extends Model
         $saveNewApplication->area_sqmt              = sqFtToSqMt($req->areaSqft);
 
         # condition entry 
-        if (!is_null($req->holdingNo)) {
+        if (!is_null($req->holdingNo) && $req->connection_through == 1) {
             $propertyId = new PropProperty();
             $propertyId = $propertyId->getPropertyId($req->holdingNo);
             $saveNewApplication->prop_id = $propertyId->id;
             $saveNewApplication->holding_no = $req->holdingNo;
         }
-        if (!is_null($req->safNo)) {
+        if (!is_null($req->safNo) && $req->connection_through == 2) {
             $safId = new PropActiveSaf();
             $safId = $safId->getSafId($req->safNo);
             $saveNewApplication->saf_id = $safId->id;

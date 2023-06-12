@@ -267,6 +267,7 @@ class WaterPaymentController extends Controller
             $mWaterApprovalApplicationDetail    = new WaterApprovalApplicationDetail();
             $mWaterChequeDtl                    = new WaterChequeDtl();
             $mWaterTran                         = new WaterTran();
+            $mWaterTranFineRebate               = new WaterTranFineRebate();
 
             $mTowards           = $this->_towards;
             $mAccDescription    = $this->_accDescription;
@@ -297,6 +298,9 @@ class WaterPaymentController extends Controller
                 $penaltyIds = explode(',', $transactionDetails->penalty_ids);
                 $refPenalty = $mWaterPenaltyInstallment->getPenaltyByArrayOfId($penaltyIds);
                 $totalPenaltyAmount = collect($refPenalty)->sum('balance_amount');
+
+                # check and find for rebate
+                // $refRebaterDetails = $mWaterTranFineRebate->
             }
 
             # Transaction Date

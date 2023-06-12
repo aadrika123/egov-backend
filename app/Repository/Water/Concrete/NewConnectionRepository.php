@@ -113,6 +113,7 @@ class NewConnectionRepository implements iNewConnection
         $mWaterConnectionCharge     = new WaterConnectionCharge();
         $mWaterTran                 = new WaterTran();
         $waterTrack                 = new WorkflowTrack();
+        $refParamId                 = Config::get('waterConstaint.PARAM_IDS');
 
         # Connection Type 
         switch ($req->connectionTypeId) {
@@ -152,11 +153,11 @@ class NewConnectionRepository implements iNewConnection
         $waterFeeId             = $newConnectionCharges['water_fee_mstr_id'];
         $totalConnectionCharges = $newConnectionCharges['conn_fee_charge']['amount'];
 
-        # Generating Application No
-        $now = Carbon::now();
-        $applicationNo = 'APP' . $now->getTimeStamp() . rand(5, 5);
-
         DB::beginTransaction();
+        # Generating Application No
+        $idGeneration   = new PrefixIdGenerator($refParamId["WAPP"], $ulbId);
+        $applicationNo  = $idGeneration->generate();
+
         # water application
         $applicationId = $objNewApplication->saveWaterApplication($req, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId, $ulbId, $applicationNo, $waterFeeId, $newConnectionCharges);
         # water applicant
@@ -245,7 +246,7 @@ class NewConnectionRepository implements iNewConnection
     public function checkVacantLand($req, $vacantLand)
     {
         switch ($req) {
-            case (!is_null($req->safNo)):
+            case (!is_null($req->safNo) && $req->connection_through == 2):                           // Static
                 $isExist = $this->checkPropertyExist($req);
                 if ($isExist) {
                     $propetySafCheck = PropActiveSaf::select('prop_type_mstr_id')
@@ -259,7 +260,7 @@ class NewConnectionRepository implements iNewConnection
                     return responseMsg(false, "Saf Not Exist!", $req->safNo);
                 }
                 break;
-            case (!is_null($req->holdingNo)):
+            case (!is_null($req->holdingNo) && $req->connection_through == 1):
                 $isExist = $this->checkPropertyExist($req);
                 if ($isExist) {
                     $propetyHoldingCheck = PropProperty::select('prop_type_mstr_id')
@@ -289,7 +290,7 @@ class NewConnectionRepository implements iNewConnection
     public function checkPropertyExist($req)
     {
         switch ($req) {
-            case (!is_null($req->safNo)): {
+            case (!is_null($req->safNo) && $req->connection_through == 2): {
                     $safCheck = PropActiveSaf::select(
                         'id',
                         'saf_no'
@@ -301,7 +302,7 @@ class NewConnectionRepository implements iNewConnection
                         return true;
                     }
                 }
-            case (!is_null($req->holdingNo)): {
+            case (!is_null($req->holdingNo) && $req->connection_through == 1): {
                     $holdingCheck = PropProperty::select(
                         'id',
                         'new_holding_no'
