@@ -271,7 +271,8 @@ class SafDocController extends Controller
             'workflowId' => $refSafs->workflow_id,
             'moduleId' => 1
         ];
-        $refDocList = $mWfActiveDocument->getDocsByActiveId($refReq);
+        $req = new Request($refReq);
+        $refDocList = $mWfActiveDocument->getDocsByActiveId($req);
         return $this->isAllDocs($applicationId, $refDocList, $refSafs);
     }
 
