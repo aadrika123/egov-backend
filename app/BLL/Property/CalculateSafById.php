@@ -44,6 +44,7 @@ class CalculateSafById
     public $_firstOwner;
     public $_mPropActiveSafOwners;
     private $_adjustmentAssessmentTypes;
+    public bool $_isTcVerification = false;
 
     public function __construct()
     {
@@ -301,6 +302,11 @@ class CalculateSafById
                 $item['adjust_amount'] = 0;
             else
                 $item['adjust_amount'] = $demand->amount - $demand->balance;
+
+            if ($this->_isTcVerification == false) {
+                if ($item['adjust_amount'] > $item['amount'])                           // If the adjust amount is going high 
+                    $item['adjust_amount'] = $item['amount'];
+            }
 
             $itemAmt = $item['amount'] ?? $item['totalTax'];
             $item['balance'] = roundFigure($itemAmt - $item['adjust_amount']);

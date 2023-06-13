@@ -1061,6 +1061,7 @@ class ActiveSafController extends Controller
                 'plot_no',
                 'village_mauja_name',
                 'road_type_mstr_id',
+                'road_width',
                 'area_of_plot',
                 'prop_address',
                 'prop_city',
