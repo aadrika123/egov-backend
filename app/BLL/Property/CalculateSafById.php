@@ -302,10 +302,10 @@ class CalculateSafById
             else
                 $item['adjust_amount'] = $demand->amount - $demand->balance;
 
-            if ($item['adjust_amount'] > $item['amount'])                           // If the adjust amount is going high 
-                $item['adjust_amount'] = $item['amount'];
+            $itemAmt = $item['amount'] ?? $item['totalTax'];                 // In Case of TC key is Total Tax
+            if ($item['adjust_amount'] > $itemAmt)                           // If the adjust amount is going high 
+                $item['adjust_amount'] = $itemAmt;
 
-            $itemAmt = $item['amount'] ?? $item['totalTax'];
             $item['balance'] = roundFigure($itemAmt - $item['adjust_amount']);
             if ($item['balance'] == 0)
                 $item['onePercPenaltyTax'] = 0;
