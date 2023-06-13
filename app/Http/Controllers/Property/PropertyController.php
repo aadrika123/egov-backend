@@ -60,6 +60,8 @@ class PropertyController extends Controller
                 throw new Exception('Property Not Found');
             $propOwners = $mPropOwner->getOwnerByPropId($propDtl->id);
             $firstOwner = collect($propOwners)->first();
+            if (!$firstOwner)
+                throw new Exception('Owner Not Found');
             $ownerMobile = $firstOwner->mobileNo;
 
             $myRequest = new \Illuminate\Http\Request();

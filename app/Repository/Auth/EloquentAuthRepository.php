@@ -477,49 +477,38 @@ class EloquentAuthRepository implements AuthRepository
      */
     public function addNotification($req)
     {
-        $user = authUser();
-        $userId = $user->id;
-        $ulbId = $user->ulb_id;
-        $citizenId = $req['citizenId'];
-        $muserNotification = new UserNotification();
-        $mMirrorUserNotification = new MirrorUserNotification();
-        $addNotification = new AddNotification();
+        try {
+            $user = authUser();
+            $userId = $user->id;
+            $ulbId = $user->ulb_id;
+            $citizenId = $req['citizenId'];
+            $muserNotification = new UserNotification();
+            $mMirrorUserNotification = new MirrorUserNotification();
+            $addNotification = new AddNotification();                  #defining BLL
 
-        $mreq = new Request([
-            "user_id"       => $req['userId'] ?? null,
-            "citizen_id"    => $req['citizenId'] ?? null,
-            "notification"  => $req['notification'] ?? null,
-            "send_by"       => $req['sender'] ?? null,
-            "category"      => $req['category'] ?? null,
-            "module_id"     => $req['moduleId'] ?? null,
-            "event_id"      => $req['eventId'] ?? null,
-            "ephameral"     => $req['ephameral'] ?? null,
-            "require_acknowledgment" => $req['requireAcknowledgment'] ?? null,
-            "sender_id"     => $userId ?? null,
-            "ulb_id"        => $req['ulbId'] ?? null,
-            "generation_time" => Carbon::now(),
-            "expected_delivery_time" => null,
-            "created_at" => Carbon::now(),
-        ]);
-        $id = $muserNotification->addNotification($mreq);
-        $addNotification->notificationAddition($mreq);           #calling BLL
+            $mreq = new Request([
+                "user_id"       => $req['userId'] ?? null,
+                "citizen_id"    => $req['citizenId'] ?? null,
+                "notification"  => $req['notification'] ?? null,
+                "send_by"       => $req['sender'] ?? null,
+                "category"      => $req['category'] ?? null,
+                "module_id"     => $req['moduleId'] ?? null,
+                "event_id"      => $req['eventId'] ?? null,
+                "ephameral"     => $req['ephameral'] ?? null,
+                "require_acknowledgment" => $req['requireAcknowledgment'] ?? null,
+                "sender_id"     => $userId ?? null,
+                "ulb_id"        => $req['ulbId'] ?? null,
+                "generation_time" => Carbon::now(),
+                "expected_delivery_time" => null,
+                "created_at" => Carbon::now(),
+            ]);
+            $id = $muserNotification->addNotification($mreq);
+            $addNotification->notificationAddition($mreq, $id);           #calling BLL
 
-        if ($citizenId) {
-            $data = $mMirrorUserNotification->mirrorNotification()
-                ->where('citizen_id', $citizenId)
-                ->get();
-        } else
-            $data = $mMirrorUserNotification->mirrorNotification()
-                ->where('user_id', $userId)
-                ->get();
-
-        // if (collect($data)->count() < 10)
-        //     $this->addMirrorNotification($mreq, $id, $user);
-
-        // if (collect($data)->count() > 10)
-        $this->updateMirrorNotification($mreq, $id, $user);
-
-        return responseMsgs(true, "Notificationn Addedd", '', "010108", "1.0", "", "POST", "");
+            return responseMsgs(true, "Notificationn Addedd", '', "010108", "1.0", "", "POST", "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), '', "010108", "1.0", "", "POST", "");
+        }
     }
 
     /**

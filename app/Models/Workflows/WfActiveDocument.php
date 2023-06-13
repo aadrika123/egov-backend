@@ -352,6 +352,23 @@ class WfActiveDocument extends Model
             ->get();
     }
 
+    /**
+     * | Get Verified Documents
+     */
+    public function getVerifiedDocsByActiveId(array $req)
+    {
+        return WfActiveDocument::where('active_id', $req['activeId'])
+            ->select(
+                'doc_code',
+                'owner_dtl_id',
+                'verify_status'
+            )
+            ->where('workflow_id', $req['workflowId'])
+            ->where('module_id', $req['moduleId'])
+            ->where('verify_status', 1)
+            ->where('status', 1)
+            ->get();
+    }
 
     /**
      * | Deactivate the Rejected Document 
