@@ -310,11 +310,7 @@ class TradeApplication extends Controller
         }
         return $this->_REPOSITORY->readPaymentReceipt($id, $transectionId);
     }
-    # Serial No : 05 it to be remove after test
-    public function documentUpload(Request $request)
-    {
-        // return $this->_REPOSITORY->documentUpload($request);
-    }
+    
 
     # Serial No : 07
     public function documentVerify(Request $request)
@@ -489,6 +485,13 @@ class TradeApplication extends Controller
     # Serial No
     public function backToCitizen(Request $req)
     {
+        $user = Auth()->user();
+        $user_id = $user->id;
+        $ulb_id = $user->ulb_id;
+
+        $refWorkflowId = $this->_WF_MASTER_Id;
+        $role = $this->_COMMON_FUNCTION->getUserRoll($user_id, $ulb_id, $refWorkflowId);
+
         $req->validate([
             'applicationId' => 'required|digits_between:1,9223372036854775807',
             'workflowId' => 'required|integer',
@@ -497,8 +500,17 @@ class TradeApplication extends Controller
         ]);
 
         try {
+
             if (!$this->_COMMON_FUNCTION->checkUsersWithtocken("users")) {
                 throw new Exception("Citizen Not Allowed");
+            }
+            if (!$req->senderRoleId) 
+            {
+                $req->request->add(["senderRoleId" => $role->role_id ?? 0]);
+            }
+            if (!$req->receiverRoleId) 
+            {
+                $req->request->add(["receiverRoleId" => $role->backward_role_id ?? 0]);               
             }
             $activeLicence = ActiveTradeLicence::find($req->applicationId);
             $track = new WorkflowTrack();
@@ -517,12 +529,14 @@ class TradeApplication extends Controller
 
             $metaReqs['moduleId'] = $this->_MODULE_ID;
             $metaReqs['workflowId'] = $activeLicence->workflow_id;
-            $metaReqs['refTableDotId'] = 'active_trade_licences.id';
+            $metaReqs['refTableDotId'] = $this->_REF_TABLE;
             $metaReqs['refTableIdValue'] = $req->applicationId;
             $metaReqs['trackDate'] = $lastworkflowtrack && $lastworkflowtrack->forward_date ? ($lastworkflowtrack->forward_date . " " . $lastworkflowtrack->forward_time) : Carbon::now()->format('Y-m-d H:i:s');
             $metaReqs['forwardDate'] = Carbon::now()->format('Y-m-d');
             $metaReqs['forwardTime'] = Carbon::now()->format('H:i:s');
             $metaReqs['verificationStatus'] = 2;
+            $metaReqs['user_id'] = $user_id;
+            $metaReqs['ulb_id'] = $ulb_id;
             $req->request->add($metaReqs);
             $track->saveTrack($req);
 
@@ -665,7 +679,7 @@ class TradeApplication extends Controller
             $lastworkflowtrack = $track->select("*")
                 ->where('ref_table_id_value', $request->applicationId)
                 ->where('module_id', $this->_MODULE_ID)
-                ->where('ref_table_dot_id', "active_trade_licences")
+                ->where('ref_table_dot_id', $this->_REF_TABLE)
                 ->whereNotNull('sender_role_id')
                 ->orderBy("track_date", 'DESC')
                 ->first();
@@ -673,7 +687,7 @@ class TradeApplication extends Controller
 
             $metaReqs['moduleId'] = $this->_MODULE_ID;
             $metaReqs['workflowId'] = $licence->workflow_id;
-            $metaReqs['refTableDotId'] = 'active_trade_licences';
+            $metaReqs['refTableDotId'] = $this->_REF_TABLE;
             $metaReqs['refTableIdValue'] = $request->applicationId;
             $metaReqs['user_id'] = $user_id;
             $metaReqs['ulb_id'] = $ulb_id;

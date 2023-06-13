@@ -57,28 +57,28 @@ class WaterApplication extends Model
         $saveNewApplication->area_sqmt              = sqFtToSqMt($req->areaSqft);
 
         # condition entry 
-        if (!is_null($req->holdingNo)) {
+        if (!is_null($req->holdingNo) && $req->connection_through == 1) {
             $propertyId = new PropProperty();
             $propertyId = $propertyId->getPropertyId($req->holdingNo);
             $saveNewApplication->prop_id = $propertyId->id;
             $saveNewApplication->holding_no = $req->holdingNo;
         }
-        if (!is_null($req->saf_no)) {
+        if (!is_null($req->safNo) && $req->connection_through == 2) {
             $safId = new PropActiveSaf();
-            $safId = $safId->getSafId($req->saf_no);
+            $safId = $safId->getSafId($req->safNo);
             $saveNewApplication->saf_id = $safId->id;
-            $saveNewApplication->saf_no = $req->saf_no;
+            $saveNewApplication->saf_no = $req->safNo;
         }
 
         switch ($saveNewApplication->user_type) {
             case ('Citizen'):
-                $saveNewApplication->apply_from = "Online";
+                $saveNewApplication->apply_from = "Online";                                             // Static
                 if ($newConnectionCharges['conn_fee_charge']['amount'] == 0) {
                     $saveNewApplication->payment_status = 1;
                 }
                 break;
             case ('JSK'):
-                $saveNewApplication->apply_from = "JSK";
+                $saveNewApplication->apply_from = "JSK";                                                // Static
                 if ($newConnectionCharges['conn_fee_charge']['amount'] == 0) {
                     $saveNewApplication->payment_status = 1;
                 }
@@ -576,8 +576,7 @@ class WaterApplication extends Model
             ->groupBy(
                 'water_applications.id',
                 'water_applicants.application_id',
-            )
-            ->get();
+            );
     }
 
     /**

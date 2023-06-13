@@ -117,7 +117,7 @@ class Report implements IReport
                             trade_transactions.payment_mode AS transaction_mode,
                             trade_transactions.paid_amount,
                             (
-                                CASE WHEN upper(trade_transactions.payment_mode) NOT IN('ONLINE','ONL') THEN users.user_name 
+                                CASE WHEN upper(trade_transactions.payment_mode) NOT IN('ONLINE','ONL') THEN users.name 
                                 ELSE 'N/A' END
                             ) AS emp_name,
                             trade_transactions.tran_no,
@@ -335,7 +335,7 @@ class Report implements IReport
                     DB::raw("sum(trade_transactions.paid_amount) as amount, 
                             count(trade_transactions.id) total_no,
                             users.id as user_id, 
-                            case when users.id  is null then 'Online' else users.user_name 
+                            case when users.id  is null then 'Online' else users.name 
                             end as user_name ")
                     )
                     ->LEFTJOIN("users",function($join){
@@ -360,7 +360,7 @@ class Report implements IReport
             {
                 $data=$data->where("trade_transactions.ulb_id",$ulbId);
             }
-            $data=$data->groupBy(["users.id", "users.user_name"]);
+            $data=$data->groupBy(["users.id", "users.name"]);
             
             $perPage = $request->perPage ? $request->perPage : 10;
             $paginator = $data->paginate($perPage);            
@@ -1569,8 +1569,8 @@ class Report implements IReport
                         select wf_role_id,user_id,user_name,role_name,concat('{',ward_ids,'}') as ward_ids
                         from (
                             select wf_roleusermaps.wf_role_id,wf_roleusermaps.user_id,
-                            users.user_name, wf_roles.role_name,
-                            string_agg(wf_ward_users.ward_id::text,',') as ward_ids
+                                users.name as user_name, wf_roles.role_name,
+                                string_agg(wf_ward_users.ward_id::text,',') as ward_ids
                             from wf_roleusermaps 
                             join wf_roles on wf_roles.id = wf_roleusermaps.wf_role_id
                                 AND wf_roles.status =1
@@ -1578,7 +1578,8 @@ class Report implements IReport
                             left join wf_ward_users on wf_ward_users.user_id = wf_roleusermaps.user_id and wf_ward_users.is_suspended = false
                             where wf_roleusermaps.wf_role_id =$roleId
                                 AND wf_roleusermaps.is_suspended = false
-                            group by wf_roleusermaps.wf_role_id,wf_roleusermaps.user_id,users.user_name,wf_roles.role_name
+                            group by wf_roleusermaps.wf_role_id,wf_roleusermaps.user_id,
+                                users.name,wf_roles.role_name
                         )role_user_ward
                     ) users_role
                     "),

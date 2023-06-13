@@ -37,6 +37,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
+use Illuminate\Validation\Rules\Exists;
 use Nette\Utils\Random;
 
 /**
@@ -112,6 +113,7 @@ class NewConnectionRepository implements iNewConnection
         $mWaterConnectionCharge     = new WaterConnectionCharge();
         $mWaterTran                 = new WaterTran();
         $waterTrack                 = new WorkflowTrack();
+        $refParamId                 = Config::get('waterConstaint.PARAM_IDS');
 
         # Connection Type 
         switch ($req->connectionTypeId) {
@@ -151,11 +153,11 @@ class NewConnectionRepository implements iNewConnection
         $waterFeeId             = $newConnectionCharges['water_fee_mstr_id'];
         $totalConnectionCharges = $newConnectionCharges['conn_fee_charge']['amount'];
 
-        # Generating Application No
-        $now = Carbon::now();
-        $applicationNo = 'APP' . $now->getTimeStamp() . rand(5, 5);
-
         DB::beginTransaction();
+        # Generating Application No
+        $idGeneration   = new PrefixIdGenerator($refParamId["WAPP"], $ulbId);
+        $applicationNo  = $idGeneration->generate();
+
         # water application
         $applicationId = $objNewApplication->saveWaterApplication($req, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId, $ulbId, $applicationNo, $waterFeeId, $newConnectionCharges);
         # water applicant
@@ -163,7 +165,7 @@ class NewConnectionRepository implements iNewConnection
             $mWaterApplicant->saveWaterApplicant($applicationId, $owners, null);
         }
         # water applicant in case of tenant
-        if (!is_null($tenant) || !empty($tenant)) {
+        if (!empty($tenant)) {
             foreach ($tenant as $tenants) {
                 $mWaterApplicant->saveWaterApplicant($applicationId, $tenants, $reftenant);
             }
@@ -171,7 +173,7 @@ class NewConnectionRepository implements iNewConnection
         # connection charges
         $connectionId = $mWaterConnectionCharge->saveWaterCharge($applicationId, $req, $newConnectionCharges);
         # water penalty
-        if (!is_null($installment)) {
+        if (!empty($installment)) {
             foreach ($installment as $installments) {
                 $mWaterPenaltyInstallment->saveWaterPenelty($applicationId, $installments, $connectionType, $connectionId);
             }
@@ -244,21 +246,21 @@ class NewConnectionRepository implements iNewConnection
     public function checkVacantLand($req, $vacantLand)
     {
         switch ($req) {
-            case (!is_null($req->saf_no)):
+            case (!is_null($req->safNo) && $req->connection_through == 2):                           // Static
                 $isExist = $this->checkPropertyExist($req);
                 if ($isExist) {
                     $propetySafCheck = PropActiveSaf::select('prop_type_mstr_id')
-                        ->where('saf_no', $req->saf_no)
+                        ->where('saf_no', $req->safNo)
                         ->where('ulb_id', $req->ulbId)
                         ->first();
                     if ($propetySafCheck->prop_type_mstr_id == $vacantLand) {
                         return responseMsg(false, "water cannot be applied on Vacant land!", "");
                     }
                 } else {
-                    return responseMsg(false, "Saf Not Exist!", $req->saf_no);
+                    return responseMsg(false, "Saf Not Exist!", $req->safNo);
                 }
                 break;
-            case (!is_null($req->holdingNo)):
+            case (!is_null($req->holdingNo) && $req->connection_through == 1):
                 $isExist = $this->checkPropertyExist($req);
                 if ($isExist) {
                     $propetyHoldingCheck = PropProperty::select('prop_type_mstr_id')
@@ -288,19 +290,19 @@ class NewConnectionRepository implements iNewConnection
     public function checkPropertyExist($req)
     {
         switch ($req) {
-            case (!is_null($req->saf_no)): {
+            case (!is_null($req->safNo) && $req->connection_through == 2): {
                     $safCheck = PropActiveSaf::select(
                         'id',
                         'saf_no'
                     )
-                        ->where('saf_no', $req->saf_no)
+                        ->where('saf_no', $req->safNo)
                         ->where('ulb_id', $req->ulbId)
                         ->first();
                     if ($safCheck) {
                         return true;
                     }
                 }
-            case (!is_null($req->holdingNo)): {
+            case (!is_null($req->holdingNo) && $req->connection_through == 1): {
                     $holdingCheck = PropProperty::select(
                         'id',
                         'new_holding_no'

@@ -153,7 +153,7 @@ class PropProperty extends Model
             ->leftJoin('ulb_ward_masters as u', 'u.id', '=', 'prop_properties.new_ward_mstr_id')
             ->where('prop_properties.holding_no', $holdingNo)
             ->where('prop_properties.ulb_id', $ulbId)
-            ->where('status', 1)
+            ->where('prop_properties.status', 1)
             ->first();
 
         if ($oldHolding) {

@@ -24,4 +24,14 @@ class WaterTranFineRebate extends Model
         $mWaterTranFineRebate->apply_connection_id  = $metaRequest->applicationId ?? null;
         $mWaterTranFineRebate->save();
     }
+
+
+    /**
+     * | Get fine and rebate according to application no 
+     * | 
+     */
+    public function getFineRebate($applicationId)
+    {
+        // WaterTranFineRebate::where("")
+    }
 }
