@@ -49,6 +49,7 @@ class SafDocController extends Controller
             $totalDocLists = collect($propTypeDocs)->merge($safOwnerDocs);
             $totalDocLists['docUploadStatus'] = $refSafs->doc_upload_status;
             $totalDocLists['docVerifyStatus'] = $refSafs->doc_verify_status;
+            $totalDocLists['paymentStatus'] = $refSafs->payment_status;
 
             return responseMsgs(true, "", remove_null($totalDocLists), "010203", "", "", 'POST', "");
         } catch (Exception $e) {
