@@ -85,7 +85,7 @@ class SafDocController extends Controller
                 'mobile' => $refOwners['mobile_no'],
                 'guardian' => $refOwners['guardian_name'],
                 'uploadedDoc' => $ownerPhoto->doc_path ?? "",
-                'verifyStatus' => $ownerPhoto->verify_status ?? ""
+                'verifyStatus' => ($refSafs->payment_status == 1) ? ($ownerPhoto->verify_status ?? "") : 0
             ];
             $filteredDocs['documents'] = $this->filterDocument($documentList, $refSafs, $refOwners['id']);                                     // function(1.2)
         } else
@@ -108,13 +108,13 @@ class SafDocController extends Controller
         $uploadedDocs = $mWfActiveDocument->getDocByRefIds($safId, $workflowId, $moduleId);
         $explodeDocs = collect(explode('#', $documentList));
 
-        $filteredDocs = $explodeDocs->map(function ($explodeDoc) use ($uploadedDocs, $ownerId) {
+        $filteredDocs = $explodeDocs->map(function ($explodeDoc) use ($uploadedDocs, $ownerId, $refSafs) {
             $document = explode(',', $explodeDoc);
             $key = array_shift($document);
             $label = array_shift($document);
             $documents = collect();
 
-            collect($document)->map(function ($item) use ($uploadedDocs, $documents, $ownerId) {
+            collect($document)->map(function ($item) use ($uploadedDocs, $documents, $ownerId, $refSafs) {
                 $uploadedDoc = $uploadedDocs->where('doc_code', $item)
                     ->where('owner_dtl_id', $ownerId)
                     ->first();
@@ -125,7 +125,7 @@ class SafDocController extends Controller
                         "documentCode" => $item,
                         "ownerId" => $uploadedDoc->owner_dtl_id ?? "",
                         "docPath" => $uploadedDoc->doc_path ?? "",
-                        "verifyStatus" => $uploadedDoc->verify_status ?? "",
+                        "verifyStatus" => $refSafs->payment_status == 1 ? ($uploadedDoc->verify_status ?? "") : 0,
                         "remarks" => $uploadedDoc->remarks ?? "",
                     ];
                     $documents->push($response);
@@ -143,7 +143,7 @@ class SafDocController extends Controller
                 $reqDoc['btcStatus'] = false;
             $reqDoc['uploadedDoc'] = $documents->last();
 
-            $reqDoc['masters'] = collect($document)->map(function ($doc) use ($uploadedDocs) {
+            $reqDoc['masters'] = collect($document)->map(function ($doc) use ($uploadedDocs, $refSafs) {
                 $uploadedDoc = $uploadedDocs->where('doc_code', $doc)->first();
                 $strLower = strtolower($doc);
                 $strReplace = str_replace('_', ' ', $strLower);
@@ -152,7 +152,7 @@ class SafDocController extends Controller
                     "docVal" => ucwords($strReplace),
                     "uploadedDoc" => $uploadedDoc->doc_path ?? "",
                     "uploadedDocId" => $uploadedDoc->id ?? "",
-                    "verifyStatus'" => $uploadedDoc->verify_status ?? "",
+                    "verifyStatus'" => $refSafs->payment_status == 1 ? ($uploadedDoc->verify_status ?? "") : 0,
                     "remarks" => $uploadedDoc->remarks ?? "",
                 ];
                 return $arr;
