@@ -49,6 +49,7 @@ class SafDocController extends Controller
             $totalDocLists = collect($propTypeDocs)->merge($safOwnerDocs);
             $totalDocLists['docUploadStatus'] = $refSafs->doc_upload_status;
             $totalDocLists['docVerifyStatus'] = $refSafs->doc_verify_status;
+            $totalDocLists['paymentStatus'] = $refSafs->payment_status;
 
             return responseMsgs(true, "", remove_null($totalDocLists), "010203", "", "", 'POST', "");
         } catch (Exception $e) {
@@ -84,7 +85,7 @@ class SafDocController extends Controller
                 'mobile' => $refOwners['mobile_no'],
                 'guardian' => $refOwners['guardian_name'],
                 'uploadedDoc' => $ownerPhoto->doc_path ?? "",
-                'verifyStatus' => $ownerPhoto->verify_status ?? ""
+                'verifyStatus' => ($refSafs->payment_status == 1) ? ($ownerPhoto->verify_status ?? "") : 0
             ];
             $filteredDocs['documents'] = $this->filterDocument($documentList, $refSafs, $refOwners['id']);                                     // function(1.2)
         } else
@@ -107,13 +108,13 @@ class SafDocController extends Controller
         $uploadedDocs = $mWfActiveDocument->getDocByRefIds($safId, $workflowId, $moduleId);
         $explodeDocs = collect(explode('#', $documentList));
 
-        $filteredDocs = $explodeDocs->map(function ($explodeDoc) use ($uploadedDocs, $ownerId) {
+        $filteredDocs = $explodeDocs->map(function ($explodeDoc) use ($uploadedDocs, $ownerId, $refSafs) {
             $document = explode(',', $explodeDoc);
             $key = array_shift($document);
             $label = array_shift($document);
             $documents = collect();
 
-            collect($document)->map(function ($item) use ($uploadedDocs, $documents, $ownerId) {
+            collect($document)->map(function ($item) use ($uploadedDocs, $documents, $ownerId, $refSafs) {
                 $uploadedDoc = $uploadedDocs->where('doc_code', $item)
                     ->where('owner_dtl_id', $ownerId)
                     ->first();
@@ -124,7 +125,7 @@ class SafDocController extends Controller
                         "documentCode" => $item,
                         "ownerId" => $uploadedDoc->owner_dtl_id ?? "",
                         "docPath" => $uploadedDoc->doc_path ?? "",
-                        "verifyStatus" => $uploadedDoc->verify_status ?? "",
+                        "verifyStatus" => $refSafs->payment_status == 1 ? ($uploadedDoc->verify_status ?? "") : 0,
                         "remarks" => $uploadedDoc->remarks ?? "",
                     ];
                     $documents->push($response);
@@ -142,7 +143,7 @@ class SafDocController extends Controller
                 $reqDoc['btcStatus'] = false;
             $reqDoc['uploadedDoc'] = $documents->last();
 
-            $reqDoc['masters'] = collect($document)->map(function ($doc) use ($uploadedDocs) {
+            $reqDoc['masters'] = collect($document)->map(function ($doc) use ($uploadedDocs, $refSafs) {
                 $uploadedDoc = $uploadedDocs->where('doc_code', $doc)->first();
                 $strLower = strtolower($doc);
                 $strReplace = str_replace('_', ' ', $strLower);
@@ -151,7 +152,7 @@ class SafDocController extends Controller
                     "docVal" => ucwords($strReplace),
                     "uploadedDoc" => $uploadedDoc->doc_path ?? "",
                     "uploadedDocId" => $uploadedDoc->id ?? "",
-                    "verifyStatus'" => $uploadedDoc->verify_status ?? "",
+                    "verifyStatus'" => $refSafs->payment_status == 1 ? ($uploadedDoc->verify_status ?? "") : 0,
                     "remarks" => $uploadedDoc->remarks ?? "",
                 ];
                 return $arr;
@@ -262,22 +263,9 @@ class SafDocController extends Controller
      */
     public function checkFullDocUpload($applicationId)
     {
-        $docList = array();
-        $uploadDocList = array();
         $mActiveSafs = new PropActiveSaf();
-        $mSafsOwners = new PropActiveSafsOwner();
         $mWfActiveDocument = new WfActiveDocument();
         $refSafs = $mActiveSafs->getSafNo($applicationId);                      // Get Saf Details
-        $refSafOwners = $mSafsOwners->getOwnersBySafId($applicationId);
-        $propListDocs = $this->getPropTypeDocList($refSafs);
-        $docList['propDocs'] = explode('#', $propListDocs);
-        $ownerDocList = collect($refSafOwners)->map(function ($owner) {
-            return [
-                'ownerId' => $owner->id,
-                'docs'  => explode('#', $this->getOwnerDocs($owner))
-            ];
-        });
-        $docList['ownerDocs'] = $ownerDocList;
         $refReq = [
             'activeId' => $applicationId,
             'workflowId' => $refSafs->workflow_id,
@@ -285,66 +273,7 @@ class SafDocController extends Controller
         ];
         $req = new Request($refReq);
         $refDocList = $mWfActiveDocument->getDocsByActiveId($req);
-        $uploadDocList['ownerDocs'] = $refDocList->where('owner_dtl_id', '!=', null)->values();
-        $uploadDocList['propDocs'] = $refDocList->where('owner_dtl_id', null)->values();
-
-        $collectUploadDocList = collect();
-        collect($uploadDocList['propDocs'])->map(function ($item) use ($collectUploadDocList) {
-            return $collectUploadDocList->push($item['doc_code']);
-        });
-        $mPropDocs = collect($docList['propDocs']);
-        // Property List Documents
-        $flag = 1;
-        foreach ($mPropDocs as $item) {
-            $explodeDocs = explode(',', $item);
-            array_shift($explodeDocs);
-            foreach ($explodeDocs as $explodeDoc) {
-                $changeStatus = 0;
-                if (in_array($explodeDoc, $collectUploadDocList->toArray())) {
-                    $changeStatus = 1;
-                    break;
-                }
-            }
-            if ($changeStatus == 0) {
-                $flag = 0;
-                break;
-            }
-        }
-
-        if ($flag == 0)
-            return 0;
-
-        // Owner Documents
-        $ownerFlags = 1;
-        foreach ($ownerDocList as $item) {
-            $ownerUploadedDocLists = $uploadDocList['ownerDocs']->where('owner_dtl_id', $item['ownerId']);
-            $arrayOwners = array();
-            foreach ($ownerUploadedDocLists as $list) {
-                array_push($arrayOwners, $list->doc_code);
-            }
-
-            foreach ($item['docs'] as $doc) {
-                $explodeDocs = explode(',', $doc);
-                array_shift($explodeDocs);
-                foreach ($explodeDocs as $explodeDoc) {
-                    $changeStatusV1 = 0;
-                    if (in_array($explodeDoc, $arrayOwners)) {
-                        $changeStatusV1 = 1;
-                        break;
-                    }
-                }
-                if ($changeStatusV1 == 0) {
-                    $ownerFlags = 0;
-                    break;
-                }
-            }
-            if ($changeStatusV1 == 0)
-                break;
-        }
-        if ($ownerFlags == 0)
-            return 0;
-        else
-            return 1;
+        return $this->isAllDocs($applicationId, $refDocList, $refSafs);
     }
 
     /**
@@ -422,6 +351,7 @@ class SafDocController extends Controller
             else
                 $ifFullDocVerifiedV1 = 0;                                       // In Case of Rejection the Document Verification Status will always remain false
 
+            // dd($ifFullDocVerifiedV1);
             if ($ifFullDocVerifiedV1 == 1) {                                     // If The Document Fully Verified Update Verify Status
                 $safDtls->doc_verify_status = 1;
                 $safDtls->save();
@@ -445,13 +375,90 @@ class SafDocController extends Controller
         $refReq = [
             'activeId' => $applicationId,
             'workflowId' => $refSafs->workflow_id,
-            'moduleId' => FacadesConfig::get('module-constants.PROPERTY_MODULE_ID')
+            'moduleId' => 1
         ];
-        $req = new Request($refReq);
-        $refDocList = $mWfActiveDocument->getDocsByActiveId($req);      // return Only the Pending Documents 
+        $refDocList = $mWfActiveDocument->getVerifiedDocsByActiveId($refReq);
+        return $this->isAllDocs($applicationId, $refDocList, $refSafs);
+    }
+
+    /**
+     * | Checks the Document Upload Or Verify Status
+     * | @param activeApplicationId
+     * | @param refDocList list of Verified and Uploaded Documents
+     * | @param refSafs saf Details
+     */
+    public function isAllDocs($applicationId, $refDocList, $refSafs)
+    {
+        $docList = array();
+        $verifiedDocList = array();
+        $mSafsOwners = new PropActiveSafsOwner();
+        $refSafOwners = $mSafsOwners->getOwnersBySafId($applicationId);
+        $propListDocs = $this->getPropTypeDocList($refSafs);
+        $docList['propDocs'] = explode('#', $propListDocs);
+        $ownerDocList = collect($refSafOwners)->map(function ($owner) {
+            return [
+                'ownerId' => $owner->id,
+                'docs'  => explode('#', $this->getOwnerDocs($owner))
+            ];
+        });
+        $docList['ownerDocs'] = $ownerDocList;
+
+        $verifiedDocList['ownerDocs'] = $refDocList->where('owner_dtl_id', '!=', null)->values();
+        $verifiedDocList['propDocs'] = $refDocList->where('owner_dtl_id', null)->values();
+        $collectUploadDocList = collect();
+        collect($verifiedDocList['propDocs'])->map(function ($item) use ($collectUploadDocList) {
+            return $collectUploadDocList->push($item['doc_code']);
+        });
+        $mPropDocs = collect($docList['propDocs']);
         // Property List Documents
-        $ifPropDocUnverified = $refDocList->contains('verify_status', 0);
-        if ($ifPropDocUnverified == 1)
+        $flag = 1;
+        foreach ($mPropDocs as $item) {
+            $explodeDocs = explode(',', $item);
+            array_shift($explodeDocs);
+            foreach ($explodeDocs as $explodeDoc) {
+                $changeStatus = 0;
+                if (in_array($explodeDoc, $collectUploadDocList->toArray())) {
+                    $changeStatus = 1;
+                    break;
+                }
+            }
+            if ($changeStatus == 0) {
+                $flag = 0;
+                break;
+            }
+        }
+
+        if ($flag == 0)
+            return 0;
+
+        // Owner Documents
+        $ownerFlags = 1;
+        foreach ($ownerDocList as $item) {
+            $ownerUploadedDocLists = $verifiedDocList['ownerDocs']->where('owner_dtl_id', $item['ownerId']);
+            $arrayOwners = array();
+            foreach ($ownerUploadedDocLists as $list) {
+                array_push($arrayOwners, $list->doc_code);
+            }
+
+            foreach ($item['docs'] as $doc) {
+                $explodeDocs = explode(',', $doc);
+                array_shift($explodeDocs);
+                foreach ($explodeDocs as $explodeDoc) {
+                    $changeStatusV1 = 0;
+                    if (in_array($explodeDoc, $arrayOwners)) {
+                        $changeStatusV1 = 1;
+                        break;
+                    }
+                }
+                if ($changeStatusV1 == 0) {
+                    $ownerFlags = 0;
+                    break;
+                }
+            }
+            if ($changeStatusV1 == 0)
+                break;
+        }
+        if ($ownerFlags == 0)
             return 0;
         else
             return 1;

@@ -101,7 +101,7 @@ class  PropActiveSaf extends Model
             'is_trust' => $req->isTrust ?? false,
             'trust_type' => $req->trustType ?? null
         ];
-        $propActiveSafs = PropActiveSaf::create($reqs);
+        $propActiveSafs = PropActiveSaf::create($reqs);                 // SAF No is Created Using Observer
         return response()->json([
             'safId' => $propActiveSafs->id,
             'safNo' => $propActiveSafs->saf_no,

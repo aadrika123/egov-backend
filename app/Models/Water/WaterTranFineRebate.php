@@ -30,8 +30,10 @@ class WaterTranFineRebate extends Model
      * | Get fine and rebate according to application no 
      * | 
      */
-    public function getFineRebate($applicationId)
+    public function getFineRebate($applicationId, $searchFor, $transactionId)
     {
-        // WaterTranFineRebate::where("")
+        return WaterTranFineRebate::where("transaction_id", $transactionId)
+            ->where("apply_connection_id", $applicationId)
+            ->where("head_name", $searchFor);
     }
 }
