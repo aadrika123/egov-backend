@@ -23,7 +23,7 @@ class MirrorUserNotification extends Model
     {
         return MirrorUserNotification::select('*', DB::raw("Replace(category, ' ', '_') AS category"))
             ->where('status', 1)
-            ->orderByDesc('id');
+            ->orderBy('id');
     }
 
     /**

@@ -318,7 +318,6 @@ class SafDocController extends Controller
                 throw new Exception("Saf Details Not Found");
 
             $ifFullDocVerified = $this->ifFullDocVerified($applicationId);       // (Current Object Derivative Function 4.1)
-
             if ($ifFullDocVerified == 1)
                 throw new Exception("Document Fully Verified");
 
