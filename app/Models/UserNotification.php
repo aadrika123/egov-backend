@@ -19,7 +19,7 @@ class UserNotification extends Model
     /**
      * | Get notification of logged in user
      */
-    public function notificationByUserId()
+    public function userNotification()
     {
         return UserNotification::select('*', DB::raw("Replace(category, ' ', '_') AS category"))
             ->where('status', 1)

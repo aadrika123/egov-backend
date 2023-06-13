@@ -16,6 +16,7 @@ class SearchHolding
             return $next($request);
         }
         return $next($request)
+            ->orderBy('id')
             ->where('holding_no', request()->input('holdingNo'))
             ->orWhere('new_holding_no', request()->input('holdingNo'));
     }
