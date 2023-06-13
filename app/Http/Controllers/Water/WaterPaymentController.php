@@ -1025,6 +1025,8 @@ class WaterPaymentController extends Controller
 
     /**
      * | Save the regulization second payament details 
+     * | if the payment for the regularization is done in installment
+        | Serial No : 07:06
      */
     public function saveRegulaizePaymentStatus($req, $offlinePaymentModes, $waterTrans)
     {

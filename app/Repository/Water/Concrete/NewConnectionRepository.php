@@ -396,18 +396,18 @@ class NewConnectionRepository implements iNewConnection
 
         # check in all the cases the data if entered in the track table 
         // Updation of Received Date
-        // $preWorkflowReq = [
-        //     'workflowId' => $waterApplication->workflow_id,
-        //     'refTableDotId' => "water_applications.id",
-        //     'refTableIdValue' => $req->applicationId,
-        //     'receiverRoleId' => $senderRoleId
-        // ];
+        $preWorkflowReq = [
+            'workflowId'        => $waterApplication->workflow_id,
+            'refTableDotId'     => "water_applications.id",
+            'refTableIdValue'   => $req->applicationId,
+            'receiverRoleId'    => $senderRoleId
+        ];
 
-        // $previousWorkflowTrack = $waterTrack->getWfTrackByRefId($preWorkflowReq);
-        // $previousWorkflowTrack->update([
-        //     'forward_date' => $current->format('Y-m-d'),
-        //     'forward_time' => $current->format('H:i:s')
-        // ]);
+        $previousWorkflowTrack = $waterTrack->getWfTrackByRefId($preWorkflowReq);
+        $previousWorkflowTrack->update([
+            'forward_date' => $current->format('Y-m-d'),
+            'forward_time' => $current->format('H:i:s')
+        ]);
         DB::commit();
         return responseMsgs(true, "Successfully Forwarded The Application!!", "", "", "", '01', '.ms', 'Post', '');
     }
