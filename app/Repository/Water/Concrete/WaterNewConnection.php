@@ -24,6 +24,7 @@ use App\Models\Water\WaterSiteInspection;
 use App\Models\Water\WaterSiteInspectionsScheduling;
 use App\Models\Water\WaterTran;
 use App\Models\Water\WaterTranDetail;
+use App\Models\Water\WaterTranFineRebate;
 use App\Models\Workflows\WfActiveDocument;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\WorkflowTrack;
@@ -32,6 +33,7 @@ use App\Repository\Water\Interfaces\IWaterNewConnection;
 use App\Traits\Auth;
 use App\Traits\Payment\Razorpay;
 use App\Traits\Property\WardPermission;
+use App\Traits\Water\WaterTrait;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
@@ -49,6 +51,7 @@ class WaterNewConnection implements IWaterNewConnection
     use Auth;               // Trait Used added by sandeep bara date 17-09-2022
     use WardPermission;
     use Razorpay;
+    use WaterTrait;
 
     /**
      * | Created On-01-12-2022
@@ -240,6 +243,7 @@ class WaterNewConnection implements IWaterNewConnection
             $refUser            = Auth()->user();
             $refUserId          = $refUser->id;
             $refUlbId           = $refUser->ulb_id;
+            $isRebate           = null;
             $paramChargeCatagory = Config::get('waterConstaint.CONNECTION_TYPE');
             $refRegulization = Config::get('waterConstaint.CHARGE_CATAGORY');
 
@@ -279,6 +283,7 @@ class WaterNewConnection implements IWaterNewConnection
                         if ($application->connection_type_id != $paramChargeCatagory['REGULAIZATION']) {
                             throw new Exceptions("Payment is not under Regulaization!");
                         }
+                        $isRebate = 1;
                         $amount = $cahges["amount"];
                         $rebat = $cahges["rabate"];
                         $cahges["penaltyIds"] = $cahges['installment_ids'];
@@ -322,6 +327,7 @@ class WaterNewConnection implements IWaterNewConnection
                 $RazorPayRequest->ip_address        = $request->ip();
                 $RazorPayRequest->order_id          = $temp["orderId"];
                 $RazorPayRequest->department_id     = $temp["departmentId"];
+                $RazorPayRequest->is_rebate         = $isRebate;
                 $RazorPayRequest->save();
             }
             #--------------------water Consumer----------------------
@@ -524,22 +530,31 @@ class WaterNewConnection implements IWaterNewConnection
                 $val->paid_status = 1;
                 $val->update();
             }
-            foreach ($mPenalty as $val) {
-                $val->paid_status = 1;
-                $val->update();
-            }
+
             # Check and write code to save data in the track table
             if ($RazorPayRequest->payment_from == "New Connection") {
                 $application->current_role = !$application->current_role ? $this->_dealingAssistent : $application->current_role;
                 $application->update();
             }
             if ($RazorPayRequest->payment_from == $refConnectionCharge['REGULAIZATION'] && $application->payment_status == 0) {
+                if ($RazorPayRequest->is_rebate = 1) {
+                    $waterTrans['id'] = $transaction_id;
+                    $req = new Request([
+                        "applicationId" => $applicationId
+                    ]);
+                    $this->saveRebateForTran($req, $mDemands, $waterTrans);
+                }
                 $application->current_role = !$application->current_role ? $this->_dealingAssistent : $application->current_role;
                 $application->update();
             }
             if ($RazorPayRequest->payment_from == "Site Inspection") {
                 $mWaterSiteInspection = new WaterSiteInspection();
                 $mWaterSiteInspection->saveSitePaymentStatus($applicationId);
+            }
+
+            foreach ($mPenalty as $val) {
+                $val->paid_status = 1;
+                $val->update();
             }
             $application->payment_status = 1;
             $application->update();
@@ -555,8 +570,7 @@ class WaterNewConnection implements IWaterNewConnection
             return responseMsg(false, $e->getMessage(), $args);
         }
     }
-
-
+    
     public function readTransectionAndApl(Request $request)
     {
         try {

@@ -115,7 +115,8 @@ return [
     "PENALTY_HEAD" => [
         "1" => "1 Installment",
         "2" => "2 Installment",
-        "3" => "3 Installment"
+        "3" => "3 Installment",
+        "4" => "Installment Rebate",
     ],
 
     "USER_TYPE" => [
