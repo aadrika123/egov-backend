@@ -302,6 +302,9 @@ class CalculateSafById
             else
                 $item['adjust_amount'] = $demand->amount - $demand->balance;
 
+            if ($item['adjust_amount'] > $item['amount'])
+                $item['adjust_amount'] = $item['amount'];
+
             $itemAmt = $item['amount'] ?? $item['totalTax'];
             $item['balance'] = roundFigure($itemAmt - $item['adjust_amount']);
             if ($item['balance'] == 0)
