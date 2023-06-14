@@ -374,7 +374,20 @@ use Barryvdh\DomPDF\Facade\PDF;
 
     public function fullDtlById(Request $request)
     {
-
+        try{
+            $notice = NoticeApplication::select(
+                "notice_applications.*",
+                "notice_type_masters.notice_type",
+                DB::raw("cast(notice_applications.created_at as date) as apply_date"),
+            )
+            ->join("notice_type_masters","notice_type_masters.id","notice_applications.notice_type_id")            
+            ->find($request->applicationId);
+            dd(DB::getQueryLog(),$notice);
+        }
+        catch(Exception $e)
+        {
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
     }
     public function WorkFlowMetaList()
     {
