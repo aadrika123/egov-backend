@@ -438,10 +438,25 @@ use Barryvdh\DomPDF\Facade\PDF;
                 $application = $application
                     ->whereBetween(DB::raw('cast(notice_applications.application_date as date)'), [$inputs['formDate'], $inputs['formDate']]);
             }
-            $application = $application
-                // ->whereIn('active_trade_licences.ward_id', $mWardIds)
-                ->get();           
-            return responseMsg(true, "", remove_null($application));
+            // $application = $application
+            //     // ->whereIn('active_trade_licences.ward_id', $mWardIds)
+            //     ->get(); 
+            if($request->all)
+            {
+                $application= $application->get();
+                return responseMsg(true, "", $application);
+            } 
+            $perPage = $request->perPage ? $request->perPage :  10;
+            $page = $request->page && $request->page > 0 ? $request->page : 1;
+
+            $paginator = $application->paginate($perPage);
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
+            ]; 
+            return responseMsg(true, "", remove_null($list)); 
         } 
         catch (Exception $e) 
         {
@@ -517,10 +532,25 @@ use Barryvdh\DomPDF\Facade\PDF;
                 $application = $application
                     ->whereBetween(DB::raw('cast(notice_applications.application_date as date)'), [$inputs['formDate'], $inputs['formDate']]);
             }
-            $application = $application
-                // ->whereIn('active_trade_licences.ward_id', $mWardIds)
-                ->get();       
-            return responseMsg(true, "", remove_null($application));
+            // $application = $application
+            //     // ->whereIn('active_trade_licences.ward_id', $mWardIds)
+            //     ->get();  
+            if($request->all)
+            {
+                $application= $application->get();
+                return responseMsg(true, "", $application);
+            } 
+            $perPage = $request->perPage ? $request->perPage :  10;
+            $page = $request->page && $request->page > 0 ? $request->page : 1;
+
+            $paginator = $application->paginate($perPage);
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
+            ]; 
+            return responseMsg(true, "", remove_null($list));
         } 
         catch (Exception $e) 
         {
