@@ -118,11 +118,11 @@ class NewConnectionRepository implements iNewConnection
         # Connection Type 
         switch ($req->connectionTypeId) {
             case (1):
-                $connectionType = "New Connection";
+                $connectionType = "New Connection";                                     // Static
                 break;
 
             case (2):
-                $connectionType = "Regulaization";
+                $connectionType = "Regulaization";                                      // Static
                 break;
         }
 
@@ -188,12 +188,9 @@ class NewConnectionRepository implements iNewConnection
 
         # Save the record in the tracks
         if ($user->user_type == "Citizen") {                                                        // Static
-            $citizenId = $user->id;
             $receiverRoleId = $waterRoles['DA'];
         }
         if ($user->user_type != "Citizen") {                                                        // Static
-            // $roleDetails = $this->getUserRolesDetails($user, $ulbWorkflowId['id']);
-            // $senderRoleId = $roleDetails->wf_role_id;
             $receiverRoleId = collect($initiatorRoleId)->first()->role_id;
         }
         $metaReqs = new Request(
