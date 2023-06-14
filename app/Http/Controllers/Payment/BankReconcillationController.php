@@ -213,22 +213,23 @@ class BankReconcillationController extends Controller
             if ($validator->fails()) {
                 return validationError($validator);
             }
-            $paymentStatus = 1;
-            $appPaymentStatus = 1;
-            $ulbId = authUser()->ulb_id;
-            $userId = authUser()->id;
+            $user = authUser();
+            $ulbId = $user->ulb_id;
+            $userId = $user->id;
             $moduleId = $request->moduleId;
+            $paymentStatus = 1;
+            $applicationPaymentStatus = 1;
             $propertyModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
             $waterModuleId = Config::get('module-constants.WATER_MODULE_ID');
             $tradeModuleId = Config::get('module-constants.TRADE_MODULE_ID');
             $mPaymentReconciliation = new PaymentReconciliation();
 
             if ($request->status == 'clear') {
-                $appPaymentStatus = $paymentStatus = 1;
+                $applicationPaymentStatus = $paymentStatus = 1;
             }
             if ($request->status == 'bounce') {
                 $paymentStatus = 3;
-                $appPaymentStatus = 0;
+                $applicationPaymentStatus = 0;
             }
 
             DB::beginTransaction();
@@ -253,7 +254,6 @@ class BankReconcillationController extends Controller
                 if ($safId)
                     $wardId = PropActiveSaf::findorFail($safId)->ward_mstr_id;
 
-
                 PropTransaction::where('id', $mChequeDtl->transaction_id)
                     ->update(
                         [
@@ -265,10 +265,10 @@ class BankReconcillationController extends Controller
                 if ($safId)
                     PropActiveSaf::where('id', $safId)
                         ->update(
-                            ['payment_status' => $appPaymentStatus]
+                            ['payment_status' => $applicationPaymentStatus]
                         );
 
-                if ($appPaymentStatus == 0) {
+                if ($applicationPaymentStatus == 0) {
 
                     $propTranDtls = PropTranDtl::where('tran_id', $transaction->id)->get();
 
@@ -281,7 +281,7 @@ class BankReconcillationController extends Controller
                             PropSafsDemand::where('id', $safDemandId)
                                 ->update(
                                     [
-                                        'paid_status' => $appPaymentStatus,
+                                        'paid_status' => $applicationPaymentStatus,
                                         'balance' => $safDemandDtl->amount - $safDemandDtl->adjust_amount,
                                     ]
                                 );
@@ -292,7 +292,7 @@ class BankReconcillationController extends Controller
                             PropDemand::where('id', $propDemandId)
                                 ->update(
                                     [
-                                        'paid_status' => $appPaymentStatus,
+                                        'paid_status' => $applicationPaymentStatus,
                                         'balance' => $propDemandDtl->amount - $propDemandDtl->adjust_amt,
                                     ]
                                 );
@@ -347,7 +347,7 @@ class BankReconcillationController extends Controller
                 WaterApplication::where('id', $mChequeDtl->application_id)
                     ->update(
                         [
-                            'payment_status' => $appPaymentStatus
+                            'payment_status' => $applicationPaymentStatus
                         ]
                     );
 
@@ -361,7 +361,7 @@ class BankReconcillationController extends Controller
                         WaterConsumerDemand::where('id', $demandId)
                             ->update(
                                 [
-                                    'paid_status' => $appPaymentStatus
+                                    'paid_status' => $applicationPaymentStatus
                                 ]
                             );
 
@@ -373,14 +373,14 @@ class BankReconcillationController extends Controller
                         WaterConnectionCharge::where('id', $demandId)
                             ->update(
                                 [
-                                    'paid_status' => $appPaymentStatus
+                                    'paid_status' => $applicationPaymentStatus
                                 ]
                             );
 
                         WaterApplication::where('id', $connectionChargeDtl->application_id)
                             ->update(
                                 [
-                                    'payment_status' => $appPaymentStatus,
+                                    'payment_status' => $applicationPaymentStatus,
 
                                 ]
                             );
@@ -389,7 +389,7 @@ class BankReconcillationController extends Controller
                         WaterPenaltyInstallment::where('related_demand_id', $demandId)
                             ->update(
                                 [
-                                    'paid_status' => $appPaymentStatus
+                                    'paid_status' => $applicationPaymentStatus
                                 ]
                             );
                     }
@@ -443,7 +443,7 @@ class BankReconcillationController extends Controller
                 //  Update in trade applications
                 ActiveTradeLicence::where('id', $transaction->temp_id)
                     ->update(
-                        ['payment_status' => $appPaymentStatus]
+                        ['payment_status' => $applicationPaymentStatus]
                     );
 
                 $wardId = ActiveTradeLicence::find($mChequeDtl->temp_id)->ward_id;
