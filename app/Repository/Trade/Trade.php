@@ -3386,7 +3386,7 @@ class Trade implements ITrade
             )
                 ->leftjoin('wf_roles', "wf_roles.id", "workflow_tracks.receiver_role_id")
                 ->where('workflow_tracks.ref_table_id_value', $id)
-                ->where('workflow_tracks.ref_table_dot_id', "active_trade_licences")
+                ->where('workflow_tracks.ref_table_dot_id', $this->_REF_TABLE)
                 ->whereNotNull('workflow_tracks.sender_role_id')
                 ->where('workflow_tracks.status', true)
                 ->groupBy(
