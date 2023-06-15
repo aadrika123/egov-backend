@@ -28,6 +28,7 @@ use App\Http\Requests\Trade\ReqAddRecorde;
 use App\Models\Workflows\WfActiveDocument;
 use App\Http\Requests\Trade\paymentCounter;
 use App\Http\Requests\Trade\ReqApplyDenail;
+use App\Http\Requests\Trade\ReqGetUpdateBasicDtl;
 use App\Http\Requests\Trade\ReqPaybleAmount;
 use App\Models\Trade\TradeParamCategoryType;
 use App\Models\Trade\TradeParamOwnershipType;
@@ -239,7 +240,7 @@ class TradeApplication extends Controller
         }
     }
     # Serial No : 02
-    public function updateLicenseBo(ReqUpdateBasicDtl $request)
+    public function updateLicenseBo(ReqGetUpdateBasicDtl $request)
     {
         return $this->_REPOSITORY->updateLicenseBo($request);
     }
