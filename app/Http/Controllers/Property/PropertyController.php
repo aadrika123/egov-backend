@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\ThirdPartyController;
 use App\Models\ActiveCitizen;
 use App\Models\Citizen\ActiveCitizenUndercare;
+use App\Models\Property\PropActiveConcession;
+use App\Models\Property\PropActiveHarvesting;
+use App\Models\Property\PropActiveObjection;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropDemand;
 use App\Models\Property\PropOwner;
@@ -235,6 +238,54 @@ class PropertyController extends Controller
             });
 
             return responseMsgs(true, 'Data Updated', '', '010801', '01', '', 'Post', '');
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Check if the property id exist in the workflow
+     */
+    public function CheckProperty(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'type' => 'required|in:Reassesment,Mutation,Concession,Objection,Harvesting',
+                'propertyId' => 'required|numeric',
+            ]
+        );
+        if ($validated->fails()) {
+            return validationError($validated);
+        }
+
+        try {
+            $type = $req->type;
+            $propertyId = $req->propertyId;
+
+            switch ($type) {
+                case 'Reassesment':
+                    $data = PropActiveSaf::select('id')->where('previous_holding_id', $propertyId)->first();
+                    break;
+                case 'Mutation':
+                    $data = PropActiveSaf::select('id')->where('previous_holding_id', $propertyId)->first();
+                    break;
+                case 'Concession':
+                    $data = PropActiveConcession::select('id')->where('property_id', $propertyId)->first();
+                    break;
+                case 'Objection':
+                    $data = PropActiveObjection::select('id')->where('property_id', $propertyId)->first();
+                    break;
+                case 'Harvesting':
+                    $data = PropActiveHarvesting::select('id')->where('property_id', $propertyId)->first();
+                    break;
+            }
+            if ($data)
+                $msg['inWorkflow'] = true;
+            else
+                $msg['inWorkflow'] = false;
+
+            return responseMsgs(true, 'Data Updated', $msg, '010801', '01', '', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
