@@ -261,7 +261,6 @@ class Trade implements ITrade
 
                 DB::beginTransaction();
                 $licence = new ActiveTradeLicence();
-                // dd((new TradeParamOwnershipType())->find(1)->activeApplication,DB::getQueryLog());
                 $licence->application_type_id = $mApplicationTypeId;
                 $licence->ulb_id              = $refUlbId;
                 $licence->trade_id            = $mOldLicenceId;
