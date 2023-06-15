@@ -361,6 +361,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     Route::post('citizen-holding-saf', 'citizenHoldingSaf');                  // 03
 
     Route::post('basic-edit', 'basicPropertyEdit');
+    Route::post('check-property', 'CheckProperty');
   });
 
   /**
