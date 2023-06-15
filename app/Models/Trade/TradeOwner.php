@@ -10,6 +10,16 @@ class TradeOwner extends Model
     use HasFactory;
     public $timestamps = false;
 
+    public function application()
+    {
+        return $this->belongsTo(TradeLicence::class,'temp_id',"id");
+    }
+
+    public function renewalApplication()
+    {
+        return $this->belongsTo(TradeRenewal::class,'temp_id',"id");
+    }
+
     public static function owneresByLId($licenseId)
     {
         return self::select("*")

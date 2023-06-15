@@ -1153,7 +1153,7 @@ class ActiveSafController extends Controller
                     // Logging of Prop Owners
                     $ownerExists = $mPropOwners->getOwnerByPropId($propId);
                     foreach ($ownerExists as $ownerExist) {
-                        $mLogPropOwner->replicateOwnerByPropOwners($ownerExist->id);
+                        $mLogPropOwner->replicateOwnerByPropOwners($ownerExist->id);            // Make Log
                     }
 
                     if (!is_null($ownerDetail->prop_owner_id))
@@ -1161,8 +1161,11 @@ class ActiveSafController extends Controller
 
                     if (isset($ifOwnerExist)) {
                         $ownerDetail = array_merge($ownerDetail->toArray(), ['property_id' => $propId]);
-                        $ownerDetail = new Request($ownerDetail);
-                        $mPropOwners->editOwner($ownerDetail);
+                        $propOwner = $mPropOwners::find($ownerDetail['prop_owner_id']);
+                        if (collect($propOwner)->isEmpty())
+                            throw new Exception("Owner Not Exists");
+                        unset($ownerDetail['id']);
+                        $propOwner->update($ownerDetail);
                     }
                 }
                 if ($assessmentType == 'Mutation') {            // In Case of Mutation Add Owners
