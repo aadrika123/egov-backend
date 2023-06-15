@@ -9,6 +9,11 @@ class TradeLicence extends Model
 {
     use HasFactory;
 
+    public function owneres()
+    {
+        return $this->hasMany(TradeOwner::class,'temp_id',"id");
+    }
+
     public function getTradeIdByLicenseNo($licenseNo)
     {
         return TradeLicence::select('id')

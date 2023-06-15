@@ -9,4 +9,9 @@ class RejectedTradeOwner extends Model
 {
     use HasFactory;
     public $timestamps=false;
+
+    public function application()
+    {
+        return $this->belongsTo(RejectedTradeLicence::class,'temp_id',"id");
+    }
 }
