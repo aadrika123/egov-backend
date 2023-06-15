@@ -41,10 +41,10 @@ class ActiveTradeLicence extends Model
     {
         return $this->hasMany(ActiveTradeOwner::class,'temp_id',"id")->where("is_active",true);
     }
-    public function itemType()
-    {
-        return $this->hasMany(TradeParamItemType::class,'id',"nature_of_bussiness");
-    }
+    // public function itemType()
+    // {
+    //     return $this->hasMany(TradeParamItemType::class,'id',"nature_of_bussiness");
+    // }
 
     public function transactionDtl()
     {
