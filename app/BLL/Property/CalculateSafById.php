@@ -74,7 +74,6 @@ class CalculateSafById
         // Saf Calculation
         $reqCalculation = $this->_safCalculationReq;
         $calculation = $this->_safCalculation->calculateTax($reqCalculation);
-
         // Throw Exception on Calculation Error
         if ($calculation->original['status'] == false)
             throw new Exception($calculation->original['message']);
@@ -297,6 +296,7 @@ class CalculateSafById
         foreach ($generatedDemand as $item) {
             $itemDueDate = $item['due_date'] ?? $item['dueDate'];
             $demand = $fullDemandList->where('due_date', $itemDueDate)->first();
+
             if (collect($demand)->isEmpty())
                 $item['adjust_amount'] = 0;
             else
