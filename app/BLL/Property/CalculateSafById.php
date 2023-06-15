@@ -296,6 +296,7 @@ class CalculateSafById
         foreach ($generatedDemand as $item) {
             $itemDueDate = $item['due_date'] ?? $item['dueDate'];
             $demand = $fullDemandList->where('due_date', $itemDueDate)->first();
+
             if (collect($demand)->isEmpty())
                 $item['adjust_amount'] = 0;
             else
