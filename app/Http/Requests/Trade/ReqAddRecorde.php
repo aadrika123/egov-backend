@@ -19,6 +19,8 @@ class ReqAddRecorde extends TradeRequest
         $mTimstamp          = $this->_CURRENT_DATE_TIME;
         $mRegex             = $this->_REX_ALPHA_NUM_DOT_SPACE;
         $mFramNameRegex     = $this->_REX_ALPHA_NUM_OPS_DOT_MIN_COM_AND_SPACE_SL;
+        $mOwnerName         = $this->_REX_OWNER_NAME;
+        $mMobileNo          = $this->_REX_MOBILE_NO;
         // $mAlphaSpace = '/^[a-zA-Z ]+$/i';
         // $mAlphaNumhyphen = '/^[a-zA-Z0-9- ]+$/i';
         // $mNumDot = '/^\d+(?:\.\d+)+$/i';
@@ -84,9 +86,9 @@ class ReqAddRecorde extends TradeRequest
             }
 
             $rules["ownerDetails"] = "required|array";
-            $rules["ownerDetails.*.businessOwnerName"] = "required|regex:/^([a-zA-Z0-9]+)(\s[a-zA-Z0-9\.\,\']+)*$/";
-            $rules["ownerDetails.*.guardianName"] = "regex:/^([a-zA-Z0-9]+)(\s[a-zA-Z0-9\.\,\']+)*$/|nullable";
-            $rules["ownerDetails.*.mobileNo"] = "required|digits:10|regex:/[0-9]{10}/";
+            $rules["ownerDetails.*.businessOwnerName"] = "required|regex:$mOwnerName";
+            $rules["ownerDetails.*.guardianName"] = "nullable|regex:$mOwnerName";
+            $rules["ownerDetails.*.mobileNo"] = "required|digits:10|regex:$mMobileNo";
             $rules["ownerDetails.*.email"] = "email|nullable";
         } 
         elseif (in_array($mApplicationTypeId, [2, 4])) # 2- Renewal,4- Surender
@@ -115,9 +117,7 @@ class ReqAddRecorde extends TradeRequest
         elseif (in_array($mApplicationTypeId, [3])) # 3- Amendment
         {
             $rules["firmDetails.areaSqft"] = "required|numeric";
-            //$rules["firmDetails.businessAddress"]="required|regex:$mRegex";
             $rules["firmDetails.businessDescription"] = "required|regex:$mFramNameRegex";
-            // $rules["firmDetails.firmName"]="required|regex:$mFramNameRegex";
             $rules["firmDetails.holdingNo"] = "required";
             $rules["initialBusinessDetails.ownershipType"] = "required|digits_between:1,9223372036854775807";
             $rules["licenseDetails.licenseFor"] = "required|int";
@@ -139,9 +139,9 @@ class ReqAddRecorde extends TradeRequest
             }
             $rules["ownerDetails"] = "array";
             if ($this->ownerDetails) {
-                $rules["ownerDetails.*.businessOwnerName"] = "required|regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9\.\,\']+)*$/";
-                $rules["ownerDetails.*.guardianName"] = "regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9\.\,\']+)*$/|nullable";
-                $rules["ownerDetails.*.mobileNo"] = "required|digits:10|regex:/[0-9]{10}/";
+                $rules["ownerDetails.*.businessOwnerName"] = "required|regex:$mOwnerName";
+                $rules["ownerDetails.*.guardianName"] = "nullable|regex:$mOwnerName";
+                $rules["ownerDetails.*.mobileNo"] = "required|digits:10|regex:$mMobileNo";
                 $rules["ownerDetails.*.email"] = "email|nullable";
             }
         }
