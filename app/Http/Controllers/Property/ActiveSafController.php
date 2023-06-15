@@ -1144,17 +1144,11 @@ class ActiveSafController extends Controller
             $mPropOwners = new PropOwner();
             $mPropFloors = new PropFloor();
             $mLogPropFloors = new LogPropFloor();
-            $mLogPropOwner = new LogPropOwner();
             // Edit Property
             $mProperty->editPropBySaf($propId, $activeSaf);
             // Edit Owners 
             foreach ($ownerDetails as $ownerDetail) {
                 if ($assessmentType == 'Reassessment') {            // In Case of Reassessment Edit Owners
-                    // Logging of Prop Owners
-                    $ownerExists = $mPropOwners->getOwnerByPropId($propId);
-                    foreach ($ownerExists as $ownerExist) {
-                        $mLogPropOwner->replicateOwnerByPropOwners($ownerExist->id);            // Make Log
-                    }
 
                     if (!is_null($ownerDetail->prop_owner_id))
                         $ifOwnerExist = $mPropOwners->getOwnerByPropOwnerId($ownerDetail->prop_owner_id);
