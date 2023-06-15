@@ -592,13 +592,12 @@ class SafCalculation
 
             $carbonDateUpto = Carbon::parse($readDateUpto)->format('Y-m-d');
 
-            if ($readDateFrom >= $this->_virtualDate) {
-                $dateFrom = $readDateFrom;
-            }
+            if ($readDateFrom >= $this->_virtualDate)
+                $carbonDateFrom = $readDateFrom;
 
-            if ($readDateFrom < $this->_virtualDate) {
-                $dateFrom = $this->_virtualDate;
-            }
+
+            if ($readDateFrom < $this->_virtualDate)                                // Get Back to 12 Years
+                $carbonDateFrom = $this->_virtualDate;
         }
 
         // Itteration for the RuleSets dateFrom wise 

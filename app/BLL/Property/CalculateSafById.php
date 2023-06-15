@@ -74,7 +74,7 @@ class CalculateSafById
         // Saf Calculation
         $reqCalculation = $this->_safCalculationReq;
         $calculation = $this->_safCalculation->calculateTax($reqCalculation);
-
+        dd($calculation->original['data']->toArray());
         // Throw Exception on Calculation Error
         if ($calculation->original['status'] == false)
             throw new Exception($calculation->original['message']);
