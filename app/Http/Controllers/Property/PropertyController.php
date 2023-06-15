@@ -265,24 +265,42 @@ class PropertyController extends Controller
 
             switch ($type) {
                 case 'Reassesment':
-                    $data = PropActiveSaf::select('id')->where('previous_holding_id', $propertyId)->first();
+                    $data = PropActiveSaf::select('prop_active_safs.id', 'role_name', 'saf_no as application_no')
+                        ->join('wf_roles', 'wf_roles.id', 'prop_active_safs.current_role')
+                        ->where('previous_holding_id', $propertyId)
+                        ->first();
                     break;
                 case 'Mutation':
-                    $data = PropActiveSaf::select('id')->where('previous_holding_id', $propertyId)->first();
+                    $data = PropActiveSaf::select('prop_active_safs.id', 'role_name', 'saf_no as application_no')
+                        ->join('wf_roles', 'wf_roles.id', 'prop_active_safs.current_role')
+                        ->where('previous_holding_id', $propertyId)
+                        ->first();
                     break;
                 case 'Concession':
-                    $data = PropActiveConcession::select('id')->where('property_id', $propertyId)->first();
+                    $data = PropActiveConcession::select('prop_active_concessions.id', 'role_name', 'application_no')
+                        ->join('wf_roles', 'wf_roles.id', 'prop_active_concessions.current_role')
+                        ->where('property_id', $propertyId)
+                        ->first();
                     break;
                 case 'Objection':
-                    $data = PropActiveObjection::select('id')->where('property_id', $propertyId)->first();
+                    $data = PropActiveObjection::select('prop_active_objections.id', 'role_name', 'objection_no as application_no')
+                        ->join('wf_roles', 'wf_roles.id', 'prop_active_objections.current_role')
+                        ->where('property_id', $propertyId)
+                        ->first();
                     break;
                 case 'Harvesting':
-                    $data = PropActiveHarvesting::select('id')->where('property_id', $propertyId)->first();
+                    $data = PropActiveHarvesting::select('prop_active_harvestings.id', 'role_name', 'application_no')
+                        ->join('wf_roles', 'wf_roles.id', 'prop_active_harvestings.current_role')
+                        ->where('property_id', $propertyId)
+                        ->first();
                     break;
             }
-            if ($data)
+            if ($data) {
+                $msg['id'] = $data->id;
                 $msg['inWorkflow'] = true;
-            else
+                $msg['currentRole'] = $data->role_name;
+                $msg['message'] = "The application is still in workflow and pending at " . $data->role_name . ". Please Track your application with " . $data->application_no;
+            } else
                 $msg['inWorkflow'] = false;
 
             return responseMsgs(true, 'Data Updated', $msg, '010801', '01', '', 'Post', '');
