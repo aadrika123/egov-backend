@@ -9,6 +9,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post("add", "add");
         Route::post("get-notice-list", "noticeList");
         Route::post("application/dtl-by-id", "noticeView");
+        Route::post("application/full-dtl-by-id", "fullDtlById");
         Route::post("application/inbox", "inbox");
         Route::post("application/outbox", "outbox");
         Route::post("application/post-next", "postNextLevel");

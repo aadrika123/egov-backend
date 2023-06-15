@@ -229,7 +229,8 @@ use Barryvdh\DomPDF\Facade\PDF;
                         "notice_applications.owner_name",
                         "notice_applications.documents",
                         "notice_applications.status",
-                        "notice_type_masters.notice_type"
+                        "notice_type_masters.notice_type",
+                        DB::raw("cast(notice_applications.created_at as date) as apply_date")
                     )
                     ->join("notice_type_masters","notice_type_masters.id","notice_applications.notice_type_id")
                     ->where("notice_applications.ulb_id",$ulb_id)
@@ -273,7 +274,7 @@ use Barryvdh\DomPDF\Facade\PDF;
     {
         try{
             $user = Auth()->user();
-            $ulb_id = $user->ulb_id;
+            $ulb_id = $user->ulb_id??0;
             $notice = NoticeApplication::select(
                 "notice_applications.*",
                 "notice_type_masters.notice_type",
@@ -370,6 +371,79 @@ use Barryvdh\DomPDF\Facade\PDF;
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
+
+    public function fullDtlById(Request $request)
+    {
+        try{ 
+            $refUser        = Auth()->user(); 
+            $refUserId      = $refUser->id;
+            $refUlbId       = $refUser->ulb_id ?? 0;
+            $notice = NoticeApplication::select(
+                "notice_applications.*",
+                "notice_type_masters.notice_type",
+                DB::raw("cast(notice_applications.created_at as date) as apply_date"),
+            )
+            ->join("notice_type_masters","notice_type_masters.id","notice_applications.notice_type_id")            
+            ->find($request->applicationId);
+            if(!$notice)
+            {
+                throw new Exception("Data Not Found");
+            } 
+            $refUlbId = $notice->ulb_id;
+            $refWorkflowId=$notice->workflow_id;
+            $mStatus = $this->applicationStatus($notice->id);            
+            $refTimeLine    = $this->getTimelin($notice->id);
+            $mUserType      = $this->_COMMON_FUNCTION->userType($refWorkflowId);
+
+            $mworkflowRoles = $this->_COMMON_FUNCTION->getWorkFlowAllRoles($refUserId, $refUlbId, $refWorkflowId, true);
+            $mileSton = $this->_COMMON_FUNCTION->sortsWorkflowRols($mworkflowRoles);
+
+            $init_finish = $this->_COMMON_FUNCTION->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
+            
+            $finisher = $init_finish['finisher']??[];
+            $pendingAt  = $init_finish['initiator']['id']??0;
+            if (!$refTimeLine->isEmpty()) {
+                $pendingAt = $refTimeLine->receiver_role_id;
+            }
+            $noticeRemider = $this->getAllNoticRemider($notice->id);
+            $data['noticeDtl']     = $notice;
+            $data['sendNotice']     = $noticeRemider;
+            $data['pendingStatus']  = $mStatus;
+            $data['remarks']        = $refTimeLine;
+            $data["userType"]       = $mUserType;
+            $data["roles"]          = $mileSton;
+            $data["pendingAt"]      = $pendingAt;
+            $data['finisher']       = $finisher;
+            return responseMsg(true, "", remove_null($data));        
+        }
+        catch(Exception $e)
+        {
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
+    }
+    public function WorkFlowMetaList()
+    {
+        return DB::table("notice_applications")
+        ->join("notice_type_masters","notice_type_masters.id","notice_applications.notice_type_id")
+        ->join("module_masters","module_masters.id","notice_applications.notice_for_module_id")
+        ->select(
+            "notice_applications.id",
+            "notice_applications.application_no",
+            "notice_applications.firm_name",
+            "notice_applications.ptn_no",
+            "notice_applications.holding_no",
+            "notice_applications.license_no",                        
+            "notice_applications.served_to",
+            "notice_applications.address",
+            "notice_applications.locality",
+            "notice_applications.mobile_no",
+            "notice_applications.notice_content",
+            "notice_applications.owner_name",
+            "notice_type_masters.notice_type",
+            "module_masters.module_name",
+            DB::raw("cast(notice_applications.created_at as date) as apply_date")
+        );
+    }
     public function inbox(Request $request)
     {
         try {
@@ -383,24 +457,7 @@ use Barryvdh\DomPDF\Facade\PDF;
             
             $inputs = $request->all();
             // DB::enableQueryLog();          
-            $application = NoticeApplication::select(
-                    "notice_applications.id",
-                    "notice_applications.application_no",
-                    "notice_applications.firm_name",
-                    "notice_applications.ptn_no",
-                    "notice_applications.holding_no",
-                    "notice_applications.license_no",                        
-                    "notice_applications.served_to",
-                    "notice_applications.address",
-                    "notice_applications.locality",
-                    "notice_applications.mobile_no",
-                    "notice_applications.notice_content",
-                    "notice_applications.owner_name",
-                    "notice_type_masters.notice_type",
-                    "module_masters.module_name"
-                )
-                ->join("notice_type_masters","notice_type_masters.id","notice_applications.notice_type_id")
-                ->join("module_masters","module_masters.id","notice_applications.notice_for_module_id")
+            $application = $this->WorkFlowMetaList()
                 ->where("notice_applications.ulb_id",$refUlbId)
                 ->whereNOTIN("notice_applications.status",[0,5])    
                 ->where(function($where)use($role1,$role2,$role3){
@@ -438,9 +495,6 @@ use Barryvdh\DomPDF\Facade\PDF;
                 $application = $application
                     ->whereBetween(DB::raw('cast(notice_applications.application_date as date)'), [$inputs['formDate'], $inputs['formDate']]);
             }
-            // $application = $application
-            //     // ->whereIn('active_trade_licences.ward_id', $mWardIds)
-            //     ->get(); 
             if($request->all)
             {
                 $application= $application->get();
@@ -477,24 +531,7 @@ use Barryvdh\DomPDF\Facade\PDF;
             
             $inputs = $request->all();
             // DB::enableQueryLog();          
-            $application = NoticeApplication::select(
-                    "notice_applications.id",
-                    "notice_applications.application_no",
-                    "notice_applications.firm_name",
-                    "notice_applications.ptn_no",
-                    "notice_applications.holding_no",
-                    "notice_applications.license_no",                        
-                    "notice_applications.served_to",
-                    "notice_applications.address",
-                    "notice_applications.locality",
-                    "notice_applications.mobile_no",
-                    "notice_applications.notice_content",
-                    "notice_applications.owner_name",
-                    "notice_type_masters.notice_type",
-                    "module_masters.module_name"
-                )
-                ->join("notice_type_masters","notice_type_masters.id","notice_applications.notice_type_id")
-                ->join("module_masters","module_masters.id","notice_applications.notice_for_module_id")
+            $application = $this->WorkFlowMetaList()
                 ->where("notice_applications.ulb_id",$refUlbId)
                 ->whereNOTIN("notice_applications.status",[0,5])
                 ->where(function($where)use($role1,$role2,$role3){
@@ -531,10 +568,7 @@ use Barryvdh\DomPDF\Facade\PDF;
             {
                 $application = $application
                     ->whereBetween(DB::raw('cast(notice_applications.application_date as date)'), [$inputs['formDate'], $inputs['formDate']]);
-            }
-            // $application = $application
-            //     // ->whereIn('active_trade_licences.ward_id', $mWardIds)
-            //     ->get();  
+            } 
             if($request->all)
             {
                 $application= $application->get();
@@ -647,7 +681,7 @@ use Barryvdh\DomPDF\Facade\PDF;
             $status = "Notice Pending At " . $rols->role_name;
         } 
         return $status;
-    }
+    }    
 
     public function openNoticiList($sedule=false)
     {
@@ -782,4 +816,55 @@ use Barryvdh\DomPDF\Facade\PDF;
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+
+    public function getTimelin($id)
+    {
+        try {
+            //    DB::enableQueryLog();
+            $time_line =  workflowTrack::select(
+                "workflow_tracks.message",
+                "workflow_tracks.forward_date",
+                "workflow_tracks.forward_time",
+                "workflow_tracks.receiver_role_id",
+                "role_name",
+                DB::raw("workflow_tracks.created_at as receiving_date")
+            )
+                ->leftjoin('wf_roles', "wf_roles.id", "workflow_tracks.receiver_role_id")
+                ->where('workflow_tracks.ref_table_id_value', $id)
+                ->where('workflow_tracks.ref_table_dot_id', $this->_REF_TABLE)
+                ->whereNotNull('workflow_tracks.sender_role_id')
+                ->where('workflow_tracks.status', true)
+                ->groupBy(
+                    'workflow_tracks.receiver_role_id',
+                    'workflow_tracks.message',
+                    'workflow_tracks.forward_date',
+                    'workflow_tracks.forward_time',
+                    'wf_roles.role_name',
+                    'workflow_tracks.created_at'
+                )
+                ->orderBy('workflow_tracks.created_at', 'desc')
+                ->get();
+            return $time_line;
+        } catch (Exception $e) {
+            echo $e->getMessage();
+        }
+    }
+
+    public function getAllNoticRemider($id)
+    {
+        try {
+            //    DB::enableQueryLog();
+            $remider = NoticeReminder::SELECT("*",
+                        DB::RAW("CAST(created_at AS DATE) AS created_on")
+                        )
+                        ->where("status",1)
+                        ->where("notice_id",$id)
+                        ->orderBy("created_at")                        
+                        ->get();
+            return $remider;
+        } catch (Exception $e) {
+            return collect([]);
+        }
+    }
+    
  }
