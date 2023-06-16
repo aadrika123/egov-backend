@@ -61,6 +61,7 @@ class PropProperty extends Model
         return DB::table('prop_properties')
             ->select(
                 'prop_properties.*',
+                DB::raw("TO_CHAR(prop_properties.water_conn_date, 'DD-MM-YYYY') as water_conn_date"),
                 DB::raw("REPLACE(prop_properties.holding_type, '_', ' ') AS holding_type"),
                 'prop_properties.status as active_status',
                 'prop_properties.assessment_type as assessment',

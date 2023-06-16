@@ -895,8 +895,8 @@ class HoldingTaxController extends Controller
                 });
             }
 
-            $transactions['Holding'] = collect($propTrans)->sortByDesc('id');
-            $transactions['Saf'] = collect($safTrans)->sortByDesc('id');
+            $transactions['Holding'] = collect($propTrans)->sortByDesc('id')->values();
+            $transactions['Saf'] = collect($safTrans)->sortByDesc('id')->values();
 
             return responseMsgs(true, "", remove_null($transactions), "011606", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
