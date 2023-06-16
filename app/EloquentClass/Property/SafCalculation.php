@@ -575,7 +575,8 @@ class SafCalculation
             $dateTo = Carbon::now();
             $readRuleSet = $this->readRuleSet($dateFrom, $key);
             $carbonDateFrom = Carbon::parse($dateFrom)->format('Y-m-d');
-            $carbonDateUpto = readFinancialDueQuarter($dateTo);
+            $carbonDateUpto = $dateTo->endOfYear()->addMonths(3);           // Get The Full Financial Year
+            $carbonDateUpto = $carbonDateUpto->format('Y-m-d');
         }
 
         if (is_numeric($key)) {                                                 // i.e. Floors
