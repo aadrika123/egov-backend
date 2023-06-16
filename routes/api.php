@@ -90,6 +90,13 @@ Route::controller(UlbController::class)->group(function () {
     Route::post('city/state/ulb-id', 'getCityStateByUlb');
 });
 
+/**
+ * | Id Generator
+ */
+Route::controller(IdGeneratorController::class)->group(function () {
+    Route::post('id-generator', 'idGenerator');
+});
+
 
 // Inside Middleware Routes with API Authenticate 
 Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger', 'expireBearerToken']], function () {
@@ -348,12 +355,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('add-update-quickaccess', 'addUpdateQuickAccess');
     });
 
-    /**
-     * | Id Generator
-     */
-    Route::controller(IdGeneratorController::class)->group(function () {
-        Route::post('id-generator', 'idGenerator');
-    });
+
 
     /**
      * | Caretaker Property , Water , Trade (10)
