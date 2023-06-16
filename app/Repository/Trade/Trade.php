@@ -2318,7 +2318,7 @@ class Trade implements ITrade
             {
                 
                 $license = $license
-                        ->whereBetween('trade_licences.application_date', [$fromDate, $uptoDate]);
+                        ->whereBetween('trade_licences.license_date', [$fromDate, $uptoDate]);
             }
 
             if (in_array(strtoupper($mUserType), ["ONLINE"])) 
