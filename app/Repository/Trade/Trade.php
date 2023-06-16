@@ -1269,7 +1269,7 @@ class Trade implements ITrade
                 'headerTitle' => "About Trade",
                 'data' => $cardDetails
             ];
-
+            $fullDetailsData["propId"]         = $licenseDetail->property_id;
             $fullDetailsData['application_no'] = $licenseDetail->application_no;
             $fullDetailsData['apply_date'] = $licenseDetail->application_date;
             $fullDetailsData['fullDetailsData']['dataArray'] = new Collection([$basicElement]);
