@@ -1144,25 +1144,22 @@ class ActiveSafController extends Controller
             $mPropOwners = new PropOwner();
             $mPropFloors = new PropFloor();
             $mLogPropFloors = new LogPropFloor();
-            $mLogPropOwner = new LogPropOwner();
             // Edit Property
             $mProperty->editPropBySaf($propId, $activeSaf);
             // Edit Owners 
             foreach ($ownerDetails as $ownerDetail) {
                 if ($assessmentType == 'Reassessment') {            // In Case of Reassessment Edit Owners
-                    // Logging of Prop Owners
-                    $ownerExists = $mPropOwners->getOwnerByPropId($propId);
-                    foreach ($ownerExists as $ownerExist) {
-                        $mLogPropOwner->replicateOwnerByPropOwners($ownerExist->id);
-                    }
 
                     if (!is_null($ownerDetail->prop_owner_id))
                         $ifOwnerExist = $mPropOwners->getOwnerByPropOwnerId($ownerDetail->prop_owner_id);
 
                     if (isset($ifOwnerExist)) {
                         $ownerDetail = array_merge($ownerDetail->toArray(), ['property_id' => $propId]);
-                        $ownerDetail = new Request($ownerDetail);
-                        $mPropOwners->editOwner($ownerDetail);
+                        $propOwner = $mPropOwners::find($ownerDetail['prop_owner_id']);
+                        if (collect($propOwner)->isEmpty())
+                            throw new Exception("Owner Not Exists");
+                        unset($ownerDetail['id']);
+                        $propOwner->update($ownerDetail);
                     }
                 }
                 if ($assessmentType == 'Mutation') {            // In Case of Mutation Add Owners

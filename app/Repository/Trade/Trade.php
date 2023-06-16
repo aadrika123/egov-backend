@@ -929,50 +929,13 @@ class Trade implements ITrade
             if (!$refOldLicece) {
                 throw new Exception("No Licence Found");
             }
-            if ($refOldLicece->payment_status == 0) {
-                $rules["firmDetails.areaSqft"] = "required|numeric";
-                $rules["firmDetails.firmEstdDate"] = "required|date";
-                $rules["firmDetails.natureOfBusiness"] = "required|array";
-                $rules["firmDetails.natureOfBusiness.*.id"] = "required|digits_between:1,9223372036854775807";
-                $rules["firmDetails.tocStatus"] = "required|bool";
-            }
-            $rules["firmDetails.businessAddress"] = "required|regex:$mRegex";
-            $rules["firmDetails.businessAddress"] = "required|regex:$mRegex";
-            $rules["firmDetails.businessDescription"] = "required|regex:$mRegex";
-            $rules["firmDetails.firmName"] = "required|regex:$mFramNameRegex";
-            $rules["firmDetails.premisesOwner"] = "required|regex:$mRegex";
-            $rules["firmDetails.newWardNo"] = "required|digits_between:1,9223372036854775807";
-            $rules["firmDetails.wardNo"] = "required|digits_between:1,9223372036854775807";
-            $rules["firmDetails.pincode"] = "required|digits:6|regex:/[0-9]{6}/|nullable";
-
-            $rules["firmDetails.landmark"] = "regex:$mRegex|nullable";
-            $rules["firmDetails.kNo"] = "digits|regex:/[0-9]{10}/";
-            $rules["firmDetails.bindBookNo"] = "regex:$mRegex";
-            $rules["firmDetails.accountNo"] = "regex:$mRegex";
-
-            $rules["initialBusinessDetails.firmType"] = "required|digits_between:1,9223372036854775807";
-            $rules["initialBusinessDetails.categoryTypeId"] = "required|digits_between:1,9223372036854775807";
-            if (isset($request->initialBusinessDetails['firmType']) && $request->initialBusinessDetails['firmType'] == 5) {
-                $rules["initialBusinessDetails.otherFirmType"] = "required|regex:$mRegex";
-            }
-            $rules["initialBusinessDetails.ownershipType"] = "required|digits_between:1,9223372036854775807";
-
-            $rules["ownerDetails"] = "required|array";
-            $rules["ownerDetails.*.id"] = "nullable|digits_between:1,9223372036854775807";
-            $rules["ownerDetails.*.businessOwnerName"] = "required|regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9]+)*$/";
-            $rules["ownerDetails.*.guardianName"] = "regex:/^([a-zA-Z]+)(\s[a-zA-Z0-9]+)*$/|nullable";
-            $rules["ownerDetails.*.mobileNo"] = "required|digits:10|regex:/[0-9]{10}/";
-            $rules["ownerDetails.*.email"] = "email|nullable";
-
-            $validator = Validator::make($request->all(), $rules, $message);
-            if ($validator->fails()) {
-                return responseMsg(false, $validator->errors(), $request->all());
-            }
+            
             $mnaturOfBusiness = array_map(function ($val) {
                 return $val['id'];
             }, $request->firmDetails['natureOfBusiness']);
             $mnaturOfBusiness = implode(',', $mnaturOfBusiness);
-            if ($request->firmDetails['holdingNo']) {
+            if ($request->firmDetails['holdingNo'])
+            {
                 $property = $this->propertyDetailsfortradebyHoldingNo($request->firmDetails['holdingNo'], $refUlbId);
                 if ($property['status'])
                     $mProprtyId = $property['property']['id'];
@@ -981,7 +944,8 @@ class Trade implements ITrade
             }
             DB::beginTransaction();
 
-            if ($refOldLicece->payment_status == 0) {
+            if ($refOldLicece->payment_status == 0) 
+            {
                 $refOldLicece->area_in_sqft        = $request->firmDetails['areaSqft'];
                 $refOldLicece->establishment_date  = $request->firmDetails['firmEstdDate'];
                 $refOldLicece->nature_of_bussiness = $mnaturOfBusiness;
@@ -1015,10 +979,13 @@ class Trade implements ITrade
             $refOldLicece->pin_code            = $request->firmDetails['pincode'] ?? null;
             $refOldLicece->street_name         = $request->firmDetails['streetName'] ?? null;
             $refOldLicece->update();
-            foreach ($request->ownerDetails as $owner) {
-                if (isset($owner['id']) && trim($owner['id'])) {
+            foreach ($request->ownerDetails as $owner) 
+            {
+                if (isset($owner['id']) && trim($owner['id'])) 
+                {
                     $refOldOwner = ActiveTradeOwner::find($owner['id']);
-                    if (!$refOldOwner || $refOldOwner->temp_id != $mLicenceId) {
+                    if (!$refOldOwner || $refOldOwner->temp_id != $mLicenceId) 
+                    {
                         throw new Exception("Invalid Owner Id Supply!!!");
                     }
                     $refOldOwner->owner_name       = $owner['businessOwnerName'];
@@ -1030,7 +997,9 @@ class Trade implements ITrade
                     $refOldOwner->state            = $owner['state'] ?? null;
                     $refOldOwner->email_id          = $owner['email'] ?? null;
                     $refOldOwner->update();
-                } elseif (!$refOldLicece->is_doc_verified) {
+                } 
+                elseif (!$refOldLicece->is_doc_verified) 
+                {
                     $newOwner = new ActiveTradeOwner();
                     $newOwner->temp_id      = $mLicenceId;
                     $newOwner->owner_name      = $owner['businessOwnerName'];
@@ -1043,7 +1012,9 @@ class Trade implements ITrade
                     $newOwner->email_id        = $owner['email'] ?? null;
                     $newOwner->user_id         = $refUserId;
                     $newOwner->save();
-                } else {
+                } 
+                else 
+                {
                     throw new Exception("You Can Not Update Owner Document is VeriFy On " . $refOldLicece->doc_verify_date . " !!!");
                 }
             }
@@ -3386,7 +3357,7 @@ class Trade implements ITrade
             )
                 ->leftjoin('wf_roles', "wf_roles.id", "workflow_tracks.receiver_role_id")
                 ->where('workflow_tracks.ref_table_id_value', $id)
-                ->where('workflow_tracks.ref_table_dot_id', "active_trade_licences")
+                ->where('workflow_tracks.ref_table_dot_id', $this->_REF_TABLE)
                 ->whereNotNull('workflow_tracks.sender_role_id')
                 ->where('workflow_tracks.status', true)
                 ->groupBy(

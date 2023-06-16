@@ -531,7 +531,7 @@ class PropProperty extends Model
     /**
      * | Search Property
      */
-    public function searchProperty()
+    public function searchProperty($ulbId)
     {
         return PropProperty::select(
             'prop_properties.id',
@@ -558,7 +558,8 @@ class PropProperty extends Model
                            ) as geotag"), function ($join) {
                 $join->on("geotag.saf_id", "=", "prop_properties.saf_id");
             })
-            ->leftjoin('prop_owners', 'prop_owners.property_id', 'prop_properties.id');
+            ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
+            ->where('prop_properties.ulb_id', $ulbId);
     }
 
     /**

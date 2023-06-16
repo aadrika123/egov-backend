@@ -10,6 +10,32 @@ class TradeOwner extends Model
     use HasFactory;
     public $timestamps = false;
 
+    public function application()
+    {
+        return $this->belongsTo(TradeLicence::class,'temp_id',"id");
+    }
+
+    public function renewalApplication()
+    {
+        return $this->belongsTo(TradeRenewal::class,'temp_id',"id");
+    }
+
+    public function docDtl()
+    {
+        return $this->hasManyThrough(WfActiveDocument::class,TradeLicence::class,'id',"active_id","temp_id","id")
+                ->whereColumn("wf_active_documents.workflow_id","trade_licences.workflow_id")
+                ->where("wf_active_documents.owner_dtl_id",$this->id)
+                ->where("wf_active_documents.status",1);
+    }
+
+    public function renewalDocDtl()
+    {
+        return $this->hasManyThrough(WfActiveDocument::class,TradeRenewal::class,'id',"active_id","temp_id","id")
+                ->whereColumn("wf_active_documents.workflow_id","trade_renewals.workflow_id")
+                ->where("wf_active_documents.owner_dtl_id",$this->id)
+                ->where("wf_active_documents.status",1);
+    }
+
     public static function owneresByLId($licenseId)
     {
         return self::select("*")

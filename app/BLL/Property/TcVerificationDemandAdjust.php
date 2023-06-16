@@ -138,7 +138,6 @@ class TcVerificationDemandAdjust
             $this->_calculateSafByid->_demandDetails = $quaterlyTax;
             $this->_calculateSafByid->_holdingNo = $activeSafDtls->holding_no;
             $this->_calculateSafByid->_safDetails['previous_holding_id'] = $activeSafDtls->previous_holding_id;
-            $this->_calculateSafByid->_isTcVerification = true;
             $quaterlyTax = $this->_calculateSafByid->adjustAmount();
         }
         return $quaterlyTax;

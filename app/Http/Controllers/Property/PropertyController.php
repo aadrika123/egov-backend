@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\ThirdPartyController;
 use App\Models\ActiveCitizen;
 use App\Models\Citizen\ActiveCitizenUndercare;
+use App\Models\Property\PropActiveConcession;
+use App\Models\Property\PropActiveHarvesting;
+use App\Models\Property\PropActiveObjection;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropDemand;
 use App\Models\Property\PropOwner;
@@ -235,6 +238,72 @@ class PropertyController extends Controller
             });
 
             return responseMsgs(true, 'Data Updated', '', '010801', '01', '', 'Post', '');
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Check if the property id exist in the workflow
+     */
+    public function CheckProperty(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'type' => 'required|in:Reassesment,Mutation,Concession,Objection,Harvesting',
+                'propertyId' => 'required|numeric',
+            ]
+        );
+        if ($validated->fails()) {
+            return validationError($validated);
+        }
+
+        try {
+            $type = $req->type;
+            $propertyId = $req->propertyId;
+
+            switch ($type) {
+                case 'Reassesment':
+                    $data = PropActiveSaf::select('prop_active_safs.id', 'role_name', 'saf_no as application_no')
+                        ->join('wf_roles', 'wf_roles.id', 'prop_active_safs.current_role')
+                        ->where('previous_holding_id', $propertyId)
+                        ->first();
+                    break;
+                case 'Mutation':
+                    $data = PropActiveSaf::select('prop_active_safs.id', 'role_name', 'saf_no as application_no')
+                        ->join('wf_roles', 'wf_roles.id', 'prop_active_safs.current_role')
+                        ->where('previous_holding_id', $propertyId)
+                        ->first();
+                    break;
+                case 'Concession':
+                    $data = PropActiveConcession::select('prop_active_concessions.id', 'role_name', 'application_no')
+                        ->join('wf_roles', 'wf_roles.id', 'prop_active_concessions.current_role')
+                        ->where('property_id', $propertyId)
+                        ->first();
+                    break;
+                case 'Objection':
+                    $data = PropActiveObjection::select('prop_active_objections.id', 'role_name', 'objection_no as application_no')
+                        ->join('wf_roles', 'wf_roles.id', 'prop_active_objections.current_role')
+                        ->where('property_id', $propertyId)
+                        ->first();
+                    break;
+                case 'Harvesting':
+                    $data = PropActiveHarvesting::select('prop_active_harvestings.id', 'role_name', 'application_no')
+                        ->join('wf_roles', 'wf_roles.id', 'prop_active_harvestings.current_role')
+                        ->where('property_id', $propertyId)
+                        ->first();
+                    break;
+            }
+            if ($data) {
+                $msg['id'] = $data->id;
+                $msg['inWorkflow'] = true;
+                $msg['currentRole'] = $data->role_name;
+                $msg['message'] = "The application is still in workflow and pending at " . $data->role_name . ". Please Track your application with " . $data->application_no;
+            } else
+                $msg['inWorkflow'] = false;
+
+            return responseMsgs(true, 'Data Updated', $msg, '010801', '01', '', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
