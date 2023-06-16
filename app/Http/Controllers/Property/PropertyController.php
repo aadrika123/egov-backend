@@ -251,7 +251,7 @@ class PropertyController extends Controller
         $validated = Validator::make(
             $req->all(),
             [
-                'type' => 'required|in:Reassesment,Mutation,Concession,Objection,Harvesting',
+                'type' => 'required|in:Reassesment,Mutation,Concession,Objection,Harvesting,Bifurcation',
                 'propertyId' => 'required|numeric',
             ]
         );
