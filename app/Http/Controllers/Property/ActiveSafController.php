@@ -1278,7 +1278,10 @@ class ActiveSafController extends Controller
 
             $propDtls = $mPropProperties->getPropIdBySafId($req->applicationId);
             $propId = $propDtls->id;
-            $fieldVerifiedSaf = $propSafVerification->getVerificationsBySafId($safId);          // Get fields Verified Saf with all Floor Details
+            if ($safDetails->prop_type_mstr_id != 4)
+                $fieldVerifiedSaf = $propSafVerification->getVerificationsBySafId($safId);          // Get fields Verified Saf with all Floor Details
+            else
+                $fieldVerifiedSaf = $propSafVerification->getVerifications($safId);
             if (collect($fieldVerifiedSaf)->isEmpty())
                 throw new Exception("Site Verification not Exist");
 
@@ -1387,34 +1390,35 @@ class ActiveSafController extends Controller
             $approvedOwner->save();
             $ownerDetail->delete();
         }
+        if ($activeSaf->prop_type_mstr_id != 4) {               // Applicable Not for Vacant Land
+            // Saf Floors Replication
+            foreach ($floorDetails as $floorDetail) {
+                $approvedFloor = $floorDetail->replicate();
+                $approvedFloor->setTable('prop_safs_floors');
+                $approvedFloor->id = $floorDetail->id;
+                $approvedFloor->save();
+                $floorDetail->delete();
+            }
 
-        // Saf Floors Replication
-        foreach ($floorDetails as $floorDetail) {
-            $approvedFloor = $floorDetail->replicate();
-            $approvedFloor->setTable('prop_safs_floors');
-            $approvedFloor->id = $floorDetail->id;
-            $approvedFloor->save();
-            $floorDetail->delete();
-        }
-
-        // Deactivate Existing Prop Floors by Saf Id
-        $existingFloors = $mPropFloors->getFloorsByPropId($propId);
-        if ($existingFloors)
-            $mPropFloors->deactivateFloorsByPropId($propId);
-        foreach ($fieldVerifiedSaf as $key) {
-            $floorReqs = new Request([
-                'floor_mstr_id' => $key->floor_mstr_id,
-                'usage_type_mstr_id' => $key->usage_type_id,
-                'const_type_mstr_id' => $key->construction_type_id,
-                'occupancy_type_mstr_id' => $key->occupancy_type_id,
-                'builtup_area' => $key->builtup_area,
-                'date_from' => $key->date_from,
-                'date_upto' => $key->date_to,
-                'carpet_area' => $key->carpet_area,
-                'property_id' => $propId,
-                'saf_id' => $safId
-            ]);
-            $mPropFloors->postFloor($floorReqs);
+            // Deactivate Existing Prop Floors by Saf Id
+            $existingFloors = $mPropFloors->getFloorsByPropId($propId);
+            if ($existingFloors)
+                $mPropFloors->deactivateFloorsByPropId($propId);
+            foreach ($fieldVerifiedSaf as $key) {
+                $floorReqs = new Request([
+                    'floor_mstr_id' => $key->floor_mstr_id,
+                    'usage_type_mstr_id' => $key->usage_type_id,
+                    'const_type_mstr_id' => $key->construction_type_id,
+                    'occupancy_type_mstr_id' => $key->occupancy_type_id,
+                    'builtup_area' => $key->builtup_area,
+                    'date_from' => $key->date_from,
+                    'date_upto' => $key->date_to,
+                    'carpet_area' => $key->carpet_area,
+                    'property_id' => $propId,
+                    'saf_id' => $safId
+                ]);
+                $mPropFloors->postFloor($floorReqs);
+            }
         }
     }
 
@@ -1439,13 +1443,15 @@ class ActiveSafController extends Controller
             $ownerDetail->delete();
         }
 
-        // SAF Floors Replication
-        foreach ($floorDetails as $floorDetail) {
-            $approvedFloor = $floorDetail->replicate();
-            $approvedFloor->setTable('prop_rejected_safs_floors');
-            $approvedFloor->id = $floorDetail->id;
-            $approvedFloor->save();
-            $floorDetail->delete();
+        if ($activeSaf->prop_type_mstr_id != 4) {           // Not Applicable for Vacant Land
+            // SAF Floors Replication
+            foreach ($floorDetails as $floorDetail) {
+                $approvedFloor = $floorDetail->replicate();
+                $approvedFloor->setTable('prop_rejected_safs_floors');
+                $approvedFloor->id = $floorDetail->id;
+                $approvedFloor->save();
+                $floorDetail->delete();
+            }
         }
     }
 
@@ -2231,7 +2237,7 @@ class ActiveSafController extends Controller
                         'user_id' => $userId,
                         'ulb_id' => $ulbId
                     ];
-                    $verificationDtl->store($floorReq);
+                    $status = $verificationDtl->store($floorReq);
                 }
             }
 

@@ -73,6 +73,6 @@ class PropSafVerificationDtl extends Model
      */
     public function store($req)
     {
-        PropSafVerificationDtl::create($req);
+        return PropSafVerificationDtl::create($req);
     }
 }
