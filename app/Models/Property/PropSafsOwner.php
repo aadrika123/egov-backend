@@ -4,6 +4,7 @@ namespace App\Models\Property;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class PropSafsOwner extends Model
 {
@@ -31,7 +32,11 @@ class PropSafsOwner extends Model
 
     public function getOwnersBySafId($safId)
     {
-        return PropSafsOwner::where('saf_id', $safId)
+        return PropSafsOwner::select(
+            'prop_safs_owners.*',
+            DB::raw("TO_CHAR(dob, 'DD-MM-YYYY') as dob"),
+        )
+            ->where('saf_id', $safId)
             ->where('status', 1)
             ->get();
     }
