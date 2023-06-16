@@ -2437,7 +2437,7 @@ class ActiveSafController extends Controller
                 ->leftjoin('ref_prop_road_types as r', 'r.id', '=', 'prop_saf_verifications.road_type_id')
                 ->leftjoin('ulb_ward_masters as u', 'u.id', '=', 'prop_saf_verifications.ward_id')
                 ->leftjoin('users', 'users.id', '=', 'prop_saf_verifications.emp_id')
-                ->where("prop_saf_verifications.id", $request->applicationId)
+                ->where("prop_saf_verifications.saf_id", $request->applicationId)
                 ->first();
             if (!$verifications) {
                 throw new Exception("verification Data NOt Found");
@@ -2456,7 +2456,7 @@ class ActiveSafController extends Controller
                     ->leftjoin('ref_prop_types as p', 'p.id', '=', 'prop_rejected_safs.prop_type_mstr_id')
                     ->leftjoin('ref_prop_road_types as r', 'r.id', '=', 'prop_rejected_safs.road_type_mstr_id')
                     ->leftjoin('ulb_ward_masters as u', 'u.id', '=', 'prop_rejected_safs.ward_mstr_id')
-                    ->leftjoin('ref_prop_ownership_types as ownership_types', 'ownership_types.id', '=', 'prop_active_safs.ownership_type_mstr_id')
+                    ->leftjoin('ref_prop_ownership_types as ownership_types', 'ownership_types.id', '=', 'prop_rejected_safs.ownership_type_mstr_id')
                     ->where("prop_rejected_safs.id", $verifications->saf_id)
                     ->first();
                 $tbl = "prop_rejected_safs";
@@ -2467,7 +2467,7 @@ class ActiveSafController extends Controller
                     ->leftjoin('ref_prop_types as p', 'p.id', '=', 'prop_safs.prop_type_mstr_id')
                     ->leftjoin('ref_prop_road_types as r', 'r.id', '=', 'prop_safs.road_type_mstr_id')
                     ->leftjoin('ulb_ward_masters as u', 'u.id', '=', 'prop_safs.ward_mstr_id')
-                    ->leftjoin('ref_prop_ownership_types as ownership_types', 'ownership_types.id', '=', 'prop_active_safs.ownership_type_mstr_id')
+                    ->leftjoin('ref_prop_ownership_types as ownership_types', 'ownership_types.id', '=', 'prop_safs.ownership_type_mstr_id')
                     ->where("prop_safs.id", $verifications->saf_id)
                     ->first();
                 $tbl = "prop_safs";
