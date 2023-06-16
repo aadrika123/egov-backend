@@ -652,7 +652,9 @@ class PropProperty extends Model
     }
 
 
-
+    /**
+     * | Get details according to ward for heat map
+     */
     public function getPropLatlong($wardId)
     {
         return PropProperty::select(
@@ -667,13 +669,12 @@ class PropProperty extends Model
             'prop_saf_geotag_uploads.created_at',
             DB::raw("concat(relative_path,'/',image_path) as doc_path"),
         )
-            ->join('prop_saf_geotag_uploads', 'prop_saf_geotag_uploads.saf_id', '=', 'prop_properties.id')
-
+            ->join('prop_saf_geotag_uploads', 'prop_saf_geotag_uploads.saf_id', '=', 'prop_properties.saf_id')
             ->where('prop_properties.ward_mstr_id', $wardId)
             ->where('prop_properties.holding_no', '!=', null)
             ->orderByDesc('prop_properties.id')
             ->skip(0)
-            ->take(200)
+            ->take(5000)
             ->get();
     }
 

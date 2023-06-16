@@ -241,24 +241,23 @@ class PropertyController extends Controller
     }
 
     /**
-     * | Get the Saf LatLong for map
-     * | Using wardId 
-     * | @param request
-     * | @var 
-     * | @return
+     * | Get the Property LatLong for Heat map
+     * | Using wardId used in dashboard data 
+     * | @param req
         | For MVP testing
      */
     public function getpropLatLong(Request $req)
     {
+        $req->validate([
+            'wardId' => 'required|integer',
+        ]);
         try {
-            $req->validate([
-                'wardId' => 'required|integer',
-            ]);
             $mPropProperty = new PropProperty();
             $propDetails = $mPropProperty->getPropLatlong($req->wardId);
             $propDetails = collect($propDetails)->map(function ($value) {
 
-                $currentDate = Carbon::now();
+                $currentDate = Carbon::now()->format('Y-04-01');
+                $refCurrentDate = Carbon::createFromFormat('Y-m-d', $currentDate);
                 $mPropDemand = new PropDemand();
 
                 $geoDate = strtotime($value['created_at']);
@@ -268,24 +267,24 @@ class PropertyController extends Controller
                 $path = $this->readDocumentPath($value['doc_path']);
                 # arrrer,current,paid
                 $refUnpaidPropDemands = $mPropDemand->getDueDemandByPropId($value['property_id']);
-                $checkPropDemand = collect($refUnpaidPropDemands)->first();
+                $checkPropDemand = collect($refUnpaidPropDemands)->last();
                 if (is_null($checkPropDemand)) {
-                    $currentStatus = 3;                                 // Static
-                    $statusName = "Arrear";                             // Static
+                    $currentStatus = 3;                                                             // Static
+                    $statusName = "No Dues";                                                         // Static
                 }
                 if ($checkPropDemand) {
-                    $lastDemand = collect($refUnpaidPropDemands)->first();
+                    $lastDemand = collect($refUnpaidPropDemands)->last();
                     if (is_null($lastDemand->due_date)) {
-                        $currentStatus = 3;                             // Static
-                        $statusName = "Arrear";                         // Static
+                        $currentStatus = 3;                                                         // Static
+                        $statusName = "No Dues";                                                     // Static
                     }
-                    $refDate = Carbon::createFromFormat('Y-m-d', $lastDemand->due_date)->toDateString();
-                    if ($currentDate < $refDate) {
-                        $currentStatus = 1;                             // Static
-                        $statusName = "No Dues";                        // Static
+                    $refDate = Carbon::createFromFormat('Y-m-d', $lastDemand->due_date);
+                    if ($refDate < $refCurrentDate) {
+                        $currentStatus = 1;                                                         // Static
+                        $statusName = "Arrear";                                                    // Static
                     } else {
-                        $currentStatus = 2;                             // Static
-                        $statusName = "Current Dues";                   // Static
+                        $currentStatus = 2;                                                         // Static
+                        $statusName = "Current Dues";                                               // Static
                     }
                 }
                 $value['statusName'] = $statusName;
@@ -297,10 +296,9 @@ class PropertyController extends Controller
                 }
                 $value['full_doc'] = !empty(trim($value['doc_path'])) ? $path : null;
                 return $value;
-            })
-                ->filter(function ($refValues) {
-                    return $refValues['new_holding_no'] != null;
-                });
+            })->filter(function ($refValues) {
+                return $refValues['new_holding_no'] != null;
+            });
             return responseMsgs(true, "latLong Details", remove_null($propDetails), "", "01", ".ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", $req->deviceId);
@@ -308,7 +306,7 @@ class PropertyController extends Controller
     }
     public function readRefDocumentPath($path)
     {
-        $path = ("http://smartulb.co.in/RMCDMC/getImageLink.php?path=" . "/" . $path);
+        $path = ("https://smartulb.co.in/RMCDMC/getImageLink.php?path=" . "/" . $path);                      // Static
         return $path;
     }
     public function readDocumentPath($path)
