@@ -33,8 +33,6 @@ class PropSafVerificationDtl extends Model
                 'v.builtup_area',
                 'v.date_from',
                 'v.date_to as date_upto',
-                // DB::raw("TO_CHAR(v.date_from, 'DD-MM-YYYY') as date_from"),
-                // DB::raw("TO_CHAR(v.date_to, 'DD-MM-YYYY') as date_upto"),
                 'v.carpet_area',
                 'v.verified_by',
                 'v.created_at',
