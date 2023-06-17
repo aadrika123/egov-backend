@@ -46,6 +46,9 @@ class CaretakerController extends Controller
                 throw new Exception("ConsumerNo caretaker already exist!");
 
             $approveApplicant = $mWaterApprovalApplicant->getOwnerDtlById($waterDtl->apply_connection_id);
+            if (is_null($approveApplicant->mobile_no)) {
+                throw new Exception("Mobile no for respective consumer not found!");
+            }
             $applicantMobile = $approveApplicant->mobile_no;
 
             $myRequest = new \Illuminate\Http\Request();

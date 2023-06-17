@@ -96,13 +96,12 @@ class RazorpayPaymentController extends Controller
      */
     public function verifyPaymentStatus(Request $req)
     {
-        # validation 
-        // return true;
         $req->validate([
             'razorpayOrderId' => 'required',
             'razorpayPaymentId' => 'required',
         ]);
         try {
+            return responseMsgs(true, "payment On process!", [], "", "01", "", "POST", $req->deviceId);
             return $this->Prepository->verifyPaymentStatus($req);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], "", "01", "", "POST", $req->deviceId);
