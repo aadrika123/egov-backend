@@ -3,12 +3,10 @@
 namespace App\Http\Controllers\Property;
 
 use App\BLL\Property\CalculateSafById;
-use App\BLL\Property\HandleTcVerification;
 use App\BLL\Property\PaymentReceiptHelper;
 use App\BLL\Property\PostRazorPayPenaltyRebate;
 use App\BLL\Property\PostSafPropTaxes;
 use App\BLL\Property\PreviousHoldingDeactivation;
-use App\BLL\Property\RazorpayRequest;
 use App\BLL\Property\TcVerificationDemandAdjust;
 use App\EloquentClass\Property\PenaltyRebateCalculation;
 use App\EloquentClass\Property\SafCalculation;
@@ -21,9 +19,6 @@ use App\MicroServices\IdGenerator\PrefixIdGenerator;
 use App\Models\CustomDetail;
 use App\Models\Payment\TempTransaction;
 use App\Models\Property\Logs\LogPropFloor;
-use App\Models\Property\Logs\LogPropOwner;
-use App\Models\Property\PaymentPropPenaltyrebate;
-use App\Models\Property\PaymentPropPenalty;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropActiveSafsOwner;
@@ -1169,14 +1164,6 @@ class ActiveSafController extends Controller
                 }
             }
             // Edit Floors
-            /**
-             * | Existing Floors Logs Before Updation
-             */
-            $floorExists = $mPropFloors->getFloorsByPropId($propId);
-            foreach ($floorExists as $floorExist) {
-                $mLogPropFloors->replicateFloorByPropFloors($floorExist->id);
-            }
-
             foreach ($floorDetails as $floorDetail) {
                 if (!is_null($floorDetail->prop_floor_details_id))
                     $ifFloorExist = $mPropFloors->getFloorByFloorId($floorDetail->prop_floor_details_id);

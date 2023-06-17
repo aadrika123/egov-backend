@@ -89,7 +89,7 @@ class PropSafVerification extends Model
             'ulb_id' => $req->ulbId,
             'gb_usage_types' => $req->gbUsageTypes,
             'gb_prop_usage_types' => $req->gbPropUsageTypes,
-
+            'rwh_date_from' => $req->rwhDateFrom
         ];
 
         return PropSafVerification::create($metaReqs)->id;

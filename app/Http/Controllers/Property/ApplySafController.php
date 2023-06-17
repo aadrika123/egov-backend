@@ -193,7 +193,6 @@ class ApplySafController extends Controller
             //     $rEloquentAuthRepository = new EloquentAuthRepository();
             //     $rEloquentAuthRepository->addNotification($mreq);
             // }
-
             DB::commit();
             return responseMsgs(true, "Successfully Submitted Your Application Your SAF No. $safNo", [
                 "safNo" => $safNo,
