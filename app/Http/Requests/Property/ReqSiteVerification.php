@@ -42,8 +42,9 @@ class ReqSiteVerification extends FormRequest
             'petrolPump.dateFrom' => 'required_if:isPetrolPump,1',
             'isWaterHarvesting' => 'required|bool',
         ];
-        // if ($this->isWaterHarvesting == true)
-        //     $validation = array_merge($validation, ['rwhDateFrom' => 'required|date|date_format:Y-m-d|before_or_equal:' . $mNowDate]);
+
+        if ($this->isWaterHarvesting == true)
+            $validation = array_merge($validation, ['rwhDateFrom' => 'required|date|date_format:Y-m-d|before_or_equal:' . $mNowDate]);
 
         if ($this->propertyType != 4) {
             $validation = array_merge($validation, [
