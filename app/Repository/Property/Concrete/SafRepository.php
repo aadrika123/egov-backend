@@ -37,6 +37,7 @@ class SafRepository implements iSafRepository
                 'prop_active_safs.parked',
                 'prop_active_safs.prop_address',
                 'prop_active_safs.applicant_name',
+                'prop_active_safs.citizen_id',
             )
             ->whereIn('workflow_id', $workflowIds)
             ->where('is_gb_saf', false);
