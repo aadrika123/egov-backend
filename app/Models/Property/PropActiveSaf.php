@@ -170,7 +170,6 @@ class  PropActiveSaf extends Model
         return DB::table('prop_active_safs')
             ->select(
                 'prop_active_safs.*',
-                DB::raw("TO_CHAR(prop_active_safs.application_date, 'DD-MM-YYYY') as application_date"),
                 'prop_active_safs.assessment_type as assessment',
                 DB::raw("REPLACE(prop_active_safs.holding_type, '_', ' ') AS holding_type"),
                 'w.ward_name as old_ward_no',

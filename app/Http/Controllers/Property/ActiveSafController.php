@@ -648,8 +648,7 @@ class ActiveSafController extends Controller
                 'data' => $electDetails
             ];
             $fullDetailsData['application_no'] = $data->saf_no;
-            // $fullDetailsData['apply_date'] = $data->application_date;
-            $fullDetailsData['apply_date'] = Carbon::createFromFormat('Y-m-d', $data->application_date)->format('d-m-Y');
+            $fullDetailsData['apply_date'] = $data->application_date;
 
             $fullDetailsData['doc_verify_status'] = $data->doc_verify_status;
             $fullDetailsData['doc_upload_status'] = $data->doc_upload_status;
@@ -2232,8 +2231,8 @@ class ActiveSafController extends Controller
                         'construction_type_id' => $floorDetail['constructionType'],
                         'occupancy_type_id' => $floorDetail['occupancyType'],
                         'builtup_area' => $floorDetail['buildupArea'],
-                        'date_from' => Carbon::parse($floorDetail['dateFrom'])->format('Y-m-d'),
-                        'date_to' => Carbon::parse($floorDetail['dateUpto'])->format('Y-m-d'),
+                        'date_from' => $floorDetail['dateFrom'],
+                        'date_to' => $floorDetail['dateUpto'],
                         'carpet_area' => $carpetArea,
                         'user_id' => $userId,
                         'ulb_id' => $ulbId

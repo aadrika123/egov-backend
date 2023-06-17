@@ -39,8 +39,7 @@ class PropActiveSafsOwner extends Model
     public function getOwnersBySafId($safId)
     {
         return PropActiveSafsOwner::select(
-            'prop_active_safs_owners.*',
-            DB::raw("TO_CHAR(dob, 'DD-MM-YYYY') as dob"),
+            'prop_active_safs_owners.*'
         )
             ->where('saf_id', $safId)
             ->where('status', 1)

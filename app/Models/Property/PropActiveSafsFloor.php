@@ -31,8 +31,6 @@ class PropActiveSafsFloor extends Model
         return DB::table('prop_active_safs_floors')
             ->select(
                 'prop_active_safs_floors.*',
-                DB::raw("TO_CHAR(prop_active_safs_floors.date_from, 'DD-MM-YYYY') as date_from"),
-                DB::raw("TO_CHAR(prop_active_safs_floors.date_upto, 'DD-MM-YYYY') as date_upto"),
                 'f.floor_name',
                 'u.usage_type',
                 'o.occupancy_type',
