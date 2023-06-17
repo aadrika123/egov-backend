@@ -325,7 +325,6 @@ class PaymentRepository implements iPayment
             }
 
             # Data to be stored in webhook table
-
             $webhookData = new WebhookPaymentData();
             $refWebhookDetails = $webhookData->getWebhookRecord($request, $captured, $webhookEntity, $status)->first();
             if (is_null($refWebhookDetails)) {
