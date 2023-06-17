@@ -43,6 +43,7 @@ class PropSafVerification extends Model
                 'v.ulb_id',
                 'v.old_verification_id',
                 'v.road_width',
+                'v.rwh_date_from',
                 'p.property_type',
                 'r.road_type as road_type_master',
                 'u.ward_name as old_ward_no',
