@@ -2232,8 +2232,8 @@ class ActiveSafController extends Controller
                         'construction_type_id' => $floorDetail['constructionType'],
                         'occupancy_type_id' => $floorDetail['occupancyType'],
                         'builtup_area' => $floorDetail['buildupArea'],
-                        'date_from' => $floorDetail['dateFrom'],
-                        'date_to' => $floorDetail['dateUpto'],
+                        'date_from' => Carbon::parse($floorDetail['dateFrom'])->format('Y-m-d'),
+                        'date_to' => Carbon::parse($floorDetail['dateUpto'])->format('Y-m-d'),
                         'carpet_area' => $carpetArea,
                         'user_id' => $userId,
                         'ulb_id' => $ulbId
