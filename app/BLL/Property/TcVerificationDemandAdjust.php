@@ -123,9 +123,9 @@ class TcVerificationDemandAdjust
             "isTrust" => $activeSafDtls->is_trust,
             "trustType" => $activeSafDtls->trust_type,
             "isTrustVerified" => $activeSafDtls->is_trust_verified,
-            "rwhDateFrom" => $activeSafDtls->rwh_date_from
-
+            "rwhDateFrom" => $fieldVerifiedSaf->rwh_date_from ?? null
         ];
+
         $calculationReq = new Request($calculationReq);
         $calculation = $this->_safCalculation->calculateTax($calculationReq);
         if ($calculation->original['status'] == false)

@@ -43,6 +43,7 @@ class PropSafVerification extends Model
                 'v.ulb_id',
                 'v.old_verification_id',
                 'v.road_width',
+                'v.rwh_date_from',
                 'p.property_type',
                 'r.road_type as road_type_master',
                 'u.ward_name as old_ward_no',
@@ -76,20 +77,20 @@ class PropSafVerification extends Model
             'ward_id' => $req->wardId,
             'new_ward_id' => $req->newWardId,
             'has_mobile_tower' => $req->isMobileTower,
-            'tower_area' => $req->mobileTowerArea,
-            'tower_installation_date' => $req->mobileTowerDate,
+            'tower_area' => $req->mobileTower['area'],
+            'tower_installation_date' => $req->mobileTower['dateFrom'],
             'has_hoarding' => $req->isHoardingBoard,
-            'hoarding_area' => $req->hoardingArea,
-            'hoarding_installation_date' => $req->hoardingDate,
+            'hoarding_area' => $req->hoardingBoard['area'],
+            'hoarding_installation_date' => $req->hoardingBoard['dateFrom'],
             'is_petrol_pump' => $req->isPetrolPump,
-            'underground_area' => $req->petrolPumpUndergroundArea,
-            'petrol_pump_completion_date' => $req->petrolPumpDate,
-            'has_water_harvesting' => $req->isHarvesting,
+            'underground_area' => $req->petrolPump['area'],
+            'petrol_pump_completion_date' => $req->petrolPump['dateFrom'],
+            'has_water_harvesting' => $req->isWaterHarvesting,
             'user_id' => $req->userId,
             'ulb_id' => $req->ulbId,
             'gb_usage_types' => $req->gbUsageTypes,
             'gb_prop_usage_types' => $req->gbPropUsageTypes,
-
+            'rwh_date_from' => $req->rwhDateFrom
         ];
 
         return PropSafVerification::create($metaReqs)->id;
