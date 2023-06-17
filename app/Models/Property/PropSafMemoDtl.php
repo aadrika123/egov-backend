@@ -51,8 +51,8 @@ class PropSafMemoDtl extends Model
                 'm.memo_type',
                 'm.holding_no',
                 'm.prop_id',
-                DB::raw("(to_char(m.created_at::timestamp,'yyyy-mm-dd HH:MI')) as memo_date"),
-                'u.user_name as generated_by'
+                DB::raw("(to_char(m.created_at::timestamp,'dd-mm-yyyy HH:MI')) as memo_date"),
+                'u.name as generated_by'
             )
             ->where('saf_id', $safId)
             ->leftJoin('users as u', 'u.id', '=', 'm.user_id')

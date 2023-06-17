@@ -172,11 +172,13 @@ class ApplySafController extends Controller
             }
 
             // Floor Details
-            if ($request['floor']) {
-                $floorDetail = $request['floor'];
-                foreach ($floorDetail as $floorDetails) {
-                    $floor = new PropActiveSafsFloor();
-                    $floor->addfloor($floorDetails, $safId, $user_id);
+            if ($request->propertyType != 4) {
+                if ($request['floor']) {
+                    $floorDetail = $request['floor'];
+                    foreach ($floorDetail as $floorDetails) {
+                        $floor = new PropActiveSafsFloor();
+                        $floor->addfloor($floorDetails, $safId, $user_id);
+                    }
                 }
             }
 

@@ -880,12 +880,20 @@ class HoldingTaxController extends Controller
             if (!$propTrans || $propTrans->isEmpty())
                 throw new Exception("No Transaction Found");
 
+            $propTrans->map(function ($propTran) {
+                $propTran['tran_date'] = Carbon::createFromFormat('Y-m-d', $propTran->tran_date)->format('d-m-Y');
+            });
+
             $propSafId = $propertyDtls->saf_id;
 
             if (is_null($propSafId))
                 $safTrans = array();
-            else
+            else {
                 $safTrans = $mPropTrans->getPropTransactions($propSafId, 'saf_id');                 // Saf payment History
+                $safTrans->map(function ($safTran) {
+                    $safTran['tran_date'] = Carbon::createFromFormat('Y-m-d', $safTran->tran_date)->format('d-m-Y');
+                });
+            }
 
             $transactions['Holding'] = collect($propTrans)->sortByDesc('id')->values();
             $transactions['Saf'] = collect($safTrans)->sortByDesc('id')->values();

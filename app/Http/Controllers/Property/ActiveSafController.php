@@ -648,7 +648,9 @@ class ActiveSafController extends Controller
                 'data' => $electDetails
             ];
             $fullDetailsData['application_no'] = $data->saf_no;
-            $fullDetailsData['apply_date'] = $data->application_date;
+            // $fullDetailsData['apply_date'] = $data->application_date;
+            $fullDetailsData['apply_date'] = Carbon::createFromFormat('Y-m-d', $data->application_date)->format('d-m-Y');
+
             $fullDetailsData['doc_verify_status'] = $data->doc_verify_status;
             $fullDetailsData['doc_upload_status'] = $data->doc_upload_status;
             $fullDetailsData['payment_status'] = $data->payment_status;
@@ -976,7 +978,6 @@ class ActiveSafController extends Controller
                     throw new Exception("Document Not Fully Verified");
                 $idGeneration = new PrefixIdGenerator($ptParamId, $saf->ulb_id);
 
-
                 if (in_array($saf->assessment_type, ['New Assessment', 'Bifurcation', 'Amalgamation', 'Mutation'])) { // Make New Property For New Assessment,Bifurcation and Amalgamation & Mutation
                     $ptNo = $idGeneration->generate();
                     $saf->pt_no = $ptNo;                        // Generate New Property Tax No for All Conditions
@@ -1278,7 +1279,10 @@ class ActiveSafController extends Controller
 
             $propDtls = $mPropProperties->getPropIdBySafId($req->applicationId);
             $propId = $propDtls->id;
-            $fieldVerifiedSaf = $propSafVerification->getVerificationsBySafId($safId);          // Get fields Verified Saf with all Floor Details
+            if ($safDetails->prop_type_mstr_id != 4)
+                $fieldVerifiedSaf = $propSafVerification->getVerificationsBySafId($safId);          // Get fields Verified Saf with all Floor Details
+            else
+                $fieldVerifiedSaf = $propSafVerification->getVerifications($safId);
             if (collect($fieldVerifiedSaf)->isEmpty())
                 throw new Exception("Site Verification not Exist");
 
@@ -1387,34 +1391,35 @@ class ActiveSafController extends Controller
             $approvedOwner->save();
             $ownerDetail->delete();
         }
+        if ($activeSaf->prop_type_mstr_id != 4) {               // Applicable Not for Vacant Land
+            // Saf Floors Replication
+            foreach ($floorDetails as $floorDetail) {
+                $approvedFloor = $floorDetail->replicate();
+                $approvedFloor->setTable('prop_safs_floors');
+                $approvedFloor->id = $floorDetail->id;
+                $approvedFloor->save();
+                $floorDetail->delete();
+            }
 
-        // Saf Floors Replication
-        foreach ($floorDetails as $floorDetail) {
-            $approvedFloor = $floorDetail->replicate();
-            $approvedFloor->setTable('prop_safs_floors');
-            $approvedFloor->id = $floorDetail->id;
-            $approvedFloor->save();
-            $floorDetail->delete();
-        }
-
-        // Deactivate Existing Prop Floors by Saf Id
-        $existingFloors = $mPropFloors->getFloorsByPropId($propId);
-        if ($existingFloors)
-            $mPropFloors->deactivateFloorsByPropId($propId);
-        foreach ($fieldVerifiedSaf as $key) {
-            $floorReqs = new Request([
-                'floor_mstr_id' => $key->floor_mstr_id,
-                'usage_type_mstr_id' => $key->usage_type_id,
-                'const_type_mstr_id' => $key->construction_type_id,
-                'occupancy_type_mstr_id' => $key->occupancy_type_id,
-                'builtup_area' => $key->builtup_area,
-                'date_from' => $key->date_from,
-                'date_upto' => $key->date_to,
-                'carpet_area' => $key->carpet_area,
-                'property_id' => $propId,
-                'saf_id' => $safId
-            ]);
-            $mPropFloors->postFloor($floorReqs);
+            // Deactivate Existing Prop Floors by Saf Id
+            $existingFloors = $mPropFloors->getFloorsByPropId($propId);
+            if ($existingFloors)
+                $mPropFloors->deactivateFloorsByPropId($propId);
+            foreach ($fieldVerifiedSaf as $key) {
+                $floorReqs = new Request([
+                    'floor_mstr_id' => $key->floor_mstr_id,
+                    'usage_type_mstr_id' => $key->usage_type_id,
+                    'const_type_mstr_id' => $key->construction_type_id,
+                    'occupancy_type_mstr_id' => $key->occupancy_type_id,
+                    'builtup_area' => $key->builtup_area,
+                    'date_from' => $key->date_from,
+                    'date_upto' => $key->date_to,
+                    'carpet_area' => $key->carpet_area,
+                    'property_id' => $propId,
+                    'saf_id' => $safId
+                ]);
+                $mPropFloors->postFloor($floorReqs);
+            }
         }
     }
 
@@ -1439,13 +1444,15 @@ class ActiveSafController extends Controller
             $ownerDetail->delete();
         }
 
-        // SAF Floors Replication
-        foreach ($floorDetails as $floorDetail) {
-            $approvedFloor = $floorDetail->replicate();
-            $approvedFloor->setTable('prop_rejected_safs_floors');
-            $approvedFloor->id = $floorDetail->id;
-            $approvedFloor->save();
-            $floorDetail->delete();
+        if ($activeSaf->prop_type_mstr_id != 4) {           // Not Applicable for Vacant Land
+            // SAF Floors Replication
+            foreach ($floorDetails as $floorDetail) {
+                $approvedFloor = $floorDetail->replicate();
+                $approvedFloor->setTable('prop_rejected_safs_floors');
+                $approvedFloor->id = $floorDetail->id;
+                $approvedFloor->save();
+                $floorDetail->delete();
+            }
         }
     }
 
@@ -2225,13 +2232,13 @@ class ActiveSafController extends Controller
                         'construction_type_id' => $floorDetail['constructionType'],
                         'occupancy_type_id' => $floorDetail['occupancyType'],
                         'builtup_area' => $floorDetail['buildupArea'],
-                        'date_from' => $floorDetail['dateFrom'],
-                        'date_to' => $floorDetail['dateUpto'],
+                        'date_from' => Carbon::parse($floorDetail['dateFrom'])->format('Y-m-d'),
+                        'date_to' => Carbon::parse($floorDetail['dateUpto'])->format('Y-m-d'),
                         'carpet_area' => $carpetArea,
                         'user_id' => $userId,
                         'ulb_id' => $ulbId
                     ];
-                    $verificationDtl->store($floorReq);
+                    $status = $verificationDtl->store($floorReq);
                 }
             }
 
@@ -2431,7 +2438,7 @@ class ActiveSafController extends Controller
                 ->leftjoin('ref_prop_road_types as r', 'r.id', '=', 'prop_saf_verifications.road_type_id')
                 ->leftjoin('ulb_ward_masters as u', 'u.id', '=', 'prop_saf_verifications.ward_id')
                 ->leftjoin('users', 'users.id', '=', 'prop_saf_verifications.emp_id')
-                ->where("prop_saf_verifications.id", $request->applicationId)
+                ->where("prop_saf_verifications.saf_id", $request->applicationId)
                 ->first();
             if (!$verifications) {
                 throw new Exception("verification Data NOt Found");
@@ -2450,7 +2457,7 @@ class ActiveSafController extends Controller
                     ->leftjoin('ref_prop_types as p', 'p.id', '=', 'prop_rejected_safs.prop_type_mstr_id')
                     ->leftjoin('ref_prop_road_types as r', 'r.id', '=', 'prop_rejected_safs.road_type_mstr_id')
                     ->leftjoin('ulb_ward_masters as u', 'u.id', '=', 'prop_rejected_safs.ward_mstr_id')
-                    ->leftjoin('ref_prop_ownership_types as ownership_types', 'ownership_types.id', '=', 'prop_active_safs.ownership_type_mstr_id')
+                    ->leftjoin('ref_prop_ownership_types as ownership_types', 'ownership_types.id', '=', 'prop_rejected_safs.ownership_type_mstr_id')
                     ->where("prop_rejected_safs.id", $verifications->saf_id)
                     ->first();
                 $tbl = "prop_rejected_safs";
@@ -2461,7 +2468,7 @@ class ActiveSafController extends Controller
                     ->leftjoin('ref_prop_types as p', 'p.id', '=', 'prop_safs.prop_type_mstr_id')
                     ->leftjoin('ref_prop_road_types as r', 'r.id', '=', 'prop_safs.road_type_mstr_id')
                     ->leftjoin('ulb_ward_masters as u', 'u.id', '=', 'prop_safs.ward_mstr_id')
-                    ->leftjoin('ref_prop_ownership_types as ownership_types', 'ownership_types.id', '=', 'prop_active_safs.ownership_type_mstr_id')
+                    ->leftjoin('ref_prop_ownership_types as ownership_types', 'ownership_types.id', '=', 'prop_safs.ownership_type_mstr_id')
                     ->where("prop_safs.id", $verifications->saf_id)
                     ->first();
                 $tbl = "prop_safs";

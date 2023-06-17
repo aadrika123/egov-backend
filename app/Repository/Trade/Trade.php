@@ -1269,7 +1269,7 @@ class Trade implements ITrade
                 'headerTitle' => "About Trade",
                 'data' => $cardDetails
             ];
-
+            $fullDetailsData["propId"]         = $licenseDetail->property_id;
             $fullDetailsData['application_no'] = $licenseDetail->application_no;
             $fullDetailsData['apply_date'] = $licenseDetail->application_date;
             $fullDetailsData['fullDetailsData']['dataArray'] = new Collection([$basicElement]);
@@ -2318,7 +2318,7 @@ class Trade implements ITrade
             {
                 
                 $license = $license
-                        ->whereBetween('trade_licences.application_date', [$fromDate, $uptoDate]);
+                        ->whereBetween('trade_licences.license_date', [$fromDate, $uptoDate]);
             }
 
             if (in_array(strtoupper($mUserType), ["ONLINE"])) 

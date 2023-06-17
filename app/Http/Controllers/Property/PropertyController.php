@@ -251,7 +251,7 @@ class PropertyController extends Controller
         $validated = Validator::make(
             $req->all(),
             [
-                'type' => 'required|in:Reassesment,Mutation,Concession,Objection,Harvesting',
+                'type' => 'required|in:Reassesment,Mutation,Concession,Objection,Harvesting,Bifurcation',
                 'propertyId' => 'required|numeric',
             ]
         );
@@ -271,6 +271,12 @@ class PropertyController extends Controller
                         ->first();
                     break;
                 case 'Mutation':
+                    $data = PropActiveSaf::select('prop_active_safs.id', 'role_name', 'saf_no as application_no')
+                        ->join('wf_roles', 'wf_roles.id', 'prop_active_safs.current_role')
+                        ->where('previous_holding_id', $propertyId)
+                        ->first();
+                    break;
+                case 'Bifurcation':
                     $data = PropActiveSaf::select('prop_active_safs.id', 'role_name', 'saf_no as application_no')
                         ->join('wf_roles', 'wf_roles.id', 'prop_active_safs.current_role')
                         ->where('previous_holding_id', $propertyId)
