@@ -303,7 +303,12 @@ class ActiveSafControllerV2 extends Controller
                 throw new Exception("Enter Valid Holding No.");
 
             $owner = $mPropOwners->firstOwner($prop['id']);
+            $owner = [
+                "owner_name" => $owner->owner_name,
+                "mobile_no" => $owner->mobile_no
+            ];
             $data[] = collect($prop)->merge($owner);
+
 
             return responseMsgs(true, "Holding Details", $data, 010124, 1.0, "308ms", "POST", $req->deviceId);
         } catch (Exception $e) {
