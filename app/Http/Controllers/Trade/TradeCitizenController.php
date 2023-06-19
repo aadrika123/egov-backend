@@ -348,6 +348,7 @@ class TradeCitizenController extends Controller
             $TradeRazorPayRequest->save();
 
             $temp["requestId"]  = $TradeRazorPayRequest->id;
+            $temp["applicationNo"]  = $refLecenceData->application_no;
             $temp['name']       = $refUser->user_name;
             $temp['mobile']     = $refUser->mobile;
             $temp['email']      = $refUser->email;
