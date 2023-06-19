@@ -1856,7 +1856,9 @@ class ActiveSafController extends Controller
             if (in_array($req['paymentMode'], $offlinePaymentModes)) {
                 $req->merge([
                     'chequeDate' => $req['chequeDate'],
-                    'tranId' => $propTrans['id']
+                    'tranId' => $propTrans['id'],
+                    "applicationNo" => $activeSaf->saf_no,
+
                 ]);
                 $this->postOtherPaymentModes($req);
             }
@@ -1929,7 +1931,7 @@ class ActiveSafController extends Controller
             'module_id' => $moduleId,
             'workflow_id' => $req['workflowId'],
             'transaction_no' => $req['tranNo'],
-            'application_no' => $req->applicationNo,
+            'application_no' => $req['applicationNo'],
             'amount' => $req['amount'],
             'payment_mode' => $req['paymentMode'],
             'cheque_dd_no' => $req['chequeNo'],
