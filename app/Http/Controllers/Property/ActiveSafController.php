@@ -1002,6 +1002,8 @@ class ActiveSafController extends Controller
                 break;
 
             case $wfLevels['TC']:
+                if ($saf->is_agency_verified == false)
+                    throw new Exception("Agency Verification Not Done");
                 if ($saf->is_geo_tagged == false)
                     throw new Exception("Geo Tagging Not Done");
                 break;
@@ -2189,6 +2191,7 @@ class ActiveSafController extends Controller
                     $req->agencyVerification = true;
                     $req->ulbVerification = false;
                     $msg = "Site Successfully Verified";
+                    $propActiveSaf->verifyAgencyFieldStatus($req->safId);                                         // Enable Fields Verify Status
                     break;
                 case $ulbTaxCollectorRole:                                                                // In Case of Ulb Tax Collector
                     $req->agencyVerification = false;

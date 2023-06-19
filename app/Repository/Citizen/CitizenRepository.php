@@ -150,6 +150,8 @@ class CitizenRepository implements iCitizenRepository
                 'prop_active_safs.updated_at',
                 't.tran_no as transaction_no',
                 't.tran_date as transaction_date',
+                'prop_active_safs.is_agency_verified',
+                'prop_active_safs.is_field_verified as is_ulb_verified',
             )
             ->where('prop_active_safs.citizen_id', $userId)
             ->where('prop_active_safs.status', 1)
