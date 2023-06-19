@@ -292,10 +292,17 @@ class ActiveSafControllerV2 extends Controller
                     ->where('prop_properties.new_holding_no', $holdingNo)
                     ->first();
             }
+
+            if (!$prop) {
+                $prop = $mPropProperty->searchHoldingNo($ulbId)
+                    ->where('prop_properties.pt_no', $holdingNo)
+                    ->first();
+            }
+
             if (!$prop)
                 throw new Exception("Enter Valid Holding No.");
 
-            $owner = $mPropOwners->firstOwner($prop->first()['id']);
+            $owner = $mPropOwners->firstOwner($prop['id']);
             $data[] = collect($prop)->merge($owner);
 
             return responseMsgs(true, "Holding Details", $data, 010124, 1.0, "308ms", "POST", $req->deviceId);

@@ -628,6 +628,7 @@ class PropProperty extends Model
             'ulb_name as ulb',
             'prop_properties.holding_no',
             'prop_properties.new_holding_no',
+            'prop_properties.pt_no',
             'ward_name',
             'prop_address',
             'prop_properties.status',
