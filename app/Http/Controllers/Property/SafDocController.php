@@ -136,13 +136,13 @@ class SafDocController extends Controller
             $reqDoc['docName'] = substr($label, 1, -1);
 
             // Check back to citizen status
-            $uploadedDocument = $documents->last();
+            $uploadedDocument = $documents->sortByDesc('uploadedDocId')->first();                           // Get Last Uploaded Document
 
             if (collect($uploadedDocument)->isNotEmpty() && $uploadedDocument['verifyStatus'] == 2) {
                 $reqDoc['btcStatus'] = true;
             } else
                 $reqDoc['btcStatus'] = false;
-            $reqDoc['uploadedDoc'] = $documents->last();
+            $reqDoc['uploadedDoc'] = $documents->sortByDesc('uploadedDocId')->first();                      // Get Last Uploaded Document
 
             $reqDoc['masters'] = collect($document)->map(function ($doc) use ($uploadedDocs, $refSafs) {
                 $uploadedDoc = $uploadedDocs->where('doc_code', $doc)->first();
