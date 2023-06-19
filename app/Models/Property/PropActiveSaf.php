@@ -357,6 +357,18 @@ class  PropActiveSaf extends Model
     }
 
     /**
+     * | Enable Agency Field Verification Status
+     */
+    public function verifyAgencyFieldStatus($safId)
+    {
+        $activeSaf = PropActiveSaf::find($safId);
+        if (!$activeSaf)
+            throw new Exception("Application Not Found");
+        $activeSaf->is_agency_verified = true;
+        $activeSaf->save();
+    }
+
+    /**
      * | Get Saf Details by Saf No
      * | @param SafNo
      */
