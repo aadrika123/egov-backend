@@ -100,7 +100,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
   /**
    * | Property Calculator
-       | Serial No : 04
+       | Serial No : 04 
    */
   Route::controller(SafCalculatorController::class)->group(function () {
     // Route::post('saf-calculation', 'calculateSaf');
