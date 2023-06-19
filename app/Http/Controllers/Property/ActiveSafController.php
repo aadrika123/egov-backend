@@ -2413,23 +2413,25 @@ class ActiveSafController extends Controller
     // ----------start------------
     public function getVerifications(Request $request)
     {
+        $request->validate([
+            'applicationId' => 'required|digits_between:1,9223372036854775807',
+        ]);
+
         try {
             $data = array();
-            $request->validate([
-                'applicationId' => 'required|digits_between:1,9223372036854775807',
-            ]);
             $verifications = PropSafVerification::select(
                 'prop_saf_verifications.*',
                 'p.property_type',
                 'r.road_type',
                 'u.ward_name as ward_no',
-                "users.user_name"
+                "users.name as user_name"
             )
                 ->leftjoin('ref_prop_types as p', 'p.id', '=', 'prop_saf_verifications.prop_type_id')
                 ->leftjoin('ref_prop_road_types as r', 'r.id', '=', 'prop_saf_verifications.road_type_id')
                 ->leftjoin('ulb_ward_masters as u', 'u.id', '=', 'prop_saf_verifications.ward_id')
-                ->leftjoin('users', 'users.id', '=', 'prop_saf_verifications.emp_id')
+                ->leftjoin('users', 'users.id', '=', 'prop_saf_verifications.user_id')
                 ->where("prop_saf_verifications.saf_id", $request->applicationId)
+                ->orderByDesc('prop_saf_verifications.id')
                 ->first();
             if (!$verifications) {
                 throw new Exception("verification Data NOt Found");
@@ -2555,31 +2557,31 @@ class ActiveSafController extends Controller
                             "key" => "Usage Type",
                             "values" => ($saf_data[0]->usage_type_mstr_id ?? "") == ($verification[0]->usage_type_id ?? ""),
                             "according_application" => $saf_data[0]->usage_type ?? "",
-                            "according_verification" => $verification[0]->usage_type ?? "",
+                            "according_verification" => $verification[0]['usage_type'] ?? "",
                         ],
                         [
                             "key" => "Occupancy Type",
                             "values" => ($saf_data[0]->occupancy_type_mstr_id ?? "") == ($verification[0]->occupancy_type_id ?? ""),
                             "according_application" => $saf_data[0]->occupancy_type ?? "",
-                            "according_verification" => $verification[0]->occupancy_type ?? "",
+                            "according_verification" => $verification[0]['occupancy_type'] ?? "",
                         ],
                         [
                             "key" => "Construction Type",
                             "values" => ($saf_data[0]->const_type_mstr_id ?? "") == ($verification[0]->construction_type_id ?? ""),
                             "according_application" => $saf_data[0]->construction_type ?? "",
-                            "according_verification" => $verification[0]->construction_type ?? "",
+                            "according_verification" => $verification[0]['construction_type'] ?? "",
                         ],
                         [
                             "key" => "Built Up Area (in Sq. Ft.)",
                             "values" => ($saf_data[0]->builtup_area ?? "") == ($verification[0]->builtup_area ?? ""),
                             "according_application" => $saf_data[0]->builtup_area ?? "",
-                            "according_verification" => $verification[0]->builtup_area ?? "",
+                            "according_verification" => $verification[0]['builtup_area'] ?? "",
                         ],
                         [
                             "key" => "Date of Completion",
                             "values" => ($saf_data[0]->date_from ?? "") == ($verification[0]->date_from ?? ""),
                             "according_application" => $saf_data[0]->date_from ?? "",
-                            "according_verification" => $verification[0]->date_from ?? "",
+                            "according_verification" => $verification[0]['date_from'] ?? "",
                         ]
                     ]
                 ];
@@ -2688,7 +2690,6 @@ class ActiveSafController extends Controller
             $data["floor_comparison"] = $floors_compais;
             return responseMsgs(true, $message, remove_null($data), "010121", "1.0", "258ms", "POST", $request->deviceId);
         } catch (Exception $e) {
-            dd($e->getMessage(), $e->getFile(), $e->getLine());
             return responseMsg(false, $e->getMessage(), "");
         }
     }
