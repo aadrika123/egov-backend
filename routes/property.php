@@ -55,14 +55,14 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      | Serial No : 01
    */
   Route::controller(ApplySafController::class)->group(function () {
-    Route::post('saf/apply', 'applySaf');                                                               // Applying Saf Route(2)
+    Route::post('saf/apply', 'applySaf')->middleware('handleDateFormat');                               // Applying Saf Route(2)
     Route::post('saf/gb-apply', 'applyGbSaf');                                                          // Applying GB Saf (3)
   });
 
   Route::controller(ActiveSafController::class)->group(function () {
     Route::get('saf/master-saf', 'masterSaf');                                                          // Get all master data in Saf(1)
     Route::post('saf/edit', 'editSaf');                                                                 // Edit Saf By Back Office(24)
-    Route::post('saf/inbox', 'inbox');                                                                   // Saf Inbox(3)
+    Route::post('saf/inbox', 'inbox');                                                                  // Saf Inbox(3)
     Route::post('saf/btc-inbox', 'btcInbox');                                                           // Saf Inbox for Back To citizen(23)
     Route::post('saf/field-verified-inbox', 'fieldVerifiedInbox');                                      // Field Verified Inbox (25)
     Route::post('saf/outbox', 'outbox');                                                                 // Saf Workflow Outbox and Outbox By search key(4)

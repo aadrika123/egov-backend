@@ -94,6 +94,7 @@ class ApplySafController extends Controller
      */
     public function applySaf(reqApplySaf $request)
     {
+        // dd($request->all());
         try {
             // Variable Assignments
             $mApplyDate = Carbon::now()->format("Y-m-d");
