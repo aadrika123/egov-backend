@@ -904,6 +904,7 @@ class ActiveSafController extends Controller
             }
             // SAF Application Update Current Role Updation
             if ($request->action == 'backward') {
+                $samHoldingDtls = $this->checkBackwardCondition($senderRoleId, $wfLevels, $saf);          // Check Backward condition
                 $saf->current_role = $forwardBackwardIds->backward_role_id;
                 $metaReqs['verificationStatus'] = 0;
                 $metaReqs['receiverRoleId'] = $forwardBackwardIds->backward_role_id;
@@ -1017,6 +1018,23 @@ class ActiveSafController extends Controller
             'samNo' => $samNo ?? "",
             'ptNo' => $ptNo ?? "",
         ];
+    }
+
+    /**
+     * |
+     */
+    public function checkBackwardCondition($senderRoleId, $wfLevels, $saf)
+    {
+        switch ($senderRoleId) {
+            case $wfLevels['TC']:
+                $saf->is_agency_verified = false;
+                $saf->save();
+                break;
+            case $wfLevels['UTC']:
+                $saf->is_field_verified = false;
+                $saf->save();
+                break;
+        }
     }
 
     /**
