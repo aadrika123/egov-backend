@@ -1079,19 +1079,22 @@ class GbSafController extends Controller
         $uploadedDocs = $mWfActiveDocument->getDocByRefIds($applicationId, $workflowId, $moduleId);
         $explodeDocs = collect(explode('#', $documentList));
 
-        $filteredDocs = $explodeDocs->map(function ($explodeDoc) use ($uploadedDocs) {
+        $filteredDocs = $explodeDocs->map(function ($explodeDoc) use ($uploadedDocs, $refSafs) {
             $document = explode(',', $explodeDoc);
             $key = array_shift($document);
             $label = array_shift($document);
             $documents = collect();
 
-            collect($document)->map(function ($item) use ($uploadedDocs, $documents) {
+            collect($document)->map(function ($item) use ($uploadedDocs, $documents, $refSafs) {
                 $uploadedDoc = $uploadedDocs->where('doc_code', $item)->first();
                 if ($uploadedDoc) {
                     $response = [
+                        "uploadedDocId" => $uploadedDoc->id ?? "",
                         "documentCode" => $item,
                         "ownerId" => $uploadedDoc->owner_dtl_id ?? "",
-                        "docPath" => $uploadedDoc->doc_path ?? ""
+                        "docPath" => $uploadedDoc->doc_path ?? "",
+                        "verifyStatus" => $refSafs->payment_status == 1 ? ($uploadedDoc->verify_status ?? "") : 0,
+                        "remarks" => $uploadedDoc->remarks ?? "",
                     ];
                     $documents->push($response);
                 }
