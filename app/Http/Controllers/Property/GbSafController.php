@@ -251,9 +251,7 @@ class GbSafController extends Controller
         $samParamId = Config::get('PropertyConstaint.SAM_PARAM_ID');
 
         // Derivative Assignments
-        $demand = $mPropSafDemand->getFirstDemandByFyearSafId($saf->id, $fYear);
-        if (collect($demand)->isEmpty())
-            throw new Exception("Demand Not Available for the Current Year to Generate SAM");
+
         switch ($senderRoleId) {
             case $wfLevels['BO']:                        // Back Office Condition
                 if ($saf->doc_upload_status == 0)
@@ -263,6 +261,9 @@ class GbSafController extends Controller
             case $wfLevels['DA']:                       // DA Condition
                 if ($saf->doc_verify_status == 0)
                     throw new Exception("Document Not Fully Verified");
+                $demand = $mPropSafDemand->getFirstDemandByFyearSafId($saf->id, $fYear);
+                if (collect($demand)->isEmpty())
+                    throw new Exception("Demand Not Available for the Current Year to Generate SAM");
                 $idGeneration = new PrefixIdGenerator($ptParamId, $saf->ulb_id);
                 $ptNo = $idGeneration->generate();
                 $saf->pt_no = $ptNo;                        // Generate New Property Tax No for All Conditions
