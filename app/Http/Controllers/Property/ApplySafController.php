@@ -196,7 +196,7 @@ class ApplySafController extends Controller
             DB::commit();
             return responseMsgs(true, "Successfully Submitted Your Application Your SAF No. $safNo", [
                 "safNo" => $safNo,
-                "applyDate" => $mApplyDate,
+                "applyDate" => ymdToDmyDate($mApplyDate),
                 "safId" => $safId,
                 "demand" => $demandResponse
             ], "010102", "1.0", "1s", "POST", $request->deviceId);

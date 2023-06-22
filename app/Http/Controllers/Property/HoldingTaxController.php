@@ -833,7 +833,7 @@ class HoldingTaxController extends Controller
                 "bankName" => $propTrans->bank_name,
                 "branchName" => $propTrans->branch_name,
                 "chequeNo" => $propTrans->cheque_no,
-                "chequeDate" => $propTrans->cheque_date,
+                "chequeDate" => ymdToDmyDate($propTrans->cheque_date),
                 "demandAmount" => $propTrans->demand_amt,
                 "taxDetails" => $taxDetails,
                 "totalRebate" => $totalRebatePenals['totalRebate'],
@@ -881,7 +881,7 @@ class HoldingTaxController extends Controller
                 throw new Exception("No Transaction Found");
 
             $propTrans->map(function ($propTran) {
-                $propTran['tran_date'] = Carbon::createFromFormat('Y-m-d', $propTran->tran_date)->format('d-m-Y');
+                $propTran['tran_date'] = Carbon::parse($propTran->tran_date)->format('d-m-Y');
             });
 
             $propSafId = $propertyDtls->saf_id;
@@ -891,7 +891,7 @@ class HoldingTaxController extends Controller
             else {
                 $safTrans = $mPropTrans->getPropTransactions($propSafId, 'saf_id');                 // Saf payment History
                 $safTrans->map(function ($safTran) {
-                    $safTran['tran_date'] = Carbon::createFromFormat('Y-m-d', $safTran->tran_date)->format('d-m-Y');
+                    $safTran['tran_date'] = Carbon::parse($safTran->tran_date)->format('d-m-Y');
                 });
             }
 
