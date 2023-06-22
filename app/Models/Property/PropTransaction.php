@@ -49,6 +49,7 @@ class PropTransaction extends Model
         return DB::table('prop_transactions')
             ->select(
                 'prop_transactions.*',
+                DB::raw("TO_CHAR(prop_transactions.tran_date,'dd-mm-YYYY') as tran_date"),
                 'a.saf_no',
                 'p.holding_no',
                 DB::raw("CASE
@@ -66,6 +67,32 @@ class PropTransaction extends Model
     // Get Property Transaction by citizen id
     public function getPropTransByCitizenId($citizenId)
     {
+
+
+        // SELECT 
+        // s.saf_no, 
+        // p.holding_no,
+        // p.pt_no,
+        // prop_transactions.* 
+        // FROM 
+        // prop_transactions 
+        // LEFT JOIN (
+        //   SELECT 
+        //     id, 
+        //     saf_no 
+        //   FROM 
+        //     prop_active_safs 
+        //   UNION 
+        //   SELECT 
+        //     id, 
+        //     saf_no 
+        //   FROM 
+        //     prop_safs 
+        // ) AS s ON s.id = prop_transactions.saf_id 
+        // LEFT JOIN prop_properties AS p ON p.id=prop_transactions.property_id
+        // WHERE 
+        // prop_transactions.citizen_id = 64
+
         return $this->getPropTransTrait()
             ->where('prop_transactions.citizen_id', $citizenId)
             ->orderByDesc('prop_transactions.id')

@@ -2063,7 +2063,7 @@ class ActiveSafController extends Controller
                 "bankName" => $safTrans->bank_name,
                 "branchName" => $safTrans->branch_name,
                 "chequeNo" => $safTrans->cheque_no,
-                "chequeDate" => $safTrans->cheque_date,
+                "chequeDate" => ymdToDmyDate($safTrans->cheque_date),
                 "demandAmount" => roundFigure((float)$calDemandAmt),
                 "taxDetails" => $taxDetails,
                 "totalRebate" => $totalRebatePenals['totalRebate'],
@@ -2104,7 +2104,7 @@ class ActiveSafController extends Controller
                 $propTrans = $propTransaction->getPropTransByCitizenId($userId);
             else
                 $propTrans = $propTransaction->getPropTransByUserId($userId);               // Get Transaction History for Citizen or User
-            return responseMsgs(true, "Transactions History", remove_null($propTrans), "010117", "1.0", "265ms", "POST", $req->deviceId);
+            return responseMsgs(true, "Transactions History", remove_null($propTrans), "010117", "1.0", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010117", "1.0", responseTime(), "POST", $req->deviceId);
         }
@@ -2727,7 +2727,7 @@ class ActiveSafController extends Controller
                 $data["Tax"]["compairTax"] = $compairTax["original"]["data"];
             }
             $data["saf_details"] = $saf;
-            $data["employee_details"] = ["user_name" => $verifications->user_name, "date" => $verifications->created_at];
+            $data["employee_details"] = ["user_name" => $verifications->user_name, "date" => ymdToDmyDate($verifications->created_at)];
             $data["property_comparison"] = $prop_compairs;
             $data["floor_comparison"] = $floors_compais;
             return responseMsgs(true, $message, remove_null($data), "010121", "1.0", "258ms", "POST", $request->deviceId);
@@ -2738,14 +2738,14 @@ class ActiveSafController extends Controller
 
     public function getSafVerificationList(Request $request)
     {
+        $request->validate([
+            'applicationId' => 'required|digits_between:1,9223372036854775807',
+        ]);
         try {
             $data = array();
-            $request->validate([
-                'applicationId' => 'required|digits_between:1,9223372036854775807',
-            ]);
             $verifications = PropSafVerification::select(
                 'id',
-                'created_at',
+                DB::raw("TO_CHAR(created_at,'dd-mm-YYYY') as created_at"),
                 'agency_verification',
                 "ulb_verification"
             )
@@ -2756,7 +2756,7 @@ class ActiveSafController extends Controller
                 $val->veryfied_by = $val->agency_verification ? "AGENCY TC" : "ULB TC";
                 return $val;
             });
-            return responseMsgs(true, "Data Fetched", remove_null($data), "010122", "1.0", "258ms", "POST", $request->deviceId);
+            return responseMsgs(true, "Data Fetched", remove_null($data), "010122", "1.0", responseTime(), "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }

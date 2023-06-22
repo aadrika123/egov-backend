@@ -94,7 +94,6 @@ class ApplySafController extends Controller
      */
     public function applySaf(reqApplySaf $request)
     {
-        // dd($request->all());
         try {
             // Variable Assignments
             $mApplyDate = Carbon::now()->format("Y-m-d");
@@ -197,7 +196,7 @@ class ApplySafController extends Controller
             DB::commit();
             return responseMsgs(true, "Successfully Submitted Your Application Your SAF No. $safNo", [
                 "safNo" => $safNo,
-                "applyDate" => $mApplyDate,
+                "applyDate" => ymdToDmyDate($mApplyDate),
                 "safId" => $safId,
                 "demand" => $demandResponse
             ], "010102", "1.0", "1s", "POST", $request->deviceId);

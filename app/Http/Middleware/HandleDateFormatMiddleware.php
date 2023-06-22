@@ -56,13 +56,15 @@ class HandleDateFormatMiddleware
                     if (is_array($val)) {
                         foreach ($val as $field => $a) {
                             if ($this->isStringDate($a)) {
-                                $parsedDate = Carbon::parse($a)->format('Y-m-d');
+                                $parsedDate = Carbon::createFromFormat($this->_clientFormat, $a)
+                                    ->format('Y-m-d');
                                 $this->_REQUEST[$req][$b][$field] = $parsedDate;
                             }
                         }
-                    } else {
+                    } else {                                // If Object            
                         if ($this->isStringDate($val)) {
-                            $parsedDate = Carbon::parse($val)->format('Y-m-d');
+                            $parsedDate = Carbon::createFromFormat($this->_clientFormat, $val)
+                                ->format('Y-m-d');
                             $this->_REQUEST[$req][$b] = $parsedDate;
                         }
                     }

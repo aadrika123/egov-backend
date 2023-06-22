@@ -55,7 +55,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      | Serial No : 01
    */
   Route::controller(ApplySafController::class)->group(function () {
-    Route::post('saf/apply', 'applySaf')->middleware('handleDateFormat');                               // Applying Saf Route(2)
+    Route::post('saf/apply', 'applySaf');                                                               // Applying Saf Route(2)
     Route::post('saf/gb-apply', 'applyGbSaf');                                                          // Applying GB Saf (3)
   });
 
