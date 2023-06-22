@@ -387,7 +387,7 @@ class ApplySafController extends Controller
 
             $safReq = [
                 'assessment_type' => $req->assessmentType,
-                'ulb_id' => $req->ulbId,
+                'ulb_id' => $ulbId,
                 'building_name' => $req->buildingName,
                 'gb_office_name' => $req->nameOfOffice,
                 'ward_mstr_id' => $req->wardId,
