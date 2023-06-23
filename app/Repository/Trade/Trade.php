@@ -799,6 +799,9 @@ class Trade implements ITrade
                 $refLecenceData->provisional_license_no = $provNo;
             }
             $refLecenceData->payment_status         = $mPaymentStatus;
+            if ($refLecenceData->application_type_id != 3) {
+                $refLecenceData->licence_for_years = $request->licenseFor;
+            }
             $refLecenceData->save();
 
             if ($refNoticeDetails) {
@@ -1785,9 +1788,13 @@ class Trade implements ITrade
                 throw new Exception("Application Not Found");
             }
             $data = [
-                "licence" => $licence,
+                "licence" => $licence->map(function($val){                    
+                    $val->application_date = $val->application_date?Carbon::parse($val->application_date)->format("d-m-Y"):null;
+                    $val->valid_upto = $val->valid_upto?Carbon::parse($val->valid_upto)->format("d-m-Y"):null;                    
+                    return $val;
+                }),
             ];
-            return responseMsg(true, "", $data);
+            return responseMsg(true, "", remove_null($data));
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
