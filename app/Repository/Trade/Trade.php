@@ -1591,7 +1591,12 @@ class Trade implements ITrade
             }
             if (!$data) {
                 throw new Exception("No Data Found");
-            } elseif ($data->valid_upto > $mNextMonth && !in_array($mApplicationTypeId, [4, 3]) && $data->tbl == "trade_licences") {
+            }
+            elseif($data->application_type_id == 4)
+            {
+                throw new Exception("You Can Not Performed Anny Action On This Application Becouse You Are Surender The License By Application No: " . $data->application_no . " Of Licence No: " . $data->license_no . ".");
+            } 
+            elseif ($data->valid_upto > $mNextMonth && !in_array($mApplicationTypeId, [4, 3]) && $data->tbl == "trade_licences") {
                 throw new Exception("Licence Valid Upto " . $data->valid_upto);
             } elseif ($data->tbl == "active_trade_licences") {
                 throw new Exception("Application Already Applied. Please Track  " . $data->application_no);
@@ -1602,6 +1607,7 @@ class Trade implements ITrade
             if ($mApplicationTypeId == 3 && $data->valid_upto < Carbon::now()->format('Y-m-d') && $data->tbl == "trade_licences") {
                 throw new Exception("You Can Not Apply Amendment. Application No: " . $data->application_no . " Of Licence No: " . $data->license_no . " Expired On " . $data->valid_upto . ".");
             }
+            
             return responseMsg(true, "", remove_null($data));
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
