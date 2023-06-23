@@ -67,31 +67,35 @@ class PropTransaction extends Model
     // Get Property Transaction by citizen id
     public function getPropTransByCitizenId($citizenId)
     {
-
-
-        // SELECT 
-        // s.saf_no, 
-        // p.holding_no,
-        // p.pt_no,
-        // prop_transactions.* 
-        // FROM 
-        // prop_transactions 
-        // LEFT JOIN (
-        //   SELECT 
-        //     id, 
-        //     saf_no 
-        //   FROM 
-        //     prop_active_safs 
-        //   UNION 
-        //   SELECT 
-        //     id, 
-        //     saf_no 
-        //   FROM 
-        //     prop_safs 
-        // ) AS s ON s.id = prop_transactions.saf_id 
-        // LEFT JOIN prop_properties AS p ON p.id=prop_transactions.property_id
-        // WHERE 
-        // prop_transactions.citizen_id = 64
+        //         SELECT 
+        //         s.saf_no, 
+        // --         p.holding_no,
+        // --         p.pt_no,
+        //         prop_transactions.*,
+        //         s.id
+        //         FROM 
+        //         prop_transactions 
+        //         JOIN (
+        //           SELECT 
+        //             pas.id, 
+        //             pas.saf_no 
+        //           FROM 
+        //             prop_active_safs as pas
+        //             join prop_transactions
+        //             on (pas.id=prop_transactions.saf_id)
+        //           UNION 
+        //           SELECT 
+        //             ps.id, 
+        //             ps.saf_no 
+        //           FROM 
+        //             prop_safs as ps
+        //             join prop_transactions
+        //             on (ps.id=prop_transactions.saf_id)
+        //         ) AS s ON s.id = prop_transactions.saf_id 
+        // --         JOIN prop_properties AS p ON p.id=prop_transactions.property_id
+        //         WHERE 
+        //         prop_transactions.citizen_id = 64
+        //         order by prop_transactions.id desc 
 
         return $this->getPropTransTrait()
             ->where('prop_transactions.citizen_id', $citizenId)
