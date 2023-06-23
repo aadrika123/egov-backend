@@ -380,6 +380,10 @@ class PropProperty extends Model
             'gb_office_name' => $req->gb_office_name,
             'gb_usage_types' => $req->gb_usage_types,
             'gb_prop_usage_types' => $req->gb_prop_usage_types,
+            'is_trust' => $req->is_trust,
+            'trust_type' => $req->trust_type,
+            'is_trust_verified' => $req->is_trust_verified,
+            'rwh_date_from' => $req->rwh_date_from
         ];
         return $reqs;
     }
