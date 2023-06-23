@@ -2540,7 +2540,7 @@ class ActiveSafController extends Controller
                 ],
                 [
                     "key" => "New Ward No",
-                    "values" => $saf->new_ward_no == $verifications->new_ward_no,
+                    "values" => $saf->new_ward_mstr_id == $verifications->new_ward_id,
                     "according_application" => $saf->new_ward_no,
                     "according_verification" => $verifications->new_ward_no,
                 ],
