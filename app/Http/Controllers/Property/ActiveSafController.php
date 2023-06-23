@@ -966,7 +966,10 @@ class ActiveSafController extends Controller
                 break;
 
             case $wfLevels['DA']:                       // DA Condition
-                $demand = $mPropSafDemand->getDemandsBySafId($saf->id)->groupBy('fyear')->first()->last();
+                $demand = $mPropSafDemand->getDemandsBySafId($saf->id)->groupBy('fyear')->first();
+                if (collect($demand)->isEmpty())
+                    throw new Exception("Demand Not Available");
+                $demand = $demand->last();
                 if (collect($demand)->isEmpty())
                     throw new Exception("Demand Not Available for the to Generate SAM");
                 if ($saf->doc_verify_status == 0)
@@ -2537,7 +2540,7 @@ class ActiveSafController extends Controller
                 ],
                 [
                     "key" => "New Ward No",
-                    "values" => $saf->new_ward_no == $verifications->new_ward_no,
+                    "values" => $saf->new_ward_mstr_id == $verifications->new_ward_id,
                     "according_application" => $saf->new_ward_no,
                     "according_verification" => $verifications->new_ward_no,
                 ],
