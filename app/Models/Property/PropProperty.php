@@ -301,7 +301,11 @@ class PropProperty extends Model
             'petrol_pump_completion_date' => $fieldVerifiedSaf->petrol_pump_completion_date,
             'is_water_harvesting' => $fieldVerifiedSaf->has_water_harvesting,
             'new_ward_mstr_id' => $fieldVerifiedSaf->new_ward_id,
-            'ulb_id' => $fieldVerifiedSaf->ulb_id
+            'ulb_id' => $fieldVerifiedSaf->ulb_id,
+            'road_width' => $fieldVerifiedSaf->road_width,
+            'gb_usage_types' => $fieldVerifiedSaf->gb_usage_types,
+            'gb_prop_usage_types' => $fieldVerifiedSaf->gb_prop_usage_types,
+            'rwh_date_from' => $fieldVerifiedSaf->rwh_date_from,
         ];
         $property->update($reqs);
     }

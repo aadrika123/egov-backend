@@ -215,8 +215,9 @@ class GbSafController extends Controller
                 $metaReqs['receiverRoleId'] = $forwardBackwardIds->backward_role_id;
             }
 
-
             $saf->save();
+            dd($saf->toArray());
+
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs['workflowId'] = $saf->workflow_id;
             $metaReqs['refTableDotId'] = Config::get('PropertyConstaint.SAF_REF_TABLE');
@@ -227,7 +228,7 @@ class GbSafController extends Controller
             $request->request->add($metaReqs);
 
             $track->saveTrack($request);
-
+            dd('ok');
             DB::commit();
             return responseMsgs(true, "Successfully Forwarded The Application!!", $samHoldingDtls, "010109", "1.0", responseTime(), "POST", $request->deviceId);
         } catch (Exception $e) {
@@ -315,6 +316,7 @@ class GbSafController extends Controller
         $toBeProperties = PropActiveSaf::query()
             ->where('id', $safId)
             ->select(
+                'saf_no',
                 'ulb_id',
                 'cluster_id',
                 'holding_no',
