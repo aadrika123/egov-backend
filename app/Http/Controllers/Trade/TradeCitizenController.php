@@ -902,6 +902,10 @@ class TradeCitizenController extends Controller
                         $option[]="AMENDMENT";
                         $option[]="SURRENDER";
                     }
+                    if(trim($val->license_type)=="approved" && $val->pending_status == 5 && $val->application_type_id == 4 && $validUpto >= Carbon::now()->format('Y-m-d'))
+                    {                    
+                        $option=[];
+                    }
                     $val->option = $option;
                     return $val;
                 });

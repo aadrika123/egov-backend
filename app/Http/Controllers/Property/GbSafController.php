@@ -412,7 +412,7 @@ class GbSafController extends Controller
         }
 
         // Edit In Case of Reassessment,Mutation
-        if (in_array($assessmentType, ['Re Assessment'])) {         // Edit Property In case of Reassessment
+        if (in_array($assessmentType, ['Reassessment'])) {         // Edit Property In case of Reassessment
             $propId = $activeSaf->previous_holding_id;
             $mProperty = new PropProperty();
             $mPropOfficer = new PropGbofficer();

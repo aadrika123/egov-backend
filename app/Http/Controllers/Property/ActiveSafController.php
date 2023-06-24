@@ -2100,13 +2100,13 @@ class ActiveSafController extends Controller
     public function getPropTransactions(Request $req)
     {
         try {
-            $propTransaction = new PropTransaction();
             $auth = authUser();
             $userId = $auth->id;
             if ($auth->user_type == 'Citizen')
-                $propTrans = $propTransaction->getPropTransByCitizenId($userId);
+                $propTrans = $this->Repository->getPropTransByCitizenUserId($userId, 'citizen_id');
             else
-                $propTrans = $propTransaction->getPropTransByUserId($userId);               // Get Transaction History for Citizen or User
+                $propTrans = $this->Repository->getPropTransByCitizenUserId($userId, 'user_id');
+
             return responseMsgs(true, "Transactions History", remove_null($propTrans), "010117", "1.0", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010117", "1.0", responseTime(), "POST", $req->deviceId);
