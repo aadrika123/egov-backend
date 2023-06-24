@@ -216,8 +216,6 @@ class GbSafController extends Controller
             }
 
             $saf->save();
-            dd($saf->toArray());
-
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs['workflowId'] = $saf->workflow_id;
             $metaReqs['refTableDotId'] = Config::get('PropertyConstaint.SAF_REF_TABLE');
@@ -228,7 +226,6 @@ class GbSafController extends Controller
             $request->request->add($metaReqs);
 
             $track->saveTrack($request);
-            dd('ok');
             DB::commit();
             return responseMsgs(true, "Successfully Forwarded The Application!!", $samHoldingDtls, "010109", "1.0", responseTime(), "POST", $request->deviceId);
         } catch (Exception $e) {
