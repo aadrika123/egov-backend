@@ -162,7 +162,7 @@ class PropSaf extends Model
                 "
             ),
             'role_name as currentRole',
-            'ward_name',
+            'ward_name as old_ward_no',
             'prop_address',
             'gbo.officer_name',
             'gbo.mobile_no'
