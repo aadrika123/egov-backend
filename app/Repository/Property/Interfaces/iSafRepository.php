@@ -11,4 +11,5 @@ interface iSafRepository
 {
     public function metaSafDtls($workflowIds);
     public function getSaf($workflowIds);
+    public function getPropTransByCitizenUserId($userId, $userType);
 }

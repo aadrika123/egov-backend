@@ -52,4 +52,48 @@ class SafRepository implements iSafRepository
             ->where('payment_status', 1);
         return $data;
     }
+
+    /**
+     * | Get Property and Saf Transaction
+     */
+    public function getPropTransByCitizenUserId($userId, $userType)
+    {
+        $query = "SELECT 
+                        prop_transactions.*,
+                        TO_CHAR(prop_transactions.tran_date,'dd-mm-YYYY') as tran_date,
+                        s.saf_no,
+                        p.holding_no,
+                        CASE 
+                            WHEN (prop_transactions.saf_id IS NULL) THEN 'PROPERTY'
+                            WHEN (prop_transactions.property_id IS NULL) THEN 'SAF'
+                        END AS application_type
+                        
+                        FROM 
+                        prop_transactions 
+                        LEFT JOIN (
+                        SELECT 
+                            pas.id, 
+                            pas.saf_no 
+                        FROM 
+                            prop_active_safs as pas
+                            JOIN prop_transactions
+                            ON (pas.id=prop_transactions.saf_id)
+                            WHERE prop_transactions.$userType=$userId
+                        UNION 
+                        SELECT 
+                            ps.id, 
+                            ps.saf_no 
+                        FROM 
+                            prop_safs as ps
+                            JOIN prop_transactions
+                            ON (ps.id=prop_transactions.saf_id)
+                            WHERE prop_transactions.$userType=$userId
+                        ) AS s ON s.id = prop_transactions.saf_id 
+                        LEFT JOIN prop_properties AS p ON p.id=prop_transactions.property_id
+                        WHERE 
+                        prop_transactions.$userType = $userId
+                    ORDER BY prop_transactions.id DESC";
+        $result = DB::select($query);
+        return $result;
+    }
 }
