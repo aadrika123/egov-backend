@@ -217,6 +217,10 @@ class CalculateSafById
 
         $payableAmount = $totalDemand - ($this->_generatedDemand['demand']['rebateAmt'] + $this->_generatedDemand['demand']['specialRebateAmt']);   // Final Payable Amount Calculation
         $this->_generatedDemand['demand']['payableAmount'] = round($payableAmount);
+        if ((int)$payableAmount < 1)
+            $this->_generatedDemand['demand']['isPayable'] = false;
+        else
+            $this->_generatedDemand['demand']['isPayable'] = true;
 
         $this->generateTaxDtls();        // (1.2.3)
     }
