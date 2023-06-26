@@ -99,10 +99,10 @@ class WfActiveDocument extends Model
             ->where('module_id', $moduleId)
             ->where('doc_category', $docCategory)
             ->where('owner_dtl_id', $ownerId)
-            ->where('verify_status', 0)
             ->where('status', 1)
-            ->first();
+            ->get();
     }
+
 
     /**
      * | Get Application Details by Application No

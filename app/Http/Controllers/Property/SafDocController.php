@@ -210,7 +210,10 @@ class SafDocController extends Controller
             }
 
             $metaReqs['owner_dtl_id'] = $req->ownerId;
-            $ifDocCategoryExist = $mWfActiveDocument->isDocCategoryExists($getSafDtls->id, $getSafDtls->workflow_id, $propModuleId, $req->docCategory, $req->ownerId);   // Checking if the document is already existing or not
+            if ($req->docCode == 'PHOTOGRAPH')
+                $ifDocCategoryExist = $mWfActiveDocument->isDocCategoryExists($getSafDtls->id, $getSafDtls->workflow_id, $propModuleId, $req->docCategory, $req->ownerId)->where('verify_status', 1)->first();   // Checking if the document is already existing or not
+            else
+                $ifDocCategoryExist = $mWfActiveDocument->isDocCategoryExists($getSafDtls->id, $getSafDtls->workflow_id, $propModuleId, $req->docCategory, $req->ownerId)->where('verify_status', 0)->first();   // Checking if the document is already existing or not
             DB::beginTransaction();
             if (collect($ifDocCategoryExist)->isEmpty())
                 $mWfActiveDocument->store($metaReqs);           // Store New Document

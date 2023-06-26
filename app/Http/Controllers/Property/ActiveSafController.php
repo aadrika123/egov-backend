@@ -1533,7 +1533,13 @@ class ActiveSafController extends Controller
             'id' => 'required|digits_between:1,9223372036854775807'
         ]);
         try {
-            $safDtls = PropActiveSaf::findOrFail($req->id);
+            $safDtls = PropActiveSaf::find($req->id);
+            if (!$safDtls)
+                $safDtls = PropSaf::find($req->id);
+
+            if (collect($safDtls)->isEmpty())
+                throw new Exception("Saf Not Available");
+
             if (in_array($safDtls->assessment_type, ['New Assessment', 'Reassessment', 'Re Assessment', 'Mutation']))
                 $req = $req->merge(['holdingNo' => $safDtls->holding_no]);
             $calculateSafById = new CalculateSafById;
@@ -2416,9 +2422,9 @@ class ActiveSafController extends Controller
                 "doc_upload_status" => $req['doc_upload_status'],
                 "ownership_type" => $req['ownership_type']
             ];
-            $demand['amounts'] = $safTaxes->original['data']['demand'];
+            $demand['amounts'] = $safTaxes->original['data']['demand'] ?? [];
             $demand['details'] = collect($safTaxes->original['data']['details'])->values();
-            $demand['taxDetails'] = collect($safTaxes->original['data']['taxDetails']);
+            $demand['taxDetails'] = collect($safTaxes->original['data']['taxDetails']) ?? [];
             $demand['paymentStatus'] = $safDetails['payment_status'];
             $demand['applicationNo'] = $safDetails['saf_no'];
             return responseMsgs(true, "Demand Details", remove_null($demand), "", "1.0", "", "POST", $req->deviceId ?? "");

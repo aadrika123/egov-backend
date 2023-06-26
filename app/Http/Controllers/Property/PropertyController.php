@@ -268,36 +268,42 @@ class PropertyController extends Controller
                     $data = PropActiveSaf::select('prop_active_safs.id', 'role_name', 'saf_no as application_no')
                         ->join('wf_roles', 'wf_roles.id', 'prop_active_safs.current_role')
                         ->where('previous_holding_id', $propertyId)
+                        ->where('prop_active_safs.status', 1)
                         ->first();
                     break;
                 case 'Mutation':
                     $data = PropActiveSaf::select('prop_active_safs.id', 'role_name', 'saf_no as application_no')
                         ->join('wf_roles', 'wf_roles.id', 'prop_active_safs.current_role')
                         ->where('previous_holding_id', $propertyId)
+                        ->where('prop_active_safs.status', 1)
                         ->first();
                     break;
                 case 'Bifurcation':
                     $data = PropActiveSaf::select('prop_active_safs.id', 'role_name', 'saf_no as application_no')
                         ->join('wf_roles', 'wf_roles.id', 'prop_active_safs.current_role')
                         ->where('previous_holding_id', $propertyId)
+                        ->where('prop_active_safs.status', 1)
                         ->first();
                     break;
                 case 'Concession':
                     $data = PropActiveConcession::select('prop_active_concessions.id', 'role_name', 'application_no')
                         ->join('wf_roles', 'wf_roles.id', 'prop_active_concessions.current_role')
                         ->where('property_id', $propertyId)
+                        ->where('prop_active_concessions.status', 1)
                         ->first();
                     break;
                 case 'Objection':
                     $data = PropActiveObjection::select('prop_active_objections.id', 'role_name', 'objection_no as application_no')
                         ->join('wf_roles', 'wf_roles.id', 'prop_active_objections.current_role')
                         ->where('property_id', $propertyId)
+                        ->where('prop_active_objections.status', 1)
                         ->first();
                     break;
                 case 'Harvesting':
                     $data = PropActiveHarvesting::select('prop_active_harvestings.id', 'role_name', 'application_no')
                         ->join('wf_roles', 'wf_roles.id', 'prop_active_harvestings.current_role')
                         ->where('property_id', $propertyId)
+                        ->where('prop_active_harvestings.status', 1)
                         ->first();
                     break;
             }
