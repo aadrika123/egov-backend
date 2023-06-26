@@ -236,7 +236,7 @@ class CalculateSafById
             'totalDemand' => roundFigure($totalDemand)
         ];
 
-        $this->_generatedDemand['details'] = $this->_demandDetails;
+        $this->_generatedDemand['details'] = $this->_demandDetails->values();
 
         $this->readRebates();                                               // (1.2.3)
 
@@ -389,11 +389,11 @@ class CalculateSafById
     {
         $taxDetails = collect();
         $demandDetails = $this->_generatedDemand['details'];
-        $groupByDemands = collect($demandDetails)->groupBy('arv');
-        $currentArv = $groupByDemands->last()->first()['arv'];          // Get Current Demand Arv Rate
+        $groupByDemands = collect($demandDetails)->groupBy('amount');
+        $currentTax = $groupByDemands->last()->first()['amount'];          // Get Current Demand Arv Rate
         foreach ($groupByDemands as $key => $item) {
             $firstTax = collect($item)->first();
-            if ($key == $currentArv)
+            if ($key == $currentTax)
                 $firstTax['status'] = "Current";
             else
                 $firstTax['status'] = "Old";
