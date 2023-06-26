@@ -4,6 +4,7 @@ namespace App\Models\Property;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class RefPropGbpropusagetype extends Model
 {
@@ -14,7 +15,10 @@ class RefPropGbpropusagetype extends Model
      */
     public function getGbpropusagetypes()
     {
-        return RefPropGbpropusagetype::select('*')
+        return RefPropGbpropusagetype::select(
+            'id',
+            DB::raw('INITCAP(prop_usage_type) as prop_usage_type'),
+        )
             ->get();
     }
 }

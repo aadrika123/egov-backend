@@ -1371,6 +1371,7 @@ class ActiveSafController extends Controller
 
             $propSafVerification->deactivateVerifications($req->applicationId);                 // Deactivate Verification From Table
             $propSafVerificationDtl->deactivateVerifications($req->applicationId);              // Deactivate Verification from Saf floor Dtls
+            dd("Stop In the name of Law");
             DB::commit();
             return responseMsgs(true, $msg, ['holdingNo' => $safDetails->holding_no, 'ptNo' => $safDetails->pt_no], "010110", "1.0", "410ms", "POST", $req->deviceId);
         } catch (Exception $e) {

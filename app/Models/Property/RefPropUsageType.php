@@ -5,6 +5,7 @@ namespace App\Models\Property;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Exception;
+use Illuminate\Support\Facades\DB;
 
 class RefPropUsageType extends Model
 {
@@ -12,7 +13,11 @@ class RefPropUsageType extends Model
 
     public function propUsageType()
     {
-        return RefPropUsageType::select('id', 'usage_type', 'usage_code')
+        return RefPropUsageType::select(
+            'id',
+            DB::raw('INITCAP(usage_type) as usage_type'),
+            'usage_code'
+        )
             ->where('status', 1)
             ->get();
     }
