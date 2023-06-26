@@ -386,4 +386,17 @@ class WfActiveDocument extends Model
                 "status" => 0
             ]);
     }
+
+    /**
+     * | Get all Rejected Documents
+     */
+    public function readRejectedDocuments(array $metaReqs)
+    {
+        return WfActiveDocument::where('active_id', $metaReqs['activeId'])
+            ->where('workflow_id', $metaReqs['workflowId'])
+            ->where('module_id', $metaReqs['moduleId'])
+            ->where('verify_status', 2)
+            ->where('status', 1)
+            ->get();
+    }
 }

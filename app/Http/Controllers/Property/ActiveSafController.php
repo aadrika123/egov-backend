@@ -55,6 +55,7 @@ use App\Models\Property\RefPropType;
 use App\Models\Property\RefPropUsageType;
 use App\Models\Property\ZoneMaster;
 use App\Models\UlbWardMaster;
+use App\Models\Workflows\WfActiveDocument;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfWorkflow;
@@ -1484,11 +1485,28 @@ class ActiveSafController extends Controller
         ]);
 
         try {
+            $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
             $safRefTableName = Config::get('PropertyConstaint.SAF_REF_TABLE');
             $saf = PropActiveSaf::findOrFail($req->applicationId);
             $track = new WorkflowTrack();
+            $mWfActiveDocument = new WfActiveDocument();
             $senderRoleId = $saf->current_role;
 
+            if ($saf->doc_verify_status == true)
+                throw new Exception("Verification Done You Cannot Back to Citizen");
+
+            // Check capability for back to citizen
+            $getDocReqs = [
+                'activeId' => $saf->id,
+                'workflowId' => $saf->workflow_id,
+                'moduleId' => $moduleId
+            ];
+            $getRejectedDocument = $mWfActiveDocument->readRejectedDocuments($getDocReqs);
+
+            if (collect($getRejectedDocument)->isEmpty())
+                throw new Exception("Document Not Rejected You Can't back to citizen this application");
+
+            dd($getRejectedDocument->toArray());
             if (is_null($saf->citizen_id)) {                // If the Application has been applied from Jsk or Ulb Employees
                 $initiatorRoleId = $saf->initiator_role_id;
                 $saf->current_role = $initiatorRoleId;
