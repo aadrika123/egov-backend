@@ -412,6 +412,12 @@ class CalculateSafById
         $readDemands = $this->_mPropSafDemand->getPaidDemandBySafId($this->_safId);
         $this->_demandDetails['details'] = $readDemands;
         $taxDetails = $this->_mPropSafTax->getSafTaxesBySafId($this->_safId);
+        foreach ($taxDetails as $key => $item) {
+            $lastElement = end($taxDetails);
+            $item->status = "Old";
+            if ($key == $lastElement)                               // Check last Element of an array
+                $item->status = "Current";
+        }
         $this->_demandDetails['taxDetails'] = $taxDetails;
         $this->_generatedDemand = $this->_demandDetails;
     }
