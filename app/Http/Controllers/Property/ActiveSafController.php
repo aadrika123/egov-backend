@@ -55,6 +55,7 @@ use App\Models\Property\RefPropType;
 use App\Models\Property\RefPropUsageType;
 use App\Models\Property\ZoneMaster;
 use App\Models\UlbWardMaster;
+use App\Models\Workflows\WfActiveDocument;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfWorkflow;
@@ -966,7 +967,10 @@ class ActiveSafController extends Controller
                 break;
 
             case $wfLevels['DA']:                       // DA Condition
-                $demand = $mPropSafDemand->getDemandsBySafId($saf->id)->groupBy('fyear')->first()->last();
+                $demand = $mPropSafDemand->getDemandsBySafId($saf->id)->groupBy('fyear')->first();
+                if (collect($demand)->isEmpty())
+                    throw new Exception("Demand Not Available");
+                $demand = $demand->last();
                 if (collect($demand)->isEmpty())
                     throw new Exception("Demand Not Available for the to Generate SAM");
                 if ($saf->doc_verify_status == 0)
@@ -1481,11 +1485,28 @@ class ActiveSafController extends Controller
         ]);
 
         try {
+            $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
             $safRefTableName = Config::get('PropertyConstaint.SAF_REF_TABLE');
             $saf = PropActiveSaf::findOrFail($req->applicationId);
             $track = new WorkflowTrack();
+            $mWfActiveDocument = new WfActiveDocument();
             $senderRoleId = $saf->current_role;
 
+            if ($saf->doc_verify_status == true)
+                throw new Exception("Verification Done You Cannot Back to Citizen");
+
+            // Check capability for back to citizen
+            $getDocReqs = [
+                'activeId' => $saf->id,
+                'workflowId' => $saf->workflow_id,
+                'moduleId' => $moduleId
+            ];
+            $getRejectedDocument = $mWfActiveDocument->readRejectedDocuments($getDocReqs);
+
+            if (collect($getRejectedDocument)->isEmpty())
+                throw new Exception("Document Not Rejected You Can't back to citizen this application");
+
+            dd($getRejectedDocument->toArray());
             if (is_null($saf->citizen_id)) {                // If the Application has been applied from Jsk or Ulb Employees
                 $initiatorRoleId = $saf->initiator_role_id;
                 $saf->current_role = $initiatorRoleId;
@@ -1530,7 +1551,13 @@ class ActiveSafController extends Controller
             'id' => 'required|digits_between:1,9223372036854775807'
         ]);
         try {
-            $safDtls = PropActiveSaf::findOrFail($req->id);
+            $safDtls = PropActiveSaf::find($req->id);
+            if (!$safDtls)
+                $safDtls = PropSaf::find($req->id);
+
+            if (collect($safDtls)->isEmpty())
+                throw new Exception("Saf Not Available");
+
             if (in_array($safDtls->assessment_type, ['New Assessment', 'Reassessment', 'Re Assessment', 'Mutation']))
                 $req = $req->merge(['holdingNo' => $safDtls->holding_no]);
             $calculateSafById = new CalculateSafById;
@@ -2097,13 +2124,13 @@ class ActiveSafController extends Controller
     public function getPropTransactions(Request $req)
     {
         try {
-            $propTransaction = new PropTransaction();
             $auth = authUser();
             $userId = $auth->id;
             if ($auth->user_type == 'Citizen')
-                $propTrans = $propTransaction->getPropTransByCitizenId($userId);
+                $propTrans = $this->Repository->getPropTransByCitizenUserId($userId, 'citizen_id');
             else
-                $propTrans = $propTransaction->getPropTransByUserId($userId);               // Get Transaction History for Citizen or User
+                $propTrans = $this->Repository->getPropTransByCitizenUserId($userId, 'user_id');
+
             return responseMsgs(true, "Transactions History", remove_null($propTrans), "010117", "1.0", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010117", "1.0", responseTime(), "POST", $req->deviceId);
@@ -2119,9 +2146,7 @@ class ActiveSafController extends Controller
         try {
             $propTransaction = new PropTransaction();
             if ($req->safId)                                                // Get By SAF Id
-            {
                 $propTrans = $propTransaction->getPropTransBySafId($req->safId);
-            }
             if ($req->propertyId)                                           // Get by Property Id
                 $propTrans = $propTransaction->getPropTransByPropId($req->propertyId);
 
@@ -2415,9 +2440,9 @@ class ActiveSafController extends Controller
                 "doc_upload_status" => $req['doc_upload_status'],
                 "ownership_type" => $req['ownership_type']
             ];
-            $demand['amounts'] = $safTaxes->original['data']['demand'];
+            $demand['amounts'] = $safTaxes->original['data']['demand'] ?? [];
             $demand['details'] = collect($safTaxes->original['data']['details'])->values();
-            $demand['taxDetails'] = collect($safTaxes->original['data']['taxDetails']);
+            $demand['taxDetails'] = collect($safTaxes->original['data']['taxDetails']) ?? [];
             $demand['paymentStatus'] = $safDetails['payment_status'];
             $demand['applicationNo'] = $safDetails['saf_no'];
             return responseMsgs(true, "Demand Details", remove_null($demand), "", "1.0", "", "POST", $req->deviceId ?? "");
@@ -2537,7 +2562,7 @@ class ActiveSafController extends Controller
                 ],
                 [
                     "key" => "New Ward No",
-                    "values" => $saf->new_ward_no == $verifications->new_ward_no,
+                    "values" => $saf->new_ward_mstr_id == $verifications->new_ward_id,
                     "according_application" => $saf->new_ward_no,
                     "according_verification" => $verifications->new_ward_no,
                 ],

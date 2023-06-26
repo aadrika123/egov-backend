@@ -47,7 +47,7 @@ class PropSafVerification extends Model
                 'p.property_type',
                 'r.road_type as road_type_master',
                 'u.ward_name as old_ward_no',
-                'u.ward_name as new_ward_no',
+                'u1.ward_name as new_ward_no',
                 'building_type',
                 'prop_usage_type'
             )

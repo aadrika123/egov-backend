@@ -10,6 +10,17 @@ class PropSafsFloor extends Model
 {
     use HasFactory;
 
+
+    /**
+     * | Get Safs Floors By Saf Id
+     */
+    public function getSafFloorsBySafId($safId)
+    {
+        return PropSafsFloor::where('saf_id', $safId)
+            ->where('status', 1)
+            ->get();
+    }
+
     /**
      * | Get Saf Floors
      */

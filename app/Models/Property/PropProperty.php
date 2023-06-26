@@ -301,7 +301,11 @@ class PropProperty extends Model
             'petrol_pump_completion_date' => $fieldVerifiedSaf->petrol_pump_completion_date,
             'is_water_harvesting' => $fieldVerifiedSaf->has_water_harvesting,
             'new_ward_mstr_id' => $fieldVerifiedSaf->new_ward_id,
-            'ulb_id' => $fieldVerifiedSaf->ulb_id
+            'ulb_id' => $fieldVerifiedSaf->ulb_id,
+            'road_width' => $fieldVerifiedSaf->road_width,
+            'gb_usage_types' => $fieldVerifiedSaf->gb_usage_types,
+            'gb_prop_usage_types' => $fieldVerifiedSaf->gb_prop_usage_types,
+            'rwh_date_from' => $fieldVerifiedSaf->rwh_date_from,
         ];
         $property->update($reqs);
     }
@@ -380,6 +384,10 @@ class PropProperty extends Model
             'gb_office_name' => $req->gb_office_name,
             'gb_usage_types' => $req->gb_usage_types,
             'gb_prop_usage_types' => $req->gb_prop_usage_types,
+            'is_trust' => $req->is_trust,
+            'trust_type' => $req->trust_type,
+            'is_trust_verified' => $req->is_trust_verified,
+            'rwh_date_from' => $req->rwh_date_from
         ];
         return $reqs;
     }

@@ -215,7 +215,6 @@ class GbSafController extends Controller
                 $metaReqs['receiverRoleId'] = $forwardBackwardIds->backward_role_id;
             }
 
-
             $saf->save();
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs['workflowId'] = $saf->workflow_id;
@@ -227,7 +226,6 @@ class GbSafController extends Controller
             $request->request->add($metaReqs);
 
             $track->saveTrack($request);
-
             DB::commit();
             return responseMsgs(true, "Successfully Forwarded The Application!!", $samHoldingDtls, "010109", "1.0", responseTime(), "POST", $request->deviceId);
         } catch (Exception $e) {
@@ -315,6 +313,7 @@ class GbSafController extends Controller
         $toBeProperties = PropActiveSaf::query()
             ->where('id', $safId)
             ->select(
+                'saf_no',
                 'ulb_id',
                 'cluster_id',
                 'holding_no',
@@ -377,7 +376,11 @@ class GbSafController extends Controller
                 'is_gb_saf',
                 'gb_office_name',
                 'gb_usage_types',
-                'gb_prop_usage_types'
+                'gb_prop_usage_types',
+                'is_trust',
+                'trust_type',
+                'is_trust_verified',
+                'rwh_date_from'
             )->first();
 
         $assessmentType = $activeSaf->assessment_type;
@@ -406,7 +409,7 @@ class GbSafController extends Controller
         }
 
         // Edit In Case of Reassessment,Mutation
-        if (in_array($assessmentType, ['Re Assessment'])) {         // Edit Property In case of Reassessment
+        if (in_array($assessmentType, ['Reassessment'])) {         // Edit Property In case of Reassessment
             $propId = $activeSaf->previous_holding_id;
             $mProperty = new PropProperty();
             $mPropOfficer = new PropGbofficer();
