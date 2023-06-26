@@ -454,7 +454,7 @@ class WaterPaymentController extends Controller
             throw new Exception("You are not Junier Enginer!");
         }
         if ($waterDetails->current_role != $waterRoles['JE']) {
-            throw new Exception("Application Is Not under Junier Injiner!");
+            throw new Exception("Application Is Not under Junier Enginer!");
         }
         if ($waterDetails->is_field_verified == true) {
             throw new Exception("Application's site is Already Approved!");
