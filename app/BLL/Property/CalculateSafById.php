@@ -466,12 +466,13 @@ class CalculateSafById
             }
 
             if (collect($demandTillQtr)->isEmpty())
-                $unpaidDemand = collect();                                    // Demand List blank in case of fyear and qtr  
+                $unpaidDemand = collect();                                                  // Demand List blank in case of fyear and qtr  
         }
         $this->_demandDetails = $unpaidDemand;
+
         if ($this->_demandDetails->isEmpty())
             throw new Exception("Demand Not Available For this Fyear and Qtr");
-        $this->calculateOnePercPenalty();   // (1.2.2)
+        $this->calculateOnePercPenalty();                                                   // (1.2.2)
         $this->_safCalculation->_propertyDetails['propertyType'] = 2;                       // Individual building
         $this->_safCalculation->_propertyDetails['isMobileTower'] = $this->_safDetails->is_mobile_tower;
         $this->_safCalculation->_propertyDetails['isHoardingBoard'] = $this->_safDetails->is_hoarding_board;
@@ -479,7 +480,6 @@ class CalculateSafById
         $this->_safCalculation->ifPropLateAssessed();
         $fine = $this->_safCalculation->calcLateAssessmentFee();
 
-        // dd($unpaidDemand->toArray());
         $dueFromFyear = $unpaidDemand->first()['fyear'];
         $dueToFyear = $unpaidDemand->last()['fyear'];
         $dueFromQtr = $unpaidDemand->first()['qtr'];
@@ -507,5 +507,7 @@ class CalculateSafById
         ];
         $this->readRebates();
         $this->calculatePayableAmt();
+        $this->_generatedDemand['details'] = $unpaidDemand;
+        $this->_generatedDemand = collect($this->_generatedDemand)->reverse();
     }
 }
