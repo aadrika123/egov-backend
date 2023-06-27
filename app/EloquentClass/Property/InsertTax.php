@@ -17,8 +17,6 @@ class InsertTax
      */
     public function insertTax($safId, $ulbId, $safTaxes)
     {
-        // $safDemand = collect($safTaxes->original['data']['details']);
-        // $details = $this->generateSafDemand($safDemand);
         $details = $safTaxes;
         $safDemand = new PropSafsDemand();
         foreach ($details as $detail) {

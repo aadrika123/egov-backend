@@ -160,6 +160,12 @@ class HoldingTaxController extends Controller
             $demandList = $mPropDemand->getDueDemandByPropId($req->propId);
             $demandList = collect($demandList);
 
+            collect($demandList)->map(function ($value) use ($pendingFYears, $qtrs) {
+                $fYear = $value->fyear;
+                $qtr = $value->qtr;
+                $pendingFYears->push($fYear);
+                $qtrs->push($qtr);
+            });
             // Property Part Payment
             if (isset($req->fYear) && isset($req->qtr)) {
                 $demandTillQtr = $demandList->where('fyear', $req->fYear)->where('qtr', $req->qtr)->first();
@@ -215,20 +221,12 @@ class HoldingTaxController extends Controller
 
             $rwhPenaltyTax = roundFigure($demandList->sum('additional_tax'));
             $advanceAdjustments = $mPropAdvance->getPropAdvanceAdjustAmt($req->propId);
-
             if (collect($advanceAdjustments)->isEmpty())
                 $advanceAmt = 0;
             else
                 $advanceAmt = $advanceAdjustments->advance - $advanceAdjustments->adjustment_amt;
 
             $mLastQuarterDemand = $demandList->where('fyear', $currentFYear)->sum('balance');
-
-            collect($demandList)->map(function ($value) use ($pendingFYears, $qtrs) {
-                $fYear = $value->fyear;
-                $qtr = $value->qtr;
-                $pendingFYears->push($fYear);
-                $qtrs->push($qtr);
-            });
 
             $paymentUptoYrs = $pendingFYears->unique()->values();
             $dueFrom = "Quarter " . $demandList->last()->qtr . "/ Year " . $demandList->last()->fyear;
@@ -251,6 +249,7 @@ class HoldingTaxController extends Controller
             $pendingQtrs = $qtrs->filter(function ($value) use ($currentQtr) {
                 return $value >= $currentQtr;
             });
+
             $totalDuesList = $penaltyRebateCalc->readRebates($currentQuarter, $loggedInUserType, $mLastQuarterDemand, $ownerDetails, $dues, $totalDuesList);
 
             $finalPayableAmt = ($dues + $onePercTax + $balance) - ($totalDuesList['rebateAmt'] + $totalDuesList['specialRebateAmt']) - $advanceAmt;

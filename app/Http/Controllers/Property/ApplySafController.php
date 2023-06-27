@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Property;
 
 use App\BLL\Property\CalculateSafById;
 use App\BLL\Property\GenerateSafApplyDemandResponse;
+use App\BLL\Property\PostSafPropTaxes;
 use App\EloquentClass\Property\InsertTax;
 use App\EloquentClass\Property\PenaltyRebateCalculation;
 use App\EloquentClass\Property\SafCalculation;
@@ -346,6 +347,8 @@ class ApplySafController extends Controller
             $assessmentId = $req->assessmentType;
             $calculateSafById = new CalculateSafById;
             $generateSafApplyDemandResponse = new GenerateSafApplyDemandResponse;
+            $insertTax = new InsertTax;
+            $postSafPropTax = new PostSafPropTaxes;
 
             // Derivative Assignments
             $ulbWfId = $this->readGbAssessUlbWfId($req, $ulbId);
@@ -378,7 +381,7 @@ class ApplySafController extends Controller
             $generatedDemand = $calculateSafById->_generatedDemand;
             $isResidential = $safTaxes->original['data']['demand']['isResidential'];
             $demandResponse = $generateSafApplyDemandResponse->generateResponse($generatedDemand, $isResidential);
-
+            $demandToBeSaved = $demandResponse['details']->values()->collapse();
             $lateAssessmentPenalty = $demandResponse['amounts']['lateAssessmentPenalty'];
             $lateAssessmentPenalty = ($lateAssessmentPenalty > 0) ? $lateAssessmentPenalty : null;
             // Send to Workflow
@@ -444,10 +447,14 @@ class ApplySafController extends Controller
             ];
             $mPropGbOfficer->store($gbOfficerReq);
             $this->sendToWorkflow($createSaf, $userId);
+            // Demand Saved
+            $insertTax->insertTax($safId, $ulbId, $demandToBeSaved);
+            $postSafPropTax->postSafTaxes($safId, $generatedDemand['details']->toArray(), $ulbId);                        // Saf Tax Generation
+
             DB::commit();
             return responseMsgs(true, "Successfully Submitted Your Application Your SAF No. $safNo", [
                 "safNo" => $safNo,
-                "applyDate" => $applicationDate,
+                "applyDate" => Carbon::parse($applicationDate)->format('d-m-Y'),
                 "safId" => $safId,
                 "demand" => $demandResponse
             ], "010102", "1.0", "1s", "POST", $req->deviceId);
