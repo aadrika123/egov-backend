@@ -1055,6 +1055,7 @@ class ConcessionController extends Controller
             // $getConcessionDtls->save();
 
             $docUploadStatus = $this->checkFullDocUpload($req->applicationId);
+            dd($docUploadStatus);
             if ($docUploadStatus == 1) {                                        // Doc Upload Status Update
                 $getConcessionDtls->doc_upload_status = 1;
                 if ($getConcessionDtls->parked == true)                                // Case of Back to Citizen
@@ -1170,11 +1171,13 @@ class ConcessionController extends Controller
             $document = $mRefReqDocs->getDocsByDocCode($moduleId, "CONCESSION_ARMED_FORCE")->requirements;
             $documentList->push($document);
         }
-        if (isset($gender)) {
+        if (isset($gender) && isset($dob)) {
+            $document = $mRefReqDocs->getDocsByDocCode($moduleId, "CONCESION_GENDER_DOB")->requirements;
+            $documentList->push($document);
+        } else if (isset($gender)) {
             $document = $mRefReqDocs->getDocsByDocCode($moduleId, "CONCESSION_GENDER")->requirements;
             $documentList->push($document);
-        }
-        if (isset($dob)) {
+        } else if (isset($dob)) {
             $document = $mRefReqDocs->getDocsByDocCode($moduleId, "CONCESSION_DOB")->requirements;
             $documentList->push($document);
         }
