@@ -1051,11 +1051,7 @@ class ConcessionController extends Controller
             $metaReqs = new Request($metaReqs);
             $mWfActiveDocument->postDocuments($metaReqs);
 
-            // $getConcessionDtls->doc_upload_status = 1;                                             // Doc Upload Status Update
-            // $getConcessionDtls->save();
-
             $docUploadStatus = $this->checkFullDocUpload($req->applicationId);
-            dd($docUploadStatus);
             if ($docUploadStatus == 1) {                                        // Doc Upload Status Update
                 $getConcessionDtls->doc_upload_status = 1;
                 if ($getConcessionDtls->parked == true)                                // Case of Back to Citizen
@@ -1063,7 +1059,6 @@ class ConcessionController extends Controller
 
                 $getConcessionDtls->save();
             }
-            // dd('ok');
             return responseMsgs(true, "Document Uploadation Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
@@ -1097,9 +1092,11 @@ class ConcessionController extends Controller
         $concessionDocs = $this->getDocList($getConcessionDtls);
         $docList['concessionDocs'] = explode('#', $concessionDocs);
 
-
         $verifiedDocList['concessionDocs'] = $refDocList->where('owner_dtl_id', '!=', null)->values();
         $collectUploadDocList = collect();
+        collect($verifiedDocList['concessionDocs'])->map(function ($item) use ($collectUploadDocList) {
+            return $collectUploadDocList->push($item['doc_code']);
+        });
 
         // $mPropDocs = $concessionDocs;
         // Property List Documents
