@@ -1226,7 +1226,7 @@ class ConcessionController extends Controller
 
             $reqDoc['docType'] = $key;
             $reqDoc['docName'] = substr($label, 1, -1);
-            $reqDoc['uploadedDoc'] = $documents->first();
+            $reqDoc['uploadedDoc'] = $documents->sortByDesc('uploadedDocId')->first();
 
             $reqDoc['masters'] = collect($document)->map(function ($doc) use ($uploadedDocs) {
                 $uploadedDoc = $uploadedDocs->where('doc_code', $doc)->first();
