@@ -1546,9 +1546,17 @@ class ActiveSafController extends Controller
      */
     public function calculateSafBySafId(Request $req)
     {
-        $req->validate([
-            'id' => 'required|digits_between:1,9223372036854775807'
-        ]);
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'id' => 'required|digits_between:1,9223372036854775807',
+                'fyear' => 'nullable|max:9|min:9',
+                'qtr' => 'nullable|regex:/^[1-4]+/'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
         try {
             $safDtls = PropActiveSaf::find($req->id);
             if (!$safDtls)
@@ -1873,7 +1881,6 @@ class ActiveSafController extends Controller
             $safCalculation = $this->calculateSafBySafId($req);
             $demands = $safCalculation->original['data']['details'];
             $amount = $safCalculation->original['data']['demand']['payableAmount'];
-
             if (!$demands || collect($demands)->isEmpty())
                 throw new Exception("Demand Not Available for Payment");
 
