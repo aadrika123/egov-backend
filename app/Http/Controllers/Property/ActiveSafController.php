@@ -55,6 +55,7 @@ use App\Models\Property\RefPropType;
 use App\Models\Property\RefPropUsageType;
 use App\Models\Property\ZoneMaster;
 use App\Models\UlbWardMaster;
+use App\Models\Workflows\WfActiveDocument;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfWorkflow;
@@ -1484,10 +1485,26 @@ class ActiveSafController extends Controller
         ]);
 
         try {
+            $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
             $safRefTableName = Config::get('PropertyConstaint.SAF_REF_TABLE');
             $saf = PropActiveSaf::findOrFail($req->applicationId);
             $track = new WorkflowTrack();
+            $mWfActiveDocument = new WfActiveDocument();
             $senderRoleId = $saf->current_role;
+
+            if ($saf->doc_verify_status == true)
+                throw new Exception("Verification Done You Cannot Back to Citizen");
+
+            // Check capability for back to citizen
+            $getDocReqs = [
+                'activeId' => $saf->id,
+                'workflowId' => $saf->workflow_id,
+                'moduleId' => $moduleId
+            ];
+            $getRejectedDocument = $mWfActiveDocument->readRejectedDocuments($getDocReqs);
+
+            if (collect($getRejectedDocument)->isEmpty())
+                throw new Exception("Document Not Rejected You Can't back to citizen this application");
 
             if (is_null($saf->citizen_id)) {                // If the Application has been applied from Jsk or Ulb Employees
                 $initiatorRoleId = $saf->initiator_role_id;
@@ -1510,7 +1527,7 @@ class ActiveSafController extends Controller
             $track->saveTrack($req);
 
             DB::commit();
-            return responseMsgs(true, "Successfully Done", "", "010111", "1.0", "350ms", "POST", $req->deviceId);
+            return responseMsgs(true, "Successfully Done", "", "010111", "1.0", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
@@ -1529,11 +1546,25 @@ class ActiveSafController extends Controller
      */
     public function calculateSafBySafId(Request $req)
     {
-        $req->validate([
-            'id' => 'required|digits_between:1,9223372036854775807'
-        ]);
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'id' => 'required|digits_between:1,9223372036854775807',
+                'fyear' => 'nullable|max:9|min:9',
+                'qtr' => 'nullable|regex:/^[1-4]+/'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
         try {
-            $safDtls = PropActiveSaf::findOrFail($req->id);
+            $safDtls = PropActiveSaf::find($req->id);
+            if (!$safDtls)
+                $safDtls = PropSaf::find($req->id);
+
+            if (collect($safDtls)->isEmpty())
+                throw new Exception("Saf Not Available");
+
             if (in_array($safDtls->assessment_type, ['New Assessment', 'Reassessment', 'Re Assessment', 'Mutation']))
                 $req = $req->merge(['holdingNo' => $safDtls->holding_no]);
             $calculateSafById = new CalculateSafById;
@@ -1807,9 +1838,9 @@ class ActiveSafController extends Controller
             $previousHoldingDeactivation->deactivateHoldingDemands($activeSaf);  // Deactivate Property Holding
             $this->sendToWorkflow($activeSaf);                                   // Send to Workflow(15.2)
             $demands = collect($demands)->toArray();
-            $postSafPropTaxes->postSafTaxes($safId, $demands);                  // Save Taxes
+            $postSafPropTaxes->postSafTaxes($safId, $demands, $activeSaf->ulb_id);                  // Save Taxes
             DB::commit();
-            return responseMsgs(true, "Payment Successfully Done",  ['TransactionNo' => $tranNo], "010115", "1.0", "567ms", "POST", $req->deviceId);
+            return responseMsgs(true, "Payment Successfully Done",  ['TransactionNo' => $tranNo], "010115", "1.0", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
@@ -1850,7 +1881,6 @@ class ActiveSafController extends Controller
             $safCalculation = $this->calculateSafBySafId($req);
             $demands = $safCalculation->original['data']['details'];
             $amount = $safCalculation->original['data']['demand']['payableAmount'];
-
             if (!$demands || collect($demands)->isEmpty())
                 throw new Exception("Demand Not Available for Payment");
 
@@ -1915,7 +1945,7 @@ class ActiveSafController extends Controller
             $activeSaf->save();
             $this->sendToWorkflow($activeSaf);        // Send to Workflow(15.2)
             $demands = collect($demands)->toArray();
-            $postSafPropTaxes->postSafTaxes($safId, $demands);                  // Save Taxes
+            $postSafPropTaxes->postSafTaxes($safId, $demands, $activeSaf->ulb_id);                  // Save Taxes
             DB::commit();
             return responseMsgs(true, "Payment Successfully Done",  ['TransactionNo' => $tranNo], "010115", "1.0", "567ms", "POST", $req->deviceId);
         } catch (Exception $e) {
@@ -2416,9 +2446,9 @@ class ActiveSafController extends Controller
                 "doc_upload_status" => $req['doc_upload_status'],
                 "ownership_type" => $req['ownership_type']
             ];
-            $demand['amounts'] = $safTaxes->original['data']['demand'];
+            $demand['amounts'] = $safTaxes->original['data']['demand'] ?? [];
             $demand['details'] = collect($safTaxes->original['data']['details'])->values();
-            $demand['taxDetails'] = collect($safTaxes->original['data']['taxDetails']);
+            $demand['taxDetails'] = collect($safTaxes->original['data']['taxDetails']) ?? [];
             $demand['paymentStatus'] = $safDetails['payment_status'];
             $demand['applicationNo'] = $safDetails['saf_no'];
             return responseMsgs(true, "Demand Details", remove_null($demand), "", "1.0", "", "POST", $req->deviceId ?? "");

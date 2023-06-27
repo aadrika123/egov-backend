@@ -9,7 +9,11 @@ use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Property\PropDemand;
 use App\Models\Property\PropProperty;
+use App\Models\Property\PropSaf;
 use App\Models\Property\PropSafsDemand;
+use App\Models\Property\PropSafsFloor;
+use App\Models\Property\PropSafsOwner;
+use App\Models\Property\PropSafTax;
 use App\Traits\Property\SAF;
 use Carbon\Carbon;
 use Exception;
@@ -27,6 +31,7 @@ class CalculateSafById
 {
     use SAF;
     private $_mPropActiveSaf;
+    private $_mPropSaf;
     private $_mPropActiveSafFloors;
     private $_mPropActiveSafOwner;
     private $_penaltyRebateCalc;
@@ -44,17 +49,24 @@ class CalculateSafById
     public $_firstOwner;
     public $_mPropActiveSafOwners;
     private $_adjustmentAssessmentTypes;
+    private $_mPropSafDemand;
+    private $_mPropSafTax;
+    private $_totalDemand;
+    private $_REQUEST;
 
     public function __construct()
     {
         $this->_mPropActiveSafOwner = new PropActiveSafsOwner();
         $this->_mPropActiveSafFloors = new PropActiveSafsFloor();
         $this->_mPropActiveSaf = new PropActiveSaf();
+        $this->_mPropSaf = new PropSaf();
         $this->_safCalculation = new SafCalculation;
         $this->_penaltyRebateCalc = new PenaltyRebateCalculation;
         $this->_todayDate = Carbon::now();
         $this->_mPropActiveSafOwners = new PropActiveSafsOwner();
         $this->_adjustmentAssessmentTypes = Config::get('PropertyConstaint.REASSESSMENT_TYPES');
+        $this->_mPropSafDemand = new PropSafsDemand();
+        $this->_mPropSafTax = new PropSafTax();
     }
 
     /**
@@ -65,22 +77,38 @@ class CalculateSafById
     {
         $this->_safId = $req->id;
         $this->_holdingNo = $req->holdingNo;
+        $this->_REQUEST = $req;
 
-        $this->readMasters();            // Function (1.1)
+        $this->readMasters();                          // Function (1.1)
 
-        $this->generateFloorCalcReq();
+        if ($this->_safDetails->is_gb_saf == true)      // For GB Saf
+        {
+            $this->_safDetails['prop_type_mstr_id'] = 2;
+            $this->generateFloorCalcReq();
+            $this->calculateGbSafDemand();
+        }
 
-        $this->generateCalculationReq();                                        // (Function 1.3)
-        // Saf Calculation
-        $reqCalculation = $this->_safCalculationReq;
-        $calculation = $this->_safCalculation->calculateTax($reqCalculation);
-        // Throw Exception on Calculation Error
-        if ($calculation->original['status'] == false)
-            throw new Exception($calculation->original['message']);
+        if ($this->_safDetails->is_gb_saf == false)      // For Normal Saf
+        {
+            if ($this->_safDetails->payment_status == 1)   // If Payment Already done
+                $this->readGeneratedDemand();
 
-        $this->_calculatedDemand = $calculation->original['data'];
+            if ($this->_safDetails->payment_status != 1)   // If Payment Not done
+            {
+                $this->generateFloorCalcReq();
+                $this->generateCalculationReq();                                        // (Function 1.3)
+                // Saf Calculation
+                $reqCalculation = $this->_safCalculationReq;
+                $calculation = $this->_safCalculation->calculateTax($reqCalculation);
+                // Throw Exception on Calculation Error
+                if ($calculation->original['status'] == false)
+                    throw new Exception($calculation->original['message']);
 
-        $this->generateSafDemand();   // (1.2)
+                $this->_calculatedDemand = $calculation->original['data'];
+                $this->generateSafDemand();   // (1.2)
+
+            }
+        }
 
         return $this->_generatedDemand;
     }
@@ -91,12 +119,22 @@ class CalculateSafById
 
     public function readMasters()
     {
-        $this->_safDetails = $this->_mPropActiveSaf::findOrFail($this->_safId);
+        $this->_safDetails = $this->_mPropActiveSaf::find($this->_safId);
+        if (collect(($this->_safDetails))->isEmpty()) {
+            $this->_safDetails = $this->_mPropSaf::find($this->_safId);
+            $this->_mPropActiveSafFloors = new PropSafsFloor();
+            $this->_mPropActiveSafOwner = new PropSafsOwner();
+        }
+
         $this->_currentQuarter = calculateQtr($this->_todayDate->format('Y-m-d'));
 
         // Read Owner
         $this->readOwnerDetails();
     }
+
+    /**
+     * | ======================================= Functions Calculating unpaid Demands ==========================
+     */
 
     /**
      * | Read Owner Details
@@ -195,7 +233,7 @@ class CalculateSafById
 
         $totalTax = roundFigure($demandDetails->sum('balance'));
         $totalOnePercPenalty = roundFigure($demandDetails->sum('onePercPenaltyTax'));
-        $totalDemand = $totalTax + $totalOnePercPenalty + $this->_calculatedDemand['demand']['lateAssessmentStatus'] + $this->_calculatedDemand['demand']['lateAssessmentPenalty'];
+        $this->_totalDemand = $totalTax + $totalOnePercPenalty + $this->_calculatedDemand['demand']['lateAssessmentStatus'] + $this->_calculatedDemand['demand']['lateAssessmentPenalty'];
         $this->_generatedDemand['demand'] = [
             'dueFromFyear' => $demandDetails->first()['fyear'],
             'dueToFyear' => $demandDetails->last()['fyear'],
@@ -208,18 +246,31 @@ class CalculateSafById
             'duesTo' => $dueTo,
             'lateAssessmentStatus' => $this->_calculatedDemand['demand']['lateAssessmentStatus'],
             'lateAssessmentPenalty' => $this->_calculatedDemand['demand']['lateAssessmentPenalty'],
-            'totalDemand' => roundFigure($totalDemand)
+            'totalDemand' => roundFigure($this->_totalDemand)
         ];
 
-        $this->_generatedDemand['details'] = $this->_demandDetails;
+        $this->_generatedDemand['details'] = $this->_demandDetails->values();
 
         $this->readRebates();                                               // (1.2.3)
 
-        $payableAmount = $totalDemand - ($this->_generatedDemand['demand']['rebateAmt'] + $this->_generatedDemand['demand']['specialRebateAmt']);   // Final Payable Amount Calculation
-        $this->_generatedDemand['demand']['payableAmount'] = round($payableAmount);
+        $this->calculatePayableAmt();
 
         $this->generateTaxDtls();        // (1.2.3)
     }
+
+    /**
+     * | Calculation of Total Payable amount
+     */
+    public function calculatePayableAmt()
+    {
+        $payableAmount = $this->_totalDemand - ($this->_generatedDemand['demand']['rebateAmt'] + $this->_generatedDemand['demand']['specialRebateAmt']);   // Final Payable Amount Calculation
+        $this->_generatedDemand['demand']['payableAmount'] = round($payableAmount);
+        if ((int)$payableAmount < 1)
+            $this->_generatedDemand['demand']['isPayable'] = false;
+        else
+            $this->_generatedDemand['demand']['isPayable'] = true;
+    }
+
 
     /**
      * | Generate Demand
@@ -360,11 +411,11 @@ class CalculateSafById
     {
         $taxDetails = collect();
         $demandDetails = $this->_generatedDemand['details'];
-        $groupByDemands = collect($demandDetails)->groupBy('arv');
-        $currentArv = $groupByDemands->last()->first()['arv'];          // Get Current Demand Arv Rate
+        $groupByDemands = collect($demandDetails)->groupBy('amount');
+        $currentTax = $groupByDemands->last()->first()['amount'];          // Get Current Demand Arv Rate
         foreach ($groupByDemands as $key => $item) {
             $firstTax = collect($item)->first();
-            if ($key == $currentArv)
+            if ($key == $currentTax)
                 $firstTax['status'] = "Current";
             else
                 $firstTax['status'] = "Old";
@@ -372,5 +423,89 @@ class CalculateSafById
             $taxDetails->push($firstTax);
         }
         $this->_generatedDemand['taxDetails'] = $taxDetails;
+    }
+
+
+    /**
+     * | ========================= Functions calculating Paid Demands ==================
+     */
+    public function readGeneratedDemand()
+    {
+        $readDemands = $this->_mPropSafDemand->getFullDemandsBySafId($this->_safId);
+        $this->_demandDetails['details'] = $readDemands;
+        $taxDetails = $this->_mPropSafTax->getSafTaxesBySafId($this->_safId);
+        foreach ($taxDetails as $key => $item) {
+            $lastElement = end($taxDetails);
+            $item->status = "Old";
+            if ($key == $lastElement)                               // Check last Element of an array
+                $item->status = "Current";
+        }
+        $this->_demandDetails['taxDetails'] = $taxDetails;
+        $this->_generatedDemand = $this->_demandDetails;
+    }
+
+
+    /**
+     * | ========================= Functions Generating GB Saf demand ==================
+     */
+    public function calculateGbSafDemand()
+    {
+        $this->readGeneratedDemand();
+        $unpaidDemand = $this->_demandDetails['details']->where('paid_status', 0);
+        $pendingFyears = $unpaidDemand->pluck('fyear')->unique()->values();
+        $pendingQtrs = [1, 2, 3, 4];
+        if (isset($this->_REQUEST->fyear) && isset($this->_REQUEST->qtr)) {                     // Case Of Part Payment
+            $demandTillQtr = $unpaidDemand->where('fyear', $this->_REQUEST->fyear)->where('qtr', $this->_REQUEST->qtr)->first();
+
+            if (collect($demandTillQtr)->isNotEmpty()) {
+                $demandDueDate = $demandTillQtr->due_date;
+                $unpaidDemand = $unpaidDemand->filter(function ($item) use ($demandDueDate) {
+                    return $item->due_date <= $demandDueDate;
+                });
+                $unpaidDemand = $unpaidDemand->values();
+            }
+
+            if (collect($demandTillQtr)->isEmpty())
+                $unpaidDemand = collect();                                    // Demand List blank in case of fyear and qtr  
+        }
+        $this->_demandDetails = $unpaidDemand;
+        if ($this->_demandDetails->isEmpty())
+            throw new Exception("Demand Not Available For this Fyear and Qtr");
+        $this->calculateOnePercPenalty();   // (1.2.2)
+        $this->_safCalculation->_propertyDetails['propertyType'] = 2;                       // Individual building
+        $this->_safCalculation->_propertyDetails['isMobileTower'] = $this->_safDetails->is_mobile_tower;
+        $this->_safCalculation->_propertyDetails['isHoardingBoard'] = $this->_safDetails->is_hoarding_board;
+        $this->_safCalculation->_floors = $this->_safFloorDetails;
+        $this->_safCalculation->ifPropLateAssessed();
+        $fine = $this->_safCalculation->calcLateAssessmentFee();
+
+        // dd($unpaidDemand->toArray());
+        $dueFromFyear = $unpaidDemand->first()['fyear'];
+        $dueToFyear = $unpaidDemand->last()['fyear'];
+        $dueFromQtr = $unpaidDemand->first()['qtr'];
+        $dueToQtr = $unpaidDemand->last()['qtr'];
+        // Payable Taxes
+        $totalTax = roundFigure($unpaidDemand->sum('balance'));
+        $totalOnePercPenalty = roundFigure($unpaidDemand->sum('onePercPenaltyTax'));
+        $lateAssessmentPenalty = $fine;
+        $this->_totalDemand = roundFigure($totalTax + $totalOnePercPenalty + $lateAssessmentPenalty);
+        $this->_generatedDemand['demand'] = [
+            "paymentUptoYrs" => $pendingFyears,
+            "paymentUptoQtrs" => $pendingQtrs,
+            "dueFromFyear" => $dueFromFyear,
+            "dueToFyear" => $dueToFyear,
+            "dueFromQtr" => $dueFromQtr,
+            "dueToQtr" => $dueToQtr,
+            "totalTax" => $totalTax,
+            "totalOnePercPenalty" => $totalOnePercPenalty,
+            "totalQuarters" => $unpaidDemand->count(),
+            "duesFrom" => "Quarter $dueFromQtr / Year $dueFromFyear",
+            "duesTo" => "Quarter $dueToQtr / Year $dueToFyear",
+            "lateAssessmentStatus" => $this->_safCalculation->_lateAssessmentStatus,
+            "lateAssessmentPenalty" => $fine,
+            "totalDemand" => $this->_totalDemand
+        ];
+        $this->readRebates();
+        $this->calculatePayableAmt();
     }
 }
