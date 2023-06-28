@@ -167,7 +167,6 @@ class StateDashboardController extends Controller
     public function stateWiseCollectionPercentage(RequestCollectionPercentage $req)
     {
         try {
-            dd("Hii");
             $currentYear = Carbon::now()->format('Y');
             if (isset($req->month)) {
                 $month = str_pad($req->month, 2, '0', STR_PAD_LEFT);
@@ -274,11 +273,11 @@ class StateDashboardController extends Controller
             ->whereBetween('tran_date', [$fromDate, $toDate])
             ->where("status", 1);
 
-        $collectiveData['propAmount'] = (collect($prop->get())->sum('propAmount'));
-        $collectiveData['waterAmount'] = (collect($water->get())->sum('waterAmount'));
-        $collectiveData['tradeAmount'] = (collect($trade->get())->sum('tradeAmount'));
+        $collectiveData['propAmount'] = (collect($prop->limit(100))->sum('propAmount'));
+        $collectiveData['waterAmount'] = (collect($water->limit(100))->sum('waterAmount'));
+        $collectiveData['tradeAmount'] = (collect($trade->limit(100))->sum('tradeAmount'));
 
-        $collectiveData['totalAount'] = round(collect($prop->get())->sum('propAmount') + collect($water->get())->sum('waterAmount') + collect($trade->get())->sum('tradeAmount'), 2);
+        $collectiveData['totalAount'] = round(collect($prop->limit(100))->sum('propAmount') + collect($water->get())->sum('waterAmount') + collect($trade->get())->sum('tradeAmount'), 2);
         $collectiveData['propPercent'] = round(($collectiveData['propAmount'] / $collectiveData['totalAount']) * 100, 2);
         $collectiveData['waterPercent'] = round(($collectiveData['waterAmount'] / $collectiveData['totalAount']) * 100, 2);
         $collectiveData['tradePercent'] = round(($collectiveData['tradeAmount'] / $collectiveData['totalAount']) * 100, 2);
