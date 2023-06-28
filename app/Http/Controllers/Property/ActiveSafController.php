@@ -1939,7 +1939,7 @@ class ActiveSafController extends Controller
 
             // GB Saf Demand Adjustments
             if ($activeSaf->is_gb_saf == true)
-                $updateSafDemand->updateDemand($demands->toArray());
+                $updateSafDemand->updateDemand($demands->toArray(), $propTrans['id']);
 
             // Replication Prop Rebates Penalties
             $this->postPenaltyRebates($safCalculation, $safId, $propTrans['id']);
