@@ -396,6 +396,7 @@ class WaterConsumer extends Controller
         | Working
         | Look for the meter status true condition while returning data
         | Recheck the process for meter and non meter 
+        | validation for the respective meter conversion and verify the new consumer.
      */
     public function checkParamForMeterEntry($request)
     {

@@ -402,6 +402,7 @@ class PaymentRepository implements iPayment
         $tranParamId = Config::get("waterConstaint.PARAM_IDS");
         $idGeneration = new PrefixIdGenerator($tranParamId['TRN'], $ulbId);
         $transactionNo = $idGeneration->generate();
+        $transactionNo = str_replace('/', '-', $transactionNo);
         return $transactionNo;
     }
 

@@ -51,6 +51,7 @@ class PropSafMemoDtl extends Model
                 'm.memo_type',
                 'm.holding_no',
                 'm.prop_id',
+                'm.pt_no',
                 DB::raw("(to_char(m.created_at::timestamp,'dd-mm-yyyy HH:MI')) as memo_date"),
                 'u.name as generated_by'
             )
