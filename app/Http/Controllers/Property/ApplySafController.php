@@ -115,9 +115,12 @@ class ApplySafController extends Controller
 
             $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);                                // Get Current Initiator ID
             $initiatorRoleId = collect(DB::select($refInitiatorRoleId))->first();
-
+            if (is_null($initiatorRoleId))
+                throw new Exception("Initiator Role Not Available");
             $refFinisherRoleId = $this->getFinisherId($ulbWorkflowId->id);
             $finisherRoleId = collect(DB::select($refFinisherRoleId))->first();
+            if (is_null($finisherRoleId))
+                throw new Exception("Finisher Role Not Available");
 
             $metaReqs['roadWidthType'] = $roadWidthType;
             $metaReqs['workflowId'] = $ulbWorkflowId->id;
