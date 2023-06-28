@@ -6,6 +6,7 @@ use App\Http\Controllers\Property\ActiveSafController;
 use App\Http\Controllers\Property\HoldingTaxController;
 use App\Http\Controllers\Trade\TradeCitizenController;
 use App\Http\Requests\Property\ReqPayment;
+use App\MicroServices\IdGenerator\PrefixIdGenerator;
 use App\Models\ApiMaster;
 use App\Models\Payment\CardDetail;
 use App\Models\Payment\DepartmentMaster;
@@ -315,7 +316,7 @@ class PaymentRepository implements iPayment
 
             $actulaAmount = $amount / 100;
             $firstKey = array_key_first($arrayInAquirer);
-            $actualTransactionNo = $this->generatingTransactionId();
+            $actualTransactionNo = $this->generatingTransactionId($webhookEntity['notes']['ulbId']);
 
             # Save card details 
             if (!is_null($aCard)) {
@@ -396,9 +397,12 @@ class PaymentRepository implements iPayment
      * | Rating : 1
         | Serial No : 03.1
      */
-    public function generatingTransactionId()
+    public function generatingTransactionId($ulbId)
     {
-        return Carbon::createFromDate()->milli . carbon::now()->diffInMicroseconds();
+        $tranParamId = Config::get("waterConstaint.PARAM_IDS");
+        $idGeneration = new PrefixIdGenerator($tranParamId['TRN'], $ulbId);
+        $transactionNo = $idGeneration->generate();
+        return $transactionNo;
     }
 
     /**

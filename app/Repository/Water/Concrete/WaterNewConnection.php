@@ -373,7 +373,7 @@ class WaterNewConnection implements IWaterNewConnection
                 case "New Connection":
                     $response = $this->waterConnectionPayment($args);
                     break;
-                case "Regulaization":
+                case "Regulaization":                                                                   // Static
                     $response = $this->waterConnectionPayment($args);
                     break;
                 case "Site Inspection":
@@ -418,7 +418,7 @@ class WaterNewConnection implements IWaterNewConnection
             if (!$RazorPayRequest) {
                 throw new Exception("Data Not Found");
             }
-            if (in_array($RazorPayRequest->payment_from, ["New Connection", "Site Inspection", "Regulaization"])) {
+            if (in_array($RazorPayRequest->payment_from, ["New Connection", "Site Inspection", "Regulaization"])) {                     // Static
                 $application = WaterApplication::find($args["id"]);
                 $cahges = 0;
                 $id = explode(",", $RazorPayRequest->demand_from_upto);

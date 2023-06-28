@@ -146,6 +146,7 @@ class PropProperty extends Model
             'prop_properties.corr_address',
             'prop_properties.apartment_details_id',
             'prop_properties.area_of_plot as total_area_in_desimal',
+            'prop_properties.prop_type_mstr_id',
             'ulb_ward_masters.ward_name as old_ward_no',
             'u.ward_name as new_ward_no',
         )
@@ -176,6 +177,7 @@ class PropProperty extends Model
             'prop_properties.corr_address',
             'prop_properties.apartment_details_id',
             'prop_properties.area_of_plot as total_area_in_desimal',
+            'prop_properties.prop_type_mstr_id',
             'ulb_ward_masters.ward_name as old_ward_no',
             'u.ward_name as new_ward_no',
         )

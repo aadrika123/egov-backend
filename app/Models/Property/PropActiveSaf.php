@@ -392,6 +392,7 @@ class  PropActiveSaf extends Model
                 's.corr_pin_code',
                 's.area_of_plot as total_area_in_desimal',
                 's.apartment_details_id',
+                's.prop_type_mstr_id',
                 'u.ward_name as old_ward_no',
                 'u1.ward_name as new_ward_no',
             )
