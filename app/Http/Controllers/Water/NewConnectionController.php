@@ -1272,6 +1272,8 @@ class NewConnectionController extends Controller
             $mPropActiveSaf         = new PropActiveSaf();
             $key                    = $request->connectionThrough;
             $refTenanted            = Config::get('PropertyConstaint.OCCUPANCY-TYPE.TENANTED');
+            $refPropertyTypes       = Config::get('PropertyConstaint.PROPERTY-TYPE');
+            $refPropertyTypes       = collect($refPropertyTypes)->flip();
 
             switch ($key) {
                 case ("1"):
@@ -1279,6 +1281,9 @@ class NewConnectionController extends Controller
                     $checkExist = collect($application)->first();
                     if (!$checkExist) {
                         throw new Exception("Data According to Holding Not Found!");
+                    }
+                    if ($application['prop_type_mstr_id'] == $refPropertyTypes['VACANT LAND']) {
+                        throw new Exception("water Cannot Be applied on VACANT LAND!");
                     }
                     if (isset($application['apartment_details_id'])) {
                         $appartmentData = $this->getAppartmentDetails($key, $application);
@@ -1303,6 +1308,9 @@ class NewConnectionController extends Controller
                     $checkExist = collect($application)->first();
                     if (!$checkExist) {
                         throw new Exception("Data According to SAF Not Found!");
+                    }
+                    if ($application['prop_type_mstr_id'] == $refPropertyTypes['VACANT LAND']) {
+                        throw new Exception("water Cannot Be applied on VACANT LAND!");
                     }
                     if (isset($application['apartment_details_id'])) {
                         $appartmentData = $this->getAppartmentDetails($key, $application);
