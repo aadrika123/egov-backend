@@ -167,6 +167,7 @@ class StateDashboardController extends Controller
     public function stateWiseCollectionPercentage(RequestCollectionPercentage $req)
     {
         try {
+            dd("Hii");
             $currentYear = Carbon::now()->format('Y');
             if (isset($req->month)) {
                 $month = str_pad($req->month, 2, '0', STR_PAD_LEFT);
