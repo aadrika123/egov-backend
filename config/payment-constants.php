@@ -49,4 +49,5 @@ return [
         "4" => "Neft",
         "5" => "Online"
     ],
+    "TRAN_PARAM_ID" => 37
 ];
