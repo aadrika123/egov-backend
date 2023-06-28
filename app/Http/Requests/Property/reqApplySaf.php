@@ -114,7 +114,7 @@ class reqApplySaf extends FormRequest
         if (isset($this->assessmentType) && $this->assessmentType != 1 && $this->assessmentType != 5) {           // Holding No Required for Reassess,Mutation,Bifurcation,Amalgamation
             $rules['previousHoldingId'] = "required|numeric";
         }
-        $rules['zone']           = "required|int|in:1,2";
+        $rules['zone']           = "required|int";
         if (isset($this->assessmentType) && $this->assessmentType == 1 || ($this->assessmentType == 3 && $this->isOwnerChanged)) {
             if ($this->formType != 'taxCalculator')
                 $rules['owner']        = "required|array";

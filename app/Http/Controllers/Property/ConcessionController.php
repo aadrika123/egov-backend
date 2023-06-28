@@ -1012,7 +1012,7 @@ class ConcessionController extends Controller
     }
 
     /**
-     * 
+     * |
      */
     public function uploadDocument(Request $req)
     {
@@ -1146,9 +1146,8 @@ class ConcessionController extends Controller
         }
     }
 
-
     /**
-     * get Doc List
+     * | Get Doc List
      */
     public function getDocList($refApplication)
     {
@@ -1190,7 +1189,6 @@ class ConcessionController extends Controller
     /**
      *  | Filtering
      */
-
     public function filterDocument($documentList, $refApplication)
     {
         $mWfActiveDocument = new WfActiveDocument();
