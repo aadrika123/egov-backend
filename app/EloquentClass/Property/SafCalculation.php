@@ -158,18 +158,7 @@ class SafCalculation
 
         $this->readParamRentalRate();                                                           // Read Rental Rate (1.1.3)
 
-        // Check If the one of the floors is commercial for Building
-        if ($this->_propertyDetails['propertyType'] != $this->_vacantPropertyTypeId) {
-            $readCommercial = collect($this->_floors)->where('useType', '!=', 1)
-                ->where('useType', '!=', $this->_religiousPlaceUsageType);
-            $this->_isResidential = $readCommercial->isEmpty();
-        }
-
-        // Check if the vacant land is residential or not
-        if ($propertyDetails['propertyType'] == $this->_vacantPropertyTypeId) {
-            $condition = $propertyDetails['isMobileTower'] == true || $propertyDetails['isHoardingBoard'] == true;
-            $this->_isResidential = $condition ? false : true;
-        }
+        $this->ifPropLateAssessed();
 
         $this->_rentalValue = $this->readRentalValue();
         $this->_multiFactors = $this->readMultiFactor();                                                            // Calculation of Rental rate and Storing in Global Variable (function 1.1.1)
@@ -228,6 +217,26 @@ class SafCalculation
             $this->_isTrustVerified = $this->_propertyDetails['isTrustVerified'] = 1;
 
         $this->ifPropPoint20Taxed();   // Check if the Property consists 0.20 % Tax Percentage or Not      // (1.1.7)
+    }
+
+    /**
+     * | Check if Property Late Assessed Or Not
+     */
+    public function ifPropLateAssessed()
+    {
+        // Check If the one of the floors is commercial for Building
+        if ($this->_propertyDetails['propertyType'] != $this->_vacantPropertyTypeId) {
+            $readCommercial = collect($this->_floors)
+                ->where('useType', '!=', 1)
+                ->where('useType', '!=', $this->_religiousPlaceUsageType);
+            $this->_isResidential = $readCommercial->isEmpty();
+        }
+
+        // Check if the vacant land is residential or not
+        if ($this->_propertyDetails['propertyType'] == $this->_vacantPropertyTypeId) {
+            $condition = $this->_propertyDetails['isMobileTower'] == true || $this->_propertyDetails['isHoardingBoard'] == true;
+            $this->_isResidential = $condition ? false : true;
+        }
     }
 
     /**

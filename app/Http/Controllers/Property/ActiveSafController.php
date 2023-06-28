@@ -8,6 +8,7 @@ use App\BLL\Property\PostRazorPayPenaltyRebate;
 use App\BLL\Property\PostSafPropTaxes;
 use App\BLL\Property\PreviousHoldingDeactivation;
 use App\BLL\Property\TcVerificationDemandAdjust;
+use App\BLL\Property\UpdateSafDemand;
 use App\EloquentClass\Property\PenaltyRebateCalculation;
 use App\EloquentClass\Property\SafCalculation;
 use App\Http\Controllers\Controller;
@@ -79,7 +80,6 @@ use Illuminate\Pipeline\Pipeline;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
-
 
 class ActiveSafController extends Controller
 {
@@ -1506,7 +1506,6 @@ class ActiveSafController extends Controller
             if (collect($getRejectedDocument)->isEmpty())
                 throw new Exception("Document Not Rejected You Can't back to citizen this application");
 
-            dd($getRejectedDocument->toArray());
             if (is_null($saf->citizen_id)) {                // If the Application has been applied from Jsk or Ulb Employees
                 $initiatorRoleId = $saf->initiator_role_id;
                 $saf->current_role = $initiatorRoleId;
@@ -1528,7 +1527,7 @@ class ActiveSafController extends Controller
             $track->saveTrack($req);
 
             DB::commit();
-            return responseMsgs(true, "Successfully Done", "", "010111", "1.0", "350ms", "POST", $req->deviceId);
+            return responseMsgs(true, "Successfully Done", "", "010111", "1.0", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
@@ -1547,9 +1546,16 @@ class ActiveSafController extends Controller
      */
     public function calculateSafBySafId(Request $req)
     {
-        $req->validate([
-            'id' => 'required|digits_between:1,9223372036854775807'
-        ]);
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'id' => 'required|digits_between:1,9223372036854775807',
+                'fyear' => 'nullable|max:9|min:9',
+                'qtr' => 'nullable|regex:/^[1-4]+/'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
         try {
             $safDtls = PropActiveSaf::find($req->id);
             if (!$safDtls)
@@ -1831,9 +1837,9 @@ class ActiveSafController extends Controller
             $previousHoldingDeactivation->deactivateHoldingDemands($activeSaf);  // Deactivate Property Holding
             $this->sendToWorkflow($activeSaf);                                   // Send to Workflow(15.2)
             $demands = collect($demands)->toArray();
-            $postSafPropTaxes->postSafTaxes($safId, $demands);                  // Save Taxes
+            $postSafPropTaxes->postSafTaxes($safId, $demands, $activeSaf->ulb_id);                  // Save Taxes
             DB::commit();
-            return responseMsgs(true, "Payment Successfully Done",  ['TransactionNo' => $tranNo], "010115", "1.0", "567ms", "POST", $req->deviceId);
+            return responseMsgs(true, "Payment Successfully Done",  ['TransactionNo' => $tranNo], "010115", "1.0", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
@@ -1856,6 +1862,7 @@ class ActiveSafController extends Controller
             $mPropTranDtl = new PropTranDtl();
             $previousHoldingDeactivation = new PreviousHoldingDeactivation;
             $postSafPropTaxes = new PostSafPropTaxes;
+            $updateSafDemand = new UpdateSafDemand;
             $safId = $req['id'];
 
             $activeSaf = PropActiveSaf::findOrFail($req['id']);
@@ -1874,7 +1881,6 @@ class ActiveSafController extends Controller
             $safCalculation = $this->calculateSafBySafId($req);
             $demands = $safCalculation->original['data']['details'];
             $amount = $safCalculation->original['data']['demand']['payableAmount'];
-
             if (!$demands || collect($demands)->isEmpty())
                 throw new Exception("Demand Not Available for Payment");
 
@@ -1909,25 +1915,31 @@ class ActiveSafController extends Controller
                 ]);
                 $this->postOtherPaymentModes($req);
             }
-            // Reflect on Prop Tran Details
-            foreach ($demands as $demand) {
-                $demand = $demand->toArray();
-                unset($demand['ruleSet'], $demand['rwhPenalty'], $demand['onePercPenalty'], $demand['onePercPenaltyTax']);
-                if (isset($demand['status']))
-                    unset($demand['status']);
-                $demand['paid_status'] = 1;
-                $demand['saf_id'] = $safId;
-                $demand['balance'] = 0;
-                $storedSafDemand = $mPropSafsDemands->postDemands($demand);
+            // Reflect on Prop Tran Details For Normal Saf
+            if ($activeSaf->is_gb_saf == false) {
+                foreach ($demands as $demand) {
+                    $demand = $demand->toArray();
+                    unset($demand['ruleSet'], $demand['rwhPenalty'], $demand['onePercPenalty'], $demand['onePercPenaltyTax']);
+                    if (isset($demand['status']))
+                        unset($demand['status']);
+                    $demand['paid_status'] = 1;
+                    $demand['saf_id'] = $safId;
+                    $demand['balance'] = 0;
+                    $storedSafDemand = $mPropSafsDemands->postDemands($demand);
 
-                $tranReq = [
-                    'tran_id' => $propTrans['id'],
-                    'saf_demand_id' => $storedSafDemand['demandId'],
-                    'total_demand' => $demand['amount'],
-                    'ulb_id' => $req['ulbId'],
-                ];
-                $mPropTranDtl->store($tranReq);
+                    $tranReq = [
+                        'tran_id' => $propTrans['id'],
+                        'saf_demand_id' => $storedSafDemand['demandId'],
+                        'total_demand' => $demand['amount'],
+                        'ulb_id' => $req['ulbId'],
+                    ];
+                    $mPropTranDtl->store($tranReq);
+                }
             }
+
+            // GB Saf Demand Adjustments
+            if ($activeSaf->is_gb_saf == true)
+                $updateSafDemand->updateDemand($demands->toArray());
 
             // Replication Prop Rebates Penalties
             $this->postPenaltyRebates($safCalculation, $safId, $propTrans['id']);
@@ -1939,9 +1951,9 @@ class ActiveSafController extends Controller
             $activeSaf->save();
             $this->sendToWorkflow($activeSaf);        // Send to Workflow(15.2)
             $demands = collect($demands)->toArray();
-            $postSafPropTaxes->postSafTaxes($safId, $demands);                  // Save Taxes
+            $postSafPropTaxes->postSafTaxes($safId, $demands, $activeSaf->ulb_id);                  // Save Taxes
             DB::commit();
-            return responseMsgs(true, "Payment Successfully Done",  ['TransactionNo' => $tranNo], "010115", "1.0", "567ms", "POST", $req->deviceId);
+            return responseMsgs(true, "Payment Successfully Done",  ['TransactionNo' => $tranNo], "010115", "1.0", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");

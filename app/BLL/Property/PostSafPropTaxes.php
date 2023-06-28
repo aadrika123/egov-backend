@@ -23,7 +23,7 @@ class PostSafPropTaxes
     /**
      * | Post Saf Taxes
      */
-    public function postSafTaxes($safId, array $demands)
+    public function postSafTaxes($safId, array $demands, $ulbId = null)
     {
         $groupByQuaterlyTax = collect($demands)->groupBy('amount');
         $isTaxesExists = $this->_mPropSafTaxes->getSafTaxesBySafId($safId);
@@ -44,7 +44,8 @@ class PostSafPropTaxes
                 'additional_tax' => $firstTax->additional_tax,
                 'qtr' => $firstTax->qtr,
                 'fyear' => $firstTax->fyear,
-                'quarterly_tax' => $firstTax->amount
+                'quarterly_tax' => $firstTax->amount,
+                'ulb_id' => $ulbId
             ];
             $this->_mPropSafTaxes->postTaxes($reqPost);
         }
