@@ -397,7 +397,7 @@ class PropertyDetailsController extends Controller
             $mWfRoleUser = new WfRoleusermap();
             $user = authUser();
             $userId = $user->id;
-            $ulbId = $user->ulb_id;
+            $ulbId = $user->ulb_id ?? $request->ulbId;
             $roleIds = $mWfRoleUser->getRoleIdByUserId($userId)->pluck('wf_role_id');                      // Model to () get Role By User Id
             $role = $roleIds->first();
             $key = $request->filteredBy;
