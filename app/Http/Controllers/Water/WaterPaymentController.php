@@ -1359,6 +1359,12 @@ class WaterPaymentController extends Controller
         $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
         switch ($req) {
             case (!empty($req->penaltyIds)):
+                if (!is_array($req->penaltyIds)) {
+                    $arrayPenalty = explode(",", $req->penaltyIds);
+                    $req->merge([
+                        "penaltyIds" => $arrayPenalty
+                    ]);
+                }
                 $mWaterPenaltyInstallment->updatePenaltyPayment($req->penaltyIds);
                 break;
 
