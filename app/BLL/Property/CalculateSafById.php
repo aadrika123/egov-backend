@@ -451,6 +451,7 @@ class CalculateSafById
     public function calculateGbSafDemand()
     {
         $this->readGeneratedDemand();
+        $allDemands = $this->_demandDetails['details'];
         $unpaidDemand = $this->_demandDetails['details']->where('paid_status', 0);
         $pendingFyears = $unpaidDemand->pluck('fyear')->unique()->values();
         $pendingQtrs = [1, 2, 3, 4];
@@ -477,8 +478,16 @@ class CalculateSafById
         $this->_safCalculation->_propertyDetails['isMobileTower'] = $this->_safDetails->is_mobile_tower;
         $this->_safCalculation->_propertyDetails['isHoardingBoard'] = $this->_safDetails->is_hoarding_board;
         $this->_safCalculation->_floors = $this->_safFloorDetails;
-        $this->_safCalculation->ifPropLateAssessed();
-        $fine = $this->_safCalculation->calcLateAssessmentFee();
+
+        $paidDemand = $allDemands->where('paid_status', 1);
+        if ($paidDemand->isNotEmpty()) {                                // If Already Payment Done
+            $this->_safCalculation->_lateAssessmentStatus = false;
+            $fine = 0;
+        }
+        if ($paidDemand->isEmpty()) {                                   // If no any payment done
+            $this->_safCalculation->ifPropLateAssessed();
+            $fine = $this->_safCalculation->calcLateAssessmentFee();
+        }
 
         $dueFromFyear = $unpaidDemand->first()['fyear'];
         $dueToFyear = $unpaidDemand->last()['fyear'];
