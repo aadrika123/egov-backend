@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Property;
 
 use App\BLL\Property\PaymentReceiptHelper;
 use App\BLL\Property\PostRazorPayPenaltyRebate;
+use App\BLL\Property\YearlyDemandGeneration;
 use App\EloquentClass\Property\PenaltyRebateCalculation;
 use App\EloquentClass\Property\SafCalculation;
 use App\Http\Controllers\Controller;
@@ -46,7 +47,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
 
-
 class HoldingTaxController extends Controller
 {
     use SAF;
@@ -79,26 +79,11 @@ class HoldingTaxController extends Controller
             'propId' => 'required|numeric'
         ]);
         try {
-            $holdingDemand = array();
-            $responseDemand = array();
-            $propId = $req->propId;
-            $mPropProperty = new PropProperty();
-            $safCalculation = new SafCalculation;
-            $details = $mPropProperty->getPropFullDtls($propId);
-            $this->_propertyDetails = $details;
-            $calReqs = $this->generateSafRequest($details);                                                   // Generate Calculation Parameters
-            $calParams = $this->generateCalculationParams($propId, $calReqs);                                 // (1.1)
-            $calParams = array_merge($calParams, ['isProperty' => true]);
-            $calParams = new Request($calParams);
-            $taxes = $safCalculation->calculateTax($calParams);
-            $holdingDemand['amount'] = $taxes->original['data']['demand'];
-            $holdingDemand['details'] = $this->generateSafDemand($taxes->original['data']['details']);
-            $holdingDemand['holdingNo'] = $details['holding_no'];
-            $responseDemand['amount'] = $holdingDemand['amount'];
-            $responseDemand['details'] = collect($taxes->original['data']['details'])->groupBy('ruleSet');
+            $yearlyDemandGeneration = new YearlyDemandGeneration;
+            $responseDemand = $yearlyDemandGeneration->generateHoldingDemand($req);
             return responseMsgs(true, "Property Demand", remove_null($responseDemand), "011601", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), ['holdingNo' => $details['holding_no']], "011601", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), ['holdingNo' => $yearlyDemandGeneration->_propertyDetails['holding_no']], "011601", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 
