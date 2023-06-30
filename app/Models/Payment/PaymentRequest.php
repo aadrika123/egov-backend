@@ -18,10 +18,10 @@ class PaymentRequest extends Model
      * | @var transaction 
         | (Working)
      */
-    public function saveRazorpayRequest($userID,$ulbId,$orderId,$request)
+    public function saveRazorpayRequest($userId,$ulbId,$orderId,$request)
     {
         $transaction = new PaymentRequest();
-        $transaction->user_id = $userID;
+        $transaction->user_id = $userId;
         $transaction->workflow_id = $request->workflowId;
         $transaction->ulb_id = $ulbId;
         $transaction->application_id = $request->id;
