@@ -337,7 +337,7 @@ class Trade implements ITrade
                     }
                 }
                 $licence->nature_of_bussiness = $mnaturOfBusiness;
-                $mAppNo = $this->createApplicationNo($mWardNo, $licenceId);
+                $mAppNo = $this->createApplicationNo($mWardNo, $licenceId,$mShortUlbName);
                 $licence->application_no = $mAppNo;
                 $licence->update();
                 #----------------End Crate Application--------------------
@@ -2947,9 +2947,9 @@ class Trade implements ITrade
      * |____________________________________________________|
      * 
      */
-    public function createApplicationNo($wardNo, $licenceId)
+    public function createApplicationNo($wardNo, $licenceId,$mShortUlbName=null)
     {
-        return "APN" . str_pad($wardNo, 2, '0', STR_PAD_LEFT) . str_pad($licenceId, 7, '0', STR_PAD_LEFT);
+        return ($mShortUlbName && strtoupper($mShortUlbName)!="RMC"?strtoupper($mShortUlbName)."-" : "")."APN" . str_pad($wardNo, 2, '0', STR_PAD_LEFT) . str_pad($licenceId, 7, '0', STR_PAD_LEFT);
     }
 
     /**
