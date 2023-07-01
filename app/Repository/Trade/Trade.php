@@ -478,6 +478,11 @@ class Trade implements ITrade
         $refActiveLicense->valid_from          = $refOldLicece->valid_upto;
         $refActiveLicense->license_no          = $refOldLicece->license_no;
         $refActiveLicense->is_tobacco          = $refOldLicece->is_tobacco;
+
+        if($refOldLicece->citizen_id)
+        {
+            $refActiveLicense->citizen_id          = $refOldLicece->citizen_id;
+        }
     }
 
     # Serial No : 01.03
@@ -513,6 +518,10 @@ class Trade implements ITrade
         $refActiveLicense->valid_from          = $refOldLicece->valid_upto;
         $refActiveLicense->license_no          = $refOldLicece->license_no;
         $refActiveLicense->is_tobacco          = $refOldLicece->is_tobacco;
+        if($refOldLicece->citizen_id)
+        {
+            $refActiveLicense->citizen_id          = $refOldLicece->citizen_id;
+        }
     }
 
     # Serial No : 01.04
