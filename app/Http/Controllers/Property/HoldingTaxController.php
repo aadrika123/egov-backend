@@ -1030,9 +1030,10 @@ class HoldingTaxController extends Controller
             $floorTypes = Config::get('PropertyConstaint.FLOOR-TYPE');
             $effectDateRuleset2 = Config::get('PropertyConstaint.EFFECTIVE_DATE_RULE2');
             $effectDateRuleset3 = Config::get('PropertyConstaint.EFFECTIVE_DATE_RULE3');
+            $mUlbMasters = new UlbMaster();
             // Derivative Assignments
             $fullDetails = $mPropProperty->getComparativeBasicDtls($propId);             // Full Details of the Floor
-            // return $fullDetails;
+            $ulbId = $fullDetails[0]->ulb_id;
             if (collect($fullDetails)->isEmpty())
                 throw new Exception("No Property Found");
             $basicDetails = collect($fullDetails)->first();
@@ -1102,6 +1103,8 @@ class HoldingTaxController extends Controller
             $comparativeDemand['basicDetails'] = array_merge((array)$basicDetails, [
                 'todayDate' => $this->_carbon->format('d-m-Y')
             ]);
+            // Ulb Details
+            $comparativeDemand['ulbDetails'] = $mUlbMasters->getUlbDetails($ulbId);
             return responseMsgs(true, "Comparative Demand", remove_null($comparativeDemand), "011610", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011610", "1.0", "", "POST", $req->deviceId);
