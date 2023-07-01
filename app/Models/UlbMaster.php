@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 
 class UlbMaster extends Model
 {
@@ -28,7 +29,11 @@ class UlbMaster extends Model
     public function getUlbDetails($ulbId): array
     {
         $docBaseUrl = Config::get('app.url');
-        $ulb = UlbMaster::where('id', $ulbId)
+        $ulb = DB::table('ulb_masters as u')
+            ->select('u.*', 'd.district_name', 's.name as state_name')
+            ->join('district_masters as d', 'd.district_code', '=', 'u.district_code')
+            ->join('m_states as s', 's.id', '=', 'u.state_id')
+            ->where('u.id', $ulbId)
             ->first();
         if (collect($ulb)->isEmpty())
             throw new Exception("Ulb Not Found");
@@ -40,6 +45,10 @@ class UlbMaster extends Model
             "hindiName" => $ulb->hindi_name,
             "currentWebsite" => $ulb->current_website,
             "parentWebsite" => $ulb->parent_website,
+            "email" => $ulb->email,
+            "mobileNo" => $ulb->mobile_no,
+            "districtName" => $ulb->district_name,
+            "stateName" => $ulb->state_name
         ];
     }
 }
