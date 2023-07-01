@@ -1222,6 +1222,8 @@ class SafCalculation
         // Check Late Assessment Penalty for Vacant Land
         if ($this->_propertyDetails['propertyType'] == $this->_vacantPropertyTypeId) {
             $currentDate = Carbon::now();
+            if (!isset($this->_propertyDetails['landOccupationDate']))
+                throw new Exception("Property Land Occupancy Date Not Available");
             $dateFrom = Carbon::createFromFormat('Y-m-d', $this->_propertyDetails['landOccupationDate']);
             $floorAhead3Months = $dateFrom->addMonth(3)->format('Y-m-d');
             $this->_lateAssessmentStatus = $currentDate >= $floorAhead3Months;
