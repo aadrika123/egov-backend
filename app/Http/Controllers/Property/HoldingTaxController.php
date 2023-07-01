@@ -32,6 +32,7 @@ use App\Models\Property\PropSaf;
 use App\Models\Property\PropSafsDemand;
 use App\Models\Property\PropTranDtl;
 use App\Models\Property\PropTransaction;
+use App\Models\UlbMaster;
 use App\Models\Workflows\WfActiveDocument;
 use App\Models\Workflows\WfRoleusermap;
 use App\Repository\Property\Interfaces\iSafRepository;
@@ -766,6 +767,7 @@ class HoldingTaxController extends Controller
             $mPropPenalties = new PropPenaltyrebate();
             $safController = new ActiveSafController($this->_safRepo);
             $paymentReceiptHelper = new PaymentReceiptHelper;
+            $mUlbMasters = new UlbMaster();
 
             $mTowards = Config::get('PropertyConstaint.SAF_TOWARDS');
             $mAccDescription = Config::get('PropertyConstaint.ACCOUNT_DESCRIPTION');
@@ -784,6 +786,8 @@ class HoldingTaxController extends Controller
                 throw new Exception("Property Not Found");
 
             $ownerDetails = $propProperty['owners']->first();
+            // Get Ulb Details
+            $ulbDetails = $mUlbMasters->getUlbDetails($propProperty['ulb_id']);
             // Get Property Penalty and Rebates
             $penalRebates = $mPropPenalties->getPropPenalRebateByTranId($propTrans->id);
 
@@ -833,6 +837,15 @@ class HoldingTaxController extends Controller
                 "paidAmtInWords" => getIndianCurrency($propTrans->amount),
                 "tcName" => $propTrans->tc_name,
                 "tcMobile" => $propTrans->tc_mobile,
+                "ulbDetails" => [
+                    "ulbName" => $ulbDetails->ulb_name,
+                    "logo" => $ulbDetails->logo,
+                    "shortName" => $ulbDetails->short_name,
+                    "tollFreeNo" => $ulbDetails->toll_free_no,
+                    "hindiName" => $ulbDetails->hindi_name,
+                    "currentWebsite" => $ulbDetails->current_website,
+                    "parentWebsite" => $ulbDetails->parent_website,
+                ]
             ];
 
             return responseMsgs(true, "Payment Receipt", remove_null($responseData), "011605", "1.0", "", "POST", $req->deviceId ?? "");

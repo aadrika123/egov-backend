@@ -19,4 +19,14 @@ class UlbMaster extends Model
         return UlbMaster::where('district_code', $districtCode)
             ->get();
     }
+
+
+    /**
+     * | Get Ulb Details
+     */
+    public function getUlbDetails($ulbId)
+    {
+        return UlbMaster::where('id', $ulbId)
+            ->first();
+    }
 }
