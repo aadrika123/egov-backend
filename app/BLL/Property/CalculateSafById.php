@@ -455,8 +455,8 @@ class CalculateSafById
         $unpaidDemand = $this->_demandDetails['details']->where('paid_status', 0);
         $pendingFyears = $unpaidDemand->pluck('fyear')->unique()->values();
         $pendingQtrs = [1, 2, 3, 4];
-        if (isset($this->_REQUEST->fyear) && isset($this->_REQUEST->qtr)) {                     // Case Of Part Payment
-            $demandTillQtr = $unpaidDemand->where('fyear', $this->_REQUEST->fyear)->where('qtr', $this->_REQUEST->qtr)->first();
+        if (isset($this->_REQUEST->fYear) && isset($this->_REQUEST->qtr)) {                     // Case Of Part Payment
+            $demandTillQtr = $unpaidDemand->where('fyear', $this->_REQUEST->fYear)->where('qtr', $this->_REQUEST->qtr)->first();
 
             if (collect($demandTillQtr)->isNotEmpty()) {
                 $demandDueDate = $demandTillQtr->due_date;

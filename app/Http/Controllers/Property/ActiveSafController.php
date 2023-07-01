@@ -1550,7 +1550,7 @@ class ActiveSafController extends Controller
             $req->all(),
             [
                 'id' => 'required|digits_between:1,9223372036854775807',
-                'fyear' => 'nullable|max:9|min:9',
+                'fYear' => 'nullable|max:9|min:9',
                 'qtr' => 'nullable|regex:/^[1-4]+/'
             ]
         );
