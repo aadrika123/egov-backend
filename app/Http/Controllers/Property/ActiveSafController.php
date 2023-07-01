@@ -1879,11 +1879,13 @@ class ActiveSafController extends Controller
                 $tranNo = $idGeneration->generateTransactionNo();
 
             $safCalculation = $this->calculateSafBySafId($req);
+            if ($safCalculation->original['status'] == false)
+                throw new Exception($safCalculation->original['message']);
             $demands = $safCalculation->original['data']['details'];
             $amount = $safCalculation->original['data']['demand']['payableAmount'];
+
             if (!$demands || collect($demands)->isEmpty())
                 throw new Exception("Demand Not Available for Payment");
-
 
             // Property Transactions
             $req->merge([
@@ -1952,6 +1954,7 @@ class ActiveSafController extends Controller
             $this->sendToWorkflow($activeSaf);        // Send to Workflow(15.2)
             $demands = collect($demands)->toArray();
             $postSafPropTaxes->postSafTaxes($safId, $demands, $activeSaf->ulb_id);                  // Save Taxes
+            dd("Stop");
             DB::commit();
             return responseMsgs(true, "Payment Successfully Done",  ['TransactionNo' => $tranNo], "010115", "1.0", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
@@ -2459,7 +2462,7 @@ class ActiveSafController extends Controller
             $demand['applicationNo'] = $safDetails['saf_no'];
             return responseMsgs(true, "Demand Details", remove_null($demand), "", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
+            return responseMsg(false, $e->getMessage(), []);
         }
     }
 
