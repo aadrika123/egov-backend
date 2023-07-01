@@ -837,15 +837,7 @@ class HoldingTaxController extends Controller
                 "paidAmtInWords" => getIndianCurrency($propTrans->amount),
                 "tcName" => $propTrans->tc_name,
                 "tcMobile" => $propTrans->tc_mobile,
-                "ulbDetails" => [
-                    "ulbName" => $ulbDetails->ulb_name,
-                    "logo" => $ulbDetails->logo,
-                    "shortName" => $ulbDetails->short_name,
-                    "tollFreeNo" => $ulbDetails->toll_free_no,
-                    "hindiName" => $ulbDetails->hindi_name,
-                    "currentWebsite" => $ulbDetails->current_website,
-                    "parentWebsite" => $ulbDetails->parent_website,
-                ]
+                "ulbDetails" => $ulbDetails
             ];
 
             return responseMsgs(true, "Payment Receipt", remove_null($responseData), "011605", "1.0", "", "POST", $req->deviceId ?? "");
