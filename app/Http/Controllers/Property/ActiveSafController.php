@@ -55,6 +55,7 @@ use App\Models\Property\RefPropTransferMode;
 use App\Models\Property\RefPropType;
 use App\Models\Property\RefPropUsageType;
 use App\Models\Property\ZoneMaster;
+use App\Models\UlbMaster;
 use App\Models\UlbWardMaster;
 use App\Models\Workflows\WfActiveDocument;
 use App\Models\Workflows\WfRoleusermap;
@@ -2046,6 +2047,7 @@ class ActiveSafController extends Controller
             $transaction = new PropTransaction();
             $propPenalties = new PropPenaltyrebate();
             $paymentReceiptHelper = new PaymentReceiptHelper;
+            $mUlbMasters = new UlbMaster();
 
             $mTowards = Config::get('PropertyConstaint.SAF_TOWARDS');
             $mAccDescription = Config::get('PropertyConstaint.ACCOUNT_DESCRIPTION');
@@ -2084,7 +2086,8 @@ class ActiveSafController extends Controller
 
             $taxDetails = $paymentReceiptHelper->readPenalyPmtAmts($lateAssessPenalty, $onePercPanalAmt, $rebateAmt,  $specialRebateAmt, $firstQtrRebate, $safTrans->amount, $jskOrOnlineRebate);   // Get Holding Tax Dtls
             $totalRebatePenals = $paymentReceiptHelper->calculateTotalRebatePenals($taxDetails);
-
+            // Get Ulb Details
+            $ulbDetails = $mUlbMasters->getUlbDetails($activeSafDetails['ulb_id']);
             // Response Return Data
             $responseData = [
                 "departmentSection" => $mDepartmentSection,
@@ -2118,6 +2121,7 @@ class ActiveSafController extends Controller
                 "paidAmtInWords" => getIndianCurrency($safTrans->amount),
                 "tcName" => $safTrans->tc_name,
                 "tcMobile" => $safTrans->tc_mobile,
+                "ulbDetails" => $ulbDetails
             ];
             return responseMsgs(true, "Payment Receipt", remove_null($responseData), "010116", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
