@@ -136,6 +136,7 @@ class CitizenRepository implements iCitizenRepository
             ->select(
                 'prop_active_safs.id as application_id',
                 'saf_no',
+                'pt_no',
                 'holding_no',
                 'assessment_type',
                 'r.role_name as current_level',

@@ -226,6 +226,8 @@ trait SAF
         $array['isGBSaf'] = $req['is_gb_saf'];
         $array['ulbId'] = $req['ulb_id'];
         $array['rwhDateFrom'] = $req['rwh_date_from'] ?? null;
+        $array['isTrust'] = $req['is_trust'];
+        $array['trustType'] = $req['trust_type'];
         $refFloors = $req['floors'];
 
         foreach ($refFloors as $key => $refFloor) {

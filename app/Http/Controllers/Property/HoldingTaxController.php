@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Property;
 
 use App\BLL\Property\PaymentReceiptHelper;
 use App\BLL\Property\PostRazorPayPenaltyRebate;
+use App\BLL\Property\YearlyDemandGeneration;
 use App\EloquentClass\Property\PenaltyRebateCalculation;
 use App\EloquentClass\Property\SafCalculation;
 use App\Http\Controllers\Controller;
@@ -31,6 +32,7 @@ use App\Models\Property\PropSaf;
 use App\Models\Property\PropSafsDemand;
 use App\Models\Property\PropTranDtl;
 use App\Models\Property\PropTransaction;
+use App\Models\UlbMaster;
 use App\Models\Workflows\WfActiveDocument;
 use App\Models\Workflows\WfRoleusermap;
 use App\Repository\Property\Interfaces\iSafRepository;
@@ -45,7 +47,6 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
-
 
 class HoldingTaxController extends Controller
 {
@@ -79,26 +80,11 @@ class HoldingTaxController extends Controller
             'propId' => 'required|numeric'
         ]);
         try {
-            $holdingDemand = array();
-            $responseDemand = array();
-            $propId = $req->propId;
-            $mPropProperty = new PropProperty();
-            $safCalculation = new SafCalculation;
-            $details = $mPropProperty->getPropFullDtls($propId);
-            $this->_propertyDetails = $details;
-            $calReqs = $this->generateSafRequest($details);                                                   // Generate Calculation Parameters
-            $calParams = $this->generateCalculationParams($propId, $calReqs);                                 // (1.1)
-            $calParams = array_merge($calParams, ['isProperty' => true]);
-            $calParams = new Request($calParams);
-            $taxes = $safCalculation->calculateTax($calParams);
-            $holdingDemand['amount'] = $taxes->original['data']['demand'];
-            $holdingDemand['details'] = $this->generateSafDemand($taxes->original['data']['details']);
-            $holdingDemand['holdingNo'] = $details['holding_no'];
-            $responseDemand['amount'] = $holdingDemand['amount'];
-            $responseDemand['details'] = collect($taxes->original['data']['details'])->groupBy('ruleSet');
+            $yearlyDemandGeneration = new YearlyDemandGeneration;
+            $responseDemand = $yearlyDemandGeneration->generateHoldingDemand($req);
             return responseMsgs(true, "Property Demand", remove_null($responseDemand), "011601", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), ['holdingNo' => $details['holding_no']], "011601", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), ['holdingNo' => $yearlyDemandGeneration->_propertyDetails['holding_no']], "011601", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 
@@ -781,6 +767,7 @@ class HoldingTaxController extends Controller
             $mPropPenalties = new PropPenaltyrebate();
             $safController = new ActiveSafController($this->_safRepo);
             $paymentReceiptHelper = new PaymentReceiptHelper;
+            $mUlbMasters = new UlbMaster();
 
             $mTowards = Config::get('PropertyConstaint.SAF_TOWARDS');
             $mAccDescription = Config::get('PropertyConstaint.ACCOUNT_DESCRIPTION');
@@ -799,6 +786,8 @@ class HoldingTaxController extends Controller
                 throw new Exception("Property Not Found");
 
             $ownerDetails = $propProperty['owners']->first();
+            // Get Ulb Details
+            $ulbDetails = $mUlbMasters->getUlbDetails($propProperty['ulb_id']);
             // Get Property Penalty and Rebates
             $penalRebates = $mPropPenalties->getPropPenalRebateByTranId($propTrans->id);
 
@@ -848,6 +837,7 @@ class HoldingTaxController extends Controller
                 "paidAmtInWords" => getIndianCurrency($propTrans->amount),
                 "tcName" => $propTrans->tc_name,
                 "tcMobile" => $propTrans->tc_mobile,
+                "ulbDetails" => $ulbDetails
             ];
 
             return responseMsgs(true, "Payment Receipt", remove_null($responseData), "011605", "1.0", "", "POST", $req->deviceId ?? "");
@@ -957,61 +947,61 @@ class HoldingTaxController extends Controller
                 // 'codeOfAmount' => '1100100A',
                 'description' => 'Holding Tax Arrear',
                 'period' =>  $arrearPeriod,
-                'amount' => $arrearTaxes->sum('holding_tax'),
+                'amount' => roundFigure($arrearTaxes->sum('holding_tax')),
             ],
             [
                 // 'codeOfAmount' => '1100100C',
                 'description' => 'Holding Tax Current',
                 'period' => $currentPeriod,
-                'amount' => $currentTaxes->sum('holding_tax'),
+                'amount' => roundFigure($currentTaxes->sum('holding_tax')),
             ],
             [
                 // 'codeOfAmount' => '1100200A',
                 'description' => 'Water Tax Arrear',
                 'period' =>  $arrearPeriod,
-                'amount' =>  $arrearTaxes->sum('water_tax'),
+                'amount' =>  roundFigure($arrearTaxes->sum('water_tax')),
             ],
             [
                 // 'codeOfAmount' => '1100200C',
                 'description' => 'Water Tax Current',
                 'period' => $currentPeriod,
-                'amount' => $currentTaxes->sum('water_tax'),
+                'amount' => roundFigure($currentTaxes->sum('water_tax')),
             ],
             [
                 // 'codeOfAmount' => '1100400A',
                 'description' => 'Conservancy Tax Arrear',
                 'period' =>  $arrearPeriod,
-                'amount' =>  $arrearTaxes->sum('latrine_tax'),
+                'amount' =>  roundFigure($arrearTaxes->sum('latrine_tax')),
             ],
             [
                 // 'codeOfAmount' => '1100400C',
                 'description' => 'Conservancy Tax Current',
                 'period' => $currentPeriod,
-                'amount' => $currentTaxes->sum('latrine_tax'),
+                'amount' => roundFigure($currentTaxes->sum('latrine_tax')),
             ],
             [
                 // 'codeOfAmount' => '1105201A',
                 'description' => 'Education Cess Arrear',
                 'period' =>  $arrearPeriod,
-                'amount' =>  $arrearTaxes->sum('education_cess'),
+                'amount' =>  roundFigure($arrearTaxes->sum('education_cess')),
             ],
             [
                 // 'codeOfAmount' => '1105201A',
                 'description' => 'Education Cess Current',
                 'period' => $currentPeriod,
-                'amount' => $currentTaxes->sum('education_cess'),
+                'amount' => roundFigure($currentTaxes->sum('education_cess')),
             ],
             [
                 // 'codeOfAmount' => '1105203A',
                 'description' => 'Health Cess Arrear',
                 'period' =>   $arrearPeriod,
-                'amount' => $arrearTaxes->sum('health_cess'),
+                'amount' => roundFigure($arrearTaxes->sum('health_cess')),
             ],
             [
                 // 'codeOfAmount' => '1105203C',
                 'description' => 'Health Cess Current',
                 'period' => $currentPeriod,
-                'amount' => $currentTaxes->sum('health_cess'),
+                'amount' => roundFigure($currentTaxes->sum('health_cess')),
             ]
         ];
     }
@@ -1040,9 +1030,10 @@ class HoldingTaxController extends Controller
             $floorTypes = Config::get('PropertyConstaint.FLOOR-TYPE');
             $effectDateRuleset2 = Config::get('PropertyConstaint.EFFECTIVE_DATE_RULE2');
             $effectDateRuleset3 = Config::get('PropertyConstaint.EFFECTIVE_DATE_RULE3');
+            $mUlbMasters = new UlbMaster();
             // Derivative Assignments
             $fullDetails = $mPropProperty->getComparativeBasicDtls($propId);             // Full Details of the Floor
-            // return $fullDetails;
+            $ulbId = $fullDetails[0]->ulb_id;
             if (collect($fullDetails)->isEmpty())
                 throw new Exception("No Property Found");
             $basicDetails = collect($fullDetails)->first();
@@ -1112,6 +1103,8 @@ class HoldingTaxController extends Controller
             $comparativeDemand['basicDetails'] = array_merge((array)$basicDetails, [
                 'todayDate' => $this->_carbon->format('d-m-Y')
             ]);
+            // Ulb Details
+            $comparativeDemand['ulbDetails'] = $mUlbMasters->getUlbDetails($ulbId);
             return responseMsgs(true, "Comparative Demand", remove_null($comparativeDemand), "011610", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011610", "1.0", "", "POST", $req->deviceId);

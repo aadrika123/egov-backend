@@ -229,6 +229,9 @@ class Trade implements ITrade
                             ->first();
                         throw new Exception("Application Aready Apply Please Track  " . $newLicense->application_no);
                     }
+                    if (!$refOldLicece->application_type_id == 4) {
+                        throw new Exception("Surender License Can Not Apply Renewal Or Amendment ");
+                    }
                     if ($refOldLicece->valid_upto > $nextMonth && !in_array($mApplicationTypeId, [3, 4])) {
                         throw new Exception("Licence Valice Upto " . $refOldLicece->valid_upto);
                     }
@@ -3626,6 +3629,15 @@ class Trade implements ITrade
                 $status = "Payment is Done But Document Not Uploaded";
             } elseif (!$doc_status && $application->payment_status == 0) {
                 $status = "Payment is Pending And Document Not Uploaded";
+            }
+        } elseif($application->payment_status==1 && $application->application_type_id==4){
+            $request = new Request(["applicationId" => $licenceId, "ulb_id" => $refUlbId, "user_id" => $refUserId]);
+            $doc_status = $this->checkWorckFlowForwardBackord($request);
+            if ($doc_status) {
+                $status = "All Required Documents Are Uploaded ";
+            }
+            else{
+                $status = "All Required Documents Are Not Uploaded ";
             }
         } elseif ($application->payment_status == 0 && $application->document_upload_status == 0) {
             $status = "Payment is pending and document not uploaded ";

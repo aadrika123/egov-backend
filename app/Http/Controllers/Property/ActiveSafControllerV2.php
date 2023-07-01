@@ -25,6 +25,7 @@ use App\Models\Property\PropSafVerification;
 use App\Models\Property\PropTax;
 use App\Models\Property\PropTranDtl;
 use App\Models\Property\PropTransaction;
+use App\Models\UlbMaster;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfWorkflowrolemap;
@@ -173,6 +174,8 @@ class ActiveSafControllerV2 extends Controller
             $mPropSafMemoDtl = new PropSafMemoDtl();
             $propSafTax = new PropSafTax();
             $propTax = new PropTax();
+            $mPropProperty = new PropProperty();
+            $mUlbMaster = new UlbMaster();
 
             $details = $mPropSafMemoDtl->getMemoDtlsByMemoId($req->memoId);
             if (collect($details)->isEmpty())
@@ -180,6 +183,7 @@ class ActiveSafControllerV2 extends Controller
 
             if (collect($details)->isEmpty())
                 throw new Exception("Memo Details Not Available");
+            $properties = $mPropProperty::find($details[0]->prop_id);
 
             $details = collect($details)->first();
             $taxTable = collect($details)->only(['holding_tax', 'water_tax', 'latrine_tax', 'education_cess', 'health_cess', 'rwh_penalty']);
@@ -240,7 +244,8 @@ class ActiveSafControllerV2 extends Controller
                 $details->rule = substr($details->from_fyear, 5) >= 2023 ? "Capital Value Rule, property tax" : "Annual Rent Value Rule, annual rent value";
                 $details->taxTable = $holdingTaxes->merge([$total])->values();
             }
-
+            // Get Ulb Details
+            $details->ulbDetails = $mUlbMaster->getUlbDetails($properties->ulb_id);
             return responseMsgs(true, "", remove_null($details), "011803", 1.0, responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011803", 1.0, responseTime(), "POST", $req->deviceId);
