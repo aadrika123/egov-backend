@@ -48,11 +48,11 @@ class UlbMaster extends Model
             "state_logo" => $docBaseUrl . "/" . "custom/jhk-govt-logo",
             "ulb_logo" => $docBaseUrl . "/" . $ulb->logo,
             "ulb_parent_website" => $ulb->parent_website,
-            "shortName" => $ulb->short_name,
-            "tollFreeNo" => $ulb->toll_free_no,
-            "hindiName" => $ulb->hindi_name,
-            "currentWebsite" => $ulb->current_website,
-            "parentWebsite" => $ulb->parent_website,
+            "short_name" => $ulb->short_name,
+            "toll_free_no" => $ulb->toll_free_no,
+            "hindi_name" => $ulb->hindi_name,
+            "current_website" => $ulb->current_website,
+            "parent_website" => $ulb->parent_website,
         ];
     }
 }
