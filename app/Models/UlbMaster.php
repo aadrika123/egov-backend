@@ -38,17 +38,21 @@ class UlbMaster extends Model
         if (collect($ulb)->isEmpty())
             throw new Exception("Ulb Not Found");
         return [
-            "ulbName" => $ulb->ulb_name,
-            "logo" => $docBaseUrl . "/" . $ulb->logo,
+            "ulb_name" => $ulb->ulb_name,
+            "district" => $ulb->district_name,
+            "state" => $ulb->state_name,
+            "address" => $ulb->address,
+            "mobile_no" => $ulb->mobile_no,
+            "website" => $ulb->current_website,
+            "email" => $ulb->email,
+            "state_logo" => $docBaseUrl . "/" . $ulb->logo,
+            "ulb_logo" => $docBaseUrl . "/" . $ulb->logo,
+            "ulb_parent_website" => $ulb->parent_website,
             "shortName" => $ulb->short_name,
             "tollFreeNo" => $ulb->toll_free_no,
             "hindiName" => $ulb->hindi_name,
             "currentWebsite" => $ulb->current_website,
             "parentWebsite" => $ulb->parent_website,
-            "email" => $ulb->email,
-            "mobileNo" => $ulb->mobile_no,
-            "districtName" => $ulb->district_name,
-            "stateName" => $ulb->state_name
         ];
     }
 }
