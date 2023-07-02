@@ -22,4 +22,17 @@ class ApiMaster extends Model
             ->where('id', $adv)
             ->first();
     }
+
+    /**
+     * | Get pet module api
+     */
+    public function getPetApi()
+    {
+        $adv = 461;
+        return ApiMaster::select(
+            'end_point'
+        )
+            ->where('id', $adv)
+            ->first();
+    }
 }

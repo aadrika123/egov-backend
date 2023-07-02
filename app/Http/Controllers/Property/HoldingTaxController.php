@@ -947,61 +947,61 @@ class HoldingTaxController extends Controller
                 // 'codeOfAmount' => '1100100A',
                 'description' => 'Holding Tax Arrear',
                 'period' =>  $arrearPeriod,
-                'amount' => $arrearTaxes->sum('holding_tax'),
+                'amount' => roundFigure($arrearTaxes->sum('holding_tax')),
             ],
             [
                 // 'codeOfAmount' => '1100100C',
                 'description' => 'Holding Tax Current',
                 'period' => $currentPeriod,
-                'amount' => $currentTaxes->sum('holding_tax'),
+                'amount' => roundFigure($currentTaxes->sum('holding_tax')),
             ],
             [
                 // 'codeOfAmount' => '1100200A',
                 'description' => 'Water Tax Arrear',
                 'period' =>  $arrearPeriod,
-                'amount' =>  $arrearTaxes->sum('water_tax'),
+                'amount' =>  roundFigure($arrearTaxes->sum('water_tax')),
             ],
             [
                 // 'codeOfAmount' => '1100200C',
                 'description' => 'Water Tax Current',
                 'period' => $currentPeriod,
-                'amount' => $currentTaxes->sum('water_tax'),
+                'amount' => roundFigure($currentTaxes->sum('water_tax')),
             ],
             [
                 // 'codeOfAmount' => '1100400A',
                 'description' => 'Conservancy Tax Arrear',
                 'period' =>  $arrearPeriod,
-                'amount' =>  $arrearTaxes->sum('latrine_tax'),
+                'amount' =>  roundFigure($arrearTaxes->sum('latrine_tax')),
             ],
             [
                 // 'codeOfAmount' => '1100400C',
                 'description' => 'Conservancy Tax Current',
                 'period' => $currentPeriod,
-                'amount' => $currentTaxes->sum('latrine_tax'),
+                'amount' => roundFigure($currentTaxes->sum('latrine_tax')),
             ],
             [
                 // 'codeOfAmount' => '1105201A',
                 'description' => 'Education Cess Arrear',
                 'period' =>  $arrearPeriod,
-                'amount' =>  $arrearTaxes->sum('education_cess'),
+                'amount' =>  roundFigure($arrearTaxes->sum('education_cess')),
             ],
             [
                 // 'codeOfAmount' => '1105201A',
                 'description' => 'Education Cess Current',
                 'period' => $currentPeriod,
-                'amount' => $currentTaxes->sum('education_cess'),
+                'amount' => roundFigure($currentTaxes->sum('education_cess')),
             ],
             [
                 // 'codeOfAmount' => '1105203A',
                 'description' => 'Health Cess Arrear',
                 'period' =>   $arrearPeriod,
-                'amount' => $arrearTaxes->sum('health_cess'),
+                'amount' => roundFigure($arrearTaxes->sum('health_cess')),
             ],
             [
                 // 'codeOfAmount' => '1105203C',
                 'description' => 'Health Cess Current',
                 'period' => $currentPeriod,
-                'amount' => $currentTaxes->sum('health_cess'),
+                'amount' => roundFigure($currentTaxes->sum('health_cess')),
             ]
         ];
     }
@@ -1030,9 +1030,10 @@ class HoldingTaxController extends Controller
             $floorTypes = Config::get('PropertyConstaint.FLOOR-TYPE');
             $effectDateRuleset2 = Config::get('PropertyConstaint.EFFECTIVE_DATE_RULE2');
             $effectDateRuleset3 = Config::get('PropertyConstaint.EFFECTIVE_DATE_RULE3');
+            $mUlbMasters = new UlbMaster();
             // Derivative Assignments
             $fullDetails = $mPropProperty->getComparativeBasicDtls($propId);             // Full Details of the Floor
-            // return $fullDetails;
+            $ulbId = $fullDetails[0]->ulb_id;
             if (collect($fullDetails)->isEmpty())
                 throw new Exception("No Property Found");
             $basicDetails = collect($fullDetails)->first();
@@ -1102,6 +1103,8 @@ class HoldingTaxController extends Controller
             $comparativeDemand['basicDetails'] = array_merge((array)$basicDetails, [
                 'todayDate' => $this->_carbon->format('d-m-Y')
             ]);
+            // Ulb Details
+            $comparativeDemand['ulbDetails'] = $mUlbMasters->getUlbDetails($ulbId);
             return responseMsgs(true, "Comparative Demand", remove_null($comparativeDemand), "011610", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011610", "1.0", "", "POST", $req->deviceId);
