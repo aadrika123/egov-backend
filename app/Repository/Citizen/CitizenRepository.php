@@ -87,13 +87,15 @@ class CitizenRepository implements iCitizenRepository
                 $property = $this->appliedSafApplications($userId);
                 $applications['Property'] = $property;
                 $applications['Property']['totalApplications'] = $this->countTotalApplications($property);
-                // return $applications;
-                $applications['Water'] = $this->appliedWaterApplications($userId);
-                $applications['Water']['totalApplications'] = $this->countTotalApplications($applications['Water']);
+
+                $waters = $this->appliedWaterApplications($userId);
+                $applications['Water'] = $waters;
 
                 $applications['Trade'] = $this->appliedTradeApplications($userId);
-                $applications['Holding'] = $this->getCitizenProperty($userId);
-                $applications['CareTaker'] = $this->getCaretakerProperty($userId);
+                $applications['Holding'] = $this->getProperties($userId);
+                // $applications['CareTaker'] = $this->getCaretakerProperty($userId);
+
+                $applications['totalPetRegistrations'] = $this->getPetRegistrations($userId);
             }
 
             if ($req->getMethod() == 'POST') {                                                      // Get Applications By Module
@@ -396,6 +398,39 @@ class CitizenRepository implements iCitizenRepository
         }
 
         return $data;
+    }
+
+
+    /**
+     * | Total Pet Registrations
+     */
+    public function getPetRegistrations($userId)
+    {
+        $applications = array();
+
+        $registrations = DB::table('pet_active_registrations')
+            ->where('citizen_id', $userId)
+            ->where('status', 1)
+            ->get();
+        $applications['applications'] = $registrations;
+        $applications['totalApplications'] = $registrations->count();
+        return $applications;
+    }
+
+
+    /**
+     * | Get Total Properties
+     */
+    public function getProperties($userId)
+    {
+        $applications = array();
+        $properties = PropProperty::select('holding_no', 'applicant_name', 'application_date')
+            ->where('citizen_id', $userId)
+            ->get();
+
+        $applications['applications'] = $properties;
+        $applications['totalApplications'] = $properties->count();
+        return $applications;
     }
 
     /**
