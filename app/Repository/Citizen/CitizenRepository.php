@@ -86,7 +86,7 @@ class CitizenRepository implements iCitizenRepository
             if ($req->getMethod() == 'GET') {                                                       // For All Applications
                 $applications['Property'] = $this->appliedSafApplications($userId);
                 $applications['Water'] = $this->appliedWaterApplications($userId);
-                $applications['Trade'] = $this->appliedTradeApplications($userId);
+                // $applications['Trade'] = $this->appliedTradeApplications($userId);
                 $applications['Holding'] = $this->getCitizenProperty($userId);
                 $applications['CareTaker'] = $this->getCaretakerProperty($userId);
             }
@@ -238,7 +238,7 @@ class CitizenRepository implements iCitizenRepository
     {
         $applications = array();
         $waterApplications = WaterApplication::select('id as application_id', 'category', 'application_no', 'holding_no', 'workflow_id', 'created_at', 'updated_at')
-            ->where('citizen_id', $userId)
+            ->where('user_id', $userId)
             ->where('status', 1)
             ->orderByDesc('id')
             ->get();
