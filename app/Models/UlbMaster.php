@@ -46,7 +46,7 @@ class UlbMaster extends Model
             "mobile_no_2" => $ulb->toll_free_no,
             "website" => $ulb->current_website,
             "email" => $ulb->email,
-            "state_logo" => $docBaseUrl . "/" . "custom/jhk-govt-logo",
+            "state_logo" => $docBaseUrl . "/" . "custom/jhk-govt-logo.png",
             "ulb_logo" => $docBaseUrl . "/" . $ulb->logo,
             "ulb_parent_website" => $ulb->parent_website,
             "short_name" => $ulb->short_name,
