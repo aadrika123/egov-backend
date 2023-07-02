@@ -30,25 +30,25 @@ class ExpireBearerToken
      */
     public function handle(Request $request, Closure $next)
     {
-        $citizenUserType = Config::get('workflow-constants.USER_TYPES.1');
-        $this->_user = auth()->user();
-        $this->_token = $request->bearerToken();
-        $this->_currentTime = Carbon::now();
+        // $citizenUserType = Config::get('workflow-constants.USER_TYPES.1');
+        // $this->_user = auth()->user();
+        // $this->_token = $request->bearerToken();
+        // $this->_currentTime = Carbon::now();
 
-        if ($this->_user && $this->_token) {
-            if ($this->_user->user_type == $citizenUserType) {                             // If the User type is citizen
-                $this->_key = 'last_activity_citizen_' . $this->_user->id;
-                $this->_lastActivity = Redis::get($this->_key);                                   // Function (1.1)
-                $this->validateToken();
-            } else {                                                                       // If the User type is not a Citizen
-                $this->_key = 'last_activity_' . $this->_user->id;
-                $this->_lastActivity = Redis::get($this->_key);
-                $this->validateToken();                                                     // Function (1.1)
-            }
+        // if ($this->_user && $this->_token) {
+        //     if ($this->_user->user_type == $citizenUserType) {                             // If the User type is citizen
+        //         $this->_key = 'last_activity_citizen_' . $this->_user->id;
+        //         $this->_lastActivity = Redis::get($this->_key);                                   // Function (1.1)
+        //         $this->validateToken();
+        //     } else {                                                                       // If the User type is not a Citizen
+        //         $this->_key = 'last_activity_' . $this->_user->id;
+        //         $this->_lastActivity = Redis::get($this->_key);
+        //         $this->validateToken();                                                     // Function (1.1)
+        //     }
 
-            if (!$request->has('key') && !$request->input('heartbeat'))
-                Redis::set($this->_key, $this->_currentTime);            // Caching
-        }
+        //     if (!$request->has('key') && !$request->input('heartbeat'))
+        //         Redis::set($this->_key, $this->_currentTime);            // Caching
+        // }
         return $next($request);
     }
 

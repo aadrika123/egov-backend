@@ -140,6 +140,7 @@ class HoldingTaxController extends Controller
             $mPropOwners = new PropOwner();
             $pendingFYears = collect();
             $qtrs = collect();
+            $mUlbMasters = new UlbMaster();
 
             $ownerDetails = $mPropOwners->getOwnerByPropId($req->propId)->first();
             $demand = array();
@@ -278,6 +279,9 @@ class HoldingTaxController extends Controller
                 'totalPayable' => $totalPayable,
                 'totalPayableInWords' => getIndianCurrency($totalPayable)
             ];
+
+            $ulb = $mUlbMasters->getUlbDetails($propDtls->ulb_id);
+            $demand['ulbDetails'] = $ulb;
             return responseMsgs(true, "Demand Details", remove_null($demand), "011602", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), ['basicDetails' => $basicDtls ?? []], "011602", "1.0", "", "POST", $req->deviceId ?? "");
