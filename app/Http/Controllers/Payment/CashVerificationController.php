@@ -822,22 +822,22 @@ class CashVerificationController extends Controller
                 throw new Exception("No Application Found for this id");
 
             $data['property'] = collect($details)->where('module_id', $propertyModuleId)->values();
-            $data['water'] = collect($details)->where('module_id', $waterModuleId)->values();
-            $data['trade'] = collect($details)->where('module_id', $tradeModuleId)->values();
+            $data['water']    = collect($details)->where('module_id', $waterModuleId)->values();
+            $data['trade']    = collect($details)->where('module_id', $tradeModuleId)->values();
 
-            $data['Cash'] = collect($details)->where('payment_mode', 'CASH')->sum('amount');
+            $data['Cash']   = collect($details)->where('payment_mode', 'CASH')->sum('amount');
             $data['Cheque'] = collect($details)->where('payment_mode', 'CHEQUE')->sum('amount');
-            $data['DD'] = collect($details)->where('payment_mode', 'DD')->sum('amount');
+            $data['DD']     = collect($details)->where('payment_mode', 'DD')->sum('amount');
 
             $data['totalAmount'] =  $details->sum('amount');
             $data['numberOfTransaction'] =  $details->count();
-            $data['collectorName']   =  collect($details)[0]->tc_name;
-            $data['collectorMobile'] =  collect($details)[0]->tc_mobile;
-            $data['verifierName']    =  collect($details)[0]->verifier_name;
-            $data['verifierMobile']  =  collect($details)[0]->verifier_mobile;
-            $data['receiptNo']       =  collect($details)[0]->tran_no;
-            $data['verificationDate'] =  collect($details)[0]->verification_date;
-            $data['ulb']       =  collect($details)[0]->ulb_name;
+            $data['collectorName']       =  collect($details)[0]->tc_name;
+            $data['collectorMobile']     =  collect($details)[0]->tc_mobile;
+            $data['verifierName']        =  collect($details)[0]->verifier_name;
+            $data['verifierMobile']      =  collect($details)[0]->verifier_mobile;
+            $data['receiptNo']           =  collect($details)[0]->tran_no;
+            $data['verificationDate']    =  collect($details)[0]->verification_date;
+            $data['ulb']                 =  collect($details)[0]->ulb_name;
 
             return responseMsgs(true, "Cash Receipt", $data, "010201", "1.0", responseTime(), "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
