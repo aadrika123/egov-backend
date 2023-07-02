@@ -194,7 +194,7 @@ class HoldingTaxController extends Controller
             $basicDtls["ownership_type"] = $ownershipType;
 
             if ($demandList->isEmpty())
-                throw new Exception("Dues Not Available for this Property");
+                throw new Exception("No Dues Found");
 
             $demandList = $demandList->map(function ($item) {                                // One Perc Penalty Tax
                 return $this->calcOnePercPenalty($item);
