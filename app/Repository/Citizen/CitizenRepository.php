@@ -84,9 +84,14 @@ class CitizenRepository implements iCitizenRepository
             $applications = array();
 
             if ($req->getMethod() == 'GET') {                                                       // For All Applications
-                $applications['Property'] = $this->appliedSafApplications($userId);
+                $property = $this->appliedSafApplications($userId);
+                $applications['Property'] = $property;
+                $applications['Property']['totalApplications'] = $this->countTotalApplications($property);
+                // return $applications;
                 $applications['Water'] = $this->appliedWaterApplications($userId);
-                // $applications['Trade'] = $this->appliedTradeApplications($userId);
+                $applications['Water']['totalApplications'] = $this->countTotalApplications($applications['Water']);
+
+                $applications['Trade'] = $this->appliedTradeApplications($userId);
                 $applications['Holding'] = $this->getCitizenProperty($userId);
                 $applications['CareTaker'] = $this->getCaretakerProperty($userId);
             }
@@ -120,6 +125,21 @@ class CitizenRepository implements iCitizenRepository
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
+    }
+
+
+    /**
+     * | Count Total
+     */
+    public function countTotalApplications($applications)
+    {
+        $counters = collect();
+        foreach ($applications as $application) {
+            $numberOfApplications = collect($application)->count();
+            $counters->push($numberOfApplications);
+        }
+        $totalCounter = $counters->sum();
+        return $totalCounter;
     }
 
     /**
@@ -255,8 +275,8 @@ class CitizenRepository implements iCitizenRepository
     {
         $applications = array();
         $tradeApplications = ActiveTradeLicence::select('id as application_id', 'application_no', 'holding_no', 'workflow_id', 'created_at', 'updated_at')
-            ->where('emp_details_id', $userId)
-            ->where('status', 1)
+            ->where('citizen_id', $userId)
+            ->where('is_active', 1)
             ->orderByDesc('id')
             ->get();
         $applications['applications'] = $tradeApplications;
