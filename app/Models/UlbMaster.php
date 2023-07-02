@@ -45,7 +45,7 @@ class UlbMaster extends Model
             "mobile_no" => $ulb->mobile_no,
             "website" => $ulb->current_website,
             "email" => $ulb->email,
-            "state_logo" => $docBaseUrl . "/" . $ulb->logo,
+            "state_logo" => $docBaseUrl . "/" . "custom/jhk-govt-logo",
             "ulb_logo" => $docBaseUrl . "/" . $ulb->logo,
             "ulb_parent_website" => $ulb->parent_website,
             "shortName" => $ulb->short_name,
