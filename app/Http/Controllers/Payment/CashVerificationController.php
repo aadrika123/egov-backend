@@ -11,6 +11,7 @@ use App\Models\Property\PropChequeDtl;
 use App\Models\Property\PropTransaction;
 use App\Models\Trade\TradeChequeDtl;
 use App\Models\Trade\TradeTransaction;
+use App\Models\UlbMaster;
 use App\Models\Water\WaterChequeDtl;
 use App\Models\Water\WaterTran;
 use Carbon\Carbon;
@@ -809,6 +810,7 @@ class CashVerificationController extends Controller
         ]);
         try {
             $ulbId = authUser()->ulb_id;
+            $mUlbMasters = new UlbMaster();
             $propertyModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
             $waterModuleId = Config::get('module-constants.WATER_MODULE_ID');
             $tradeModuleId = Config::get('module-constants.TRADE_MODULE_ID');
@@ -838,6 +840,7 @@ class CashVerificationController extends Controller
             $data['receiptNo']           =  collect($details)[0]->tran_no;
             $data['verificationDate']    =  collect($details)[0]->verification_date;
             $data['ulb']                 =  collect($details)[0]->ulb_name;
+            $data['ulbDetails']          = $mUlbMasters->getUlbDetails($ulbId);
 
             return responseMsgs(true, "Cash Receipt", $data, "010201", "1.0", responseTime(), "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
