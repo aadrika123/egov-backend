@@ -84,11 +84,18 @@ class CitizenRepository implements iCitizenRepository
             $applications = array();
 
             if ($req->getMethod() == 'GET') {                                                       // For All Applications
-                $applications['Property'] = $this->appliedSafApplications($userId);
-                $applications['Water'] = $this->appliedWaterApplications($userId);
-                // $applications['Trade'] = $this->appliedTradeApplications($userId);
-                $applications['Holding'] = $this->getCitizenProperty($userId);
+                $property = $this->appliedSafApplications($userId);
+                $applications['Property'] = $property;
+                $applications['Property']['totalApplications'] = $this->countTotalApplications($property);
+
+                $waters = $this->appliedWaterApplications($userId);
+                $applications['Water'] = $waters;
+
+                $applications['Trade'] = $this->appliedTradeApplications($userId);
                 $applications['CareTaker'] = $this->getCaretakerProperty($userId);
+                $applications['Holding'] = $this->getProperties($userId, $applications['CareTaker']);
+
+                $applications['totalPetRegistrations'] = $this->getPetRegistrations($userId);
             }
 
             if ($req->getMethod() == 'POST') {                                                      // Get Applications By Module
@@ -120,6 +127,21 @@ class CitizenRepository implements iCitizenRepository
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
+    }
+
+
+    /**
+     * | Count Total
+     */
+    public function countTotalApplications($applications)
+    {
+        $counters = collect();
+        foreach ($applications as $application) {
+            $numberOfApplications = collect($application)->count();
+            $counters->push($numberOfApplications);
+        }
+        $totalCounter = $counters->sum();
+        return $totalCounter;
     }
 
     /**
@@ -255,8 +277,8 @@ class CitizenRepository implements iCitizenRepository
     {
         $applications = array();
         $tradeApplications = ActiveTradeLicence::select('id as application_id', 'application_no', 'holding_no', 'workflow_id', 'created_at', 'updated_at')
-            ->where('emp_details_id', $userId)
-            ->where('status', 1)
+            ->where('citizen_id', $userId)
+            ->where('is_active', 1)
             ->orderByDesc('id')
             ->get();
         $applications['applications'] = $tradeApplications;
@@ -376,6 +398,40 @@ class CitizenRepository implements iCitizenRepository
         }
 
         return $data;
+    }
+
+
+    /**
+     * | Total Pet Registrations
+     */
+    public function getPetRegistrations($userId)
+    {
+        $applications = array();
+
+        $registrations = DB::table('pet_active_registrations')
+            ->where('citizen_id', $userId)
+            ->where('status', 1)
+            ->get();
+        $applications['applications'] = $registrations;
+        $applications['totalApplications'] = $registrations->count();
+        return $applications;
+    }
+
+
+    /**
+     * | Get Total Properties
+     */
+    public function getProperties($userId, $careTakerProperties)
+    {
+        $applications = array();
+        $properties = PropProperty::select('holding_no', 'applicant_name', 'application_date')
+            ->where('citizen_id', $userId)
+            ->get();
+
+        $applications['applications'] = $properties;
+        $totalCareTakers = collect($careTakerProperties)->count();
+        $applications['totalApplications'] = $properties->count() + $totalCareTakers;
+        return $applications;
     }
 
     /**
