@@ -92,8 +92,8 @@ class CitizenRepository implements iCitizenRepository
                 $applications['Water'] = $waters;
 
                 $applications['Trade'] = $this->appliedTradeApplications($userId);
-                $applications['Holding'] = $this->getProperties($userId);
-                // $applications['CareTaker'] = $this->getCaretakerProperty($userId);
+                $applications['CareTaker'] = $this->getCaretakerProperty($userId);
+                $applications['Holding'] = $this->getProperties($userId, $applications['CareTaker']);
 
                 $applications['totalPetRegistrations'] = $this->getPetRegistrations($userId);
             }
@@ -421,7 +421,7 @@ class CitizenRepository implements iCitizenRepository
     /**
      * | Get Total Properties
      */
-    public function getProperties($userId)
+    public function getProperties($userId, $careTakerProperties)
     {
         $applications = array();
         $properties = PropProperty::select('holding_no', 'applicant_name', 'application_date')
@@ -429,7 +429,8 @@ class CitizenRepository implements iCitizenRepository
             ->get();
 
         $applications['applications'] = $properties;
-        $applications['totalApplications'] = $properties->count();
+        $totalCareTakers = collect($careTakerProperties)->count();
+        $applications['totalApplications'] = $properties->count() + $totalCareTakers;
         return $applications;
     }
 
