@@ -184,6 +184,7 @@ class Trade implements ITrade
             if (!$refWfWorkflow) {
                 throw new Exception("Workflow Not Available");
             }
+            
             $refWorkflows       = $this->_COMMON_FUNCTION->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
             $mUserType          = $this->_COMMON_FUNCTION->userType($refWorkflowId);
             $mShortUlbName      = "";
@@ -274,7 +275,7 @@ class Trade implements ITrade
                 $licence->current_role        = $refWorkflows['initiator']['id'];
                 $licence->initiator_role      = $refWorkflows['initiator']['id'];
                 $licence->finisher_role       = $refWorkflows['finisher']['id'];
-                $licence->workflow_id         = $refWorkflowId;
+                $licence->workflow_id         = $refWfWorkflow->id;
 
                 if (strtoupper($mUserType) == "ONLINE") {
                     $licence->citizen_id      = $refUserId;
