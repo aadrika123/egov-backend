@@ -184,7 +184,6 @@ class ActiveSafControllerV2 extends Controller
             if (collect($details)->isEmpty())
                 throw new Exception("Memo Details Not Available");
             $properties = $mPropProperty::find($details[0]->prop_id);
-
             $details = collect($details)->first();
             $taxTable = collect($details)->only(['holding_tax', 'water_tax', 'latrine_tax', 'education_cess', 'health_cess', 'rwh_penalty']);
             $details->taxTable = $this->generateTaxTable($taxTable);
@@ -245,7 +244,7 @@ class ActiveSafControllerV2 extends Controller
                 $details->taxTable = $holdingTaxes->merge([$total])->values();
             }
             // Get Ulb Details
-            $details->ulbDetails = $mUlbMaster->getUlbDetails($properties->ulb_id);
+            $details->ulbDetails = $mUlbMaster->getUlbDetails($properties->ulb_id ?? 2);
             return responseMsgs(true, "", remove_null($details), "011803", 1.0, responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011803", 1.0, responseTime(), "POST", $req->deviceId);
