@@ -610,6 +610,7 @@ class ActiveSafControllerV2 extends Controller
             DB::commit();
             return responseMsgs(true, "Application Edited Successfully", [], "011809", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
+            
             DB::rollBack();
             return responseMsgs(false, $e->getMessage(), [], "011809", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         }
