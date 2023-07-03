@@ -521,7 +521,7 @@ class TradeCitizen implements ITradeCitizen
             $refApplication->items_code = $mCods;
             $refOwnerDtl                = $this->_REPOSITORY_TRADE->getAllOwnereDtlByLId($id);
             $refTransactionDtl          = TradeTransaction::listByLicId($id);
-            $refTimeLine                = $this->_REPOSITORY_TRADE->getTimelin($id);
+            // $refTimeLine                = $this->_REPOSITORY_TRADE->getTimelin($id);
             $mWfActiveDocument = new WfActiveDocument();
             $refUploadDocuments         = $mWfActiveDocument->getTradeDocByAppNo($refApplication->id,$refApplication->workflow_id,$modul_id);
             
@@ -530,20 +530,20 @@ class TradeCitizen implements ITradeCitizen
             if ($mlevelData) {
                 $pendingAt = $mlevelData->receiver_user_type_id;
             }
-            $mworkflowRoles = $this->_COMMON_FUNCTION->getWorkFlowAllRoles($refUserId, $refUlbId, $refWorkflowId, true);
-            $mileSton = $this->_COMMON_FUNCTION->sortsWorkflowRols($mworkflowRoles);
+            // $mworkflowRoles = $this->_COMMON_FUNCTION->getWorkFlowAllRoles($refUserId, $refUlbId, $refWorkflowId, true);
+            // $mileSton = $this->_COMMON_FUNCTION->sortsWorkflowRols($mworkflowRoles);
 
             $data['licenceDtl']     = $refApplication;
             $data['ownerDtl']       = $refOwnerDtl;
             $data['transactionDtl'] = $refTransactionDtl;
             $data['pendingStatus']  = $mStatus;
-            $data['remarks']        = $refTimeLine;
+            // $data['remarks']        = $refTimeLine;
             $data['documents']      = $refUploadDocuments;
             $data["userType"]       = $mUserType;
-            $data["roles"]          = $mileSton;
+            // $data["roles"]          = $mileSton;
             $data["pendingAt"]      = $pendingAt;
-            $data["levelData"]      = $mlevelData;
-            $data['finisher']       = $finisher;
+            // $data["levelData"]      = $mlevelData;
+            // $data['finisher']       = $finisher;
             $data = remove_null($data);
 
             return responseMsg(true, "", $data);
