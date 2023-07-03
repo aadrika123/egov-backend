@@ -28,6 +28,7 @@ use App\Http\Requests\Trade\ReqAddRecorde;
 use App\Models\Workflows\WfActiveDocument;
 use App\Http\Requests\Trade\paymentCounter;
 use App\Http\Requests\Trade\ReqApplyDenail;
+use App\Http\Requests\Trade\ReqGetUpdateBasicDtl;
 use App\Http\Requests\Trade\ReqPaybleAmount;
 use App\Models\Trade\TradeParamCategoryType;
 use App\Models\Trade\TradeParamOwnershipType;
@@ -239,7 +240,7 @@ class TradeApplication extends Controller
         }
     }
     # Serial No : 02
-    public function updateLicenseBo(ReqUpdateBasicDtl $request)
+    public function updateLicenseBo(ReqGetUpdateBasicDtl $request)
     {
         return $this->_REPOSITORY->updateLicenseBo($request);
     }
@@ -444,14 +445,25 @@ class TradeApplication extends Controller
                 'roleName'              => $userRole->role_name,
                 "shortRole"             => ($this->_TRADE_CONSTAINT['USER-TYPE-SHORT-NAME'][strtoupper($userRole->role_name)]) ?? "N/A",
                 'todayForwardCount'     => collect($dateWiseData)->where('sender_role_id', $userRole->role_id)->count(),
-                'todayReceivedCount'    => collect($dateWiseData)->where('receiver_role_id', $userRole->role_id)->count(),
+                'todayReceivedCount'    => $userRole->is_initiator==false
+                                            ?
+                                            collect($dateWiseData)->where('receiver_role_id', $userRole->role_id)->count()
+                                            :
+                                            (
+                                                (
+                                                    $inboxData->original['data']->where("application_date", Carbon::now()->format('d-m-Y'))->whereNotIn("id",$dateWiseData->pluck("ref_table_id_value"))->count()??0??0
+                                                )
+                                                +
+                                                (
+                                                    collect($dateWiseData)->where('receiver_role_id', $userRole->role_id)->count()??0
+                                                )
+                                            ),
                 'pendingApplication'    => $inboxData->original['data']->count() ?? 0,
                 'newLicense'            => $inboxData->original['data']->where("application_type_id", 1)->count() ?? 0,
                 'renewalLicense'        => $inboxData->original['data']->where("application_type_id", 2)->count() ?? 0,
                 'amendmentLicense'      => $inboxData->original['data']->where("application_type_id", 3)->count() ?? 0,
                 'surenderLicense'       => $inboxData->original['data']->where("application_type_id", 4)->count() ?? 0
             ];
-
             return responseMsgs(true, "", remove_null($returnData), "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "01", ".ms", "POST", "");

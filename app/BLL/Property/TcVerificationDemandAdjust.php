@@ -123,9 +123,9 @@ class TcVerificationDemandAdjust
             "isTrust" => $activeSafDtls->is_trust,
             "trustType" => $activeSafDtls->trust_type,
             "isTrustVerified" => $activeSafDtls->is_trust_verified,
-            "rwhDateFrom" => $activeSafDtls->rwh_date_from
-
+            "rwhDateFrom" => $fieldVerifiedSaf->rwh_date_from ?? null
         ];
+
         $calculationReq = new Request($calculationReq);
         $calculation = $this->_safCalculation->calculateTax($calculationReq);
         if ($calculation->original['status'] == false)
@@ -137,6 +137,7 @@ class TcVerificationDemandAdjust
         if (in_array($this->_reqs['assessmentType'], $this->_adjustmentAssessmentTypes)) {
             $this->_calculateSafByid->_demandDetails = $quaterlyTax;
             $this->_calculateSafByid->_holdingNo = $activeSafDtls->holding_no;
+            $this->_calculateSafByid->_safDetails['previous_holding_id'] = $activeSafDtls->previous_holding_id;
             $quaterlyTax = $this->_calculateSafByid->adjustAmount();
         }
         return $quaterlyTax;

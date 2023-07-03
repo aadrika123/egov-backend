@@ -101,7 +101,7 @@ class  PropActiveSaf extends Model
             'is_trust' => $req->isTrust ?? false,
             'trust_type' => $req->trustType ?? null
         ];
-        $propActiveSafs = PropActiveSaf::create($reqs);
+        $propActiveSafs = PropActiveSaf::create($reqs);                 // SAF No is Created Using Observer
         return response()->json([
             'safId' => $propActiveSafs->id,
             'safNo' => $propActiveSafs->saf_no,
@@ -357,6 +357,18 @@ class  PropActiveSaf extends Model
     }
 
     /**
+     * | Enable Agency Field Verification Status
+     */
+    public function verifyAgencyFieldStatus($safId)
+    {
+        $activeSaf = PropActiveSaf::find($safId);
+        if (!$activeSaf)
+            throw new Exception("Application Not Found");
+        $activeSaf->is_agency_verified = true;
+        $activeSaf->save();
+    }
+
+    /**
      * | Get Saf Details by Saf No
      * | @param SafNo
      */
@@ -380,6 +392,7 @@ class  PropActiveSaf extends Model
                 's.corr_pin_code',
                 's.area_of_plot as total_area_in_desimal',
                 's.apartment_details_id',
+                's.prop_type_mstr_id',
                 'u.ward_name as old_ward_no',
                 'u1.ward_name as new_ward_no',
             )
@@ -775,9 +788,10 @@ class  PropActiveSaf extends Model
             'prop_active_safs.saf_no',
             'prop_active_safs.assessment_type',
             DB::raw(
-                "case when prop_active_safs.payment_status!=1 then 'Payment Not Done'
-                      else role_name end
-                      as current_role
+                "case when prop_active_safs.payment_status = 0 then 'Payment Not Done'
+                      when prop_active_safs.payment_status = 2 then 'Payment Under Verification'
+                    else role_name end
+                as current_role
                 "
             ),
             'role_name as currentRole',

@@ -456,12 +456,12 @@ class EloquentAuthRepository implements AuthRepository
         $userType = $user->user_type;
         $mMirrorUserNotification = new MirrorUserNotification();
         if ($userType == 'Citizen') {
-            $data = $mMirrorUserNotification->notificationByUserId()
+            $data = $mMirrorUserNotification->mirrorNotification()
                 ->where('citizen_id', $userId)
                 ->get();
             $notification = collect($data)->groupBy('category');
         } else
-            $notification =  $mMirrorUserNotification->notificationByUserId($userId)
+            $notification =  $mMirrorUserNotification->mirrorNotification($userId)
                 ->where('user_id', $userId)
                 ->where('ulb_id', $ulbId)
                 ->get();

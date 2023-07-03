@@ -122,7 +122,8 @@ class PropSaf extends Model
             'prop_safs.saf_no',
             'prop_safs.assessment_type',
             DB::raw(
-                "case when prop_safs.payment_status!=1 then 'Payment Not Done'
+                "case when prop_safs.payment_status = 0 then 'Payment Not Done'
+                      when prop_safs.payment_status = 2 then 'Payment Under Verification'
                       else role_name end
                       as current_role
                 "
@@ -161,7 +162,7 @@ class PropSaf extends Model
                 "
             ),
             'role_name as currentRole',
-            'ward_name',
+            'ward_name as old_ward_no',
             'prop_address',
             'gbo.officer_name',
             'gbo.mobile_no'

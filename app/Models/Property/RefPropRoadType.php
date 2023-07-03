@@ -5,7 +5,7 @@ namespace App\Models\Property;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Exception;
-
+use Illuminate\Support\Facades\DB;
 
 class RefPropRoadType extends Model
 {
@@ -14,7 +14,10 @@ class RefPropRoadType extends Model
     public function propRoadType()
     {
 
-        return RefPropRoadType::select('id', 'road_type')
+        return RefPropRoadType::select(
+            'id',
+            DB::raw('INITCAP(road_type) as road_type')
+        )
             ->where('status', '1')
             ->get();
     }

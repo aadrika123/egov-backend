@@ -118,11 +118,11 @@ class NewConnectionRepository implements iNewConnection
         # Connection Type 
         switch ($req->connectionTypeId) {
             case (1):
-                $connectionType = "New Connection";
+                $connectionType = "New Connection";                                     // Static
                 break;
 
             case (2):
-                $connectionType = "Regulaization";
+                $connectionType = "Regulaization";                                      // Static
                 break;
         }
 
@@ -141,6 +141,9 @@ class NewConnectionRepository implements iNewConnection
         $refFinisherRoleId  = $this->getFinisherId($ulbWorkflowId->id);
         $finisherRoleId     = DB::select($refFinisherRoleId);
         $initiatorRoleId    = DB::select($refInitiatorRoleId);
+        if (!$finisherRoleId || !$initiatorRoleId) {
+            throw new Exception("initiatorRoleId or finisherRoleId not found for respective Workflow!");
+        }
 
         # Generating Demand 
         $newConnectionCharges = objToArray($mWaterNewConnection->calWaterConCharge($req));
@@ -188,12 +191,9 @@ class NewConnectionRepository implements iNewConnection
 
         # Save the record in the tracks
         if ($user->user_type == "Citizen") {                                                        // Static
-            $citizenId = $user->id;
             $receiverRoleId = $waterRoles['DA'];
         }
         if ($user->user_type != "Citizen") {                                                        // Static
-            // $roleDetails = $this->getUserRolesDetails($user, $ulbWorkflowId['id']);
-            // $senderRoleId = $roleDetails->wf_role_id;
             $receiverRoleId = collect($initiatorRoleId)->first()->role_id;
         }
         $metaReqs = new Request(
@@ -396,18 +396,18 @@ class NewConnectionRepository implements iNewConnection
 
         # check in all the cases the data if entered in the track table 
         // Updation of Received Date
-        // $preWorkflowReq = [
-        //     'workflowId' => $waterApplication->workflow_id,
-        //     'refTableDotId' => "water_applications.id",
-        //     'refTableIdValue' => $req->applicationId,
-        //     'receiverRoleId' => $senderRoleId
-        // ];
+        $preWorkflowReq = [
+            'workflowId'        => $waterApplication->workflow_id,
+            'refTableDotId'     => "water_applications.id",
+            'refTableIdValue'   => $req->applicationId,
+            'receiverRoleId'    => $senderRoleId
+        ];
 
-        // $previousWorkflowTrack = $waterTrack->getWfTrackByRefId($preWorkflowReq);
-        // $previousWorkflowTrack->update([
-        //     'forward_date' => $current->format('Y-m-d'),
-        //     'forward_time' => $current->format('H:i:s')
-        // ]);
+        $previousWorkflowTrack = $waterTrack->getWfTrackByRefId($preWorkflowReq);
+        $previousWorkflowTrack->update([
+            'forward_date' => $current->format('Y-m-d'),
+            'forward_time' => $current->format('H:i:s')
+        ]);
         DB::commit();
         return responseMsgs(true, "Successfully Forwarded The Application!!", "", "", "", '01', '.ms', 'Post', '');
     }
@@ -483,15 +483,18 @@ class NewConnectionRepository implements iNewConnection
     public function approvalRejectionWater($request, $roleId)
     {
         # Condition while the final Check
-        $mWaterApplication = new WaterApplication();
-        $mWaterApplicant = new WaterApplicant();
-        $refJe = Config::get("waterConstaint.ROLE-LABEL.JE");
-        $refWaterDetails = $this->preApprovalConditionCheck($request, $roleId);
+        $mWaterApplication  = new WaterApplication();
+        $mWaterApplicant    = new WaterApplicant();
+        $refJe              = Config::get("waterConstaint.ROLE-LABEL.JE");
+        $consumerParamId    = Config::get("waterConstaint.PARAM_IDS.WCON");
+        $refWaterDetails    = $this->preApprovalConditionCheck($request, $roleId);
 
         # Approval of water application 
         if ($request->status == 1) {
-            $now = Carbon::now();
-            $consumerNo = 'CON' . $now->getTimeStamp() . rand(5, 5);
+            # Consumer no generation
+            $idGeneration   = new PrefixIdGenerator($consumerParamId, $refWaterDetails['ulb_id']);
+            $consumerNo     = $idGeneration->generate();
+
             $this->saveWaterConnInProperty($refWaterDetails, $consumerNo);
             $consumerId = $mWaterApplication->finalApproval($request, $consumerNo, $refJe);
             $mWaterApplicant->finalApplicantApproval($request, $consumerId);
@@ -572,7 +575,7 @@ class NewConnectionRepository implements iNewConnection
      * | save the water details in property or saf data
      * | save water connection no in prop or saf table
      * | @param 
-        | Not Tested
+        | Recheck
      */
     public function saveWaterConnInProperty($refWaterDetails, $consumerNo)
     {
@@ -587,10 +590,10 @@ class NewConnectionRepository implements iNewConnection
             case ($refWaterDetails->connection_through == $refConnectionThrough['HOLDING']):
                 $appartmentsPropIds = collect($refWaterDetails->prop_id);
                 if (in_array($refWaterDetails->property_type_id, [$refPropType['Apartment'], $refPropType['MultiStoredUnit']])) {
-                    $propDetails = PropProperty::findOrFail($refWaterDetails->prop_id);
-                    $apartmentId = $propDetails['apartment_details_id'];
-                    $appartmentsProperty = $mPropProperty->getPropertyByApartmentId($apartmentId)->get();
-                    $appartmentsPropIds = collect($appartmentsProperty)->pluck('id');
+                    $propDetails            = PropProperty::findOrFail($refWaterDetails->prop_id);
+                    $apartmentId            = $propDetails['apartment_details_id'];
+                    $appartmentsProperty    = $mPropProperty->getPropertyByApartmentId($apartmentId)->get();
+                    $appartmentsPropIds     = collect($appartmentsProperty)->pluck('id');
                 }
                 $mPropProperty->updateWaterConnection($appartmentsPropIds, $consumerNo);
                 break;
@@ -598,10 +601,10 @@ class NewConnectionRepository implements iNewConnection
             case ($refWaterDetails->connection_through == $refConnectionThrough['SAF']):
                 $appartmentsSafIds = collect($refWaterDetails->saf_id);
                 if (in_array($refWaterDetails->property_type_id, [$refPropType['Apartment'], $refPropType['MultiStoredUnit']])) {
-                    $safDetails = PropActiveSaf::findOrFail($refWaterDetails->saf_id);
-                    $apartmentId = $safDetails['apartment_details_id'];
-                    $appartmentsSaf = $mPropActiveSaf->getActiveSafByApartmentId($apartmentId)->get();
-                    $appartmentsSafIds = collect($appartmentsSaf)->pluck('id');
+                    $safDetails         = PropActiveSaf::findOrFail($refWaterDetails->saf_id);
+                    $apartmentId        = $safDetails['apartment_details_id'];
+                    $appartmentsSaf     = $mPropActiveSaf->getActiveSafByApartmentId($apartmentId)->get();
+                    $appartmentsSafIds  = collect($appartmentsSaf)->pluck('id');
                 }
                 $mPropActiveSaf->updateWaterConnection($appartmentsSafIds, $consumerNo);
                 break;

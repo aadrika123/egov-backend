@@ -215,7 +215,6 @@ class GbSafController extends Controller
                 $metaReqs['receiverRoleId'] = $forwardBackwardIds->backward_role_id;
             }
 
-
             $saf->save();
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs['workflowId'] = $saf->workflow_id;
@@ -227,7 +226,6 @@ class GbSafController extends Controller
             $request->request->add($metaReqs);
 
             $track->saveTrack($request);
-
             DB::commit();
             return responseMsgs(true, "Successfully Forwarded The Application!!", $samHoldingDtls, "010109", "1.0", responseTime(), "POST", $request->deviceId);
         } catch (Exception $e) {
@@ -251,9 +249,7 @@ class GbSafController extends Controller
         $samParamId = Config::get('PropertyConstaint.SAM_PARAM_ID');
 
         // Derivative Assignments
-        $demand = $mPropSafDemand->getFirstDemandByFyearSafId($saf->id, $fYear);
-        if (collect($demand)->isEmpty())
-            throw new Exception("Demand Not Available for the Current Year to Generate SAM");
+
         switch ($senderRoleId) {
             case $wfLevels['BO']:                        // Back Office Condition
                 if ($saf->doc_upload_status == 0)
@@ -263,6 +259,9 @@ class GbSafController extends Controller
             case $wfLevels['DA']:                       // DA Condition
                 if ($saf->doc_verify_status == 0)
                     throw new Exception("Document Not Fully Verified");
+                $demand = $mPropSafDemand->getFirstDemandByFyearSafId($saf->id, $fYear);
+                if (collect($demand)->isEmpty())
+                    throw new Exception("Demand Not Available for the Current Year to Generate SAM");
                 $idGeneration = new PrefixIdGenerator($ptParamId, $saf->ulb_id);
                 $ptNo = $idGeneration->generate();
                 $saf->pt_no = $ptNo;                        // Generate New Property Tax No for All Conditions
@@ -314,6 +313,7 @@ class GbSafController extends Controller
         $toBeProperties = PropActiveSaf::query()
             ->where('id', $safId)
             ->select(
+                'saf_no',
                 'ulb_id',
                 'cluster_id',
                 'holding_no',
@@ -376,7 +376,11 @@ class GbSafController extends Controller
                 'is_gb_saf',
                 'gb_office_name',
                 'gb_usage_types',
-                'gb_prop_usage_types'
+                'gb_prop_usage_types',
+                'is_trust',
+                'trust_type',
+                'is_trust_verified',
+                'rwh_date_from'
             )->first();
 
         $assessmentType = $activeSaf->assessment_type;
@@ -405,7 +409,7 @@ class GbSafController extends Controller
         }
 
         // Edit In Case of Reassessment,Mutation
-        if (in_array($assessmentType, ['Re Assessment'])) {         // Edit Property In case of Reassessment
+        if (in_array($assessmentType, ['Reassessment'])) {         // Edit Property In case of Reassessment
             $propId = $activeSaf->previous_holding_id;
             $mProperty = new PropProperty();
             $mPropOfficer = new PropGbofficer();
@@ -1079,19 +1083,22 @@ class GbSafController extends Controller
         $uploadedDocs = $mWfActiveDocument->getDocByRefIds($applicationId, $workflowId, $moduleId);
         $explodeDocs = collect(explode('#', $documentList));
 
-        $filteredDocs = $explodeDocs->map(function ($explodeDoc) use ($uploadedDocs) {
+        $filteredDocs = $explodeDocs->map(function ($explodeDoc) use ($uploadedDocs, $refSafs) {
             $document = explode(',', $explodeDoc);
             $key = array_shift($document);
             $label = array_shift($document);
             $documents = collect();
 
-            collect($document)->map(function ($item) use ($uploadedDocs, $documents) {
+            collect($document)->map(function ($item) use ($uploadedDocs, $documents, $refSafs) {
                 $uploadedDoc = $uploadedDocs->where('doc_code', $item)->first();
                 if ($uploadedDoc) {
                     $response = [
+                        "uploadedDocId" => $uploadedDoc->id ?? "",
                         "documentCode" => $item,
                         "ownerId" => $uploadedDoc->owner_dtl_id ?? "",
-                        "docPath" => $uploadedDoc->doc_path ?? ""
+                        "docPath" => $uploadedDoc->doc_path ?? "",
+                        "verifyStatus" => $refSafs->payment_status == 1 ? ($uploadedDoc->verify_status ?? "") : 0,
+                        "remarks" => $uploadedDoc->remarks ?? "",
                     ];
                     $documents->push($response);
                 }

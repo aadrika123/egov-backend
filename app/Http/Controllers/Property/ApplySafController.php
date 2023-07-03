@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Property;
 
 use App\BLL\Property\CalculateSafById;
 use App\BLL\Property\GenerateSafApplyDemandResponse;
+use App\BLL\Property\PostSafPropTaxes;
 use App\EloquentClass\Property\InsertTax;
 use App\EloquentClass\Property\PenaltyRebateCalculation;
 use App\EloquentClass\Property\SafCalculation;
@@ -114,9 +115,12 @@ class ApplySafController extends Controller
 
             $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);                                // Get Current Initiator ID
             $initiatorRoleId = collect(DB::select($refInitiatorRoleId))->first();
-
+            if (is_null($initiatorRoleId))
+                throw new Exception("Initiator Role Not Available");
             $refFinisherRoleId = $this->getFinisherId($ulbWorkflowId->id);
             $finisherRoleId = collect(DB::select($refFinisherRoleId))->first();
+            if (is_null($finisherRoleId))
+                throw new Exception("Finisher Role Not Available");
 
             $metaReqs['roadWidthType'] = $roadWidthType;
             $metaReqs['workflowId'] = $ulbWorkflowId->id;
@@ -172,11 +176,13 @@ class ApplySafController extends Controller
             }
 
             // Floor Details
-            if ($request['floor']) {
-                $floorDetail = $request['floor'];
-                foreach ($floorDetail as $floorDetails) {
-                    $floor = new PropActiveSafsFloor();
-                    $floor->addfloor($floorDetails, $safId, $user_id);
+            if ($request->propertyType != 4) {
+                if ($request['floor']) {
+                    $floorDetail = $request['floor'];
+                    foreach ($floorDetail as $floorDetails) {
+                        $floor = new PropActiveSafsFloor();
+                        $floor->addfloor($floorDetails, $safId, $user_id);
+                    }
                 }
             }
 
@@ -191,11 +197,10 @@ class ApplySafController extends Controller
             //     $rEloquentAuthRepository = new EloquentAuthRepository();
             //     $rEloquentAuthRepository->addNotification($mreq);
             // }
-
             DB::commit();
             return responseMsgs(true, "Successfully Submitted Your Application Your SAF No. $safNo", [
                 "safNo" => $safNo,
-                "applyDate" => $mApplyDate,
+                "applyDate" => ymdToDmyDate($mApplyDate),
                 "safId" => $safId,
                 "demand" => $demandResponse
             ], "010102", "1.0", "1s", "POST", $request->deviceId);
@@ -345,6 +350,8 @@ class ApplySafController extends Controller
             $assessmentId = $req->assessmentType;
             $calculateSafById = new CalculateSafById;
             $generateSafApplyDemandResponse = new GenerateSafApplyDemandResponse;
+            $insertTax = new InsertTax;
+            $postSafPropTax = new PostSafPropTaxes;
 
             // Derivative Assignments
             $ulbWfId = $this->readGbAssessUlbWfId($req, $ulbId);
@@ -377,7 +384,7 @@ class ApplySafController extends Controller
             $generatedDemand = $calculateSafById->_generatedDemand;
             $isResidential = $safTaxes->original['data']['demand']['isResidential'];
             $demandResponse = $generateSafApplyDemandResponse->generateResponse($generatedDemand, $isResidential);
-
+            $demandToBeSaved = $demandResponse['details']->values()->collapse();
             $lateAssessmentPenalty = $demandResponse['amounts']['lateAssessmentPenalty'];
             $lateAssessmentPenalty = ($lateAssessmentPenalty > 0) ? $lateAssessmentPenalty : null;
             // Send to Workflow
@@ -386,7 +393,8 @@ class ApplySafController extends Controller
 
             $safReq = [
                 'assessment_type' => $req->assessmentType,
-                'ulb_id' => $req->ulbId,
+                'ulb_id' => $ulbId,
+                'prop_type_mstr_id' => 2,               // Independent Building
                 'building_name' => $req->buildingName,
                 'gb_office_name' => $req->nameOfOffice,
                 'ward_mstr_id' => $req->wardId,
@@ -443,10 +451,14 @@ class ApplySafController extends Controller
             ];
             $mPropGbOfficer->store($gbOfficerReq);
             $this->sendToWorkflow($createSaf, $userId);
+            // Demand Saved
+            $insertTax->insertTax($safId, $ulbId, $demandToBeSaved);
+            $postSafPropTax->postSafTaxes($safId, $generatedDemand['details']->toArray(), $ulbId);                        // Saf Tax Generation
+
             DB::commit();
             return responseMsgs(true, "Successfully Submitted Your Application Your SAF No. $safNo", [
                 "safNo" => $safNo,
-                "applyDate" => $applicationDate,
+                "applyDate" => Carbon::parse($applicationDate)->format('d-m-Y'),
                 "safId" => $safId,
                 "demand" => $demandResponse
             ], "010102", "1.0", "1s", "POST", $req->deviceId);

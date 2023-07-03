@@ -99,10 +99,10 @@ class WfActiveDocument extends Model
             ->where('module_id', $moduleId)
             ->where('doc_category', $docCategory)
             ->where('owner_dtl_id', $ownerId)
-            ->where('verify_status', 0)
             ->where('status', 1)
-            ->first();
+            ->get();
     }
+
 
     /**
      * | Get Application Details by Application No
@@ -352,6 +352,23 @@ class WfActiveDocument extends Model
             ->get();
     }
 
+    /**
+     * | Get Verified Documents
+     */
+    public function getVerifiedDocsByActiveId(array $req)
+    {
+        return WfActiveDocument::where('active_id', $req['activeId'])
+            ->select(
+                'doc_code',
+                'owner_dtl_id',
+                'verify_status'
+            )
+            ->where('workflow_id', $req['workflowId'])
+            ->where('module_id', $req['moduleId'])
+            ->where('verify_status', 1)
+            ->where('status', 1)
+            ->get();
+    }
 
     /**
      * | Deactivate the Rejected Document 
@@ -368,5 +385,18 @@ class WfActiveDocument extends Model
             ->update([
                 "status" => 0
             ]);
+    }
+
+    /**
+     * | Get all Rejected Documents
+     */
+    public function readRejectedDocuments(array $metaReqs)
+    {
+        return WfActiveDocument::where('active_id', $metaReqs['activeId'])
+            ->where('workflow_id', $metaReqs['workflowId'])
+            ->where('module_id', $metaReqs['moduleId'])
+            ->where('verify_status', 2)
+            ->where('status', 1)
+            ->get();
     }
 }

@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\ThirdPartyController;
 use App\Models\ActiveCitizen;
 use App\Models\Citizen\ActiveCitizenUndercare;
+use App\Models\Property\PropActiveConcession;
+use App\Models\Property\PropActiveHarvesting;
+use App\Models\Property\PropActiveObjection;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropDemand;
 use App\Models\Property\PropOwner;
@@ -241,24 +244,101 @@ class PropertyController extends Controller
     }
 
     /**
-     * | Get the Saf LatLong for map
-     * | Using wardId 
-     * | @param request
-     * | @var 
-     * | @return
+     * | Check if the property id exist in the workflow
+     */
+    public function CheckProperty(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'type' => 'required|in:Reassesment,Mutation,Concession,Objection,Harvesting,Bifurcation',
+                'propertyId' => 'required|numeric',
+            ]
+        );
+        if ($validated->fails()) {
+            return validationError($validated);
+        }
+
+        try {
+            $type = $req->type;
+            $propertyId = $req->propertyId;
+
+            switch ($type) {
+                case 'Reassesment':
+                    $data = PropActiveSaf::select('prop_active_safs.id', 'role_name', 'saf_no as application_no')
+                        ->join('wf_roles', 'wf_roles.id', 'prop_active_safs.current_role')
+                        ->where('previous_holding_id', $propertyId)
+                        ->where('prop_active_safs.status', 1)
+                        ->first();
+                    break;
+                case 'Mutation':
+                    $data = PropActiveSaf::select('prop_active_safs.id', 'role_name', 'saf_no as application_no')
+                        ->join('wf_roles', 'wf_roles.id', 'prop_active_safs.current_role')
+                        ->where('previous_holding_id', $propertyId)
+                        ->where('prop_active_safs.status', 1)
+                        ->first();
+                    break;
+                case 'Bifurcation':
+                    $data = PropActiveSaf::select('prop_active_safs.id', 'role_name', 'saf_no as application_no')
+                        ->join('wf_roles', 'wf_roles.id', 'prop_active_safs.current_role')
+                        ->where('previous_holding_id', $propertyId)
+                        ->where('prop_active_safs.status', 1)
+                        ->first();
+                    break;
+                case 'Concession':
+                    $data = PropActiveConcession::select('prop_active_concessions.id', 'role_name', 'application_no')
+                        ->join('wf_roles', 'wf_roles.id', 'prop_active_concessions.current_role')
+                        ->where('property_id', $propertyId)
+                        ->where('prop_active_concessions.status', 1)
+                        ->first();
+                    break;
+                case 'Objection':
+                    $data = PropActiveObjection::select('prop_active_objections.id', 'role_name', 'objection_no as application_no')
+                        ->join('wf_roles', 'wf_roles.id', 'prop_active_objections.current_role')
+                        ->where('property_id', $propertyId)
+                        ->where('prop_active_objections.status', 1)
+                        ->first();
+                    break;
+                case 'Harvesting':
+                    $data = PropActiveHarvesting::select('prop_active_harvestings.id', 'role_name', 'application_no')
+                        ->join('wf_roles', 'wf_roles.id', 'prop_active_harvestings.current_role')
+                        ->where('property_id', $propertyId)
+                        ->where('prop_active_harvestings.status', 1)
+                        ->first();
+                    break;
+            }
+            if ($data) {
+                $msg['id'] = $data->id;
+                $msg['inWorkflow'] = true;
+                $msg['currentRole'] = $data->role_name;
+                $msg['message'] = "The application is still in workflow and pending at " . $data->role_name . ". Please Track your application with " . $data->application_no;
+            } else
+                $msg['inWorkflow'] = false;
+
+            return responseMsgs(true, 'Data Updated', $msg, '010801', '01', '', 'Post', '');
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Get the Property LatLong for Heat map
+     * | Using wardId used in dashboard data 
+     * | @param req
         | For MVP testing
      */
     public function getpropLatLong(Request $req)
     {
+        $req->validate([
+            'wardId' => 'required|integer',
+        ]);
         try {
-            $req->validate([
-                'wardId' => 'required|integer',
-            ]);
             $mPropProperty = new PropProperty();
             $propDetails = $mPropProperty->getPropLatlong($req->wardId);
             $propDetails = collect($propDetails)->map(function ($value) {
 
-                $currentDate = Carbon::now();
+                $currentDate = Carbon::now()->format('Y-04-01');
+                $refCurrentDate = Carbon::createFromFormat('Y-m-d', $currentDate);
                 $mPropDemand = new PropDemand();
 
                 $geoDate = strtotime($value['created_at']);
@@ -268,24 +348,24 @@ class PropertyController extends Controller
                 $path = $this->readDocumentPath($value['doc_path']);
                 # arrrer,current,paid
                 $refUnpaidPropDemands = $mPropDemand->getDueDemandByPropId($value['property_id']);
-                $checkPropDemand = collect($refUnpaidPropDemands)->first();
+                $checkPropDemand = collect($refUnpaidPropDemands)->last();
                 if (is_null($checkPropDemand)) {
-                    $currentStatus = 3;                                 // Static
-                    $statusName = "Arrear";                             // Static
+                    $currentStatus = 3;                                                             // Static
+                    $statusName = "No Dues";                                                         // Static
                 }
                 if ($checkPropDemand) {
-                    $lastDemand = collect($refUnpaidPropDemands)->first();
+                    $lastDemand = collect($refUnpaidPropDemands)->last();
                     if (is_null($lastDemand->due_date)) {
-                        $currentStatus = 3;                             // Static
-                        $statusName = "Arrear";                         // Static
+                        $currentStatus = 3;                                                         // Static
+                        $statusName = "No Dues";                                                     // Static
                     }
-                    $refDate = Carbon::createFromFormat('Y-m-d', $lastDemand->due_date)->toDateString();
-                    if ($currentDate < $refDate) {
-                        $currentStatus = 1;                             // Static
-                        $statusName = "No Dues";                        // Static
+                    $refDate = Carbon::createFromFormat('Y-m-d', $lastDemand->due_date);
+                    if ($refDate < $refCurrentDate) {
+                        $currentStatus = 1;                                                         // Static
+                        $statusName = "Arrear";                                                    // Static
                     } else {
-                        $currentStatus = 2;                             // Static
-                        $statusName = "Current Dues";                   // Static
+                        $currentStatus = 2;                                                         // Static
+                        $statusName = "Current Dues";                                               // Static
                     }
                 }
                 $value['statusName'] = $statusName;
@@ -297,10 +377,9 @@ class PropertyController extends Controller
                 }
                 $value['full_doc'] = !empty(trim($value['doc_path'])) ? $path : null;
                 return $value;
-            })
-                ->filter(function ($refValues) {
-                    return $refValues['new_holding_no'] != null;
-                });
+            })->filter(function ($refValues) {
+                return $refValues['new_holding_no'] != null;
+            });
             return responseMsgs(true, "latLong Details", remove_null($propDetails), "", "01", ".ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", $req->deviceId);
@@ -308,7 +387,7 @@ class PropertyController extends Controller
     }
     public function readRefDocumentPath($path)
     {
-        $path = ("http://smartulb.co.in/RMCDMC/getImageLink.php?path=" . "/" . $path);
+        $path = ("https://smartulb.co.in/RMCDMC/getImageLink.php?path=" . "/" . $path);                      // Static
         return $path;
     }
     public function readDocumentPath($path)

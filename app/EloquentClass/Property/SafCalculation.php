@@ -158,18 +158,7 @@ class SafCalculation
 
         $this->readParamRentalRate();                                                           // Read Rental Rate (1.1.3)
 
-        // Check If the one of the floors is commercial for Building
-        if ($this->_propertyDetails['propertyType'] != $this->_vacantPropertyTypeId) {
-            $readCommercial = collect($this->_floors)->where('useType', '!=', 1)
-                ->where('useType', '!=', $this->_religiousPlaceUsageType);
-            $this->_isResidential = $readCommercial->isEmpty();
-        }
-
-        // Check if the vacant land is residential or not
-        if ($propertyDetails['propertyType'] == $this->_vacantPropertyTypeId) {
-            $condition = $propertyDetails['isMobileTower'] == true || $propertyDetails['isHoardingBoard'] == true;
-            $this->_isResidential = $condition ? false : true;
-        }
+        $this->ifPropLateAssessed();
 
         $this->_rentalValue = $this->readRentalValue();
         $this->_multiFactors = $this->readMultiFactor();                                                            // Calculation of Rental rate and Storing in Global Variable (function 1.1.1)
@@ -228,6 +217,26 @@ class SafCalculation
             $this->_isTrustVerified = $this->_propertyDetails['isTrustVerified'] = 1;
 
         $this->ifPropPoint20Taxed();   // Check if the Property consists 0.20 % Tax Percentage or Not      // (1.1.7)
+    }
+
+    /**
+     * | Check if Property Late Assessed Or Not
+     */
+    public function ifPropLateAssessed()
+    {
+        // Check If the one of the floors is commercial for Building
+        if ($this->_propertyDetails['propertyType'] != $this->_vacantPropertyTypeId) {
+            $readCommercial = collect($this->_floors)
+                ->where('useType', '!=', 1)
+                ->where('useType', '!=', $this->_religiousPlaceUsageType);
+            $this->_isResidential = $readCommercial->isEmpty();
+        }
+
+        // Check if the vacant land is residential or not
+        if ($this->_propertyDetails['propertyType'] == $this->_vacantPropertyTypeId) {
+            $condition = $this->_propertyDetails['isMobileTower'] == true || $this->_propertyDetails['isHoardingBoard'] == true;
+            $this->_isResidential = $condition ? false : true;
+        }
     }
 
     /**
@@ -575,7 +584,8 @@ class SafCalculation
             $dateTo = Carbon::now();
             $readRuleSet = $this->readRuleSet($dateFrom, $key);
             $carbonDateFrom = Carbon::parse($dateFrom)->format('Y-m-d');
-            $carbonDateUpto = readFinancialDueQuarter($dateTo);
+            $carbonDateUpto = $dateTo->endOfYear()->addMonths(3);           // Get The Full Financial Year
+            $carbonDateUpto = $carbonDateUpto->format('Y-m-d');
         }
 
         if (is_numeric($key)) {                                                 // i.e. Floors
@@ -592,13 +602,12 @@ class SafCalculation
 
             $carbonDateUpto = Carbon::parse($readDateUpto)->format('Y-m-d');
 
-            if ($readDateFrom >= $this->_virtualDate) {
-                $dateFrom = $readDateFrom;
-            }
+            if ($readDateFrom >= $this->_virtualDate)
+                $carbonDateFrom = $readDateFrom;
 
-            if ($readDateFrom < $this->_virtualDate) {
-                $dateFrom = $this->_virtualDate;
-            }
+
+            if ($readDateFrom < $this->_virtualDate)                                // Get Back to 12 Years
+                $carbonDateFrom = $this->_virtualDate;
         }
 
         // Itteration for the RuleSets dateFrom wise 
@@ -1213,6 +1222,8 @@ class SafCalculation
         // Check Late Assessment Penalty for Vacant Land
         if ($this->_propertyDetails['propertyType'] == $this->_vacantPropertyTypeId) {
             $currentDate = Carbon::now();
+            if (!isset($this->_propertyDetails['landOccupationDate']))
+                throw new Exception("Property Land Occupancy Date Not Available");
             $dateFrom = Carbon::createFromFormat('Y-m-d', $this->_propertyDetails['landOccupationDate']);
             $floorAhead3Months = $dateFrom->addMonth(3)->format('Y-m-d');
             $this->_lateAssessmentStatus = $currentDate >= $floorAhead3Months;

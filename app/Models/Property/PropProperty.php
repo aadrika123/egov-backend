@@ -146,6 +146,7 @@ class PropProperty extends Model
             'prop_properties.corr_address',
             'prop_properties.apartment_details_id',
             'prop_properties.area_of_plot as total_area_in_desimal',
+            'prop_properties.prop_type_mstr_id',
             'ulb_ward_masters.ward_name as old_ward_no',
             'u.ward_name as new_ward_no',
         )
@@ -176,6 +177,7 @@ class PropProperty extends Model
             'prop_properties.corr_address',
             'prop_properties.apartment_details_id',
             'prop_properties.area_of_plot as total_area_in_desimal',
+            'prop_properties.prop_type_mstr_id',
             'ulb_ward_masters.ward_name as old_ward_no',
             'u.ward_name as new_ward_no',
         )
@@ -301,7 +303,11 @@ class PropProperty extends Model
             'petrol_pump_completion_date' => $fieldVerifiedSaf->petrol_pump_completion_date,
             'is_water_harvesting' => $fieldVerifiedSaf->has_water_harvesting,
             'new_ward_mstr_id' => $fieldVerifiedSaf->new_ward_id,
-            'ulb_id' => $fieldVerifiedSaf->ulb_id
+            'ulb_id' => $fieldVerifiedSaf->ulb_id,
+            'road_width' => $fieldVerifiedSaf->road_width,
+            'gb_usage_types' => $fieldVerifiedSaf->gb_usage_types,
+            'gb_prop_usage_types' => $fieldVerifiedSaf->gb_prop_usage_types,
+            'rwh_date_from' => $fieldVerifiedSaf->rwh_date_from,
         ];
         $property->update($reqs);
     }
@@ -380,6 +386,10 @@ class PropProperty extends Model
             'gb_office_name' => $req->gb_office_name,
             'gb_usage_types' => $req->gb_usage_types,
             'gb_prop_usage_types' => $req->gb_prop_usage_types,
+            'is_trust' => $req->is_trust,
+            'trust_type' => $req->trust_type,
+            'is_trust_verified' => $req->is_trust_verified,
+            'rwh_date_from' => $req->rwh_date_from
         ];
         return $reqs;
     }
@@ -404,6 +414,7 @@ class PropProperty extends Model
         return PropProperty::select('*')
             ->where('holding_no', $req->holdingNo)
             ->orWhere('new_holding_no', $req->holdingNo)
+            ->orWhere('pt_no', $req->holdingNo)
             ->where('ulb_id', $req->ulbId)
             ->first();
     }
@@ -531,7 +542,7 @@ class PropProperty extends Model
     /**
      * | Search Property
      */
-    public function searchProperty()
+    public function searchProperty($ulbId)
     {
         return PropProperty::select(
             'prop_properties.id',
@@ -558,7 +569,8 @@ class PropProperty extends Model
                            ) as geotag"), function ($join) {
                 $join->on("geotag.saf_id", "=", "prop_properties.saf_id");
             })
-            ->leftjoin('prop_owners', 'prop_owners.property_id', 'prop_properties.id');
+            ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id');
+        // ->where('prop_properties.ulb_id', $ulbId);
     }
 
     /**
@@ -626,6 +638,7 @@ class PropProperty extends Model
             'ulb_name as ulb',
             'prop_properties.holding_no',
             'prop_properties.new_holding_no',
+            'prop_properties.pt_no',
             'ward_name',
             'prop_address',
             'prop_properties.status',
@@ -652,7 +665,9 @@ class PropProperty extends Model
     }
 
 
-
+    /**
+     * | Get details according to ward for heat map
+     */
     public function getPropLatlong($wardId)
     {
         return PropProperty::select(
@@ -667,13 +682,12 @@ class PropProperty extends Model
             'prop_saf_geotag_uploads.created_at',
             DB::raw("concat(relative_path,'/',image_path) as doc_path"),
         )
-            ->join('prop_saf_geotag_uploads', 'prop_saf_geotag_uploads.saf_id', '=', 'prop_properties.id')
-
+            ->join('prop_saf_geotag_uploads', 'prop_saf_geotag_uploads.saf_id', '=', 'prop_properties.saf_id')
             ->where('prop_properties.ward_mstr_id', $wardId)
             ->where('prop_properties.holding_no', '!=', null)
             ->orderByDesc('prop_properties.id')
             ->skip(0)
-            ->take(200)
+            ->take(4000)
             ->get();
     }
 

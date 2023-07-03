@@ -17,7 +17,7 @@ class MCity extends Model
     {
         return DB::table("ulb_masters")
             ->select("ulb_masters.*", "c.city_name", "s.name")
-            ->join("m_cities as c", 'c.id', '=', 'ulb_masters.city_id')
+            ->join("m_cities as c", 'c.ulb_id', '=', 'ulb_masters.id')
             ->join("m_states as s", "s.id", '=', 'c.state_id')
             ->where("ulb_masters.id", $ulbId)
             ->first();

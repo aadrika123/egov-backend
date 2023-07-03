@@ -25,6 +25,7 @@ use App\Models\Property\PropSafVerification;
 use App\Models\Property\PropTax;
 use App\Models\Property\PropTranDtl;
 use App\Models\Property\PropTransaction;
+use App\Models\UlbMaster;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfWorkflowrolemap;
@@ -173,6 +174,8 @@ class ActiveSafControllerV2 extends Controller
             $mPropSafMemoDtl = new PropSafMemoDtl();
             $propSafTax = new PropSafTax();
             $propTax = new PropTax();
+            $mPropProperty = new PropProperty();
+            $mUlbMaster = new UlbMaster();
 
             $details = $mPropSafMemoDtl->getMemoDtlsByMemoId($req->memoId);
             if (collect($details)->isEmpty())
@@ -180,7 +183,7 @@ class ActiveSafControllerV2 extends Controller
 
             if (collect($details)->isEmpty())
                 throw new Exception("Memo Details Not Available");
-
+            $properties = $mPropProperty::find($details[0]->prop_id);
             $details = collect($details)->first();
             $taxTable = collect($details)->only(['holding_tax', 'water_tax', 'latrine_tax', 'education_cess', 'health_cess', 'rwh_penalty']);
             $details->taxTable = $this->generateTaxTable($taxTable);
@@ -210,7 +213,7 @@ class ActiveSafControllerV2 extends Controller
                     $diffAmt = $ulbVerifiedQuarterlyTaxes - $selfAssessQuaterlyTax;
                     if (substr($ulbTax->fyear, 5) >= 2023 && $ulbTax->qtr >= 1)
                         $particulars = "Holding Tax @ 0.075% or 0.15% or 0.2%";         // Ruleset1
-                    if (substr($ulbTax->fyear, 5) >= 2017 && $ulbTax->qtr >= 1)
+                    elseif (substr($ulbTax->fyear, 5) >= 2017 && $ulbTax->qtr >= 1)
                         $particulars = "Holding Tax @ 2%";                              // Ruleset2
                     else
                         $particulars = "Holding Tax @ 43.75% or 38.75%";                // Ruleset3
@@ -240,7 +243,8 @@ class ActiveSafControllerV2 extends Controller
                 $details->rule = substr($details->from_fyear, 5) >= 2023 ? "Capital Value Rule, property tax" : "Annual Rent Value Rule, annual rent value";
                 $details->taxTable = $holdingTaxes->merge([$total])->values();
             }
-
+            // Get Ulb Details
+            $details->ulbDetails = $mUlbMaster->getUlbDetails($properties->ulb_id ?? 2);
             return responseMsgs(true, "", remove_null($details), "011803", 1.0, responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011803", 1.0, responseTime(), "POST", $req->deviceId);
@@ -292,11 +296,23 @@ class ActiveSafControllerV2 extends Controller
                     ->where('prop_properties.new_holding_no', $holdingNo)
                     ->first();
             }
+
+            if (!$prop) {
+                $prop = $mPropProperty->searchHoldingNo($ulbId)
+                    ->where('prop_properties.pt_no', $holdingNo)
+                    ->first();
+            }
+
             if (!$prop)
                 throw new Exception("Enter Valid Holding No.");
 
-            $owner = $mPropOwners->firstOwner($prop->first()['id']);
+            $owner = $mPropOwners->firstOwner($prop['id']);
+            $owner = [
+                "owner_name" => $owner->owner_name,
+                "mobile_no" => $owner->mobile_no
+            ];
             $data[] = collect($prop)->merge($owner);
+
 
             return responseMsgs(true, "Holding Details", $data, 010124, 1.0, "308ms", "POST", $req->deviceId);
         } catch (Exception $e) {

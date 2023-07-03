@@ -546,4 +546,18 @@ if (!function_exists("responseTime")) {
         $responseTime = (microtime(true) - LARAVEL_START) * 1000;
         return round($responseTime, 2);
     }
+
+
+    /**
+     * | Convert YMD format to dmy
+     */
+    if (!function_exists("ymdToDmyDate")) {
+        function ymdToDmyDate($date)
+        {
+            if (isset($date)) {
+                $parsedDate = Carbon::parse($date)->format('d-m-Y');
+                return $parsedDate;
+            }
+        }
+    }
 }

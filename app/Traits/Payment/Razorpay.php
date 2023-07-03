@@ -12,6 +12,7 @@ use Illuminate\Support\Str;
 use Razorpay\Api\Errors\SignatureVerificationError;
 use App\Models\Payment\CardDetail;
 use App\Models\Payment\WebhookPaymentData;
+use App\Models\Workflows\WfWorkflow;
 use App\Repository\Property\Concrete\SafRepository;
 use App\Repository\Property\Interfaces\iSafRepository;
 use App\Repository\Trade\Trade;
@@ -20,6 +21,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -50,12 +52,24 @@ trait Razorpay
 
     public function saveGenerateOrderid($request)
     {
+        $request->validate([
+            'id'            => 'required|integer',
+            'amount'        => 'required|',
+            'workflowId'    => 'required|',
+        ]);
+
         try {
-            $mUserID        = auth()->user()->id ?? $request->ghostUserId;
-            $mUlbID         = $request["ulbId"] ?? "2";                                             // user Id
-            $refRazorpayId  = Config::get('razorpay.RAZORPAY_ID');
-            $refRazorpayKey = Config::get('razorpay.RAZORPAY_KEY');
-            $mReciptId      = Str::random(10);                                                      // Static recipt ID
+            $mWfWorkflow    = new WfWorkflow();
+            $wfReq = new Request([
+                'id' => $request->workflowId
+            ]);
+
+            $userId             = auth()->user()->id ?? $request->ghostUserId;
+            $workflowDetails    = $mWfWorkflow->listbyId($wfReq);
+            $ulbId              = $workflowDetails->ulb_id;                                           // ulbId
+            $refRazorpayId      = Config::get('razorpay.RAZORPAY_ID');
+            $refRazorpayKey     = Config::get('razorpay.RAZORPAY_KEY');
+            $mReciptId          = Str::random(15);                                                      // Static recipt ID
 
             $mApi = new Api($refRazorpayId, $refRazorpayKey);
             $mOrder = $mApi->order->create(array(
@@ -69,8 +83,8 @@ trait Razorpay
                 'orderId'       => $mOrder['id'],
                 'amount'        => $request->all()['amount'],
                 'currency'      => 'INR',                                                           // Static
-                'userId'        => $mUserID,
-                'ulbId'         => $mUlbID,
+                'userId'        => $userId,
+                'ulbId'         => $ulbId,
                 'workflowId'    => $request->workflowId,
                 'applicationId' => $request->id,
                 'departmentId'  => $request->departmentId,
@@ -78,7 +92,7 @@ trait Razorpay
             ];
 
             $saveRequestObj = new PaymentRequest();
-            $saveRequestObj->saveRazorpayRequest($mUserID, $mUlbID, $Returndata['orderId'], $request);
+            $saveRequestObj->saveRazorpayRequest($userId, $ulbId, $Returndata['orderId'], $request);
 
             return $Returndata;
         } catch (Exception $error) {

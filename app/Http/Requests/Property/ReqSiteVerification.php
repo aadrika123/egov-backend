@@ -42,6 +42,10 @@ class ReqSiteVerification extends FormRequest
             'petrolPump.dateFrom' => 'required_if:isPetrolPump,1',
             'isWaterHarvesting' => 'required|bool',
         ];
+
+        if ($this->isWaterHarvesting == true)
+            $validation = array_merge($validation, ['rwhDateFrom' => 'required|date|date_format:Y-m-d|before_or_equal:' . $mNowDate]);
+
         if ($this->propertyType != 4) {
             $validation = array_merge($validation, [
                 'floor' => 'required|array',
@@ -51,8 +55,8 @@ class ReqSiteVerification extends FormRequest
                 'floor.*.constructionType' => 'required|integer',
                 'floor.*.occupancyType' => 'required|integer',
                 'floor.*.buildupArea' => 'required|numeric',
-                'floor.*.dateFrom' => 'required|date|date_format:Y-m-d|before_or_equal:' . $mNowDate,
-                'floor.*.dateUpto' => 'nullable|date|date_format:Y-m-d|before_or_equal:' . $mNowDate,
+                'floor.*.dateFrom' => 'required|date|before_or_equal:' . $mNowDate,
+                'floor.*.dateUpto' => 'nullable|date|before_or_equal:' . $mNowDate,
             ]);
         }
         return $validation;

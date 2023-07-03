@@ -49,6 +49,7 @@ class PropTransaction extends Model
         return DB::table('prop_transactions')
             ->select(
                 'prop_transactions.*',
+                DB::raw("TO_CHAR(prop_transactions.tran_date,'dd-mm-YYYY') as tran_date"),
                 'a.saf_no',
                 'p.holding_no',
                 DB::raw("CASE
@@ -69,7 +70,7 @@ class PropTransaction extends Model
         return $this->getPropTransTrait()
             ->where('prop_transactions.citizen_id', $citizenId)
             ->orderByDesc('prop_transactions.id')
-            ->get();
+            ->first();
     }
 
     // Get Property Transaction by User Id
@@ -195,7 +196,7 @@ class PropTransaction extends Model
         $propTrans->to_fyear = collect($demands)->last()['fyear'];
         $propTrans->from_qtr = collect($demands)->first()['qtr'];
         $propTrans->to_qtr = collect($demands)->last()['qtr'];
-        $propTrans->demand_amt = collect($demands)->sum('amount');
+        $propTrans->demand_amt = collect($demands)->sum('balance');
         $propTrans->tran_by_type = $req['tranBy'];
         $propTrans->verify_status = $req['verifyStatus'];
         $propTrans->save();

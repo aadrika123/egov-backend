@@ -38,6 +38,7 @@ use App\Models\Workflows\WfRoleusermap;
 use App\Repository\Water\Concrete\WaterNewConnection;
 use App\Traits\Payment\Razorpay;
 use App\Traits\Ward;
+use App\Traits\Water\WaterTrait;
 use App\Traits\Workflow\Workflow;
 use Carbon\Carbon;
 use DateTime;
@@ -62,6 +63,7 @@ class WaterPaymentController extends Controller
     use Ward;
     use Workflow;
     use Razorpay;
+    use WaterTrait;
 
     // water Constant
     private $_waterRoles;
@@ -273,6 +275,7 @@ class WaterPaymentController extends Controller
             $mAccDescription    = $this->_accDescription;
             $mDepartmentSection = $this->_departmentSection;
             $mPaymentModes      = $this->_paymentModes;
+            $mSearchForRebate   = Config::get("waterConstaint.PENALTY_HEAD");
 
             # transaction Deatils
             $transactionDetails = $mWaterTran->getTransactionByTransactionNo($refTransactionNo)
@@ -300,7 +303,10 @@ class WaterPaymentController extends Controller
                 $totalPenaltyAmount = collect($refPenalty)->sum('balance_amount');
 
                 # check and find for rebate
-                // $refRebaterDetails = $mWaterTranFineRebate->
+                $refRebaterDetails = $mWaterTranFineRebate->getFineRebate($applicationDetails['id'], $mSearchForRebate['4'], $transactionDetails['id'])->first();
+                if (!is_null($refRebaterDetails)) {
+                    $rebateAmount = $refRebaterDetails['amount'];
+                }
             }
 
             # Transaction Date
@@ -334,7 +340,7 @@ class WaterPaymentController extends Controller
                 "logo"                  => $applicationDetails['logo'],
                 "towards"               => $mTowards,
                 "description"           => $mAccDescription,
-                "rebate"                => 0,                                                           // Static
+                "rebate"                => $rebateAmount ?? 0,                                                           // Static
                 "connectionFee"         => $connectionCharges['conn_fee'] ?? 0,
                 "totalPaidAmount"       => $transactionDetails->amount,
                 "penaltyAmount"         => $totalPenaltyAmount ?? 0,
@@ -448,7 +454,7 @@ class WaterPaymentController extends Controller
             throw new Exception("You are not Junier Enginer!");
         }
         if ($waterDetails->current_role != $waterRoles['JE']) {
-            throw new Exception("Application Is Not under Junier Injiner!");
+            throw new Exception("Application Is Not under Junier Enginer!");
         }
         if ($waterDetails->is_field_verified == true) {
             throw new Exception("Application's site is Already Approved!");
@@ -961,13 +967,15 @@ class WaterPaymentController extends Controller
             }
             # Water Transactions
             $req->merge([
-                'userId'    => $userId,
-                'userType'  => $userType,
-                'todayDate' => $todayDate->format('Y-m-d'),
-                'tranNo'    => $tranNo,
-                'id'        => $req->applicationId,
-                'ulbId'     => $user->ulb_id,
-                'isJsk'     => true                                                                 // Static
+                'userId'        => $userId,
+                'userType'      => $userType,
+                'todayDate'     => $todayDate->format('Y-m-d'),
+                'tranNo'        => $tranNo,
+                'id'            => $req->applicationId,
+                'ulbId'         => $user->ulb_id,
+                'isJsk'         => true,                                                                // Static
+                'penaltyIds'    => $refCharges['penaltyIds'] ?? null,
+                'isPenalty'     => $refCharges['isPenalty']
             ]);
 
             DB::beginTransaction();
@@ -1017,6 +1025,8 @@ class WaterPaymentController extends Controller
 
     /**
      * | Save the regulization second payament details 
+     * | if the payment for the regularization is done in installment
+        | Serial No : 07:06
      */
     public function saveRegulaizePaymentStatus($req, $offlinePaymentModes, $waterTrans)
     {
@@ -1045,6 +1055,9 @@ class WaterPaymentController extends Controller
 
     /**
      * | Check for the payment done 
+     * | @param req
+        | Check if the charges id not present 
+        | Serial No : 07:05
      */
     public function checkForCharges($req)
     {
@@ -1065,50 +1078,6 @@ class WaterPaymentController extends Controller
                 throw new Exception("All Payment is done for penalty as well!");
             }
         }
-    }
-
-
-
-    /**
-     * | Save Rebate details for water connection
-     * | only in terms of regulisation
-     * | @param req
-     * | @param charges
-     * | @param waterTrans
-        | Serial No : 07.05
-        | Not Tested
-        | Check the code 
-        | Common function
-     */
-    public function saveRebateForTran($req, $charges, $waterTrans)
-    {
-        $transactionId              = $waterTrans['id'];
-        $mWaterTranFineRebate       = new WaterTranFineRebate();
-        $mWaterPenaltyInstallment   = new WaterPenaltyInstallment();
-        $refWaterHeadName           = Config::get("waterConstaint.WATER_HEAD_NAME");
-
-        $connectionChargeId = collect($charges)->pluck('id')->first();
-        $penaltyDetails = $mWaterPenaltyInstallment->getPenaltyByChargeId($connectionChargeId)->get();
-
-        collect($penaltyDetails)->map(function ($value)
-        use ($mWaterTranFineRebate, $req, $transactionId) {
-            $metaRequest = new Request([
-                "headName"      => $value['penalty_head'],
-                "amount"        => $value['balance_amount'],
-                "applicationId" => $req->applicationId,
-                "valueAddMinus" => "+"                                                          // Static
-            ]);
-            $mWaterTranFineRebate->saveRebateDetails($metaRequest, $transactionId);
-        });
-        $refPenalty = collect($charges)->pluck('penalty')->first();
-        $actualPenaltyAmountRebate = (10 / 100 * $refPenalty);
-        $metaRequest = new Request([
-            "headName"      => $refWaterHeadName['1'],
-            "amount"        => $actualPenaltyAmountRebate,
-            "applicationId" => $req->applicationId,
-            "valueAddMinus" => "-"                                                              // Static
-        ]);
-        $mWaterTranFineRebate->saveRebateDetails($metaRequest, $transactionId);
     }
 
 
@@ -1193,6 +1162,7 @@ class WaterPaymentController extends Controller
         $mWaterConnectionCharge     = new WaterConnectionCharge();
         $paramChargeCatagory        = Config::get('waterConstaint.CHARGE_CATAGORY');
         $connectionTypeIdConfig     = Config::get('waterConstaint.CONNECTION_TYPE');
+        $isPenalty                  = null;
 
         switch ($req) {
                 # In Case of Residential payment Offline
@@ -1202,8 +1172,11 @@ class WaterPaymentController extends Controller
                 }
                 switch ($req) {
                     case ($req->isInstallment == "yes"):
-                        $penaltyIds = $req->penaltyIds;
-                        $refPenallty = $mWaterPenaltyInstallment->getPenaltyByArrayOfId($penaltyIds);
+                        $penaltyIds         = $req->penaltyIds;
+                        $returnPenaltyIds   = implode(",", $penaltyIds);
+                        $refPenallty        = $mWaterPenaltyInstallment->getPenaltyByArrayOfId($penaltyIds);
+                        $isPenalty          = 0;
+
                         $checkPenalty = collect($refPenallty)->first();
                         if (is_null($checkPenalty)) {
                             throw new Exception("Penalty Details not found!");
@@ -1231,6 +1204,7 @@ class WaterPaymentController extends Controller
                         if ($refPenaltySumAmount != ($req->amount - ($refAmount ?? 0))) {
                             throw new Exception("Respective Penalty Amount Not Matched!");
                         }
+
                         break;
                     case ($req->isInstallment == "no"): # check <-------------- calculation 
                         $actualCharge = $mWaterConnectionCharge->getWaterchargesById($req->applicationId)
@@ -1259,6 +1233,10 @@ class WaterPaymentController extends Controller
                         if ($actualCharge['conn_fee'] != $chargeAmount) {
                             throw new Exception("Connection fee not matched!");
                         }
+
+                        $refPenaltyIds = collect($refPenallty)->pluck("id");
+                        $returnPenaltyIds = implode(',', $refPenaltyIds->toArray());
+                        $isPenalty = 0;
                         # save penalty and rebate details 
                         # write code to track the rebate and the penalty
                         break;
@@ -1303,7 +1281,9 @@ class WaterPaymentController extends Controller
                 break;
         }
         return [
-            'charges' => $actualCharge
+            'charges'       => $actualCharge,
+            'penaltyIds'    => $returnPenaltyIds ?? null,
+            'isPenalty'     => $isPenalty
         ];
     }
 
@@ -1379,6 +1359,12 @@ class WaterPaymentController extends Controller
         $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
         switch ($req) {
             case (!empty($req->penaltyIds)):
+                if (!is_array($req->penaltyIds)) {
+                    $arrayPenalty = explode(",", $req->penaltyIds);
+                    $req->merge([
+                        "penaltyIds" => $arrayPenalty
+                    ]);
+                }
                 $mWaterPenaltyInstallment->updatePenaltyPayment($req->penaltyIds);
                 break;
 

@@ -156,9 +156,8 @@ class WaterTran extends Model
         $waterTrans->pg_response_id     = $req['pgResponseId'] ?? null;
         $waterTrans->pg_id              = $req['pgId'] ?? null;
         if ($req->penaltyIds) {
-            $refPenaltyIds              = explode(",", $req->penaltyIds);
-            $waterTrans->pg_id          = $refPenaltyIds;
-            $waterTrans->is_penalty     = 1;                                            // Static
+            $waterTrans->penalty_ids    = $req->penaltyIds;
+            $waterTrans->is_penalty     = $req->isPenalty;
         }
         $waterTrans->save();
 

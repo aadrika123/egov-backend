@@ -348,6 +348,7 @@ class TradeCitizenController extends Controller
             $TradeRazorPayRequest->save();
 
             $temp["requestId"]  = $TradeRazorPayRequest->id;
+            $temp["applicationNo"]  = $refLecenceData->application_no;
             $temp['name']       = $refUser->user_name;
             $temp['mobile']     = $refUser->mobile;
             $temp['email']      = $refUser->email;
@@ -900,6 +901,10 @@ class TradeCitizenController extends Controller
                     {
                         $option[]="AMENDMENT";
                         $option[]="SURRENDER";
+                    }
+                    if(trim($val->license_type)=="approved" && $val->pending_status == 5 && $val->application_type_id == 4 && $validUpto >= Carbon::now()->format('Y-m-d'))
+                    {                    
+                        $option=[];
                     }
                     $val->option = $option;
                     return $val;

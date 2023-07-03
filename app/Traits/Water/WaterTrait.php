@@ -3,6 +3,11 @@
 namespace App\Traits\Water;
 
 use App\Models\Water\WaterApplication;
+use App\Models\Water\WaterPenaltyInstallment;
+use App\Models\Water\WaterTranFineRebate;
+use Exception;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Config;
 
 /**
  * Created By-Sam kerketta
@@ -66,5 +71,51 @@ trait WaterTrait
                 AND water_consumer_demands.demand_upto <= '$uptoDate'
                 AND  ulb_id = '$ulbId'";
         return $raw;
+    }
+
+    /**
+     * | Save Rebate details for water connection
+     * | only in terms of regulisation
+     * | @param req
+     * | @param charges
+     * | @param waterTrans
+        | Serial No : 07.05
+        | Not Tested
+        | Check the code 
+        | Common function
+     */
+    public function saveRebateForTran($req, $charges, $waterTrans)
+    {
+        $transactionId              = $waterTrans['id'];
+        $mWaterTranFineRebate       = new WaterTranFineRebate();
+        $mWaterPenaltyInstallment   = new WaterPenaltyInstallment();
+        $refWaterHeadName           = Config::get("waterConstaint.WATER_HEAD_NAME");
+
+        $connectionChargeId = collect($charges)->pluck('id')->first();
+        $penaltyDetails = $mWaterPenaltyInstallment->getPenaltyByChargeId($connectionChargeId)->get();
+        $checkPenalty = collect($penaltyDetails)->first();
+        if (!$checkPenalty) {
+            throw new Exception("penalty details not found or there is false data!");
+        }
+
+        collect($penaltyDetails)->map(function ($value)
+        use ($mWaterTranFineRebate, $req, $transactionId) {
+            $metaRequest = new Request([
+                "headName"      => $value['penalty_head'],
+                "amount"        => $value['balance_amount'],
+                "applicationId" => $req->applicationId,
+                "valueAddMinus" => "+"                                                          // Static
+            ]);
+            $mWaterTranFineRebate->saveRebateDetails($metaRequest, $transactionId);
+        });
+        $refPenalty = collect($charges)->pluck('penalty')->first();
+        $actualPenaltyAmountRebate = (10 / 100 * $refPenalty);
+        $metaRequest = new Request([
+            "headName"      => $refWaterHeadName['1'],
+            "amount"        => $actualPenaltyAmountRebate,
+            "applicationId" => $req->applicationId,
+            "valueAddMinus" => "-"                                                              // Static
+        ]);
+        $mWaterTranFineRebate->saveRebateDetails($metaRequest, $transactionId);
     }
 }

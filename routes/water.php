@@ -51,7 +51,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('get-upload-documents', 'getUploadDocuments');                                      // Workflow/Citizen  
 
         # Admin / Citizen view
-        Route::Post('application/delete', 'deleteWaterApplication');                                    // Citizen     
+        Route::post('application/delete', 'deleteWaterApplication');                                    // Citizen     
         Route::post('application/get-by-id', 'getApplicationDetails');                                  // Citizen
         Route::post('citizen/get-doc-list', 'getDocToUpload');                                          // Citizen  
         Route::post('application/edit', 'editWaterAppliction');                                         // Citizen/Admin

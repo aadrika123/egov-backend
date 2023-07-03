@@ -25,7 +25,8 @@ return [
 
     "PARAM_IDS" => [
         "WAPP" => 15,
-        "WCON" => 16
+        "WCON" => 16,
+        "TRN" => 37
     ],
     "ACCOUNT_DESCRIPTION" => "Water",
     "DEPARTMENT_SECTION" => "Revenue Section",
@@ -115,7 +116,8 @@ return [
     "PENALTY_HEAD" => [
         "1" => "1 Installment",
         "2" => "2 Installment",
-        "3" => "3 Installment"
+        "3" => "3 Installment",
+        "4" => "Installment Rebate",
     ],
 
     "USER_TYPE" => [

@@ -43,10 +43,11 @@ class PropSafVerification extends Model
                 'v.ulb_id',
                 'v.old_verification_id',
                 'v.road_width',
+                'v.rwh_date_from',
                 'p.property_type',
                 'r.road_type as road_type_master',
                 'u.ward_name as old_ward_no',
-                'u.ward_name as new_ward_no',
+                'u1.ward_name as new_ward_no',
                 'building_type',
                 'prop_usage_type'
             )
@@ -76,20 +77,20 @@ class PropSafVerification extends Model
             'ward_id' => $req->wardId,
             'new_ward_id' => $req->newWardId,
             'has_mobile_tower' => $req->isMobileTower,
-            'tower_area' => $req->mobileTowerArea,
-            'tower_installation_date' => $req->mobileTowerDate,
+            'tower_area' => $req->mobileTower['area'],
+            'tower_installation_date' => $req->mobileTower['dateFrom'],
             'has_hoarding' => $req->isHoardingBoard,
-            'hoarding_area' => $req->hoardingArea,
-            'hoarding_installation_date' => $req->hoardingDate,
+            'hoarding_area' => $req->hoardingBoard['area'],
+            'hoarding_installation_date' => $req->hoardingBoard['dateFrom'],
             'is_petrol_pump' => $req->isPetrolPump,
-            'underground_area' => $req->petrolPumpUndergroundArea,
-            'petrol_pump_completion_date' => $req->petrolPumpDate,
-            'has_water_harvesting' => $req->isHarvesting,
+            'underground_area' => $req->petrolPump['area'],
+            'petrol_pump_completion_date' => $req->petrolPump['dateFrom'],
+            'has_water_harvesting' => $req->isWaterHarvesting,
             'user_id' => $req->userId,
             'ulb_id' => $req->ulbId,
             'gb_usage_types' => $req->gbUsageTypes,
             'gb_prop_usage_types' => $req->gbPropUsageTypes,
-
+            'rwh_date_from' => $req->rwhDateFrom
         ];
 
         return PropSafVerification::create($metaReqs)->id;
@@ -117,6 +118,15 @@ class PropSafVerification extends Model
         $query = "SELECT *,v.id as id FROM prop_saf_verification_dtls AS v
                     JOIN (SELECT * FROM prop_saf_verifications WHERE saf_id=$safId AND ulb_verification=TRUE ORDER BY id DESC LIMIT 1) AS p ON p.id=v.verification_id
                     WHERE v.saf_id=$safId";
+        return DB::select($query);
+    }
+
+    /**
+     * | Get Verifications
+     */
+    public function getVerifications($safId)
+    {
+        $query = "SELECT * FROM prop_saf_verifications WHERE saf_id=$safId AND ulb_verification=TRUE ORDER BY id DESC LIMIT 1";
         return DB::select($query);
     }
 }
