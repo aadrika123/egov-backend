@@ -1286,6 +1286,7 @@ class Trade implements ITrade
                 'data' => $cardDetails
             ];
             $fullDetailsData["propId"]         = $licenseDetail->property_id;
+            $fullDetailsData["workflowId"]     = $licenseDetail->workflow_id;
             $fullDetailsData['application_no'] = $licenseDetail->application_no;
             $fullDetailsData['apply_date'] = $licenseDetail->application_date;
             $fullDetailsData['fullDetailsData']['dataArray'] = new Collection([$basicElement]);
