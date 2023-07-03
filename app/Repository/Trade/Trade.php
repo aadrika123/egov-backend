@@ -3592,7 +3592,7 @@ class Trade implements ITrade
         $path = (config('app.url') . '/api/getImageLink?path=' . $path);
         return $path;
     }
-    public function applicationStatus($licenceId)
+    public function applicationStatus($licenceId,$docChequ=true)
     {
         $refUser        = Auth()->user();
         $refUserId      = $refUser->id ?? 0;
@@ -3628,7 +3628,8 @@ class Trade implements ITrade
             $status = "Application pending at " . ($rols->role_name??"");
         } elseif (!$application->is_active) {
             $status = "Application rejected ";
-        } elseif (strtoupper($mUserType) == "ONLINE" && $application->citizen_id == $refUserId && $application->payment_status == 0) {
+        } 
+        elseif ($docChequ && strtoupper($mUserType) == "ONLINE" && $application->citizen_id == $refUserId && $application->payment_status == 0) {
             $request = new Request(["applicationId" => $licenceId, "ulb_id" => $refUlbId, "user_id" => $refUserId]);
             $doc_status = $this->checkWorckFlowForwardBackord($request);
             if ($doc_status && $application->payment_status == 0) {
@@ -3640,7 +3641,8 @@ class Trade implements ITrade
             } elseif (!$doc_status && $application->payment_status == 0) {
                 $status = "Payment is Pending And Document Not Uploaded";
             }
-        } elseif($application->payment_status==1 && $application->application_type_id==4){
+        } 
+        elseif($docChequ && $application->payment_status==1 && $application->application_type_id==4){
             $request = new Request(["applicationId" => $licenceId, "ulb_id" => $refUlbId, "user_id" => $refUserId]);
             $doc_status = $this->checkWorckFlowForwardBackord($request);
             if ($doc_status) {
@@ -3649,7 +3651,8 @@ class Trade implements ITrade
             else{
                 $status = "All Required Documents Are Not Uploaded ";
             }
-        } elseif ($application->payment_status == 0 && $application->document_upload_status == 0) {
+        } 
+        elseif ($application->payment_status == 0 && $application->document_upload_status == 0) {
             $status = "Payment is pending and document not uploaded ";
         } elseif ($application->payment_status == 1 && $application->document_upload_status == 0) {
             $status = "Payment is done but document not uploaded ";
@@ -3716,7 +3719,7 @@ class Trade implements ITrade
         $ulb_id = $user->ulb_id ?? $request->ulb_id;
         $refWorkflowId = $this->_WF_MASTER_Id;
         $allRolse = collect($this->_COMMON_FUNCTION->getAllRoles($user_id, $ulb_id, $refWorkflowId, 0, true));
-        $init_finish = $this->_COMMON_FUNCTION->iniatorFinisher($user_id, $ulb_id, $refWorkflowId);
+        // $init_finish = $this->_COMMON_FUNCTION->iniatorFinisher($user_id, $ulb_id, $refWorkflowId);
         $mUserType      = $this->_COMMON_FUNCTION->userType($refWorkflowId, $ulb_id);
         $fromRole = [];
         if (!empty($allRolse)) {

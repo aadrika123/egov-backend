@@ -460,7 +460,7 @@ class TradeCitizen implements ITradeCitizen
                     $option=[];
                 }
                 $val->option = $option;
-                $val->pending_at = $this->_REPOSITORY_TRADE->applicationStatus($val->id);                
+                $val->pending_at = $this->_REPOSITORY_TRADE->applicationStatus($val->id,false);                
                 if(str_contains(strtoupper($val->pending_at),strtoupper("All Required Documents Are Uploaded")))
                 {
                     $val->document_upload_status =1; 
