@@ -85,7 +85,7 @@ class PropSafMemoDtl extends Model
                             LEFT JOIN prop_safs_demands pd ON pd.fyear=d.from_fyear AND pd.qtr=d.from_qtr AND pd.saf_id=d.saf_id AND pd.status=1
                             LEFT JOIN (SELECT owner_name,guardian_name,saf_id,relation_type FROM prop_active_safs_owners ORDER BY id) AS o ON o.saf_id=d.saf_id
                             JOIN prop_active_safs AS s ON s.id=d.saf_id
-                            JOIN ulb_ward_masters AS u ON u.id=d.ward_mstr_id
+                            JOIN ulb_ward_masters AS u ON u.id=s.ward_mstr_id
                             LEFT JOIN ulb_ward_masters AS nw ON nw.id=s.new_ward_mstr_id
                             WHERE d.id=$memoId AND d.status=1
                     LIMIT 1";
@@ -116,7 +116,7 @@ class PropSafMemoDtl extends Model
                             LEFT JOIN prop_safs_demands pd ON pd.fyear=d.from_fyear AND pd.qtr=d.from_qtr AND pd.saf_id=d.saf_id AND pd.status=1
                             LEFT JOIN (SELECT owner_name,guardian_name,saf_id,relation_type FROM prop_safs_owners ORDER BY id) AS o ON o.saf_id=d.saf_id
                             JOIN prop_safs AS s ON s.id=d.saf_id
-                            JOIN ulb_ward_masters AS u ON u.id=d.ward_mstr_id
+                            JOIN ulb_ward_masters AS u ON u.id=s.ward_mstr_id
                             LEFT JOIN ulb_ward_masters AS nw ON nw.id=s.new_ward_mstr_id
                             WHERE d.id=$memoId AND d.status=1
                     LIMIT 1";

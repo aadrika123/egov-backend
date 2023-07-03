@@ -140,6 +140,7 @@ class HoldingTaxController extends Controller
             $mPropOwners = new PropOwner();
             $pendingFYears = collect();
             $qtrs = collect();
+            $mUlbMasters = new UlbMaster();
 
             $ownerDetails = $mPropOwners->getOwnerByPropId($req->propId)->first();
             $demand = array();
@@ -193,7 +194,7 @@ class HoldingTaxController extends Controller
             $basicDtls["ownership_type"] = $ownershipType;
 
             if ($demandList->isEmpty())
-                throw new Exception("Dues Not Available for this Property");
+                throw new Exception("No Dues Found Please See Your Payment History For Your Recent Transactions");
 
             $demandList = $demandList->map(function ($item) {                                // One Perc Penalty Tax
                 return $this->calcOnePercPenalty($item);
@@ -278,6 +279,9 @@ class HoldingTaxController extends Controller
                 'totalPayable' => $totalPayable,
                 'totalPayableInWords' => getIndianCurrency($totalPayable)
             ];
+
+            $ulb = $mUlbMasters->getUlbDetails($propDtls->ulb_id);
+            $demand['ulbDetails'] = $ulb;
             return responseMsgs(true, "Demand Details", remove_null($demand), "011602", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), ['basicDetails' => $basicDtls ?? []], "011602", "1.0", "", "POST", $req->deviceId ?? "");
@@ -796,9 +800,11 @@ class HoldingTaxController extends Controller
             $rebate = collect($penalRebates)->where('head_name', 'Rebate')->first()->amount ?? "";
             $specialRebate = collect($penalRebates)->where('head_name', $specialRebateKey)->first()->amount ?? 0;
             $firstQtrRebate = collect($penalRebates)->where('head_name', $firstQtrKey)->first()->amount ?? 0;
-            $jskOrOnlineRebate = collect($penalRebates)->where('head_name', $onlineRebate)->first()->amount ?? 0;
-            $lateAssessmentPenalty = 0;
+            $jskOrOnlineRebate = collect($penalRebates)
+                ->where('head_name', $onlineRebate)
+                ->first()->amount ?? 0;
 
+            $lateAssessmentPenalty = 0;
             $taxDetails = $paymentReceiptHelper->readPenalyPmtAmts($lateAssessmentPenalty, $onePercPenalty, $rebate, $specialRebate, $firstQtrRebate, $propTrans->amount, $jskOrOnlineRebate);
             $totalRebatePenals = $paymentReceiptHelper->calculateTotalRebatePenals($taxDetails);
 

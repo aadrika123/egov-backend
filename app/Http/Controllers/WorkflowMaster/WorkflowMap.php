@@ -13,13 +13,13 @@ class WorkflowMap extends Controller
     // Initializing Construct function
     public function __construct(iWorkflowMapRepository $wfMap)
     {
-        $this->WfMap = $wfMap;
+        $this->wfMap = $wfMap;
     }
 
     //Mapping 
     public function getRoleDetails(Request $req)
     {
-        return $this->WfMap->getRoleDetails($req);
+        return $this->wfMap->getRoleDetails($req);
     }
 
     public function getUserById(Request $request)
