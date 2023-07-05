@@ -3641,7 +3641,18 @@ class Trade implements ITrade
             } elseif (!$doc_status && $application->payment_status == 0) {
                 $status = "Payment is Pending And Document Not Uploaded";
             }
-        } elseif ($application->payment_status == 0 && $application->document_upload_status == 0) {
+        } 
+        elseif($docChequ && $application->payment_status==1 && $application->application_type_id==4){
+            $request = new Request(["applicationId" => $licenceId, "ulb_id" => $refUlbId, "user_id" => $refUserId]);
+            $doc_status = $this->checkWorckFlowForwardBackord($request);
+            if ($doc_status) {
+                $status = "All Required Documents Are Uploaded ";
+            }
+            else{
+                $status = "All Required Documents Are Not Uploaded ";
+            }
+        } 
+        elseif ($application->payment_status == 0 && $application->document_upload_status == 0) {
             $status = "Payment is pending and document not uploaded ";
         } elseif ($application->payment_status == 1 && $application->document_upload_status == 0) {
             $status = "Payment is done but document not uploaded ";
