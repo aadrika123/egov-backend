@@ -18,7 +18,7 @@ yarn-error.log
 /public/objection
 /public/image/
 /storage/concession
-/razorpay-php
+# /razorpay-php
 public/Uploads/Property/
 public/Uploads/Trade/
 public/Uploads/water/
@@ -27,7 +27,6 @@ public/Uploads/notice/
 public/Uploads/User/
 public/Uploads/Notice/
 public/Uploads/Citizen/
-public/Uploads/Bug/
 public/Uploads/Custom/
 
 razorpay-php
