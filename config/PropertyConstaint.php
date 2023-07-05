@@ -470,18 +470,18 @@ return [
      */
     "REBATE_PENAL_MASTERS" => [
         [
-            "id" => 1,
+            "id" => 1,                      // Used
             "key" => "onePercPenalty",
             "value" => "1% Monthly Penalty"
         ],
         [
-            "id" => 2,
+            "id" => 2,                      // Used
             "key" => "firstQtrRebate",
             "value" => "First Qtr Rebate",
             "perc" => 5,
         ],
         [
-            "id" => 3,
+            "id" => 3,                      // Used
             "key" => "onlineRebate",
             "value" => "Rebate From Jsk/Online Payment",
             "perc" => 5
@@ -493,7 +493,7 @@ return [
             "perc" => 2.5
         ],
         [
-            "id" => 5,
+            "id" => 5,                      // Used
             "key" => "lateAssessmentFine",
             "value" => "Late Assessment Fine(Rule 14.1)"
         ],

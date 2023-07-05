@@ -392,6 +392,7 @@ class Report implements IReport
             $uptoDate = Carbon::now()->format("Y-m-d");
             $licenseNo = null;
             $oprater=null;
+            
             if($request->licenseNo)
             {
                 $licenseNo = $request->licenseNo;
@@ -416,6 +417,7 @@ class Report implements IReport
             {
                 $ulbId = $request->ulbId;
             }
+            
             $select = [
                 "licences.id","licences.ward_id","licences.application_type_id",
                 "licences.ulb_id","licences.application_no","licences.provisional_license_no",
@@ -458,7 +460,13 @@ class Report implements IReport
             }
             if($licenseNo)
             {
-                $data = $data->where('licences.license_no', 'ILIKE', "%" . $licenseNo . "%");
+                if($ulbId)
+                {
+                    $data = $data->where('licences.license_no', 'ILIKE', "%" . $licenseNo . "%");
+                }
+                else{
+                    $data = $data->where('licences.license_no', 'ILIKE', "" . $licenseNo . "");
+                }
             }
             if((!$oprater) && $licenseNo)
             {
@@ -468,8 +476,14 @@ class Report implements IReport
                     ->select($select2)
                     ->join("ulb_masters","ulb_masters.id","licences.ulb_id")
                     ->join("ulb_ward_masters","ulb_ward_masters.id","licences.ward_id") 
-                    ->leftjoin("trade_param_firm_types", "trade_param_firm_types.id", "licences.firm_type_id")
-                    ->where('licences.license_no', 'ILIKE', '%' . $licenseNo . '%');
+                    ->leftjoin("trade_param_firm_types", "trade_param_firm_types.id", "licences.firm_type_id");
+                    if($ulbId)
+                    {
+                        $old = $old->where('licences.license_no', 'ILIKE', "%" . $licenseNo . "%");
+                    }
+                    else{
+                        $old = $old->where('licences.license_no', 'ILIKE', "" . $licenseNo . "");
+                    }
                     if($wardId)
                     {
                         $old = $old->where("licences.ward_id",$wardId);

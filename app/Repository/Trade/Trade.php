@@ -184,6 +184,7 @@ class Trade implements ITrade
             if (!$refWfWorkflow) {
                 throw new Exception("Workflow Not Available");
             }
+            
             $refWorkflows       = $this->_COMMON_FUNCTION->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
             $mUserType          = $this->_COMMON_FUNCTION->userType($refWorkflowId);
             $mShortUlbName      = "";
@@ -229,10 +230,9 @@ class Trade implements ITrade
                             ->first();
                         throw new Exception("Application Aready Apply Please Track  " . $newLicense->application_no);
                     }
-                    if ($refOldLicece->application_type_id== 4) {
-                        throw new Exception("Surrender License cannot be applied for Renewal and Amendment");
+                    if (!$refOldLicece->application_type_id == 4) {
+                        throw new Exception("Surender License Can Not Apply Renewal Or Amendment ");
                     }
-                    
                     if ($refOldLicece->valid_upto > $nextMonth && !in_array($mApplicationTypeId, [3, 4])) {
                          throw new Exception("Licence Valice Upto " . $refOldLicece->valid_upto);
                     }
@@ -275,7 +275,7 @@ class Trade implements ITrade
                 $licence->current_role        = $refWorkflows['initiator']['id'];
                 $licence->initiator_role      = $refWorkflows['initiator']['id'];
                 $licence->finisher_role       = $refWorkflows['finisher']['id'];
-                $licence->workflow_id         = $refWorkflowId;
+                $licence->workflow_id         = $refWfWorkflow->id;
 
                 if (strtoupper($mUserType) == "ONLINE") {
                     $licence->citizen_id      = $refUserId;
@@ -338,7 +338,7 @@ class Trade implements ITrade
                     }
                 }
                 $licence->nature_of_bussiness = $mnaturOfBusiness;
-                $mAppNo = $this->createApplicationNo($mWardNo, $licenceId);
+                $mAppNo = $this->createApplicationNo($mWardNo, $licenceId,$mShortUlbName);
                 $licence->application_no = $mAppNo;
                 $licence->update();
                 #----------------End Crate Application--------------------
@@ -479,6 +479,11 @@ class Trade implements ITrade
         $refActiveLicense->valid_from          = $refOldLicece->valid_upto;
         $refActiveLicense->license_no          = $refOldLicece->license_no;
         $refActiveLicense->is_tobacco          = $refOldLicece->is_tobacco;
+
+        if($refOldLicece->citizen_id)
+        {
+            $refActiveLicense->citizen_id          = $refOldLicece->citizen_id;
+        }
     }
 
     # Serial No : 01.03
@@ -514,6 +519,10 @@ class Trade implements ITrade
         $refActiveLicense->valid_from          = $refOldLicece->valid_upto;
         $refActiveLicense->license_no          = $refOldLicece->license_no;
         $refActiveLicense->is_tobacco          = $refOldLicece->is_tobacco;
+        if($refOldLicece->citizen_id)
+        {
+            $refActiveLicense->citizen_id          = $refOldLicece->citizen_id;
+        }
     }
 
     # Serial No : 01.04
@@ -1277,6 +1286,7 @@ class Trade implements ITrade
                 'data' => $cardDetails
             ];
             $fullDetailsData["propId"]         = $licenseDetail->property_id;
+            $fullDetailsData["workflowId"]     = $licenseDetail->workflow_id;
             $fullDetailsData['application_no'] = $licenseDetail->application_no;
             $fullDetailsData['apply_date'] = $licenseDetail->application_date;
             $fullDetailsData['fullDetailsData']['dataArray'] = new Collection([$basicElement]);
@@ -2376,15 +2386,15 @@ class Trade implements ITrade
         try {
             $select = [
                 "licences.*",
-                "application_no",
-                "provisional_license_no",
-                "trade_id",
-                "licence_for_years",
-                "application_type_id",
-                "license_no",
-                "firm_name",
-                "holding_no",
-                "address",
+                "licences.application_no",
+                "licences.provisional_license_no",
+                "licences.trade_id",
+                "licences.licence_for_years",
+                "licences.application_type_id",
+                "licences.license_no",
+                "licences.firm_name",
+                "licences.holding_no",
+                "licences.address",
                 "owner.owner_name",
                 "owner.guardian_name",
                 "owner.mobile",
@@ -2397,9 +2407,9 @@ class Trade implements ITrade
                         ulb_masters.parent_website as ulb_parent_website,
                         ulb_masters.toll_free_no as ulb_toll_free_no,
                         ulb_masters.mobile_no AS ulb_mobile_no,
-                        TO_CHAR(cast(application_date as date), 'DD-MM-YYYY') AS application_date,
-                        TO_CHAR(cast(valid_from as date), 'DD-MM-YYYY') AS valid_from,
-                        TO_CHAR(cast(valid_upto as date), 'DD-MM-YYYY') AS valid_upto
+                        TO_CHAR(cast(licences.application_date as date), 'DD-MM-YYYY') AS application_date,
+                        TO_CHAR(cast(licences.valid_from as date), 'DD-MM-YYYY') AS valid_from,
+                        TO_CHAR(cast(licences.valid_upto as date), 'DD-MM-YYYY') AS valid_upto
                         ")
             ];
             $application = DB::table("active_trade_licences AS licences")->select($select)
@@ -2559,13 +2569,13 @@ class Trade implements ITrade
             $data['provisionalCertificate'] = config('app.url') . "/api/trade/provisional-certificate/" . $id;
             $select = [
                 "license.*",
-                "application_no",
-                "provisional_license_no",
-                "license_no",
-                "firm_name",
-                "holding_no",
-                "address",
-                "payment_status",
+                "license.application_no",
+                "license.provisional_license_no",
+                "license.license_no",
+                "license.firm_name",
+                "license.holding_no",
+                "license.address",
+                "license.payment_status",
                 "owner.owner_name",
                 "owner.guardian_name",
                 "owner.mobile",
@@ -2737,18 +2747,18 @@ class Trade implements ITrade
             $data['licenceCertificate'] = config('app.url') . "/api/trade/license-certificate/" . $id;
             $select= [
                 "license.*",
-                "application_no",
-                "provisional_license_no",
-                "license_no",
-                "firm_name",
-                "holding_no",
-                "address", 
-                "licence_for_years",
-                "nature_of_bussiness",
-                "firm_description",
-                "brief_firm_desc",
-                "premises_owner_name",
-                "pending_status",
+                "license.application_no",
+                "license.provisional_license_no",
+                "license.license_no",
+                "license.firm_name",
+                "license.holding_no",
+                "license.address", 
+                "license.licence_for_years",
+                "license.nature_of_bussiness",
+                "license.firm_description",
+                "license.brief_firm_desc",
+                "license.premises_owner_name",
+                "license.pending_status",
                 "owner.owner_name",
                 "owner.guardian_name",
                 "owner.mobile",
@@ -2948,9 +2958,9 @@ class Trade implements ITrade
      * |____________________________________________________|
      * 
      */
-    public function createApplicationNo($wardNo, $licenceId)
+    public function createApplicationNo($wardNo, $licenceId,$mShortUlbName=null)
     {
-        return "APN" . str_pad($wardNo, 2, '0', STR_PAD_LEFT) . str_pad($licenceId, 7, '0', STR_PAD_LEFT);
+        return ($mShortUlbName && strtoupper($mShortUlbName)!="RMC"?strtoupper($mShortUlbName)."-" : "")."APN" . str_pad($wardNo, 2, '0', STR_PAD_LEFT) . str_pad($licenceId, 7, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -3583,7 +3593,7 @@ class Trade implements ITrade
         $path = (config('app.url') . '/api/getImageLink?path=' . $path);
         return $path;
     }
-    public function applicationStatus($licenceId,$doccheq=true)
+    public function applicationStatus($licenceId)
     {
         $refUser        = Auth()->user();
         $refUserId      = $refUser->id ?? 0;
@@ -3619,7 +3629,7 @@ class Trade implements ITrade
             $status = "Application pending at " . ($rols->role_name??"");
         } elseif (!$application->is_active) {
             $status = "Application rejected ";
-        } elseif ($doccheq && strtoupper($mUserType) == "ONLINE" && $application->citizen_id == $refUserId && $application->payment_status == 0) {
+        } elseif (strtoupper($mUserType) == "ONLINE" && $application->citizen_id == $refUserId && $application->payment_status == 0) {
             $request = new Request(["applicationId" => $licenceId, "ulb_id" => $refUlbId, "user_id" => $refUserId]);
             $doc_status = $this->checkWorckFlowForwardBackord($request);
             if ($doc_status && $application->payment_status == 0) {
@@ -3630,17 +3640,7 @@ class Trade implements ITrade
                 $status = "Payment is Done But Document Not Uploaded";
             } elseif (!$doc_status && $application->payment_status == 0) {
                 $status = "Payment is Pending And Document Not Uploaded";
-            }elseif ($doccheq && $application->payment_status == 1 && $application->application_type_id == 4){
-                $request = new Request(["applicationId" => $licenceId, "ulb_id" => $refUlbId, "user_id" => $refUserId]);
-                $doc_status = $this->checkWorckFlowForwardBackord($request);
-                if ($doc_status){
-                    $status = "All Required Documents Are Uploaded ";
-                }
-                else{
-                    $status = "All Required Documents Are Not Uploaded ";
-                }
             }
-            
         } elseif ($application->payment_status == 0 && $application->document_upload_status == 0) {
             $status = "Payment is pending and document not uploaded ";
         } elseif ($application->payment_status == 1 && $application->document_upload_status == 0) {
@@ -3706,7 +3706,7 @@ class Trade implements ITrade
         $ulb_id = $user->ulb_id ?? $request->ulb_id;
         $refWorkflowId = $this->_WF_MASTER_Id;
         $allRolse = collect($this->_COMMON_FUNCTION->getAllRoles($user_id, $ulb_id, $refWorkflowId, 0, true));
-      //  $init_finish = $this->_COMMON_FUNCTION->iniatorFinisher($user_id, $ulb_id, $refWorkflowId);
+        $init_finish = $this->_COMMON_FUNCTION->iniatorFinisher($user_id, $ulb_id, $refWorkflowId);
         $mUserType      = $this->_COMMON_FUNCTION->userType($refWorkflowId, $ulb_id);
         $fromRole = [];
         if (!empty($allRolse)) {
