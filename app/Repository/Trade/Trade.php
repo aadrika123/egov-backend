@@ -3630,7 +3630,7 @@ class Trade implements ITrade
         } elseif (!$application->is_active) {
             $status = "Application rejected ";
         } 
-        elseif ($docChequ && strtoupper($mUserType) == "ONLINE" && $application->citizen_id == $refUserId && $application->payment_status == 0) {
+        elseif ($docChequ && strtoupper($mUserType) == "ONLINE" && $application->citizen_id == $refUserId && $application->document_upload_status == 0 && $application->payment_status == 0) {
             $request = new Request(["applicationId" => $licenceId, "ulb_id" => $refUlbId, "user_id" => $refUserId]);
             $doc_status = $this->checkWorckFlowForwardBackord($request);
             if ($doc_status && $application->payment_status == 0) {
@@ -3643,7 +3643,7 @@ class Trade implements ITrade
                 $status = "Payment is Pending And Document Not Uploaded";
             }
         } 
-        elseif($docChequ && $application->payment_status==1 && $application->application_type_id==4){
+        elseif($docChequ && $application->payment_status==1 && $application->document_upload_status == 0 && $application->application_type_id==4){
             $request = new Request(["applicationId" => $licenceId, "ulb_id" => $refUlbId, "user_id" => $refUserId]);
             $doc_status = $this->checkWorckFlowForwardBackord($request);
             if ($doc_status) {
