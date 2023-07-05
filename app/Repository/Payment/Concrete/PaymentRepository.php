@@ -336,7 +336,7 @@ class PaymentRepository implements iPayment
                 'paymentMode'   => $webhookData->payment_method,
                 'id'            => $webhookEntity['notes']['applicationId'],
                 'amount'        => $actulaAmount,
-                'workflowId'    =>  $webhookData->workflow_id,
+                'workflowId'    => $webhookData->workflow_id,
                 'transactionNo' => $actualTransactionNo,
                 'userId'        => $webhookData->user_id,
                 'ulbId'         => $webhookData->ulb_id,
@@ -380,7 +380,7 @@ class PaymentRepository implements iPayment
                         Http::withHeaders([])
                             ->post("$api->end_point", $transfer);
                         break;
-                    case('9'):
+                    case ('9'):
                         $mApiMaster = new ApiMaster();
                         $petApi = $mApiMaster->getPetApi();
                         Http::withHeaders([])
