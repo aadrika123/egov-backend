@@ -120,6 +120,36 @@ class WaterConsumer extends Model
             ->get();
     }
 
+
+    /**
+     * | get the water consumer detaials by application no
+     * | @param refVal as ApplicationNo
+     */
+    public function getDetailByApplicationNo($refVal)
+    {
+        return WaterConsumer::select(
+            'water_consumers.id',
+            'water_consumers.consumer_no',
+            'water_consumers.ward_mstr_id',
+            'water_consumers.address',
+            'water_consumers.holding_no',
+            'water_consumers.saf_no',
+            'ulb_ward_masters.ward_name',
+            'water_consumer_owners.applicant_name as applicant_name',
+            'water_consumer_owners.mobile_no as mobile_no',
+            'water_consumer_owners.guardian_name as guardian_name',
+        )
+            ->join('water_approval_application_details', 'water_approval_application_details.id', 'water_consumers.apply_connection_id')
+            ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_consumers.id')
+            ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_consumers.ward_mstr_id')
+            ->where('water_approval_application_details.application_no', 'LIKE', '%' . $refVal . '%')
+            ->where('water_consumers.status', true)
+            ->where('ulb_ward_masters.status', true)
+            ->get();
+    }
+
+
+
     /**
      * | Get the list of Application according to user id
      * | @param 

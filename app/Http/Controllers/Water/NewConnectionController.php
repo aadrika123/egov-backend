@@ -227,6 +227,7 @@ class NewConnectionController extends Controller
                 ->get();
 
             $filterWaterList = collect($waterList)->unique('id');
+            $filterWaterList = $filterWaterList->values();
             return responseMsgs(true, "BTC Inbox List", remove_null($filterWaterList), "", 1.0, "560ms", "POST", $mDeviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", 010123, 1.0, "271ms", "POST", $mDeviceId);
@@ -622,11 +623,22 @@ class NewConnectionController extends Controller
      */
     public function btcParamcheck($role, $mWaterApplication)
     {
+        $refReq = new Request([
+            "applicationId" => $mWaterApplication->id
+        ]);
+        $rawDoc = $this->getUploadDocuments($refReq);
         if ($role->is_btc != true) {
             throw new Exception("You dont have permission to BTC!");
         }
         if ($mWaterApplication->current_role != $role->role_id) {
             throw new Exception("the application is not under your possession!");
+        }
+        $activeDocs = collect($rawDoc)['original']['data'];
+        $canBtc = $activeDocs->contains(function ($item) {
+            return $item['verify_status'] == 2;
+        });
+        if (!$canBtc) {
+            throw new Exception("Document not rejected! cannot perform BTC!");
         }
     }
 
@@ -1715,6 +1727,12 @@ class NewConnectionController extends Controller
                 case ('mobileNo'):                                                                          // Static
                     $paramenter = strtoupper($paramenter);
                     $waterReturnDetails = $mWaterConsumer->getDetailByOwnerDetails($refstring, $paramenter);
+                    $checkVal = collect($waterReturnDetails)->first();
+                    if (!$checkVal)
+                        throw new Exception("Data according to " . $key . " not Found!");
+                    break;
+                case ('applicationNo'):
+                    $waterReturnDetails = $mWaterConsumer->getDetailByApplicationNo($paramenter);
                     $checkVal = collect($waterReturnDetails)->first();
                     if (!$checkVal)
                         throw new Exception("Data according to " . $key . " not Found!");
