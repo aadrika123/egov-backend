@@ -169,7 +169,7 @@ class TradeCitizenController extends Controller
                 throw new Exception("Finisher Not Available");
             }
             if (in_array($mApplicationTypeId, ["2", "3", "4"]) && (!$request->licenseId || !is_numeric($request->licenseId))) {
-                throw new Exception("Old licence Id Requird");
+                throw new Exception("Old license Id Requird");
             }
             return $this->_REPOSITORY->addRecord($request);
         } catch (Exception $e) {
@@ -421,9 +421,9 @@ class TradeCitizenController extends Controller
             $licenceId = $args["id"];
             $refLevelData = $this->_REPOSITORY_TRADE->getWorkflowTrack($licenceId);
             if (!$refLecenceData) {
-                throw new Exception("Licence Data Not Found !!!!!");
+                throw new Exception("s Data Not Found !!!!!");
             } elseif ($refLecenceData->application_type_id == 4) {
-                throw new Exception("Surender Application Not Pay Anny Amount");
+                throw new Exception("Surender Application Not Pay Any Amount");
             } elseif (in_array($refLecenceData->payment_status, [1, 2])) {
                 throw new Exception("Payment Already Done Of This Application");
             }
@@ -587,7 +587,7 @@ class TradeCitizenController extends Controller
                 throw new Exception("Application Not Found....");
             }
             if (!$transection) {
-                throw new Exception("Not Transection Data Found....");
+                throw new Exception("Not Transaction Data Found....");
             }
             $data["amount"]            = $TradeRazorPayResponse->amount;
             $data["applicationId"]     = $TradeRazorPayResponse->temp_id;
