@@ -397,6 +397,7 @@ class PropertyDetailsController extends Controller
             $mWfRoleUser = new WfRoleusermap();
             $user = authUser();
             $userId = $user->id;
+            $userType = $user->user_type;
             $ulbId = $user->ulb_id ?? $request->ulbId;
             $roleIds = $mWfRoleUser->getRoleIdByUserId($userId)->pluck('wf_role_id');                      // Model to () get Role By User Id
             $role = $roleIds->first();
@@ -468,9 +469,9 @@ class PropertyDetailsController extends Controller
                     break;
             }
 
-            // return $data
-            //     ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'latitude', 'longitude')
-            //     ->get();
+            if ($userType != 'Citizen')
+                $data = $data->where('prop_properties.ulb_id', $ulbId);
+
             if ($isLegacy == true) {
                 $paginator = $data->where('new_holding_no', null)
                     ->where('latitude', null)

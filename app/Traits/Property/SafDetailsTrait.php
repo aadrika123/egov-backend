@@ -158,9 +158,6 @@ trait SafDetailsTrait
             ['displayString' => 'Is Specially Abled', 'key' => 'isSpeciallyAbled', 'value' => ($req->is_specially_abled == true) ? 'Yes' : 'No'],
             ['displayString' => 'Owner', 'key' => 'ownerName', 'value' => $req->owner_name],
             ['displayString' => 'Concession Applied For', 'key' => 'appliedFor', 'value' => $req->applied_for],
-            // ['displayString' => 'Property Type', 'key' => 'propertyType', 'value' => $req->property_type],
-            // ['displayString' => 'Ownership Type', 'key' => 'ownershipType', 'value' => $req->ownership_type],
-            // ['displayString' => 'Plot-Area(sqt)', 'key' => 'plotArea', 'value' => $req->area_of_plot]
         ]);
 
         $cardElement = [

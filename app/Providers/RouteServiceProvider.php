@@ -99,6 +99,11 @@ class RouteServiceProvider extends ServiceProvider
                 ->middleware('api')
                 ->namespace($this->namespace)
                 ->group(base_path('routes/notice.php'));
+            // Bug Api
+            Route::prefix('api/bug')
+                ->middleware('api')
+                ->namespace($this->namespace)
+                ->group(base_path('routes/bug.php'));
         });
     }
 
@@ -113,4 +118,6 @@ class RouteServiceProvider extends ServiceProvider
             return Limit::perMinute(100)->by(optional($request->user())->id ?: $request->ip());
         });
     }
+
+
 }
