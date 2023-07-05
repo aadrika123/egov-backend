@@ -229,8 +229,12 @@ class Trade implements ITrade
                             ->first();
                         throw new Exception("Application Aready Apply Please Track  " . $newLicense->application_no);
                     }
+                    if ($refOldLicece->application_type_id== 4) {
+                        throw new Exception("Surrender License cannot be applied for Renewal and Amendment");
+                    }
+                    
                     if ($refOldLicece->valid_upto > $nextMonth && !in_array($mApplicationTypeId, [3, 4])) {
-                        throw new Exception("Licence Valice Upto " . $refOldLicece->valid_upto);
+                         throw new Exception("Licence Valice Upto " . $refOldLicece->valid_upto);
                     }
                     if ($refOldLicece->valid_upto < (Carbon::now()->format('Y-m-d')) && in_array($mApplicationTypeId, [3, 4])) {
                         throw new Exception("Licence Was Expired Please Renewal First");
@@ -3579,7 +3583,7 @@ class Trade implements ITrade
         $path = (config('app.url') . '/api/getImageLink?path=' . $path);
         return $path;
     }
-    public function applicationStatus($licenceId)
+    public function applicationStatus($licenceId,$doccheq=true)
     {
         $refUser        = Auth()->user();
         $refUserId      = $refUser->id ?? 0;
@@ -3615,7 +3619,7 @@ class Trade implements ITrade
             $status = "Application pending at " . ($rols->role_name??"");
         } elseif (!$application->is_active) {
             $status = "Application rejected ";
-        } elseif (strtoupper($mUserType) == "ONLINE" && $application->citizen_id == $refUserId && $application->payment_status == 0) {
+        } elseif ($doccheq && strtoupper($mUserType) == "ONLINE" && $application->citizen_id == $refUserId && $application->payment_status == 0) {
             $request = new Request(["applicationId" => $licenceId, "ulb_id" => $refUlbId, "user_id" => $refUserId]);
             $doc_status = $this->checkWorckFlowForwardBackord($request);
             if ($doc_status && $application->payment_status == 0) {
@@ -3626,7 +3630,17 @@ class Trade implements ITrade
                 $status = "Payment is Done But Document Not Uploaded";
             } elseif (!$doc_status && $application->payment_status == 0) {
                 $status = "Payment is Pending And Document Not Uploaded";
+            }elseif ($doccheq && $application->payment_status == 1 && $application->application_type_id == 4){
+                $request = new Request(["applicationId" => $licenceId, "ulb_id" => $refUlbId, "user_id" => $refUserId]);
+                $doc_status = $this->checkWorckFlowForwardBackord($request);
+                if ($doc_status){
+                    $status = "All Required Documents Are Uploaded ";
+                }
+                else{
+                    $status = "All Required Documents Are Not Uploaded ";
+                }
             }
+            
         } elseif ($application->payment_status == 0 && $application->document_upload_status == 0) {
             $status = "Payment is pending and document not uploaded ";
         } elseif ($application->payment_status == 1 && $application->document_upload_status == 0) {
@@ -3642,9 +3656,7 @@ class Trade implements ITrade
         } else {
             $status = "Applilcation Not Appoved";
         }
-
-
-        return $status;
+       return $status;
     }
 
     public function getWorkflowTrack($licenseId)
@@ -3694,7 +3706,7 @@ class Trade implements ITrade
         $ulb_id = $user->ulb_id ?? $request->ulb_id;
         $refWorkflowId = $this->_WF_MASTER_Id;
         $allRolse = collect($this->_COMMON_FUNCTION->getAllRoles($user_id, $ulb_id, $refWorkflowId, 0, true));
-        $init_finish = $this->_COMMON_FUNCTION->iniatorFinisher($user_id, $ulb_id, $refWorkflowId);
+      //  $init_finish = $this->_COMMON_FUNCTION->iniatorFinisher($user_id, $ulb_id, $refWorkflowId);
         $mUserType      = $this->_COMMON_FUNCTION->userType($refWorkflowId, $ulb_id);
         $fromRole = [];
         if (!empty($allRolse)) {
@@ -3735,7 +3747,7 @@ class Trade implements ITrade
                 $val["documents"]->map(function ($val1) use ($Wdocuments, $ownerId) {
                     $val1["ownerId"] = $ownerId;
                     $val1["is_uploded"] = (in_array($val1["docType"], ["R", "OR"]))  ? ((!empty($val1["uploadedDoc"])) ? true : false) : true;
-                    $val1["is_docVerify"] = !empty($val1["uploadedDoc"]) ?  (((collect($val1["uploadedDoc"])->all())["verifyStatus"]) ? true : false) : true;
+                    $val1["is_docVerify"] = !empty($val1["uploaded Doc"]) ?  (((collect($val1["uploadedDoc"])->all())["verifyStatus"]) ? true : false) : true;
                     $val1["is_docRejected"] = !empty($val1["uploadedDoc"]) ?  (((collect($val1["uploadedDoc"])->all())["verifyStatus"]==2) ? true : false) : false;
                     $val1["is_madetory_docRejected"] = (!empty($val1["uploadedDoc"]) && in_array($val1["docType"],["R", "OR"]))?  (((collect($val1["uploadedDoc"])->all())["verifyStatus"]==2) ? true : false) : false;
                     $Wdocuments->push($val1);

@@ -897,7 +897,7 @@ class TradeCitizenController extends Controller
                     {
                         $option[]="RENEWAL";
                     }
-                    if(trim($val->license_type)=="approved" && $val->pending_status == 5 && $validUpto >= Carbon::now()->format('Y-m-d'))
+                    if(trim($val->license_type)=="approved" && $val->pending_status == 5 && $validUpto >= Carbon::now()->format('d-m-Y')) //date changed y-m-d to d-m-y
                     {
                         $option[]="AMENDMENT";
                         $option[]="SURRENDER";

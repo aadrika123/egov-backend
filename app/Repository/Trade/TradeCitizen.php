@@ -183,7 +183,7 @@ class TradeCitizen implements ITradeCitizen
             if (!$refLecenceData) {
                 throw new Exception("Licence Data Not Found !!!!!");
             } elseif ($refLecenceData->application_type_id == 4) {
-                throw new Exception("Surender Application Not Pay Anny Amount");
+                throw new Exception("Surender Application Not Pay Any Amount");
             } elseif (in_array($refLecenceData->payment_status, [1, 2])) {
                 throw new Exception("Payment Already Done Of This Application");
             }
