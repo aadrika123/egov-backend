@@ -27,6 +27,8 @@ public/Uploads/notice/
 public/Uploads/User/
 public/Uploads/Notice/
 public/Uploads/Citizen/
+public/Uploads/Bug/
+public/Uploads/Custom/
 
 razorpay-php
 tests/Feature/
