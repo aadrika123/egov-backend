@@ -78,6 +78,7 @@ class SafCalculation
     private $_rwhAreaOfPlot;
     public $_ulbType;
     private $_religiousPlaceUsageType;
+    private $_individualPropTypeId;
 
     /** 
      * | For Building
@@ -180,11 +181,13 @@ class SafCalculation
                 throw new Exception("CV Rate Not Available for this ward");
         }
 
-        if ($propertyDetails['isMobileTower'] == 1 || $propertyDetails['isHoardingBoard'] == 1 || $propertyDetails['isPetrolPump'] == 1) {
+        if ($propertyDetails['isMobileTower'] == 1 || $propertyDetails['isHoardingBoard'] == 1 || $propertyDetails['isPetrolPump'] == 1)
             $this->_capitalValueRateMPH = $this->readCapitalValueRateMHP();                                         // Capital Value Rate for MobileTower, PetrolPump,HoardingBoard
-        }
 
-        if (in_array($this->_propertyDetails['propertyType'], [4, 2]))                                                          // i.e for Vacant Land and Independent Building
+
+        $this->_individualPropTypeId = Config::get('PropertyConstaint.INDEPENDENT_PROP_TYPE_ID');
+
+        if (in_array($this->_propertyDetails['propertyType'], [$this->_vacantPropertyTypeId, $this->_individualPropTypeId]))     // i.e for Vacant Land and Independent Building
             $this->_vacantRentalRates = $this->readVacantRentalRates();
 
         $this->_penaltyRebateCalc = new PenaltyRebateCalculation();
@@ -216,6 +219,7 @@ class SafCalculation
             $this->_isTrustVerified = $this->_propertyDetails['isTrustVerified'] = 1;
 
         $this->ifPropPoint20Taxed();   // Check if the Property consists 0.20 % Tax Percentage or Not      // (1.1.7)
+
     }
 
     /**
@@ -537,7 +541,7 @@ class SafCalculation
     public function calculateVacantLandTax()
     {
         $readPropertyType = $this->_propertyDetails['propertyType'];
-        if (in_array($readPropertyType, [$this->_vacantPropertyTypeId, 2])) {                                             // Vacant Land condition with independent building
+        if (in_array($readPropertyType, [$this->_vacantPropertyTypeId, $this->_individualPropTypeId])) {                                             // Vacant Land condition with independent building
             $calculateQuaterlyRuleSets = $this->calculateQuaterlyRulesets("vacantLand");
             $ruleSetsWithMobileTower = collect($this->_mobileQuaterlyRuleSets)->merge($calculateQuaterlyRuleSets);        // Collapse with mobile tower
             $ruleSetsWithHoardingBoard = collect($this->_hoardingQuaterlyRuleSets)->merge($ruleSetsWithMobileTower);      // Collapse with hoarding board

@@ -31,6 +31,9 @@ return [
         "7"     => "HoardingBoard",
         "9"     => "FloorDetail"
     ],
+
+    "INDEPENDENT_PROP_TYPE_ID" => "2",       // Individual Property 
+
     "PROPERTY-TYPE" => [
         "1"     => "SUPER STRUCTURE",
         "2"     => "INDEPENDENT BUILDING",
