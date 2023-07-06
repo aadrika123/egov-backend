@@ -184,9 +184,8 @@ class SafCalculation
             $this->_capitalValueRateMPH = $this->readCapitalValueRateMHP();                                         // Capital Value Rate for MobileTower, PetrolPump,HoardingBoard
         }
 
-        if ($this->_propertyDetails['propertyType'] == 4) {                                                         // i.e for Vacant Land
+        if (in_array($this->_propertyDetails['propertyType'], [4, 2]))                                                          // i.e for Vacant Land and Independent Building
             $this->_vacantRentalRates = $this->readVacantRentalRates();
-        }
 
         $this->_penaltyRebateCalc = new PenaltyRebateCalculation();
         // Current Quarter End Date and Start Date for 1% Penalty
@@ -508,6 +507,7 @@ class SafCalculation
     public function calculateBuildingTax()
     {
         $readPropertyType = $this->_propertyDetails['propertyType'];
+
         if ($readPropertyType != $this->_vacantPropertyTypeId) {
             if ($this->_propertyDetails['isPetrolPump'] == 1) {                                                                     // For Petrol Pump
                 $this->_petrolPump['installDate'] = $this->_propertyDetails['petrolPump']['dateFrom'];
@@ -537,11 +537,12 @@ class SafCalculation
     public function calculateVacantLandTax()
     {
         $readPropertyType = $this->_propertyDetails['propertyType'];
-        if ($readPropertyType == $this->_vacantPropertyTypeId) {
+        if (in_array($readPropertyType, [$this->_vacantPropertyTypeId, 2])) {                                             // Vacant Land condition with independent building
             $calculateQuaterlyRuleSets = $this->calculateQuaterlyRulesets("vacantLand");
             $ruleSetsWithMobileTower = collect($this->_mobileQuaterlyRuleSets)->merge($calculateQuaterlyRuleSets);        // Collapse with mobile tower
             $ruleSetsWithHoardingBoard = collect($this->_hoardingQuaterlyRuleSets)->merge($ruleSetsWithMobileTower);      // Collapse with hoarding board
-            $this->_GRID['details'] = $ruleSetsWithHoardingBoard;
+            $this->_GRID['vacantDemandDetails'] = $ruleSetsWithHoardingBoard;
+            $this->_GRID['details'] = $this->_GRID['vacantDemandDetails']->merge($this->_GRID['details'] ?? collect());
         }
     }
 
@@ -581,11 +582,21 @@ class SafCalculation
 
             if ($dateFrom < '2016-04-01')
                 $dateFrom = '2016-04-01';
-            $dateTo = Carbon::now();
+
+            if ($this->_propertyDetails['propertyType'] == 2) {             // For Independent Building
+                $leastDatedFloor = collect($this->_floors)->sortBy('dateFrom');
+                $floorCalculationStartedDate = $leastDatedFloor->first()['dateFrom'];
+                $carbonDateUpto = Carbon::parse($floorCalculationStartedDate)->format('Y-m-d');
+            }
+
+            if ($this->_propertyDetails['propertyType'] == $this->_vacantPropertyTypeId) {   // Vacant Land
+                $dateTo = Carbon::now();
+                $carbonDateUpto = $dateTo->endOfYear()->addMonths(3);           // Get The Full Financial Year
+                $carbonDateUpto = $carbonDateUpto->format('Y-m-d');
+            }
+
             $readRuleSet = $this->readRuleSet($dateFrom, $key);
             $carbonDateFrom = Carbon::parse($dateFrom)->format('Y-m-d');
-            $carbonDateUpto = $dateTo->endOfYear()->addMonths(3);           // Get The Full Financial Year
-            $carbonDateUpto = $carbonDateUpto->format('Y-m-d');
         }
 
         if (is_numeric($key)) {                                                 // i.e. Floors
@@ -611,13 +622,17 @@ class SafCalculation
         }
 
         // Itteration for the RuleSets dateFrom wise 
-        while ($carbonDateFrom <= $carbonDateUpto) {
+        while ($carbonDateFrom < $carbonDateUpto) {
             $readRuleSet = $this->readRuleSet($carbonDateFrom, $key);
             $carbonDateFrom = Carbon::parse($carbonDateFrom)->addMonth()->format('Y-m-d');              // CarbonDateFrom = CarbonDateFrom + 1 (add one months)
             array_push($arrayRuleSet, $readRuleSet);
         }
 
         $collectRuleSets = collect($arrayRuleSet);
+
+        // if ($collectRuleSets->isEmpty())
+        //     throw new Exception("No Demand Generated due to invalid Date Range");
+
         $uniqueRuleSets = $collectRuleSets->unique('dueDate');
         $ruleSet = $uniqueRuleSets->values();
         return $ruleSet;
@@ -874,6 +889,9 @@ class SafCalculation
                 $area = decimalToAcre($plotArea);
             else
                 $area = decimalToSqMt($plotArea);
+
+            if (collect($this->_vacantRentalRates)->isEmpty())
+                throw new Exception("Vacant Land Rental Rate Not Available");
 
             $rentalRate = collect($this->_vacantRentalRates)->where('prop_road_type_id', $this->_readRoadType[$this->_effectiveDateRule2])
                 ->where('ulb_type_id', $this->_ulbType)
