@@ -142,7 +142,6 @@ class WaterConsumer extends Controller
      */
     public function saveGenerateConsumerDemand(Request $request)
     {
-        // $mNowDate = Carbon::now();
         $request->validate([
             'consumerId'    => "required|digits_between:1,9223372036854775807",
             // "demandUpto"    => "nullable|date|date_format:Y-m-d|before_or_equal:$mNowDate",
@@ -836,14 +835,17 @@ class WaterConsumer extends Controller
                 'newMeterInitialReading'    => $relatedDetails['meterDetails']['initial_reading']
             ]);
 
+            DB::beginTransaction();
             $refDocument = $this->saveDocument($request, $fixedMeterCode);
             $document = [
                 'relaivePath'   => $refDocument['relaivePath'],
                 'document'      => $refDocument['document']
             ];
             $mWaterConsumerMeter->saveMeterDetails($metaRequest, $document, $request->ratePerMonth);
+            DB::commit();
             return responseMsgs(true, "Fixed rate entered successfully!", "", "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
+            DB::rollBack();
             return responseMsgs(false, $e->getMessage(), [""], "", "01", ".ms", "POST", $request->deviceId);
         }
     }
@@ -862,11 +864,11 @@ class WaterConsumer extends Controller
         $refPropertyType        = Config::get('waterConstaint.PROPERTY_TYPE');
         $refConnectionType      = Config::get('waterConstaint.WATER_MASTER_DATA.METER_CONNECTION_TYPE');
 
-        $consumerDetails = $mWaterWaterConsumer->getConsumerDetailById($consumerId);
-        if ($consumerDetails->property_type_id != $refPropertyType['Government'])
-            // throw new Exception("Consumer's property type is not under Government!");
+        // $consumerDetails = $mWaterWaterConsumer->getConsumerDetailById($consumerId);
+        // if ($consumerDetails->property_type_id != $refPropertyType['Government'])
+        // throw new Exception("Consumer's property type is not under Government!");
 
-            $meterConnectionDetails = $mWaterConsumerMeter->getMeterDetailsByConsumerId($consumerId)->first();
+        $meterConnectionDetails = $mWaterConsumerMeter->getMeterDetailsByConsumerId($consumerId)->first();
         if (!$meterConnectionDetails)
             throw new Exception("Consumer meter details not found maybe meter is not installed!");
 

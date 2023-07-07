@@ -1619,6 +1619,7 @@ class WaterPaymentController extends Controller
             $myRequest->request->add(['workflowId' => 0]);
             $myRequest->request->add(['id' => $request->consumerId]);
             $myRequest->request->add(['departmentId' => $waterModuleId]);
+            $myRequest->request->add(['ulbId' => $refDetails['consumer']['ulb_id']]);
             $temp = $this->saveGenerateOrderid($myRequest);
 
             $mWaterRazorPayRequest = new WaterRazorPayRequest();
