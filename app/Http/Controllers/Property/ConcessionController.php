@@ -38,7 +38,6 @@ use Exception;
  * | Controller for Concession
  * | --------------------------- Workflow Parameters ---------------------------------------
  * | Concession Master ID   = 35                
- * | Concession WorkflowID  = 106 
  * */
 
 
@@ -777,19 +776,19 @@ class ConcessionController extends Controller
      */
     public function updateOwner($propOwners, $activeConcession)
     {
-        if ($activeConcession->applied_for == 'Gender') {
+        if (isset($activeConcession->gender)) {
             $propOwners->gender = $activeConcession->gender;
             $propOwners->save();
         }
-        if ($activeConcession->applied_for == 'Senior Citizen') {
+        if (isset($activeConcession->dob)) {
             $propOwners->dob = $activeConcession->dob;
             $propOwners->save();
         }
-        if ($activeConcession->applied_for == 'Specially Abled') {
+        if (isset($activeConcession->is_specially_abled)) {
             $propOwners->is_specially_abled = $activeConcession->is_specially_abled;
             $propOwners->save();
         }
-        if ($activeConcession->applied_for == 'Armed Force') {
+        if (isset($activeConcession->is_armed_force)) {
             $propOwners->is_armed_force = $activeConcession->is_armed_force;
             $propOwners->save();
         }
