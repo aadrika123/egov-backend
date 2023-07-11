@@ -763,7 +763,7 @@ class ConcessionController extends Controller
                 'forward_date' => $this->_todayDate->format('Y-m-d'),
                 'forward_time' => $this->_todayDate->format('H:i:s')
             ]);
-
+            // dd();
             DB::commit();
             return responseMsgs(true, $msg, "", "", '010709', '01', '376ms', 'Post', '');
         } catch (Exception $e) {
