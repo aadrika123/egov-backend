@@ -78,7 +78,7 @@ class WaterConsumerDemand extends Model
      * | @param meterDetails
         | Create the demand no through id generation
      */
-    public function saveConsumerDemand($demands, $meterDetails, $consumerDetails, $request, $taxId)
+    public function saveConsumerDemand($demands, $consumerDetails, $request, $taxId, $userDetails)
     {
         $mWaterConsumerDemand = new WaterConsumerDemand();
         $mWaterConsumerDemand->consumer_id              =  $consumerDetails->id;
@@ -86,16 +86,17 @@ class WaterConsumerDemand extends Model
         $mWaterConsumerDemand->ulb_id                   =  $consumerDetails->ulb_id;
         $mWaterConsumerDemand->generation_date          =  $demands['generation_date'];
         $mWaterConsumerDemand->amount                   =  $demands['amount'];
-        $mWaterConsumerDemand->paid_status              =  0;
+        $mWaterConsumerDemand->paid_status              =  0;                                   // Static
         $mWaterConsumerDemand->consumer_tax_id          =  $taxId;
-        $mWaterConsumerDemand->emp_details_id           =  authUser()->id;
+        $mWaterConsumerDemand->emp_details_id           =  $userDetails['emp_id'] ?? null;
+        $mWaterConsumerDemand->citizen_id               =  $userDetails['citizen_id'] ?? null;
         $mWaterConsumerDemand->demand_from              =  $demands['demand_from'];
         $mWaterConsumerDemand->demand_upto              =  $demands['demand_upto'];
-        $mWaterConsumerDemand->penalty                  =  $demands['penalty'] ?? 0;
+        $mWaterConsumerDemand->penalty                  =  $demands['penalty'] ?? 0;            // Static
         $mWaterConsumerDemand->current_meter_reading    =  $request->finalRading;
         $mWaterConsumerDemand->unit_amount              =  $demands['unit_amount'];
         $mWaterConsumerDemand->connection_type          =  $demands['connection_type'];
-        $mWaterConsumerDemand->demand_no                =  "RMC" . random_int(100000, 999999) . "/" . random_int(1, 10);
+        $mWaterConsumerDemand->demand_no                =  "WCD" . random_int(100000, 999999) . "/" . random_int(1, 10);
         $mWaterConsumerDemand->balance_amount           =  $demands['penalty'] ?? 0 + $demands['amount'];
         $mWaterConsumerDemand->created_at               =  Carbon::now();
         $mWaterConsumerDemand->save();

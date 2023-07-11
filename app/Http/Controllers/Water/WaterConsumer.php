@@ -14,6 +14,7 @@ use App\Models\Water\WaterApprovalApplicationDetail;
 use App\Models\Water\WaterChequeDtl;
 use App\Models\Water\WaterConnectionCharge;
 use App\Models\Water\WaterConsumer as WaterWaterConsumer;
+use App\Models\Water\WaterConsumerCharge;
 use App\Models\Water\WaterConsumerDemand;
 use App\Models\Water\WaterConsumerDisconnection;
 use App\Models\Water\WaterConsumerInitialMeter;
@@ -164,6 +165,7 @@ class WaterConsumer extends Controller
 
             # Save demand details 
             DB::beginTransaction();
+            $userDetails = $this->checkUserType($request);
             if (isset($calculatedDemand)) {
                 $demandDetails = collect($calculatedDemand['consumer_tax']['0']);
                 switch ($demandDetails['charge_type']) {
@@ -172,8 +174,8 @@ class WaterConsumer extends Controller
                             'document' => "required|mimes:pdf,jpeg,png,jpg",
                         ]);
                         $meterDetails = $mWaterConsumerMeter->saveMeterReading($request);
-                        $mWaterConsumerInitialMeter->saveConsumerReading($request, $meterDetails);
-                        $demandIds = $this->savingDemand($calculatedDemand, $request, $consumerDetails, $demandDetails['charge_type'], $refMeterConnectionType);
+                        $mWaterConsumerInitialMeter->saveConsumerReading($request, $meterDetails, $userDetails);
+                        $demandIds = $this->savingDemand($calculatedDemand, $request, $consumerDetails, $demandDetails['charge_type'], $refMeterConnectionType, $userDetails);
 
                         # save the chages doc
                         $documentPath = $this->saveDocument($request, $meterRefImageName);
@@ -187,8 +189,8 @@ class WaterConsumer extends Controller
                             'document' => "required|mimes:pdf,jpeg,png,jpg",
                         ]);
                         $meterDetails = $mWaterConsumerMeter->saveMeterReading($request);
-                        $mWaterConsumerInitialMeter->saveConsumerReading($request, $meterDetails);
-                        $demandIds = $this->savingDemand($calculatedDemand, $request, $consumerDetails, $demandDetails['charge_type'], $refMeterConnectionType);
+                        $mWaterConsumerInitialMeter->saveConsumerReading($request, $meterDetails, $userDetails);
+                        $demandIds = $this->savingDemand($calculatedDemand, $request, $consumerDetails, $demandDetails['charge_type'], $refMeterConnectionType, $userDetails);
 
                         # save the chages doc
                         $documentPath = $this->saveDocument($request, $meterRefImageName);
@@ -203,8 +205,8 @@ class WaterConsumer extends Controller
                             'document' => "required|mimes:pdf,jpeg,png,jpg",
                         ]);
                         $meterDetails = $mWaterConsumerMeter->saveMeterReading($request);
-                        $mWaterConsumerInitialMeter->saveConsumerReading($request, $meterDetails);
-                        $demandIds = $this->savingDemand($calculatedDemand, $request, $consumerDetails, $demandDetails['charge_type'], $refMeterConnectionType);
+                        $mWaterConsumerInitialMeter->saveConsumerReading($request, $meterDetails, $userDetails);
+                        $demandIds = $this->savingDemand($calculatedDemand, $request, $consumerDetails, $demandDetails['charge_type'], $refMeterConnectionType, $userDetails);
 
                         # save the chages doc
                         $documentPath = $this->saveDocument($request, $meterRefImageName);
@@ -215,7 +217,7 @@ class WaterConsumer extends Controller
                         break;
 
                     case ($refMeterConnectionType['3']):
-                        $this->savingDemand($calculatedDemand, $request, $consumerDetails, $demandDetails['charge_type'], $refMeterConnectionType);
+                        $this->savingDemand($calculatedDemand, $request, $consumerDetails, $demandDetails['charge_type'], $refMeterConnectionType, $userDetails);
                         break;
                 }
                 DB::commit();
@@ -240,16 +242,17 @@ class WaterConsumer extends Controller
         | Serial No : 03.01
         | Not Tested
      */
-    public function savingDemand($calculatedDemand, $request, $consumerDetails, $demandType, $refMeterConnectionType)
+    public function savingDemand($calculatedDemand, $request, $consumerDetails, $demandType, $refMeterConnectionType, $userDetails)
     {
         $mWaterConsumerTax      = new WaterConsumerTax();
         $mWaterConsumerDemand   = new WaterConsumerDemand();
         $generatedDemand        = $calculatedDemand['consumer_tax'];
 
         $returnDemandIds = collect($generatedDemand)->map(function ($firstValue)
-        use ($mWaterConsumerDemand, $consumerDetails, $request, $mWaterConsumerTax, $demandType, $refMeterConnectionType) {
-            $taxId = $mWaterConsumerTax->saveConsumerTax($firstValue, $consumerDetails);
+        use ($mWaterConsumerDemand, $consumerDetails, $request, $mWaterConsumerTax, $demandType, $refMeterConnectionType, $userDetails) {
+            $taxId = $mWaterConsumerTax->saveConsumerTax($firstValue, $consumerDetails, $userDetails);
             $refDemandIds = array();
+            # User for meter details entry
             $meterDetails = [
                 "charge_type"       => $firstValue['charge_type'],
                 "amount"            => $firstValue['charge_type'],
@@ -264,52 +267,52 @@ class WaterConsumer extends Controller
                     $check = collect($refDemands)->first();
                     if (is_array($check)) {
                         $refDemandIds = collect($refDemands)->map(function ($secondValue)
-                        use ($mWaterConsumerDemand, $meterDetails, $consumerDetails, $request, $taxId) {
-                            $refDemandId = $mWaterConsumerDemand->saveConsumerDemand($secondValue, $meterDetails, $consumerDetails, $request, $taxId);
+                        use ($mWaterConsumerDemand, $consumerDetails, $request, $taxId, $userDetails) {
+                            $refDemandId = $mWaterConsumerDemand->saveConsumerDemand($secondValue, $consumerDetails, $request, $taxId, $userDetails);
                             return $refDemandId;
                         });
                         break;
                     }
-                    $refDemandIds = $mWaterConsumerDemand->saveConsumerDemand($refDemands, $meterDetails, $consumerDetails, $request, $taxId);
+                    $refDemandIds = $mWaterConsumerDemand->saveConsumerDemand($refDemands, $consumerDetails, $request, $taxId, $userDetails);
                     break;
                 case ($refMeterConnectionType['5']):
                     $refDemands = $firstValue['consumer_demand'];
                     $check = collect($refDemands)->first();
                     if (is_array($check)) {
                         $refDemandIds = collect($refDemands)->map(function ($secondValue)
-                        use ($mWaterConsumerDemand, $meterDetails, $consumerDetails, $request, $taxId) {
-                            $refDemandId = $mWaterConsumerDemand->saveConsumerDemand($secondValue, $meterDetails, $consumerDetails, $request, $taxId);
+                        use ($mWaterConsumerDemand, $consumerDetails, $request, $taxId, $userDetails) {
+                            $refDemandId = $mWaterConsumerDemand->saveConsumerDemand($secondValue, $consumerDetails, $request, $taxId, $userDetails);
                             return $refDemandId;
                         });
                         break;
                     }
-                    $refDemandIds = $mWaterConsumerDemand->saveConsumerDemand($refDemands, $meterDetails, $consumerDetails, $request, $taxId);
+                    $refDemandIds = $mWaterConsumerDemand->saveConsumerDemand($refDemands,  $consumerDetails, $request, $taxId, $userDetails);
                     break;
                 case ($refMeterConnectionType['2']):
                     $refDemands = $firstValue['consumer_demand'];
                     $check = collect($refDemands)->first();
                     if (is_array($check)) {
                         $refDemandIds = collect($refDemands)->map(function ($secondValue)
-                        use ($mWaterConsumerDemand, $meterDetails, $consumerDetails, $request, $taxId) {
-                            $refDemandId = $mWaterConsumerDemand->saveConsumerDemand($secondValue, $meterDetails, $consumerDetails, $request, $taxId);
+                        use ($mWaterConsumerDemand, $consumerDetails, $request, $taxId, $userDetails) {
+                            $refDemandId = $mWaterConsumerDemand->saveConsumerDemand($secondValue, $consumerDetails, $request, $taxId, $userDetails);
                             return $refDemandId;
                         });
                         break;
                     }
-                    $refDemandIds = $mWaterConsumerDemand->saveConsumerDemand($refDemands, $meterDetails, $consumerDetails, $request, $taxId);
+                    $refDemandIds = $mWaterConsumerDemand->saveConsumerDemand($refDemands,  $consumerDetails, $request, $taxId, $userDetails);
                     break;
                 case ($refMeterConnectionType['3']):
                     $refDemands = $firstValue['consumer_demand'];
                     $check = collect($refDemands)->first();
                     if (is_array($check)) {
                         $refDemandIds = collect($refDemands)->map(function ($secondValue)
-                        use ($mWaterConsumerDemand, $meterDetails, $consumerDetails, $request, $taxId) {
-                            $refDemandId = $mWaterConsumerDemand->saveConsumerDemand($secondValue, $meterDetails, $consumerDetails, $request, $taxId);
+                        use ($mWaterConsumerDemand, $consumerDetails, $request, $taxId, $userDetails) {
+                            $refDemandId = $mWaterConsumerDemand->saveConsumerDemand($secondValue,  $consumerDetails, $request, $taxId, $userDetails);
                             return $refDemandId;
                         });
                         break;
                     }
-                    $refDemandIds = $mWaterConsumerDemand->saveConsumerDemand($refDemands, $meterDetails, $consumerDetails, $request, $taxId);
+                    $refDemandIds = $mWaterConsumerDemand->saveConsumerDemand($refDemands, $consumerDetails, $request, $taxId, $userDetails);
                     break;
             }
             return $refDemandIds;
@@ -364,7 +367,7 @@ class WaterConsumer extends Controller
         try {
             $mWaterConsumerMeter    = new WaterConsumerMeter();
             $meterRefImageName      = config::get('waterConstaint.WATER_METER_CODE');
-            $param = $this->checkParamForMeterEntry($request);
+            $param                  = $this->checkParamForMeterEntry($request);
 
             DB::beginTransaction();
             $metaRequest = new Request([
@@ -377,7 +380,6 @@ class WaterConsumer extends Controller
                 $this->saveGenerateConsumerDemand($metaRequest);
             }
             $documentPath = $this->saveDocument($request, $meterRefImageName);
-            // $fixedRate = $this->getFixedRate($request);                                          // Manul Entry of fixed rate
             $mWaterConsumerMeter->saveMeterDetails($request, $documentPath, $fixedRate = null);
             DB::commit();
             return responseMsgs(true, "Meter Detail Entry Success !", "", "", "01", ".ms", "POST", $request->deviceId);
@@ -399,17 +401,21 @@ class WaterConsumer extends Controller
      */
     public function checkParamForMeterEntry($request)
     {
-        $refConsumerId = $request->consumerId;
-        $todayDate = Carbon::now();
+        $refConsumerId  = $request->consumerId;
+        $todayDate      = Carbon::now();
 
         $mWaterWaterConsumer    = new WaterWaterConsumer();
         $mWaterConsumerMeter    = new WaterConsumerMeter();
         $mWaterConsumerDemand   = new WaterConsumerDemand();
+        $mWaterConsumerCharge   = new WaterConsumerCharge();
         $refMeterConnType       = Config::get('waterConstaint.WATER_MASTER_DATA.METER_CONNECTION_TYPE');
+        $refConsumerChrages     = Config::get('waterConstaint.CONSUMER_CHARGE_CATAGORY');
 
-        $mWaterWaterConsumer->getConsumerDetailById($refConsumerId);
-        $consumerMeterDetails = $mWaterConsumerMeter->getMeterDetailsByConsumerId($refConsumerId)->first();
-        $consumerDemand = $mWaterConsumerDemand->getFirstConsumerDemand($refConsumerId)->first();
+        $refConsumerDetails     = $mWaterWaterConsumer->getConsumerDetailById($refConsumerId);
+        $consumerMeterDetails   = $mWaterConsumerMeter->getMeterDetailsByConsumerId($refConsumerId)->first();
+        $consumerDemand         = $mWaterConsumerDemand->getFirstConsumerDemand($refConsumerId)->first();
+
+        # Check the meter/fixed case 
         $this->checkForMeterFixedCase($request, $consumerMeterDetails, $refMeterConnType);
 
         switch ($request) {
@@ -432,6 +438,14 @@ class WaterConsumer extends Controller
                 break;
         }
 
+        # if fixed meter connection is changing to meter connection as per rule every connection should be in meter
+        if ($request->connectionType != $refMeterConnType['Fixed'] && $consumerMeterDetails->connection_type == $refMeterConnType['Fixed']) {
+            if ($consumerDemand) {
+                throw new Exception("Please pay the old Demand Amount! as per rule to change fixed connection to meter!");
+            }
+            throw new Exception("Please apply for regularization as per rule 16 your connection shoul be in meter!");
+        }
+        # if there is meter detail exist
         if (isset($consumerMeterDetails)) {
             $reqConnectionDate = $request->connectionDate;
             switch ($consumerMeterDetails) {
@@ -439,6 +453,7 @@ class WaterConsumer extends Controller
                     throw new Exception("Connection Date should be grater than previous Connection date!");
             }
         }
+        # if the consumer demand exist
         if (isset($consumerDemand)) {
             $reqConnectionDate = $request->connectionDate;
             $reqConnectionDate = Carbon::parse($reqConnectionDate)->format('m');
@@ -449,6 +464,7 @@ class WaterConsumer extends Controller
                     break;
             }
         }
+        # if the meter detail do not exist 
         if (is_null($consumerMeterDetails)) {
             $returnData['meterStatus'] = false;
         }
@@ -491,8 +507,8 @@ class WaterConsumer extends Controller
 
         $imageName = $docUpload->upload($refImageName, $document, $relativePath);
         $doc = [
-            "document" => $imageName,
-            "relaivePath" => $relativePath
+            "document"      => $imageName,
+            "relaivePath"   => $relativePath
         ];
         return $doc;
     }
@@ -1078,6 +1094,7 @@ class WaterConsumer extends Controller
     }
 
     /////////////////////////
+    // Calling function
     public function getDetailByConsumerNo($key, $refNo)
     {
         $refConnectionType = Config::get('waterConstaint.WATER_MASTER_DATA.METER_CONNECTION_TYPE');
@@ -1113,6 +1130,104 @@ class WaterConsumer extends Controller
                 'ulb_ward_masters.ward_name'
             )->first();
     }
+
+
+    /**
+     * | Citizen self generation of demand 
+     * | generate demand only the last day of the month
+        | Serial No :
+        | Under Con
+     */
+    public function selfGenerateDemand(Request $req)
+    {
+        $req->validate([
+            'id'    => 'required',
+            'finalRading'   => 'required',
+            'document'      => 'required|file|'
+        ]);
+        try {
+            $today                  = Carbon::now();
+            $consumerId             = $req->id;
+            $mWaterWaterConsumer    = new WaterWaterConsumer();
+            $refConsumerDetails     = $mWaterWaterConsumer->getConsumerDetailById($consumerId);
+            $refDetails             = $this->checkUser($req, $refConsumerDetails);
+            $metaReq = new Request([
+                "consumerId" => $consumerId
+            ]);
+
+            $this->checkDemandGeneration($metaReq, $refConsumerDetails);
+            $metaRequest = new Request([
+                "consumerId"    => $consumerId,
+                "finalRading"   => $req->FinalReading,                          // if the demand is generated for the first time
+                "demandUpto"    => $today,
+                "document"      => $req->document,
+            ]);
+            $returnDetails = $this->saveGenerateConsumerDemand($metaRequest);
+            if ($returnDetails->original['status'] == false) {
+                throw new Exception($returnDetails->original['message']);
+            }
+            return responseMsgs(true, "Self Demand Generated!", [], "", "01", ".ms", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $req->deviceId);
+        }
+    }
+
+    /**
+     * | Check the user details for self demand generation
+     * | check the consumer details with user details
+        | Serial No :
+     */
+    public function checkUser($req, $refConsumerDetails)
+    {
+        $user = authUser();
+        $refUserType = Config::get("waterConstaint.REF_USER_TYPE");
+        if ($refConsumerDetails->user_type != $refUserType['1']) {
+            throw new Exception("you are not the citizen whose consumer is assigned!");
+        }
+        if ($refConsumerDetails->user_id != $user->id) {
+            throw new Exception("you are not the authorized user!");
+        }
+    }
+
+
+
+    /**
+     * | Check the user type and return its id
+     */
+    public function checkUserType($req)
+    {
+        $user = authUser();
+        $confUserType = Config::get("waterConstaint.USER_TYPE");
+        $userType = $user->user_type;
+
+        if ($userType == $confUserType['confUserType']) {
+            return [
+                "citizen_id" => $user->id,
+                "user_type" => $userType
+            ];
+        } else {
+            return [
+                "emp_id" => $user->id,
+                "user_type" => $userType
+            ];
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     /**

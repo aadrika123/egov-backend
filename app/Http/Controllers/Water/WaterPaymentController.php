@@ -534,7 +534,7 @@ class WaterPaymentController extends Controller
 
                     # in case of change or payment of penalty
                     if ($payPenalty == true) {
-                        $mWaterPenaltyInstallment->saveWaterPenelty($applicationId, $refInstallment, $chargeCatagory['SITE_INSPECTON'], $connectionId);
+                        $mWaterPenaltyInstallment->saveWaterPenelty($applicationId, $refInstallment, $chargeCatagory['SITE_INSPECTON'], $connectionId,null);
                     }
                     $mWaterApplication->updatePaymentStatus($applicationId, false);
                     $refPaymentStatus = 0;                                              // Static
@@ -554,7 +554,7 @@ class WaterPaymentController extends Controller
                     $newConnectionCharges['conn_fee_charge']['conn_fee'] = 0;
                     $newConnectionCharges['conn_fee_charge']['amount'] = $unpaidPenalty;
                     $connectionId = $mWaterConnectionCharge->saveWaterCharge($applicationId, $request, $newConnectionCharges);
-                    $mWaterPenaltyInstallment->saveWaterPenelty($applicationId, $refInstallment, $chargeCatagory['SITE_INSPECTON'], $connectionId);
+                    $mWaterPenaltyInstallment->saveWaterPenelty($applicationId, $refInstallment, $chargeCatagory['SITE_INSPECTON'], $connectionId,null);
                     $mWaterApplication->updatePaymentStatus($applicationId, false);
                     $refPaymentStatus = 0;                                              // Static
                     break;
@@ -786,7 +786,7 @@ class WaterPaymentController extends Controller
             'headName'      => $refHeadNames['2'],
             'amount'        => $penaltyAmount,
             'valueAddMinus' => "+",                                                 // Static
-            'applicationId' => null
+            'applicationId' => null                                                 // Static
         ]);
         $mWaterTranFineRebate->saveRebateDetails($metaRequest, $transactionId);
     }
