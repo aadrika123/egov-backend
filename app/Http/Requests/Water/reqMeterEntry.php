@@ -29,18 +29,18 @@ class reqMeterEntry extends FormRequest
         $rules['consumerId']            = "required|digits_between:1,9223372036854775807";
         $rules['connectionDate']        = 'required|date|date_format:Y-m-d';
         $rules['oldMeterFinalReading']  = 'required';
-        $rules['document']              = 'required|mimes:pdf,jpeg,jpg,png|max:2048';
+
         if (isset($this->connectionType) && $this->connectionType && in_array($this->connectionType, [$refMeterConnectionType['Meter'], $refMeterConnectionType['Gallon']])) {
-            $rules['meterNo'] = 'required';
-            // $rule['MeterDoc'] = 'required|' # Meter doc should be in pdf only.
-            $rules['newMeterInitialReading'] = 'required';
+            $rules['meterNo']                   = 'required';
+            $rules['document']                  = 'required|mimes:pdf,jpeg,jpg,png|max:2048';
+            $rules['newMeterInitialReading']    = 'required';
         }
         if (isset($this->connectionType) && $this->connectionType && $this->connectionType == $refMeterConnectionType['Fixed']) {
             $rules['newMeterInitialReading'] = 'required';
         }
         if (isset($this->connectionType) && $this->connectionType && $this->connectionType == $refMeterConnectionType['Meter/Fixed']) {
-            $rules['meterNo'] = 'required';
-            // $rule['MeterDoc'] = 'required|' # Meter doc should be in pdf only.
+            $rules['meterNo']               = 'required';
+            $rules['document']              = 'required|mimes:pdf,jpeg,jpg,png|max:2048';
         }
         return $rules;
     }

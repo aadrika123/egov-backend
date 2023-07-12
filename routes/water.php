@@ -107,6 +107,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('admin/consumer/get-meter-list', 'getMeterList');                                   // Admin
         Route::post('consumer/caretaken-connections', 'viewCaretakenConnection');                       // Citiizen
         Route::post('consumer/calculate/meter-fixed-reading', 'calculateMeterFixedReading');            // Admin
+        Route::post('consumer/self-generate-demand', 'selfGenerateDemand');         // Herer                    // Citizen
 
         # Unfinished API
         Route::post('admin/consumer/add-fixed-rate', 'addFixedRate');               // Here             // Admin / Not used

@@ -153,4 +153,11 @@ return [
         "4" => "Pseudo",
         "5" => "Employee"
     ],
+    "CONSUMER_CHARGE_CATAGORY" => [
+        "FIXED_TO_METER"            => 1,
+        "WATER_DISCONNECTION"       => 2,
+        "NAME_TRANSFER"             => 3,
+        "FERRULE_CLEANING_CHECKING" => 4,
+        "PIPE_SHIFTING_ALTERATION " => 5
+    ],
 ];

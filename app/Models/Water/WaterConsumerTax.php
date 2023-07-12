@@ -14,19 +14,20 @@ class WaterConsumerTax extends Model
      * | Save the Consumer Tax Details 
      * | @param 
      */
-    public function saveConsumerTax($taxDetails, $consumerDetails)
+    public function saveConsumerTax($taxDetails, $consumerDetails, $userDetails)
     {
         $mWaterConsumerTax = new WaterConsumerTax();
-        $mWaterConsumerTax->ward_mstr_id     = $consumerDetails['ward_mstr_id'];
-        $mWaterConsumerTax->consumer_id      = $consumerDetails['id'];
-        $mWaterConsumerTax->charge_type      = $taxDetails['charge_type'];
-        $mWaterConsumerTax->rate_id          = $taxDetails['rate_id'];
-        $mWaterConsumerTax->initial_reading  = $taxDetails['initial_reading'] ?? 0;
-        $mWaterConsumerTax->final_reading    = $taxDetails['final_reading'];
-        $mWaterConsumerTax->amount           = $taxDetails['amount'];
-        $mWaterConsumerTax->effective_from   = $taxDetails['effective_from'];
-        $mWaterConsumerTax->emp_details_id   = authUser()->id;
-        $mWaterConsumerTax->created_on       = Carbon::now();
+        $mWaterConsumerTax->ward_mstr_id    = $consumerDetails['ward_mstr_id'];
+        $mWaterConsumerTax->consumer_id     = $consumerDetails['id'];
+        $mWaterConsumerTax->charge_type     = $taxDetails['charge_type'];
+        $mWaterConsumerTax->rate_id         = $taxDetails['rate_id'];
+        $mWaterConsumerTax->initial_reading = $taxDetails['initial_reading'] ?? 0;
+        $mWaterConsumerTax->final_reading   = $taxDetails['final_reading'];
+        $mWaterConsumerTax->amount          = $taxDetails['amount'];
+        $mWaterConsumerTax->effective_from  = $taxDetails['effective_from'];
+        $mWaterConsumerTax->emp_details_id  = $userDetails['emp_id'] ?? null;
+        $mWaterConsumerTax->citizen_id      = $userDetails['citizen_id'] ?? null;
+        $mWaterConsumerTax->created_on      = Carbon::now();
         $mWaterConsumerTax->save();
         return $mWaterConsumerTax->id;
     }
