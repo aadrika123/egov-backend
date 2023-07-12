@@ -275,8 +275,6 @@ trait SafDetailsTrait
                 $objectionFlooorDtl['occupancy_type'],
                 $objectionFlooorDtl['construction_type'],
                 $objectionFlooorDtl['builtup_area'],
-                $objectionFlooorDtl['carpet_area'],
-
             ];
     }
 
