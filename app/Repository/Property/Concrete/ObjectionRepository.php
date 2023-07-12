@@ -350,9 +350,9 @@ class ObjectionRepository implements iObjectionRepository
                     }
                     //road width
                     if ($otid['id'] == 3) {
-                        $assement_error->data_ref_type = 'ref_prop_road_types.id';
+                        $assement_error->data_ref_type = 'road_width';
                         $objection->objection_type_id = 3;
-                        $assessmmtData = collect($assesmentData['road_type_mstr_id']);
+                        $assessmmtData = collect($assesmentData['road_width']);
                         $assement_error->assesment_data =  $assessmmtData->first();
                     }
                     //property_types
@@ -466,6 +466,7 @@ class ObjectionRepository implements iObjectionRepository
     {
         $assesmentDetails = PropProperty::select(
             'rwh_date_from',
+            'road_width',
             'is_hoarding_board as isHoarding',
             'hoarding_area',
             'hoarding_installation_date',
