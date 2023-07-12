@@ -230,24 +230,24 @@ class ObjectionController extends Controller
                 $ownerList = json_decode(json_encode($ownerList), true);
 
 
-                $sql = " SELECT Odtls.*,
+                $sql = "SELECT Odtls.*,
                             ot.type,
-                            case when Odtls.objection_type_id not in (3,4) then Odtls.assesment_data
-                                when Odtls.objection_type_id =3 then ref_prop_road_types.road_type
-                                when Odtls.objection_type_id =4 then ref_prop_types.property_type 
-                                end as obj_valu,
-                            case when Odtls.objection_type_id not in (3,4) then Odtls.assesment_data
-                                when Odtls.objection_type_id =3 then objection_type_road.road_type
-                                when Odtls.objection_type_id =4 then objection_type_prop.property_type 
-                                end as asses_valu,
-                            ref_prop_road_types.road_type,
+                            CASE
+                                WHEN Odtls.objection_type_id NOT IN (2, 4) THEN Odtls.applicant_data
+                                WHEN Odtls.objection_type_id = 2 AND Odtls.applicant_data = '1' THEN 'YES'
+                                WHEN Odtls.objection_type_id = 2 AND Odtls.applicant_data = '0' THEN 'NO'
+                                WHEN Odtls.objection_type_id = 4 THEN objection_type_prop.property_type
+                            END AS obj_valu,
+                            CASE
+                                WHEN Odtls.objection_type_id NOT IN (2, 4) THEN Odtls.assesment_data
+                                WHEN Odtls.objection_type_id = 2 AND Odtls.assesment_data = '1' THEN 'YES'
+                                WHEN Odtls.objection_type_id = 2 AND Odtls.assesment_data = '0' THEN 'NO'
+                                WHEN Odtls.objection_type_id = 4 THEN ref_prop_types.property_type
+                            END AS asses_valu,
                             ref_prop_types.property_type
                         FROM prop_active_objection_dtls as Odtls
                         inner join ref_prop_objection_types as ot on ot.id = Odtls.objection_type_id
-                        left join ref_prop_road_types on ref_prop_road_types.id::text = Odtls.assesment_data and Odtls.objection_type_id =3
                         left join ref_prop_types on ref_prop_types.id::text = Odtls.assesment_data and Odtls.objection_type_id =4
-
-                        left join ref_prop_road_types objection_type_road on objection_type_road.id::text = Odtls.applicant_data and Odtls.objection_type_id =3
                         left join ref_prop_types objection_type_prop on objection_type_prop.id::text = Odtls.applicant_data and Odtls.objection_type_id =4
 
                         where objection_id = $details->objection_id";
@@ -629,6 +629,11 @@ class ObjectionController extends Controller
                                 case (4):
                                     PropProperty::where('id', $activeObjection->id)
                                         ->update(['prop_type_mstr_id' => $objDtl->applicant_data]);
+                                    break;
+
+                                case (8):
+                                    PropProperty::where('id', $activeObjection->id)
+                                        ->update(['rwh_date_from' => $objDtl->applicant_data]);
                                     break;
                             }
                         }
