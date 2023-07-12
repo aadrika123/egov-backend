@@ -369,6 +369,13 @@ class ObjectionRepository implements iObjectionRepository
                         $assessmmtData = collect($assesmentData['areaOfPlot']);
                         $assement_error->assesment_data =  $assessmmtData->first();
                     }
+                    //rwh date
+                    if ($otid['id'] == 8) {
+                        $assement_error->data_ref_type = 'date';
+                        $objection->objection_type_id = 8;
+                        $assessmmtData = collect($assesmentData['rwhDateFrom']);
+                        $assement_error->assesment_data =  $assessmmtData->first();
+                    }
                     $assement_error->applicant_data = $otid['value'] ?? null;
                     $assement_error->save();
                 }
@@ -404,8 +411,8 @@ class ObjectionRepository implements iObjectionRepository
                         $assement_floor->carpet_area = $floors['buildupArea'] * 0.70;
                     else
                         $assement_floor->carpet_area = $floors['buildupArea'] * 0.80;
-                    // $assement_floor->date_from = $floors->dateFrom ?? null;
-                    // $assement_floor->date_upto = $floors->dateUpto ?? null;
+                    $assement_floor->date_from = $floors->dateFrom ?? null;
+                    $assement_floor->date_upto = $floors->dateUpto ?? null;
                     $assement_floor->save();
                 }
             }
