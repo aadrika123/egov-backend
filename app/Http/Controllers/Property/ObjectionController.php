@@ -230,24 +230,18 @@ class ObjectionController extends Controller
                 $ownerList = json_decode(json_encode($ownerList), true);
 
 
-                $sql = " SELECT Odtls.*,
+                $sql = "SELECT Odtls.*,
                             ot.type,
-                            case when Odtls.objection_type_id not in (3,4) then Odtls.assesment_data
-                                when Odtls.objection_type_id =3 then ref_prop_road_types.road_type
+                            case when Odtls.objection_type_id not in (4) then Odtls.assesment_data
                                 when Odtls.objection_type_id =4 then ref_prop_types.property_type 
                                 end as obj_valu,
-                            case when Odtls.objection_type_id not in (3,4) then Odtls.assesment_data
-                                when Odtls.objection_type_id =3 then objection_type_road.road_type
+                            case when Odtls.objection_type_id not in (4) then Odtls.applicant_data
                                 when Odtls.objection_type_id =4 then objection_type_prop.property_type 
                                 end as asses_valu,
-                            ref_prop_road_types.road_type,
                             ref_prop_types.property_type
                         FROM prop_active_objection_dtls as Odtls
                         inner join ref_prop_objection_types as ot on ot.id = Odtls.objection_type_id
-                        left join ref_prop_road_types on ref_prop_road_types.id::text = Odtls.assesment_data and Odtls.objection_type_id =3
                         left join ref_prop_types on ref_prop_types.id::text = Odtls.assesment_data and Odtls.objection_type_id =4
-
-                        left join ref_prop_road_types objection_type_road on objection_type_road.id::text = Odtls.applicant_data and Odtls.objection_type_id =3
                         left join ref_prop_types objection_type_prop on objection_type_prop.id::text = Odtls.applicant_data and Odtls.objection_type_id =4
 
                         where objection_id = $details->objection_id";
