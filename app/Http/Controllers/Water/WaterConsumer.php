@@ -1026,7 +1026,7 @@ class WaterConsumer extends Controller
         }
     }
 
-
+    //Start///////////////////////////////////////////////////////////////////////
     /**
      * | Search the governmental prop water commention 
      * | Search only the Gov water connections 
@@ -1093,7 +1093,7 @@ class WaterConsumer extends Controller
         }
     }
 
-    /////////////////////////
+
     // Calling function
     public function getDetailByConsumerNo($key, $refNo)
     {
@@ -1130,13 +1130,13 @@ class WaterConsumer extends Controller
                 'ulb_ward_masters.ward_name'
             )->first();
     }
-
+    ///////////////////////////////////////////////////////////////////////End//
 
     /**
      * | Citizen self generation of demand 
      * | generate demand only the last day of the month
         | Serial No :
-        | Under Con
+        | Working
      */
     public function selfGenerateDemand(Request $req)
     {
@@ -1179,11 +1179,12 @@ class WaterConsumer extends Controller
      */
     public function checkUser($req, $refConsumerDetails)
     {
-        $user           = authUser();
-        $todayDate      = Carbon::now();
-        $endDate        = Carbon::now()->endOfMonth();
-        $formatEndDate  = $endDate->format('d-m-Y');
-        $refUserType    = Config::get("waterConstaint.REF_USER_TYPE");
+        $user                       = authUser();
+        $todayDate                  = Carbon::now();
+        $endDate                    = Carbon::now()->endOfMonth();
+        $formatEndDate              = $endDate->format('d-m-Y');
+        $refUserType                = Config::get("waterConstaint.REF_USER_TYPE");
+        $mActiveCitizenUndercare    = new ActiveCitizenUndercare();
 
         // if ($endDate > $todayDate) {
         //     throw new Exception("please generate the demand on $formatEndDate or after it!");
@@ -1191,8 +1192,12 @@ class WaterConsumer extends Controller
         if ($refConsumerDetails->user_type != $refUserType['1']) {
             throw new Exception("you are not the citizen whose consumer is assigned!");
         }
-        if ($refConsumerDetails->user_id != $user->id) {
-            throw new Exception("you are not the authorized user!");
+        $careTakerDetails   = $mActiveCitizenUndercare->getWaterUnderCare($user->id)->get();
+        $consumerIds        = collect($careTakerDetails)->pluck('consumer_id');
+        if (!in_array($req->id, ($consumerIds->toArray()))) {
+            if ($refConsumerDetails->user_id != $user->id) {
+                throw new Exception("you are not the authorized user!");
+            }
         }
     }
 

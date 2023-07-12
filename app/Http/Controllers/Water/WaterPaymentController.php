@@ -18,6 +18,8 @@ use App\Models\Water\WaterConnectionCharge;
 use App\Models\Water\WaterConnectionThroughMstr;
 use App\Models\Water\WaterConnectionTypeMstr;
 use App\Models\Water\WaterConsumer;
+use App\Models\Water\WaterConsumerCharge;
+use App\Models\Water\WaterConsumerChargeCategory;
 use App\Models\Water\WaterConsumerCollection;
 use App\Models\Water\WaterConsumerDemand;
 use App\Models\Water\WaterConsumerInitialMeter;
@@ -114,12 +116,14 @@ class WaterPaymentController extends Controller
             $mWaterConnectionThroughMstr    = new WaterConnectionThroughMstr();
             $mWaterPropertyTypeMstr         = new WaterPropertyTypeMstr();
             $mWaterOwnerTypeMstr            = new WaterOwnerTypeMstr();
+            $mWaterConsumerChargeCategory   = new WaterConsumerChargeCategory();
 
             $waterParamPipelineType     = json_decode(Redis::get('water-param-pipeline-type'));
             $waterConnectionTypeMstr    = json_decode(Redis::get('water-connection-type-mstr'));
             $waterConnectionThroughMstr = json_decode(Redis::get('water-connection-through-mstr'));
             $waterPropertyTypeMstr      = json_decode(Redis::get('water-property-type-mstr'));
             $waterOwnerTypeMstr         = json_decode(Redis::get('water-owner-type-mstr'));
+            $waterConsumerChargeMstr    = json_decode(Redis::get('water-consumer-charge-mstr'));
 
             # Ward Masters
             if (!$waterParamPipelineType) {
@@ -142,12 +146,17 @@ class WaterPaymentController extends Controller
                 $waterOwnerTypeMstr = $mWaterOwnerTypeMstr->getWaterOwnerTypeMstr();                            // Get PipelineType By Model Function
                 $redisConn->set('water-owner-type-mstr', json_encode($waterOwnerTypeMstr));                     // Caching
             }
+            if (!$waterConsumerChargeMstr) {
+                $waterConsumerChargeMstr = $mWaterConsumerChargeCategory->getConsumerChargesType();
+                $redisConn->set('water-consumer-charge-mstr', json_encode($waterConsumerChargeMstr));
+            }
             $masterValues = [
                 'water_param_pipeline_type'     => $waterParamPipelineType,
                 'water_connection_type_mstr'    => $waterConnectionTypeMstr,
                 'water_connection_through_mstr' => $waterConnectionThroughMstr,
                 'water_property_type_mstr'      => $waterPropertyTypeMstr,
                 'water_owner_type_mstr'         => $waterOwnerTypeMstr,
+                'water_consumer_charge_mstr'    => $waterConsumerChargeMstr
             ];
 
             # Config Master Data 
@@ -534,7 +543,7 @@ class WaterPaymentController extends Controller
 
                     # in case of change or payment of penalty
                     if ($payPenalty == true) {
-                        $mWaterPenaltyInstallment->saveWaterPenelty($applicationId, $refInstallment, $chargeCatagory['SITE_INSPECTON'], $connectionId,null);
+                        $mWaterPenaltyInstallment->saveWaterPenelty($applicationId, $refInstallment, $chargeCatagory['SITE_INSPECTON'], $connectionId, null);
                     }
                     $mWaterApplication->updatePaymentStatus($applicationId, false);
                     $refPaymentStatus = 0;                                              // Static
@@ -554,7 +563,7 @@ class WaterPaymentController extends Controller
                     $newConnectionCharges['conn_fee_charge']['conn_fee'] = 0;
                     $newConnectionCharges['conn_fee_charge']['amount'] = $unpaidPenalty;
                     $connectionId = $mWaterConnectionCharge->saveWaterCharge($applicationId, $request, $newConnectionCharges);
-                    $mWaterPenaltyInstallment->saveWaterPenelty($applicationId, $refInstallment, $chargeCatagory['SITE_INSPECTON'], $connectionId,null);
+                    $mWaterPenaltyInstallment->saveWaterPenelty($applicationId, $refInstallment, $chargeCatagory['SITE_INSPECTON'], $connectionId, null);
                     $mWaterApplication->updatePaymentStatus($applicationId, false);
                     $refPaymentStatus = 0;                                              // Static
                     break;

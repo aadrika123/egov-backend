@@ -432,4 +432,14 @@ class WaterConsumer extends Model
             ->orderByDesc('id')
             ->first();
     }
+
+    /**
+     * | Get consumers according to cosumer Ids
+     */
+    public function getConsumerListByIds($consumerIds)
+    {
+        return WaterConsumer::whereIn('id', $consumerIds)
+            ->where('status', 1)
+            ->orderByDesc('id');
+    }
 }
