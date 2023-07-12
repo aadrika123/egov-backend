@@ -119,6 +119,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         # Deactivation
         Route::post('admin/consumer/apply-deactivation', 'applyDeactivation');                          // Admin / Not Used
         Route::post('admin/consumer/demand-deactivation', 'consumerDemandDeactivation');                // Admin / Not used
+        // Route::post('consumer/')
     });
 
 
