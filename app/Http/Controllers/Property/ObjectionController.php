@@ -630,6 +630,11 @@ class ObjectionController extends Controller
                                     PropProperty::where('id', $activeObjection->id)
                                         ->update(['prop_type_mstr_id' => $objDtl->applicant_data]);
                                     break;
+
+                                case (8):
+                                    PropProperty::where('id', $activeObjection->id)
+                                        ->update(['rwh_date_from' => $objDtl->applicant_data]);
+                                    break;
                             }
                         }
                     }
