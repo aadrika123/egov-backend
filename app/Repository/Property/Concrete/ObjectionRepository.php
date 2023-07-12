@@ -373,7 +373,7 @@ class ObjectionRepository implements iObjectionRepository
                     if ($otid['id'] == 8) {
                         $assement_error->data_ref_type = 'date';
                         $objection->objection_type_id = 8;
-                        $assessmmtData = collect($assesmentData['rwhDateFrom']);
+                        $assessmmtData = collect($assesmentData['rwh_date_from']);
                         $assement_error->assesment_data =  $assessmmtData->first();
                     }
                     $assement_error->applicant_data = $otid['value'] ?? null;
@@ -465,6 +465,7 @@ class ObjectionRepository implements iObjectionRepository
     public function assesmentDetails($request)
     {
         $assesmentDetails = PropProperty::select(
+            'rwh_date_from',
             'is_hoarding_board as isHoarding',
             'hoarding_area',
             'hoarding_installation_date',
