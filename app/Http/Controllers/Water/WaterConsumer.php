@@ -1189,12 +1189,12 @@ class WaterConsumer extends Controller
         // if ($endDate > $todayDate) {
         //     throw new Exception("please generate the demand on $formatEndDate or after it!");
         // }
-        if ($refConsumerDetails->user_type != $refUserType['1']) {
-            throw new Exception("you are not the citizen whose consumer is assigned!");
-        }
         $careTakerDetails   = $mActiveCitizenUndercare->getWaterUnderCare($user->id)->get();
         $consumerIds        = collect($careTakerDetails)->pluck('consumer_id');
         if (!in_array($req->id, ($consumerIds->toArray()))) {
+            if ($refConsumerDetails->user_type != $refUserType['1']) {
+                throw new Exception("you are not the citizen whose consumer is assigned!");
+            }
             if ($refConsumerDetails->user_id != $user->id) {
                 throw new Exception("you are not the authorized user!");
             }
