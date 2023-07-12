@@ -1185,9 +1185,9 @@ class WaterConsumer extends Controller
         $formatEndDate  = $endDate->format('d-m-Y');
         $refUserType    = Config::get("waterConstaint.REF_USER_TYPE");
 
-        if ($endDate > $todayDate) {
-            throw new Exception("please generate the demand on $formatEndDate or after it!");
-        }
+        // if ($endDate > $todayDate) {
+        //     throw new Exception("please generate the demand on $formatEndDate or after it!");
+        // }
         if ($refConsumerDetails->user_type != $refUserType['1']) {
             throw new Exception("you are not the citizen whose consumer is assigned!");
         }
