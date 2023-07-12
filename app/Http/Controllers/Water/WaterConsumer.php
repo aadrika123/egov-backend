@@ -145,7 +145,6 @@ class WaterConsumer extends Controller
     {
         $request->validate([
             'consumerId'    => "required|digits_between:1,9223372036854775807",
-            // "demandUpto"    => "nullable|date|date_format:Y-m-d|before_or_equal:$mNowDate",
         ]);
         try {
             $mWaterConsumerInitialMeter = new WaterConsumerInitialMeter();
@@ -328,6 +327,7 @@ class WaterConsumer extends Controller
      */
     public function checkDemandGeneration($request, $consumerDetails)
     {
+        $user                   = authUser();
         $today                  = Carbon::now();
         $refConsumerId          = $request->consumerId;
         $mWaterConsumerDemand   = new WaterConsumerDemand();
@@ -338,15 +338,15 @@ class WaterConsumer extends Controller
             if ($refDemandUpto > $today) {
                 throw new Exception("the demand is generated till" . "" . $lastDemand->demand_upto);
             }
-            $startDate = Carbon::parse($refDemandUpto);
-            $uptoMonth = $startDate;
+            $startDate  = Carbon::parse($refDemandUpto);
+            $uptoMonth  = $startDate;
             $todayMonth = $today;
-            if ($uptoMonth >= $todayMonth) {
+            if ($uptoMonth->greaterThan($todayMonth)) {
                 throw new Exception("demand should be generated generate in next month!");
             }
             $diffMonth = $startDate->diffInMonths($today);
             if ($diffMonth < 1) {
-                throw new Exception("there should be a diff of month!");
+                throw new Exception("there should be a difference of month!");
             }
         }
     }
@@ -1141,8 +1141,8 @@ class WaterConsumer extends Controller
     public function selfGenerateDemand(Request $req)
     {
         $req->validate([
-            'id'    => 'required',
-            'finalRading'   => 'required',
+            'id'            => 'required',
+            'finalReading'  => 'required',
             'document'      => 'required|file|'
         ]);
         try {
@@ -1158,8 +1158,8 @@ class WaterConsumer extends Controller
             $this->checkDemandGeneration($metaReq, $refConsumerDetails);
             $metaRequest = new Request([
                 "consumerId"    => $consumerId,
-                "finalRading"   => $req->FinalReading,                          // if the demand is generated for the first time
-                "demandUpto"    => $today,
+                "finalRading"   => $req->finalReading,                          // if the demand is generated for the first time
+                "demandUpto"    => $today->format('Y-m-d'),
                 "document"      => $req->document,
             ]);
             $returnDetails = $this->saveGenerateConsumerDemand($metaRequest);
@@ -1179,8 +1179,15 @@ class WaterConsumer extends Controller
      */
     public function checkUser($req, $refConsumerDetails)
     {
-        $user = authUser();
-        $refUserType = Config::get("waterConstaint.REF_USER_TYPE");
+        $user           = authUser();
+        $todayDate      = Carbon::now();
+        $endDate        = Carbon::now()->endOfMonth();
+        $formatEndDate  = $endDate->format('d-m-Y');
+        $refUserType    = Config::get("waterConstaint.REF_USER_TYPE");
+
+        if ($endDate > $todayDate) {
+            throw new Exception("please generate the demand on $formatEndDate or after it!");
+        }
         if ($refConsumerDetails->user_type != $refUserType['1']) {
             throw new Exception("you are not the citizen whose consumer is assigned!");
         }
@@ -1197,17 +1204,17 @@ class WaterConsumer extends Controller
     public function checkUserType($req)
     {
         $user = authUser();
-        $confUserType = Config::get("waterConstaint.USER_TYPE");
+        $confUserType = Config::get("waterConstaint.REF_USER_TYPE");
         $userType = $user->user_type;
 
-        if ($userType == $confUserType['confUserType']) {
+        if ($userType == $confUserType['1']) {
             return [
-                "citizen_id" => $user->id,
-                "user_type" => $userType
+                "citizen_id"    => $user->id,
+                "user_type"     => $userType
             ];
         } else {
             return [
-                "emp_id" => $user->id,
+                "emp_id"    => $user->id,
                 "user_type" => $userType
             ];
         }
