@@ -245,7 +245,7 @@ class ObjectionController extends Controller
                         left join ref_prop_types objection_type_prop on objection_type_prop.id::text = Odtls.applicant_data and Odtls.objection_type_id =4
 
                         where objection_id = $details->objection_id";
-                return  $objectionList =  DB::select($sql);
+                $objectionList =  DB::select($sql);
 
 
                 // //Assessment Details
