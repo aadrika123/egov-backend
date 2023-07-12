@@ -233,10 +233,10 @@ class ObjectionController extends Controller
                 $sql = "SELECT Odtls.*,
                             ot.type,
                             case when Odtls.objection_type_id not in (4) then Odtls.applicant_data
-                                when Odtls.objection_type_id =4 then ref_prop_types.property_type 
+                                when Odtls.objection_type_id =4 then objection_type_prop.property_type
                                 end as obj_valu,
                             case when Odtls.objection_type_id not in (4) then Odtls.assesment_data
-                                when Odtls.objection_type_id =4 then objection_type_prop.property_type 
+                                when Odtls.objection_type_id =4 then ref_prop_types.property_type
                                 end as asses_valu,
                             ref_prop_types.property_type
                         FROM prop_active_objection_dtls as Odtls
