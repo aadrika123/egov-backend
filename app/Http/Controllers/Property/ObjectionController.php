@@ -232,10 +232,10 @@ class ObjectionController extends Controller
 
                 $sql = "SELECT Odtls.*,
                             ot.type,
-                            case when Odtls.objection_type_id not in (4) then Odtls.assesment_data
+                            case when Odtls.objection_type_id not in (4) then Odtls.applicant_data
                                 when Odtls.objection_type_id =4 then ref_prop_types.property_type 
                                 end as obj_valu,
-                            case when Odtls.objection_type_id not in (4) then Odtls.applicant_data
+                            case when Odtls.objection_type_id not in (4) then Odtls.assesment_data
                                 when Odtls.objection_type_id =4 then objection_type_prop.property_type 
                                 end as asses_valu,
                             ref_prop_types.property_type
@@ -245,7 +245,7 @@ class ObjectionController extends Controller
                         left join ref_prop_types objection_type_prop on objection_type_prop.id::text = Odtls.applicant_data and Odtls.objection_type_id =4
 
                         where objection_id = $details->objection_id";
-                $objectionList =  DB::select($sql);
+                return  $objectionList =  DB::select($sql);
 
 
                 // //Assessment Details
