@@ -139,7 +139,7 @@ class HoldingTaxController extends Controller
             $loggedInUserType = $user->user_type ?? "Citizen";
             $mPropOwners = new PropOwner();
             $pendingFYears = collect();
-            $qtrs = collect();
+            $qtrs = collect([1, 2, 3, 4]);
             $mUlbMasters = new UlbMaster();
 
             $ownerDetails = $mPropOwners->getOwnerByPropId($req->propId)->first();
@@ -147,11 +147,9 @@ class HoldingTaxController extends Controller
             $demandList = $mPropDemand->getDueDemandByPropId($req->propId);
             $demandList = collect($demandList);
 
-            collect($demandList)->map(function ($value) use ($pendingFYears, $qtrs) {
+            collect($demandList)->map(function ($value) use ($pendingFYears) {
                 $fYear = $value->fyear;
-                $qtr = $value->qtr;
                 $pendingFYears->push($fYear);
-                $qtrs->push($qtr);
             });
             // Property Part Payment
             if (isset($req->fYear) && isset($req->qtr)) {
@@ -239,9 +237,12 @@ class HoldingTaxController extends Controller
 
             $totalDuesList = $penaltyRebateCalc->readRebates($currentQuarter, $loggedInUserType, $mLastQuarterDemand, $ownerDetails, $dues, $totalDuesList);
 
-            $finalPayableAmt = ($dues + $onePercTax + $balance) - ($totalDuesList['rebateAmt'] + $totalDuesList['specialRebateAmt']) - $advanceAmt;
+            $totalRebates = $totalDuesList['rebateAmt'] + $totalDuesList['specialRebateAmt'];
+            $finalPayableAmt = ($dues + $onePercTax + $balance) - ($totalRebates + $advanceAmt);
             if ($finalPayableAmt < 0)
                 $finalPayableAmt = 0;
+            $totalDuesList['totalRebatesAmt'] = $totalRebates;
+            $totalDuesList['totalPenaltiesAmt'] = $onePercTax;
             $totalDuesList['payableAmount'] = round($finalPayableAmt);
             $totalDuesList['paymentUptoYrs'] = [$paymentUptoYrs->first()];
             $totalDuesList['paymentUptoQtrs'] = $pendingQtrs->unique()->values()->sort()->values();

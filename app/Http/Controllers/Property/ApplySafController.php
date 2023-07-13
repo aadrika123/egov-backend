@@ -185,7 +185,6 @@ class ApplySafController extends Controller
                     }
                 }
             }
-
             // Citizen Notification
             // if ($userType == 'Citizen') {
             //     $mreq['userType']  = 'Citizen';
