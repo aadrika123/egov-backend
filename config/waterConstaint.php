@@ -113,6 +113,7 @@ return [
 
     "WATER_METER_CODE" => "Meter",
     "WATER_FIXED_CODE" => "MeterFixed",
+    "WATER_ADVANCE_CODE" => "WaterAdvance",
     "PENALTY_HEAD" => [
         "1" => "1 Installment",
         "2" => "2 Installment",

@@ -892,7 +892,7 @@ class WaterPaymentController extends Controller
     /**
      * | Check the Advance and its existence
      * | Advance and Adjustment calcullation 
-     * | @param request
+     * | @param request contain consumerId
         | Serial No : 06:02 / 05:01:01
         | Not Working
         | Common function
