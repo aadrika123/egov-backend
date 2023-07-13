@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Property\ReqGbSiteVerification;
 use App\MicroServices\DocUpload;
 use App\MicroServices\IdGeneration;
+use App\MicroServices\IdGenerator\HoldingNoGenerator;
 use App\MicroServices\IdGenerator\PrefixIdGenerator;
+use App\MicroServices\IdGenerator\PropIdGenerator;
 use App\Models\CustomDetail;
 use App\Models\Masters\RefRequiredDocument;
 use App\Models\Property\PropActiveGbOfficer;
@@ -240,13 +242,13 @@ class GbSafController extends Controller
     public function checkPostCondition($senderRoleId, $wfLevels, $saf)
     {
         // Variable Assigments
-        $reAssessWfMstrId = Config::get('workflow-constants.SAF_REASSESSMENT_ID');
         $mPropSafDemand = new PropSafsDemand();
         $mPropMemoDtl = new PropSafMemoDtl();
         $todayDate = Carbon::now()->format('Y-m-d');
         $fYear = calculateFYear($todayDate);
         $ptParamId = Config::get('PropertyConstaint.PT_PARAM_ID');
-        $samParamId = Config::get('PropertyConstaint.SAM_PARAM_ID');
+        $propIdGenerator = new PropIdGenerator;
+        $holdingNoGenerator = new HoldingNoGenerator;
 
         // Derivative Assignments
 
@@ -263,12 +265,15 @@ class GbSafController extends Controller
                 if (collect($demand)->isEmpty())
                     throw new Exception("Demand Not Available for the Current Year to Generate SAM");
                 $idGeneration = new PrefixIdGenerator($ptParamId, $saf->ulb_id);
+                // Holding No Generation
+                $holdingNo = $holdingNoGenerator->generateHoldingNo($saf);
                 $ptNo = $idGeneration->generate();
                 $saf->pt_no = $ptNo;                        // Generate New Property Tax No for All Conditions
+                $saf->holding_no = $holdingNo;
                 $saf->save();
 
-                $samIdGeneration = new PrefixIdGenerator($samParamId, $saf->ulb_id);
-                $samNo = $samIdGeneration->generate();                 // Generate SAM No
+                $samNo = $propIdGenerator->generateMemoNo("SAM", $saf->ward_mstr_id, $demand->fyear);           // Sam No Generation
+
                 $mergedDemand = array_merge($demand->toArray(), [
                     'memo_type' => 'SAM',
                     'memo_no' => $samNo,
@@ -818,6 +823,7 @@ class GbSafController extends Controller
             $todayDate = Carbon::now()->format('Y-m-d');
             $currentFinYear = calculateFYear($todayDate);
             $famParamId = Config::get('PropertyConstaint.FAM_PARAM_ID');
+            $propIdGenerator = new PropIdGenerator;
 
             $userId = authUser()->id;
             $safId = $req->applicationId;
@@ -860,9 +866,8 @@ class GbSafController extends Controller
                 if (collect($demand)->isEmpty())
                     throw new Exception("Demand Not Available for the Current Year to Generate FAM");
 
-                $idGeneration = new PrefixIdGenerator($famParamId, $activeSaf->ulb_id);
                 // SAF Application replication
-                $famNo = $idGeneration->generate();
+                $famNo = $propIdGenerator->generateMemoNo("FAM", $safDetails->ward_mstr_id, $demand->fyear);
                 $mergedDemand = array_merge($demand->toArray(), [
                     'memo_type' => 'FAM',
                     'memo_no' => $famNo,

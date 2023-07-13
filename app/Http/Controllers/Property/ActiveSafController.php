@@ -17,6 +17,7 @@ use App\Http\Requests\Property\ReqSiteVerification;
 use App\MicroServices\DocUpload;
 use App\MicroServices\IdGeneration;
 use App\MicroServices\IdGenerator\PrefixIdGenerator;
+use App\MicroServices\IdGenerator\PropIdGenerator;
 use App\Models\CustomDetail;
 use App\Models\Payment\TempTransaction;
 use App\Models\Property\Logs\LogPropFloor;
@@ -81,6 +82,7 @@ use Illuminate\Pipeline\Pipeline;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
+use App\MicroServices\IdGenerator\HoldingNoGenerator;
 
 class ActiveSafController extends Controller
 {
@@ -949,16 +951,13 @@ class ActiveSafController extends Controller
     public function checkPostCondition($senderRoleId, $wfLevels, $saf, $wfMstrId)
     {
         // Variable Assigments
-        $reAssessWfMstrId = Config::get('workflow-constants.SAF_REASSESSMENT_ID');
         $mPropSafDemand = new PropSafsDemand();
         $mPropMemoDtl = new PropSafMemoDtl();
         $mPropSafTax = new PropSafTax();
         $mPropTax = new PropTax();
-        $todayDate = Carbon::now()->format('Y-m-d');
-        $fYear = calculateFYear($todayDate);
-
+        $propIdGenerator = new PropIdGenerator;
         $ptParamId = Config::get('PropertyConstaint.PT_PARAM_ID');
-        $samParamId = Config::get('PropertyConstaint.SAM_PARAM_ID');
+        $holdingNoGenerator = new HoldingNoGenerator;
 
         // Derivative Assignments
         switch ($senderRoleId) {
@@ -979,14 +978,16 @@ class ActiveSafController extends Controller
                 $idGeneration = new PrefixIdGenerator($ptParamId, $saf->ulb_id);
 
                 if (in_array($saf->assessment_type, ['New Assessment', 'Bifurcation', 'Amalgamation', 'Mutation'])) { // Make New Property For New Assessment,Bifurcation and Amalgamation & Mutation
+                    // Holding No Generation
+                    $holdingNo = $holdingNoGenerator->generateHoldingNo($saf);
                     $ptNo = $idGeneration->generate();
                     $saf->pt_no = $ptNo;                        // Generate New Property Tax No for All Conditions
+                    $saf->holding_no = $holdingNo;
                     $saf->save();
                 }
                 $ptNo = $saf->pt_no;
-                $samIdGeneration = new PrefixIdGenerator($samParamId, $saf->ulb_id);
-                $samNo = $samIdGeneration->generate();                 // Generate SAM No
-
+                // Sam No Generator
+                $samNo = $propIdGenerator->generateMemoNo("SAM", $saf->ward_mstr_id, $demand->fyear);
                 $this->replicateSaf($saf->id);
                 $propId = $this->_replicatedPropId;
 
@@ -1259,6 +1260,7 @@ class ActiveSafController extends Controller
             $currentFinYear = calculateFYear($todayDate);
             $famParamId = Config::get('PropertyConstaint.FAM_PARAM_ID');
             $previousHoldingDeactivation = new PreviousHoldingDeactivation;
+            $propIdGenerator = new PropIdGenerator;
 
             $userId = authUser()->id;
             $safId = $req->applicationId;
@@ -1309,10 +1311,8 @@ class ActiveSafController extends Controller
                 if (collect($demand)->isEmpty())
                     throw new Exception("Demand Not Available for the Current Year to Generate FAM");
 
-                $idGeneration = new PrefixIdGenerator($famParamId, $activeSaf->ulb_id);
-
                 // SAF Application replication
-                $famNo = $idGeneration->generate();
+                $famNo = $propIdGenerator->generateMemoNo("FAM", $safDetails->ward_mstr_id, $demand->fyear);
                 $mergedDemand = array_merge($demand->toArray(), [
                     'memo_type' => 'FAM',
                     'memo_no' => $famNo,

@@ -9,9 +9,12 @@ use Exception;
 use Illuminate\Support\Facades\Config;
 
 /**
- * | Author-Anshu Kumar
- * | Created On-13-07-2023 
- * | Created for the Id generations for SAF and Property 
+ * ╔═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+ * | ✅Author-Anshu Kumar                                                                                                              |
+ * | Created On-13-07-2023                                                                                                           |
+ * | Created for the Id generations for SAF and Property                                                                             |
+ * | Status-Closed                                                                                                                   |
+ * ╚═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝ 
  */
 
 class PropIdGenerator
@@ -25,7 +28,10 @@ class PropIdGenerator
         $this->_mIdGenerationParams = new IdGenerationParam();
     }
 
-    // ============================================== SAF NO ====================================================================================
+    // ╔═══════════════════════════════════════════════════════════════════════════╗
+    // ║                     ✅ SAF No Generation ✅                              ║ 
+    // ╚═══════════════════════════════════════════════════════════════════════════╝ 
+
     /**
      * | Saf No Generation
      * | @param activeSaf
@@ -99,5 +105,39 @@ class PropIdGenerator
         return str_pad($counter, 4, "0", STR_PAD_LEFT);
     }
 
-    // ============================================== SAF NO ====================================================================================
+
+    // ╔═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+    // ║                                                ✅ Memo No Generation ✅                                                          ║ 
+    // ╚═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝ 
+
+    /**
+     * | Generate Memo No
+     */
+    public function generateMemoNo($memoType, $wardId, $fyear): string
+    {
+        $paramId = ($memoType == 'SAM') ? Config::get('PropertyConstaint.SAM_PARAM_ID') : Config::get('PropertyConstaint.FAM_PARAM_ID');
+        $prefix = $this->_mIdGenerationParams->where('id', $paramId)->first();
+        if (collect($prefix)->isEmpty())
+            throw new Exception("Memo Prefix Not Available");
+
+        $wardDtls = $this->_mUlbWardMasters->getWardById($wardId);
+        if (collect($wardDtls)->isEmpty())
+            throw new Exception("Ward Not Available for this id");
+
+        $ward = str_pad($wardDtls->ward_name, 3, "0", STR_PAD_LEFT);
+
+        if ($memoType == 'SAM') {                                               // SAM Counter
+            $counter = str_pad($wardDtls->sam_counter, 4, "0", STR_PAD_LEFT);
+            $wardDtls->sam_counter += 1;                                         // Update Counter
+        }
+
+        if ($memoType == 'FAM') {                                                // FAM Counter
+            $counter = str_pad($wardDtls->fam_counter, 4, "0", STR_PAD_LEFT);
+            $wardDtls->fam_counter += 1;                                         // Update Counter
+        }
+
+        $wardDtls->save();
+        $memoNo = $prefix->string_val . '/' . $ward . '/' . $counter . '/' . $fyear;
+        return $memoNo;
+    }
 }
