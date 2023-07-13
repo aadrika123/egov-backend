@@ -992,6 +992,7 @@ class ActiveSafController extends Controller
                 $propId = $this->_replicatedPropId;
 
                 $mergedDemand = array_merge($demand->toArray(), [       // SAM Memo Generation
+                    'holding_no' => $holdingNo,
                     'memo_type' => 'SAM',
                     'memo_no' => $samNo,
                     'pt_no' => $ptNo,
