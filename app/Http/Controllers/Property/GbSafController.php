@@ -394,7 +394,7 @@ class GbSafController extends Controller
             $propProperties = $toBeProperties->replicate();
             $propProperties->setTable('prop_properties');
             $propProperties->saf_id = $activeSaf->id;
-            $propProperties->new_holding_no = $activeSaf->new_holding_no;
+            $propProperties->new_holding_no = $activeSaf->holding_no;
             $propProperties->save();
 
             // SAF Officer replication
