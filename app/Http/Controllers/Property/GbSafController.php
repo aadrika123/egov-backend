@@ -275,6 +275,7 @@ class GbSafController extends Controller
                 $samNo = $propIdGenerator->generateMemoNo("SAM", $saf->ward_mstr_id, $demand->fyear);           // Sam No Generation
 
                 $mergedDemand = array_merge($demand->toArray(), [
+                    'holding_no' => $saf->holding_no,
                     'memo_type' => 'SAM',
                     'memo_no' => $samNo,
                     'pt_no' => $ptNo,
@@ -295,7 +296,7 @@ class GbSafController extends Controller
                 break;
         }
         return [
-            'holdingNo' =>  $holdingNo ?? "",
+            'holdingNo' =>  $saf->holding_no ?? "",
             'samNo' => $samNo ?? ""
         ];
     }

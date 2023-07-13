@@ -992,7 +992,7 @@ class ActiveSafController extends Controller
                 $propId = $this->_replicatedPropId;
 
                 $mergedDemand = array_merge($demand->toArray(), [       // SAM Memo Generation
-                    'holding_no' => $holdingNo,
+                    'holding_no' => $saf->holding_no,
                     'memo_type' => 'SAM',
                     'memo_no' => $samNo,
                     'pt_no' => $ptNo,
@@ -1021,7 +1021,7 @@ class ActiveSafController extends Controller
                 break;
         }
         return [
-            'holdingNo' =>  $holdingNo ?? "",
+            'holdingNo' =>  $saf->holding_no ?? "",
             'samNo' => $samNo ?? "",
             'ptNo' => $ptNo ?? "",
         ];
