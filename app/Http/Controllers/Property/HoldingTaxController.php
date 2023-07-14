@@ -566,7 +566,7 @@ class HoldingTaxController extends Controller
             $mPropAdjustment = new PropAdjustment();
             $propDetails = PropProperty::findOrFail($propId);
 
-            $tranNo = $idGeneration->generateTransactionNo();
+            $tranNo = $idGeneration->generateTransactionNo($propDetails->ulb_id);
 
             $propCalReq = new Request([
                 'propId' => $req['id'],
@@ -1176,8 +1176,8 @@ class HoldingTaxController extends Controller
             "calculationFactor" => $rule['calculationFactor'] ?? null,
             "arvPsf" => $rule['arvPsf'] ?? null,
             "circleRate" => $rule['circleRate'] ?? "",
-            "arvTotalPropTax" => $rule['arvTotalPropTax'] ?? 0,
-            "cvArvPropTax" => $rule['cvArvPropTax'] ?? 0
+            "arvTotalPropTax" => roundFigure($rule['arvTotalPropTax'] ?? 0),
+            "cvArvPropTax" => roundFigure($rule['cvArvPropTax'] ?? 0)
         ];
     }
 
@@ -1387,7 +1387,7 @@ class HoldingTaxController extends Controller
 
             $dues = $dues->original['data'];
             $demands = $dues['demandList'];
-            $tranNo = $idGeneration->generateTransactionNo();
+            $tranNo = $idGeneration->generateTransactionNo($req['ulbId']);
             $payableAmount = $dues['duesList']['payableAmount'];
             $advanceAmt = $dues['duesList']['advanceAmt'];
             // Property Transactions
