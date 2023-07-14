@@ -1758,7 +1758,7 @@ class NewConnectionController extends Controller
         $request->validate([
             'filterBy'  => 'required|in:newConnection,regularization,name,mobileNo,safNo,holdingNo',
             'parameter' => $request->filterBy == 'mobileNo' ? 'required|numeric|digits:10' : "required",
-            'pages'     => 'required|integer',
+            'pages'     => 'nullable|integer',
         ]);
 
         try {
