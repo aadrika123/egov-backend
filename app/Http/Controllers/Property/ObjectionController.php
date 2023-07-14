@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Property;
 
+use App\BLL\Property\CalculatePropById;
 use App\Repository\Property\Interfaces\iObjectionRepository;
 use App\Http\Controllers\Controller;
 use App\MicroServices\DocUpload;
@@ -647,18 +648,22 @@ class ObjectionController extends Controller
                         PropFloor::where('id', $floorDtl->prop_floor_id)
                             ->update(
                                 [
-                                    'floor_mstr_id' => $ownerDtl->floor_mstr_id,
-                                    'usage_type_mstr_id' => $ownerDtl->usage_type_mstr_id,
-                                    'occupancy_type_mstr_id' => $ownerDtl->occupancy_type_mstr_id,
-                                    'const_type_mstr_id' => $ownerDtl->const_type_mstr_id,
-                                    'builtup_area' => $ownerDtl->builtup_area,
-                                    'carpet_area' => $ownerDtl->carpet_area,
+                                    'floor_mstr_id' => $floorDtl->floor_mstr_id,
+                                    'usage_type_mstr_id' => $floorDtl->usage_type_mstr_id,
+                                    'occupancy_type_mstr_id' => $floorDtl->occupancy_type_mstr_id,
+                                    'const_type_mstr_id' => $floorDtl->const_type_mstr_id,
+                                    'builtup_area' => $floorDtl->builtup_area,
+                                    'carpet_area' => $floorDtl->carpet_area,
                                 ]
                             );
                     }
                 }
                 $msg =  "Application Successfully Approved !!";
                 $metaReqs['verificationStatus'] = 1;
+
+                $var = new CalculatePropById;
+                return  $data = $var->calculatePropTax($activeObjection);
+                dd($data);
             }
 
             // Rejection
@@ -697,7 +702,6 @@ class ObjectionController extends Controller
                 'forward_date' => $this->_todayDate->format('Y-m-d'),
                 'forward_time' => $this->_todayDate->format('H:i:s')
             ]);
-
             DB::commit();
 
             return responseMsgs(true, $msg, "", '010811', '01', responseTime(), 'Post', '');
