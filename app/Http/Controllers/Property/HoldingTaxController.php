@@ -1074,7 +1074,6 @@ class HoldingTaxController extends Controller
                 }
                 $safCalculation->_floors = $floors;
                 $capitalvalueRates = $safCalculation->readCapitalValueRate();
-
                 foreach ($fullDetails as $key => $detail) {
                     $floorMstrId = $detail->floor_mstr_id;
                     $floorBuiltupArea = $detail->builtup_area;
