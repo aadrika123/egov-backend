@@ -1758,45 +1758,65 @@ class NewConnectionController extends Controller
         $request->validate([
             'filterBy'  => 'required|in:newConnection,regularization,name,mobileNo,safNo,holdingNo',
             'parameter' => $request->filterBy == 'mobileNo' ? 'required|numeric|digits:10' : "required",
+            'pages'     => 'required|integer',
         ]);
 
         try {
             $key                = $request->filterBy;
             $parameter          = $request->parameter;
+            $pages              = $request->pages ?? 10;
             $mWaterApplicant    = new WaterApplication();
             $connectionTypes    = Config::get('waterConstaint.CONNECTION_TYPE');
 
             switch ($key) {
                 case ("newConnection"):                                                                     // Static
-                    $returnData = $mWaterApplicant->getDetailsByApplicationNo($connectionTypes['NEW_CONNECTION'], $parameter);
+                    $returnData = $mWaterApplicant->getDetailsByApplicationNo($connectionTypes['NEW_CONNECTION'], $parameter)->paginate($pages);
+                    $checkVal = collect($returnData)->last();
+                    if (!$checkVal || $checkVal == 0)
+                        throw new Exception("Data according to " . $key . " not Found!");
                     break;
                 case ("regularization"):                                                                    // Static
-                    $returnData = $mWaterApplicant->getDetailsByApplicationNo($connectionTypes['REGULAIZATION'], $parameter);
+                    $returnData = $mWaterApplicant->getDetailsByApplicationNo($connectionTypes['REGULAIZATION'], $parameter)->paginate($pages);
+                    $checkVal = collect($returnData)->last();
+                    if (!$checkVal || $checkVal == 0)
+                        throw new Exception("Data according to " . $key . " not Found!");
                     break;
                 case ("name"):                                                                              // Static
                     $returnData = $mWaterApplicant->getDetailsByParameters()
                         ->where("water_applicants.applicant_name", 'ILIKE', '%' . $parameter . '%')
-                        ->get();
+                        ->paginate($pages);
+                    $checkVal = collect($returnData)->last();
+                    if (!$checkVal || $checkVal == 0)
+                        throw new Exception("Data according to " . $key . " not Found!");
                     break;
                 case ("mobileNo"):                                                                          // Static
                     $returnData = $mWaterApplicant->getDetailsByParameters()
                         ->where("water_applicants.mobile_no", $parameter)
-                        ->get();
+                        ->paginate($pages);
+                    $checkVal = collect($returnData)->last();
+                    if (!$checkVal || $checkVal == 0)
+                        throw new Exception("Data according to " . $key . " not Found!");
                     break;
                 case ("safNo"):                                                                             // Static
                     $returnData = $mWaterApplicant->getDetailsByParameters()
                         ->where("water_applications.saf_no", 'LIKE', '%' . $parameter . '%')
-                        ->get();
+                        ->paginate($pages);
+                    $checkVal = collect($returnData)->last();
+                    if (!$checkVal || $checkVal == 0)
+                        throw new Exception("Data according to " . $key . " not Found!");
                     break;
                 case ("holdingNo"):                                                                         // Static
                     $returnData = $mWaterApplicant->getDetailsByParameters()
                         ->where("water_applications.holding_no", 'LIKE', '%' . $parameter . '%')
-                        ->get();
+                        ->paginate($pages);
+                    $checkVal = collect($returnData)->last();
+                    if (!$checkVal || $checkVal == 0)
+                        throw new Exception("Data according to " . $key . " not Found!");
                     break;
             }
             return responseMsgs(true, "List of Appication!", $returnData, "", "01", "723 ms", "POST", "");
         } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
+            return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $request->deviceId);
         }
     }
 

@@ -210,8 +210,16 @@ class WaterApplication extends Model
             ->where('water_applications.connection_type_id', $connectionTypes)
             ->where('water_applications.application_no', 'LIKE', '%' . $applicationNo . '%')
             ->where('water_applications.ulb_id', auth()->user()->ulb_id)
-            ->groupBy('water_applications.saf_no', 'water_applications.holding_no', 'water_applications.address', 'water_applications.id', 'water_applicants.application_id', 'water_applications.application_no', 'water_applications.ward_id', 'ulb_ward_masters.ward_name')
-            ->get();
+            ->groupBy(
+                'water_applications.saf_no',
+                'water_applications.holding_no',
+                'water_applications.address',
+                'water_applications.id',
+                'water_applicants.application_id',
+                'water_applications.application_no',
+                'water_applications.ward_id',
+                'ulb_ward_masters.ward_name'
+            );
     }
 
     /**
