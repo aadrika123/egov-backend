@@ -1825,7 +1825,7 @@ class WaterPaymentController extends Controller
 
             # Demand Details 
             $refConsumerDemand  = $mWaterConsumerDemand->getConsumerDemand($consumerDetails->id);
-            $latestDemand       = collect($refConsumerDemand)->first();
+            $lastestDemand      = collect($refConsumerDemand)->first();
             $startingDemand     = collect($refConsumerDemand)->last();
             $totalDemandAmount  = round((collect($refConsumerDemand)->sum('balance_amount')), 2);
             $totalPenaltyAmount = round((collect($refConsumerDemand)->sum('penalty')), 2);
@@ -1844,7 +1844,7 @@ class WaterPaymentController extends Controller
                 "customerMobile"        => $consumerDetails['mobile_no'],
                 "address"               => $consumerDetails['address'],
                 "paidFrom"              => ($startingDemand->demand_from) ?? null,
-                "paidUpto"              => ($latestDemand->demand_upto) ?? null,
+                "paidUpto"              => ($lastestDemand->demand_upto) ?? null,
                 "holdingNo"             => $consumerDetails['holding_no'],
                 "safNo"                 => $consumerDetails['saf_no'],                                 // in case of chque,dd,nfts
                 "penaltyAmount"         => $totalPenaltyAmount ?? 0,
@@ -1856,7 +1856,7 @@ class WaterPaymentController extends Controller
                 "towards"               => $refconsumerTowards,
                 "description"           => $refAccDescription,
                 "paidAmtInWords"        => getIndianCurrency($totalDemandAmount),
-                "billNumber"            => $latestDemand->demand_no ?? null,
+                "billNumber"            => $lastestDemand->demand_no ?? null,
                 "advanceAmount"         => $advanceDetails['advanceAmount'] ?? 0,
 
             ];
