@@ -525,6 +525,7 @@ if (!function_exists('flipConstants')) {
         $flip = $chunk->map(function ($a) {
             return collect($a)->flip();
         });
+
         $flip = $flip->collapse();
         return $flip;
     }
@@ -558,6 +559,25 @@ if (!function_exists("responseTime")) {
                 $parsedDate = Carbon::parse($date)->format('d-m-Y');
                 return $parsedDate;
             }
+        }
+    }
+
+
+    /**
+     * | Check if the floor have same usage types
+     */
+    if (!function_exists("isElementsSame")) {
+        function isElementsSame($elements)
+        {
+            $firstElement = $elements->first();
+            $same = true;
+            foreach ($elements as $element) {
+                if ($element != $firstElement) {
+                    $same = false;
+                    break;
+                }
+            }
+            return $same;
         }
     }
 }
