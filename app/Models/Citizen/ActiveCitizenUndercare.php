@@ -32,6 +32,18 @@ class ActiveCitizenUndercare extends Model
     }
 
     /**
+     * | Get water under caretaker list
+     */
+    public function getWaterUnderCare($userId)
+    {
+        return ActiveCitizenUndercare::where('citizen_id', $userId)
+            ->whereNotNull('consumer_id')
+            ->where('deactive_status', false);
+    }
+
+
+
+    /**
      * | Save caretaker Details 
      */
     public function saveCaretakeDetails($applicationId, $mobileNo, $userId)

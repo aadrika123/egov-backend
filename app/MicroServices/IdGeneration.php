@@ -2,9 +2,11 @@
 
 namespace App\MicroServices;
 
+use App\MicroServices\IdGenerator\PrefixIdGenerator;
 use App\Models\Masters\IdGenerationParam;
 use App\Models\UlbMaster;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Config;
 
 /**
  * | Created On-16-01-2023 
@@ -16,9 +18,13 @@ class IdGeneration
     /**
      * | Generate Transaction ID
      */
-    public function generateTransactionNo()
+    public function generateTransactionNo($ulbId)
     {
-        return Carbon::createFromDate()->milli . carbon::now()->diffInMicroseconds() . Carbon::now()->format('Y');
+        $tranParamId = Config::get("waterConstaint.PARAM_IDS");
+        $idGeneration = new PrefixIdGenerator($tranParamId['TRN'], $ulbId);
+        $transactionNo = $idGeneration->generate();
+        $transactionNo = str_replace('/', '-', $transactionNo);
+        return $transactionNo;
     }
 
     /**

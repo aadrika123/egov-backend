@@ -878,4 +878,13 @@ class  PropActiveSaf extends Model
             ->where('prop_active_safs.status', 1)
             ->orderByDesc('id');
     }
+
+    /**
+     * | Count Previous Holdings
+     */
+    public function countPreviousHoldings($previousHoldingId)
+    {
+        return PropActiveSaf::where('previous_holding_id', $previousHoldingId)
+            ->count();
+    }
 }

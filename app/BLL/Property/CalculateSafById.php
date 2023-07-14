@@ -233,7 +233,10 @@ class CalculateSafById
 
         $totalTax = roundFigure($demandDetails->sum('balance'));
         $totalOnePercPenalty = roundFigure($demandDetails->sum('onePercPenaltyTax'));
-        $this->_totalDemand = $totalTax + $totalOnePercPenalty + $this->_calculatedDemand['demand']['lateAssessmentStatus'] + $this->_calculatedDemand['demand']['lateAssessmentPenalty'];
+        $this->_totalDemand = $totalTax + $totalOnePercPenalty + $this->_calculatedDemand['demand']['lateAssessmentPenalty'];
+
+        $totalPenaltiesAmt = $totalOnePercPenalty + $this->_calculatedDemand['demand']['lateAssessmentPenalty'];
+
         $this->_generatedDemand['demand'] = [
             'dueFromFyear' => $demandDetails->first()['fyear'],
             'dueToFyear' => $demandDetails->last()['fyear'],
@@ -246,7 +249,8 @@ class CalculateSafById
             'duesTo' => $dueTo,
             'lateAssessmentStatus' => $this->_calculatedDemand['demand']['lateAssessmentStatus'],
             'lateAssessmentPenalty' => $this->_calculatedDemand['demand']['lateAssessmentPenalty'],
-            'totalDemand' => roundFigure($this->_totalDemand)
+            'totalDemand' => roundFigure($this->_totalDemand),
+            'totalPenaltiesAmt' => $totalPenaltiesAmt
         ];
 
         $this->_generatedDemand['details'] = $this->_demandDetails->values();
@@ -263,6 +267,7 @@ class CalculateSafById
      */
     public function calculatePayableAmt()
     {
+        $this->_generatedDemand['demand']['totalRebatesAmt'] = $this->_generatedDemand['demand']['rebateAmt'] + $this->_generatedDemand['demand']['specialRebateAmt'];
         $payableAmount = $this->_totalDemand - ($this->_generatedDemand['demand']['rebateAmt'] + $this->_generatedDemand['demand']['specialRebateAmt']);   // Final Payable Amount Calculation
         $this->_generatedDemand['demand']['payableAmount'] = round($payableAmount);
         if ((int)$payableAmount < 1)

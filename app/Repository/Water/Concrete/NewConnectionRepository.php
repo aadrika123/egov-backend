@@ -95,6 +95,7 @@ class NewConnectionRepository implements iNewConnection
     public function store(Request $req)
     {
         # ref variables
+        $user       = authUser();
         $vacantLand = $this->_vacantLand;
         $workflowID = $this->_waterWorkflowId;
         $waterRoles = $this->_waterRoles;
@@ -103,8 +104,7 @@ class NewConnectionRepository implements iNewConnection
         $ulbId      = $req->ulbId;
         $reftenant  = true;
         $citizenId  = null;
-        $user       = authUser();
-
+        
         $ulbWorkflowObj             = new WfWorkflow();
         $mWaterNewConnection        = new WaterNewConnection();
         $objNewApplication          = new WaterApplication();

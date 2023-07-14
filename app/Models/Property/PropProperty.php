@@ -460,6 +460,7 @@ class PropProperty extends Model
             ->leftJoin('prop_floors as f', 'f.property_id', '=', 'p.id')
             ->where('p.id', $propId)
             ->where('p.status', 1)
+            ->where('f.status', 1)
             ->get();
     }
 
