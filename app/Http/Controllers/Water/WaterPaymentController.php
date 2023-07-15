@@ -636,8 +636,11 @@ class WaterPaymentController extends Controller
             $startingDate   = $startingDate->toDateString();
             $endDate        = $endDate->toDateString();
 
+            if (!$user->ulb_id) {
+                throw new Exception("Ulb Not Found!");
+            }
             $finalCharges = $this->preOfflinePaymentParams($request, $startingDate, $endDate);
-            $tranNo = $midGeneration->generateTransactionNo();
+            $tranNo = $midGeneration->generateTransactionNo($user->ulb_id);
             $request->merge([
                 'userId'            => $user->id,
                 'userType'          => $user->user_type,
@@ -966,7 +969,10 @@ class WaterPaymentController extends Controller
             $refCharges = $this->verifyPaymentRules($req, $refWaterApplication);
 
             # Derivative Assignments
-            $tranNo = $idGeneration->generateTransactionNo();
+            if (!$user->ulb_id) {
+                throw new Exception("Ulb Not Found!");
+            }
+            $tranNo = $idGeneration->generateTransactionNo($user->ulb_id);
             $charges = $mWaterConnectionCharge->getWaterchargesById($req->applicationId)
                 ->where('paid_status', 0)
                 ->get();                                                                                        # get water User connectin charges
