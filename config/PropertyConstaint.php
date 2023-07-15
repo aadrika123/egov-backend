@@ -522,7 +522,7 @@ return [
 
     // Adjustment Types 
     "ADJUSTMENT_TYPES" => [
-        "ULB_ADJUSTMENT" => "Demand Adjustment"
+        "ULB_ADJUSTMENT" => "Demand Adjustment",
     ],
 
     // Doc Codes

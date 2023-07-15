@@ -152,7 +152,7 @@ class TcVerificationDemandAdjust
         $collectAdvanceAmt = collect();
         $mPropSafsDemands = $this->_mPropSafsDemands;
         $mPropDemands = $this->_mPropDemands;
-        $quaterlyTax = $this->_quaterlyTax;
+        $quaterlyTax  = $this->_quaterlyTax;
         $propSafsDemands = $mPropSafsDemands->getPaidDemandBySafId($this->_activeSafDtls['id']);
         $propDemands = $mPropDemands->getFullDemandsByPropId($this->_reqs['propId']);
         foreach ($quaterlyTax as $tax) {

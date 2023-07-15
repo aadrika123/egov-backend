@@ -1878,7 +1878,7 @@ class ActiveSafController extends Controller
             $tranNo = $req['transactionNo'];
             // Derivative Assignments
             if (!$tranNo)
-                $tranNo = $idGeneration->generateTransactionNo();
+                $tranNo = $idGeneration->generateTransactionNo($activeSaf->ulb_id);
 
             $safCalculation = $this->calculateSafBySafId($req);
             if ($safCalculation->original['status'] == false)
