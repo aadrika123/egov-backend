@@ -21,4 +21,14 @@ class WaterConsumerChargeCategory extends Model
             ->where('status', 1)
             ->get();
     }
+
+    /**
+     * | Get charge catagory according to id
+     */
+    public function getChargesByid($id)
+    {
+        return WaterConsumerChargeCategory::where('id', $id)
+            ->where('status', 1)
+            ->first();
+    }
 }

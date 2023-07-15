@@ -311,11 +311,11 @@ class WaterConsumer extends Model
      * | Dectivate the water Consumer 
      * | @param req
      */
-    public function dissconnetConsumer($consumerId)
+    public function dissconnetConsumer($consumerId, $status)
     {
         WaterConsumer::where('id', $consumerId)
             ->update([
-                'status' => 0
+                'status' => $status
             ]);
     }
 

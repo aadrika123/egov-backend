@@ -26,7 +26,8 @@ return [
     "PARAM_IDS" => [
         "WAPP" => 15,
         "WCON" => 16,
-        "TRN" => 37
+        "TRN" => 37,
+        "WCD" => 39
     ],
     "ACCOUNT_DESCRIPTION" => "Water",
     "DEPARTMENT_SECTION" => "Revenue Section",

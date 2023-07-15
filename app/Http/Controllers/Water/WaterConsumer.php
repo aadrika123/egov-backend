@@ -7,6 +7,7 @@ use App\Http\Requests\Water\reqDeactivate;
 use App\Http\Requests\Water\reqMeterEntry;
 use App\MicroServices\DocUpload;
 use App\MicroServices\IdGeneration;
+use App\MicroServices\IdGenerator\PrefixIdGenerator;
 use App\Models\Citizen\ActiveCitizenUndercare;
 use App\Models\Payment\TempTransaction;
 use App\Models\Water\WaterAdvance;
@@ -14,6 +15,7 @@ use App\Models\Water\WaterApplication;
 use App\Models\Water\WaterApprovalApplicationDetail;
 use App\Models\Water\WaterChequeDtl;
 use App\Models\Water\WaterConnectionCharge;
+use App\Models\Water\WaterConnectionTypeMstr;
 use App\Models\Water\WaterConsumer as WaterWaterConsumer;
 use App\Models\Water\WaterConsumerActiveRequest;
 use App\Models\Water\WaterConsumerCharge;
@@ -580,28 +582,30 @@ class WaterConsumer extends Controller
     {
         $request->validate([
             'consumerId'    => "required|digits_between:1,9223372036854775807",
-            'amount'        => "required",
-            'paymentMode'   => "required|in:Cash,Cheque,DD",
             'ulbId'         => "required",
-            'document'      => "required|mimes:pdf,jpg,jpeg,png",
-            'reason'        => "required|in:1,2,3",
+            'reason'        => "required",
             'remarks'       => "required"
         ]);
 
         try {
             $user                           = authUser();
-            $ulbId                          = $request->ulbId;
             $currentDate                    = Carbon::now();
-            $refIdGeneration                = new IdGeneration();
+            $refRequest                     = array();
             $ulbWorkflowObj                 = new WfWorkflow();
             $mWaterWaterConsumer            = new WaterWaterConsumer();
+            $mWaterConsumerCharge           = new WaterConsumerCharge();
+            $mWaterConsumerChargeCategory   = new WaterConsumerChargeCategory();
             $mWaterConsumerActiveRequest    = new WaterConsumerActiveRequest();
-            $refWorkflow                    = Config::get('workflow-constants.WATER_MASTER_ID');
             $refUserType                    = Config::get('waterConstaint.REF_USER_TYPE');
+            $refConsumerCharges             = Config::get('waterConstaint.CONSUMER_CHARGE_CATAGORY');
+            $refApplyFrom                   = Config::get('waterConstaint.APP_APPLY_FROM');
+            $refWorkflow                    = Config::get('workflow-constants.WATER_DISCONNECTION');
+            $refConParamId                  = Config::get('waterConstaint.PARAM_IDS');
 
             # Check the condition for deactivation
-            $consumerDetails = $this->PreConsumerDeactivationCheck($request);
-
+            $refDetails = $this->PreConsumerDeactivationCheck($request, $user);
+            $ulbId      = $request->ulbId ?? $refDetails['consumerDetails']['ulb_id'];
+            
             # Get initiater and finisher
             $ulbWorkflowId = $ulbWorkflowObj->getulbWorkflowId($refWorkflow, $ulbId);
             if (!$ulbWorkflowId) {
@@ -615,27 +619,49 @@ class WaterConsumer extends Controller
                 throw new Exception("initiatorRoleId or finisherRoleId not found for respective Workflow!");
             }
 
+            # If the user is not citizen
             if ($user->user_type != $refUserType['1']) {
                 $request->request->add(['workflowId' => $refWorkflow]);
                 $roleDetails = $this->getRole($request);
                 $roleId = $roleDetails['wf_role_id'];
-                $request->request->add(['roleId' => $roleId]);
+                $refRequest = [
+                    "applyFrom" => $user->user_type,
+                    "empId"     => $user->id
+                ];
+            } else {
+                $refRequest = [
+                    "applyFrom" => $refApplyFrom['1'],
+                    "citizenId" => $user->id
+                ];
             }
 
+            # Get chrages for deactivation
+            $chargeAmount = $mWaterConsumerChargeCategory->getChargesByid($refConsumerCharges['WATER_DISCONNECTION']);
+            $refChargeList = collect($refConsumerCharges)->flip();
+
+            $refRequest["initiatorRoleId"]   = collect($initiatorRoleId)->first()->role_id;
+            $refRequest["finisherRoleId"]    = collect($finisherRoleId)->first()->role_id;
+            $refRequest["roleId"]            = $roleId ?? null;
+            $refRequest["ulbWorkflowId"]     = $ulbWorkflowId->id;
+            $refRequest["chargeCatagoryId"]  = $refConsumerCharges['WATER_DISCONNECTION'];
+            $refRequest["amount"]            = $chargeAmount->amount;
+            $refRequest['userType']          = $user->user_type;
+
             DB::beginTransaction();
-            $deactivatedDetails = $mWaterConsumerActiveRequest->saveRequestDetails($request, $currentDate, $consumerDetails);
+            $idGeneration       = new PrefixIdGenerator($refConParamId['WCD'], $ulbId);
+            $applicationNo      = $idGeneration->generate();
+            $applicationNo      = str_replace('/', '-', $applicationNo);
+            $deactivatedDetails = $mWaterConsumerActiveRequest->saveRequestDetails($request, $refDetails['consumerDetails'], $refRequest, $applicationNo);
             $metaRequest = [
-                'id'                => $deactivatedDetails['id'],
-                'amount'            => $request->amount,
-                'chargeCategory'    => "Demand Deactivation",                                   // Static
-                'todayDate'         => $currentDate->format('Y-m-d'),
-                // 'tranNo'            => $transactionNo,
-                'paymentMode'       => $request->paymentMode,
-                'userId'            => $user->id,
-                'userType'          => $user->user_type,
-                'ulbId'             => $request->ulbId ?? $user->ulb_id,
+                'chargeAmount'      => $chargeAmount->amount,
+                'amount'            => $chargeAmount->amount,
+                'ruleSet'           => null,
+                'chargeCategoryId'  => $refConsumerCharges['WATER_DISCONNECTION'],
+                'relatedId'         => $deactivatedDetails['id'],
+                'status'            => 2                                                // Static
             ];
-            $mWaterWaterConsumer->dissconnetConsumer($request);
+            $mWaterConsumerCharge->saveConsumerCharges($metaRequest, $request->consumerId, $refChargeList['2']);
+            $mWaterWaterConsumer->dissconnetConsumer($request->consumerId, $metaRequest['status']);
             DB::commit();
             return responseMsgs(true, "Respective Consumer Deactivated!", "", "", "02", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
@@ -650,24 +676,34 @@ class WaterConsumer extends Controller
      * | @var 
         | Not Working
         | Serial No : 06.01
-        | Recheck the amount and the order from weaver committee
+        | Recheck the amount and the order from weaver committee 
+        | Check if the consumer applied for other requests
      */
-    public function PreConsumerDeactivationCheck($request)
+    public function PreConsumerDeactivationCheck($request, $user)
     {
         $consumerId                     = $request->consumerId;
         $mWaterWaterConsumer            = new WaterWaterConsumer();
         $mWaterConsumerDemand           = new WaterConsumerDemand();
+        $mWaterConsumerActiveRequest    = new WaterConsumerActiveRequest();
+        $refUserType                    = Config::get('waterConstaint.REF_USER_TYPE');
 
         $refConsumerDetails = $mWaterWaterConsumer->getConsumerDetailById($consumerId);
-        if (isset($refConsumerDetails)) {
-            throw new Exception("Consumer Don't Exist!");
-        }
-        $pendingDemand = $mWaterConsumerDemand->getConsumerDemand($consumerId);
+        $pendingDemand      = $mWaterConsumerDemand->getConsumerDemand($consumerId);
         $firstPendingDemand = collect($pendingDemand)->first();
+
         if (isset($firstPendingDemand)) {
             throw new Exception("There are unpaid pending demand!");
         }
-        return $refConsumerDetails;
+        if (isset($request->ulbId) && $request->ulbId != $refConsumerDetails->ulb_id) {
+            throw new Exception("ulb not matched according to consumer connection!");
+        }
+        if ($refConsumerDetails->user_type == $refUserType['1'] && $user->id != $refConsumerDetails->user_id) {
+            throw new Exception("You are not the autherised user who filled before the connection!");
+        }
+        // $mWaterConsumerActiveRequest->getRequestByConId($consumerId);
+        return [
+            "consumerDetails" => $refConsumerDetails
+        ];
     }
 
 
@@ -971,7 +1007,7 @@ class WaterConsumer extends Controller
             if (is_null($consumerDetails)) {
                 throw new Exception("consumer Details not found!");
             }
-            $applicationDetails = $this->Repository->getconsumerRelatedData(1116);
+            $applicationDetails = $this->Repository->getconsumerRelatedData($consumerDetails->id);
             if (is_null($applicationDetails)) {
                 throw new Exception("Application Details not found!");
             }

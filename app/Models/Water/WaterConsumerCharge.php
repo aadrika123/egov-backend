@@ -28,10 +28,11 @@ class WaterConsumerCharge extends Model
         $mWaterConsumerCharge->consumer_id          = $consumerId;
         $mWaterConsumerCharge->charge_category      = $refChrgesCatagory;
         $mWaterConsumerCharge->charge_amount        = $consumerCharges['chargeAmount'];
-        $mWaterConsumerCharge->penalty              = $consumerCharges['penalty'];
+        $mWaterConsumerCharge->penalty              = $consumerCharges['penalty'] ?? 0;
         $mWaterConsumerCharge->amount               = $consumerCharges['amount'];
         $mWaterConsumerCharge->rule_set             = $consumerCharges['ruleSet'];
         $mWaterConsumerCharge->charge_category_id   = $consumerCharges['chargeCategoryId'];
+        $mWaterConsumerCharge->related_id           = $consumerCharges['relatedId'];
         $mWaterConsumerCharge->save();
         return [
             "id" => $mWaterConsumerCharge->id
