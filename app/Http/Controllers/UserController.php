@@ -46,7 +46,7 @@ class UserController extends Controller
     // Store the user in database from Authority
     public function authorizeStore(AuthorizeRequestUser $request)
     {
-        $request['ulb'] = auth()->user()->ulb_id;
+        $request['ulb'] = authUser($request)->ulb_id;
         return $this->EloquentAuth->store($request);
     }
 
@@ -149,12 +149,12 @@ class UserController extends Controller
     public function changePasswordByOtp(AuthOtpChangePass $request)
     {
         try {
-            $id = auth()->user()->id;
+            $id = authUser($request)->id;
             $user = User::find($id);
             $user->password = Hash::make($request->password);
             $user->save();
 
-            Redis::del('user:' . auth()->user()->id);   //DELETING REDIS KEY
+            Redis::del('user:' . authUser($request)->id);   //DELETING REDIS KEY
             return response()->json(['Status' => 'True', 'Message' => 'Successfully Changed the Password'], 200);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "", "01", ".ms", "POST", $request->deviceId);
