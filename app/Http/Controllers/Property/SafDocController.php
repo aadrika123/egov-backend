@@ -210,15 +210,17 @@ class SafDocController extends Controller
             }
 
             $metaReqs['owner_dtl_id'] = $req->ownerId;
-            $documents = $mWfActiveDocument->isDocCategoryExists($getSafDtls->id, $getSafDtls->workflow_id, $propModuleId, $req->docCategory, $req->ownerId);
+            $documents = $mWfActiveDocument->isDocCategoryExists($getSafDtls->id, $getSafDtls->workflow_id, $propModuleId, $req->docCategory, $req->ownerId)->get();
+            $ifDocCategoryExist = collect();
             if ($req->docCode == 'PHOTOGRAPH')
-                $ifDocCategoryExist = $documents->where('verify_status', 1)->first();   // Checking if the document is already existing or not
+                $ifDocCategoryExist = collect($documents)->where('verify_status', 1)->first();   // Checking if the document is already existing or not
             else
-                $ifDocCategoryExist = $documents->where('verify_status', 0)->first();   // Checking if the document is already existing or not
+                $ifDocCategoryExist = collect($documents)->where('verify_status', 0)->first();   // Checking if the document is already existing or not
+
             DB::beginTransaction();
             if (collect($ifDocCategoryExist)->isEmpty()) {
                 // Check if the New Uploaded Document is Rejected Or Not
-                $isDocRejected = $documents->where('verify_status', 2)->first();
+                $isDocRejected = collect($documents)->where('verify_status', 2)->first();
                 if ($isDocRejected)
                     $isDocRejected->update(['status' => 0]);
 

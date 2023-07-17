@@ -99,8 +99,7 @@ class WfActiveDocument extends Model
             ->where('module_id', $moduleId)
             ->where('doc_category', $docCategory)
             ->where('owner_dtl_id', $ownerId)
-            ->where('status', 1)
-            ->get();
+            ->where('status', 1);
     }
 
 

@@ -3,6 +3,7 @@
 namespace App\Traits\Water;
 
 use App\Models\Water\WaterApplication;
+use App\Models\Water\WaterConsumerActiveRequest;
 use App\Models\Water\WaterPenaltyInstallment;
 use App\Models\Water\WaterTranFineRebate;
 use Exception;
@@ -20,9 +21,10 @@ trait WaterTrait
 
     /**
      * |----------------------------- Get Water Application List For the Workflow ---------------------------|
-     * | @param ulbId
      * | Rating : 
      * | Opertation : serch the application for the respective ulb/workflow
+        | Serial No : 01
+        | Working
      */
     public function getWaterApplicatioList($workflowIds, $ulbId)
     {
@@ -55,7 +57,7 @@ trait WaterTrait
      * | Details for the dcb according to the perticular year
      * | @param
      * | @param
-        | Serial No :
+        | Serial No : 02
         | Working
      */
     public function demandByFyear($fyear, $fromDate, $uptoDate, $ulbId)
@@ -117,5 +119,20 @@ trait WaterTrait
             "valueAddMinus" => "-"                                                              // Static
         ]);
         $mWaterTranFineRebate->saveRebateDetails($metaRequest, $transactionId);
+    }
+
+    /**
+     * | 
+     */
+    public function getConsumerWfBaseQuerry($workflowIds, $ulbId)
+    {
+        return WaterConsumerActiveRequest::select('water_consumer_active_requests.*')
+        ->join('water_consumer_owners AS wco','wco.consumer_id', 'water_consumer_active_requests.consumer_id')
+        ->join('ulb_ward_masters AS uwm', 'uwm.id', 'water_consumer_active_requests.ward_mstr_id')
+        ->join('ulb_masters AS um','um.id','water_consumer_active_requests.ulb_id')
+        ->where('water_consumer_active_requests.status', 1)
+        ->where('water_consumer_active_requests.payment_status', 1)
+        ->where('water_consumer_active_requests.ulb_id', $ulbId)
+        ->whereIn('water_consumer_active_requests.workflow_id', $workflowIds);
     }
 }

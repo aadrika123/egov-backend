@@ -349,7 +349,7 @@ class WaterNewConnection implements IWaterNewConnection
             $temp['mobile']     = $refUser->mobile;
             $temp['email']      = $refUser->email;
             $temp['userId']     = $refUser->id;
-            $temp['ulbId']      = $refUser->ulb_id;
+            $temp['ulbId']      = $refUser->ulb_id ?? $temp['ulbId'];
             $temp["applycationType"] = $request->applycationType;
             return responseMsg(true, "", $temp);
         } catch (Exception $e) {
@@ -570,7 +570,7 @@ class WaterNewConnection implements IWaterNewConnection
             return responseMsg(false, $e->getMessage(), $args);
         }
     }
-    
+
     public function readTransectionAndApl(Request $request)
     {
         try {

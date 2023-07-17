@@ -2694,7 +2694,7 @@ class Report implements IReport
                     AND prop_demands.ulb_id = $ulbId
                     GROUP BY prop_demands.property_id,holding_no,new_holding_no,owner_name,mobile_no,
                              prop_address,prop_demands.ward_mstr_id,ward_name
-                    order by prop_demands.property_id
+                    order by prop_demands.property_id desc
             limit $limit offset $offset";
 
             $sql2 = "SELECT count(DISTINCT prop_demands.property_id) as total
@@ -2718,7 +2718,7 @@ class Report implements IReport
             $data = DB::TABLE(DB::RAW("($sql )AS prop"))->get();
 
             $total = (collect(DB::SELECT($sql2))->first())->total ?? 0;
-            $lastPage = ceil($total / $perPage);
+            $lastPage = round($total / $perPage);
             $list = [
                 "current_page" => $page,
                 "data" => $data,

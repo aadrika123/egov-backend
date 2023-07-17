@@ -553,7 +553,7 @@ class ActiveSafControllerV2 extends Controller
             $dues = $dues1->original['data'];
 
             $demands = $dues['details'];
-            $tranNo = $idGeneration->generateTransactionNo();
+            $tranNo = $idGeneration->generateTransactionNo($req['ulbId']);
             $payableAmount = $dues['demand']['payableAmount'];
             // Property Transactions
             if (in_array($req['paymentMode'], $offlinePaymentModes)) {

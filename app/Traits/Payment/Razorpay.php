@@ -56,6 +56,7 @@ trait Razorpay
             'id'            => 'required|integer',
             'amount'        => 'required|',
             'workflowId'    => 'required|',
+            'ulbId'         => 'nullable'
         ]);
 
         try {
@@ -66,11 +67,14 @@ trait Razorpay
 
             $userId             = auth()->user()->id ?? $request->ghostUserId;
             $workflowDetails    = $mWfWorkflow->listbyId($wfReq);
-            $ulbId              = $workflowDetails->ulb_id;                                           // ulbId
+            $ulbId              = $workflowDetails->ulb_id ?? $request->ulbId;                                           // ulbId
             $refRazorpayId      = Config::get('razorpay.RAZORPAY_ID');
             $refRazorpayKey     = Config::get('razorpay.RAZORPAY_KEY');
             $mReciptId          = Str::random(15);                                                      // Static recipt ID
 
+            if (!$ulbId) {
+                throw new Exception("Ulb details not found!");
+            }
             $mApi = new Api($refRazorpayId, $refRazorpayKey);
             $mOrder = $mApi->order->create(array(
                 'receipt'           => $mReciptId,

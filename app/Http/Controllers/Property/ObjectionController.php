@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Property;
 
+use App\BLL\Property\CalculatePropById;
 use App\Repository\Property\Interfaces\iObjectionRepository;
 use App\Http\Controllers\Controller;
 use App\MicroServices\DocUpload;
@@ -230,24 +231,24 @@ class ObjectionController extends Controller
                 $ownerList = json_decode(json_encode($ownerList), true);
 
 
-                $sql = " SELECT Odtls.*,
+                $sql = "SELECT Odtls.*,
                             ot.type,
-                            case when Odtls.objection_type_id not in (3,4) then Odtls.assesment_data
-                                when Odtls.objection_type_id =3 then ref_prop_road_types.road_type
-                                when Odtls.objection_type_id =4 then ref_prop_types.property_type 
-                                end as obj_valu,
-                            case when Odtls.objection_type_id not in (3,4) then Odtls.assesment_data
-                                when Odtls.objection_type_id =3 then objection_type_road.road_type
-                                when Odtls.objection_type_id =4 then objection_type_prop.property_type 
-                                end as asses_valu,
-                            ref_prop_road_types.road_type,
+                            CASE
+                                WHEN Odtls.objection_type_id NOT IN (2, 4) THEN Odtls.applicant_data
+                                WHEN Odtls.objection_type_id = 2 AND Odtls.applicant_data = '1' THEN 'YES'
+                                WHEN Odtls.objection_type_id = 2 AND Odtls.applicant_data = '0' THEN 'NO'
+                                WHEN Odtls.objection_type_id = 4 THEN objection_type_prop.property_type
+                            END AS obj_valu,
+                            CASE
+                                WHEN Odtls.objection_type_id NOT IN (2, 4) THEN Odtls.assesment_data
+                                WHEN Odtls.objection_type_id = 2 AND Odtls.assesment_data = '1' THEN 'YES'
+                                WHEN Odtls.objection_type_id = 2 AND Odtls.assesment_data = '0' THEN 'NO'
+                                WHEN Odtls.objection_type_id = 4 THEN ref_prop_types.property_type
+                            END AS asses_valu,
                             ref_prop_types.property_type
                         FROM prop_active_objection_dtls as Odtls
                         inner join ref_prop_objection_types as ot on ot.id = Odtls.objection_type_id
-                        left join ref_prop_road_types on ref_prop_road_types.id::text = Odtls.assesment_data and Odtls.objection_type_id =3
                         left join ref_prop_types on ref_prop_types.id::text = Odtls.assesment_data and Odtls.objection_type_id =4
-
-                        left join ref_prop_road_types objection_type_road on objection_type_road.id::text = Odtls.applicant_data and Odtls.objection_type_id =3
                         left join ref_prop_types objection_type_prop on objection_type_prop.id::text = Odtls.applicant_data and Odtls.objection_type_id =4
 
                         where objection_id = $details->objection_id";
@@ -273,12 +274,12 @@ class ObjectionController extends Controller
 
                     $objectionFloorElement = [
                         'headerTitle' => 'Objection Floor Details',
-                        'tableHead' => ["#", "Floor No.", "Usage Type", "Occupancy Type", "Construction Type", "Built Up Area (in Sq. Ft.)", "Carpet Area (in Sq. Ft.)"],
+                        'tableHead' => ["Floor No.", "Usage Type", "Occupancy Type", "Construction Type", "Built Up Area (in Sq. Ft.)", "Date From", "Date Upto"],
                         'tableData' => array()
                     ];
                     $floorElement = [
                         'headerTitle' => 'Floor Details',
-                        'tableHead' => ["#", "Floor", "Usage Type", "Occupancy Type", "Construction Type", "Build Up Area (in Sq. Ft.)", "Carpet Area (in Sq. Ft.)"],
+                        'tableHead' => ["#", "Floor", "Usage Type", "Occupancy Type", "Construction Type", "Build Up Area (in Sq. Ft.)", "Date From", "Date Upto"],
                         'tableData' => array()
                     ];
                     foreach ($objectionFlooorDtls as $objectionFlooorDtl) {
@@ -512,11 +513,11 @@ class ObjectionController extends Controller
      */
     public function approvalRejection(Request $req)
     {
+        $req->validate([
+            "applicationId" => "required",
+            "status" => "required"
+        ]);
         try {
-            $req->validate([
-                "applicationId" => "required",
-                "status" => "required"
-            ]);
             $mWfRoleUsermap = new WfRoleusermap();
             $mPropOwner = new PropOwner();
             $mPropActiveObjectionOwner = new PropActiveObjectionOwner();
@@ -630,6 +631,11 @@ class ObjectionController extends Controller
                                     PropProperty::where('id', $activeObjection->id)
                                         ->update(['prop_type_mstr_id' => $objDtl->applicant_data]);
                                     break;
+
+                                case (8):
+                                    PropProperty::where('id', $activeObjection->id)
+                                        ->update(['rwh_date_from' => $objDtl->applicant_data]);
+                                    break;
                             }
                         }
                     }
@@ -642,18 +648,22 @@ class ObjectionController extends Controller
                         PropFloor::where('id', $floorDtl->prop_floor_id)
                             ->update(
                                 [
-                                    'floor_mstr_id' => $ownerDtl->floor_mstr_id,
-                                    'usage_type_mstr_id' => $ownerDtl->usage_type_mstr_id,
-                                    'occupancy_type_mstr_id' => $ownerDtl->occupancy_type_mstr_id,
-                                    'const_type_mstr_id' => $ownerDtl->const_type_mstr_id,
-                                    'builtup_area' => $ownerDtl->builtup_area,
-                                    'carpet_area' => $ownerDtl->carpet_area,
+                                    'floor_mstr_id' => $floorDtl->floor_mstr_id,
+                                    'usage_type_mstr_id' => $floorDtl->usage_type_mstr_id,
+                                    'occupancy_type_mstr_id' => $floorDtl->occupancy_type_mstr_id,
+                                    'const_type_mstr_id' => $floorDtl->const_type_mstr_id,
+                                    'builtup_area' => $floorDtl->builtup_area,
+                                    'carpet_area' => $floorDtl->carpet_area,
                                 ]
                             );
                     }
                 }
                 $msg =  "Application Successfully Approved !!";
                 $metaReqs['verificationStatus'] = 1;
+
+                // $var = new CalculatePropById;
+                // return  $data = $var->calculatePropTax($activeObjection);
+                // dd($data);
             }
 
             // Rejection
@@ -692,7 +702,6 @@ class ObjectionController extends Controller
                 'forward_date' => $this->_todayDate->format('Y-m-d'),
                 'forward_time' => $this->_todayDate->format('H:i:s')
             ]);
-
             DB::commit();
 
             return responseMsgs(true, $msg, "", '010811', '01', responseTime(), 'Post', '');

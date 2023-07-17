@@ -227,6 +227,7 @@ class NewConnectionController extends Controller
                 ->get();
 
             $filterWaterList = collect($waterList)->unique('id');
+            $filterWaterList = $filterWaterList->values();
             return responseMsgs(true, "BTC Inbox List", remove_null($filterWaterList), "", 1.0, "560ms", "POST", $mDeviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", 010123, 1.0, "271ms", "POST", $mDeviceId);
@@ -622,11 +623,22 @@ class NewConnectionController extends Controller
      */
     public function btcParamcheck($role, $mWaterApplication)
     {
+        $refReq = new Request([
+            "applicationId" => $mWaterApplication->id
+        ]);
+        $rawDoc = $this->getUploadDocuments($refReq);
         if ($role->is_btc != true) {
             throw new Exception("You dont have permission to BTC!");
         }
         if ($mWaterApplication->current_role != $role->role_id) {
             throw new Exception("the application is not under your possession!");
+        }
+        $activeDocs = collect($rawDoc)['original']['data'];
+        $canBtc = $activeDocs->contains(function ($item) {
+            return $item['verify_status'] == 2;
+        });
+        if (!$canBtc) {
+            throw new Exception("Document not rejected! cannot perform BTC!");
         }
     }
 
@@ -944,7 +956,7 @@ class NewConnectionController extends Controller
             }
 
             DB::beginTransaction();
-            $ifDocExist = $mWfActiveDocument->isDocCategoryExists($getWaterDetails->id, $getWaterDetails->workflow_id, $refmoduleId, $req->docCategory, $req->ownerId);   // Checking if the document is already existing or not
+            $ifDocExist = $mWfActiveDocument->isDocCategoryExists($getWaterDetails->id, $getWaterDetails->workflow_id, $refmoduleId, $req->docCategory, $req->ownerId)->first();   // Checking if the document is already existing or not
             $metaReqs = new Request($metaReqs);
             if (collect($ifDocExist)->isEmpty()) {
                 $mWfActiveDocument->postDocuments($metaReqs);
@@ -1677,46 +1689,54 @@ class NewConnectionController extends Controller
     {
         $request->validate([
             'filterBy'  => 'required',
-            'parameter' => 'required'
+            'parameter' => 'required',
+            'pages'     => 'nullable',
         ]);
         try {
             $mWaterConsumer = new WaterConsumer();
             $key            = $request->filterBy;
             $paramenter     = $request->parameter;
+            $pages          = $request->pages ?? 10;
             $string         = preg_replace("/([A-Z])/", "_$1", $key);
             $refstring      = strtolower($string);
 
             switch ($key) {
                 case ("consumerNo"):                                                                        // Static
-                    $waterReturnDetails = $mWaterConsumer->getDetailByConsumerNo($refstring, $paramenter);
-                    $checkVal = collect($waterReturnDetails)->first();
-                    if (!$checkVal)
+                    $waterReturnDetails = $mWaterConsumer->getDetailByConsumerNo($refstring, $paramenter)->paginate($pages);
+                    $checkVal = collect($waterReturnDetails)->last();
+                    if (!$checkVal || $checkVal == 0)
                         throw new Exception("Data according to " . $key . " not Found!");
                     break;
                 case ("holdingNo"):                                                                         // Static
-                    $waterReturnDetails = $mWaterConsumer->getDetailByConsumerNo($refstring, $paramenter);
-                    $checkVal = collect($waterReturnDetails)->first();
-                    if (!$checkVal)
+                    $waterReturnDetails = $mWaterConsumer->getDetailByConsumerNo($refstring, $paramenter)->paginate($pages);
+                    $checkVal = collect($waterReturnDetails)->last();
+                    if (!$checkVal || $checkVal == 0)
                         throw new Exception("Data according to " . $key . " not Found!");
                     break;
                 case ("safNo"):                                                                             // Static
-                    $waterReturnDetails = $mWaterConsumer->getDetailByConsumerNo($refstring, $paramenter);
-                    $checkVal = collect($waterReturnDetails)->first();
-                    if (!$checkVal)
+                    $waterReturnDetails = $mWaterConsumer->getDetailByConsumerNo($refstring, $paramenter)->paginate($pages);
+                    $checkVal = collect($waterReturnDetails)->last();
+                    if (!$checkVal || $checkVal == 0)
                         throw new Exception("Data according to " . $key . " not Found!");
                     break;
                 case ("applicantName"):                                                                     // Static
                     $paramenter = strtoupper($paramenter);
-                    $waterReturnDetails = $mWaterConsumer->getDetailByOwnerDetails($refstring, $paramenter);
-                    $checkVal = collect($waterReturnDetails)->first();
-                    if (!$checkVal)
+                    $waterReturnDetails = $mWaterConsumer->getDetailByOwnerDetails($refstring, $paramenter)->paginate($pages);
+                    $checkVal = collect($waterReturnDetails)->last();
+                    if (!$checkVal || $checkVal == 0)
                         throw new Exception("Data according to " . $key . " not Found!");
                     break;
                 case ('mobileNo'):                                                                          // Static
                     $paramenter = strtoupper($paramenter);
-                    $waterReturnDetails = $mWaterConsumer->getDetailByOwnerDetails($refstring, $paramenter);
-                    $checkVal = collect($waterReturnDetails)->first();
-                    if (!$checkVal)
+                    $waterReturnDetails = $mWaterConsumer->getDetailByOwnerDetails($refstring, $paramenter)->paginate($pages);
+                    $checkVal = collect($waterReturnDetails)->last();
+                    if (!$checkVal || $checkVal == 0)
+                        throw new Exception("Data according to " . $key . " not Found!");
+                    break;
+                case ('applicationNo'):
+                    $waterReturnDetails = $mWaterConsumer->getDetailByApplicationNo($paramenter)->paginate($pages);
+                    $checkVal = collect($waterReturnDetails)->last();
+                    if (!$checkVal || $checkVal == 0)
                         throw new Exception("Data according to " . $key . " not Found!");
                     break;
                 default:
@@ -1738,45 +1758,65 @@ class NewConnectionController extends Controller
         $request->validate([
             'filterBy'  => 'required|in:newConnection,regularization,name,mobileNo,safNo,holdingNo',
             'parameter' => $request->filterBy == 'mobileNo' ? 'required|numeric|digits:10' : "required",
+            'pages'     => 'nullable|integer',
         ]);
 
         try {
             $key                = $request->filterBy;
             $parameter          = $request->parameter;
+            $pages              = $request->pages ?? 10;
             $mWaterApplicant    = new WaterApplication();
             $connectionTypes    = Config::get('waterConstaint.CONNECTION_TYPE');
 
             switch ($key) {
                 case ("newConnection"):                                                                     // Static
-                    $returnData = $mWaterApplicant->getDetailsByApplicationNo($connectionTypes['NEW_CONNECTION'], $parameter);
+                    $returnData = $mWaterApplicant->getDetailsByApplicationNo($connectionTypes['NEW_CONNECTION'], $parameter)->paginate($pages);
+                    $checkVal = collect($returnData)->last();
+                    if (!$checkVal || $checkVal == 0)
+                        throw new Exception("Data according to " . $key . " not Found!");
                     break;
                 case ("regularization"):                                                                    // Static
-                    $returnData = $mWaterApplicant->getDetailsByApplicationNo($connectionTypes['REGULAIZATION'], $parameter);
+                    $returnData = $mWaterApplicant->getDetailsByApplicationNo($connectionTypes['REGULAIZATION'], $parameter)->paginate($pages);
+                    $checkVal = collect($returnData)->last();
+                    if (!$checkVal || $checkVal == 0)
+                        throw new Exception("Data according to " . $key . " not Found!");
                     break;
                 case ("name"):                                                                              // Static
                     $returnData = $mWaterApplicant->getDetailsByParameters()
                         ->where("water_applicants.applicant_name", 'ILIKE', '%' . $parameter . '%')
-                        ->get();
+                        ->paginate($pages);
+                    $checkVal = collect($returnData)->last();
+                    if (!$checkVal || $checkVal == 0)
+                        throw new Exception("Data according to " . $key . " not Found!");
                     break;
                 case ("mobileNo"):                                                                          // Static
                     $returnData = $mWaterApplicant->getDetailsByParameters()
                         ->where("water_applicants.mobile_no", $parameter)
-                        ->get();
+                        ->paginate($pages);
+                    $checkVal = collect($returnData)->last();
+                    if (!$checkVal || $checkVal == 0)
+                        throw new Exception("Data according to " . $key . " not Found!");
                     break;
                 case ("safNo"):                                                                             // Static
                     $returnData = $mWaterApplicant->getDetailsByParameters()
                         ->where("water_applications.saf_no", 'LIKE', '%' . $parameter . '%')
-                        ->get();
+                        ->paginate($pages);
+                    $checkVal = collect($returnData)->last();
+                    if (!$checkVal || $checkVal == 0)
+                        throw new Exception("Data according to " . $key . " not Found!");
                     break;
                 case ("holdingNo"):                                                                         // Static
                     $returnData = $mWaterApplicant->getDetailsByParameters()
                         ->where("water_applications.holding_no", 'LIKE', '%' . $parameter . '%')
-                        ->get();
+                        ->paginate($pages);
+                    $checkVal = collect($returnData)->last();
+                    if (!$checkVal || $checkVal == 0)
+                        throw new Exception("Data according to " . $key . " not Found!");
                     break;
             }
             return responseMsgs(true, "List of Appication!", $returnData, "", "01", "723 ms", "POST", "");
         } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
+            return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $request->deviceId);
         }
     }
 
