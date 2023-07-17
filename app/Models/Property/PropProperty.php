@@ -679,16 +679,18 @@ class PropProperty extends Model
             'prop_properties.pt_no',
             'prop_properties.prop_address',
             'prop_saf_geotag_uploads.latitude',
+            'prop_owners.mobile_no',
             'prop_saf_geotag_uploads.longitude',
             'prop_saf_geotag_uploads.created_at',
             DB::raw("concat(relative_path,'/',image_path) as doc_path"),
         )
             ->join('prop_saf_geotag_uploads', 'prop_saf_geotag_uploads.saf_id', '=', 'prop_properties.saf_id')
+            ->join('prop_owners', 'prop_owners.property_id', '=', 'prop_properties.id')
             ->where('prop_properties.ward_mstr_id', $wardId)
             ->where('prop_properties.holding_no', '!=', null)
             ->orderByDesc('prop_properties.id')
             ->skip(0)
-            ->take(4000)
+            ->take(100)
             ->get();
     }
 

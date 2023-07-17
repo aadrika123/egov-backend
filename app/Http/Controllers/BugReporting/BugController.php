@@ -34,14 +34,15 @@ class BugController extends Controller
         'bugTitle' => 'required',
         'bugSummary' => 'required',
         'environmentDescription' => 'required',
-        'category' => 'required',
+        'categoryId' => 'required',
         'severity' => 'required',
-        'status' => 'required',
-        'reportingUserId' => 'required',
-        'assignedTo' => 'required',
+        'priority'=>'required',
+        //'status' => 'required',
+        //'reportingUserId' => 'required',
+        //'assignedTo' => 'required',
         'screenBitmap' => 'required',
         'moduleId' => 'required',
-        'caseId' => 'required'
+        //'caseId' => 'required'
     ]);
 
     if ($validated->fails()) {
@@ -85,11 +86,12 @@ class BugController extends Controller
     }
 
     
-    public function caseList(Request $request)
+    public function category(Request $request)
     {
         try{
+            return authUser();
             $list = new Bug();
-            $caselist = $list->caseList($request);
+            $caselist = $list->category($request);
             
             return responseMsg(true, "Case List", $caselist);
         } catch(Exception $e){
@@ -98,13 +100,13 @@ class BugController extends Controller
     }
 
 
-    public function modulecaselist(Request $request)
+    public function allformlist(Request $request)
     {
         try{
             $data = new Bug();
-            $getdata = $data->modulecaselist($request);
+            $getdata = $data->allformlist($request);
 
-            return responseMsg(true, "Module and Case List", $getdata);
+            return responseMsg(true, "Module, Category, Severity and Priority List", remove_null($getdata));
            }catch (Exception $e){
             return responseMsg(false, $e->getMessage(), "");
            }
