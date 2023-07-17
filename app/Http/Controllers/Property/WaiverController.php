@@ -34,7 +34,7 @@ class WaiverController extends Controller
     
         try {
             $docUpload = new DocUpload();
-            $path = "Waiver/Documents";
+            $path = "Uploads/Property";
             $refImageName = "WaiverDocuments";
             $document = $request->waiverDocuments;
     
