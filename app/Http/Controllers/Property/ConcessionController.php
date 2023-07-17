@@ -362,8 +362,8 @@ class ConcessionController extends Controller
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
             $perPage = $req->perPage ?? 10;
 
-            $userId = authUser()->id;
-            $ulbId  = authUser()->ulb_id;
+            $userId = authUser($req)->id;
+            $ulbId  = authUser($req)->ulb_id;
             $occupiedWards = $mWfWardUser->getWardsByUserId($userId)->pluck('ward_id');                       // Model () to get Occupied Wards of Current User
 
             $roleIds = $mWfRoleUser->getRoleIdByUserId($userId)->pluck('wf_role_id');                      // Model to () get Role By User Id
@@ -598,7 +598,7 @@ class ConcessionController extends Controller
             'action' => 'required|In:forward,backward',
         ]);
         try {
-            $userId = authUser()->id;
+            $userId = authUser($req)->id;
             $track = new WorkflowTrack();
             $mWfWorkflows = new WfWorkflow();
             $mWfRoleMaps = new WfWorkflowrolemap();
@@ -686,7 +686,7 @@ class ConcessionController extends Controller
             $activeConcession = $mActiveConcession->getConcessionById($req->applicationId);
             $propOwners = PropOwner::where('id', $activeConcession->prop_owner_id)
                 ->first();
-            $userId = authUser()->id;
+            $userId = authUser($req)->id;
             $getFinisherQuery = $this->getFinisherId($req->workflowId);                                 // Get Finisher using Trait
             $refGetFinisher = collect(DB::select($getFinisherQuery))->first();
 
@@ -1262,7 +1262,7 @@ class ConcessionController extends Controller
             $mPropActiveConcession = new PropActiveConcession();
             $mWfRoleusermap = new WfRoleusermap();
             $wfDocId = $req->id;
-            $userId = authUser()->id;
+            $userId = authUser($req)->id;
             $applicationId = $req->applicationId;
             $wfLevel = Config::get('PropertyConstaint.SAF-LABEL');
             // Derivative Assigments

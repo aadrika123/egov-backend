@@ -112,8 +112,8 @@ class ObjectionController extends Controller
     public function inbox(Request $req)
     {
         try {
-            $userId = authUser()->id;
-            $ulbId = authUser()->ulb_id;
+            $userId = authUser($req)->id;
+            $ulbId = authUser($req)->ulb_id;
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
             $perPage = $req->perPage ?? 10;
 
@@ -140,8 +140,8 @@ class ObjectionController extends Controller
     public function outbox(Request $req)
     {
         try {
-            $userId = authUser()->id;
-            $ulbId = authUser()->ulb_id;
+            $userId = authUser($req)->id;
+            $ulbId = authUser($req)->ulb_id;
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
             $perPage = $req->perPage ?? 10;
 
@@ -376,7 +376,7 @@ class ObjectionController extends Controller
             ]);
 
             DB::beginTransaction();
-            $userId = authUser()->id;
+            $userId = authUser($req)->id;
             $objId = $req->applicationId;
             $data = PropActiveObjection::find($objId);
             $data->is_escalated = $req->escalateStatus;
@@ -394,8 +394,8 @@ class ObjectionController extends Controller
     public function specialInbox(Request $req)
     {
         try {
-            $userId = authUser()->id;
-            $ulbId = authUser()->ulb_id;
+            $userId = authUser($req)->id;
+            $ulbId = authUser($req)->ulb_id;
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
             $perPage = $req->perPage ?? 10;
 
@@ -422,8 +422,8 @@ class ObjectionController extends Controller
     public function btcInboxList(Request $req)
     {
         try {
-            $userId = authUser()->id;
-            $ulbId = authUser()->ulb_id;
+            $userId = authUser($req)->id;
+            $ulbId = authUser($req)->ulb_id;
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
             $perPage = $req->perPage ?? 10;
 
@@ -453,7 +453,7 @@ class ObjectionController extends Controller
                 'receiverRoleId' => 'nullable|integer',
                 'action' => 'required|In:forward,backward',
             ]);
-            $userId = authUser()->id;
+            $userId = authUser($req)->id;
             $mRefTable = Config::get('PropertyConstaint.SAF_OBJECTION_REF_TABLE');
             $objection = PropActiveObjection::find($req->applicationId);
             $track = new WorkflowTrack();
@@ -524,7 +524,7 @@ class ObjectionController extends Controller
             $mPropActiveObjectionDtl = new PropActiveObjectionDtl();
             $mPropActiveObjectionFloor = new PropActiveObjectionFloor();
             $track = new WorkflowTrack();
-            $userId = authUser()->id;
+            $userId = authUser($req)->id;
             $activeObjection = PropActiveObjection::where('id', $req->applicationId)
                 ->first();
 
@@ -1031,8 +1031,9 @@ class ObjectionController extends Controller
         // return $request->owners[0]['gender'];
         try {
             $mPropProperty = new PropProperty();
-            $userId = authUser()->id;
-            $userType = auth()->user()->user_type;
+            $user = authUser($request);
+            $userId = $user->id;
+            $userType = $user->user_type;
             $objectionFor = $request->objectionFor;
             $objParamId = Config::get('PropertyConstaint.OBJ_PARAM_ID');
             $owner = $request->owners;
@@ -1270,7 +1271,7 @@ class ObjectionController extends Controller
             $mPropActiveObjection = new PropActiveObjection();
             $mWfRoleusermap = new WfRoleusermap();
             $wfDocId = $req->id;
-            $userId = authUser()->id;
+            $userId = authUser($req)->id;
             $applicationId = $req->applicationId;
             $wfLevel = Config::get('PropertyConstaint.SAF-LABEL');
             // Derivative Assigments

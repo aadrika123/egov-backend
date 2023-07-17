@@ -142,7 +142,7 @@ class ActiveSafController extends Controller
             $redisConn = Redis::connection();
             $data = [];
             if ($method == 'GET')
-                $ulbId = authUser($req)['ulb_id'];
+                $ulbId = authUser($req)->ulb_id;
             else
                 $ulbId = $req->ulbId;
             if (!$ulbId)
@@ -349,8 +349,8 @@ class ActiveSafController extends Controller
             $mWfWardUser = new WfWardUser();
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
 
-            $userId = authUser()->id;
-            $ulbId = authUser()->ulb_id;
+            $userId = authUser($req)->id;
+            $ulbId = authUser($req)->ulb_id;
             $perPage = $req->perPage ?? 10;
 
             $occupiedWards = $mWfWardUser->getWardsByUserId($userId)->pluck('ward_id');                       // Model () to get Occupied Wards of Current User
@@ -400,8 +400,8 @@ class ActiveSafController extends Controller
             $mWfWardUser = new WfWardUser();
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
 
-            $mUserId = authUser()->id;
-            $mUlbId = authUser()->ulb_id;
+            $mUserId = authUser($req)->id;
+            $mUlbId = authUser($req)->ulb_id;
             $mDeviceId = $req->deviceId ?? "";
             $perPage = $req->perPage ?? 10;
 
@@ -440,8 +440,8 @@ class ActiveSafController extends Controller
             $mWfWardUser = new WfWardUser();
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
 
-            $mUserId = authUser()->id;
-            $mUlbId = authUser()->ulb_id;
+            $mUserId = authUser($req)->id;
+            $mUlbId = authUser($req)->ulb_id;
             $mDeviceId = $req->deviceId ?? "";
             $perPage = $req->perPage ?? 10;
 
@@ -483,8 +483,8 @@ class ActiveSafController extends Controller
             $mWfWardUser = new WfWardUser();
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
 
-            $userId = auth()->user()->id;
-            $ulbId = auth()->user()->ulb_id;
+            $userId = authUser($req)->id;
+            $ulbId = authUser($req)->ulb_id;
             $perPage = $req->perPage ?? 10;
 
             $roleIds = $mWfRoleUser->getRoleIdByUserId($userId)->pluck('wf_role_id');
@@ -524,8 +524,8 @@ class ActiveSafController extends Controller
             $mWfWardUser = new WfWardUser();
             $mWfRoleUserMaps = new WfRoleusermap();
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
-            $userId = authUser()->id;
-            $ulbId = authUser()->ulb_id;
+            $userId = authUser($req)->id;
+            $ulbId = authUser($req)->ulb_id;
             $perPage = $req->perPage ?? 10;
 
             $wardIds = $mWfWardUser->getWardsByUserId($userId)->pluck('ward_id');                        // Get All Occupied Ward By user id using trait
@@ -729,6 +729,8 @@ class ActiveSafController extends Controller
             $data = $mPropActiveSaf->getActiveSafDtls()                         // <------- Model function Active SAF Details
                 ->where('prop_active_safs.id', $req->applicationId)
                 ->first();
+            if (!$data)
+                throw new Exception("Application Not Found");
 
             if (collect($data)->isEmpty()) {
                 $data = $mPropSaf->getSafDtls()
@@ -788,7 +790,7 @@ class ActiveSafController extends Controller
             "applicationId" => "required|int",
         ]);
         try {
-            $userId = auth()->user()->id;
+            $userId = authUser($request)->id;
             $saf_id = $request->applicationId;
             $data = PropActiveSaf::find($saf_id);
             $data->is_escalate = $request->escalateStatus;
@@ -809,8 +811,8 @@ class ActiveSafController extends Controller
         ]);
 
         try {
-            $userId = authUser()->id;
-            $userType = authUser()->user_type;
+            $userId = authUser($request)->id;
+            $userType = authUser($request)->user_type;
             $workflowTrack = new WorkflowTrack();
             $mWfRoleUsermap = new WfRoleusermap();
             $saf = PropActiveSaf::findOrFail($request->applicationId);                // SAF Details
@@ -870,7 +872,7 @@ class ActiveSafController extends Controller
 
         try {
             // Variable Assigments
-            $userId = authUser()->id;
+            $userId = authUser($request)->id;
             $wfLevels = Config::get('PropertyConstaint.SAF-LABEL');
             $saf = PropActiveSaf::findOrFail($request->applicationId);
             $mWfMstr = new WfWorkflow();
@@ -899,7 +901,7 @@ class ActiveSafController extends Controller
             DB::beginTransaction();
             if ($request->action == 'forward') {
                 $wfMstrId = $mWfMstr->getWfMstrByWorkflowId($saf->workflow_id);
-                $samHoldingDtls = $this->checkPostCondition($senderRoleId, $wfLevels, $saf, $wfMstrId);          // Check Post Next level condition
+                $samHoldingDtls = $this->checkPostCondition($senderRoleId, $wfLevels, $saf, $wfMstrId, $userId);          // Check Post Next level condition
                 $saf->current_role = $forwardBackwardIds->forward_role_id;
                 $saf->last_role_id =  $forwardBackwardIds->forward_role_id;                     // Update Last Role Id
                 $saf->parked = false;
@@ -948,7 +950,7 @@ class ActiveSafController extends Controller
     /**
      * | check Post Condition for backward forward(9.1)
      */
-    public function checkPostCondition($senderRoleId, $wfLevels, $saf, $wfMstrId)
+    public function checkPostCondition($senderRoleId, $wfLevels, $saf, $wfMstrId, $userId)
     {
         // Variable Assigments
         $mPropSafDemand = new PropSafsDemand();
@@ -997,7 +999,8 @@ class ActiveSafController extends Controller
                     'memo_no' => $samNo,
                     'pt_no' => $ptNo,
                     'ward_id' => $saf->ward_mstr_id,
-                    'prop_id' => $propId
+                    'prop_id' => $propId,
+                    'userId'  => $userId
                 ]);
                 $memoReqs = new Request($mergedDemand);
                 $mPropMemoDtl->postSafMemoDtls($memoReqs);
@@ -1263,7 +1266,7 @@ class ActiveSafController extends Controller
             $previousHoldingDeactivation = new PreviousHoldingDeactivation;
             $propIdGenerator = new PropIdGenerator;
 
-            $userId = authUser()->id;
+            $userId = authUser($req)->id;
             $safId = $req->applicationId;
             // Derivative Assignments
             $safDetails = PropActiveSaf::findOrFail($req->applicationId);
@@ -1321,7 +1324,8 @@ class ActiveSafController extends Controller
                     'pt_no' => $activeSaf->pt_no,
                     'ward_id' => $activeSaf->ward_mstr_id,
                     'prop_id' => $propId,
-                    'saf_id' => $safId
+                    'saf_id' => $safId,
+                    'userId'  => $userId
                 ]);
                 $memoReqs = new Request($mergedDemand);
                 $mPropSafMemoDtl->postSafMemoDtls($memoReqs);
@@ -1522,7 +1526,7 @@ class ActiveSafController extends Controller
             $metaReqs['workflowId'] = $saf->workflow_id;
             $metaReqs['refTableDotId'] = $safRefTableName;
             $metaReqs['refTableIdValue'] = $req->applicationId;
-            $metaReqs['user_id'] = authUser()->id;
+            $metaReqs['user_id'] = authUser($req)->id;
             $metaReqs['verificationStatus'] = 2;
             $metaReqs['senderRoleId'] = $senderRoleId;
             $req->request->add($metaReqs);
@@ -1872,8 +1876,8 @@ class ActiveSafController extends Controller
             if ($activeSaf->payment_status == 1)
                 throw new Exception("Payment Already Done");
 
-            $userId = auth()->user()->id;                                      // Authenticated user or Ghost User
-            $tranBy = authUser()->user_type;
+            $userId = authUser($req)->id;                                      // Authenticated user or Ghost User
+            $tranBy = authUser($req)->user_type;
 
             $tranNo = $req['transactionNo'];
             // Derivative Assignments
@@ -2143,7 +2147,7 @@ class ActiveSafController extends Controller
     public function getPropTransactions(Request $req)
     {
         try {
-            $auth = authUser();
+            $auth = authUser($req);
             $userId = $auth->id;
             if ($auth->user_type == 'Citizen')
                 $propTrans = $this->Repository->getPropTransByCitizenUserId($userId, 'citizen_id');
@@ -2232,8 +2236,8 @@ class ActiveSafController extends Controller
             $verification = new PropSafVerification();
             $mWfRoleUsermap = new WfRoleusermap();
             $verificationDtl = new PropSafVerificationDtl();
-            $userId = authUser()->id;
-            $ulbId = authUser()->ulb_id;
+            $userId = authUser($req)->id;
+            $ulbId = authUser($req)->ulb_id;
             $vacantLand = $propertyType['VACANT LAND'];
 
             $safDtls = $propActiveSaf->getSafNo($req->safId);
@@ -2350,7 +2354,7 @@ class ActiveSafController extends Controller
                     'longitude' => $longitude[$key],
                     'latitude' => $latitude[$key],
                     'relative_path' => $relativePath,
-                    'user_id' => authUser()->id
+                    'user_id' => authUser($req)->id
                 ];
                 if ($isDocExist)
                     $geoTagging->edit($isDocExist, $docReqs);
@@ -2418,7 +2422,7 @@ class ActiveSafController extends Controller
             $mPropTransactions = new PropTransaction();
             $jskRole = Config::get('PropertyConstaint.JSK_ROLE');
             $tcRole = 5;
-            $user = authUser();
+            $user = authUser($req);
             $userId = $user->id;
             $safDetails = $this->details($req);
             if ($safDetails['payment_status'] == 1) {       // Get Transaction no if the payment is done

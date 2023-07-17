@@ -25,7 +25,7 @@ use Illuminate\Support\Facades\DB;
 
 class PropertyDeactivateController extends Controller
 {
-     /**
+    /**
      * | Created On-19-11-2022 
      * | Created By-Sandeep Bara
      * --------------------------------------------------------------------------------------
@@ -51,21 +51,20 @@ class PropertyDeactivateController extends Controller
     protected $_WORKFLOW_TRACK;
     protected $_APPLICATION_NO_CONST;
 
-    public function __construct(IPropertyDeactivate $PropertyDeactivate,iSafRepository $saf_repository)
+    public function __construct(IPropertyDeactivate $PropertyDeactivate, iSafRepository $saf_repository)
     {
-        $this->_REPOSITORY = $PropertyDeactivate ;
+        $this->_REPOSITORY = $PropertyDeactivate;
         $this->_SAF_REPOSITORY = new ActiveSafController($saf_repository);
         $this->_COMMON_FUNCTION = new CommonFunction();
         $this->_MODEL_WARD = new ModelWard();
         $this->_WORKFLOW_TRACK = new WorkflowTrack();
-        $this->_WF_MASTER_ID=Config::get('workflow-constants.PROPERTY_DEACTIVATION_MASTER_ID');
-        $this->_MODULE_CONSTAINT=Config::get('module-constants');
+        $this->_WF_MASTER_ID = Config::get('workflow-constants.PROPERTY_DEACTIVATION_MASTER_ID');
+        $this->_MODULE_CONSTAINT = Config::get('module-constants');
         $this->_PROPERTY_CONSTAINT = Config::get("PropertyConstaint");
-        $this->_APPLICATION_NO_CONST =  $this->_PROPERTY_CONSTAINT["DEACTIV_PARAM_ID"]??0;
-        $this->_MODULE_ID = $this->_PROPERTY_CONSTAINT["PROPERTY_MODULE_ID"]??NULL;
+        $this->_APPLICATION_NO_CONST =  $this->_PROPERTY_CONSTAINT["DEACTIV_PARAM_ID"] ?? 0;
+        $this->_MODULE_ID = $this->_PROPERTY_CONSTAINT["PROPERTY_MODULE_ID"] ?? NULL;
         $this->_REF_TABLE = null;
         $this->_DOC_PATH = null;
-
     }
     public function readHoldigbyNo(Request $request)
     {
@@ -73,61 +72,51 @@ class PropertyDeactivateController extends Controller
     }
     public function readPorertyById(reqReadProperty $request)
     {
-        try{
+        try {
             $mProperty = $this->_SAF_REPOSITORY->getPropByHoldingNo($request);
-            if(!$mProperty->original['status'])
-            {
+            if (!$mProperty->original['status']) {
                 throw new Exception($mProperty->original['message']);
             }
-            if($mProperty->original['data']['status']!=1)
-            {
+            if ($mProperty->original['data']['status'] != 1) {
                 throw new Exception("Property Alerady Deactivated");
             }
             $deactivationStatus = 0;
             $PropDeactivationRequest    = PropActiveDeactivationRequest::select("*")
-                                              ->where("property_id",$request->propertyId)
-                                              ->where("status",1)
-                                              ->orderBy("id","DESC")
-                                              ->first();
-            if($PropDeactivationRequest)
-            {
-                $deactivationStatus =1;
+                ->where("property_id", $request->propertyId)
+                ->where("status", 1)
+                ->orderBy("id", "DESC")
+                ->first();
+            if ($PropDeactivationRequest) {
+                $deactivationStatus = 1;
                 // throw new Exception("Request is already submited. Please check request status...!");
             }
-            $mProperty->original['data']['deactivationStatus']=$deactivationStatus;
-            return responseMsgs(true,$mProperty->original['message'],$mProperty->original['data'], "00001", "1.0", "", "POST", $request->deviceId);
+            $mProperty->original['data']['deactivationStatus'] = $deactivationStatus;
+            return responseMsgs(true, $mProperty->original['message'], $mProperty->original['data'], "00001", "1.0", "", "POST", $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $request->all(), "00001", "1.0", "", "POST", $request->deviceId);
         }
-        catch(Exception $e)
-        {
-            return responseMsgs(false,$e->getMessage(),$request->all(), "00001", "1.0", "", "POST", $request->deviceId);
-        }
-        
     }
     public function deactivatProperty(reqDeactivatProperty $request)
     {
-        try{
+        try {
             $PropDeactivationRequest    = PropDeactivationRequest::select("*")
-                                              ->where("property_id",$request->propertyId)
-                                              ->where("status",1)
-                                              ->orderBy("id","DESC")
-                                              ->first();
-            if($PropDeactivationRequest)
-            {
+                ->where("property_id", $request->propertyId)
+                ->where("status", 1)
+                ->orderBy("id", "DESC")
+                ->first();
+            if ($PropDeactivationRequest) {
                 throw new Exception("Request is already submited. Please check request status with APPN - $PropDeactivationRequest->application_no !....");
             }
             return $this->_REPOSITORY->deactivatProperty($request);
-        }
-        catch(Exception $e)
-        {
-            return responseMsgs(false,$e->getMessage(),$request->all(), "00002", "1.0", "", "POST", $request->deviceId);
-             
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $request->all(), "00002", "1.0", "", "POST", $request->deviceId);
         }
     }
     public function inbox(Request $request)
     {
         return $this->_REPOSITORY->inbox($request);
     }
-    
+
     public function outbox(Request $request)
     {
         return $this->_REPOSITORY->outbox($request);
@@ -137,10 +126,10 @@ class PropertyDeactivateController extends Controller
     {
         return $this->_REPOSITORY->specialInbox($request);
     }
-    
+
     public function postNextLevel(reqPostNext $request)
     {
-        try{
+        try {
             $user = Auth()->user();
             $user_id = $user->id;
             $ulb_id = $user->ulb_id;
@@ -148,48 +137,39 @@ class PropertyDeactivateController extends Controller
             $workflowId = WfWorkflow::where('id', $refWorkflowId)
                 ->where('ulb_id', $ulb_id)
                 ->first();
-            if (!$workflowId) 
-            {
+            if (!$workflowId) {
                 throw new Exception("Workflow Not Available");
             }
             $refDeactivationReq = PropActiveDeactivationRequest::find($request->applicationId);
-            $role = $this->_COMMON_FUNCTION->getUserRoll($user_id,$ulb_id,$refWorkflowId);
-            $init_finish = $this->_COMMON_FUNCTION->iniatorFinisher($user_id,$ulb_id,$refWorkflowId); 
-            if(!$refDeactivationReq)
-            {
+            $role = $this->_COMMON_FUNCTION->getUserRoll($user_id, $ulb_id, $refWorkflowId);
+            $init_finish = $this->_COMMON_FUNCTION->iniatorFinisher($user_id, $ulb_id, $refWorkflowId);
+            if (!$refDeactivationReq) {
                 throw new Exception("Data Not Found");
             }
-            if($refDeactivationReq->pending_status==5)
-            {
+            if ($refDeactivationReq->pending_status == 5) {
                 throw new Exception("Deactivation Request Is Already Approved");
-            }            
-            if($refDeactivationReq->current_role!=$role->role_id)
-            {
+            }
+            if ($refDeactivationReq->current_role != $role->role_id) {
                 throw new Exception("You are not authorised for this action");
-            }          
-            if(!$init_finish)
-            {
+            }
+            if (!$init_finish) {
                 throw new Exception("Full Work Flow Not Desigen Properly. Please Contact Admin !!!...");
             }
-            if(!$init_finish["initiator"])
-            {
+            if (!$init_finish["initiator"]) {
                 throw new Exception("Initiar Not Available. Please Contact Admin !!!...");
             }
-            if(!$init_finish["finisher"])
-            {
+            if (!$init_finish["finisher"]) {
                 throw new Exception("Finisher Not Available. Please Contact Admin !!!...");
             }
-            $allRolse = collect($this->_COMMON_FUNCTION->getAllRoles($user_id,$ulb_id,$refWorkflowId,0,true));
-            $receiverRole = array_values(objToArray($allRolse->where("id",$request->receiverRoleId)))[0]??[];
-            
-            $sms ="Application BackWord To ".$receiverRole["role_name"]??"";
-            if($refDeactivationReq->max_level_attained < ($receiverRole["serial_no"]??0))
-            {
-                $sms ="Application Forward To ".$receiverRole["role_name"]??"";
+            $allRolse = collect($this->_COMMON_FUNCTION->getAllRoles($user_id, $ulb_id, $refWorkflowId, 0, true));
+            $receiverRole = array_values(objToArray($allRolse->where("id", $request->receiverRoleId)))[0] ?? [];
+
+            $sms = "Application BackWord To " . $receiverRole["role_name"] ?? "";
+            if ($refDeactivationReq->max_level_attained < ($receiverRole["serial_no"] ?? 0)) {
+                $sms = "Application Forward To " . $receiverRole["role_name"] ?? "";
             }
             DB::beginTransaction();
-            if($refDeactivationReq->max_level_attained < $receiverRole["serial_no"]??0)
-            {
+            if ($refDeactivationReq->max_level_attained < $receiverRole["serial_no"] ?? 0) {
                 $refDeactivationReq->max_level_attained = $receiverRole["serial_no"];
                 $refDeactivationReq->current_role = $request->receiverRoleId;
                 $refDeactivationReq->update();
@@ -209,12 +189,9 @@ class PropertyDeactivateController extends Controller
             DB::commit();
 
             return responseMsgs(true, $sms, "", "00003", "1.0", "", "POST", $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $request->all(), "00003", "1.0", "", "POST", $request->deviceId);
         }
-        catch(Exception $e)
-        {
-            return responseMsgs(false,$e->getMessage(),$request->all(), "00003", "1.0", "", "POST", $request->deviceId);
-        }
-        
     }
 
     public function approvalRejection(Request $request)
@@ -231,54 +208,48 @@ class PropertyDeactivateController extends Controller
             $ulb_id = $user->ulb_id;
             // Check if the Current User is Finisher or Not
             $refDeactivationReq = PropActiveDeactivationRequest::find($request->applicationId);
-            if(!$refDeactivationReq)
-            {
+            if (!$refDeactivationReq) {
                 throw new Exception("Data NOt Found!......");
             }
             // dd($refDeactivationReq);
             if ($refDeactivationReq->finisher_role != $request->roleId) {
                 throw new Exception("Forbidden Access");
             }
-            
+
             $PropProperty = PropProperty::find($refDeactivationReq->property_id);
-            if(!$PropProperty)
-            {
+            if (!$PropProperty) {
                 throw new Exception("Property Not Found!..........");
             }
             DB::beginTransaction();
-            if ($request->status == 1) 
-            {
+            if ($request->status == 1) {
                 $verifired = new PropDeactivationRequest();
-                $this->transeferData($verifired,$refDeactivationReq);
+                $this->transeferData($verifired, $refDeactivationReq);
                 $verifired->status = 5;
                 $verifired->approve_date = Carbon::now()->formate('Y-m-d');
                 $verifired->approve_by = $user_id;
-                $PropProperty->status=0;
-                $PropProperty->update(); 
+                $PropProperty->status = 0;
+                $PropProperty->update();
                 $msg = "Property Deactivated Successfully !! Holding No " . $PropProperty->holding_no;
             }
             // Rejection
-            if ($request->status == 0) 
-            {
+            if ($request->status == 0) {
                 $verifired = new PropRejectedDeactivationRequest();
-                $this->transeferData($verifired,$refDeactivationReq);
+                $this->transeferData($verifired, $refDeactivationReq);
                 $verifired->status = 0;
                 $verifired->approve_date = Carbon::now()->formate('Y-m-d');
                 $verifired->approve_by = $user_id;
                 $msg = "Application Rejected Successfully";
-            } 
+            }
             $verifired->save();
             $refDeactivationReq->forceDelete();
             DB::commit();
             return responseMsgs(true, $msg, [], "00004", "1.0", "410ms", "POST", $request->deviceId);
-        } 
-        catch (Exception $e) 
-        {
+        } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
     }
-    private function transeferData($targerModel,$sorseModel)
+    private function transeferData($targerModel, $sorseModel)
     {
         $targerModel->id             = $sorseModel->id;
         $targerModel->ulb_id         = $sorseModel->ulb_id;
@@ -300,7 +271,7 @@ class PropertyDeactivateController extends Controller
     }
     public function readDeactivationReq(Request $request)
     {
-        return $this->_REPOSITORY-> readDeactivationReq($request);
+        return $this->_REPOSITORY->readDeactivationReq($request);
     }
     public function commentIndependent(Request $request)
     {
@@ -333,14 +304,12 @@ class PropertyDeactivateController extends Controller
             $this->_WORKFLOW_TRACK->saveTrack($request);
             DB::commit();
             return responseMsgs(true, "You Have Commented Successfully!!", ['Comment' => $request->comment], "00006", "1.0", "", "POST", $request->deviceId);
-        } 
-        catch (Exception $e) 
-        {
+        } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
     }
-    
+
     public function postEscalate(Request $request)
     {
         $request->validate([
@@ -348,9 +317,9 @@ class PropertyDeactivateController extends Controller
             "applicationId" => "required|digits_between:1,9223372036854775807",
         ]);
         try {
-            $userId = auth()->user()->id;
-            $refDeactivationReq = PropActiveDeactivationRequest::find($request->applicationId); 
-            $refDeactivationReq->is_escalate = $request->escalateStatus<=0?true:false;
+            $userId = authUser($request)->id;
+            $refDeactivationReq = PropActiveDeactivationRequest::find($request->applicationId);
+            $refDeactivationReq->is_escalate = $request->escalateStatus <= 0 ? true : false;
             $refDeactivationReq->escalate_by = $userId;
             $refDeactivationReq->save();
             return responseMsgs(true, $request->escalateStatus <= 0 ? "Data is removed from Escalated" : 'Data is Escalated', '', "00007", "1.0", "353ms", "POST", $request->deviceId);
@@ -364,18 +333,15 @@ class PropertyDeactivateController extends Controller
         $request->validate([
             'applicationId' => 'required|digits_between:1,9223372036854775807',
         ]);
-        try{
+        try {
             $refDeactivationReq = PropActiveDeactivationRequest::find($request->applicationId);
-            if(!$refDeactivationReq)
-            {
+            if (!$refDeactivationReq) {
                 throw new Exception("Data Not Found!.......");
             }
-            $docpath = !empty(trim($refDeactivationReq->documents))? $this->_REPOSITORY->readDocumentPath($refDeactivationReq->documents):"";
-            
+            $docpath = !empty(trim($refDeactivationReq->documents)) ? $this->_REPOSITORY->readDocumentPath($refDeactivationReq->documents) : "";
+
             return responseMsgs(true, "Document Fetched", $docpath, "00008", "1.0", "", "POST", $request->deviceId);
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
     }

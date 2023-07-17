@@ -27,7 +27,7 @@ class WorkflowTrack extends Model
     {
         $track      = new WorkflowTrack;
         $userId     = $request->user_id;
-        $ulbId      = $request->ulb_id ?? authUser()->ulb_id;
+        $ulbId      = $request->ulb_id ?? authUser($request)->ulb_id;
         $mTrackDate = $request->trackDate ?? Carbon::now()->format('Y-m-d H:i:s');
 
         $track->workflow_id         = $request->workflowId;
