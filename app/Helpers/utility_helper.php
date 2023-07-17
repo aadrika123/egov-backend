@@ -511,7 +511,7 @@ if (!function_exists('dateDiff')) {
 if (!function_exists('authUser')) {
     function authUser($req)
     {
-        return $req->auth;
+        return (object)$req->auth;
     }
 }
 
