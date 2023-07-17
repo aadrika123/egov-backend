@@ -142,7 +142,7 @@ class ActiveSafController extends Controller
             $redisConn = Redis::connection();
             $data = [];
             if ($method == 'GET')
-                $ulbId = auth()->user()->ulb_id;
+                $ulbId = authUser($req)['ulb_id'];
             else
                 $ulbId = $req->ulbId;
             if (!$ulbId)

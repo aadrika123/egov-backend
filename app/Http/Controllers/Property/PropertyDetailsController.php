@@ -195,7 +195,7 @@ class PropertyDetailsController extends Controller
                 }
             }
 
-            // search by name
+            // search by mobileNo
             if ($searchBy == 'mobileNo') {
                 $mobileNo = $request->value;
                 switch ($key) {
