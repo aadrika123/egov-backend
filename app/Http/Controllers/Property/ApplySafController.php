@@ -98,9 +98,10 @@ class ApplySafController extends Controller
         try {
             // Variable Assignments
             $mApplyDate = Carbon::now()->format("Y-m-d");
-            $user_id = auth()->user()->id;
-            $ulb_id = $request->ulbId ?? auth()->user()->ulb_id;
-            $userType = auth()->user()->user_type;
+            $user = authUser($request);
+            $user_id = $user->id;
+            $ulb_id = $request->ulbId ?? $user->ulb_id;
+            $userType = $user->user_type;
             $metaReqs = array();
             $saf = new PropActiveSaf();
             $mOwner = new PropActiveSafsOwner();
@@ -336,9 +337,10 @@ class ApplySafController extends Controller
     {
         try {
             // Variable Assignments
-            $userId = auth()->user()->id;
-            $userType = authUser()->user_type;
-            $ulbId = $req->ulbId ?? auth()->user()->ulb_id;
+            $user = authUser($req);
+            $userId = $user->id;
+            $userType = $user->user_type;
+            $ulbId = $req->ulbId ?? $user->ulb_id;
             $propActiveSafs = new PropActiveSaf();
             $safCalculation = new SafCalculation;
             $mPropFloors = new PropActiveSafsFloor();
