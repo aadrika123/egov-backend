@@ -661,9 +661,9 @@ class ObjectionController extends Controller
                 $msg =  "Application Successfully Approved !!";
                 $metaReqs['verificationStatus'] = 1;
 
-                $var = new CalculatePropById;
-                return  $data = $var->calculatePropTax($activeObjection);
-                dd($data);
+                // $var = new CalculatePropById;
+                // return  $data = $var->calculatePropTax($activeObjection);
+                // dd($data);
             }
 
             // Rejection
