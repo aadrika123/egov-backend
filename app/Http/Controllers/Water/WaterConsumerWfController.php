@@ -48,7 +48,7 @@ class WaterConsumerWfController extends Controller
             'perPage' => 'nullable|integer',
         ]);
         try {
-            $user                   = authUser();
+            $user                   = authUser($req);
             $pages                  = $req->perPage ?? 10;
             $userId                 = $user->id;
             $ulbId                  = $user->ulb_id;
@@ -88,7 +88,7 @@ class WaterConsumerWfController extends Controller
             'perPage' => 'nullable|integer',
         ]);
         try {
-            $user                   = authUser();
+            $user                   = authUser($req);
             $pages                  = $req->perPage ?? 10;
             $userId                 = $user->id;
             $ulbId                  = $user->ulb_id;

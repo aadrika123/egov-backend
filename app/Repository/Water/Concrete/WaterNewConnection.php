@@ -76,7 +76,7 @@ class WaterNewConnection implements IWaterNewConnection
        query cost (2.30)
        Site Inspection Condition Hamper
      * ---------------------------------------------------------------------
-     * | @var refUser            = Auth()->user()
+     * | @var refUser            = authUser()
      * | @var refUserId          = refUser->id      | loging user Id
      * | @var refUlbId           = refUser->ulb_id  | loging user ulb Id
      * | @var connection         = query data  [Model use (WaterApplication , WaterConnectionCharge)]
@@ -84,7 +84,7 @@ class WaterNewConnection implements IWaterNewConnection
      */
     public function getCitizenApplication(Request $request)
     {
-        $refUser                = Auth()->user();
+        $refUser                = authUser($request);
         $refUserId              = $refUser->id;
         $roleDetails            = Config::get('waterConstaint.ROLE-LABEL');
 
@@ -233,14 +233,14 @@ class WaterNewConnection implements IWaterNewConnection
      *  Genrate the RazorPay OrderId 
        Query const(3.30)
      * ---------------------------------------------------------------------------
-     * | @var refUser            = Auth()->user()
+     * | @var refUser            = authUser()
      * | @var refUserId          = refUser->id      | loging user Id
      * | @var refUlbId           = refUser->ulb_id  | loging user ulb Id
      */
     public function handeRazorPay(Request $request)
     {
         try {
-            $refUser            = Auth()->user();
+            $refUser            = authUser($request);
             $refUserId          = $refUser->id;
             $refUlbId           = $refUser->ulb_id;
             $isRebate           = null;
@@ -396,9 +396,8 @@ class WaterNewConnection implements IWaterNewConnection
     public function waterConnectionPayment($args)
     {
         try {
-            $refUser        = Auth()->user();
-            $refUserId      = $refUser->id ?? $args["userId"];
-            $refUlbId       = $refUser->ulb_id ?? $args["ulbId"];
+            $refUserId      = $args["userId"];
+            $refUlbId       = $args["ulbId"];
             $mNowDate       = Carbon::now()->format('Y-m-d');
             $mTimstamp      = Carbon::now()->format('Y-m-d H:i:s');
             $cahges         = null;
@@ -574,7 +573,7 @@ class WaterNewConnection implements IWaterNewConnection
     public function readTransectionAndApl(Request $request)
     {
         try {
-            $refUser        = Auth()->user();
+            $refUser        = authUser($request);
             $refUserId      = $refUser->id;
             $refUlbId       = $refUser->ulb_id;
             $mDemands       = null;
@@ -644,7 +643,7 @@ class WaterNewConnection implements IWaterNewConnection
      * get And Uploade Water Requied Documents
        Query cost(3.00)
      * ------------------------------------------------------------------ 
-     * | @var refUser            = Auth()->user()
+     * | @var refUser            = authUser()
      * | @var refUserId          = refUser->id      | loging user Id
      * | @var refUlbId           = refUser->ulb_id  | loging user ulb Id
      * | @var refApplication     = WaterApplication(Model);
@@ -663,7 +662,7 @@ class WaterNewConnection implements IWaterNewConnection
     public function documentUpload(Request $request)
     {
         try {
-            $refUser            = Auth()->user();
+            $refUser            = authUser($request);
             $refUserId          = $refUser->id ?? $request->userId;
             $refUlbId           = $refUser->ulb_id ?? $request->ulbId;
             $refApplication     = (array)null;

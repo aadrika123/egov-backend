@@ -333,7 +333,7 @@ class WaterConsumer extends Controller
      */
     public function checkDemandGeneration($request, $consumerDetails)
     {
-        $user                   = authUser();
+        $user                   = authUser($request);
         $today                  = Carbon::now();
         $refConsumerId          = $request->consumerId;
         $mWaterConsumerDemand   = new WaterConsumerDemand();
@@ -590,7 +590,7 @@ class WaterConsumer extends Controller
         ]);
 
         try {
-            $user                           = authUser();
+            $user                           = authUser($request);
             $currentDate                    = Carbon::now();
             $refRequest                     = array();
             $ulbWorkflowObj                 = new WfWorkflow();
@@ -1073,7 +1073,7 @@ class WaterConsumer extends Controller
         ]);
         try {
 
-            return $waterReturnDetails = $this->getDetailByConsumerNo('consumer_no', '2016000500');
+            return $waterReturnDetails = $this->getDetailByConsumerNo($request, 'consumer_no', '2016000500');
             return false;
 
             $mWaterConsumer = new WaterWaterConsumer();
@@ -1084,19 +1084,19 @@ class WaterConsumer extends Controller
 
             switch ($key) {
                 case ("consumerNo"):                                                                        // Static
-                    $waterReturnDetails = $this->getDetailByConsumerNo($refstring, $paramenter);
+                    $waterReturnDetails = $this->getDetailByConsumerNo($request, $refstring, $paramenter);
                     $checkVal = collect($waterReturnDetails)->first();
                     if (!$checkVal)
                         throw new Exception("Data according to " . $key . " not Found!");
                     break;
                 case ("holdingNo"):                                                                         // Static
-                    $waterReturnDetails = $mWaterConsumer->getDetailByConsumerNo($refstring, $paramenter)->get();
+                    $waterReturnDetails = $mWaterConsumer->getDetailByConsumerNo($request, $refstring, $paramenter)->get();
                     $checkVal = collect($waterReturnDetails)->first();
                     if (!$checkVal)
                         throw new Exception("Data according to " . $key . " not Found!");
                     break;
                 case ("safNo"):                                                                             // Static
-                    $waterReturnDetails = $mWaterConsumer->getDetailByConsumerNo($refstring, $paramenter)->get();
+                    $waterReturnDetails = $mWaterConsumer->getDetailByConsumerNo($request, $refstring, $paramenter)->get();
                     $checkVal = collect($waterReturnDetails)->first();
                     if (!$checkVal)
                         throw new Exception("Data according to " . $key . " not Found!");
@@ -1126,7 +1126,7 @@ class WaterConsumer extends Controller
 
 
     // Calling function
-    public function getDetailByConsumerNo($key, $refNo)
+    public function getDetailByConsumerNo($req, $key, $refNo)
     {
         $refConnectionType = Config::get('waterConstaint.WATER_MASTER_DATA.METER_CONNECTION_TYPE');
         return WaterWaterConsumer::select(
@@ -1147,7 +1147,7 @@ class WaterConsumer extends Controller
             ->leftjoin('water_consumer_meters', 'water_consumer_meters.consumer_id', 'water_consumers.id')
             ->where('water_consumers.' . $key, 'LIKE', '%' . $refNo . '%')
             ->where('water_consumers.status', 1)
-            ->where('water_consumers.ulb_id', auth()->user()->ulb_id)
+            ->where('water_consumers.ulb_id', authUser($req)->ulb_id)
             ->where('water_consumer_meters.connection_type', $refConnectionType['Fixed'])
             ->groupBy(
                 'water_consumers.saf_no',
@@ -1210,7 +1210,7 @@ class WaterConsumer extends Controller
      */
     public function checkUser($req, $refConsumerDetails)
     {
-        $user                       = authUser();
+        $user                       = authUser($req);
         $todayDate                  = Carbon::now();
         $endDate                    = Carbon::now()->endOfMonth();
         $formatEndDate              = $endDate->format('d-m-Y');
@@ -1239,7 +1239,7 @@ class WaterConsumer extends Controller
      */
     public function checkUserType($req)
     {
-        $user = authUser();
+        $user = authUser($req);
         $confUserType = Config::get("waterConstaint.REF_USER_TYPE");
         $userType = $user->user_type;
 
@@ -1273,7 +1273,7 @@ class WaterConsumer extends Controller
             'reason'        => 'nullable'
         ]);
         try {
-            $user           = authUser();
+            $user           = authUser($req);
             $docAdvanceCode = Config::get('waterConstaint.WATER_ADVANCE_CODE');
             $refAdvanceFor  = Config::get('waterConstaint.ADVANCE_FOR');
             $refWorkflow    = Config::get('workflow-constants.WATER_MASTER_ID');

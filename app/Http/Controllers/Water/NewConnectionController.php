@@ -119,7 +119,7 @@ class NewConnectionController extends Controller
     public function waterInbox(Request $request)
     {
         try {
-            $user   = authUser();
+            $user   = authUser($request);
             $userId = $user->id;
             $ulbId  = $user->ulb_id;
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
@@ -155,7 +155,7 @@ class NewConnectionController extends Controller
             $mWfWardUser            = new WfWardUser();
             $mWfWorkflowRoleMaps    = new WfWorkflowrolemap();
 
-            $user   = authUser();
+            $user   = authUser($req);
             $userId = $user->id;
             $ulbId  = $user->ulb_id;
 
@@ -205,8 +205,8 @@ class NewConnectionController extends Controller
         try {
             $mWfWardUser = new WfWardUser();
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
-            $userId = authUser()->id;
-            $ulbId = authUser()->ulb_id;
+            $userId = authUser($req)->id;
+            $ulbId = authUser($req)->ulb_id;
             $mDeviceId = $req->deviceId ?? "";
 
             $workflowRoles = $this->getRoleIdByUserId($userId);
@@ -245,8 +245,8 @@ class NewConnectionController extends Controller
         try {
             $mWfWardUser            = new WfWardUser();
             $mWfWorkflowRoleMaps    = new WfWorkflowrolemap();
-            $userId = authUser()->id;
-            $ulbId  = authUser()->ulb_id;
+            $userId = authUser($request)->id;
+            $ulbId  = authUser($request)->ulb_id;
 
             $occupiedWard = $mWfWardUser->getWardsByUserId($userId);                        // Get All Occupied Ward By user id using trait
             $wardId = $occupiedWard->map(function ($item, $key) {                           // Filter All ward_id in an array using laravel collections
@@ -320,7 +320,7 @@ class NewConnectionController extends Controller
             "applicationId" => "required|int",
         ]);
         try {
-            $userId = authUser()->id;
+            $userId = authUser($request)->id;
             $applicationId = $request->applicationId;
             $applicationsData = WaterApplication::find($applicationId);
             $applicationsData->is_escalate = $request->escalateStatus;
@@ -351,7 +351,7 @@ class NewConnectionController extends Controller
             $waterDetails = WaterApplication::findOrFail($request->applicationId);
 
             # check the login user is EO or not
-            $userId = authUser()->id;
+            $userId = authUser($request)->id;
             $workflowId = $waterDetails->workflow_id;
             $getRoleReq = new Request([                                                 // make request to get role id of the user
                 'userId' => $userId,
@@ -388,7 +388,7 @@ class NewConnectionController extends Controller
         ]);
         try {
             $metaReqs       = array();
-            $user           = authUser();
+            $user           = authUser($request);
             $userType       = $user->user_type;
             $userId         = $user->id;
             $workflowTrack  = new WorkflowTrack();
@@ -520,7 +520,7 @@ class NewConnectionController extends Controller
 
             # Get all consumer details 
             $mWaterConsumer = new WaterConsumer();
-            $approvedWater = $mWaterConsumer->getConsumerDetails();
+            $approvedWater = $mWaterConsumer->getConsumerDetails($request);
             $checkExist = $approvedWater->first();
             if ($checkExist) {
                 return responseMsgs(true, "Approved Application Details!", $approvedWater, "", "03", "ms", "POST", "");
@@ -541,8 +541,8 @@ class NewConnectionController extends Controller
         try {
             $mWfWardUser            = new WfWardUser();
             $mWfWorkflowRoleMaps    = new WfWorkflowrolemap();
-            $userId                 = authUser()->id;
-            $ulbId                  = authUser()->ulb_id;
+            $userId                 = authUser($request)->id;
+            $ulbId                  = authUser($request)->ulb_id;
 
             $refWard = $mWfWardUser->getWardsByUserId($userId);
             $wardId = $refWard->map(function ($value) {
@@ -578,7 +578,7 @@ class NewConnectionController extends Controller
         ]);
 
         try {
-            $user               = authUser();
+            $user               = authUser($req);
             $WorkflowTrack      = new WorkflowTrack();
             $refWorkflowId      = Config::get("workflow-constants.WATER_MASTER_ID");
             $refApplyFrom       = config::get("waterConstaint.APP_APPLY_FROM");
@@ -653,7 +653,7 @@ class NewConnectionController extends Controller
             'applicationId' => 'required|integer'
         ]);
         try {
-            $user                       = authUser();
+            $user                       = authUser($req);
             $mWaterApplication          = new WaterApplication();
             $mWaterApplicant            = new WaterApplicant();
             $mWaterConnectionCharge     = new WaterConnectionCharge();
@@ -781,7 +781,7 @@ class NewConnectionController extends Controller
                 if ($refApplication->current_role) {
                     throw new Exception("Application is already in Workflow!");
                 }
-                if ($refApplication->user_id != authUser()->id) {
+                if ($refApplication->user_id != authUser($request)->id) {
                     throw new Exception("You are not the Autherised Person!");
                 }
                 if ($refApplication->payment_status == 1) {
@@ -801,7 +801,7 @@ class NewConnectionController extends Controller
     public function boApplicationEdit($req, $refApplication, $mWaterApplication)
     {
         switch ($refApplication) {
-            case ($refApplication->current_role != authUser()->id):
+            case ($refApplication->current_role != authUser($req)->id):
                 throw new Exception("You Are Not the Valid Person!");
                 break;
         }
@@ -843,7 +843,7 @@ class NewConnectionController extends Controller
             'applicationId' => 'required|integer',
         ]);
         try {
-            $user = authUser();
+            $user = authUser($request);
             $mWaterSiteInspectionsScheduling = new WaterSiteInspectionsScheduling();
             $mWaterConnectionCharge  = new WaterConnectionCharge();
             $mWaterApplication = new WaterApplication();
@@ -920,7 +920,7 @@ class NewConnectionController extends Controller
         ]);
 
         try {
-            $user               = authUser();
+            $user               = authUser($req);
             $metaReqs           = array();
             $applicationId      = $req->applicationId;
             $document           = $req->document;
@@ -1702,19 +1702,19 @@ class NewConnectionController extends Controller
 
             switch ($key) {
                 case ("consumerNo"):                                                                        // Static
-                    $waterReturnDetails = $mWaterConsumer->getDetailByConsumerNo($refstring, $paramenter)->paginate($pages);
+                    $waterReturnDetails = $mWaterConsumer->getDetailByConsumerNo($request, $refstring, $paramenter)->paginate($pages);
                     $checkVal = collect($waterReturnDetails)->last();
                     if (!$checkVal || $checkVal == 0)
                         throw new Exception("Data according to " . $key . " not Found!");
                     break;
                 case ("holdingNo"):                                                                         // Static
-                    $waterReturnDetails = $mWaterConsumer->getDetailByConsumerNo($refstring, $paramenter)->paginate($pages);
+                    $waterReturnDetails = $mWaterConsumer->getDetailByConsumerNo($request, $refstring, $paramenter)->paginate($pages);
                     $checkVal = collect($waterReturnDetails)->last();
                     if (!$checkVal || $checkVal == 0)
                         throw new Exception("Data according to " . $key . " not Found!");
                     break;
                 case ("safNo"):                                                                             // Static
-                    $waterReturnDetails = $mWaterConsumer->getDetailByConsumerNo($refstring, $paramenter)->paginate($pages);
+                    $waterReturnDetails = $mWaterConsumer->getDetailByConsumerNo($request, $refstring, $paramenter)->paginate($pages);
                     $checkVal = collect($waterReturnDetails)->last();
                     if (!$checkVal || $checkVal == 0)
                         throw new Exception("Data according to " . $key . " not Found!");
@@ -1770,19 +1770,19 @@ class NewConnectionController extends Controller
 
             switch ($key) {
                 case ("newConnection"):                                                                     // Static
-                    $returnData = $mWaterApplicant->getDetailsByApplicationNo($connectionTypes['NEW_CONNECTION'], $parameter)->paginate($pages);
+                    $returnData = $mWaterApplicant->getDetailsByApplicationNo($request, $connectionTypes['NEW_CONNECTION'], $parameter)->paginate($pages);
                     $checkVal = collect($returnData)->last();
                     if (!$checkVal || $checkVal == 0)
                         throw new Exception("Data according to " . $key . " not Found!");
                     break;
                 case ("regularization"):                                                                    // Static
-                    $returnData = $mWaterApplicant->getDetailsByApplicationNo($connectionTypes['REGULAIZATION'], $parameter)->paginate($pages);
+                    $returnData = $mWaterApplicant->getDetailsByApplicationNo($request, $connectionTypes['REGULAIZATION'], $parameter)->paginate($pages);
                     $checkVal = collect($returnData)->last();
                     if (!$checkVal || $checkVal == 0)
                         throw new Exception("Data according to " . $key . " not Found!");
                     break;
                 case ("name"):                                                                              // Static
-                    $returnData = $mWaterApplicant->getDetailsByParameters()
+                    $returnData = $mWaterApplicant->getDetailsByParameters($request)
                         ->where("water_applicants.applicant_name", 'ILIKE', '%' . $parameter . '%')
                         ->paginate($pages);
                     $checkVal = collect($returnData)->last();
@@ -1790,7 +1790,7 @@ class NewConnectionController extends Controller
                         throw new Exception("Data according to " . $key . " not Found!");
                     break;
                 case ("mobileNo"):                                                                          // Static
-                    $returnData = $mWaterApplicant->getDetailsByParameters()
+                    $returnData = $mWaterApplicant->getDetailsByParameters($request)
                         ->where("water_applicants.mobile_no", $parameter)
                         ->paginate($pages);
                     $checkVal = collect($returnData)->last();
@@ -1798,7 +1798,7 @@ class NewConnectionController extends Controller
                         throw new Exception("Data according to " . $key . " not Found!");
                     break;
                 case ("safNo"):                                                                             // Static
-                    $returnData = $mWaterApplicant->getDetailsByParameters()
+                    $returnData = $mWaterApplicant->getDetailsByParameters($request)
                         ->where("water_applications.saf_no", 'LIKE', '%' . $parameter . '%')
                         ->paginate($pages);
                     $checkVal = collect($returnData)->last();
@@ -1806,7 +1806,7 @@ class NewConnectionController extends Controller
                         throw new Exception("Data according to " . $key . " not Found!");
                     break;
                 case ("holdingNo"):                                                                         // Static
-                    $returnData = $mWaterApplicant->getDetailsByParameters()
+                    $returnData = $mWaterApplicant->getDetailsByParameters($request)
                         ->where("water_applications.holding_no", 'LIKE', '%' . $parameter . '%')
                         ->paginate($pages);
                     $checkVal = collect($returnData)->last();
@@ -1843,7 +1843,7 @@ class NewConnectionController extends Controller
             $mWfRoleusermap     = new WfRoleusermap();
             $wfDocId            = $req->id;
             $applicationId      = $req->applicationId;
-            $userId             = authUser()->id;
+            $userId             = authUser($req)->id;
             $wfLevel            = Config::get('waterConstaint.ROLE-LABEL');
 
             # validating application
@@ -2061,7 +2061,7 @@ class NewConnectionController extends Controller
             ];
             #application Details according to date
             $refApplications = $mWaterApplication->getapplicationByDate($refTimeDate)
-                ->where('water_applications.user_id', authUser()->id)
+                ->where('water_applications.user_id', authUser($request)->id)
                 ->get();
             # Final Data to return
             $returnValue = collect($refApplications)->map(function ($value, $key)
@@ -2323,7 +2323,7 @@ class NewConnectionController extends Controller
         $refApplication     = WaterApplication::findOrFail($request->applicationId);
         $WaterRoles         = Config::get('waterConstaint.ROLE-LABEL');
         $metaReqs = new Request([
-            'userId'        => authUser()->id,
+            'userId'        => authUser($request)->id,
             'workflowId'    => $refApplication->workflow_id
         ]);
         $readRoles = $mWfRoleUser->getRoleByUserWfId($metaReqs);                      // Model to () get Role By User Id
@@ -2412,7 +2412,7 @@ class NewConnectionController extends Controller
             'ferruleType'   => 'required|in:6,10,12,16'
         ]);
         try {
-            $user                   = authUser();
+            $user                   = authUser($request);
             $current                = Carbon::now();
             $currentDate            = $current->format('Y-m-d');
             $currentTime            = $current->format('H:i:s');
@@ -2460,7 +2460,7 @@ class NewConnectionController extends Controller
         $workflowId     = $refApplication->workflow_id;
 
         $metaReqs =  new Request([
-            'userId'        => authUser()->id,
+            'userId'        => authUser($request)->id,
             'workflowId'    => $workflowId
         ]);
         $readRoles = $mWfRoleUser->getRoleByUserWfId($metaReqs);                      // Model to () get Role By User Id

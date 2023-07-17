@@ -449,7 +449,7 @@ class WaterPaymentController extends Controller
         $waterRoles = $this->_waterRoles;
 
         # check the login user is Eo or not
-        $userId = authUser()->id;
+        $userId = authUser($request)->id;
         $workflowId = $waterDetails->workflow_id;
         $getRoleReq = new Request([                                                 # make request to get role id of the user
             'userId'     => $userId,
@@ -621,7 +621,7 @@ class WaterPaymentController extends Controller
     public function offlineDemandPayment(reqDemandPayment $request)
     {
         try {
-            $user                       = authUser();
+            $user                       = authUser($request);
             $midGeneration              = new IdGeneration;
             $mWaterAdjustment           = new WaterAdjustment();
             $mwaterTran                 = new waterTran();
@@ -949,7 +949,7 @@ class WaterPaymentController extends Controller
     {
         try {
             # Variable Assignments
-            $user       = authUser();
+            $user       = authUser($req);
             $userId     = $user->id;
             $userType   = $user->user_type;
             $todayDate  = Carbon::now();
@@ -1616,7 +1616,7 @@ class WaterPaymentController extends Controller
     public function initiateOnlineDemandPayment(reqDemandPayment $request)
     {
         try {
-            $refUser        = Auth()->user();
+            $refUser        = authUser($request);
             $waterModuleId  = config::get('module-constants.WATER_MODULE_ID');
             $paymentFor     = Config::get('waterConstaint.PAYMENT_FOR');
             $startingDate   = Carbon::createFromFormat('Y-m-d',  $request->demandFrom)->startOfMonth();
@@ -1668,10 +1668,9 @@ class WaterPaymentController extends Controller
     {
         try {
             # ref var assigning
-            $refUser        = Auth()->user();
             $today          = Carbon::now();
-            $refUserId      = $refUser->id ?? $webhookData["userId"];
-            $refUlbId       = $refUser->ulb_id ?? $webhookData["ulbId"];
+            $refUserId      = $webhookData["userId"];
+            $refUlbId       = $webhookData["ulbId"];
             $mDemands       = (array)null;
 
             # model assigning
@@ -1773,7 +1772,7 @@ class WaterPaymentController extends Controller
             'pages' => 'required|int'
         ]);
         try {
-            $citizen        = authUser();
+            $citizen        = authUser($request);
             $citizenId      = $citizen->id;
             $mWaterTran     = new WaterTran();
             $refUserType    = Config::get("waterConstaint.USER_TYPE");
