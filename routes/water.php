@@ -3,6 +3,7 @@
 use App\Http\Controllers\Water\NewConnectionController;
 use App\Http\Controllers\Water\WaterApplication;
 use App\Http\Controllers\Water\WaterConsumer;
+use App\Http\Controllers\Water\WaterConsumerWfController;
 use App\Http\Controllers\Water\WaterPaymentController;
 use App\Http\Controllers\Water\WaterReportController;
 use Illuminate\Support\Facades\Route;
@@ -118,9 +119,26 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
         # Deactivation
         Route::post('admin/consumer/apply-deactivation', 'applyDeactivation');                          // Admin / Not Used
-        Route::post('admin/consumer/demand-deactivation', 'consumerDemandDeactivation');                // Admin / Not used
-        // Route::post('consumer/')
+        Route::post('admin/consumer/demand-deactivation', 'consumerDemandDeactivation');  // Here       // Admin / Not used
     });
+
+
+    /**
+     * | Created On : 15-07-2023
+     * | Created By : Sam kerketta
+     * |------------ Water Consumer Workflow -------------|
+     */
+    Route::controller(WaterConsumerWfController::class)->group(function () {
+        Route::post('consumer/req/inbox', 'consumerInbox');
+        Route::post('consumer/req/outbox', 'consumerOutbox');
+        Route::post('consumer/req/post-next-level', 'consumerPostNextLevel');
+        Route::post('consumer/req/list-req-docs', 'listDocToUpload');
+        Route::post('consumer/req/doc-verify-reject', 'consumerDocVerifyReject');
+        Route::post('consumer/req/upload-document', 'consumerDocUpload');
+        Route::post('consumer/req/get-upload-documents', 'getConsumerDocs');
+        Route::post('consumer/req/approval-rejection', 'consumerApprovalRejection');
+    });
+
 
 
     /**

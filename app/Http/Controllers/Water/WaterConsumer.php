@@ -445,11 +445,13 @@ class WaterConsumer extends Controller
         }
 
         # if fixed meter connection is changing to meter connection as per rule every connection should be in meter
-        if ($request->connectionType != $refMeterConnType['Fixed'] && $consumerMeterDetails->connection_type == $refMeterConnType['Fixed']) {
-            if ($consumerDemand) {
-                throw new Exception("Please pay the old Demand Amount! as per rule to change fixed connection to meter!");
+        if ($consumerMeterDetails) {
+            if ($request->connectionType != $refMeterConnType['Fixed'] && $consumerMeterDetails->connection_type == $refMeterConnType['Fixed']) {
+                if ($consumerDemand) {
+                    throw new Exception("Please pay the old Demand Amount! as per rule to change fixed connection to meter!");
+                }
+                throw new Exception("Please apply for regularization as per rule 16 your connection shoul be in meter!");
             }
-            throw new Exception("Please apply for regularization as per rule 16 your connection shoul be in meter!");
         }
         # if there is meter detail exist
         if (isset($consumerMeterDetails)) {
@@ -605,7 +607,7 @@ class WaterConsumer extends Controller
             # Check the condition for deactivation
             $refDetails = $this->PreConsumerDeactivationCheck($request, $user);
             $ulbId      = $request->ulbId ?? $refDetails['consumerDetails']['ulb_id'];
-            
+
             # Get initiater and finisher
             $ulbWorkflowId = $ulbWorkflowObj->getulbWorkflowId($refWorkflow, $ulbId);
             if (!$ulbWorkflowId) {
@@ -700,7 +702,10 @@ class WaterConsumer extends Controller
         if ($refConsumerDetails->user_type == $refUserType['1'] && $user->id != $refConsumerDetails->user_id) {
             throw new Exception("You are not the autherised user who filled before the connection!");
         }
-        // $mWaterConsumerActiveRequest->getRequestByConId($consumerId);
+        $activeReq = $mWaterConsumerActiveRequest->getRequestByConId($consumerId)->first();
+        if ($activeReq) {
+            throw new Exception("There are other request applied for respective consumer connection!");
+        }
         return [
             "consumerDetails" => $refConsumerDetails
         ];
