@@ -40,12 +40,12 @@ class WaterConsumerWfController extends Controller
     /**
      * | List the consumer request inbox details 
         | Serial No : 01
-        | Under Con
+        | Working
      */
     public function consumerInbox(Request $req)
     {
         $req->validate([
-            'perPage'     => 'nullable|integer',
+            'perPage' => 'nullable|integer',
         ]);
         try {
             $user                   = authUser();
@@ -60,12 +60,54 @@ class WaterConsumerWfController extends Controller
 
             $inboxDetails = $this->getConsumerWfBaseQuerry($workflowIds, $ulbId)
                 ->whereIn('water_consumer_active_requests.current_role', $roleId)
-                ->whereIn('water_consumer_active_requests.ward_id', $occupiedWards)
+                ->whereIn('water_consumer_active_requests.ward_mstr_id', $occupiedWards)
                 ->where('water_consumer_active_requests.is_escalate', false)
                 ->where('water_consumer_active_requests.parked', false)
                 ->orderByDesc('water_consumer_active_requests.id')
                 ->paginate($pages);
-                
+
+            $isDataExist = collect($inboxDetails)->last();
+            if (!$isDataExist || $isDataExist == 0) {
+                throw new Exception('Data not Found!');
+            }
+            return responseMsgs(true, "Successfully listed consumer req inbox details!", $inboxDetails, "", "01", responseTime(), "POST", $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], '', '01', responseTime(), "POST", $req->deviceId);
+        }
+    }
+
+    /**
+     * | Consumer Outbox 
+     * | Get Consumer Active outbox details 
+        | Serial No :
+        | Working 
+     */
+    public function consumerOutbox(Request $req)
+    {
+        $req->validate([
+            'perPage' => 'nullable|integer',
+        ]);
+        try {
+            $user                   = authUser();
+            $pages                  = $req->perPage ?? 10;
+            $userId                 = $user->id;
+            $ulbId                  = $user->ulb_id;
+            $mWfWorkflowRoleMaps    = new WfWorkflowrolemap();
+
+            $occupiedWards  = $this->getWardByUserId($userId)->pluck('ward_id');
+            $roleId         = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
+            $workflowIds    = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
+
+            $inboxDetails = $this->getConsumerWfBaseQuerry($workflowIds, $ulbId)
+                ->whereNotIn('water_consumer_active_requests.current_role', $roleId)
+                ->whereIn('water_consumer_active_requests.ward_mstr_id', $occupiedWards)
+                ->orderByDesc('water_consumer_active_requests.id')
+                ->paginate($pages);
+
+            $isDataExist = collect($inboxDetails)->last();
+            if (!$isDataExist || $isDataExist == 0) {
+                throw new Exception('Data not Found!');
+            }
             return responseMsgs(true, "Successfully listed consumer req inbox details!", $inboxDetails, "", "01", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], '', '01', responseTime(), "POST", $req->deviceId);

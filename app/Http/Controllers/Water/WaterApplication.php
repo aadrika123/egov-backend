@@ -45,13 +45,6 @@ class WaterApplication extends Controller
     {
         return $this->Repository->readTransectionAndApl($request);
     }
-    public function paymentRecipt(Request $request)
-    {
-        $request->validate([
-            'transectionNo' => 'required'
-        ]);
-        return $this->Repository->paymentRecipt($request->transectionNo);
-    }
     public function documentUpload(Request $request)
     {
         return $this->Repository->documentUpload($request);

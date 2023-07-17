@@ -964,58 +964,6 @@ class WaterNewConnection implements IWaterNewConnection
         }
     }
 
-    /**
-     *  Get The Payment Reciept Data Or Water Module
-        Query Cost(2.00)
-     */
-    public function paymentRecipt($transectionNo)
-    {
-        try {
-            $application = (array)null;
-            $transection = WaterTran::select("*")
-                ->where("tran_no", $transectionNo)
-                ->whereIn("status", [1, 2])
-                ->first();
-
-            if (!$transection) {
-                throw new Exception("Transection Data Not Found....");
-            }
-            if ($transection->tran_type != "Demand Collection") {
-                $application = WaterApplication::select(
-                    "water_applications.application_no",
-                    "address",
-                    "owner.owner_name",
-                    "owner.guardian_name",
-                    "owner.mobile",
-                    DB::raw("ulb_ward_masters.ward_name AS ward_no, 
-                                            ulb_masters.id as ulb_id, ulb_masters.ulb_name,ulb_masters.ulb_type
-                                            ")
-                )
-                    ->join("ulb_masters", "ulb_masters.id", "water_applications.ulb_id")
-                    ->join("ulb_ward_masters", function ($join) {
-                        $join->on("ulb_ward_masters.id", "=", "water_applications.ward_id");
-                    })
-                    ->leftjoin(DB::raw("(SELECT STRING_AGG(applicant_name,',') as owner_name,
-                                                            STRING_AGG(guardian_name,',') as guardian_name,
-                                                            STRING_AGG(mobile_no::text,',') as mobile,
-                                                            application_id
-                                                        FROM water_applicants 
-                                                        WHERE application_id = $transection->related_id
-                                                            AND status != FALSE
-                                                        GROUP BY application_id
-                                                        ) owner"), function ($join) {
-                        $join->on("owner.application_id", "=", "water_applications.id");
-                    })
-                    ->where('water_applications.id', $transection->related_id)
-                    ->first();
-            }
-            $data["transaction"] = $transection;
-            $data["application"] = $application;
-            return responseMsg(true, "data Fetch!", $data);
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), '');
-        }
-    }
 
     public function calWaterConCharge(Request $request)
     {

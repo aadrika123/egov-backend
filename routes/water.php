@@ -23,7 +23,7 @@ Route::post('/apply-new-connection', function () {
 
 Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger', 'expireBearerToken']], function () {
     /**
-     * | Created On-07-10-2022 
+     * | Created On-08-10-2022 
      * | Updated by-Sam kerketta
      * | ------------------- Apply New Water Connection ------------------------ |
      */
@@ -129,14 +129,14 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      * |------------ Water Consumer Workflow -------------|
      */
     Route::controller(WaterConsumerWfController::class)->group(function () {
-        Route::post('consumer/req/inbox', 'consumerInbox');
-        Route::post('consumer/req/outbox', 'consumerOutbox');
-        Route::post('consumer/req/post-next-level', 'consumerPostNextLevel');
-        Route::post('consumer/req/list-req-docs', 'listDocToUpload');
-        Route::post('consumer/req/doc-verify-reject', 'consumerDocVerifyReject');
-        Route::post('consumer/req/upload-document', 'consumerDocUpload');
-        Route::post('consumer/req/get-upload-documents', 'getConsumerDocs');
-        Route::post('consumer/req/approval-rejection', 'consumerApprovalRejection');
+        Route::post('consumer/req/inbox', 'consumerInbox');                                         // Workflow
+        Route::post('consumer/req/outbox', 'consumerOutbox');                                       // Workflow
+        Route::post('consumer/req/post-next-level', 'consumerPostNextLevel');  // Here
+        Route::post('consumer/req/list-req-docs', 'listDocToUpload');  // Here
+        Route::post('consumer/req/doc-verify-reject', 'consumerDocVerifyReject');  // Here
+        Route::post('consumer/req/upload-document', 'consumerDocUpload');  // Here
+        Route::post('consumer/req/get-upload-documents', 'getConsumerDocs');  // Here
+        Route::post('consumer/req/approval-rejection', 'consumerApprovalRejection');  // Here
     });
 
 
@@ -174,7 +174,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     });
 });
 Route::controller(WaterApplication::class)->group(function () {
-    Route::post('payment-recipt', 'paymentRecipt');                                                     //15
     Route::post('cargeCal', 'calWaterConCharge');                                                       //16
     Route::post('consumerChargeCal', 'calConsumerDemand');                                              //17
 });

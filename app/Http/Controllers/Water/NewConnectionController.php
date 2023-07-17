@@ -149,7 +149,7 @@ class NewConnectionController extends Controller
         | Serial No :
         | Working
      */
-    public function waterOutbox()
+    public function waterOutbox(Request $req)
     {
         try {
             $mWfWardUser            = new WfWardUser();
@@ -541,8 +541,8 @@ class NewConnectionController extends Controller
         try {
             $mWfWardUser            = new WfWardUser();
             $mWfWorkflowRoleMaps    = new WfWorkflowrolemap();
-            $userId                 = auth()->user()->id;
-            $ulbId                  = auth()->user()->ulb_id;
+            $userId                 = authUser()->id;
+            $ulbId                  = authUser()->ulb_id;
 
             $refWard = $mWfWardUser->getWardsByUserId($userId);
             $wardId = $refWard->map(function ($value) {
