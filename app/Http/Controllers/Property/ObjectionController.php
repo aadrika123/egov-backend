@@ -513,11 +513,11 @@ class ObjectionController extends Controller
      */
     public function approvalRejection(Request $req)
     {
+        $req->validate([
+            "applicationId" => "required",
+            "status" => "required"
+        ]);
         try {
-            $req->validate([
-                "applicationId" => "required",
-                "status" => "required"
-            ]);
             $mWfRoleUsermap = new WfRoleusermap();
             $mPropOwner = new PropOwner();
             $mPropActiveObjectionOwner = new PropActiveObjectionOwner();
@@ -661,9 +661,9 @@ class ObjectionController extends Controller
                 $msg =  "Application Successfully Approved !!";
                 $metaReqs['verificationStatus'] = 1;
 
-                $var = new CalculatePropById;
-                return  $data = $var->calculatePropTax($activeObjection);
-                dd($data);
+                // $var = new CalculatePropById;
+                // return  $data = $var->calculatePropTax($activeObjection);
+                // dd($data);
             }
 
             // Rejection

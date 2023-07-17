@@ -3,6 +3,7 @@
 namespace App\Models\BugReporting;
 
 use App\Models\ModuleMaster;
+use App\Models\ParamCategory;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -12,6 +13,8 @@ use Illuminate\Database\Eloquent\Model;
 class Bug extends Model
 {
     use HasFactory;
+
+    protected $hidden = ['created_at', 'updated_at', 'deleted_at'];
     
 
     //create bugsform
@@ -23,17 +26,17 @@ class Bug extends Model
         $data->bug_title = $request->bugTitle;
         $data->bug_summary = $request->bugSummary;
         $data->environment_description = $request->environmentDescription;
-        $data->category = $request->category;
+        $data->category_id = $request->categoryId;
         $data->severity = $request->severity;
         $data->priority = $request->priority;
-        $data->status = $request->status;
+        //$data->status = $request->status;
         $data->reporting_user_id = $request->reportingUserId;
         $data->reporting_time = Carbon::now();
-        $data->assigned_to = $request->assignedTo;
+        //$data->assigned_to = $request->assignedTo;
         $data->assignment_time = Carbon::now();
         $data->screen_bitmap = $request->screenBitmap;
         $data->module_id = $request->moduleId;
-        $data->case_id = $request->caseId;
+        //$data->case_id = $request->caseId;
         $data->save();
     }
 
@@ -41,34 +44,48 @@ class Bug extends Model
     //for modulelist
     public function moduleList()
     {
-        $moduleList = ModuleMaster::all();        
+        $moduleList = ModuleMaster::select('id', 'module_name', 'status')
+        ->where('status', 1)
+        ->orderBy('id') 
+        ->get();       
         return $moduleList;        
 
     }
 
 
     //for case list
-    public function caseList()
+    public function category()
     {
-        $caselist = CaseType::all();
+        $caselist = Category::all();
         return $caselist;
     }
 
 
     //for module and case list
-    public function modulecaselist()
+    public function allformlist()
     {
-        $moduleList = ModuleMaster::where('status', 1)
+        $moduleList = ModuleMaster::select('id', 'module_name', 'status')
+        ->where('status', 1)
         ->orderBy('id')
         ->get();
 
-        $caselist = CaseType::where('status', 1)
+        $category = Category::where('status', 1)
+        ->orderBy('id')
+        ->get();
+
+        $severity = Severity::where('status', 1)
+        ->orderBy('id')
+        ->get();
+
+        $priority = Priority::where('status', 1)
         ->orderBy('id')
         ->get();
 
         $getdata = [
-            "Module List" => $moduleList,
-            "Case List" => $caselist
+            "moduleList" => $moduleList,
+            "category" => $category, 
+            "severity" => $severity,
+            "priority" => $priority
         ];
 
         return $getdata;
