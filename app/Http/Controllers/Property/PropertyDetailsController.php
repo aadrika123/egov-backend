@@ -47,12 +47,12 @@ class PropertyDetailsController extends Controller
     // get details of the property filtering with the provided details
     public function applicationsListByKey(Request $request)
     {
+        $request->validate([
+            'searchBy' => 'required',
+            'filteredBy' => 'required',
+            'value' => 'required',
+        ]);
         try {
-            $request->validate([
-                'searchBy' => 'required',
-                'filteredBy' => 'required',
-                'value' => 'required',
-            ]);
 
             $mPropActiveSaf = new PropActiveSaf();
             $mPropActiveConcessions = new PropActiveConcession();

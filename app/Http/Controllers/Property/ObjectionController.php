@@ -513,11 +513,11 @@ class ObjectionController extends Controller
      */
     public function approvalRejection(Request $req)
     {
+        $req->validate([
+            "applicationId" => "required",
+            "status" => "required"
+        ]);
         try {
-            $req->validate([
-                "applicationId" => "required",
-                "status" => "required"
-            ]);
             $mWfRoleUsermap = new WfRoleusermap();
             $mPropOwner = new PropOwner();
             $mPropActiveObjectionOwner = new PropActiveObjectionOwner();

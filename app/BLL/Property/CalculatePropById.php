@@ -166,13 +166,11 @@ class CalculatePropById extends CalculateSafById
                         $taxes = $this->generatePropDemandTax($propTax, $adjustAmt, $balance);
                         $newDemand->push($taxes);
                     }
-                    // return 'new demand  increasing';
                 }
 
                 if ($propTax['amount'] < $propQtrDemand['amount']) {
                     $advanceAmt = round(($propQtrDemand['amount'] - $propTax['amount']), 2);
                     $collectAdvanceAmt->push($advanceAmt);
-                    // return 'new demand  decreasing';
                 }
             }
         }
