@@ -453,7 +453,7 @@ class ApplySafController extends Controller
             $mPropGbOfficer->store($gbOfficerReq);
             $this->sendToWorkflow($createSaf, $userId);
             // Demand Saved
-            $insertTax->insertTax($safId, $ulbId, $demandToBeSaved);
+            $insertTax->insertTax($safId, $ulbId, $demandToBeSaved, $userId);
             $postSafPropTax->postSafTaxes($safId, $generatedDemand['details']->toArray(), $ulbId);                        // Saf Tax Generation
 
             DB::commit();
