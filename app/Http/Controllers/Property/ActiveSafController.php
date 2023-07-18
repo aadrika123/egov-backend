@@ -483,8 +483,8 @@ class ActiveSafController extends Controller
             $mWfWardUser = new WfWardUser();
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
 
-            $userId = auth()->user()->id;
-            $ulbId = auth()->user()->ulb_id;
+            $userId = authUser($req)->id;
+            $ulbId = authUser($req)->ulb_id;
             $perPage = $req->perPage ?? 10;
 
             $roleIds = $mWfRoleUser->getRoleIdByUserId($userId)->pluck('wf_role_id');
@@ -729,6 +729,8 @@ class ActiveSafController extends Controller
             $data = $mPropActiveSaf->getActiveSafDtls()                         // <------- Model function Active SAF Details
                 ->where('prop_active_safs.id', $req->applicationId)
                 ->first();
+            if (!$data)
+                throw new Exception("Application Not Found");
 
             if (collect($data)->isEmpty()) {
                 $data = $mPropSaf->getSafDtls()
@@ -788,7 +790,7 @@ class ActiveSafController extends Controller
             "applicationId" => "required|int",
         ]);
         try {
-            $userId = auth()->user()->id;
+            $userId = authUser($request)->id;
             $saf_id = $request->applicationId;
             $data = PropActiveSaf::find($saf_id);
             $data->is_escalate = $request->escalateStatus;
@@ -899,7 +901,7 @@ class ActiveSafController extends Controller
             DB::beginTransaction();
             if ($request->action == 'forward') {
                 $wfMstrId = $mWfMstr->getWfMstrByWorkflowId($saf->workflow_id);
-                $samHoldingDtls = $this->checkPostCondition($senderRoleId, $wfLevels, $saf, $wfMstrId);          // Check Post Next level condition
+                $samHoldingDtls = $this->checkPostCondition($senderRoleId, $wfLevels, $saf, $wfMstrId, $userId);          // Check Post Next level condition
                 $saf->current_role = $forwardBackwardIds->forward_role_id;
                 $saf->last_role_id =  $forwardBackwardIds->forward_role_id;                     // Update Last Role Id
                 $saf->parked = false;
@@ -948,7 +950,7 @@ class ActiveSafController extends Controller
     /**
      * | check Post Condition for backward forward(9.1)
      */
-    public function checkPostCondition($senderRoleId, $wfLevels, $saf, $wfMstrId)
+    public function checkPostCondition($senderRoleId, $wfLevels, $saf, $wfMstrId, $userId)
     {
         // Variable Assigments
         $mPropSafDemand = new PropSafsDemand();
@@ -997,7 +999,8 @@ class ActiveSafController extends Controller
                     'memo_no' => $samNo,
                     'pt_no' => $ptNo,
                     'ward_id' => $saf->ward_mstr_id,
-                    'prop_id' => $propId
+                    'prop_id' => $propId,
+                    'userId'  => $userId
                 ]);
                 $memoReqs = new Request($mergedDemand);
                 $mPropMemoDtl->postSafMemoDtls($memoReqs);
@@ -1321,7 +1324,8 @@ class ActiveSafController extends Controller
                     'pt_no' => $activeSaf->pt_no,
                     'ward_id' => $activeSaf->ward_mstr_id,
                     'prop_id' => $propId,
-                    'saf_id' => $safId
+                    'saf_id' => $safId,
+                    'userId'  => $userId
                 ]);
                 $memoReqs = new Request($mergedDemand);
                 $mPropSafMemoDtl->postSafMemoDtls($memoReqs);
@@ -1872,7 +1876,7 @@ class ActiveSafController extends Controller
             if ($activeSaf->payment_status == 1)
                 throw new Exception("Payment Already Done");
 
-            $userId = auth()->user()->id;                                      // Authenticated user or Ghost User
+            $userId = authUser($req)->id;                                      // Authenticated user or Ghost User
             $tranBy = authUser($req)->user_type;
 
             $tranNo = $req['transactionNo'];

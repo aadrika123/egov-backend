@@ -92,7 +92,7 @@ class PropertyController extends Controller
             'ptNo' => 'required_without:holdingNo|numeric',
         ]);
         try {
-            $userId = authUser()->id;
+            $userId = authUser($req)->id;
             $activeCitizen = ActiveCitizen::findOrFail($userId);
 
             $propDtl = app(Pipeline::class)
@@ -137,7 +137,7 @@ class PropertyController extends Controller
             'ulbId' => 'required|numeric'
         ]);
         try {
-            $citizenId = authUser()->id;
+            $citizenId = authUser($req)->id;
             $ulbId = $req->ulbId;
             $type = $req->type;
             $mPropSafs = new PropSaf();

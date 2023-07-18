@@ -206,7 +206,7 @@ class PropProperty extends Model
     /**
      * | Search holding
      */
-    public function searchHolding()
+    public function searchHolding($ulbId)
     {
         return PropProperty::select(
             'prop_properties.id',
@@ -221,7 +221,7 @@ class PropProperty extends Model
             ->join('prop_owners', 'prop_owners.saf_id', '=', 'prop_properties.saf_id')
             ->join('ref_prop_types', 'ref_prop_types.id', '=', 'prop_properties.prop_type_mstr_id')
             ->where('prop_properties.status', 1)
-            ->where('ulb_id', auth()->user()->ulb_id)
+            ->where('ulb_id', $ulbId)
             ->groupBy('prop_properties.id', 'ref_prop_types.property_type');
     }
 
