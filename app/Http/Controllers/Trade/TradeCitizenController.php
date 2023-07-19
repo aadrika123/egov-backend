@@ -517,7 +517,7 @@ class TradeCitizenController extends Controller
                 $refLecenceData->pending_status  = 1;
                 $args["sender_role_id"] = $refWorkflows['initiator']['id'];
                 $args["receiver_role_id"] = $refWorkflows['initiator']['forward_id'];
-                $args["citizen_id"] = $refUserId;;
+                $args["citizen_id"] = $refUserId;
                 $args["ref_table_dot_id"] = "active_trade_licences";
                 $args["ref_table_id_value"] = $licenceId;
                 $args["workflow_id"] = $refWorkflowId;

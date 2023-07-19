@@ -311,6 +311,7 @@ class TradeCitizen implements ITradeCitizen
     }
 
     # Serial No : 27
+     
     public function citizenApplication(Request $request)
     {
         try {
@@ -346,7 +347,6 @@ class TradeCitizen implements ITradeCitizen
                         TO_CHAR( CAST(licences.application_date AS DATE), 'DD-MM-YYYY') as application_date
                 "),
             ];
-
             $ActiveSelect = $select;
             $ActiveSelect[] = DB::raw("'active' as license_type");
             $ActiveLicence = DB::TABLE("active_trade_licences AS licences")
@@ -412,7 +412,6 @@ class TradeCitizen implements ITradeCitizen
                 ->where("licences.is_active", true)
                 ->where("licences.citizen_id", $refUserId);
                 // ->get();
-
             
             $OldSelect = $select;        
             $OldSelect[] = DB::raw("'old' as license_type");
@@ -491,8 +490,6 @@ class TradeCitizen implements ITradeCitizen
             $refUlbId       = $refUser->ulb_id ?? 0;
             $refWorkflowId  = $this->_WF_MASTER_Id;
             $modul_id = $this->_MODULE_ID;
-           
-            
             $mUserType      = $this->_COMMON_FUNCTION->userType($refWorkflowId);
             $refApplication = $this->_REPOSITORY_TRADE->getAllLicenceById($id);
             $mStatus = $this->_REPOSITORY_TRADE->applicationStatus($id);
@@ -519,7 +516,7 @@ class TradeCitizen implements ITradeCitizen
                     $mCods      .= $val->trade_code . ",";
                 }
                 $mItemName = trim($mItemName, ',');
-                $mCods = trim($mCods, ',');
+                $mCods =trim ($mCods,',');
             }
             $refApplication->items      = $mItemName;
             $refApplication->items_code = $mCods;
@@ -554,7 +551,6 @@ class TradeCitizen implements ITradeCitizen
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), '');
         }
-    }
-
     
+}
 }
