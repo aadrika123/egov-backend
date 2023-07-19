@@ -87,8 +87,7 @@ class WaterConsumer extends Model
                 'water_consumers.consumer_no',
                 'water_consumers.ward_mstr_id',
                 'ulb_ward_masters.ward_name'
-            )
-            ->get();
+            );
     }
 
 
@@ -116,8 +115,7 @@ class WaterConsumer extends Model
             ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_consumers.ward_mstr_id')
             ->where('water_consumer_owners.' . $key, 'LIKE', '%' . $refVal . '%')
             ->where('water_consumers.status', true)
-            ->where('ulb_ward_masters.status', true)
-            ->get();
+            ->where('ulb_ward_masters.status', true);
     }
 
 
@@ -144,8 +142,7 @@ class WaterConsumer extends Model
             ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_consumers.ward_mstr_id')
             ->where('water_approval_application_details.application_no', 'LIKE', '%' . $refVal . '%')
             ->where('water_consumers.status', true)
-            ->where('ulb_ward_masters.status', true)
-            ->get();
+            ->where('ulb_ward_masters.status', true);
     }
 
 
@@ -314,11 +311,11 @@ class WaterConsumer extends Model
      * | Dectivate the water Consumer 
      * | @param req
      */
-    public function dissconnetConsumer($consumerId)
+    public function dissconnetConsumer($consumerId, $status)
     {
         WaterConsumer::where('id', $consumerId)
             ->update([
-                'status' => 0
+                'status' => $status
             ]);
     }
 
@@ -431,5 +428,15 @@ class WaterConsumer extends Model
             ->where('status', 1)
             ->orderByDesc('id')
             ->first();
+    }
+
+    /**
+     * | Get consumers according to cosumer Ids
+     */
+    public function getConsumerListByIds($consumerIds)
+    {
+        return WaterConsumer::whereIn('id', $consumerIds)
+            ->where('status', 1)
+            ->orderByDesc('id');
     }
 }

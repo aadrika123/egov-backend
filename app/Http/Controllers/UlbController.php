@@ -64,7 +64,7 @@ class UlbController extends Controller
             ]);
         }
         try {
-            $ulbId = $req->ulbId ?? authUser()->ulb_id;
+            $ulbId = $req->ulbId ?? authUser($req)->ulb_id;
             $mCity = new MCity();
             $data = $mCity->getCityStateByUlb($ulbId);
             return responseMsgs(true, "", remove_null($data));

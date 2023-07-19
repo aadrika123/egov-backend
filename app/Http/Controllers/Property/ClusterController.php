@@ -207,12 +207,13 @@ class ClusterController extends Controller
             'holdingNo'     => 'required',
         ]);
         try {
+            $ulbId = authUser($request)->ulb_id;
             $perPage = $request->perPage ?? 10;
             $mPropProperty = new PropProperty();
-            $holdingDtls = $mPropProperty->searchHolding()
+            $holdingDtls = $mPropProperty->searchHolding($ulbId)
                 ->where('prop_properties.holding_no', 'LIKE', '%' . $request->holdingNo);
 
-            $newHoldingDtls = $mPropProperty->searchHolding()
+            $newHoldingDtls = $mPropProperty->searchHolding($ulbId)
                 ->where('prop_properties.new_holding_no', 'LIKE', '%' . $request->holdingNo);
 
             $holdingDetails = $holdingDtls->union($newHoldingDtls)
@@ -275,9 +276,10 @@ class ClusterController extends Controller
             'safNo' => 'required',
         ]);
         try {
+            $ulbId = authUser($request)->ulb_id;
             $mPropActiveSaf = new PropActiveSaf();
             $perPage = $request->perPage ?? 10;
-            $application = $mPropActiveSaf->searchSafDtlsBySafNo()
+            $application = $mPropActiveSaf->searchSafDtlsBySafNo($ulbId)
                 ->where('s.saf_no', 'LIKE', '%' . $request->safNo)
                 ->paginate($perPage);
 

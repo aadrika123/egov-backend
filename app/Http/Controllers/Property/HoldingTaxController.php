@@ -135,11 +135,11 @@ class HoldingTaxController extends Controller
             $penaltyRebateCalc = new PenaltyRebateCalculation;
             $currentQuarter = calculateQtr(Carbon::now()->format('Y-m-d'));
             $currentFYear = getFY();
-            $user = authUser();
+            $user = authUser($req);
             $loggedInUserType = $user->user_type ?? "Citizen";
             $mPropOwners = new PropOwner();
             $pendingFYears = collect();
-            $qtrs = collect();
+            $qtrs = collect([1, 2, 3, 4]);
             $mUlbMasters = new UlbMaster();
 
             $ownerDetails = $mPropOwners->getOwnerByPropId($req->propId)->first();
@@ -147,11 +147,9 @@ class HoldingTaxController extends Controller
             $demandList = $mPropDemand->getDueDemandByPropId($req->propId);
             $demandList = collect($demandList);
 
-            collect($demandList)->map(function ($value) use ($pendingFYears, $qtrs) {
+            collect($demandList)->map(function ($value) use ($pendingFYears) {
                 $fYear = $value->fyear;
-                $qtr = $value->qtr;
                 $pendingFYears->push($fYear);
-                $qtrs->push($qtr);
             });
             // Property Part Payment
             if (isset($req->fYear) && isset($req->qtr)) {
@@ -239,9 +237,12 @@ class HoldingTaxController extends Controller
 
             $totalDuesList = $penaltyRebateCalc->readRebates($currentQuarter, $loggedInUserType, $mLastQuarterDemand, $ownerDetails, $dues, $totalDuesList);
 
-            $finalPayableAmt = ($dues + $onePercTax + $balance) - ($totalDuesList['rebateAmt'] + $totalDuesList['specialRebateAmt']) - $advanceAmt;
+            $totalRebates = $totalDuesList['rebateAmt'] + $totalDuesList['specialRebateAmt'];
+            $finalPayableAmt = ($dues + $onePercTax + $balance) - ($totalRebates + $advanceAmt);
             if ($finalPayableAmt < 0)
                 $finalPayableAmt = 0;
+            $totalDuesList['totalRebatesAmt'] = $totalRebates;
+            $totalDuesList['totalPenaltiesAmt'] = $onePercTax;
             $totalDuesList['payableAmount'] = round($finalPayableAmt);
             $totalDuesList['paymentUptoYrs'] = [$paymentUptoYrs->first()];
             $totalDuesList['paymentUptoQtrs'] = $pendingQtrs->unique()->values()->sort()->values();
@@ -556,7 +557,7 @@ class HoldingTaxController extends Controller
         try {
             $offlinePaymentModes = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
             $todayDate = Carbon::now();
-            $userId = authUser()->id;
+            $userId = authUser($req)->id;
             $propDemand = new PropDemand();
             $idGeneration = new IdGeneration;
             $mPropTrans = new PropTransaction();
@@ -565,7 +566,7 @@ class HoldingTaxController extends Controller
             $mPropAdjustment = new PropAdjustment();
             $propDetails = PropProperty::findOrFail($propId);
 
-            $tranNo = $idGeneration->generateTransactionNo();
+            $tranNo = $idGeneration->generateTransactionNo($propDetails->ulb_id);
 
             $propCalReq = new Request([
                 'propId' => $req['id'],
@@ -584,7 +585,7 @@ class HoldingTaxController extends Controller
             if ($demands->isEmpty())
                 throw new Exception("No Dues For this Property");
             // Property Transactions
-            $tranBy = authUser()->user_type;
+            $tranBy = authUser($req)->user_type;
             $req->merge([
                 'userId' => $userId,
                 'todayDate' => $todayDate->format('Y-m-d'),
@@ -730,8 +731,8 @@ class HoldingTaxController extends Controller
                 'doc_code' => $refImageName,
                 'relative_path' => $relativePath,
                 'document' => $imageName,
-                'uploaded_by' => authUser()->id,
-                'uploaded_by_type' => authUser()->user_type,
+                'uploaded_by' => authUser($req)->id,
+                'uploaded_by_type' => authUser($req)->user_type,
                 'doc_category' => $refImageName,
             ];
             DB::beginTransaction();
@@ -1073,7 +1074,6 @@ class HoldingTaxController extends Controller
                 }
                 $safCalculation->_floors = $floors;
                 $capitalvalueRates = $safCalculation->readCapitalValueRate();
-
                 foreach ($fullDetails as $key => $detail) {
                     $floorMstrId = $detail->floor_mstr_id;
                     $floorBuiltupArea = $detail->builtup_area;
@@ -1175,8 +1175,8 @@ class HoldingTaxController extends Controller
             "calculationFactor" => $rule['calculationFactor'] ?? null,
             "arvPsf" => $rule['arvPsf'] ?? null,
             "circleRate" => $rule['circleRate'] ?? "",
-            "arvTotalPropTax" => $rule['arvTotalPropTax'] ?? 0,
-            "cvArvPropTax" => $rule['cvArvPropTax'] ?? 0
+            "arvTotalPropTax" => roundFigure($rule['arvTotalPropTax'] ?? 0),
+            "cvArvPropTax" => roundFigure($rule['cvArvPropTax'] ?? 0)
         ];
     }
 
@@ -1263,7 +1263,7 @@ class HoldingTaxController extends Controller
             $finalClusterDemand = array();
             $clusterDemandList = array();
             $currentQuarter = calculateQtr($todayDate->format('Y-m-d'));
-            $loggedInUserType = authUser()->user_type;
+            $loggedInUserType = authUser($req)->user_type;
             $currentFYear = getFY();
 
             $clusterDtls = $mClusters::findOrFail($clusterId);
@@ -1386,15 +1386,15 @@ class HoldingTaxController extends Controller
 
             $dues = $dues->original['data'];
             $demands = $dues['demandList'];
-            $tranNo = $idGeneration->generateTransactionNo();
+            $tranNo = $idGeneration->generateTransactionNo($req['ulbId']);
             $payableAmount = $dues['duesList']['payableAmount'];
             $advanceAmt = $dues['duesList']['advanceAmt'];
             // Property Transactions
             if (in_array($req['paymentMode'], $offlinePaymentModes)) {
-                $userId = auth()->user()->id ?? null;
+                $userId = authUser($req)->id ?? null;
                 if (!$userId)
                     throw new Exception("User Should Be Logged In");
-                $tranBy = authUser()->user_type;
+                $tranBy = authUser($req)->user_type;
             }
             $req->merge([
                 'userId' => $userId,

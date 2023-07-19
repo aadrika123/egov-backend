@@ -21,4 +21,15 @@ class RefPropUsageType extends Model
             ->where('status', 1)
             ->get();
     }
+
+
+    public function propAllUsageType()
+    {
+        return RefPropUsageType::select(
+            'id',
+            DB::raw('INITCAP(usage_type) as usage_type'),
+            'usage_code'
+        )
+            ->get();
+    }
 }

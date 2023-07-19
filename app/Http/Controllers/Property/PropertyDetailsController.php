@@ -47,12 +47,12 @@ class PropertyDetailsController extends Controller
     // get details of the property filtering with the provided details
     public function applicationsListByKey(Request $request)
     {
+        $request->validate([
+            'searchBy' => 'required',
+            'filteredBy' => 'required',
+            'value' => 'required',
+        ]);
         try {
-            $request->validate([
-                'searchBy' => 'required',
-                'filteredBy' => 'required',
-                'value' => 'required',
-            ]);
 
             $mPropActiveSaf = new PropActiveSaf();
             $mPropActiveConcessions = new PropActiveConcession();
@@ -195,7 +195,7 @@ class PropertyDetailsController extends Controller
                 }
             }
 
-            // search by name
+            // search by mobileNo
             if ($searchBy == 'mobileNo') {
                 $mobileNo = $request->value;
                 switch ($key) {
@@ -395,7 +395,7 @@ class PropertyDetailsController extends Controller
         try {
             $mPropProperty = new PropProperty();
             $mWfRoleUser = new WfRoleusermap();
-            $user = authUser();
+            $user = authUser($request);
             $userId = $user->id;
             $userType = $user->user_type;
             $ulbId = $user->ulb_id ?? $request->ulbId;

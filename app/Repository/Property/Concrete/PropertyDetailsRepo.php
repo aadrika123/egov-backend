@@ -106,7 +106,7 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
                 'mobile_no AS mobileNo'
             )
                 ->join('prop_owners', 'prop_owners.property_id', '=', 'prop_properties.id')
-                ->where('ulb_id', auth()->user()->ulb_id)
+                ->where('ulb_id', authUser($request)->ulb_id)
                 ->where('owner_name', $request->search)
                 ->orwhere('mobile_no', $request->search)
                 ->orwhere('pan_no', $request->search)
@@ -122,7 +122,7 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
             'mobile_no AS mobileNo'
         )
             ->join('prop_owners', 'prop_owners.property_id', '=', 'prop_properties.id')
-            ->where('ulb_id', auth()->user()->ulb_id)
+            ->where('ulb_id', authUser($request)->ulb_id)
             ->where('prop_properties.ward_mstr_id', $request->wardId)
             ->where('owner_name', $request->search)
             ->orwhere('mobile_no', $request->search)

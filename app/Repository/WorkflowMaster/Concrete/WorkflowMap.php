@@ -30,7 +30,7 @@ class WorkflowMap implements iWorkflowMapRepository
     //get role details by 
     public function getRoleDetails(Request $request)
     {
-        $ulbId = auth()->user()->ulb_id;
+        $ulbId = authUser($request)->ulb_id;
         $request->validate([
             'workflowId' => 'required|int'
 

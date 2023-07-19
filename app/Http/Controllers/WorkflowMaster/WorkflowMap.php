@@ -24,100 +24,100 @@ class WorkflowMap extends Controller
 
     public function getUserById(Request $request)
     {
-        return $this->WfMap->getUserById($request);
+        return $this->wfMap->getUserById($request);
     }
 
     public function getWorkflowNameByUlb(Request $request)
     {
         // return 'Hii';
-        return $this->WfMap->getWorkflowNameByUlb($request);
+        return $this->wfMap->getWorkflowNameByUlb($request);
     }
 
     public function getRoleByUlb(Request $request)
     {
-        return $this->WfMap->getRoleByUlb($request);
+        return $this->wfMap->getRoleByUlb($request);
     }
 
     public function getWardByUlb(Request $request)
     {
-        return $this->WfMap->getWardByUlb($request);
+        return $this->wfMap->getWardByUlb($request);
     }
 
     public function getUserByRole(Request $request)
     {
-        return $this->WfMap->getUserByRole($request);
+        return $this->wfMap->getUserByRole($request);
     }
 
     //============================================================
     //============================================================
     public function getRoleByWorkflow(Request $request)
     {
-        return $this->WfMap->getRoleByWorkflow($request);
+        return $this->wfMap->getRoleByWorkflow($request);
     }
 
     public function getUserByWorkflow(Request $request)
     {
-        return $this->WfMap->getUserByWorkflow($request);
+        return $this->wfMap->getUserByWorkflow($request);
     }
 
     public function getWardsInWorkflow(Request $request)
     {
-        return $this->WfMap->getWardsInWorkflow($request);
+        return $this->wfMap->getWardsInWorkflow($request);
     }
 
     public function getUlbInWorkflow(Request $request)
     {
-        return $this->WfMap->getUlbInWorkflow($request);
+        return $this->wfMap->getUlbInWorkflow($request);
     }
 
     public function getWorkflowByRole(Request $request)
     {
-        return $this->WfMap->getWorkflowByRole($request);
+        return $this->wfMap->getWorkflowByRole($request);
     }
 
     public function getUserByRoleId(Request $request)
     {
-        return $this->WfMap->getUserByRoleId($request);
+        return $this->wfMap->getUserByRoleId($request);
     }
 
     public function getWardByRole(Request $request)
     {
-        return $this->WfMap->getWardByRole($request);
+        return $this->wfMap->getWardByRole($request);
     }
 
     public function getUlbByRole(Request $request)
     {
-        return $this->WfMap->getUlbByRole($request);
+        return $this->wfMap->getUlbByRole($request);
     }
 
     public function getUserInUlb(Request $request)
     {
-        return $this->WfMap->getUserInUlb($request);
+        return $this->wfMap->getUserInUlb($request);
     }
 
     public function getRoleInUlb(Request $request)
     {
-        return $this->WfMap->getRoleInUlb($request);
+        return $this->wfMap->getRoleInUlb($request);
     }
 
     public function getWorkflowInUlb(Request $request)
     {
-        return $this->WfMap->getWorkflowInUlb($request);
+        return $this->wfMap->getWorkflowInUlb($request);
     }
 
     public function getRoleByUserUlbId(Request $request)
     {
-        return $this->WfMap->getRoleByUserUlbId($request);
+        return $this->wfMap->getRoleByUserUlbId($request);
     }
 
     public function getRoleByWardUlbId(Request $request)
     {
-        return $this->WfMap->getRoleByWardUlbId($request);
+        return $this->wfMap->getRoleByWardUlbId($request);
     }
 
     //
     public function getWorkflow(Request $request)
     {
-        return $this->WfMap->getWorkflow($request);
+        return $this->wfMap->getWorkflow($request);
     }
 }

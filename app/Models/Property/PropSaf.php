@@ -218,4 +218,13 @@ class PropSaf extends Model
         return PropSaf::where('property_id', $propId)
             ->first();
     }
+
+    /**
+     * | Count Previous Holdings
+     */
+    public function countPreviousHoldings($previousHoldingId)
+    {
+        return PropSaf::where('previous_holding_id', $previousHoldingId)
+            ->count();
+    }
 }

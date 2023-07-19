@@ -88,7 +88,7 @@ class PropActiveConcession extends Model
 
     public function escalate($req)
     {
-        $userId = auth()->user()->id;
+        $userId = authUser($req)->id;
         if ($req->escalateStatus == 1) {
             $concession = PropActiveConcession::find($req->id);
             $concession->is_escalate = 1;
