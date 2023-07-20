@@ -100,7 +100,7 @@ class reqApplySaf extends FormRequest
 
                 $rules["floor.*.buildupArea"]       =   "required|numeric|not_in:0";
                 $rules["floor.*.dateFrom"]          =   "required|date|date_format:Y-m-d|before_or_equal:$mNowDate";
-                $rules["floor.*.dateUpto"]          =   "nullable|date|date_format:Y-m-d|before_or_equal:$mNowDate|after:$this->dateFrom";
+                $rules["floor.*.dateUpto"]          =   "nullable|date|date_format:Y-m-d|before_or_equal:$mNowDate|before:$this->dateFrom";
             }
         }
         // Condition for the Organizational Institutes running by trust

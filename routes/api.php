@@ -81,7 +81,7 @@ Route::controller(CitizenController::class)->group(function () {
 });
 
 /**
- * | Created On-147-08-2022 
+ * | Created On-14-08-2022 
  * | Created By-Anshu Kumar
  * | Get all Ulbs by Ulb ID
  */
@@ -233,23 +233,6 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('change-citizen-pass', 'changeCitizenPass');                                               // Change the Password of The Citizen Using its Old Password 
         Route::post('otp/change-citizen-pass', 'changeCitizenPassByOtp');                                      // Change Password using OTP for Citizen
         Route::post('citizen-profile-details', 'profileDetails');
-    });
-
-    /**
-     * -----------------------------------------------------------------------------------------------
-     * | Created By - Anshu Kumar
-     * | Advertisement Module
-     * -----------------------------------------------------------------------------------------------
-     */
-
-    // Self Advertisement
-    Route::controller(SelfAdvertisementController::class)->group(function () {
-        Route::post('crud/store-selfadvertisement', 'storeSelfAdvertisement');                          // Save Self Advertisement
-        Route::get('crud/get-all-selfadvertisements-inbox', 'getAllSelfAdvertisementsInbox');           // Get All Self Advertisement Datas in Inbox
-        Route::get('crud/get-all-selfadvertisements-outbox', 'getAllSelfAdvertisementsOutbox');         // Get All Self Advertisement Datas in Outbox
-        Route::get('crud/get-selfadvertisement-by-id/{id}', 'getSelfAdvertisementByID');                // Get Self Advertisement By Id
-        Route::put('crud/update-selfadvertisement/{id}', 'updateSelfAdvertisement');                    // Update Self Advertisement
-        Route::delete('crud/del-selfadvertisement/{id}', 'deleteSelfAdvertisement');                    // Delete Self Advertisement By ID
     });
 
     /**

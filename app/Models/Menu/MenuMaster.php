@@ -33,7 +33,7 @@ class MenuMaster extends Model
         $newMenues->menu_string  =  $request->menuName;
         $newMenues->top_level  =  $request->topLevel;
         $newMenues->sub_level  =  $request->subLevel;
-        $newMenues->parent_serial  =  $request->parentSerial ?? 0;
+        $newMenues->parent_id  =  $request->parentSerial ?? 0;
         $newMenues->description  =  $request->description;
         $newMenues->serial = $request->serial;
         $newMenues->route = $request->route;
@@ -63,7 +63,7 @@ class MenuMaster extends Model
     {
         $a = MenuMaster::select(
             'menu_masters.id',
-            'menu_masters.parent_serial'
+            'menu_masters.parent_id'
         )
             ->join('wf_rolemenus', 'wf_rolemenus.menu_id', '=', 'menu_masters.id')
             ->where('menu_masters.is_deleted', false)
@@ -83,10 +83,10 @@ class MenuMaster extends Model
         return MenuMaster::select(
             'id',
             'menu_string',
-            'parent_serial',
+            'parent_id',
             'serial'
         )
-            ->where('parent_serial', 0)
+            ->where('parent_id', 0)
             ->where('is_deleted', false)
             ->orderBy("menu_masters.serial", "Asc");
     }
@@ -102,12 +102,12 @@ class MenuMaster extends Model
     }
     public function getChildrenNode($id)
     {
-        return MenuMaster::where('parent_serial', $id)
+        return MenuMaster::where('parent_id', $id)
             ->where('is_deleted', false)
             ->orderBy("menu_masters.serial", "Asc");
     }
 
- /**
+    /**
      * | Get Menues By Id
      */
     public function checkgetMenuById($id)
@@ -129,7 +129,7 @@ class MenuMaster extends Model
                     'serial'        => $request->serial         ?? $refValues->serial,
                     'description'   => $request->description    ?? $refValues->description,
                     'menu_string'   => $request->menuName       ?? $refValues->menu_string,
-                    'parent_serial' => $request->parentSerial   ?? $refValues->parent_serial,
+                    'parent_id' => $request->parentSerial   ?? $refValues->parent_id,
                     'route'         => $request->route          ?? $refValues->route,
                     'icon'          => $request->icon           ?? $refValues->icon,
                     'is_deleted'    => $request->delete         ?? $refValues->is_deleted,

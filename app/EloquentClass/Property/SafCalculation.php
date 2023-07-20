@@ -135,7 +135,7 @@ class SafCalculation
         $todayDate = Carbon::now();
         $this->_virtualDate = $todayDate->subYears(12)->format('Y-m-d');
         $this->_floors = $propertyDetails['floor'] ?? [];
-        $this->_ulbId = ($propertyDetails['ulbId']) ?? auth()->user()->ulb_id;
+        $this->_ulbId = ($propertyDetails['ulbId']) ?? ($this->_propertyDetails['auth']['ulb_id']);
 
         $ulbMstrs = UlbMaster::findOrFail($this->_ulbId);
         $this->_ulbType = $ulbMstrs->category;
