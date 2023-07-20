@@ -21,7 +21,6 @@ use App\Http\Controllers\Property\HoldingTaxController;
 use App\Http\Controllers\Property\PropertyController;
 use App\Http\Controllers\Property\ReportController;
 use App\Http\Controllers\Property\SafDocController;
-use App\Http\Controllers\Property\WaiverController;
 use App\Http\Controllers\Property\ZoneController;
 
 /**
@@ -491,10 +490,4 @@ Route::controller(ReportController::class)->group(function () {
 Route::controller(PropertyController::class)->group(function () {
   Route::post('getpropLatLong', 'getpropLatLong');                             // 01
   Route::post('upload-document', 'uploadDocument');                             // 01
-});
-
-
-Route::controller(WaiverController::class)->group(function () {
-  Route::post('createwaiver-', 'createwaiver');                             // 01
-                            // 01
 });
