@@ -390,7 +390,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
         Route::post('sub-menu/tree-structure', 'getTreeStructureMenu');             // Generation of the menu tree Structure        
         Route::post('sub-menu/get-children-node', 'getChildrenNode');               // Get the children menues
-        Route::post('menu/by-module', 'getMenuByModuleId');                         // Get menu by Module Id 
+        Route::post('menu/by-module', 'getMenuByModuleId');                          // Get menu by Module Id 
 
     });
 });
