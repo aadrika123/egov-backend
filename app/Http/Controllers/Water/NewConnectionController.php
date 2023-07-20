@@ -1270,11 +1270,16 @@ class NewConnectionController extends Controller
      */
     public function getSafHoldingDetails(Request $request)
     {
-        $request->validate([
-            'connectionThrough' => 'required|int|in:1,2',
-            'id'                => 'required',
-            'ulbId'             => 'required'
-        ]);
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'connectionThrough' => 'required|int|in:1,2',
+                'id'                => 'required',
+                'ulbId'             => 'required'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
         try {
             $mPropProperty          = new PropProperty();
             $mPropOwner             = new PropOwner();

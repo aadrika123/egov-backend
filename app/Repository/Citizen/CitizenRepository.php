@@ -80,7 +80,7 @@ class CitizenRepository implements iCitizenRepository
     public function getAllAppliedApplications($req)
     {
         try {
-            $userId = auth()->user()->id;
+            $userId = authUser($req)->id;
             $applications = array();
 
             if ($req->getMethod() == 'GET') {                                                       // For All Applications
@@ -448,7 +448,7 @@ class CitizenRepository implements iCitizenRepository
 
         $array = array();
         $array['workflowId'] = $req->workflowId;
-        $array['citizenId'] = auth()->user()->id;
+        $array['citizenId'] = authUser($req)->id;
         $array['refTableId'] = $refTable['workflow_name'] . '.id';
         $array['applicationId'] = $req->applicationId;
         $array['message'] = $req->message;
@@ -462,10 +462,10 @@ class CitizenRepository implements iCitizenRepository
     /**
      * | Get Transaction History
      */
-    public function getTransactionHistory()
+    public function getTransactionHistory($req)
     {
         try {
-            $userId = auth()->user()->id;
+            $userId = authUser($req)->id;
             $trans = PaymentRequest::where('citizen_id', $userId)
                 ->get();
             return responseMsg(true, "Data Fetched", remove_null($trans));
