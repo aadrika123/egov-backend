@@ -1618,7 +1618,7 @@ class WaterPaymentController extends Controller
     {
         try {
             $refUser        = authUser($request);
-            $waterModuleId  = config::get('module-constants.WATER_MODULE_ID');
+            $waterModuleId  = Config::get('module-constants.WATER_MODULE_ID');
             $paymentFor     = Config::get('waterConstaint.PAYMENT_FOR');
             $startingDate   = Carbon::createFromFormat('Y-m-d',  $request->demandFrom)->startOfMonth();
             $endDate        = Carbon::createFromFormat('Y-m-d',  $request->demandUpto)->endOfMonth();

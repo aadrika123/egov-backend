@@ -16,10 +16,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
      * | Jsk Controller
      Serial No : 01
      */
-    Route::controller(JskController::class)->group(function () {
-        Route::post('jsk/prop-details', 'propDtl');               // 01
-        Route::post('jsk/prop-dashboard', 'jskPropDashboard');
-    });
+
 
     /**
      * | State Dashboard
@@ -30,7 +27,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('state/ulb-wise-data', 'ulbWiseData');
         Route::post('state/collection-percentage', 'stateWiseCollectionPercentage');
         Route::post('state/district-wise-data', 'districtWiseData');
-        
+
         Route::post('state/property/DCB', 'stateDashboardDCB');                    //done
     });
 
