@@ -291,7 +291,7 @@ trait TradeTrait
     {
         try{
             $commonFuction = new CommonFunction();
-            $user = Auth()->user();
+            $user =authUser($refLicenc);
             $user_id = $user->id;
             $ulb_id = $user->ulb_id;
             $refWorkflowId = Config::get('workflow-constants.TRADE_MASTER_ID');

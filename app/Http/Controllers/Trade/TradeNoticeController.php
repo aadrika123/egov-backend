@@ -67,7 +67,7 @@ class TradeNoticeController extends Controller
             $rules["document"]="required|mimes:pdf,jpg,jpeg,png|max:2048";
             $request->validate($rules);
 
-            $user = Auth()->user();
+            $user = authUser($request);
             $userId = $user->id;
             $ulbId = $user->ulb_id;
             $refWorkflowId = $this->_WF_MASTER_Id;
@@ -114,7 +114,7 @@ class TradeNoticeController extends Controller
 
         try {
             // Trade Notice Application Update Current Role Updation
-            $user = Auth()->user();
+            $user = authUser($request);
             $user_id = $user->id;
             $ulb_id = $user->ulb_id;
             $refWorkflowId = $this->_WF_MASTER_Id;

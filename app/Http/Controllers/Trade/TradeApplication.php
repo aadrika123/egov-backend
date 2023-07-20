@@ -112,7 +112,7 @@ class TradeApplication extends Controller
     public function getApplyData(Request $request)
     {
         try {
-            $refUser            = Auth()->user();
+            $refUser            = authUser($request);
             $refUserId          = $refUser->id;
             $refUlbId           = $refUser->ulb_id ?? $request->ulbId;
             $refWorkflowId      = $this->_WF_MASTER_Id;
@@ -190,7 +190,8 @@ class TradeApplication extends Controller
     # Serial No : 01
     public function applyApplication(ReqAddRecorde $request)
     {
-        $refUser            = Auth()->user();
+   
+        $refUser            = authUser($request);
         $refUserId          = $refUser->id;
         $refUlbId           = $refUser->ulb_id;
         if ($refUser->user_type == $this->_TRADE_CONSTAINT["CITIZEN"]) {
@@ -327,7 +328,7 @@ class TradeApplication extends Controller
                 throw new Exception("Citizen Not Allowed");
             }
             // Variable Assignments
-            $user = Auth()->user();
+            $user = authUser($request);
             $userId = $user->id;
             $ulbId = $user->ulb_id;
             $mWfDocument = new WfActiveDocument();
@@ -415,9 +416,10 @@ class TradeApplication extends Controller
             $track = new WorkflowTrack();
             $mWfWorkflow = new WfWorkflow();
             $tradC = new Trade();
-            $refUser = Auth()->user();
+            $refUser =authUser($request);
             $refUserId = $refUser->id;
             $refUlbId = $refUser->ulb_id;
+           // $refUser->ulb_id = null;
             $refWorkflowId      = $this->_WF_MASTER_Id;
             $userRole = $this->_COMMON_FUNCTION->getUserRoll($refUserId, $refUlbId, $refWorkflowId);
             $wfAllRoles         = $this->_COMMON_FUNCTION->getWorkFlowAllRoles($refUserId, $refUlbId, $refWorkflowId, true);
@@ -497,7 +499,7 @@ class TradeApplication extends Controller
     # Serial No
     public function backToCitizen(Request $req)
     {
-        $user = Auth()->user();
+        $user =  authUser($req);
         $user_id = $user->id;
         $ulb_id = $user->ulb_id;
 
@@ -565,7 +567,7 @@ class TradeApplication extends Controller
     #please not use custome request
     public function postNextLevel(Request $request)
     {
-        $user = Auth()->user();
+        $user =  authUser($request);
         $user_id = $user->id;
         $ulb_id = $user->ulb_id;
 
@@ -732,7 +734,7 @@ class TradeApplication extends Controller
                 throw new Exception("Citizen Not Allowed");
             }
 
-            $user = Auth()->user();
+            $user =  authUser($req);
             $user_id = $user->id;
             $ulb_id = $user->ulb_id;
             $refWorkflowId = $this->_WF_MASTER_Id;

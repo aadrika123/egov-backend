@@ -70,7 +70,7 @@ class TradeNotice implements ITradeNotice
     }
     public function addDenail(Request $request)
     {
-        $user = Auth()->user();
+        $user = authUser($request);
         $userId = $user->id;
         $ulbId = $user->ulb_id;
         try {
@@ -141,7 +141,7 @@ class TradeNotice implements ITradeNotice
     {
         try {
             $data = (array)null;
-            $user = Auth()->user();
+            $user = authUser($request);
             $user_id = $user->id;
             $ulb_id = $user->ulb_id;
             $workflow_id = $this->_WF_MASTER_Id;
@@ -201,7 +201,7 @@ class TradeNotice implements ITradeNotice
     public function outbox(Request $request)
     {
         try {
-            $user = Auth()->user();
+            $user = authUser($request);
             $user_id = $user->id;
             $ulb_id = $user->ulb_id;
             $refWorkflowId = $this->_WF_MASTER_Id;
@@ -268,7 +268,7 @@ class TradeNotice implements ITradeNotice
     public function specialInbox(Request $request)
     {
         try {
-            $refUser        = Auth()->user();
+            $refUser        = authUser($request);
             $refUserId      = $refUser->id;
             $refUlbId       = $refUser->ulb_id;
             $refWorkflowId  = $this->_WF_MASTER_Id;
@@ -318,7 +318,7 @@ class TradeNotice implements ITradeNotice
     public function btcInbox(Request $request)
     {
         try {
-            $refUser        = Auth()->user();
+            $refUser        = authUser($request);
             $refUserId      = $refUser->id;
             $refUlbId       = $refUser->ulb_id;
             $refWorkflowId  = $this->_WF_MASTER_Id;
@@ -405,7 +405,7 @@ class TradeNotice implements ITradeNotice
         try {
             $applicationId = $request->applicationId;
             $data = (array)null;
-            $user = Auth()->user();
+            $user = authUser($request);
             $user_id = $user->id;
             $ulb_id = $user->ulb_id;
             $workflow_id = $this->_WF_MASTER_Id;
@@ -427,7 +427,7 @@ class TradeNotice implements ITradeNotice
     {
         try {
             $data = (array)null;
-            $user = Auth()->user();
+            $user = authUser($req);
             $user_id = $user->id;
             $ulb_id = $user->ulb_id;
             $refWorkflowId = $this->_WF_MASTER_Id;

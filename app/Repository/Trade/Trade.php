@@ -110,7 +110,7 @@ class Trade implements ITrade
      * | add records only ["ONLINE","JSK","UTC","TC","SUPER ADMIN","TL"]
      * |----------------------------------------------
      * | @var mDenialAmount      = 0
-     * | @var refUser            = Auth()->user()
+     * | @var refUser            = Auth()->user
      * | @var refUserId          = refUser->id      | loging user Id
      * | @var refUlbId           = refUser->ulb_id  | loging user ulb Id
      * | @var refUlbDtl          = UlbMaster::find(refUlbId) | 
@@ -171,7 +171,7 @@ class Trade implements ITrade
     {
         try {
             #------------------------ Declaration-----------------------           
-            $refUser            = Auth()->user();
+            $refUser            = authUser($request);
             $refUserId          = $refUser->id;
             $refUlbId           = $refUser->ulb_id ?? $request->ulbId;
             $refUlbDtl          = UlbMaster::find($refUlbId);
@@ -570,7 +570,7 @@ class Trade implements ITrade
      * | --------------------descriptin------------------------------------
      * | make Payment only ["JSK","UTC","TC","SUPER ADMIN","TL"]
      * |-------------------------------------------------------------------
-     * | @var refUser        = Auth()->user()
+     * | @var refUser        = Auth()->user
      * | @var refUserId      = refUser->id          | loging user Id
      * | @var refUlbId       = refUser->ulb_id      | loging user Ulb Id
      * | @var refWorkflowId  = $this->_WF_MASTER_Id
@@ -665,7 +665,7 @@ class Trade implements ITrade
     public function paymentCounter(Request $request)
     {
         try {
-            $refUser        = Auth()->user();
+            $refUser        = authUser($request);
             $refUserId      = $refUser->id;
             $refUlbId       = $refUser->ulb_id;
             $refWorkflowId  = $this->_WF_MASTER_Id;
@@ -877,7 +877,7 @@ class Trade implements ITrade
     public function updateLicenseBo(Request $request)
     {
         try {
-            $refUser            = Auth()->user();
+            $refUser            = authUser($request);
             $refUserId          = $refUser->id;
             $refUlbId           = $refUser->ulb_id;
             $refWorkflowId = $this->_WF_MASTER_Id;
@@ -921,7 +921,7 @@ class Trade implements ITrade
     }
     public function updateBasicDtl(Request $request)
     {
-        $user       = Auth()->user();
+        $user       = authUser($request);
         $refUserId  = $user->id;
         $refUlbId   = $user->ulb_id;
         $redis      = new Redis;
@@ -1072,7 +1072,7 @@ class Trade implements ITrade
     # Serial No : 07
     public function documentVirify(Request $request)
     {
-        $user = Auth()->user();
+        $user = authUser($request);
         $user_id = $user->id;
         $ulb_id = $user->ulb_id;
         $workflow_id = $this->_WF_MASTER_Id;
@@ -1202,7 +1202,7 @@ class Trade implements ITrade
             $mCustomDetails = new CustomDetail();
             $forwardBackward = new WorkflowMap;
             $id = $request->applicationId;
-            $refUser        = Auth()->user();
+            $refUser        = authUser($request);
             $refUserId      = $refUser->id;
             $refUlbId       = $refUser->ulb_id;
             $refWorkflowId  = $this->_WF_MASTER_Id;
@@ -1220,7 +1220,7 @@ class Trade implements ITrade
             $refApplication->valid_upto = $refApplication->valid_upto?Carbon::parse($refApplication->valid_upto)->format("d-m-Y"):"";
             $refApplication->establishment_date = $refApplication->establishment_date?Carbon::parse($refApplication->establishment_date)->format("d-m-Y"):"";
             
-            $mStatus = $this->applicationStatus($id);
+            $mStatus = $this->applicationStatus($id,false,$request); //$id
             $mItemName      = "";
             $mCods          = "";
             if (trim($refApplication->nature_of_bussiness)) {
@@ -1331,7 +1331,7 @@ class Trade implements ITrade
     public function readDenialdtlbyNoticno(Request $request)
     {
         $data = (array)null;
-        $refUser = Auth()->user();
+        $refUser = authUser($request);
         $refUlbId = $refUser->ulb_id ?? $request->ulbId;
         $mNoticeNo = null;
         $mNowDate = Carbon::now()->format('Y-m-d'); // todays date
@@ -1409,7 +1409,7 @@ class Trade implements ITrade
     # Serial No : 11 
     public function isvalidateSaf(Request $request)
     {
-        $ferUser = Auth()->user();
+        $ferUser = authUser($request);
         $ferUlbId = $ferUser->ulb_id ?? $request->ulbId;
         if ($request->getMethod() == "POST") {
             $refWorkflowId      = $this->_WF_MASTER_Id;
@@ -1441,7 +1441,7 @@ class Trade implements ITrade
     # Serial No : 12 
     public function isvalidateHolding(Request $request)
     {
-        $refUser = Auth()->user();
+        $refUser = authUser($request);
         $refUserId = $refUser->id;
         $refUlbId = $refUser->ulb_id ?? $request->ulbId;
         if ($request->getMethod() == "POST") {
@@ -1479,7 +1479,7 @@ class Trade implements ITrade
      * |-------------------Request--------------------------------------
      * |    1. licenceNo
      * |-----------------------------------------------------------------
-     * | @var refUser    = Auth()->user()
+     * | @var refUser    = Auth()->user
      * | @var refUserId  = refUser->id
      * | @var refUlbId   = refUser->ulb_id
      * | @var mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d')
@@ -1496,7 +1496,7 @@ class Trade implements ITrade
     public function searchLicenceByNo(Request $request) # reniwal/surrend/amendment
     {
         try {
-            $refUser    = Auth()->user();
+            $refUser    = authUser($request);
             $refUlbId   = $refUser->ulb_id ?? $request->ulbId;
             $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
             $refWorkflowId      = $this->_WF_MASTER_Id;
@@ -1638,14 +1638,14 @@ class Trade implements ITrade
      * |    2. entityName
      * |
      * |----------------------------------------------------------------------------
-     * | @var refUser   = Auth()->user()
+     * | @var refUser   = Auth()->user
      * | @var refUlbId  = refUser->ulb_id
      * | @var mInputs   = request->all() 
      */
     public function readApplication(Request $request)
     {
         try {
-            $refUser    = Auth()->user();
+            $refUser    = authUser($request);
             $refUlbId   = $refUser->ulb_id;
             $mInputs    = $request->all();
             DB::enableQueryLog();
@@ -1824,7 +1824,7 @@ class Trade implements ITrade
     public function postEscalate(Request $request)
     {
         try {
-            $userId = auth()->user()->id;
+            $userId = authUser($request)->id;
             // Validation Rule
             $rules = [
                 "escalateStatus" => "required|int",
@@ -1903,7 +1903,7 @@ class Trade implements ITrade
      * |    4.  toDate  -> optinal 
      * |
      * |----------------------------------------------------------------------------------
-     * | @var refUser        = Auth()->user()
+     * | @var refUser        = Auth()->user
      * | @var refUserId      = refUser->id
      * | @var refUlbId       = refUser->ulb_id
      * | @var refWorkflowId  = $this->_WF_MASTER_Id
@@ -1919,7 +1919,7 @@ class Trade implements ITrade
     public function inbox(Request $request)
     {
         try {
-            $refUser        = Auth()->user();
+            $refUser        = authUser($request);
             $refUserId      = $refUser->id;
             $refUlbId       = $refUser->ulb_id;
             $refWorkflowId  = $this->_WF_MASTER_Id;
@@ -2005,7 +2005,7 @@ class Trade implements ITrade
     public function outbox(Request $request)
     {
         try {
-            $user = Auth()->user();
+            $user = authUser($request);
             $user_id = $user->id;
             $ulb_id = $user->ulb_id;
             $refWorkflowId = $this->_WF_MASTER_Id;
@@ -2087,7 +2087,7 @@ class Trade implements ITrade
     public function specialInbox(Request $request)
     {
         try {
-            $refUser        = Auth()->user();
+            $refUser        = authUser($request);
             $refUserId      = $refUser->id;
             $refUlbId       = $refUser->ulb_id;
             $refWorkflowId  = $this->_WF_MASTER_Id;
@@ -2163,7 +2163,7 @@ class Trade implements ITrade
     public function btcInbox(Request $request)
     {
         try {
-            $refUser        = Auth()->user();
+            $refUser        = authUser($request);
             $refUserId      = $refUser->id;
             $refUlbId       = $refUser->ulb_id;
             $refWorkflowId  = $this->_WF_MASTER_Id;
@@ -2242,7 +2242,7 @@ class Trade implements ITrade
     public function approvedApplication(Request $request)
     {
         try {
-            $refUser            = Auth()->user();
+            $refUser            = authUser($request);
             $refUserId          = $refUser->id;
             $refUlbId           = $refUser->ulb_id ?? 0;
             $refWorkflowId      = $this->_WF_MASTER_Id;
@@ -2858,12 +2858,12 @@ class Trade implements ITrade
     {
         try {
             $mRegex     = '/^[a-zA-Z1-9][a-zA-Z1-9\. \s]+$/';
-            $userId = auth()->user()->id;
-            $ulbId  = auth()->user()->ulb_id;
+            $userId = authUser($request)->id;
+            $ulbId  = authUser($request)->ulb_id;
             $role_id = 0;
             $refWorkflowId = $this->_WF_MASTER_Id;
             $role = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $refWorkflowId);
-            if ($role && auth()->user()->gettable()=='users') {
+            if ($role && authUser($request)->getTable()=='users') {
                 $role_id = $role->role_id??0;
             }
 
@@ -2888,7 +2888,8 @@ class Trade implements ITrade
             $metaReqs['refTableDotId'] = 'active_trade_licences';
             $metaReqs['refTableIdValue'] = $refLicense->id;
             $metaReqs['senderRoleId'] = $role_id;
-            if(auth()->user()->gettable()=='users')
+            if ($role && authUser($request)->getTable() == 'users')
+
             {
                 $metaReqs['user_id'] = $userId;
             }
@@ -3567,9 +3568,9 @@ class Trade implements ITrade
         $path = (config('app.url') . '/api/getImageLink?path=' . $path);
         return $path;
     }
-    public function applicationStatus($licenceId,$docChequ2=true)
+    public function applicationStatus($licenceId,$docChequ2=true,$request)
     {
-        $refUser        = Auth()->user();
+        $refUser        = authUser($request);
         $refUserId      = $refUser->id ?? 0;
         $refUlbId       = $refUser->ulb_id ?? 0;
         $refWorkflowId  = $this->_WF_MASTER_Id;
@@ -3686,7 +3687,7 @@ class Trade implements ITrade
 
     public function checkWorckFlowForwardBackord(Request $request)
     {
-        $user = Auth()->user();
+        $user = authUser($request);
         $ulb_id = $user->ulb_id ?? $request->ulb_id;
         $refWorkflowId = $this->_WF_MASTER_Id;
         $allRoles = collect($this->_COMMON_FUNCTION->getAllRoles($user->id, $ulb_id, $refWorkflowId, 0, true));

@@ -75,6 +75,7 @@ class TradeCitizen implements ITradeCitizen
         ];
         
     }
+
     public function addRecord(Request $request)
     {
         $this->_META_DATA["apiId"] = "c2";
@@ -82,7 +83,7 @@ class TradeCitizen implements ITradeCitizen
         $this->_META_DATA["action"]    = $request->getMethod();
         $this->_META_DATA["deviceId"] = $request->ip();        
         try {
-            $refUser            = Auth()->user();
+            $refUser            = authUser($request);
             $refUserId          = $refUser->id;
             $refUlbId           = $request->ulbId;
             $refWorkflowId      = $this->_WF_MASTER_Id;
@@ -145,10 +146,10 @@ class TradeCitizen implements ITradeCitizen
             );
         }
     }
-    public function razorPayResponse($args)
+    public function razorPayResponse($args,$request)
     {
         try {
-            $refUser        = Auth()->user();
+            $refUser        = authUser($request);
             $refUserId      = $refUser->id ?? $args["userId"];
             $refUlbId       = $refUser->ulb_id ?? $args["ulbId"];
             $refWorkflowId  = $this->_WF_MASTER_Id;
@@ -316,7 +317,7 @@ class TradeCitizen implements ITradeCitizen
     {
         try {
 
-            $refUser        = Auth()->user();
+            $refUser        = authUser($request);
             $refUserId      = $refUser->id;
             $refWorkflowId      = $this->_WF_MASTER_Id;
 
@@ -437,7 +438,7 @@ class TradeCitizen implements ITradeCitizen
             $final = $ActiveLicence->union($RejectedLicence)
                     ->union($ApprovedLicence)->union($OldLicence)
                     ->get();
-            $final->map(function($val) use($refUserId){
+            $final->map(function($val) use($refUserId,$request){
                 $option = [];
                 $nextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
                 $validUpto="";
@@ -459,7 +460,7 @@ class TradeCitizen implements ITradeCitizen
                     $option=[];
                 }
                 $val->option = $option;
-                $val->pending_at = $this->_REPOSITORY_TRADE->applicationStatus($val->id,false);                
+                $val->pending_at = $this->_REPOSITORY_TRADE->applicationStatus($val->id,false,$request);                
                 if(str_contains(strtoupper($val->pending_at),strtoupper("All Required Documents Are Uploaded")))
                 {
                     $val->document_upload_status =1; 
@@ -485,14 +486,14 @@ class TradeCitizen implements ITradeCitizen
         try {
            
             $id = $request->id;
-            $refUser        = Auth()->user(); 
+            $refUser        = authUser($request); 
             $refUserId      = $refUser->id;
             $refUlbId       = $refUser->ulb_id ?? 0;
             $refWorkflowId  = $this->_WF_MASTER_Id;
             $modul_id = $this->_MODULE_ID;
             $mUserType      = $this->_COMMON_FUNCTION->userType($refWorkflowId);
             $refApplication = $this->_REPOSITORY_TRADE->getAllLicenceById($id);
-            $mStatus = $this->_REPOSITORY_TRADE->applicationStatus($id);
+            $mStatus = $this->_REPOSITORY_TRADE->applicationStatus($id,false,$request); //$id
             $mItemName      = "";
             $mCods          = "";
             if(!$refApplication)

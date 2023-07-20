@@ -260,7 +260,7 @@ class ReportController extends Controller
         );
         $request->request->add(["metaData" => ["tr10.2.2.2", 1.1, null, $request->getMethod(), null,]]);
 
-        $refUser        = Auth()->user();
+        $refUser        =  authUser($request);
         $refUserId      = $refUser->id;
         $ulbId          = $refUser->ulb_id;
         if ($request->ulbId) {
@@ -322,7 +322,7 @@ class ReportController extends Controller
         $metaData = collect($request->metaData)->all();
         list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
         try{
-            $refUser        = Auth()->user();
+            $refUser        = authUser($request);
             $refUserId      = $refUser->id;
             $ulbId          = $refUser->ulb_id;
             if($request->ulbId)
@@ -350,7 +350,7 @@ class ReportController extends Controller
         list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
         try
         {
-            $refUser        = Auth()->user();
+            $refUser        = authUser($request);
             $refUserId      = $refUser->id;
             $ulbId          = $refUser->ulb_id;
             if($request->ulbId)

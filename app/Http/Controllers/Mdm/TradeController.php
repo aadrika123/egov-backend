@@ -68,7 +68,7 @@ class TradeController extends Controller
     public function addFirmType(Request $request)
     {
         try{
-            $user = Auth()->user();
+            $user = authUser($request);
             $userId = $user->id??0;
             $ulbId = $user->ulb_id??0;
             $role = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_WF_MASTER_Id);            
@@ -152,7 +152,7 @@ class TradeController extends Controller
     {
 
         try{
-            $user = Auth()->user();
+            $user = authUser($request);
             $userId = $user->id??0;
             $ulbId = $user->ulb_id??0;
             $role = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_WF_MASTER_Id);            
@@ -206,7 +206,7 @@ class TradeController extends Controller
     public function addApplicationType(Request $request)
     {
         try{
-            $user = Auth()->user();
+            $user = authUser($request);
             $userId = $user->id??0;
             $ulbId = $user->ulb_id??0;
             $role = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_WF_MASTER_Id);            
@@ -290,7 +290,7 @@ class TradeController extends Controller
     {
 
         try{
-            $user = Auth()->user();
+            $user = authUser($request);
             $userId = $user->id??0;
             $ulbId = $user->ulb_id??0;
             $role = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_WF_MASTER_Id);            
@@ -344,7 +344,7 @@ class TradeController extends Controller
     public function addCategoryType(Request $request)
     {
         try{
-            $user = Auth()->user();
+            $user = authUser($request);
             $userId = $user->id??0;
             $ulbId = $user->ulb_id??0;
             $role = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_WF_MASTER_Id);            
@@ -428,7 +428,7 @@ class TradeController extends Controller
     {
 
         try{
-            $user = Auth()->user();
+            $user = authUser($request);
             $userId = $user->id??0;
             $ulbId = $user->ulb_id??0;
             $role = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_WF_MASTER_Id);            
@@ -483,7 +483,7 @@ class TradeController extends Controller
     public function addItemType(Request $request)
     {
         try{
-            $user = Auth()->user();
+            $user = authUser($request);
             $userId = $user->id??0;
             $ulbId = $user->ulb_id??0;
             $role = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_WF_MASTER_Id);            
@@ -573,7 +573,7 @@ class TradeController extends Controller
     {
 
         try{
-            $user = Auth()->user();
+            $user = authUser($request);
             $userId = $user->id??0;
             $ulbId = $user->ulb_id??0;
             $role = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_WF_MASTER_Id);            
@@ -629,7 +629,7 @@ class TradeController extends Controller
     public function addRate(Request $request)
     {
         try{
-            $user = Auth()->user();
+            $user = authUser($request);
             $userId = $user->id??0;
             $ulbId = $user->ulb_id??0;
             $role = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_WF_MASTER_Id);            
@@ -660,7 +660,7 @@ class TradeController extends Controller
                 ]
             );
             
-            $user = Auth()->user();
+            $user = authUser($request);
             $user_id = $user->id;
             
            
@@ -704,7 +704,7 @@ class TradeController extends Controller
     public function rate(Request $request)
     {
         try{  
-            $user = Auth()->user();
+            $user = authUser($request);
             $userId = $user->id??0;
             $ulbId = $user->ulb_id??0;
             $role = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_WF_MASTER_Id); 
@@ -733,7 +733,7 @@ class TradeController extends Controller
     {
 
         try{
-            $user = Auth()->user();
+            $user = authUser($request);
             $userId = $user->id??0;
             $ulbId = $user->ulb_id??0;
             $role = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_WF_MASTER_Id);            
@@ -799,7 +799,7 @@ class TradeController extends Controller
     public function addOwnershipType(Request $request)
     {
         try{
-            $user = Auth()->user();
+            $user = authUser($request);
             $userId = $user->id??0;
             $ulbId = $user->ulb_id??0;
             $role = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_WF_MASTER_Id);            
@@ -816,7 +816,7 @@ class TradeController extends Controller
                 ]
             );
             
-            $user = Auth()->user();
+            $user = authUser($request);
             $user_id = $user->id;
             
            
@@ -893,7 +893,7 @@ class TradeController extends Controller
     {
 
         try{
-            $user = Auth()->user();
+            $user = authUser($request);
             $userId = $user->id??0;
             $ulbId = $user->ulb_id??0;
             $role = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_WF_MASTER_Id);            

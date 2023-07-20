@@ -137,7 +137,7 @@ class TradeCitizenController extends Controller
             {
                 throw New Exception("Counter User Not Allowed");
             }
-            $refUser            = Auth()->user();
+            $refUser            = authUser($request);
             $refUserId          = $refUser->id;
             $refUlbId           = $request->ulbId;
             $wardId = $request->firmDetails["wardNo"];
@@ -197,7 +197,7 @@ class TradeCitizenController extends Controller
         $this->_META_DATA["deviceId"] = $request->ip();
 
         $data = (array)null;
-        $refUser = Auth()->user();
+        $refUser = authUser($request);
         $refUlbId = $request->ulbId;
         $mNoticeNo = null;
         $mNowDate = Carbon::now()->format('Y-m-d'); // todays date
@@ -277,7 +277,7 @@ class TradeCitizenController extends Controller
                 throw New Exception("Counter User Not Allowed");
             }
             #------------------------ Declaration-----------------------
-            $refUser            = Auth()->user();
+            $refUser            = authUser($request);
             $refNoticeDetails   = null;
             $refWorkflowId      = $this->_WF_MASTER_Id;
             $mNoticeDate        = null;
@@ -385,10 +385,10 @@ class TradeCitizenController extends Controller
             );
         }
     }
-    public function razorPayResponse($args)
+    public function razorPayResponse($args,$request)
     {
         try {
-            $refUser        = Auth()->user();
+            $refUser        = authUser($request);
             $refUserId      = $refUser->id ?? $args["userId"];
             $refUlbId       = $refUser->ulb_id ?? $args["ulbId"];
             $refWorkflowId  = $this->_WF_MASTER_Id;
@@ -556,7 +556,7 @@ class TradeCitizenController extends Controller
             {
                 throw New Exception("Counter User Not Allowed");
             }
-            $refUser     = Auth()->user();
+            $refUser     = authUser($request);
             $application = null;
             $transection = null;
             $path = "/api/trade/paymentReceipt/";
@@ -629,7 +629,7 @@ class TradeCitizenController extends Controller
     public function expiredLicence(Request $request)
     {
         try {
-            $citizenId = authUser()->id;
+            $citizenId = authUser($request)->id;
             $mApplicationTypeId = $request->applicationType;
             $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
 
@@ -654,9 +654,9 @@ class TradeCitizenController extends Controller
     }
 
     # Serial No
-    public function renewalList()
+    public function renewalList($request)
     {
-        $citizenId = authUser()->id;
+        $citizenId = authUser($request)->id;
         $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
 
         $data = TradeLicence::select('trade_licences.*')
@@ -676,10 +676,10 @@ class TradeCitizenController extends Controller
     }
 
     # Serial No
-    public function amendmentList()
+    public function amendmentList($request)
     {
         try {
-            $citizenId = authUser()->id;
+            $citizenId = authUser($request)->id;
             $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
             // DB::enableQueryLog();
             $data = TradeLicence::select('*')
@@ -701,10 +701,10 @@ class TradeCitizenController extends Controller
     }
 
     # Serial No
-    public function surrenderList()
+    public function surrenderList($request)
     { 
         try {
-            $citizenId = authUser()->id;
+            $citizenId = authUser($request)->id;
             $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
 
             $data = TradeLicence::select('*')
@@ -728,7 +728,7 @@ class TradeCitizenController extends Controller
     public function readAtachedLicenseDtl(Request $request)
     {
         try{
-            $refUser        = Auth()->user();
+            $refUser        = authUser($request);
             $refUserId      = $refUser->id;
             $refWorkflowId      = $this->_WF_MASTER_Id;
 

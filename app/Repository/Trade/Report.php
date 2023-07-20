@@ -59,7 +59,7 @@ class Report implements IReport
         $metaData= collect($request->metaData)->all();
         list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
         try{
-            $refUser        = Auth()->user();
+            $refUser        = authUser($request);
             $refUserId      = $refUser->id;
             $ulbId          = $refUser->ulb_id;
             $wardId = null;
@@ -298,7 +298,7 @@ class Report implements IReport
         $metaData= collect($request->metaData)->all();
         list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
         try{
-            $refUser        = Auth()->user();
+            $refUser        = authUser($request);
             $refUserId      = $refUser->id;
             $ulbId          = $refUser->ulb_id;
             $wardId = null;
@@ -384,7 +384,7 @@ class Report implements IReport
         $metaData= collect($request->metaData)->all();
         list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
         try{
-            $refUser        = Auth()->user();
+            $refUser        = authUser($request);
             $refUserId      = $refUser->id;
             $ulbId          = $refUser->ulb_id;
             $wardId = null;
@@ -518,7 +518,7 @@ class Report implements IReport
         $metaData= collect($request->metaData)->all();
         list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
         try{
-            $refUser        = Auth()->user();
+            $refUser        = authUser($request);
             $refUserId      = $refUser->id;
             $ulbId          = $refUser->ulb_id;
             $wardId = null;
@@ -667,7 +667,7 @@ class Report implements IReport
         $metaData= collect($request->metaData)->all();
         list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
         try{
-            $refUser        = Auth()->user();
+            $refUser        = authUser($request);
             $refUserId      = $refUser->id;
             $ulbId          = $refUser->ulb_id;
             $fiYear = getFY();
@@ -736,7 +736,7 @@ class Report implements IReport
         $metaData = collect($request->metaData)->all();
         list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
         try{
-            $refUser        = Auth()->user();
+            $refUser        = authUser($request);
             $refUserId      = $refUser->id;
             $ulbId          = $refUser->ulb_id;
             $wardId = null;
@@ -791,7 +791,7 @@ class Report implements IReport
         $metaData= collect($request->metaData)->all();
         list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
         try{
-            $refUser        = Auth()->user();
+            $refUser        = authUser($request);
             $refUserId      = $refUser->id;
             $ulbId          = $refUser->ulb_id;
             $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
@@ -955,7 +955,7 @@ class Report implements IReport
         $metaData= collect($request->metaData)->all();
         list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
         try{
-            $refUser        = Auth()->user();
+            $refUser        = authUser($request);
             $refUserId      = $refUser->id;
             $ulbId          = $refUser->ulb_id;
             $refWorkflowId      = $this->_WF_MASTER_Id;
@@ -1070,7 +1070,7 @@ class Report implements IReport
         $metaData= collect($request->metaData)->all();
         list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
         try{
-            $refUser        = Auth()->user();
+            $refUser        = authUser($request);
             $refUserId      = $refUser->id;
             $ulbId          = $refUser->ulb_id;
             $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
@@ -1264,7 +1264,7 @@ class Report implements IReport
         $metaData= collect($request->metaData)->all();
         list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
         try{
-            $refUser        = Auth()->user();
+            $refUser        = authUser($request);
             $refUserId      = $refUser->id;
             $ulbId          = $refUser->ulb_id;
             $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
@@ -1414,7 +1414,7 @@ class Report implements IReport
         $metaData= collect($request->metaData)->all();
         list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
         try{
-            $refUser        = Auth()->user();
+            $refUser        = authUser($request);
             $refUserId      = $refUser->id;
             $ulbId          = $refUser->ulb_id;
             $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
@@ -1462,7 +1462,7 @@ class Report implements IReport
         $metaData = collect($request->metaData)->all();
         list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
         try{
-            $refUser        = Auth()->user();
+            $refUser        = authUser($request);
             $refUserId      = $refUser->id;
             $ulbId          = $refUser->ulb_id;
             if ($request->ulbId) 
@@ -1527,7 +1527,7 @@ class Report implements IReport
         $metaData = collect($request->metaData)->all();
         list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
         try {
-            $refUser        = Auth()->user();
+            $refUser        = authUser($request);
             $refUserId      = $refUser->id;
             $ulbId          = $refUser->ulb_id;
             $roleId = $roleId2 = $userId = null;
@@ -1650,7 +1650,7 @@ class Report implements IReport
         $metaData = collect($request->metaData)->all();
         list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
         try {
-            $refUser        = Auth()->user();
+            $refUser        = authUser($request);
             $refUserId      = $refUser->id;
             $ulbId          = $refUser->ulb_id;
             $roleId = $roleId2 = $userId = null;
@@ -1744,7 +1744,7 @@ class Report implements IReport
         $metaData = collect($request->metaData)->all();
         list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
         try {
-            $refUser        = Auth()->user();
+            $refUser        = authUser($request);
             $refUserId      = $refUser->id;
             $ulbId          = $refUser->ulb_id;
             $roleId = $roleId2 = $userId = null;
@@ -1847,7 +1847,7 @@ class Report implements IReport
         $metaData = collect($request->metaData)->all();
         list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
         try{
-            $refUser        = Auth()->user();
+            $refUser        = authUser($request);
             $refUserId      = $refUser->id;
             $ulbId          = $refUser->ulb_id;
             $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
@@ -2105,7 +2105,7 @@ class Report implements IReport
         $metaData = collect($request->metaData)->all();
         list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
         try{
-            $refUser        = Auth()->user();
+            $refUser        = authUser($request);
             $refUserId      = $refUser->id;
             $ulbId          = $refUser->ulb_id;
             $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");

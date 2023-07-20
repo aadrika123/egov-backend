@@ -14,7 +14,7 @@ use App\Http\Controllers\Trade\ReportController;
  * | Created By-SandeepBara  
  */
 
-Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger','expireBearerToken']], function () {
+// Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger','expireBearerToken']], function () {
     /**
      *  -----------------------------------------------------------------
      * |                TRADE MODULE                                      |
@@ -124,9 +124,9 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
 
         Route::post('application/attached-list', "readAtachedLicenseDtl");
     });
-});
+// });
 
-Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {
+// Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {
     Route::controller(ReportController::class)->group(function () {
         Route::post("dashboard", "tradeDaseboard");
         Route::post("dashboard-application-collection", "applicationTypeCollection");
@@ -137,7 +137,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post("application/valid-expire-list", "valideAndExpired");
         Route::post("application/collection-summary", "CollectionSummary");
         Route::post("application/track-status", "ApplicantionTrackStatus");
-        Route::post("application/application-agent-notice", "applicationAgentNotice"); 
+        Route::post("application/application-agent-notice", "applicationAgentNotrequestice"); 
         Route::post("application/notice-summary", "noticeSummary");
         Route::post("application/levelwisependingform", "levelwisependingform"); 
         Route::post("application/leveluserpending", "levelUserPending"); 
@@ -149,7 +149,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('ward-list', 'WardList');
         Route::post('tc-list', 'TcList');
     });
-});
+// });
 
 Route::controller(TradeApplication::class)->group(function () {
     Route::get('payment-receipt/{id}/{transectionId}', 'paymentReceipt');
@@ -157,7 +157,7 @@ Route::controller(TradeApplication::class)->group(function () {
     Route::get('license-certificate/{id}', 'licenceCertificate');
 });
 
-Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {
+// Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {
     Route::controller(TradeController::class)->group(function () {
         // Route::post('firm-type-add', 'addFirmType');
         Route::post('firm-type-list', 'firmTypeList');
@@ -189,4 +189,4 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('ownership-type', 'ownershipType');
         // Route::post('ownership-type-update', 'updateOwnershipType');
     });
-});
+// });
