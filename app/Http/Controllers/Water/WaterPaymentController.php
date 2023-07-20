@@ -48,6 +48,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Redis;
 use Predis\Command\Redis\SELECT;
 
@@ -1623,20 +1624,25 @@ class WaterPaymentController extends Controller
             $endDate        = Carbon::createFromFormat('Y-m-d',  $request->demandUpto)->endOfMonth();
             $startingDate   = $startingDate->toDateString();
             $endDate        = $endDate->toDateString();
+            $url            = Config::get('razorpay.PAYMENT_GATEWAY_URL');
+            $endPoint       = Config::get('razorpay.PAYMENT_GATEWAY_END_POINT');
 
             # Demand Collection 
             DB::beginTransaction();
             $refDetails = $this->preOfflinePaymentParams($request, $startingDate, $endDate);
+            $myRequest = [
+                'amount'        => $request->amount,
+                'workflowId'    => 0,                                                                   // Static
+                'id'            => $request->consumerId,
+                'departmentId'  => $waterModuleId,
+                'ulbId'         => $refDetails['consumer']['ulb_id'],
+                'auth'          => $refUser
+            ];
+            // $temp = $this->saveGenerateOrderid($myRequest);
+            $temp = Http::withHeaders([])
+                ->post($url . $endPoint, $myRequest);                                                   // Static
 
-            $myRequest = new \Illuminate\Http\Request();
-            $myRequest->setMethod('POST');
-            $myRequest->request->add(['amount' => $request->amount]);
-            $myRequest->request->add(['workflowId' => 0]);
-            $myRequest->request->add(['id' => $request->consumerId]);
-            $myRequest->request->add(['departmentId' => $waterModuleId]);
-            $myRequest->request->add(['ulbId' => $refDetails['consumer']['ulb_id']]);
-            $temp = $this->saveGenerateOrderid($myRequest);
-
+            $temp = $temp['data'];
             $mWaterRazorPayRequest = new WaterRazorPayRequest();
             $mWaterRazorPayRequest->saveRequestData($request, $paymentFor['1'], $temp, $refDetails);
             DB::commit();

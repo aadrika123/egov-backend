@@ -39,6 +39,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
 use Predis\Configuration\Option\Exceptions;
@@ -241,11 +242,12 @@ class WaterNewConnection implements IWaterNewConnection
     {
         try {
             $refUser            = authUser($request);
-            $refUserId          = $refUser->id;
-            $refUlbId           = $refUser->ulb_id;
             $isRebate           = null;
-            $paramChargeCatagory = Config::get('waterConstaint.CONNECTION_TYPE');
-            $refRegulization = Config::get('waterConstaint.CHARGE_CATAGORY');
+
+            $paramChargeCatagory    = Config::get('waterConstaint.CONNECTION_TYPE');
+            $refRegulization        = Config::get('waterConstaint.CHARGE_CATAGORY');
+            $url                    = Config::get('razorpay.PAYMENT_GATEWAY_URL');
+            $endPoint               = Config::get('razorpay.PAYMENT_GATEWAY_END_POINT');
 
             $rules = [
                 'id'                => 'required|digits_between:1,9223372036854775807',
@@ -313,11 +315,18 @@ class WaterNewConnection implements IWaterNewConnection
                 if (!$totalAmount) {
                     throw new Exception("minimum 1 rs to be pay");
                 }
-                $myRequest->request->add(['amount' => $totalAmount]);
-                $myRequest->request->add(['workflowId' => $application->workflow_id]);
-                $myRequest->request->add(['id' => $application->id]);
-                $myRequest->request->add(['departmentId' => 2]);
-                $temp = $this->saveGenerateOrderid($myRequest);
+                $myRequest = [
+                    'amount'        => $totalAmount,
+                    'workflowId'    => $application->workflow_id,
+                    'id'            => $application->id,
+                    'departmentId'  => 2,
+                    'auth'          => $refUser,
+                ];
+                // $temp = $this->saveGenerateOrderid($myRequest);
+                $temp = Http::withHeaders([])
+                    ->post($url . $endPoint, $myRequest);                                                   // Static
+                $temp = $temp['data'];
+                
                 $RazorPayRequest = new WaterRazorPayRequest;
                 $RazorPayRequest->related_id        = $application->id;
                 $RazorPayRequest->payment_from      = $cahges['charge_for'];
