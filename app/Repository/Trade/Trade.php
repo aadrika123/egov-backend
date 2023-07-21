@@ -1919,9 +1919,10 @@ class Trade implements ITrade
     public function inbox(Request $request)
     {
         try {
-            $refUser        = authUser($request);
-            $refUserId      = $refUser->id;
-            $refUlbId       = $refUser->ulb_id;
+            $refUser = authUser($request);
+            $refUlbId = property_exists($refUser, 'ulb_id') ? $refUser->ulb_id : null;
+            $ulbId = $request->input('ulbId', $refUlbId);
+            $refUserId = $refUser->id;
             $refWorkflowId  = $this->_WF_MASTER_Id;
             $refWfWorkflow     = WfWorkflow::where('wf_master_id', $refWorkflowId)
                 ->where('ulb_id', $refUlbId)

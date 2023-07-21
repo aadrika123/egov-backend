@@ -350,19 +350,12 @@ class ReportController extends Controller
     try {
         $refUser = authUser($request);
         $refUserId = $refUser->id;
-
-        // Check if the 'ulb_id' property exists in $refUser
         if (property_exists($refUser, 'ulb_id')) {
             $ulbId = $refUser->ulb_id;
         } else {
-            // If 'ulb_id' doesn't exist, handle the situation accordingly.
-            // For example, set a default value or throw an error.
-            // In this case, I'm setting $ulbId to null as an example:
+            
             $ulbId = null;
         }
-
-        // You can also use the $request->input('ulbId') to get the value if it exists.
-        // If it doesn't exist, $ulbId will still hold the value from $refUser.
         if ($request->has('ulbId')) {
             $ulbId = $request->input('ulbId');
         }
@@ -380,39 +373,79 @@ class ReportController extends Controller
 }
 
 
-    public function TcList(Request $request)
-    {
-        $request->request->add(["metaData" => ["tr14.1", 1.1, null, $request->getMethod(), null,]]);
-        $metaData = collect($request->metaData)->all();
-        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
-        try
-        {
-            $refUser        = authUser($request);
-            $refUserId      = $refUser->id;
-            $ulbId          = $refUser->ulb_id;
-            if($request->ulbId)
-            {
-                $ulbId  =   $request->ulbId;
-            }
-            $rolse = $this->_common->getAllRoles($refUserId,$ulbId,$this->_WF_MASTER_Id,0,true);
-            $rolseIds = collect($rolse)->implode("id",",");
-            if(!$rolseIds)
-            {
-                throw new Exception("No Anny Role Found In This Ulb");
-            } 
-            $tcList = DB::table("users")
-                    ->select(DB::raw("users.id,users.user_name, wf_roles.role_name"))
-                    ->JOIN("wf_roleusermaps","wf_roleusermaps.user_id","=","users.id")
-                    ->JOIN("wf_roles","wf_roles.id","wf_roleusermaps.wf_role_id")
-                    ->WHERE("wf_roleusermaps.is_suspended",FALSE)
-                    ->WHERE("wf_roles.is_suspended",FALSE)
-                    ->WHEREIN("wf_roles.id",explode(",",$rolseIds))
-                    ->GET();
-            return responseMsgs(true, "", remove_null($tcList), $apiId, $version, $queryRunTime, $action, $deviceId);
-        } 
-        catch(Exception $e)
-        {
-            return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
+//     public function TcList(Request $request)
+//     {
+//         $request->request->add(["metaData" => ["tr14.1", 1.1, null, $request->getMethod(), null,]]);
+//         $metaData = collect($request->metaData)->all();
+//         list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
+//         try
+//         {
+//             $refUser        = authUser($request);
+//             $refUserId      = $refUser->id;
+//             $ulbId          = $refUser->ulb_id;
+//             if($request->ulbId)
+//             {
+//                 $ulbId  =   $request->ulbId;
+//             }
+//             $rolse = $this->_common->getAllRoles($refUserId,$ulbId,$this->_WF_MASTER_Id,0,true);
+//             $rolseIds = collect($rolse)->implode("id",",");
+//             if(!$rolseIds)
+//             {
+//                 throw new Exception("No Anny Role Found In This Ulb");
+//             } 
+//             $tcList = DB::table("users")
+//                     ->select(DB::raw("users.id,users.user_name, wf_roles.role_name"))
+//                     ->JOIN("wf_roleusermaps","wf_roleusermaps.user_id","=","users.id")
+//                     ->JOIN("wf_roles","wf_roles.id","wf_roleusermaps.wf_role_id")
+//                     ->WHERE("wf_roleusermaps.is_suspended",FALSE)
+//                     ->WHERE("wf_roles.is_suspended",FALSE)
+//                     ->WHEREIN("wf_roles.id",explode(",",$rolseIds))
+//                     ->GET();
+//             return responseMsgs(true, "", remove_null($tcList), $apiId, $version, $queryRunTime, $action, $deviceId);
+//         } 
+//         catch(Exception $e)
+//         {
+//             return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
+//         }
+//     }
+// }
+public function TcList(Request $request)
+{
+    $request->request->add(["metaData" => ["tr14.1", 1.1, null, $request->getMethod(), null]]);
+    $metaData = collect($request->metaData)->all();
+    list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
+    try {
+        $refUser = authUser($request);
+        $refUserId = $refUser->id;
+
+        if (property_exists($refUser, 'ulb_id')) {
+            $ulbId = $refUser->ulb_id;
+        } else {
+            $ulbId = null;
         }
+
+        if ($request->has('ulbId')) {
+            $ulbId = $request->input('ulbId');
+        }
+
+        $rolse = $this->_common->getAllRoles($refUserId, $ulbId, $this->_WF_MASTER_Id, 0, true);
+        $rolseIds = collect($rolse)->implode("id", ",");
+        if (!$rolseIds) {
+            throw new Exception("No Any Role Found In This Ulb");
+        }
+
+        $tcList = DB::table("users")
+            ->select(DB::raw("users.id, users.user_name, wf_roles.role_name"))
+            ->join("wf_roleusermaps", "wf_roleusermaps.user_id", "=", "users.id")
+            ->join("wf_roles", "wf_roles.id", "wf_roleusermaps.wf_role_id")
+            ->where("wf_roleusermaps.is_suspended", false)
+            ->where("wf_roles.is_suspended", false)
+            ->whereIn("wf_roles.id", explode(",", $rolseIds))
+            ->get();
+
+        return responseMsgs(true, "", remove_null($tcList), $apiId, $version, $queryRunTime, $action, $deviceId);
+    } catch (Exception $e) {
+        return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
     }
+}
 }

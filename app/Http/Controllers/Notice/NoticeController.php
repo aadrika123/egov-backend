@@ -284,8 +284,19 @@ class NoticeController extends Controller
             $request->validate($rules);
 
 
-            $user = Auth()->user();
+            $user = authUser($request);
             $userId = $user->id;
+    
+            // Check if the 'ulb_id' property exists in $user
+            if (property_exists($user, 'ulb_id')) {
+                $ulbId = $user->ulb_id;
+            } else {
+              $ulbId = null;
+            }
+            if ($request->has('ulbId')) {
+                $ulbId = $request->input('ulbId');
+            }
+    
             $ulbId = $user->ulb_id;
             $role1 = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_GENERAL_NOTICE_WF_MASTER_Id);
             $role2 = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $this->_PAYMENT_NOTICE_WF_MASTER_Id);
@@ -369,7 +380,7 @@ class NoticeController extends Controller
     {
 
         try {
-            $user = Auth()->user();
+            $user = authUser($request);
             $user_id = $user->id;
             $ulb_id = $user->ulb_id;
         
