@@ -276,9 +276,14 @@ class WaterNewConnection implements IWaterNewConnection
                 $rebat = 0;
                 $amount = $cahges["amount"];
                 if (isset($request->isInstallment)) {
-                    $request->validate([
-                        'isInstallment' => 'nullable|in:yes,no'
-                    ]);
+                    $validated = Validator::make(
+                        $request->all(),
+                        [
+                            'isInstallment' => 'nullable|in:yes,no'
+                        ]
+                    );
+                    if ($validated->fails())
+                        return validationError($validated);
                 }
                 switch ($request->isInstallment) {
                     case ("no"):
@@ -292,9 +297,14 @@ class WaterNewConnection implements IWaterNewConnection
                         $cahges['charge_for'] = $refRegulization['REGULAIZATION'];
                         break;
                     case ("yes"):
-                        $request->validate([
-                            'penaltyIds' => 'required|array',
-                        ]);
+                        $validated = Validator::make(
+                            $request->all(),
+                            [
+                                'penaltyIds' => 'required|array',
+                            ]
+                        );
+                        if ($validated->fails())
+                            return validationError($validated);
                         if ($application->connection_type_id != $paramChargeCatagory['REGULAIZATION']) {
                             throw new Exceptions("Payment is not under Regulaization!");
                         }
@@ -326,7 +336,7 @@ class WaterNewConnection implements IWaterNewConnection
                 $temp = Http::withHeaders([])
                     ->post($url . $endPoint, $myRequest);                                                   // Static
                 $temp = $temp['data'];
-                
+
                 $RazorPayRequest = new WaterRazorPayRequest;
                 $RazorPayRequest->related_id        = $application->id;
                 $RazorPayRequest->payment_from      = $cahges['charge_for'];

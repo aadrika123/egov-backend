@@ -10,6 +10,7 @@ use App\Traits\Water\WaterTrait;
 use App\Traits\Workflow\Workflow;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Config;
 
 /**
@@ -44,9 +45,15 @@ class WaterConsumerWfController extends Controller
      */
     public function consumerInbox(Request $req)
     {
-        $req->validate([
-            'perPage' => 'nullable|integer',
-        ]);
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'perPage' => 'nullable|integer',
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+            
         try {
             $user                   = authUser($req);
             $pages                  = $req->perPage ?? 10;
@@ -84,9 +91,14 @@ class WaterConsumerWfController extends Controller
      */
     public function consumerOutbox(Request $req)
     {
-        $req->validate([
-            'perPage' => 'nullable|integer',
-        ]);
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'perPage' => 'nullable|integer',
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
         try {
             $user                   = authUser($req);
             $pages                  = $req->perPage ?? 10;
