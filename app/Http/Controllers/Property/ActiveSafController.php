@@ -83,6 +83,7 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use App\MicroServices\IdGenerator\HoldingNoGenerator;
+use Illuminate\Support\Facades\Http;
 
 class ActiveSafController extends Controller
 {
@@ -1613,6 +1614,9 @@ class ActiveSafController extends Controller
             $ipAddress = getClientIpAddress();
             $mPropRazorPayRequest = new PropRazorpayRequest();
             $postRazorPayPenaltyRebate = new PostRazorPayPenaltyRebate;
+            $url            = Config::get('razorpay.PAYMENT_GATEWAY_URL');
+            $endPoint       = Config::get('razorpay.PAYMENT_GATEWAY_END_POINT');
+            $authUser      = authUser($req);
             $req->merge(['departmentId' => 1]);
             $safDetails = PropActiveSaf::findOrFail($req->id);
             if ($safDetails->payment_status == 1)
@@ -1621,9 +1625,13 @@ class ActiveSafController extends Controller
             $demands = $calculateSafById->original['data']['demand'];
             $details = $calculateSafById->original['data']['details'];
             $totalAmount = $demands['payableAmount'];
-            $req->request->add(['workflowId' => $safDetails->workflow_id, 'ghostUserId' => 0, 'amount' => $totalAmount]);
+            $req->request->add(['workflowId' => $safDetails->workflow_id, 'ghostUserId' => 0, 'amount' => $totalAmount, 'auth' => $authUser]);
             DB::beginTransaction();
-            $orderDetails = $this->saveGenerateOrderid($req);
+
+            // $orderDetails = $this->saveGenerateOrderid($req);
+            return $orderDetails = Http::withHeaders([])
+                ->post($url . $endPoint, $req->toArray());
+
             $status = isset($orderDetails->original['status']) ? $orderDetails->original['status'] : true;                                      //<---------- Generate Order ID Trait
 
             if ($status == false)
@@ -1643,7 +1651,7 @@ class ActiveSafController extends Controller
                 'ulb_id' => $safDetails->ulb_id,
                 'ip_address' => $ipAddress,
                 'demand_list' => json_encode($details, true),
-                'amount' => $totalAmount
+                'amount' => $totalAmount,
             ];
             $storedRazorPayReqs = $mPropRazorPayRequest->store($razorPayRequest);
             // Store Razor pay penalty Rebates

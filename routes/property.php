@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Dashboard\JskController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Property\ActiveSafController;
 use App\Http\Controllers\Property\ActiveSafControllerV2;
@@ -437,6 +438,15 @@ Route::controller(HoldingTaxController::class)->group(function () {
   Route::post('prop-comparative-demand', 'comparativeDemand');                              // (10) Property Comparative Demand
   Route::post('cluster/payment-history', 'clusterPaymentHistory');                           // (13) Cluster Payment History
   Route::post('cluster/payment-receipt', 'clusterPaymentReceipt');                           // (14) Generate Cluster Payment Receipt for Saf and Property
+});
+
+
+/**
+ * | 
+ */
+Route::controller(JskController::class)->group(function () {
+  Route::post('dashboard-details', 'propDashboardDtl');               // 01
+  Route::post('dashboard', 'propDashboard');
 });
 
 

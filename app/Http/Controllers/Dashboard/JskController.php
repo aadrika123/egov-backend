@@ -28,12 +28,13 @@ class JskController extends Controller
     /**
      * | Property Dashboard Details
      */
-    public function propDtl(Request $request)
+    public function propDashboardDtl(Request $request)
     {
         try {
-            $userId = authUser()->id;
-            $userType = authUser()->user_type;
-            $ulbId = authUser()->ulb_id;
+            $user = authUser($request);
+            $userId = $user->id;
+            $userType = $user->user_type;
+            $ulbId = $user->ulb_id;
             $rUserType = array('TC', 'TL', 'JSK');
             $applicationType = $request->applicationType;
             $propActiveSaf =  new PropActiveSaf();
@@ -88,10 +89,10 @@ class JskController extends Controller
         }
     }
 
-    public function jskPropDashboard(Request $request)
+    public function propDashboard(Request $request)
     {
         try {
-            $user     = authUser();
+            $user     = authUser($request);
             $userId   = $user->id;
             $userType = $user->user_type;
             $ulbId    = $user->ulb_id;
