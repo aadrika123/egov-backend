@@ -320,7 +320,7 @@ class HoldingTaxController extends Controller
             $postRazorPayPenaltyRebate = new PostRazorPayPenaltyRebate;
             $url            = Config::get('razorpay.PAYMENT_GATEWAY_URL');
             $endPoint       = Config::get('razorpay.PAYMENT_GATEWAY_END_POINT');
-
+            $authUser      = authUser($req);
             $demand = $this->getHoldingDues($req);
             if ($demand->original['status'] == false)
                 throw new Exception($demand->original['message']);
@@ -339,7 +339,8 @@ class HoldingTaxController extends Controller
                 'departmentId' => $departmentId,
                 'ulbId' => $propDtls->ulb_id,
                 'id' => $req->propId,
-                'ghostUserId' => 0
+                'ghostUserId' => 0,
+                'auth' => $authUser
             ]);
             DB::beginTransaction();
             // $orderDetails = $this->saveGenerateOrderid($req);                                      //<---------- Generate Order ID Trait
