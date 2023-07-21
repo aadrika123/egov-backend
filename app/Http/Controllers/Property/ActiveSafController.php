@@ -1629,15 +1629,17 @@ class ActiveSafController extends Controller
             DB::beginTransaction();
 
             // $orderDetails = $this->saveGenerateOrderid($req);
-            return $orderDetails = Http::withHeaders([])
+            $orderDetails = Http::withHeaders([])
                 ->post($url . $endPoint, $req->toArray());
 
-            $status = isset($orderDetails->original['status']) ? $orderDetails->original['status'] : true;                                      //<---------- Generate Order ID Trait
+            $orderDetails = collect(json_decode($orderDetails));
+
+            $status = isset($orderDetails['status']) ? $orderDetails['status'] : true;                                      //<---------- Generate Order ID Trait
 
             if ($status == false)
-                return $orderDetails->original;
+                return $orderDetails;
             $demands = array_merge($demands->toArray(), [
-                'orderId' => $orderDetails['orderId']
+                'orderId' => $orderDetails['data']->orderId
             ]);
             // Store Razor pay Request
             $razorPayRequest = [
@@ -1659,7 +1661,7 @@ class ActiveSafController extends Controller
             $postRazorPayPenaltyRebate->_razorPayRequestId = $storedRazorPayReqs['razorPayReqId'];
             $postRazorPayPenaltyRebate->postRazorPayPenaltyRebates($demands);
             DB::commit();
-            return responseMsgs(true, "Order ID Generated", remove_null($orderDetails), "010114", "1.0", "1s", "POST", $req->deviceId);
+            return responseMsgs(true, "Order ID Generated", remove_null($orderDetails['data']), "010114", "1.0", "1s", "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");

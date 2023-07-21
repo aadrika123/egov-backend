@@ -22,6 +22,7 @@ use App\Http\Controllers\Property\HoldingTaxController;
 use App\Http\Controllers\Property\PropertyController;
 use App\Http\Controllers\Property\ReportController;
 use App\Http\Controllers\Property\SafDocController;
+use App\Http\Controllers\Property\WaiverController;
 use App\Http\Controllers\Property\ZoneController;
 
 /**
@@ -360,7 +361,6 @@ Route::controller(PropertyController::class)->group(function () {
   Route::post('caretaker-otp', 'caretakerOtp');                             // 01
   Route::post('caretaker-property-tagging', 'caretakerPropertyTag');        // 02
   Route::post('citizen-holding-saf', 'citizenHoldingSaf');                  // 03
-
   Route::post('basic-edit', 'basicPropertyEdit');
   Route::post('check-property', 'CheckProperty');
 });
@@ -449,6 +449,13 @@ Route::controller(JskController::class)->group(function () {
   Route::post('dashboard', 'propDashboard');
 });
 
+
+Route::controller(WaiverController::class)->group(function () {
+  Route::post('waiver/apply', 'apply');
+  Route::post('waiver/final-approval', 'approvalRejection');
+  Route::post('waiver/approved-list', 'approvedApplication');
+  Route::post('waiver/application-detail', 'applicationDetails');
+});
 
 
 #Added By Sandeep Bara
