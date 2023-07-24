@@ -14,11 +14,7 @@ use App\Http\Controllers\Trade\ReportController;
  * | Created By-SandeepBara  
  */
 
-<<<<<<< HEAD
-// Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger','expireBearerToken']], function () {
-=======
 Route::group(['middleware' => ['json.response', "auth_maker"]], function () {
->>>>>>> 4ffbb782da9bc727a58340dfdb21f5cb2b8734dc
     /**
      *  -----------------------------------------------------------------
      * |                TRADE MODULE                                      |
@@ -193,4 +189,5 @@ Route::controller(TradeApplication::class)->group(function () {
         Route::post('ownership-type', 'ownershipType');
         // Route::post('ownership-type-update', 'updateOwnershipType');
     });
-// });
+
+});
