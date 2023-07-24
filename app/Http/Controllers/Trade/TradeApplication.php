@@ -411,14 +411,20 @@ class TradeApplication extends Controller
     public function workflowDashordDetails(Request $request)
     {
         try {
-
+            
             $track = new WorkflowTrack();
             $mWfWorkflow = new WfWorkflow();
             $tradC = new Trade();
-            $refUser =authUser($request);
+            $refUser = authUser($request);
             $refUserId = $refUser->id;
-            $refUlbId = $refUser->ulb_id;
-           // $refUser->ulb_id = null;
+            
+            if (property_exists($refUser, 'ulb_id')) {
+                $refUlbId = $refUser->ulb_id;
+            } 
+            if ($request->has('ulbId')) {
+                $ulbId = $request->input('ulbId');
+            }
+    
             $refWorkflowId      = $this->_WF_MASTER_Id;
             $userRole = $this->_COMMON_FUNCTION->getUserRoll($refUserId, $refUlbId, $refWorkflowId);
             $wfAllRoles         = $this->_COMMON_FUNCTION->getWorkFlowAllRoles($refUserId, $refUlbId, $refWorkflowId, true);
@@ -470,7 +476,8 @@ class TradeApplication extends Controller
             return responseMsgs(false, $e->getMessage(), "", "01", ".ms", "POST", "");
         }
     }
-    # Serial No : 15
+
+# Serial No : 15
     public function postEscalate(Request $request)
     {
         return $this->_REPOSITORY->postEscalate($request);

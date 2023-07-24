@@ -8,6 +8,7 @@ use App\Http\Requests\Trade\ReqApplyDenail;
 use App\Models\Trade\ActiveTradeNoticeConsumerDtl;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\WorkflowTrack;
+use Illuminate\Support\Facades\Auth; 
 use App\Repository\Common\CommonFunction;
 use App\Repository\Trade\ITradeNotice;
 use Exception;
@@ -68,10 +69,20 @@ class TradeNoticeController extends Controller
             $request->validate($rules);
 
             $user = authUser($request);
-            $userId = $user->id;
+
+            // Check if the 'ulb_id' property exists in $user
+            if (property_exists($user, 'ulb_id')) {
+                $ulbId = $user->ulb_id;
+            } else {
+                $ulbId = null;
+            }
+            if ($request->has('ulbId')) {
+                $ulbId = $request->input('ulbId');
+            }
+    
             $ulbId = $user->ulb_id;
             $refWorkflowId = $this->_WF_MASTER_Id;
-            $role = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $refWorkflowId);
+            $role = $this->_COMMON_FUNCTION->getUserRoll($user, $ulbId, $refWorkflowId);
             // dd($role);
             if (!$role) {
                 throw new Exception("You Are Not Authorized");

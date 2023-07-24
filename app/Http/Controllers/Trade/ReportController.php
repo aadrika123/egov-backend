@@ -350,12 +350,10 @@ class ReportController extends Controller
     try {
         $refUser = authUser($request);
         $refUserId = $refUser->id;
-
-        // Check if the 'ulb_id' property exists in $refUser
         if (property_exists($refUser, 'ulb_id')) {
             $ulbId = $refUser->ulb_id;
         } else {
-          
+            
             $ulbId = null;
         }
 
@@ -386,19 +384,11 @@ class ReportController extends Controller
         {
             $refUser        = authUser($request);
             $refUserId      = $refUser->id;
-            $ulbId = null; 
-
-            if ($request->has('ulbId')) {
-                $ulbId = $request->ulbId;
-            } elseif (property_exists($refUser, 'ulb_id')) {
-        
-                $ulbId = $refUser->ulb_id;
+            $ulbId          = $refUser->ulb_id;
+            if($request->ulbId)
+            {
+                $ulbId  =   $request->ulbId;
             }
-
-            if (!$ulbId) {
-                throw new Exception("ULB ID not found.");
-            }
-           
             $rolse = $this->_common->getAllRoles($refUserId,$ulbId,$this->_WF_MASTER_Id,0,true);
             $rolseIds = collect($rolse)->implode("id",",");
             if(!$rolseIds)
