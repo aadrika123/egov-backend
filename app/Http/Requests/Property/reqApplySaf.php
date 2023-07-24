@@ -149,7 +149,7 @@ class reqApplySaf extends FormRequest
             response()->json(
                 [
                     'status' => false,
-                    'message' => 'The given data was invalid',
+                    'message' => $validator->errors(),
                     'errors' => $validator->errors()
                 ],
                 422
