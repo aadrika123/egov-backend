@@ -169,6 +169,8 @@ class Trade implements ITrade
      */
     public function addRecord(Request $request)
     {
+        return($request->all());
+
         try {
             #------------------------ Declaration-----------------------           
             $refUser            = authUser($request);
@@ -184,7 +186,6 @@ class Trade implements ITrade
             if (!$refWfWorkflow) {
                 throw new Exception("Workflow Not Available");
             }
-            
             $refWorkflows       = $this->_COMMON_FUNCTION->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
             $mUserType          = $this->_COMMON_FUNCTION->userType($refWorkflowId);
             $mShortUlbName      = "";

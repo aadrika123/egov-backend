@@ -90,7 +90,7 @@ class TradeRequest extends FormRequest
                 [
                     'status' => false,
                     'message' => 'The given data was invalid',
-                    'errors' => $validator->errors()
+                    'errors' => $validator->errors(),
                 ], 
                 422)
         );

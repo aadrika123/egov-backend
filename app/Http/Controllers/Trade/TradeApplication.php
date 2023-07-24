@@ -188,11 +188,10 @@ class TradeApplication extends Controller
     }
     # Serial No : 01
     public function applyApplication(ReqAddRecorde $request)
-    {
-   
+    {       
         $refUser            = authUser($request);
         $refUserId          = $refUser->id;
-        $refUlbId           = $refUser->ulb_id;
+        $refUlbId           = $refUser->ulb_id??null;
         if ($refUser->user_type == $this->_TRADE_CONSTAINT["CITIZEN"]) {
             $refUlbId = $request->ulbId ?? 0;
         }
