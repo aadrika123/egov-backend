@@ -81,7 +81,7 @@ Route::controller(CitizenController::class)->group(function () {
 });
 
 /**
- * | Created On-147-08-2022 
+ * | Created On-14-08-2022 
  * | Created By-Anshu Kumar
  * | Get all Ulbs by Ulb ID
  */
@@ -99,171 +99,154 @@ Route::controller(IdGeneratorController::class)->group(function () {
 
 
 // Inside Middleware Routes with API Authenticate 
-Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger', 'expireBearerToken']], function () {
+// Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger', 'expireBearerToken']], function () {
 
-    /**
-     * | Api to Check if the User is authenticated or not
-     */
-    Route::post('/heartbeat', function () {                 // Heartbeat Api
-        return response()->json([
-            'status' => true,
-            'authenticated' => auth()->check()
-        ]);
-    });
+/**
+ * | Api to Check if the User is authenticated or not
+ */
+Route::post('/heartbeat', function () {                 // Heartbeat Api
+    return response()->json([
+        'status' => true,
+        'authenticated' => auth()->check()
+    ]);
+});
 
-    /**
-     * Routes for User 
-     * Created By-Anshu Kumar
-     * Updated By-Sam Kerketta
-     * Created On-20-06-2022 
-     * Modified On-27-06-2022 
-     */
+/**
+ * Routes for User 
+ * Created By-Anshu Kumar
+ * Updated By-Sam Kerketta
+ * Created On-20-06-2022 
+ * Modified On-27-06-2022 
+ */
 
-    Route::controller(UlbController::class)->group(function () {
-        Route::post('city/state/auth/ulb-id', 'getCityStateByUlb');
-        Route::post('list-ulb-by-district', 'districtWiseUlb');
-        Route::post('list-district', 'districtList');
-    });
+Route::controller(UlbController::class)->group(function () {
+    Route::post('city/state/auth/ulb-id', 'getCityStateByUlb');
+    Route::post('list-ulb-by-district', 'districtWiseUlb');
+    Route::post('list-district', 'districtList');
+});
 
-    Route::controller(UserController::class)->group(function () {
-        Route::post('authorised-register', 'authorizeStore');               // authorised user adding user // 
-        Route::get('test', 'testing');
-        Route::post('logout', 'logOut');
-        Route::post('change-password', 'changePass');                       // Change password with login
-        Route::post('otp/change-password', 'changePasswordByOtp');           // Change Password With OTP   
+Route::controller(UserController::class)->group(function () {
+    Route::post('authorised-register', 'authorizeStore');               // authorised user adding user // 
+    Route::get('test', 'testing');
+    Route::post('logout', 'logOut');
+    Route::post('change-password', 'changePass');                       // Change password with login
+    Route::post('otp/change-password', 'changePasswordByOtp');           // Change Password With OTP   
 
-        // User Profile APIs
-        Route::get('my-profile-details', 'myProfileDetails');   // For get My profile Details
-        Route::post('edit-my-profile', 'editMyProfile');        // For Edit My profile Details ---->>edited by mrinal method changed from put to post
+    // User Profile APIs
+    Route::get('my-profile-details', 'myProfileDetails');   // For get My profile Details
+    Route::post('edit-my-profile', 'editMyProfile');        // For Edit My profile Details ---->>edited by mrinal method changed from put to post
 
-        Route::post('edit-user', 'update');
-        Route::post('delete-user', 'deleteUser');
-        Route::get('get-user/{id}', 'getUser');
-        Route::get('get-all-users', 'getAllUsers');
-        Route::post('list-employees', 'employeeList');
-        Route::post('get-user-notifications', 'userNotification');
-        Route::post('add-user-notification', 'addNotification');
-        Route::post('delete-user-notification', 'deactivateNotification');
-        Route::post('hash-password', 'hashPassword');
+    Route::post('edit-user', 'update');
+    Route::post('delete-user', 'deleteUser');
+    Route::get('get-user/{id}', 'getUser');
+    Route::get('get-all-users', 'getAllUsers');
+    Route::post('list-employees', 'employeeList');
+    Route::post('get-user-notifications', 'userNotification');
+    Route::post('add-user-notification', 'addNotification');
+    Route::post('delete-user-notification', 'deactivateNotification');
+    Route::post('hash-password', 'hashPassword');
 
-        // Route are authorized for super admin only using Middleware 
-        Route::group(['middleware' => ['can:isSuperAdmin']], function () {
-            // Route::put('edit-user/{id}', 'update');
-            // Route::delete('delete-user', 'deleteUser');
-            // Route::get('get-user/{id}', 'getUser');
-            // Route::get('get-all-users', 'getAllUsers');
-        });
-    });
-
-
-    /**
-     * Routes for Ulbs
-     * Created By-Anshu Kumar
-     * Creation Date-02-07-2022 
-     * Modified On-
-     */
-    Route::controller(UlbController::class)->group(function () {
-        Route::post('save-ulb', 'store');
-        Route::put('edit-ulb/{id}', 'edit');
-        Route::get('get-ulb/{id}', 'view');
-        Route::delete('delete-ulb/{id}', 'deleteUlb');
-    });
-
-    /**
-     * Routes for Workflows
-     * Created By-Anshu Kumar
-     * Creation Date-06-07-2022 
-     * Modified On-
-     */
-    Route::controller(WorkflowController::class)->group(function () {
-        Route::post('add-workflow', 'storeWorkflow');
-        Route::get('view-workflow/{id}', 'viewWorkflow');
-        Route::put('edit-workflow/{id}', 'updateWorkflow');
-        Route::delete('delete-workflow/{id}', 'deleteWorkflow');
-        Route::get('all-workflows', 'getAllWorkflows');
-
-        Route::post('workflow-candidate', 'storeWorkflowCandidate');
-        Route::get('view-workflow-candidates/{id}', 'viewWorkflowCandidates');
-        Route::get('all-workflow-candidates', 'allWorkflowCandidates');
-        Route::put('edit-workflow-candidates/{id}', 'editWorkflowCandidates');
-        Route::delete('delete-workflow-candidates/{id}', 'deleteWorkflowCandidates');
-        Route::get('gen/workflow/workflow-candidates/{ulbworkflowid}', 'getWorkflowCandidatesByUlbWorkflowID');  // Get Workflow Candidates by ulb-workflow-id
-    });
-
-    // Workflow Roles Rest Apis
-    Route::resource('workflow/workflow-roles', UlbWorkflowRolesController::class);
-
-    /**
-     * APIs for Module Master
-     * Created By-Anshu Kumar
-     * Creation Date-14-07-2022
-     * Modified By-
-     */
-    Route::resource('crud/module-masters', ModuleController::class);
-
-    /**
-     * Api route for Ulb Module Master
-     * CreatedBy-Anshu Kumar
-     * Creation Date-14-07-2022 
-     * Modified By-
-     */
-    Route::resource('crud/ulb-workflow-masters', UlbWorkflowController::class);
-
-    // Get Ulb Workflow details by Ulb Ids
-    Route::get('admin/workflows/{ulb_id}', [UlbWorkflowController::class, 'getUlbWorkflowByUlbID']);
-
-    // Workflow Track
-    Route::controller(WorkflowTrackController::class)->group(function () {
-        Route::post('save-workflow-track', 'store');                                                                         // Save Workflow Track Messages
-        Route::post('get-workflow-track', 'getWorkflowTrackByID');                                                       // Get Workflow Track Message By TrackID
-        Route::post('gen/workflow-track', 'getWorkflowTrackByTableIDValue');                     // Get WorkflowTrack By TableRefID and RefTableValue
-
-        //changes by mrinal
-        Route::post('workflow-track/getNotificationByCitizenId', 'getNotificationByCitizenId');
-    });
-
-    // Citizen Register
-    Route::controller(CitizenController::class)->group(function () {
-        Route::get('get-citizen-by-id/{id}', 'getCitizenByID');                                                // Get Citizen By ID
-        Route::get('get-all-citizens', 'getAllCitizens');                                                      // Get All Citizens
-        Route::post('edit-citizen-profile', 'citizenEditProfile');                                             // Approve Or Reject Citizen by Id
-        Route::match(['get', 'post'], 'citizens/applied-applications', 'getAllAppliedApplications');           // Get Applied Applications
-        Route::post('citizens/independent-comment', 'commentIndependent');                                     // Independent Comment for the Citizen to be Tracked
-        Route::get('citizens/get-transactions', 'getTransactionHistory');                                      // Get User Transaction History
-        Route::post('change-citizen-pass', 'changeCitizenPass');                                               // Change the Password of The Citizen Using its Old Password 
-        Route::post('otp/change-citizen-pass', 'changeCitizenPassByOtp');                                      // Change Password using OTP for Citizen
-        Route::post('citizen-profile-details', 'profileDetails');
-    });
-
-    /**
-     * -----------------------------------------------------------------------------------------------
-     * | Created By - Anshu Kumar
-     * | Advertisement Module
-     * -----------------------------------------------------------------------------------------------
-     */
-
-    // Self Advertisement
-    Route::controller(SelfAdvertisementController::class)->group(function () {
-        Route::post('crud/store-selfadvertisement', 'storeSelfAdvertisement');                          // Save Self Advertisement
-        Route::get('crud/get-all-selfadvertisements-inbox', 'getAllSelfAdvertisementsInbox');           // Get All Self Advertisement Datas in Inbox
-        Route::get('crud/get-all-selfadvertisements-outbox', 'getAllSelfAdvertisementsOutbox');         // Get All Self Advertisement Datas in Outbox
-        Route::get('crud/get-selfadvertisement-by-id/{id}', 'getSelfAdvertisementByID');                // Get Self Advertisement By Id
-        Route::put('crud/update-selfadvertisement/{id}', 'updateSelfAdvertisement');                    // Update Self Advertisement
-        Route::delete('crud/del-selfadvertisement/{id}', 'deleteSelfAdvertisement');                    // Delete Self Advertisement By ID
-    });
-
-    /**
-     * | Created On-19-08-2022 
-     * | Created by-Anshu Kumar
-     * | Ulb Wards operations
-     */
-    Route::controller(WardController::class)->group(function () {
-        Route::post('store-ulb-wards', 'storeUlbWard');          // Save Ulb Ward
-        Route::put('edit-ulb-ward/{id}', 'editUlbWard');         // Edit Ulb Ward
-        Route::get('get-ulb-ward/{id}', 'getUlbWardByID');       // Get Ulb Ward Details by ID
-        Route::get('get-all-ulb-wards', 'getAllUlbWards'); //not for use      // Get All Ulb Wards
+    // Route are authorized for super admin only using Middleware 
+    Route::group(['middleware' => ['can:isSuperAdmin']], function () {
+        // Route::put('edit-user/{id}', 'update');
+        // Route::delete('delete-user', 'deleteUser');
+        // Route::get('get-user/{id}', 'getUser');
+        // Route::get('get-all-users', 'getAllUsers');
     });
 });
+
+
+/**
+ * Routes for Ulbs
+ * Created By-Anshu Kumar
+ * Creation Date-02-07-2022 
+ * Modified On-
+ */
+Route::controller(UlbController::class)->group(function () {
+    Route::post('save-ulb', 'store');
+    Route::put('edit-ulb/{id}', 'edit');
+    Route::get('get-ulb/{id}', 'view');
+    Route::delete('delete-ulb/{id}', 'deleteUlb');
+});
+
+/**
+ * Routes for Workflows
+ * Created By-Anshu Kumar
+ * Creation Date-06-07-2022 
+ * Modified On-
+ */
+Route::controller(WorkflowController::class)->group(function () {
+    Route::post('add-workflow', 'storeWorkflow');
+    Route::get('view-workflow/{id}', 'viewWorkflow');
+    Route::put('edit-workflow/{id}', 'updateWorkflow');
+    Route::delete('delete-workflow/{id}', 'deleteWorkflow');
+    Route::get('all-workflows', 'getAllWorkflows');
+
+    Route::post('workflow-candidate', 'storeWorkflowCandidate');
+    Route::get('view-workflow-candidates/{id}', 'viewWorkflowCandidates');
+    Route::get('all-workflow-candidates', 'allWorkflowCandidates');
+    Route::put('edit-workflow-candidates/{id}', 'editWorkflowCandidates');
+    Route::delete('delete-workflow-candidates/{id}', 'deleteWorkflowCandidates');
+    Route::get('gen/workflow/workflow-candidates/{ulbworkflowid}', 'getWorkflowCandidatesByUlbWorkflowID');  // Get Workflow Candidates by ulb-workflow-id
+});
+
+// Workflow Roles Rest Apis
+Route::resource('workflow/workflow-roles', UlbWorkflowRolesController::class);
+
+/**
+ * APIs for Module Master
+ * Created By-Anshu Kumar
+ * Creation Date-14-07-2022
+ * Modified By-
+ */
+Route::resource('crud/module-masters', ModuleController::class);
+
+/**
+ * Api route for Ulb Module Master
+ * CreatedBy-Anshu Kumar
+ * Creation Date-14-07-2022 
+ * Modified By-
+ */
+Route::resource('crud/ulb-workflow-masters', UlbWorkflowController::class);
+
+// Get Ulb Workflow details by Ulb Ids
+Route::get('admin/workflows/{ulb_id}', [UlbWorkflowController::class, 'getUlbWorkflowByUlbID']);
+
+// Workflow Track
+Route::controller(WorkflowTrackController::class)->group(function () {
+    Route::post('save-workflow-track', 'store');                                                                         // Save Workflow Track Messages
+    Route::post('get-workflow-track', 'getWorkflowTrackByID');                                                       // Get Workflow Track Message By TrackID
+    Route::post('gen/workflow-track', 'getWorkflowTrackByTableIDValue');                     // Get WorkflowTrack By TableRefID and RefTableValue
+
+    //changes by mrinal
+    Route::post('workflow-track/getNotificationByCitizenId', 'getNotificationByCitizenId');
+});
+
+// Citizen Register
+Route::controller(CitizenController::class)->group(function () {
+    Route::get('get-citizen-by-id/{id}', 'getCitizenByID');                                                // Get Citizen By ID
+    Route::get('get-all-citizens', 'getAllCitizens');                                                      // Get All Citizens
+    Route::post('edit-citizen-profile', 'citizenEditProfile');                                             // Approve Or Reject Citizen by Id
+    Route::match(['get', 'post'], 'property/citizens/applied-applications', 'getAllAppliedApplications');           // Get Applied Applications
+    Route::post('citizens/independent-comment', 'commentIndependent');                                     // Independent Comment for the Citizen to be Tracked
+    Route::get('citizens/get-transactions', 'getTransactionHistory');                                      // Get User Transaction History
+    Route::post('change-citizen-pass', 'changeCitizenPass');                                               // Change the Password of The Citizen Using its Old Password 
+    Route::post('otp/change-citizen-pass', 'changeCitizenPassByOtp');                                      // Change Password using OTP for Citizen
+    Route::post('citizen-profile-details', 'profileDetails');
+});
+
+/**
+ * | Created On-19-08-2022 
+ * | Created by-Anshu Kumar
+ * | Ulb Wards operations
+ */
+Route::controller(WardController::class)->group(function () {
+    Route::post('store-ulb-wards', 'storeUlbWard');          // Save Ulb Ward
+    Route::put('edit-ulb-ward/{id}', 'editUlbWard');         // Edit Ulb Ward
+    Route::get('get-ulb-ward/{id}', 'getUlbWardByID');       // Get Ulb Ward Details by ID
+    Route::get('get-all-ulb-wards', 'getAllUlbWards'); //not for use      // Get All Ulb Wards
+});
+// });
 
 
 // Routes used where authentication not required

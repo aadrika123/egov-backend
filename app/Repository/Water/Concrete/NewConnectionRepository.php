@@ -95,7 +95,7 @@ class NewConnectionRepository implements iNewConnection
     public function store(Request $req)
     {
         # ref variables
-        $user       = authUser();
+        $user       = authUser($req);
         $vacantLand = $this->_vacantLand;
         $workflowID = $this->_waterWorkflowId;
         $waterRoles = $this->_waterRoles;
@@ -389,7 +389,7 @@ class NewConnectionRepository implements iNewConnection
         $metaReqs['workflowId']         = $waterApplication->workflow_id;
         $metaReqs['refTableDotId']      = 'water_applications.id';
         $metaReqs['refTableIdValue']    = $req->applicationId;
-        $metaReqs['user_id']            = authUser()->id;
+        $metaReqs['user_id']            = authUser($req)->id;
         $req->request->add($metaReqs);
 
         $waterTrack = new WorkflowTrack();

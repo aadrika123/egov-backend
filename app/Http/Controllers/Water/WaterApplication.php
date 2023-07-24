@@ -45,13 +45,6 @@ class WaterApplication extends Controller
     {
         return $this->Repository->readTransectionAndApl($request);
     }
-    public function paymentRecipt(Request $request)
-    {
-        $request->validate([
-            'transectionNo' => 'required'
-        ]);
-        return $this->Repository->paymentRecipt($request->transectionNo);
-    }
     public function documentUpload(Request $request)
     {
         return $this->Repository->documentUpload($request);
@@ -78,7 +71,7 @@ class WaterApplication extends Controller
     public function getJskAppliedApplication(Request $request)
     {
         try {
-            $user = authUser();
+            $user = authUser($request);
             if (!in_array($user->user_type, ['JSK', 'TC'])) {
                 $canView = false;
             }
@@ -88,7 +81,7 @@ class WaterApplication extends Controller
             $refConnectionType  = Config::get("waterConstaint.CONNECTION_TYPE");
             $wfMstId            = Config::get("workflow-constants.WATER_MASTER_ID");
 
-            $applicationDetails = $mWaterApplication->getJskAppliedApplications()->get();
+            $applicationDetails = $mWaterApplication->getJskAppliedApplications($request)->get();
             $transactionDetails = $mWaterTran->tranDetailByDate();
             $workflow = $mWfWorkflow->getulbWorkflowId($wfMstId, $user->ulb_id);
             $metaRequest = new Request([
@@ -170,7 +163,7 @@ class WaterApplication extends Controller
     public function workflowDashordDetails(Request $request)
     {
         try {
-            $user = authUser();
+            $user = authUser($request);
             if (in_array($user->user_type, ['JSK', 'TC'])) {
                 $canView = false;
             }

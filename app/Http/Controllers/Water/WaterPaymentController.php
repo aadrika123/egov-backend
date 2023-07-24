@@ -48,6 +48,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Redis;
 use Predis\Command\Redis\SELECT;
 
@@ -449,7 +450,7 @@ class WaterPaymentController extends Controller
         $waterRoles = $this->_waterRoles;
 
         # check the login user is Eo or not
-        $userId = authUser()->id;
+        $userId = authUser($request)->id;
         $workflowId = $waterDetails->workflow_id;
         $getRoleReq = new Request([                                                 # make request to get role id of the user
             'userId'     => $userId,
@@ -621,7 +622,7 @@ class WaterPaymentController extends Controller
     public function offlineDemandPayment(reqDemandPayment $request)
     {
         try {
-            $user                       = authUser();
+            $user                       = authUser($request);
             $midGeneration              = new IdGeneration;
             $mWaterAdjustment           = new WaterAdjustment();
             $mwaterTran                 = new waterTran();
@@ -949,7 +950,7 @@ class WaterPaymentController extends Controller
     {
         try {
             # Variable Assignments
-            $user       = authUser();
+            $user       = authUser($req);
             $userId     = $user->id;
             $userType   = $user->user_type;
             $todayDate  = Carbon::now();
@@ -1616,27 +1617,32 @@ class WaterPaymentController extends Controller
     public function initiateOnlineDemandPayment(reqDemandPayment $request)
     {
         try {
-            $refUser        = Auth()->user();
-            $waterModuleId  = config::get('module-constants.WATER_MODULE_ID');
+            $refUser        = authUser($request);
+            $waterModuleId  = Config::get('module-constants.WATER_MODULE_ID');
             $paymentFor     = Config::get('waterConstaint.PAYMENT_FOR');
             $startingDate   = Carbon::createFromFormat('Y-m-d',  $request->demandFrom)->startOfMonth();
             $endDate        = Carbon::createFromFormat('Y-m-d',  $request->demandUpto)->endOfMonth();
             $startingDate   = $startingDate->toDateString();
             $endDate        = $endDate->toDateString();
+            $url            = Config::get('razorpay.PAYMENT_GATEWAY_URL');
+            $endPoint       = Config::get('razorpay.PAYMENT_GATEWAY_END_POINT');
 
             # Demand Collection 
             DB::beginTransaction();
             $refDetails = $this->preOfflinePaymentParams($request, $startingDate, $endDate);
+            $myRequest = [
+                'amount'        => $request->amount,
+                'workflowId'    => 0,                                                                   // Static
+                'id'            => $request->consumerId,
+                'departmentId'  => $waterModuleId,
+                'ulbId'         => $refDetails['consumer']['ulb_id'],
+                'auth'          => $refUser
+            ];
+            // $temp = $this->saveGenerateOrderid($myRequest);
+            $temp = Http::withHeaders([])
+                ->post($url . $endPoint, $myRequest);                                                   // Static
 
-            $myRequest = new \Illuminate\Http\Request();
-            $myRequest->setMethod('POST');
-            $myRequest->request->add(['amount' => $request->amount]);
-            $myRequest->request->add(['workflowId' => 0]);
-            $myRequest->request->add(['id' => $request->consumerId]);
-            $myRequest->request->add(['departmentId' => $waterModuleId]);
-            $myRequest->request->add(['ulbId' => $refDetails['consumer']['ulb_id']]);
-            $temp = $this->saveGenerateOrderid($myRequest);
-
+            $temp = $temp['data'];
             $mWaterRazorPayRequest = new WaterRazorPayRequest();
             $mWaterRazorPayRequest->saveRequestData($request, $paymentFor['1'], $temp, $refDetails);
             DB::commit();
@@ -1668,10 +1674,9 @@ class WaterPaymentController extends Controller
     {
         try {
             # ref var assigning
-            $refUser        = Auth()->user();
             $today          = Carbon::now();
-            $refUserId      = $refUser->id ?? $webhookData["userId"];
-            $refUlbId       = $refUser->ulb_id ?? $webhookData["ulbId"];
+            $refUserId      = $webhookData["userId"];
+            $refUlbId       = $webhookData["ulbId"];
             $mDemands       = (array)null;
 
             # model assigning
@@ -1773,7 +1778,7 @@ class WaterPaymentController extends Controller
             'pages' => 'required|int'
         ]);
         try {
-            $citizen        = authUser();
+            $citizen        = authUser($request);
             $citizenId      = $citizen->id;
             $mWaterTran     = new WaterTran();
             $refUserType    = Config::get("waterConstaint.USER_TYPE");

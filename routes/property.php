@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Dashboard\JskController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Property\ActiveSafController;
 use App\Http\Controllers\Property\ActiveSafControllerV2;
@@ -360,7 +361,6 @@ Route::controller(PropertyController::class)->group(function () {
   Route::post('caretaker-otp', 'caretakerOtp');                             // 01
   Route::post('caretaker-property-tagging', 'caretakerPropertyTag');        // 02
   Route::post('citizen-holding-saf', 'citizenHoldingSaf');                  // 03
-
   Route::post('basic-edit', 'basicPropertyEdit');
   Route::post('check-property', 'CheckProperty');
 });
@@ -441,6 +441,22 @@ Route::controller(HoldingTaxController::class)->group(function () {
 });
 
 
+/**
+ * | 
+ */
+Route::controller(JskController::class)->group(function () {
+  Route::post('dashboard-details', 'propDashboardDtl');               // 01
+  Route::post('dashboard', 'propDashboard');
+});
+
+
+Route::controller(WaiverController::class)->group(function () {
+  Route::post('waiver/apply', 'apply');
+  Route::post('waiver/final-approval', 'approvalRejection');
+  Route::post('waiver/approved-list', 'approvedApplication');
+  Route::post('waiver/application-detail', 'applicationDetails');
+});
+
 
 #Added By Sandeep Bara
 #Date 16/02/2023
@@ -491,10 +507,4 @@ Route::controller(ReportController::class)->group(function () {
 Route::controller(PropertyController::class)->group(function () {
   Route::post('getpropLatLong', 'getpropLatLong');                             // 01
   Route::post('upload-document', 'uploadDocument');                             // 01
-});
-
-
-Route::controller(WaiverController::class)->group(function () {
-  Route::post('createwaiver-', 'createwaiver');                             // 01
-                            // 01
 });

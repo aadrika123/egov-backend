@@ -124,7 +124,6 @@ class TradeApplication extends Controller
             if (!in_array($mApplicationTypeId, [1])) {
                 $rules["licenseId"] = "required|digits_between:1,9223372036854775807";
             }
-
             $validator = Validator::make($request->all(), $rules,);
             if ($validator->fails()) {
                 return responseMsg(false, $validator->errors(), $request->all());

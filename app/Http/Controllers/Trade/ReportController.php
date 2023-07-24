@@ -355,14 +355,11 @@ class ReportController extends Controller
         if (property_exists($refUser, 'ulb_id')) {
             $ulbId = $refUser->ulb_id;
         } else {
-            // If 'ulb_id' doesn't exist, handle the situation accordingly.
-            // For example, set a default value or throw an error.
-            // In this case, I'm setting $ulbId to null as an example:
+          
             $ulbId = null;
         }
 
-        // You can also use the $request->input('ulbId') to get the value if it exists.
-        // If it doesn't exist, $ulbId will still hold the value from $refUser.
+        
         if ($request->has('ulbId')) {
             $ulbId = $request->input('ulbId');
         }
@@ -389,11 +386,19 @@ class ReportController extends Controller
         {
             $refUser        = authUser($request);
             $refUserId      = $refUser->id;
-            $ulbId          = $refUser->ulb_id;
-            if($request->ulbId)
-            {
-                $ulbId  =   $request->ulbId;
+            $ulbId = null; 
+
+            if ($request->has('ulbId')) {
+                $ulbId = $request->ulbId;
+            } elseif (property_exists($refUser, 'ulb_id')) {
+        
+                $ulbId = $refUser->ulb_id;
             }
+
+            if (!$ulbId) {
+                throw new Exception("ULB ID not found.");
+            }
+           
             $rolse = $this->_common->getAllRoles($refUserId,$ulbId,$this->_WF_MASTER_Id,0,true);
             $rolseIds = collect($rolse)->implode("id",",");
             if(!$rolseIds)
