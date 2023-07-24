@@ -127,7 +127,7 @@ class TradeCitizenController extends Controller
     }
 
     public function applyApplication(ReqCitizenAddRecorde $request)
-    {
+    {        
         $this->_META_DATA["apiId"] = "c2";
         $this->_META_DATA["queryRunTime"] = 2.48;
         $this->_META_DATA["action"]    = $request->getMethod();
@@ -140,6 +140,7 @@ class TradeCitizenController extends Controller
             $refUser            = authUser($request);
             $refUserId          = $refUser->id;
             $refUlbId           = $request->ulbId;
+            
             $wardId = $request->firmDetails["wardNo"];
             $wardId = $this->_MODEL_WARD->getAllWard($request->ulbId)->filter(function ($item) use ($wardId) {
                 if ($item->id == $wardId) {
