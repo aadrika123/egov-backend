@@ -95,6 +95,7 @@ class NewConnectionRepository implements iNewConnection
     public function store(Request $req)
     {
         # ref variables
+        $user       = authUser($req);
         $vacantLand = $this->_vacantLand;
         $workflowID = $this->_waterWorkflowId;
         $waterRoles = $this->_waterRoles;
@@ -103,7 +104,6 @@ class NewConnectionRepository implements iNewConnection
         $ulbId      = $req->ulbId;
         $reftenant  = true;
         $citizenId  = null;
-        $user       = authUser();
 
         $ulbWorkflowObj             = new WfWorkflow();
         $mWaterNewConnection        = new WaterNewConnection();
@@ -160,6 +160,7 @@ class NewConnectionRepository implements iNewConnection
         # Generating Application No
         $idGeneration   = new PrefixIdGenerator($refParamId["WAPP"], $ulbId);
         $applicationNo  = $idGeneration->generate();
+        $applicationNo  = str_replace('/', '-', $applicationNo);
 
         # water application
         $applicationId = $objNewApplication->saveWaterApplication($req, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId, $ulbId, $applicationNo, $waterFeeId, $newConnectionCharges);
@@ -178,7 +179,7 @@ class NewConnectionRepository implements iNewConnection
         # water penalty
         if (!empty($installment)) {
             foreach ($installment as $installments) {
-                $mWaterPenaltyInstallment->saveWaterPenelty($applicationId, $installments, $connectionType, $connectionId);
+                $mWaterPenaltyInstallment->saveWaterPenelty($applicationId, $installments, $connectionType, $connectionId, null);
             }
         }
         # in case of connection charge is 0
@@ -388,7 +389,7 @@ class NewConnectionRepository implements iNewConnection
         $metaReqs['workflowId']         = $waterApplication->workflow_id;
         $metaReqs['refTableDotId']      = 'water_applications.id';
         $metaReqs['refTableIdValue']    = $req->applicationId;
-        $metaReqs['user_id']            = authUser()->id;
+        $metaReqs['user_id']            = authUser($req)->id;
         $req->request->add($metaReqs);
 
         $waterTrack = new WorkflowTrack();
@@ -494,6 +495,7 @@ class NewConnectionRepository implements iNewConnection
             # Consumer no generation
             $idGeneration   = new PrefixIdGenerator($consumerParamId, $refWaterDetails['ulb_id']);
             $consumerNo     = $idGeneration->generate();
+            $consumerNo     = str_replace('/', '-', $consumerNo);
 
             $this->saveWaterConnInProperty($refWaterDetails, $consumerNo);
             $consumerId = $mWaterApplication->finalApproval($request, $consumerNo, $refJe);

@@ -26,7 +26,8 @@ return [
     "PARAM_IDS" => [
         "WAPP" => 15,
         "WCON" => 16,
-        "TRN" => 37
+        "TRN" => 37,
+        "WCD" => 39
     ],
     "ACCOUNT_DESCRIPTION" => "Water",
     "DEPARTMENT_SECTION" => "Revenue Section",
@@ -113,6 +114,7 @@ return [
 
     "WATER_METER_CODE" => "Meter",
     "WATER_FIXED_CODE" => "MeterFixed",
+    "WATER_ADVANCE_CODE" => "WaterAdvance",
     "PENALTY_HEAD" => [
         "1" => "1 Installment",
         "2" => "2 Installment",
@@ -152,5 +154,12 @@ return [
         "3" => "TC",
         "4" => "Pseudo",
         "5" => "Employee"
+    ],
+    "CONSUMER_CHARGE_CATAGORY" => [
+        "FIXED_TO_METER"            => 1,
+        "WATER_DISCONNECTION"       => 2,
+        "NAME_TRANSFER"             => 3,
+        "FERRULE_CLEANING_CHECKING" => 4,
+        "PIPE_SHIFTING_ALTERATION " => 5
     ],
 ];

@@ -72,7 +72,7 @@ class RainWaterHarvestingController extends Controller
     public function getWardMasterData(Request $request)
     {
         try {
-            $ulbId = auth()->user()->ulb_id;
+            $ulbId = authUser($request)->ulb_id;
             $wardList = $this->getAllWard($ulbId);
             return responseMsg(true, "List of wards", $wardList);
         } catch (Exception $error) {
@@ -100,8 +100,8 @@ class RainWaterHarvestingController extends Controller
             ]);
 
             $ulbId = $request->ulbId;
-            $userId = auth()->user()->id;
-            $userType = auth()->user()->user_type;
+            $userId = authUser($request)->id;
+            $userType = authUser($request)->user_type;
             $track = new WorkflowTrack();
             $harParamId = Config::get('PropertyConstaint.HAR_PARAM_ID');
 
@@ -198,8 +198,8 @@ class RainWaterHarvestingController extends Controller
     public function harvestingInbox(Request $req)
     {
         try {
-            $userId = authUser()->id;
-            $ulbId = authUser()->ulb_id;
+            $userId = authUser($req)->id;
+            $ulbId = authUser($req)->ulb_id;
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
             $harvestingList = new PropActiveHarvesting();
             $perPage = $req->perPage ?? 10;
@@ -242,8 +242,8 @@ class RainWaterHarvestingController extends Controller
     public function specialInbox(Request $req)
     {
         try {
-            $userId = authUser()->id;
-            $ulbId = authUser()->ulb_id;
+            $userId = authUser($req)->id;
+            $ulbId = authUser($req)->ulb_id;
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
             $harvestingList = new PropActiveHarvesting();
             $perPage = $req->perPage ?? 10;
@@ -272,8 +272,8 @@ class RainWaterHarvestingController extends Controller
     public function fieldVerifiedInbox(Request $req)
     {
         try {
-            $userId = authUser()->id;
-            $ulbId = authUser()->ulb_id;
+            $userId = authUser($req)->id;
+            $ulbId = authUser($req)->ulb_id;
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
             $harvestingList = new PropActiveHarvesting();
             $perPage = $req->perPage ?? 10;
@@ -311,8 +311,8 @@ class RainWaterHarvestingController extends Controller
     public function harvestingOutbox(Request $req)
     {
         try {
-            $userId = authUser()->id;
-            $ulbId = authUser()->ulb_id;
+            $userId = authUser($req)->id;
+            $ulbId = authUser($req)->ulb_id;
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
             $harvestingList = new PropActiveHarvesting();
             $perPage = $req->perPage ?? 10;
@@ -527,7 +527,7 @@ class RainWaterHarvestingController extends Controller
                 'action' => 'required|In:forward,backward',
             ]);
 
-            $userId = authUser()->id;
+            $userId = authUser($req)->id;
             $track = new WorkflowTrack();
             $harvesting = PropActiveHarvesting::findorFail($req->applicationId);
             $mWfWorkflows = new WfWorkflow();
@@ -595,7 +595,7 @@ class RainWaterHarvestingController extends Controller
             // Check if the Current User is Finisher or Not    
             $mWfRoleUsermap = new WfRoleusermap();
             $track = new WorkflowTrack();
-            $userId = authUser()->id;
+            $userId = authUser($req)->id;
             $activeHarvesting = PropActiveHarvesting::find($req->applicationId);
             $propProperties = PropProperty::where('id', $activeHarvesting->property_id)
                 ->first();
@@ -691,7 +691,7 @@ class RainWaterHarvestingController extends Controller
             $req->validate([
                 'applicationId' => 'required',
             ]);
-            $userId = authUser()->id;
+            $userId = authUser($req)->id;
             $getRole = $this->getRoleIdByUserId($userId);
             $roleId = $getRole->map(function ($value, $key) {                         // Get user Workflow Roles
                 return $value->wf_role_id;
@@ -760,8 +760,8 @@ class RainWaterHarvestingController extends Controller
         ]);
 
         try {
-            $userId = authUser()->id;
-            $userType = authUser()->user_type;
+            $userId = authUser($request)->id;
+            $userType = authUser($request)->user_type;
             $workflowTrack = new WorkflowTrack();
             $mWfRoleUsermap = new WfRoleusermap();
             $harvesting = PropActiveHarvesting::findOrFail($request->applicationId);                // SAF Details
@@ -927,8 +927,8 @@ class RainWaterHarvestingController extends Controller
     public function btcInboxList(Request $req)
     {
         try {
-            $userId = authUser()->id;
-            $ulbId = authUser()->ulb_id;
+            $userId = authUser($req)->id;
+            $ulbId = authUser($req)->ulb_id;
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
             $harvestingList = new PropActiveHarvesting();
             $perPage = $req->perPage ?? 10;
@@ -1056,7 +1056,7 @@ class RainWaterHarvestingController extends Controller
             $mPropActiveHarvesting = new PropActiveHarvesting();
             $mWfRoleusermap = new WfRoleusermap();
             $wfDocId = $req->id;
-            $userId = authUser()->id;
+            $userId = authUser($req)->id;
             $applicationId = $req->applicationId;
             $wfLevel = Config::get('PropertyConstaint.SAF-LABEL');
             // Derivative Assigments
@@ -1165,8 +1165,8 @@ class RainWaterHarvestingController extends Controller
             $geoTagging = new PropHarvestingGeotagUpload();
             $mWfActiveDocument = new WfActiveDocument();
             $mRefRequiredDocument = new RefRequiredDocument();
-            $userId = authUser()->id;
-            $ulbId = authUser()->ulb_id;
+            $userId = authUser($req)->id;
+            $ulbId = authUser($req)->ulb_id;
 
             $applicationDtls = $propActiveHarvesting->getHarvestingNo($req->applicationId);
             $workflowId = $applicationDtls->workflow_id;
@@ -1201,7 +1201,7 @@ class RainWaterHarvestingController extends Controller
                         'longitude' => $req->longitude,
                         'latitude' => $req->latitude,
                         'relative_path' => $relativePath,
-                        'user_id' => authUser()->id
+                        'user_id' => authUser($req)->id
                     ];
 
                     $imageName = $docUpload->upload($refImageName, $images, $relativePath);         // <------- Get uploaded image name and move the image in folder

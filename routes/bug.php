@@ -32,7 +32,7 @@ use Illuminate\Http\Request;
 |--------------------------------------------------------------------------
 
 */
-Route::group(['middleware' => []], function () {
+Route::group(['middleware' => ['auth:sanctum','json.response','expireBearerToken','request_logger']], function () {
  
     Route::post('test',[BugController::class,'test']);
         // Route::post("test","createbugsform");
@@ -43,8 +43,8 @@ Route::group(['middleware' => []], function () {
             Route::post('testw','test');
             Route::post('add-bugs','createbugsform');
             Route::post('module-list','moduleList');
-            Route::post('case-list', 'caseList');
-            Route::post('register-apply-data', 'modulecaselist');
+            Route::post('case-list', 'category');
+            Route::post('register-apply-data', 'allformlist');
             
 
         });

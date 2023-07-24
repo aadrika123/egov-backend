@@ -31,6 +31,9 @@ return [
         "7"     => "HoardingBoard",
         "9"     => "FloorDetail"
     ],
+
+    "INDEPENDENT_PROP_TYPE_ID" => "2",       // Individual Property 
+
     "PROPERTY-TYPE" => [
         "1"     => "SUPER STRUCTURE",
         "2"     => "INDEPENDENT BUILDING",
@@ -415,7 +418,7 @@ return [
     ],
 
     // Relative GeoTagging Path of Geo Tagging
-    "GEOTAGGING_RELATIVE_PATH" => "public/Property/GeoTagging",
+    "GEOTAGGING_RELATIVE_PATH" => "Uploads/Property/GeoTagging",
     "SAF_RELATIVE_PATH"        => "Uploads/Property/Saf",
     "OBJECTION_RELATIVE_PATH"  => "Uploads/Property/Objection",
     "CONCESSION_RELATIVE_PATH" => "Uploads/Property/Concession",
@@ -519,7 +522,7 @@ return [
 
     // Adjustment Types 
     "ADJUSTMENT_TYPES" => [
-        "ULB_ADJUSTMENT" => "Demand Adjustment"
+        "ULB_ADJUSTMENT" => "Demand Adjustment",
     ],
 
     // Doc Codes

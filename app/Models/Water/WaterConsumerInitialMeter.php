@@ -23,12 +23,13 @@ class WaterConsumerInitialMeter extends Model
      * | Save the consumer meter details when the monthely demand is generated
      * | @param request
      */
-    public function saveConsumerReading($request, $meterDetails)
+    public function saveConsumerReading($request, $meterDetails, $userDetails)
     {
         $mWaterConsumerInitialMeter = new WaterConsumerInitialMeter();
         $mWaterConsumerInitialMeter->consumer_id        = $request->consumerId;
         $mWaterConsumerInitialMeter->initial_reading    = $request->finalRading;
-        $mWaterConsumerInitialMeter->emp_details_id     = authUser()->id;
+        $mWaterConsumerInitialMeter->emp_details_id     = $userDetails['emp_id'] ?? null;
+        $mWaterConsumerInitialMeter->citizen_id         = $userDetails['citizen_id'] ?? null;
         $mWaterConsumerInitialMeter->consumer_meter_id  = $meterDetails['meterId'];
         $mWaterConsumerInitialMeter->save();
     }

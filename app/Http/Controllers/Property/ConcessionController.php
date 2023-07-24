@@ -38,7 +38,6 @@ use Exception;
  * | Controller for Concession
  * | --------------------------- Workflow Parameters ---------------------------------------
  * | Concession Master ID   = 35                
- * | Concession WorkflowID  = 106 
  * */
 
 
@@ -363,8 +362,8 @@ class ConcessionController extends Controller
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
             $perPage = $req->perPage ?? 10;
 
-            $userId = authUser()->id;
-            $ulbId  = authUser()->ulb_id;
+            $userId = authUser($req)->id;
+            $ulbId  = authUser($req)->ulb_id;
             $occupiedWards = $mWfWardUser->getWardsByUserId($userId)->pluck('ward_id');                       // Model () to get Occupied Wards of Current User
 
             $roleIds = $mWfRoleUser->getRoleIdByUserId($userId)->pluck('wf_role_id');                      // Model to () get Role By User Id
@@ -599,7 +598,7 @@ class ConcessionController extends Controller
             'action' => 'required|In:forward,backward',
         ]);
         try {
-            $userId = authUser()->id;
+            $userId = authUser($req)->id;
             $track = new WorkflowTrack();
             $mWfWorkflows = new WfWorkflow();
             $mWfRoleMaps = new WfWorkflowrolemap();
@@ -687,7 +686,7 @@ class ConcessionController extends Controller
             $activeConcession = $mActiveConcession->getConcessionById($req->applicationId);
             $propOwners = PropOwner::where('id', $activeConcession->prop_owner_id)
                 ->first();
-            $userId = authUser()->id;
+            $userId = authUser($req)->id;
             $getFinisherQuery = $this->getFinisherId($req->workflowId);                                 // Get Finisher using Trait
             $refGetFinisher = collect(DB::select($getFinisherQuery))->first();
 
@@ -763,7 +762,7 @@ class ConcessionController extends Controller
                 'forward_date' => $this->_todayDate->format('Y-m-d'),
                 'forward_time' => $this->_todayDate->format('H:i:s')
             ]);
-
+            // dd();
             DB::commit();
             return responseMsgs(true, $msg, "", "", '010709', '01', '376ms', 'Post', '');
         } catch (Exception $e) {
@@ -777,19 +776,19 @@ class ConcessionController extends Controller
      */
     public function updateOwner($propOwners, $activeConcession)
     {
-        if ($activeConcession->applied_for == 'Gender') {
+        if (isset($activeConcession->gender)) {
             $propOwners->gender = $activeConcession->gender;
             $propOwners->save();
         }
-        if ($activeConcession->applied_for == 'Senior Citizen') {
+        if (isset($activeConcession->dob)) {
             $propOwners->dob = $activeConcession->dob;
             $propOwners->save();
         }
-        if ($activeConcession->applied_for == 'Specially Abled') {
+        if (isset($activeConcession->is_specially_abled)) {
             $propOwners->is_specially_abled = $activeConcession->is_specially_abled;
             $propOwners->save();
         }
-        if ($activeConcession->applied_for == 'Armed Force') {
+        if (isset($activeConcession->is_armed_force)) {
             $propOwners->is_armed_force = $activeConcession->is_armed_force;
             $propOwners->save();
         }
@@ -1263,7 +1262,7 @@ class ConcessionController extends Controller
             $mPropActiveConcession = new PropActiveConcession();
             $mWfRoleusermap = new WfRoleusermap();
             $wfDocId = $req->id;
-            $userId = authUser()->id;
+            $userId = authUser($req)->id;
             $applicationId = $req->applicationId;
             $wfLevel = Config::get('PropertyConstaint.SAF-LABEL');
             // Derivative Assigments

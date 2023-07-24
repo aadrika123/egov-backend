@@ -57,7 +57,7 @@ class WaterConsumer extends Model
      * | @var 
      * | @return 
      */
-    public function getDetailByConsumerNo($key, $refNo)
+    public function getDetailByConsumerNo($req, $key, $refNo)
     {
         return WaterConsumer::select(
             'water_consumers.id',
@@ -76,7 +76,7 @@ class WaterConsumer extends Model
             ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_consumers.ward_mstr_id')
             ->where('water_consumers.' . $key, 'LIKE', '%' . $refNo . '%')
             ->where('water_consumers.status', 1)
-            ->where('water_consumers.ulb_id', auth()->user()->ulb_id)
+            ->where('water_consumers.ulb_id', authUser($req)->ulb_id)
             ->groupBy(
                 'water_consumers.saf_no',
                 'water_consumers.holding_no',
@@ -87,8 +87,7 @@ class WaterConsumer extends Model
                 'water_consumers.consumer_no',
                 'water_consumers.ward_mstr_id',
                 'ulb_ward_masters.ward_name'
-            )
-            ->get();
+            );
     }
 
 
@@ -116,8 +115,7 @@ class WaterConsumer extends Model
             ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_consumers.ward_mstr_id')
             ->where('water_consumer_owners.' . $key, 'LIKE', '%' . $refVal . '%')
             ->where('water_consumers.status', true)
-            ->where('ulb_ward_masters.status', true)
-            ->get();
+            ->where('ulb_ward_masters.status', true);
     }
 
 
@@ -144,8 +142,7 @@ class WaterConsumer extends Model
             ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_consumers.ward_mstr_id')
             ->where('water_approval_application_details.application_no', 'LIKE', '%' . $refVal . '%')
             ->where('water_consumers.status', true)
-            ->where('ulb_ward_masters.status', true)
-            ->get();
+            ->where('ulb_ward_masters.status', true);
     }
 
 
@@ -157,7 +154,7 @@ class WaterConsumer extends Model
      * | @return 
             | not finshed
      */
-    public function getConsumerDetails()
+    public function getConsumerDetails($req)
     {
         return WaterConsumer::select(
             'water_consumers.id',
@@ -185,10 +182,10 @@ class WaterConsumer extends Model
             ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'water_consumers.ward_mstr_id')
             ->leftjoin('water_connection_charges', 'water_connection_charges.application_id', '=', 'water_consumers.apply_connection_id')
             ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_consumers.id')
-            ->where('water_consumers.user_id', auth()->user()->id)
-            ->where('water_consumers.user_type', auth()->user()->user_type)
+            ->where('water_consumers.user_id', authUser($req)->id)
+            ->where('water_consumers.user_type', authUser($req)->user_type)
             ->where('water_consumers.status', true)
-            // ->where('water_consumers.ulb_id', auth()->user()->ulb_id)
+            // ->where('water_consumers.ulb_id', authUser($req)->ulb_id)
             ->groupBy(
                 'water_consumers.id',
                 'water_consumer_owners.consumer_id',
@@ -314,11 +311,11 @@ class WaterConsumer extends Model
      * | Dectivate the water Consumer 
      * | @param req
      */
-    public function dissconnetConsumer($consumerId)
+    public function dissconnetConsumer($consumerId, $status)
     {
         WaterConsumer::where('id', $consumerId)
             ->update([
-                'status' => 0
+                'status' => $status
             ]);
     }
 
@@ -431,5 +428,15 @@ class WaterConsumer extends Model
             ->where('status', 1)
             ->orderByDesc('id')
             ->first();
+    }
+
+    /**
+     * | Get consumers according to cosumer Ids
+     */
+    public function getConsumerListByIds($consumerIds)
+    {
+        return WaterConsumer::whereIn('id', $consumerIds)
+            ->where('status', 1)
+            ->orderByDesc('id');
     }
 }

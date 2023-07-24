@@ -206,7 +206,7 @@ class PropProperty extends Model
     /**
      * | Search holding
      */
-    public function searchHolding()
+    public function searchHolding($ulbId)
     {
         return PropProperty::select(
             'prop_properties.id',
@@ -221,7 +221,7 @@ class PropProperty extends Model
             ->join('prop_owners', 'prop_owners.saf_id', '=', 'prop_properties.saf_id')
             ->join('ref_prop_types', 'ref_prop_types.id', '=', 'prop_properties.prop_type_mstr_id')
             ->where('prop_properties.status', 1)
-            ->where('ulb_id', auth()->user()->ulb_id)
+            ->where('ulb_id', $ulbId)
             ->groupBy('prop_properties.id', 'ref_prop_types.property_type');
     }
 
@@ -460,6 +460,7 @@ class PropProperty extends Model
             ->leftJoin('prop_floors as f', 'f.property_id', '=', 'p.id')
             ->where('p.id', $propId)
             ->where('p.status', 1)
+            ->where('f.status', 1)
             ->get();
     }
 
@@ -678,16 +679,18 @@ class PropProperty extends Model
             'prop_properties.pt_no',
             'prop_properties.prop_address',
             'prop_saf_geotag_uploads.latitude',
+            'prop_owners.mobile_no',
             'prop_saf_geotag_uploads.longitude',
             'prop_saf_geotag_uploads.created_at',
             DB::raw("concat(relative_path,'/',image_path) as doc_path"),
         )
             ->join('prop_saf_geotag_uploads', 'prop_saf_geotag_uploads.saf_id', '=', 'prop_properties.saf_id')
+            ->join('prop_owners', 'prop_owners.property_id', '=', 'prop_properties.id')
             ->where('prop_properties.ward_mstr_id', $wardId)
             ->where('prop_properties.holding_no', '!=', null)
             ->orderByDesc('prop_properties.id')
             ->skip(0)
-            ->take(4000)
+            ->take(100)
             ->get();
     }
 

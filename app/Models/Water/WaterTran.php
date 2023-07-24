@@ -81,9 +81,9 @@ class WaterTran extends Model
      */
     public function saveZeroConnectionCharg($totalConnectionCharges, $ulbId, $req, $applicationId, $connectionId, $connectionType)
     {
-        $user = authUser();
-        $refIdGeneration = new IdGeneration();
-        $transactionNo = $refIdGeneration->generateTransactionNo();
+        $user               = authUser();
+        $refIdGeneration    = new IdGeneration();
+        $transactionNo      = $refIdGeneration->generateTransactionNo($ulbId);
         if ($user->user_type == 'Citizen') {
             $isJsk = false;
             $paymentMode = "Online";                                                // Static

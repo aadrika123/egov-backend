@@ -15,7 +15,7 @@ class InsertTax
      * | @param userId 
      * | @param safTaxes
      */
-    public function insertTax($safId, $ulbId, $safTaxes)
+    public function insertTax($safId, $ulbId, $safTaxes, $userId)
     {
         $details = $safTaxes;
         $safDemand = new PropSafsDemand();
@@ -33,7 +33,7 @@ class InsertTax
                 'fyear' => $detail['quarterYear'],
                 'qtr' => $detail['qtr'],
                 'due_date' => $detail['dueDate'],
-                'user_id' => authUser()->id,
+                'user_id' => $userId,
                 'ulb_id' => $ulbId,
                 'adjust_amount' => $detail['adjustAmount'],
                 'balance' => $detail['balance']

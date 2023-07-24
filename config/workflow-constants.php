@@ -24,8 +24,8 @@ return [
     "PROPERTY_OBJECTION_FORGERY"        => "12",
     "RAIN_WATER_HARVESTING_ID"          => "13",
 
-    // "WATER_MASTER_ID"                   => "3",
     "WATER_MASTER_ID"                   => "15",
+    "WATER_DISCONNECTION"               => "33",
     "TRADE_MASTER_ID"                   => "16",
     "TRADE_NOTICE_ID"                   => "17",
 

@@ -93,6 +93,7 @@ class RazorpayPaymentController extends Controller
      * | Verify the payment status 
      * | Use to check the actual paymetn from the server 
         | Testing
+        | This
      */
     public function verifyPaymentStatus(Request $req)
     {
@@ -109,6 +110,9 @@ class RazorpayPaymentController extends Controller
     }
 
     //verify the payment status
+    /**
+        | This
+     */
     public function gettingWebhookDetails(Request $req)
     {
         return $this->Prepository->gettingWebhookDetails($req);
@@ -131,6 +135,9 @@ class RazorpayPaymentController extends Controller
     }
 
     // saveGenerateOrderid
+    /**
+        | This
+     */
     public function generateOrderid(Request $req)
     {
         // return $req;

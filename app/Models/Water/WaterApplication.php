@@ -52,8 +52,8 @@ class WaterApplication extends Model
         $saveNewApplication->application_no         = $applicationNo;
         $saveNewApplication->ulb_id                 = $ulbId;
         $saveNewApplication->apply_date             = date('Y-m-d H:i:s');
-        $saveNewApplication->user_id                = auth()->user()->id;    // <--------- here
-        $saveNewApplication->user_type              = auth()->user()->user_type;
+        $saveNewApplication->user_id                = authUser($req)->id;    // <--------- here
+        $saveNewApplication->user_type              = authUser($req)->user_type;
         $saveNewApplication->area_sqmt              = sqFtToSqMt($req->areaSqft);
 
         # condition entry 
@@ -84,7 +84,7 @@ class WaterApplication extends Model
                 }
                 break;
             default: # Check
-                $saveNewApplication->apply_from = auth()->user()->user_type;
+                $saveNewApplication->apply_from = authUser($req)->user_type;
                 $saveNewApplication->current_role = Config::get('waterConstaint.ROLE-LABEL.BO');
                 break;
         }
@@ -190,7 +190,7 @@ class WaterApplication extends Model
      * | @param connectionTypes 
      * | @return 
      */
-    public function getDetailsByApplicationNo($connectionTypes, $applicationNo)
+    public function getDetailsByApplicationNo($req, $connectionTypes, $applicationNo)
     {
         return WaterApplication::select(
             'water_applications.id',
@@ -209,16 +209,24 @@ class WaterApplication extends Model
             ->where('water_applications.status', true)
             ->where('water_applications.connection_type_id', $connectionTypes)
             ->where('water_applications.application_no', 'LIKE', '%' . $applicationNo . '%')
-            ->where('water_applications.ulb_id', auth()->user()->ulb_id)
-            ->groupBy('water_applications.saf_no', 'water_applications.holding_no', 'water_applications.address', 'water_applications.id', 'water_applicants.application_id', 'water_applications.application_no', 'water_applications.ward_id', 'ulb_ward_masters.ward_name')
-            ->get();
+            ->where('water_applications.ulb_id', authUser($req)->ulb_id)
+            ->groupBy(
+                'water_applications.saf_no',
+                'water_applications.holding_no',
+                'water_applications.address',
+                'water_applications.id',
+                'water_applicants.application_id',
+                'water_applications.application_no',
+                'water_applications.ward_id',
+                'ulb_ward_masters.ward_name'
+            );
     }
 
     /**
      * | Get Application details according to desired Parameter
      * | 
      */
-    public function getDetailsByParameters()
+    public function getDetailsByParameters($req)
     {
         return WaterApplication::select(
             'water_applications.id',
@@ -235,7 +243,7 @@ class WaterApplication extends Model
             ->join('water_applicants', 'water_applicants.application_id', '=', 'water_applications.id')
             ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_applications.ward_id')
             ->where('water_applications.status', true)
-            ->where('water_applications.ulb_id', authUser()->ulb_id)
+            ->where('water_applications.ulb_id', authUser($req)->ulb_id)
             ->groupBy(
                 'water_applications.saf_no',
                 'water_applications.holding_no',
@@ -305,7 +313,7 @@ class WaterApplication extends Model
             'workflowId'        => $approvedWater->workflow_id,
             'refTableDotId'     => 'water_applications.id',
             'refTableIdValue'   => $approvedWater->id,
-            'user_id'           => authUser()->id,
+            'user_id'           => authUser($request)->id,
         ];
         $request->request->add($metaReqs);
         $waterTrack->saveTrack($request);
@@ -337,7 +345,7 @@ class WaterApplication extends Model
         $metaReqs['workflowId'] = $rejectedWater->workflow_id;
         $metaReqs['refTableDotId'] = 'water_applications.id';
         $metaReqs['refTableIdValue'] = $rejectedWater->id;
-        $metaReqs['user_id'] = authUser()->id;
+        $metaReqs['user_id'] = authUser($request)->id;
         $request->request->add($metaReqs);
         $waterTrack->saveTrack($request);
 
@@ -557,9 +565,9 @@ class WaterApplication extends Model
     /**
      * | Dash bording 
      */
-    public function getJskAppliedApplications()
+    public function getJskAppliedApplications($req)
     {
-        $refUserType = authUser()->user_type;
+        $refUserType = authUser($req)->user_type;
         $currentDate = Carbon::now()->format('Y-m-d');
 
         return WaterApplication::select(

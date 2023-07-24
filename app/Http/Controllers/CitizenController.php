@@ -185,7 +185,7 @@ class CitizenController extends Controller
     public function citizenLogout(Request $req)
     {
         // token();
-        $id =  auth()->user()->id;
+        $id =  authUser($req)->id;
 
         $user = ActiveCitizen::where('id', $id)->first();
         $user->remember_token = null;
@@ -324,9 +324,9 @@ class CitizenController extends Controller
     }
 
     // Citizen Transaction History
-    public function getTransactionHistory()
+    public function getTransactionHistory(Request $req)
     {
-        return $this->Repository->getTransactionHistory();
+        return $this->Repository->getTransactionHistory($req);
     }
 
     /**
@@ -341,7 +341,7 @@ class CitizenController extends Controller
     public function changeCitizenPass(ChangePassRequest $request)
     {
         try {
-            $id = auth()->user()->id;
+            $id = authUser($request)->id;
             $citizen = ActiveCitizen::where('id', $id)->firstOrFail();
             $validPassword = Hash::check($request->password, $citizen->password);
             if ($validPassword) {
@@ -349,7 +349,7 @@ class CitizenController extends Controller
                 $citizen->password = Hash::make($request->newPassword);
                 $citizen->save();
 
-                Redis::del('user:' . auth()->user()->id);   //DELETING REDIS KEY
+                Redis::del('user:' . authUser($request)->id);   //DELETING REDIS KEY
                 return responseMsgs(true, 'Successfully Changed the Password', "", "", "02", ".ms", "POST", $request->deviceId);
             }
             throw new Exception("Old Password dosen't Match!");
@@ -365,12 +365,12 @@ class CitizenController extends Controller
     public function changeCitizenPassByOtp(OtpChangePass $request)
     {
         try {
-            $id = auth()->user()->id;
+            $id = authUser($request)->id;
             $citizen = ActiveCitizen::where('id', $id)->firstOrFail();
             $citizen->password = Hash::make($request->password);
             $citizen->save();
 
-            Redis::del('user:' . auth()->user()->id);   //DELETING REDIS KEY
+            Redis::del('user:' . authUser($request)->id);   //DELETING REDIS KEY
             return responseMsgs(true, "Password changed!", "", "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "", "01", ".ms", "POST", $request->deviceId);

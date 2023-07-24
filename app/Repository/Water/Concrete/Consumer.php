@@ -45,7 +45,7 @@ class Consumer implements IConsumer
             if ($request->demandUpto) {
                 $demandUpto = $request->demandUpto;
             }
-            $tax = $this->generate_demand($request->consumerId, $demandUpto, $request->finalRading);
+            $tax = $this->generate_demand($request,$request->consumerId, $demandUpto, $request->finalRading);
             return $tax;
         } catch (Exception $e) {
             $response["status"] = false;
@@ -53,7 +53,7 @@ class Consumer implements IConsumer
             return collect($response);
         }
     }
-    public function generate_demand($consumer_id, $upto_date = null, $final_reading = 0)
+    public function generate_demand($req,$consumer_id, $upto_date = null, $final_reading = 0)
     {
         try {
             $refLastDemandDetails = $this->getConsumerLastDemad($consumer_id);
@@ -87,9 +87,9 @@ class Consumer implements IConsumer
             if ($refMeterStatus->connection_type == "3" || $refMeterStatus->connection_type == "") {
                 return $this->fixedDemand($refConsumerDetails, $refLastDemandDetails, $refMeterStatus, $demand_from, $upto_date);
             } elseif (in_array($refMeterStatus->connection_type, [1, 2]) && $refMeterStatus->meter_status == "0" && ($mPropertyTypeId == 3 || (!empty($refLastDemandDetails) && $mPropertyTypeId != 3))) {
-                return $this->averageBulling($refConsumerDetails, $refLastDemandDetails, $refMeterStatus, $demand_from, $upto_date, $final_reading);
+                return $this->averageBulling($req,$refConsumerDetails, $refLastDemandDetails, $refMeterStatus, $demand_from, $upto_date, $final_reading);
             } elseif (in_array($refMeterStatus->connection_type, [1, 2]) && $refMeterStatus->meter_status == "1") {
-                return $this->meterDemand($refConsumerDetails, $refLastDemandDetails, $refMeterStatus, $demand_from, $upto_date, $final_reading);
+                return $this->meterDemand($req,$refConsumerDetails, $refLastDemandDetails, $refMeterStatus, $demand_from, $upto_date, $final_reading);
             } else {
                 throw new Exception("No Anny Rules Applied");
             }
@@ -263,12 +263,12 @@ class Consumer implements IConsumer
             return collect($response);
         }
     }
-    public function meterDemand($refConsumerDetails, $refLastDemandDetails, $refMeterStatus, $demand_from, $upto_date = null, $final_reading = 0)
+    public function meterDemand($req,$refConsumerDetails, $refLastDemandDetails, $refMeterStatus, $demand_from, $upto_date = null, $final_reading = 0)
     {
         $response["consumer_tax"]    = (array)null;
         try {
             $conter = 0;
-            $refUser              = Auth()->user();
+            $refUser              = authUser($req);
             $refUserId            = $refUser->id ?? 0;
             $refUlbId             = $refUser->ulb_id ?? 0;
             $refUlb             = UlbMaster::select("ulb_type")->find($refUlbId);
@@ -386,7 +386,7 @@ class Consumer implements IConsumer
             return collect($response);
         }
     }
-    public function averageBulling($refConsumerDetails, $refLastDemandDetails, $refMeterStatus, $demand_from, $upto_date = null, $final_reading = 0)
+    public function averageBulling($req,$refConsumerDetails, $refLastDemandDetails, $refMeterStatus, $demand_from, $upto_date = null, $final_reading = 0)
     {
         $response["consumer_tax"]    = (array)null;
         // $response["consumer_tax"]["consumer_demand"] = (array)null;
@@ -477,7 +477,7 @@ class Consumer implements IConsumer
                 $conter++;
             } elseif ($property_type_id != 3 && $refMeterStatus->connection_type == 1 ||  $refMeterStatus->connection_type == 2 && $refMeterStatus->meter_status == 0) {
                 // print_r($response);
-                $refUser              = Auth()->user();
+                $refUser              = authUser($req);
                 $refUserId            = $refUser->id ?? 0;
                 $refUlbId             = $refUser->ulb_id ?? 0;
                 $refUlb             = UlbMaster::select("ulb_type")->find($refUlbId);
@@ -802,6 +802,7 @@ class Consumer implements IConsumer
             'water_approval_application_details.saf_no',
             'ulb_ward_masters.ward_name',
             'ulb_masters.ulb_name',
+            'water_param_pipeline_types.pipeline_type as pipeline_type_name',
             'site.property_type_id AS site_property_type_id',
             'site.pipeline_type_id AS site_pipeline_type_id',
             DB::raw("string_agg(water_approval_applicants.applicant_name,',') as applicantName"),
@@ -821,6 +822,7 @@ class Consumer implements IConsumer
                     $join->on("site.apply_connection_id", "=", "water_approval_application_details.id");
                 }
             )
+            ->join("water_param_pipeline_types", "water_param_pipeline_types.id", "site.pipeline_type_id")
             ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_approval_application_details.ward_id')
             ->where('water_approval_application_details.status', true)
             ->where('water_approval_application_details.id', $applicationId)
@@ -836,8 +838,9 @@ class Consumer implements IConsumer
                 'ulb_ward_masters.ward_name',
                 'ulb_masters.id',
                 'ulb_masters.ulb_name',
+                'water_param_pipeline_types.pipeline_type',
                 'site.property_type_id',
-                'site.pipeline_type_id'
+                'site.pipeline_type_id',
             )
             ->first();
     }
