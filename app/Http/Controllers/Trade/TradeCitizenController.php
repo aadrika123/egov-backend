@@ -170,7 +170,7 @@ class TradeCitizenController extends Controller
                 throw new Exception("Finisher Not Available");
             }
             if (in_array($mApplicationTypeId, ["2", "3", "4"]) && (!$request->licenseId || !is_numeric($request->licenseId))) {
-                throw new Exception("Old license Id Requird");
+                throw new Exception("Old licence Id Requird");
             }
             return $this->_REPOSITORY->addRecord($request);
         } catch (Exception $e) {
