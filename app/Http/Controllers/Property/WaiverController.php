@@ -67,8 +67,10 @@ class WaiverController extends Controller
                 "workflowId" => 195,
                 "currentRole" => 3,
             ]);
+
             $data = $mPropActiveWaiver->addWaiver($request);
             $this->saveDoc($request, $data);
+
 
             return responseMsgs(true, "Data Saved", $data);
         } catch (Exception $e) {
@@ -83,7 +85,7 @@ class WaiverController extends Controller
         $relativePath = Config::get('PropertyConstaint.WAIVER_RELATIVE_PATH');
         $refImageName = $request->docCode;
         $refImageName = $data->id . '-' . str_replace(' ', '_', $refImageName);
-        $document = $request->waiverDocument;
+        $document = $request['doc'];
 
         $imageName = $docUpload->upload($refImageName, $document, $relativePath);
         $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
@@ -92,7 +94,7 @@ class WaiverController extends Controller
         $metaReqs['ulbId'] = $data->ulb_id;
         $metaReqs['document'] = $imageName;
         $metaReqs['relativePath'] = $relativePath;
-        $metaReqs['docCode'] = $request['code'];
+        $metaReqs['docCode'] = $request->docCode;
 
         $metaReqs = new Request($metaReqs);
         $mWfActiveDocument->postDocuments($metaReqs);
