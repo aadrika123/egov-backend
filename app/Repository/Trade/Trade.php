@@ -169,8 +169,6 @@ class Trade implements ITrade
      */
     public function addRecord(Request $request)
     {
-        return($request->all());
-
         try {
             #------------------------ Declaration-----------------------           
             $refUser            = authUser($request);
@@ -186,6 +184,7 @@ class Trade implements ITrade
             if (!$refWfWorkflow) {
                 throw new Exception("Workflow Not Available");
             }
+            
             $refWorkflows       = $this->_COMMON_FUNCTION->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
             $mUserType          = $this->_COMMON_FUNCTION->userType($refWorkflowId);
             $mShortUlbName      = "";
@@ -235,7 +234,7 @@ class Trade implements ITrade
                         throw new Exception("Surender License Can Not Apply Renewal Or Amendment ");
                     }
                     if ($refOldLicece->valid_upto > $nextMonth && !in_array($mApplicationTypeId, [3, 4])) {
-                         throw new Exception("Licence Valice Upto " . $refOldLicece->valid_upto);
+                        throw new Exception("Licence Valice Upto " . $refOldLicece->valid_upto);
                     }
                     if ($refOldLicece->valid_upto < (Carbon::now()->format('Y-m-d')) && in_array($mApplicationTypeId, [3, 4])) {
                         throw new Exception("Licence Was Expired Please Renewal First");
@@ -413,7 +412,6 @@ class Trade implements ITrade
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
-
     # Serial No : 01.01
     public function newLicense($refActiveLicense, $request)
     {
