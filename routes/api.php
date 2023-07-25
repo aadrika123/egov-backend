@@ -23,6 +23,7 @@ use App\Http\Controllers\Workflows\UlbWorkflowRolesController;
 use App\Http\Controllers\WorkflowMaster\WorkflowRoleController;
 use App\Http\Controllers\WorkflowMaster\WorkflowRoleUserMapController;
 use App\Http\Controllers\CaretakerController;
+use App\Http\Controllers\ReferenceController;
 use Illuminate\Http\Request;
 
 /*
@@ -416,28 +417,8 @@ Route::controller(WardListController::class)->group(function () {
 });
 
 
-Route::controller(ReferenceController::class)->group(function(){
-   
-    Route::post('property/building-rental-const', 'listBuildingRentalconst');
-    Route::post('property/get-forgery-type', 'listpropForgeryType');
-    Route::post('property/get-rental-value', 'listPropRentalValue');
-    Route::post('property/building-rental-rate', 'listPropBuildingRentalrate');
-    Route::post('property/vacant-rental-rate','listPropVacantRentalrate');
-    Route::post('property/get-construction-list','listPropConstructiontype');
-    Route::post('property/floor-type','listPropFloor');
-    Route::post('property/gb-building-usage-type','listPropgbBuildingUsagetype');
-    Route::post('property/gb-prop-usage-type','listPropgbPropUsagetype');
-    Route::post('property/prop-objection-type','listPropObjectiontype');
-    Route::post('property/prop-occupancy-factor','listPropOccupancyFactor');
-    Route::post('property/prop-occupancy-type','listPropOccupancytype');
-    Route::post('property/prop-ownership-type','listPropOwnershiptype');
-    Route::post('property/prop-penalty-type','listPropPenaltytype');
-    Route::post('property/prop-rebate-type','listPropRebatetype');
-    Route::post('property/prop-road-type','listPropRoadtype');
-    Route::post('property/prop-transfer-mode','listPropTransfermode');  
-    Route::post('property/get-prop-type','listProptype');
-    Route::post('property/prop-usage-type','listPropUsagetype');
-});
+
+
 
 
 /**
@@ -446,7 +427,7 @@ Route::controller(ReferenceController::class)->group(function(){
 Route::controller(DemoController::class)->group(function () {
     Route::post('water-connection', 'waterConnection');
 });
-#---------------------------- document read ------------------------------
+#-------------------------- document read ------------------------------
 Route::get('/getImageLink', function () {
     return view('getImageLink');
 });
