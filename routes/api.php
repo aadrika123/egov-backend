@@ -407,6 +407,56 @@ Route::controller(ThirdPartyController::class)->group(function () {
 
 
 
+
+/**
+ * | Get Reference List and Ulb Master Crud Operation
+ * | Created By : Tannu Verma
+ * | Created At : 20-05-2023
+ * | Status: Open
+ */
+
+Route::controller(UlbMasterController::class)->group(function () {
+
+    Route::post('list-ulbmaster', 'listulbmaster');                                                           
+    Route::post('store-ulbmaster', 'storeUlbMaster');                                                           
+    Route::post('view-ulbmaster', 'showUlbMaster');                                                
+    Route::post('edit-ulbmaster', 'updateUlbMaster'); 
+    Route::post('deactivate-ulbmaster', 'deactivateUlbMaster');              
+});
+
+Route::controller(WardListController::class)->group(function () {
+                                                               
+    Route::post('store-wardlist', 'storeUlbWardMaster');                                                           
+    Route::post('view-wardlist', 'showUlbWardMaster');                                                
+    Route::post('edit-wardlist', 'updateUlbWardMaster'); 
+    Route::post('update-wardlist', 'deactivateUlbWardMaster');              
+});
+
+
+Route::controller(ReferenceController::class)->group(function(){
+   
+    Route::post('property/building-rental-const', 'listBuildingRentalconst');
+    Route::post('property/get-forgery-type', 'listpropForgeryType');
+    Route::post('property/get-rental-value', 'listPropRentalValue');
+    Route::post('property/building-rental-rate', 'listPropBuildingRentalrate');
+    Route::post('property/vacant-rental-rate','listPropVacantRentalrate');
+    Route::post('property/get-construction-list','listPropConstructiontype');
+    Route::post('property/floor-type','listPropFloor');
+    Route::post('property/gb-building-usage-type','listPropgbBuildingUsagetype');
+    Route::post('property/gb-prop-usage-type','listPropgbPropUsagetype');
+    Route::post('property/prop-objection-type','listPropObjectiontype');
+    Route::post('property/prop-occupancy-factor','listPropOccupancyFactor');
+    Route::post('property/prop-occupancy-type','listPropOccupancytype');
+    Route::post('property/prop-ownership-type','listPropOwnershiptype');
+    Route::post('property/prop-penalty-type','listPropPenaltytype');
+    Route::post('property/prop-rebate-type','listPropRebatetype');
+    Route::post('property/prop-road-type','listPropRoadtype');
+    Route::post('property/prop-transfer-mode','listPropTransfermode');  
+    Route::post('property/get-prop-type','listProptype');
+    Route::post('property/prop-usage-type','listPropUsagetype');
+});
+
+
 /**
  * This Route is for Demo Purpose
  */
