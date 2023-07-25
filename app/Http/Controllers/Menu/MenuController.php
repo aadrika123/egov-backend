@@ -288,7 +288,7 @@ class MenuController extends Controller
     public function getMenuByModuleId(Request $req)
     {
         try {
-            $user = authUser();
+            $user = authUser($req);
             $userId = $user->id;
             $mWfRoleUserMap = new WfRoleusermap();
             $mMenuRepo = new MenuRepo();

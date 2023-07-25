@@ -39,6 +39,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
 use Predis\Configuration\Option\Exceptions;
@@ -76,7 +77,7 @@ class WaterNewConnection implements IWaterNewConnection
        query cost (2.30)
        Site Inspection Condition Hamper
      * ---------------------------------------------------------------------
-     * | @var refUser            = Auth()->user()
+     * | @var refUser            = authUser()
      * | @var refUserId          = refUser->id      | loging user Id
      * | @var refUlbId           = refUser->ulb_id  | loging user ulb Id
      * | @var connection         = query data  [Model use (WaterApplication , WaterConnectionCharge)]
@@ -84,7 +85,7 @@ class WaterNewConnection implements IWaterNewConnection
      */
     public function getCitizenApplication(Request $request)
     {
-        $refUser                = Auth()->user();
+        $refUser                = authUser($request);
         $refUserId              = $refUser->id;
         $roleDetails            = Config::get('waterConstaint.ROLE-LABEL');
 
@@ -233,19 +234,20 @@ class WaterNewConnection implements IWaterNewConnection
      *  Genrate the RazorPay OrderId 
        Query const(3.30)
      * ---------------------------------------------------------------------------
-     * | @var refUser            = Auth()->user()
+     * | @var refUser            = authUser()
      * | @var refUserId          = refUser->id      | loging user Id
      * | @var refUlbId           = refUser->ulb_id  | loging user ulb Id
      */
     public function handeRazorPay(Request $request)
     {
         try {
-            $refUser            = Auth()->user();
-            $refUserId          = $refUser->id;
-            $refUlbId           = $refUser->ulb_id;
+            $refUser            = authUser($request);
             $isRebate           = null;
-            $paramChargeCatagory = Config::get('waterConstaint.CONNECTION_TYPE');
-            $refRegulization = Config::get('waterConstaint.CHARGE_CATAGORY');
+
+            $paramChargeCatagory    = Config::get('waterConstaint.CONNECTION_TYPE');
+            $refRegulization        = Config::get('waterConstaint.CHARGE_CATAGORY');
+            $url                    = Config::get('razorpay.PAYMENT_GATEWAY_URL');
+            $endPoint               = Config::get('razorpay.PAYMENT_GATEWAY_END_POINT');
 
             $rules = [
                 'id'                => 'required|digits_between:1,9223372036854775807',
@@ -313,11 +315,18 @@ class WaterNewConnection implements IWaterNewConnection
                 if (!$totalAmount) {
                     throw new Exception("minimum 1 rs to be pay");
                 }
-                $myRequest->request->add(['amount' => $totalAmount]);
-                $myRequest->request->add(['workflowId' => $application->workflow_id]);
-                $myRequest->request->add(['id' => $application->id]);
-                $myRequest->request->add(['departmentId' => 2]);
-                $temp = $this->saveGenerateOrderid($myRequest);
+                $myRequest = [
+                    'amount'        => $totalAmount,
+                    'workflowId'    => $application->workflow_id,
+                    'id'            => $application->id,
+                    'departmentId'  => 2,
+                    'auth'          => $refUser,
+                ];
+                // $temp = $this->saveGenerateOrderid($myRequest);
+                $temp = Http::withHeaders([])
+                    ->post($url . $endPoint, $myRequest);                                                   // Static
+                $temp = $temp['data'];
+                
                 $RazorPayRequest = new WaterRazorPayRequest;
                 $RazorPayRequest->related_id        = $application->id;
                 $RazorPayRequest->payment_from      = $cahges['charge_for'];
@@ -396,9 +405,8 @@ class WaterNewConnection implements IWaterNewConnection
     public function waterConnectionPayment($args)
     {
         try {
-            $refUser        = Auth()->user();
-            $refUserId      = $refUser->id ?? $args["userId"];
-            $refUlbId       = $refUser->ulb_id ?? $args["ulbId"];
+            $refUserId      = $args["userId"];
+            $refUlbId       = $args["ulbId"];
             $mNowDate       = Carbon::now()->format('Y-m-d');
             $mTimstamp      = Carbon::now()->format('Y-m-d H:i:s');
             $cahges         = null;
@@ -574,7 +582,7 @@ class WaterNewConnection implements IWaterNewConnection
     public function readTransectionAndApl(Request $request)
     {
         try {
-            $refUser        = Auth()->user();
+            $refUser        = authUser($request);
             $refUserId      = $refUser->id;
             $refUlbId       = $refUser->ulb_id;
             $mDemands       = null;
@@ -644,7 +652,7 @@ class WaterNewConnection implements IWaterNewConnection
      * get And Uploade Water Requied Documents
        Query cost(3.00)
      * ------------------------------------------------------------------ 
-     * | @var refUser            = Auth()->user()
+     * | @var refUser            = authUser()
      * | @var refUserId          = refUser->id      | loging user Id
      * | @var refUlbId           = refUser->ulb_id  | loging user ulb Id
      * | @var refApplication     = WaterApplication(Model);
@@ -663,7 +671,7 @@ class WaterNewConnection implements IWaterNewConnection
     public function documentUpload(Request $request)
     {
         try {
-            $refUser            = Auth()->user();
+            $refUser            = authUser($request);
             $refUserId          = $refUser->id ?? $request->userId;
             $refUlbId           = $refUser->ulb_id ?? $request->ulbId;
             $refApplication     = (array)null;
@@ -964,58 +972,6 @@ class WaterNewConnection implements IWaterNewConnection
         }
     }
 
-    /**
-     *  Get The Payment Reciept Data Or Water Module
-        Query Cost(2.00)
-     */
-    public function paymentRecipt($transectionNo)
-    {
-        try {
-            $application = (array)null;
-            $transection = WaterTran::select("*")
-                ->where("tran_no", $transectionNo)
-                ->whereIn("status", [1, 2])
-                ->first();
-
-            if (!$transection) {
-                throw new Exception("Transection Data Not Found....");
-            }
-            if ($transection->tran_type != "Demand Collection") {
-                $application = WaterApplication::select(
-                    "water_applications.application_no",
-                    "address",
-                    "owner.owner_name",
-                    "owner.guardian_name",
-                    "owner.mobile",
-                    DB::raw("ulb_ward_masters.ward_name AS ward_no, 
-                                            ulb_masters.id as ulb_id, ulb_masters.ulb_name,ulb_masters.ulb_type
-                                            ")
-                )
-                    ->join("ulb_masters", "ulb_masters.id", "water_applications.ulb_id")
-                    ->join("ulb_ward_masters", function ($join) {
-                        $join->on("ulb_ward_masters.id", "=", "water_applications.ward_id");
-                    })
-                    ->leftjoin(DB::raw("(SELECT STRING_AGG(applicant_name,',') as owner_name,
-                                                            STRING_AGG(guardian_name,',') as guardian_name,
-                                                            STRING_AGG(mobile_no::text,',') as mobile,
-                                                            application_id
-                                                        FROM water_applicants 
-                                                        WHERE application_id = $transection->related_id
-                                                            AND status != FALSE
-                                                        GROUP BY application_id
-                                                        ) owner"), function ($join) {
-                        $join->on("owner.application_id", "=", "water_applications.id");
-                    })
-                    ->where('water_applications.id', $transection->related_id)
-                    ->first();
-            }
-            $data["transaction"] = $transection;
-            $data["application"] = $application;
-            return responseMsg(true, "data Fetch!", $data);
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), '');
-        }
-    }
 
     public function calWaterConCharge(Request $request)
     {

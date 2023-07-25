@@ -65,8 +65,8 @@ class GbSafController extends Controller
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
             $mpropActiveSafs = new PropActiveSaf();
 
-            $userId = auth()->user()->id;
-            $ulbId = auth()->user()->ulb_id;
+            $userId = authUser($req)->id;
+            $ulbId = authUser($req)->ulb_id;
             $perPage = $req->perPage ?? 10;
 
             $occupiedWards = $mWfWardUser->getWardsByUserId($userId)->pluck('ward_id');                       // Model () to get Occupied Wards of Current User
@@ -110,8 +110,8 @@ class GbSafController extends Controller
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
             $mpropActiveSafs = new PropActiveSaf();
 
-            $userId = auth()->user()->id;
-            $ulbId = auth()->user()->ulb_id;
+            $userId = authUser($req)->id;
+            $ulbId = authUser($req)->ulb_id;
             $perPage = $req->perPage ?? 10;
 
             $roleIds = $mWfRoleUser->getRoleIdByUserId($userId)->pluck('wf_role_id');
@@ -719,7 +719,7 @@ class GbSafController extends Controller
             "applicationId" => "required|int",
         ]);
         try {
-            $userId = auth()->user()->id;
+            $userId = authUser($request)->id;
             $saf_id = $request->applicationId;
             $data = PropActiveSaf::find($saf_id);
             $data->is_escalate = $request->escalateStatus;

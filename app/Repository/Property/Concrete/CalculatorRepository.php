@@ -87,8 +87,8 @@ class CalculatorRepository implements iCalculatorRepository
     {
         try {
             if (isset($request->fromDate) && isset($request->toDate)) {
-                $user_id = auth()->user()->id;
-                $ulb_id = auth()->user()->ulb_id;
+                $user_id = authUser($request)->id;
+                $ulb_id = authUser($request)->ulb_id;
                 $fromDate = Carbon::create($request->fromDate)->format('Y-m-d');
                 $toDate = Carbon::create($request->toDate)->format('Y-m-d');
                 $response = array();

@@ -83,6 +83,7 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use App\MicroServices\IdGenerator\HoldingNoGenerator;
+use Illuminate\Support\Facades\Http;
 
 class ActiveSafController extends Controller
 {
@@ -729,8 +730,8 @@ class ActiveSafController extends Controller
             $data = $mPropActiveSaf->getActiveSafDtls()                         // <------- Model function Active SAF Details
                 ->where('prop_active_safs.id', $req->applicationId)
                 ->first();
-            if (!$data)
-                throw new Exception("Application Not Found");
+            // if (!$data)
+            // throw new Exception("Application Not Found");
 
             if (collect($data)->isEmpty()) {
                 $data = $mPropSaf->getSafDtls()
@@ -740,7 +741,7 @@ class ActiveSafController extends Controller
             }
 
             if (collect($data)->isEmpty())
-                throw new Exception("Data Not Found");
+                throw new Exception("Application Not Found");
 
             if ($data->payment_status == 0) {
                 $data->current_role_name = null;
@@ -1613,6 +1614,9 @@ class ActiveSafController extends Controller
             $ipAddress = getClientIpAddress();
             $mPropRazorPayRequest = new PropRazorpayRequest();
             $postRazorPayPenaltyRebate = new PostRazorPayPenaltyRebate;
+            $url            = Config::get('razorpay.PAYMENT_GATEWAY_URL');
+            $endPoint       = Config::get('razorpay.PAYMENT_GATEWAY_END_POINT');
+            $authUser      = authUser($req);
             $req->merge(['departmentId' => 1]);
             $safDetails = PropActiveSaf::findOrFail($req->id);
             if ($safDetails->payment_status == 1)
@@ -1621,15 +1625,21 @@ class ActiveSafController extends Controller
             $demands = $calculateSafById->original['data']['demand'];
             $details = $calculateSafById->original['data']['details'];
             $totalAmount = $demands['payableAmount'];
-            $req->request->add(['workflowId' => $safDetails->workflow_id, 'ghostUserId' => 0, 'amount' => $totalAmount]);
+            $req->request->add(['workflowId' => $safDetails->workflow_id, 'ghostUserId' => 0, 'amount' => $totalAmount, 'auth' => $authUser]);
             DB::beginTransaction();
-            $orderDetails = $this->saveGenerateOrderid($req);
-            $status = isset($orderDetails->original['status']) ? $orderDetails->original['status'] : true;                                      //<---------- Generate Order ID Trait
+
+            // $orderDetails = $this->saveGenerateOrderid($req);
+            $orderDetails = Http::withHeaders([])
+                ->post($url . $endPoint, $req->toArray());
+
+            $orderDetails = collect(json_decode($orderDetails));
+
+            $status = isset($orderDetails['status']) ? $orderDetails['status'] : true;                                      //<---------- Generate Order ID Trait
 
             if ($status == false)
-                return $orderDetails->original;
+                return $orderDetails;
             $demands = array_merge($demands->toArray(), [
-                'orderId' => $orderDetails['orderId']
+                'orderId' => $orderDetails['data']->orderId
             ]);
             // Store Razor pay Request
             $razorPayRequest = [
@@ -1643,7 +1653,7 @@ class ActiveSafController extends Controller
                 'ulb_id' => $safDetails->ulb_id,
                 'ip_address' => $ipAddress,
                 'demand_list' => json_encode($details, true),
-                'amount' => $totalAmount
+                'amount' => $totalAmount,
             ];
             $storedRazorPayReqs = $mPropRazorPayRequest->store($razorPayRequest);
             // Store Razor pay penalty Rebates
@@ -1651,7 +1661,7 @@ class ActiveSafController extends Controller
             $postRazorPayPenaltyRebate->_razorPayRequestId = $storedRazorPayReqs['razorPayReqId'];
             $postRazorPayPenaltyRebate->postRazorPayPenaltyRebates($demands);
             DB::commit();
-            return responseMsgs(true, "Order ID Generated", remove_null($orderDetails), "010114", "1.0", "1s", "POST", $req->deviceId);
+            return responseMsgs(true, "Order ID Generated", remove_null($orderDetails['data']), "010114", "1.0", "1s", "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");

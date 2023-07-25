@@ -62,9 +62,10 @@ class ObjectionRepository implements iObjectionRepository
     public function applyObjection($request)
     {
         try {
-            $userId = authUser()->id;
-            $ulbId = $request->ulbId ?? authUser()->ulb_id;
-            $userType = auth()->user()->user_type;
+            $user = authUser($request);
+            $userId = $user->id;
+            $ulbId = $request->ulbId ?? $user->ulb_id;
+            $userType = $user->user_type;
             $objectionFor = $request->objectionFor;
             $tracks = new WorkflowTrack();
             $objParamId = Config::get('PropertyConstaint.OBJ_PARAM_ID');

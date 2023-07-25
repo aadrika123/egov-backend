@@ -27,10 +27,10 @@ class reqDemandPayment extends FormRequest
     {
         $rules = array();
         $offlinePaymentModes = Config::get('payment-constants.PAYMENT_OFFLINE_MODE_WATER');
-        $cash = Config::get('payment-constants.PAYMENT_OFFLINE_MODE.1');
+        $refPaymentMode = Config::get('payment-constants.PAYMENT_OFFLINE_MODE');
         $refDate = Carbon::now()->format('Y-m-d');
 
-        if (isset($this['paymentMode']) &&  in_array($this['paymentMode'], $offlinePaymentModes) && $this['paymentMode'] != $cash) {
+        if (isset($this['paymentMode']) &&  in_array($this['paymentMode'], $offlinePaymentModes) && $this['paymentMode'] != $refPaymentMode['1']) {
             $rules['chequeDate']    = "required|date|date_format:Y-m-d";
             $rules['bankName']      = "required";
             $rules['branchName']    = "required";

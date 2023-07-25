@@ -43,7 +43,7 @@ class MenuRepo implements iMenuRepo
                             m.serial,
                             m.description, 
                             m.menu_string,
-                            m.parent_serial,
+                            m.parent_id,
                             r.role_id,
                             (CASE 
                                 WHEN r.role_id IS NOT NULL THEN TRUE 
@@ -52,7 +52,7 @@ class MenuRepo implements iMenuRepo
                             END) AS permission_status
                             FROM menu_masters AS m
                     LEFT JOIN (SELECT * FROM wf_rolemenus WHERE role_id=$req->roleId AND status=1) AS r ON r.menu_id=m.id
-                    WHERE m.parent_serial > '0'";
+                    WHERE m.parent_id > '0'";
         $menues = DB::select($mQuery);
         $this->_redis->set('menu-by-role-' . $req->roleId, json_encode($menues));               // Caching the data should be flush while adding new menu to the role
 
@@ -119,7 +119,7 @@ class MenuRepo implements iMenuRepo
         $data = collect($mMenues)->map(function ($value, $key) {
             $return = array();
             $return['id'] = $value['id'];
-            $return['parentId'] = $value['parent_serial'];
+            $return['parentId'] = $value['parent_id'];
             $return['path'] = $value['route'];
             $return['icon'] = config('app.url') . '/api/getImageLink?path=' . $value['icon'];
             $return['name'] = $value['menu_string'];
@@ -151,8 +151,8 @@ class MenuRepo implements iMenuRepo
             $mRoleMenues = $mMenuMaster->getMenuByRole($req->roleId, $req->moduleId); //addition of module Id
 
             $roleWise = collect($mRoleMenues)->map(function ($value) use ($mMenuMaster) {
-                if ($value['parent_serial'] > 0) {
-                    return $roleWise = $this->getParent($value['parent_serial']);
+                if ($value['parent_id'] > 0) {
+                    return $roleWise = $this->getParent($value['parent_id']);
                 }
                 return $value['id'];
             });
@@ -175,8 +175,8 @@ class MenuRepo implements iMenuRepo
     {
         $mMenuMaster = new MenuMaster();
         $refvalue = $mMenuMaster->getMenuById($parentId);
-        if ($refvalue['parent_serial'] > 0) {
-            $this->getParent($refvalue['parent_serial']);
+        if ($refvalue['parent_id'] > 0) {
+            $this->getParent($refvalue['parent_id']);
         }
         return $refvalue['id'];
     }
@@ -238,7 +238,7 @@ class MenuRepo implements iMenuRepo
 //     $data = collect($mMenues)->map(function ($value, $key) {
 //         $return = array();
 //         $return['id'] = $value['id'];
-//         $return['parentId'] = $value['parent_serial'];
+//         $return['parentId'] = $value['parent_id'];
 //         $return['path'] = $value['route'];  ----------------------------> remove first the check
 //         $return['name'] = $value['menu_string'];
 //         $return['children'] = array();

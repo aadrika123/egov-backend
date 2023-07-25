@@ -325,9 +325,9 @@ class CitizenController extends Controller
     }
 
     // Citizen Transaction History
-    public function getTransactionHistory()
+    public function getTransactionHistory(Request $req)
     {
-        return $this->Repository->getTransactionHistory();
+        return $this->Repository->getTransactionHistory($req);
     }
 
     /**

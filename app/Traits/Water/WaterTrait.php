@@ -81,7 +81,7 @@ trait WaterTrait
      * | @param req
      * | @param charges
      * | @param waterTrans
-        | Serial No : 07.05
+        | Serial No : 03
         | Not Tested
         | Check the code 
         | Common function
@@ -122,17 +122,20 @@ trait WaterTrait
     }
 
     /**
-     * | 
+     * | common function for workflow
+     * | Get consumer active application details 
+        | Serial No : 04
+        | Working
      */
     public function getConsumerWfBaseQuerry($workflowIds, $ulbId)
     {
         return WaterConsumerActiveRequest::select('water_consumer_active_requests.*')
-        ->join('water_consumer_owners AS wco','wco.consumer_id', 'water_consumer_active_requests.consumer_id')
-        ->join('ulb_ward_masters AS uwm', 'uwm.id', 'water_consumer_active_requests.ward_mstr_id')
-        ->join('ulb_masters AS um','um.id','water_consumer_active_requests.ulb_id')
-        ->where('water_consumer_active_requests.status', 1)
-        ->where('water_consumer_active_requests.payment_status', 1)
-        ->where('water_consumer_active_requests.ulb_id', $ulbId)
-        ->whereIn('water_consumer_active_requests.workflow_id', $workflowIds);
+            ->join('water_consumer_owners AS wco', 'wco.consumer_id', 'water_consumer_active_requests.consumer_id')
+            ->join('ulb_ward_masters AS uwm', 'uwm.id', 'water_consumer_active_requests.ward_mstr_id')
+            ->join('ulb_masters AS um', 'um.id', 'water_consumer_active_requests.ulb_id')
+            ->where('water_consumer_active_requests.status', 1)
+            ->where('water_consumer_active_requests.payment_status', 1)
+            ->where('water_consumer_active_requests.ulb_id', $ulbId)
+            ->whereIn('water_consumer_active_requests.workflow_id', $workflowIds);
     }
 }

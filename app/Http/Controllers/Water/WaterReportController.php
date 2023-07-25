@@ -75,7 +75,7 @@ class WaterReportController extends Controller
         $metaData = collect($request->metaData)->all();
         list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
         try {
-            $refUser        = Auth()->user();
+            $refUser        = authUser($request);
             $refUserId      = $refUser->id;
             $ulbId          = $refUser->ulb_id;
             $wardId = null;
@@ -434,7 +434,7 @@ class WaterReportController extends Controller
         list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
 
         try {
-            $refUser        = Auth()->user();
+            $refUser        = authUser($request);
             $refUserId      = $refUser->id;
             $ulbId          = $refUser->ulb_id;
             $wardId = null;
@@ -707,7 +707,7 @@ class WaterReportController extends Controller
     public function dcbPieChart(Request $request)
     {
         try {
-            $ulbId = $request->ulbId ?? authUser()->ulb_id;
+            $ulbId = $request->ulbId ?? authUser($request)->ulb_id;
             $currentDate = Carbon::now()->format('Y-m-d');
             $currentYear = Carbon::now()->year;
             $currentFyear = getFinancialYear($currentDate);
@@ -803,7 +803,7 @@ class WaterReportController extends Controller
         $perPage = $request->perPage ?? 5;
 
         if ($request->user == 'tc') {
-            $userId = authUser()->id;
+            $userId = authUser($request)->id;
             $request->merge(["userId" => $userId]);
         }
 
@@ -858,7 +858,7 @@ class WaterReportController extends Controller
         list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
 
         try {
-            $refUser        = Auth()->user();
+            $refUser        = authUser($request);
             $refUserId      = $refUser->id;
             $ulbId          = $refUser->ulb_id;
             $wardId = null;
@@ -996,7 +996,7 @@ class WaterReportController extends Controller
         list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
 
         try {
-            $refUser        = Auth()->user();
+            $refUser        = authUser($request);
             $refUserId      = $refUser->id;
             $ulbId          = $refUser->ulb_id;
             $wardId = null;
