@@ -126,7 +126,7 @@ Route::group(['middleware' => ['json.response', "auth_maker"]], function () {
     });
 });
 
-Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {
+Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
     Route::controller(ReportController::class)->group(function () {
         Route::post("dashboard", "tradeDaseboard");
         Route::post("dashboard-application-collection", "applicationTypeCollection");
