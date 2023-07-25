@@ -4,15 +4,20 @@ namespace App\Http\Controllers\Property;
 
 use App\Http\Controllers\Controller;
 use App\MicroServices\DocUpload;
+use App\Models\CustomDetail;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveWaiver;
 use App\Models\Property\PropProperty;
 use App\Models\Waiver;
+use App\Models\Workflows\WfActiveDocument;
 use App\Models\Workflows\WfRoleusermap;
+use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\Workflows\WfWorkflowrolemap;
 use App\Models\WorkflowTrack;
+use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
 use App\Traits\Property\SafDetailsTrait;
+use App\Traits\Property\WaiverTrait;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\Eloquent\Collection;
@@ -23,6 +28,7 @@ use Illuminate\Support\Facades\Validator;
 
 class WaiverController extends Controller
 {
+    use WaiverTrait;
     use SafDetailsTrait;
 
     /**
@@ -56,24 +62,40 @@ class WaiverController extends Controller
         try {
             $user = authUser($request);
             $mPropActiveWaiver = new PropActiveWaiver();
-            $docUpload = new DocUpload();
-            $path = "Uploads/Property/Waiver";
-            $refImageName = "WaiverDocuments";
-            $document = $request->waiverDocument;
-            $imageName = $docUpload->upload($refImageName, $document, $path);
             $request->merge([
-                "waiverDocument" => $imageName,
                 "userId" => $user->id,
                 "workflowId" => 195,
                 "currentRole" => 3,
             ]);
-
             $data = $mPropActiveWaiver->addWaiver($request);
+            $this->saveDoc($request, $data);
 
             return responseMsgs(true, "Data Saved", $data);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "");
         }
+    }
+
+    public function saveDoc($request, $data)
+    {
+        $docUpload = new DocUpload;
+        $mWfActiveDocument = new WfActiveDocument();
+        $relativePath = Config::get('PropertyConstaint.WAIVER_RELATIVE_PATH');
+        $refImageName = $request->docCode;
+        $refImageName = $data->id . '-' . str_replace(' ', '_', $refImageName);
+        $document = $request->waiverDocument;
+
+        $imageName = $docUpload->upload($refImageName, $document, $relativePath);
+        $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+        $metaReqs['activeId'] = $data->id;
+        $metaReqs['workflowId'] = $data->workflow_id;
+        $metaReqs['ulbId'] = $data->ulb_id;
+        $metaReqs['document'] = $imageName;
+        $metaReqs['relativePath'] = $relativePath;
+        $metaReqs['docCode'] = $request['code'];
+
+        $metaReqs = new Request($metaReqs);
+        $mWfActiveDocument->postDocuments($metaReqs);
     }
 
     /**
@@ -253,6 +275,9 @@ class WaiverController extends Controller
             return validationError($validation);
         }
         try {
+            $forwardBackward = new WorkflowMap;
+            $mCustomDetails = new CustomDetail();
+            $mWorkflowTracks = new WorkflowTrack();
             $applicationDtl = PropActiveWaiver::find($req->applicationId);
             $propertyDetail = PropProperty::find($applicationDtl->property_id);
             $safDetail      = PropActiveSaf::find($applicationDtl->saf_id);
@@ -283,6 +308,17 @@ class WaiverController extends Controller
                     $waiverList['is_rwh_penalty'] = true;
                     $waiverList['rwh_amount'] = $applicationDtl->rwh_amount;
                     $waiverList['rwh_waiver_amount'] = $applicationDtl->rwh_waiver_amount;
+
+                    $waiverDetails = $this->waiverDetail1($waiverList);
+                    $waiverElement = [
+                        'headerTitle' => 'Waiver Details',
+                        'tableHead' => [
+                            "Is Bill Waiver", "Bill Amount", "Bill Waiver Amount",
+                            "One Percent Penalty", "One Percent Penalty Amount", "One Percent Penalty Waiver Amount",
+                            "RWH Penalty", "RWH Amount", "RWH Waiver Amount"
+                        ],
+                        'tableData' => [$waiverDetails]
+                    ];
                     break;
 
                 case ($applicationDtl->is_bill_waiver && $applicationDtl->is_one_percent_penalty):
@@ -292,6 +328,16 @@ class WaiverController extends Controller
                     $waiverList['is_one_percent_penalty'] = true;
                     $waiverList['one_percent_penalty_amount'] = $applicationDtl->one_percent_penalty_amount;
                     $waiverList['one_percent_penalty_waiver_amount'] = $applicationDtl->one_percent_penalty_waiver_amount;
+
+                    $waiverDetails = $this->waiverDetail2($waiverList);
+                    $waiverElement = [
+                        'headerTitle' => 'Waiver Details',
+                        'tableHead' => [
+                            "Is Bill Waiver", "Bill Amount", "Bill Waiver Amount",
+                            "One Percent Penalty", "One Percent Penalty Amount", "One Percent Penalty Waiver Amount"
+                        ],
+                        'tableData' => [$waiverDetails]
+                    ];
                     break;
 
                 case ($applicationDtl->is_one_percent_penalty && $applicationDtl->is_rwh_penalty):
@@ -301,6 +347,16 @@ class WaiverController extends Controller
                     $waiverList['is_rwh_penalty'] = true;
                     $waiverList['rwh_amount'] = $applicationDtl->rwh_amount;
                     $waiverList['rwh_waiver_amount'] = $applicationDtl->rwh_waiver_amount;
+
+                    $waiverDetails = $this->waiverDetail3($waiverList);
+                    $waiverElement = [
+                        'headerTitle' => 'Waiver Details',
+                        'tableHead' => [
+                            "One Percent Penalty", "One Percent Penalty Amount", "One Percent Penalty Waiver Amount",
+                            "RWH Penalty", "RWH Amount", "RWH Waiver Amount"
+                        ],
+                        'tableData' => [$waiverDetails]
+                    ];
                     break;
 
                 case ($applicationDtl->is_bill_waiver && $applicationDtl->is_rwh_penalty):
@@ -310,67 +366,100 @@ class WaiverController extends Controller
                     $waiverList['is_rwh_penalty'] = true;
                     $waiverList['rwh_amount'] = $applicationDtl->rwh_amount;
                     $waiverList['rwh_waiver_amount'] = $applicationDtl->rwh_waiver_amount;
+
+                    $waiverDetails = $this->waiverDetail4($waiverList);
+                    $waiverElement = [
+                        'headerTitle' => 'Waiver Details',
+                        'tableHead' => [
+                            "Is Bill Waiver", "Bill Amount", "Bill Waiver Amount",
+                            "RWH Penalty", "RWH Amount", "RWH Waiver Amount"
+                        ],
+                        'tableData' => [$waiverDetails]
+                    ];
                     break;
 
                 case ($applicationDtl->is_bill_waiver):
                     $waiverList['is_bill_waiver'] = true;
                     $waiverList['bill_amount'] = $applicationDtl->bill_amount;
                     $waiverList['bill_waiver_amount'] = $applicationDtl->bill_waiver_amount;
+
+                    $waiverDetails = $this->waiverDetail5($waiverList);
+                    $waiverElement = [
+                        'headerTitle' => 'Waiver Details',
+                        'tableHead' => [
+                            "Is Bill Waiver", "Bill Amount", "Bill Waiver Amount",
+                        ],
+                        'tableData' => [$waiverDetails]
+                    ];
                     break;
 
                 case ($applicationDtl->is_one_percent_penalty):
                     $waiverList['is_one_percent_penalty'] = true;
                     $waiverList['one_percent_penalty_amount'] = $applicationDtl->one_percent_penalty_amount;
                     $waiverList['one_percent_penalty_waiver_amount'] = $applicationDtl->one_percent_penalty_waiver_amount;
+
+                    $waiverDetails = $this->waiverDetail6($waiverList);
+                    $waiverElement = [
+                        'headerTitle' => 'Waiver Details',
+                        'tableHead' => [
+                            "One Percent Penalty", "One Percent Penalty Amount", "One Percent Penalty Waiver Amount"
+                        ],
+                        'tableData' => [$waiverDetails]
+                    ];
                     break;
 
                 case ($applicationDtl->is_rwh_penalty):
                     $waiverList['is_rwh_penalty'] = true;
                     $waiverList['rwh_amount'] = $applicationDtl->rwh_amount;
                     $waiverList['rwh_waiver_amount'] = $applicationDtl->rwh_waiver_amount;
+
+                    $waiverDetails = $this->waiverDetail7($waiverList);
+                    $waiverElement = [
+                        'headerTitle' => 'Waiver Details',
+                        'tableHead' => [
+                            "RWH Penalty", "RWH Amount", "RWH Waiver Amount"
+                        ],
+                        'tableData' => [$waiverDetails]
+                    ];
                     break;
 
                 case ($applicationDtl->is_lateassessment_penalty):
                     $waiverList['is_lateassessment_penalty'] = true;
                     $waiverList['lateassessment_penalty_amount'] = $applicationDtl->lateassessment_penalty_amount;
                     $waiverList['lateassessment_penalty_waiver_amount'] = $applicationDtl->lateassessment_penalty_waiver_amount;
+
+                    $waiverDetails = $this->waiverDetail8($waiverList);
+                    $waiverElement = [
+                        'headerTitle' => 'Waiver Details',
+                        'tableHead' => [
+                            "Lateassessment Penalty", "Lateassessment Penalty Amount", "Lateassessment Penalty Waiver Amount"
+                        ],
+                        'tableData' => [$waiverDetails]
+                    ];
                     break;
             }
 
-
-
             $waiverList = json_decode(json_encode($waiverList), true);       // Convert Std class to array
 
-            $waiverDetails = $this->waiverDetails($waiverList);
-            return  $waiverElement = [
-                'headerTitle' => 'Waiver Details',
-                'tableHead' => [
-                    "Is Bill Waiver", "Bill Amount", "Bill Waiver Amount",
-                    "is_one_percent_penalty", "one_percent_penalty_amount", "one_percent_penalty_waiver_amount",
-                    "is_rwh_penalty", "rwh_amount", "rwh_waiver_amount"
-                ],
-                'tableData' => $waiverDetails
-            ];
-            $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$objectionElement]);
+            $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$waiverElement]);
 
-            $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$ownerElement]);
             // Card Details
-            $cardElement = $this->generateConcessionCardDtls($details, $ownerList);
+            $cardElement = $this->generateWaiverCardDtls($applicationDtl, $propertyDetail);
             $fullDetailsData['fullDetailsData']['cardArray'] = $cardElement;
 
-            $levelComment = $mWorkflowTracks->getTracksByRefId($mRefTable, $req->applicationId);
+            $levelComment = $mWorkflowTracks->getTracksByRefId('prop_active_waivers', $req->applicationId);
             $fullDetailsData['levelComment'] = $levelComment;
 
-            $citizenComment = $mWorkflowTracks->getCitizenTracks($mRefTable, $req->applicationId, $details->user_id);
+            $citizenComment = $mWorkflowTracks->getCitizenTracks('prop_active_waivers', $req->applicationId, $applicationDtl->user_id);
             $fullDetailsData['citizenComment'] = $citizenComment;
 
-            $metaReqs['customFor'] = 'PROPERTY-CONCESSION';
-            $metaReqs['wfRoleId'] = $details->current_role;
-            $metaReqs['workflowId'] = $details->workflow_id;
-            // $metaReqs['lastRoleId'] = $details->last_role_id;
+            $metaReqs['customFor'] = 'PROPERTY-WAIVER';
+            $metaReqs['wfRoleId'] = $applicationDtl->current_role;
+            $metaReqs['workflowId'] = $applicationDtl->workflow_id;
+            $metaReqs['lastRoleId'] = 11;
             $req->request->add($metaReqs);
 
-            $forwardBackward = $mForwardBackward->getRoleDetails($req);
+            $forwardBackward = $forwardBackward->getRoleDetails($req);
             $fullDetailsData['roleDetails'] = collect($forwardBackward)['original']['data'];
 
             $fullDetailsData['timelineData'] = collect($req);
@@ -381,6 +470,65 @@ class WaiverController extends Controller
             return responseMsgs(true, "Application Details", $fullDetailsData, "", '010709', '01', responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | 
+     */
+    public function inbox(Request $req)
+    {
+        try {
+            $mWfRoleUser = new WfRoleusermap();
+            $mWfWardUser = new WfWardUser();
+            $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
+            $mPropActiveWaiver   = new PropActiveWaiver();
+
+            $user = authUser($req);
+            $userId = $user->id;
+            $ulbId = $user->ulb_id;
+            $perPage = $req->perPage ?? 10;
+
+            $occupiedWards = $mWfWardUser->getWardsByUserId($userId)->pluck('ward_id');                       // Model () to get Occupied Wards of Current User
+            $roleIds = $mWfRoleUser->getRoleIdByUserId($userId)->pluck('wf_role_id');                      // Model to () get Role By User Id
+            $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleIds)->pluck('workflow_id');
+
+            $safDtl = $mPropActiveWaiver->waiverList()                                         // Repository function to get SAF Details
+                // ->where('prop_active_waivers.ulb_id', $ulbId)
+                ->where('prop_active_waivers.is_approved', false)
+                // ->where('prop_active_waivers.status', 1)
+                ->whereIn('current_role', $roleIds)
+                ->orderByDesc('prop_active_waivers.id')
+                ->paginate($perPage);
+
+            return responseMsgs(true, "Data Fetched", remove_null($safDtl), "010103", "1.0", responseTime(), "POST", "");
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     *  | Get uploaded documents
+     */
+    public function getUploadedDocuments(Request $req)
+    {
+        $req->validate([
+            'applicationId' => 'required|numeric'
+        ]);
+        try {
+            $mWfActiveDocument = new WfActiveDocument();
+            $mPropActiveWaiver = new PropActiveWaiver();
+            $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
+
+            $waiverDetails = $mPropActiveWaiver::find($req->applicationId);
+            if (!$waiverDetails)
+                throw new Exception("Application Not Found for this application Id");
+
+            $workflowId = $waiverDetails->workflow_id;
+            $documents = $mWfActiveDocument->getDocsByAppId($req->applicationId, $workflowId, $moduleId);
+            return responseMsgs(true, "Uploaded Documents", remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 }

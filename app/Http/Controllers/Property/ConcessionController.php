@@ -275,7 +275,7 @@ class ConcessionController extends Controller
     public function saveGenderData($req, $concession)
     {
         $concession->gender = $req['value'];
-        // $this->saveDoc($req, $concession);
+        $this->saveDoc($req, $concession);
     }
 
     /**
