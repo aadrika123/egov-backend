@@ -491,6 +491,14 @@ Route::controller(ReferenceController::class)->group(function () {
   Route::post('v1/prop-usage-type', 'listPropUsagetype');                                          //19
 });
 
+
+
+
+
+
+
+
+
 #Added By Sandeep Bara
 #Date 16/02/2023
 
