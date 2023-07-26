@@ -155,7 +155,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
     Route::get('provisional-certificate/{id}', 'provisionalCertificate');
     Route::get('license-certificate/{id}', 'licenceCertificate');
 });
-//});
+
 Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
     Route::controller(TradeController::class)->group(function () {
         // Route::post('firm-type-add', 'addFirmType');

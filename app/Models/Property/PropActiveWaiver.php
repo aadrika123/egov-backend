@@ -4,6 +4,7 @@ namespace App\Models\Property;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class PropActiveWaiver extends Model
 {
@@ -35,5 +36,32 @@ class PropActiveWaiver extends Model
         $data->workflow_id = $request->workflowId;
         $data->current_role = $request->currentRole;
         $data->save();
+        return $data;
+    }
+
+    public function waiverList()
+    {
+        return PropActiveWaiver::select(
+            'prop_active_waivers.*',
+            's.area_of_plot',
+            // DB::raw("case when is_bill_waiver = true then 'Bill Waiver',
+            //          case when is_one_percent_penalty = true then '1 % Penalty',
+            //          case when is_rwh_penalty = true then 'RWH Penalty',
+            //          case when is_lateassessment_penalty = true then 'Late Assessment Penalty',
+            //  end as applied_for"),
+            DB::raw("case when property_id is not null then 'Property' else 'Saf' end as application_type"),
+            DB::raw("TO_CHAR(prop_active_waivers.created_at, 'DD-MM-YYYY') as application_date"),
+            'u.ward_name as old_ward_no',
+            'u1.ward_name as new_ward_no',
+            'p.property_type',
+            'o.ownership_type',
+            'r.road_type as road_type_master'
+        )
+            ->leftJoin('prop_properties as s', 's.id', '=', 'prop_active_waivers.property_id')
+            ->leftJoin('ulb_ward_masters as u', 'u.id', '=', 's.ward_mstr_id')
+            ->leftJoin('ulb_ward_masters as u1', 'u.id', '=', 's.new_ward_mstr_id')
+            ->leftJoin('ref_prop_ownership_types as o', 'o.id', '=', 's.ownership_type_mstr_id')
+            ->leftJoin('ref_prop_types as p', 'p.id', '=', 's.prop_type_mstr_id')
+            ->leftJoin('ref_prop_road_types as r', 'r.id', '=', 's.road_type_mstr_id');
     }
 }
