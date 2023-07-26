@@ -225,11 +225,11 @@ class ReferenceController extends Controller
     public function listPropVacantRentalrate(Request $request)
    {
     try {
-        $perPage = $request->input('per_page', 10); // Number of results per page, default is 10
+        
         $status = $request->input('status', 1); // Status filter, default is 1
         
         $m_propvacantrentalrate = MPropVacantRentalrate::where('status', $status)
-            ->paginate($perPage);
+            ->get();
 
         if (!$m_propvacantrentalrate->count()) {
             return response()->json([
@@ -292,11 +292,11 @@ class ReferenceController extends Controller
     public function listPropFloor(Request $request)
    {
     try {
-        $perPage = $request->input('per_page', 10); // Number of results per page, default is 10
+        
         $status = $request->input('status', 1); // Status filter, default is 1
         
         $m_propfloor = RefPropFloor::where('status', $status)
-            ->paginate($perPage);
+            ->get();
 
         if (!$m_propfloor->count()) {
             return response()->json([
