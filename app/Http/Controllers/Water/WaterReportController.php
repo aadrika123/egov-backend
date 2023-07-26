@@ -8,6 +8,7 @@ use App\Traits\Water\WaterTrait;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
@@ -418,7 +419,8 @@ class WaterReportController extends Controller
      */
     public function wardWiseDCB(Request $request)
     {
-        $request->validate(
+        $validated = Validator::make(
+            $request->all(),
             [
                 "fiYear" => "nullable|regex:/^\d{4}-\d{4}$/",
                 "ulbId" => "nullable|digits_between:1,9223372036854775807",
@@ -429,6 +431,9 @@ class WaterReportController extends Controller
                 // "perPage" => "nullable|digits_between:1,9223372036854775807",
             ]
         );
+        if ($validated->fails())
+            return validationError($validated);
+
         $request->request->add(["metaData" => ["", 1.1, "", $request->getMethod(), $request->deviceId,]]);
         $metaData = collect($request->metaData)->all();
         list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
@@ -781,7 +786,8 @@ class WaterReportController extends Controller
      */
     public function WaterCollection(Request $request)
     {
-        $request->validate(
+        $validated = Validator::make(
+            $request->all(),
             [
                 "fromDate"      => "required|date|date_format:Y-m-d",
                 "uptoDate"      => "required|date|date_format:Y-m-d",
@@ -792,6 +798,8 @@ class WaterReportController extends Controller
                 "perPage"       => "nullable|digits_between:1,9223372036854775807",
             ]
         );
+        if ($validated->fails())
+            return validationError($validated);
 
         $consumerCollection = null;
         $applicationCollection = null;
@@ -841,7 +849,8 @@ class WaterReportController extends Controller
      */
     public function consumerReport(Request $request)
     {
-        $request->validate(
+        $validated = Validator::make(
+            $request->all(),
             [
                 "fromDate"      => "required|date|date_format:Y-m-d",
                 "uptoDate"      => "required|date|date_format:Y-m-d",
@@ -852,6 +861,8 @@ class WaterReportController extends Controller
                 "perPage"       => "nullable|digits_between:1,9223372036854775807",
             ]
         );
+        if ($validated->fails())
+            return validationError($validated);
 
         $metaData = collect($request->metaData)->all();
         $request->request->add(["metaData" => ["pr1.1", 1.1, null, $request->getMethod(), null,]]);
@@ -980,17 +991,21 @@ class WaterReportController extends Controller
      */
     public function connectionCollection(Request $request)
     {
-        $request->validate(
+        $validated = Validator::make(
+            $request->all(),
             [
-                "fromDate" => "required|date|date_format:Y-m-d",
-                "uptoDate" => "required|date|date_format:Y-m-d",
-                "wardId" => "nullable|digits_between:1,9223372036854775807",
-                "userId" => "nullable|digits_between:1,9223372036854775807",
-                "paymentMode" => "nullable",
-                "page" => "nullable|digits_between:1,9223372036854775807",
-                "perPage" => "nullable|digits_between:1,9223372036854775807",
+                "fromDate"      => "required|date|date_format:Y-m-d",
+                "uptoDate"      => "required|date|date_format:Y-m-d",
+                "wardId"        => "nullable|digits_between:1,9223372036854775807",
+                "userId"        => "nullable|digits_between:1,9223372036854775807",
+                "paymentMode"   => "nullable",
+                "page"          => "nullable|digits_between:1,9223372036854775807",
+                "perPage"       => "nullable|digits_between:1,9223372036854775807",
             ]
         );
+        if ($validated->fails())
+            return validationError($validated);
+
         $request->request->add(["metaData" => ["pr2.1", 1.1, null, $request->getMethod(), null,]]);
         $metaData = collect($request->metaData)->all();
         list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;

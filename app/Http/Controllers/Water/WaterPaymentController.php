@@ -12,6 +12,7 @@ use App\Models\Payment\WebhookPaymentData;
 use App\Models\Water\WaterAdjustment;
 use App\Models\Water\WaterAdvance;
 use App\Models\Water\WaterApplication;
+use Illuminate\Support\Facades\Validator;
 use App\Models\Water\WaterApprovalApplicationDetail;
 use App\Models\Water\WaterChequeDtl;
 use App\Models\Water\WaterConnectionCharge;
@@ -198,9 +199,15 @@ class WaterPaymentController extends Controller
      */
     public function getConsumerPaymentHistory(Request $request)
     {
-        $request->validate([
-            'consumerId' => 'required|digits_between:1,9223372036854775807'
-        ]);
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'consumerId' => 'required|digits_between:1,9223372036854775807'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
         try {
             $mWaterTran             = new WaterTran();
             $mWaterConsumer         = new WaterConsumer();
@@ -267,9 +274,14 @@ class WaterPaymentController extends Controller
      */
     public function generateOfflinePaymentReceipt(Request $req)
     {
-        $req->validate([
-            'transactionNo' => 'required'
-        ]);
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'transactionNo' => 'required'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
         try {
             $refTransactionNo = $req->transactionNo;
 
@@ -816,11 +828,16 @@ class WaterPaymentController extends Controller
      */
     public function callDemandByMonth(Request $request)
     {
-        $request->validate([
-            'consumerId' => 'required',
-            'demandFrom' => 'required|date|date_format:Y-m-d',
-            'demandUpto' => 'required|date|date_format:Y-m-d',
-        ]);
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'consumerId' => 'required',
+                'demandFrom' => 'required|date|date_format:Y-m-d',
+                'demandUpto' => 'required|date|date_format:Y-m-d',
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
         try {
             $startingDate   = Carbon::createFromFormat('Y-m-d',  $request->demandFrom)->startOfMonth();
             $endDate        = Carbon::createFromFormat('Y-m-d',  $request->demandUpto)->endOfMonth();
@@ -1402,9 +1419,14 @@ class WaterPaymentController extends Controller
      */
     public function getApplicationPaymentHistory(Request $request)
     {
-        $request->validate([
-            'id' => 'required|digits_between:1,9223372036854775807'
-        ]);
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'id' => 'required|digits_between:1,9223372036854775807'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
         try {
             $mWaterTran                 = new WaterTran();
             $mWaterApplication          = new WaterApplication();
@@ -1486,9 +1508,15 @@ class WaterPaymentController extends Controller
      */
     public function generateDemandPaymentReceipt(Request $req)
     {
-        $req->validate([
-            'transactionNo' => 'required'
-        ]);
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'transactionNo' => 'required'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
         try {
             $refTransactionNo       = $req->transactionNo;
             $mWaterConsumerDemand   = new WaterConsumerDemand();
@@ -1774,9 +1802,15 @@ class WaterPaymentController extends Controller
      */
     public function paymentHistory(Request $request)
     {
-        $request->validate([
-            'pages' => 'required|int'
-        ]);
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'pages' => 'required|int'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
         try {
             $citizen        = authUser($request);
             $citizenId      = $citizen->id;
@@ -1812,9 +1846,16 @@ class WaterPaymentController extends Controller
      */
     public function getWaterUserCharges(Request $request)
     {
-        $request->validate([
-            'consumerNo' => 'required'
-        ]);
+
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'consumerNo' => 'required'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
         try {
             $mWaterConsumer         = new WaterConsumer();
             $mWaterConsumerDemand   = new WaterConsumerDemand();
