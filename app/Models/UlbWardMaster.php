@@ -9,7 +9,11 @@ use Exception;
 class UlbWardMaster extends Model
 {
     use HasFactory;
+<<<<<<< HEAD
 
+=======
+    public $timestamps = false;
+>>>>>>> d00f9ecdb7ad26492e009324550114a31bd18da5
     /**
      * | Get the Ward No by ward id
      * | @param id $id
