@@ -4,7 +4,9 @@ namespace App\Http\Requests\Water;
 
 use Carbon\Carbon;
 use Exception;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Facades\Config;
 
 class ReqWaterPayment extends FormRequest
@@ -47,5 +49,20 @@ class ReqWaterPayment extends FormRequest
         $rules['applicationId'] = 'required';
         $rules['penaltyAmount'] = 'required';
         return $rules;
+    }
+
+    // Validation Error Message
+    protected function failedValidation(Validator $validator)
+    {
+        throw new HttpResponseException(
+            response()->json(
+                [
+                    'status'   => false,
+                    'message'  => 'The given data was invalid',
+                    'errors'   => $validator->errors()
+                ],
+                422
+            )
+        );
     }
 }
