@@ -276,13 +276,19 @@ class NewConnectionController extends Controller
     public function postNextLevel(Request $request)
     {
         $wfLevels = Config::get('waterConstaint.ROLE-LABEL');
-        $request->validate([
-            'applicationId'     => 'required',
-            'senderRoleId'      => 'required',
-            'receiverRoleId'    => 'required',
-            'action'            => 'required|In:forward,backward',
-            'comment'           => $request->senderRoleId == $wfLevels['BO'] ? 'nullable' : 'required',
-        ]);
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'applicationId'     => 'required',
+                'senderRoleId'      => 'required',
+                'receiverRoleId'    => 'required',
+                'action'            => 'required|In:forward,backward',
+                'comment'           => $request->senderRoleId == $wfLevels['BO'] ? 'nullable' : 'required',
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
         try {
             return $this->newConnection->postNextLevel($request);
         } catch (Exception $error) {
@@ -298,9 +304,14 @@ class NewConnectionController extends Controller
      */
     public function getApplicationsDetails(Request $request)
     {
-        $request->validate([
-            'applicationId' => 'required'
-        ]);
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'applicationId' => 'required'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
         try {
             return $this->newConnection->getApplicationsDetails($request);
         } catch (Exception $e) {
@@ -315,10 +326,16 @@ class NewConnectionController extends Controller
      */
     public function postEscalate(Request $request)
     {
-        $request->validate([
-            "escalateStatus" => "required|int",
-            "applicationId" => "required|int",
-        ]);
+        $validated = Validator::make(
+            $request->all(),
+            [
+                "escalateStatus" => "required|int",
+                "applicationId" => "required|int",
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
         try {
             $userId = authUser($request)->id;
             $applicationId = $request->applicationId;
@@ -341,11 +358,16 @@ class NewConnectionController extends Controller
      */
     public function approvalRejectionWater(Request $request)
     {
-        $request->validate([
-            "applicationId" => "required",
-            "status"        => "required",
-            "comment"       => "required"
-        ]);
+        $validated = Validator::make(
+            $request->all(),
+            [
+                "applicationId" => "required",
+                "status"        => "required",
+                "comment"       => "required"
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
         try {
             $mWfRoleUsermap = new WfRoleusermap();
             $waterDetails = WaterApplication::findOrFail($request->applicationId);
@@ -381,11 +403,16 @@ class NewConnectionController extends Controller
      */
     public function commentIndependent(Request $request)
     {
-        $request->validate([
-            'comment'       => 'required',
-            'applicationId' => 'required',
-            'senderRoleId'  => 'nullable|integer'
-        ]);
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'comment'       => 'required',
+                'applicationId' => 'required',
+                'senderRoleId'  => 'nullable|integer'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
         try {
             $metaReqs       = array();
             $user           = authUser($request);
@@ -444,9 +471,14 @@ class NewConnectionController extends Controller
     {
         try {
             if ($request->id) {
-                $request->validate([
-                    "id" => "nullable|int",                                     // Consumer ID
-                ]);
+                $validated = Validator::make(
+                    $request->all(),
+                    [
+                        "id" => "nullable|int",
+                    ]
+                );
+                if ($validated->fails())
+                    return validationError($validated);
 
                 $refConsumerId              = $request->id;
                 $mWaterConsumerMeter        = new WaterConsumerMeter();
@@ -572,10 +604,15 @@ class NewConnectionController extends Controller
      */
     public function backToCitizen(Request $req)
     {
-        $req->validate([
-            'applicationId' => 'required|integer',
-            'comment'       => 'required|string'
-        ]);
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'applicationId' => 'required|integer',
+                'comment'       => 'required|string'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
 
         try {
             $user               = authUser($req);
@@ -649,9 +686,15 @@ class NewConnectionController extends Controller
      */
     public function deleteWaterApplication(Request $req)
     {
-        $req->validate([
-            'applicationId' => 'required|integer'
-        ]);
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'applicationId' => 'required|integer'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
         try {
             $user                       = authUser($req);
             $mWaterApplication          = new WaterApplication();
@@ -709,10 +752,15 @@ class NewConnectionController extends Controller
      */
     public function editWaterAppliction(Request $req)
     {
-        $req->validate([
-            'applicatonId'  => 'required|integer',
-            'owner'         => 'nullable|array',
-        ]);
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'applicatonId'  => 'required|integer',
+                'owner'         => 'nullable|array',
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
 
         try {
             $mWaterApplication          = new WaterApplication();
@@ -839,9 +887,16 @@ class NewConnectionController extends Controller
      */
     public function getApplicationDetails(Request $request)
     {
-        $request->validate([
-            'applicationId' => 'required|integer',
-        ]);
+
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'applicationId' => 'required|integer',
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
         try {
             $user = authUser($request);
             $mWaterSiteInspectionsScheduling = new WaterSiteInspectionsScheduling();
@@ -911,13 +966,18 @@ class NewConnectionController extends Controller
      */
     public function uploadWaterDoc(Request $req)
     {
-        $req->validate([
-            "applicationId" => "required|numeric",
-            "document"      => "required|mimes:pdf,jpeg,png,jpg|max:2048",
-            "docCode"       => "required",
-            "docCategory"   => "required",                                  // Recheck in case of undefined
-            "ownerId"       => "nullable|numeric"
-        ]);
+        $validated = Validator::make(
+            $req->all(),
+            [
+                "applicationId" => "required|numeric",
+                "document"      => "required|mimes:pdf,jpeg,png,jpg|max:2048",
+                "docCode"       => "required",
+                "docCategory"   => "required",                                  // Recheck in case of undefined
+                "ownerId"       => "nullable|numeric"
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
 
         try {
             $user               = authUser($req);
@@ -944,7 +1004,8 @@ class NewConnectionController extends Controller
                 'document'      => $imageName,
                 'docCode'       => $req->docCode,
                 'ownerDtlId'    => $req->ownerId,
-                'docCategory'   => $req->docCategory
+                'docCategory'   => $req->docCategory,
+                'auth'          => $user
             ];
 
             if ($user->user_type == "Citizen") {                                                // Static
@@ -1122,9 +1183,15 @@ class NewConnectionController extends Controller
      */
     public function getUploadDocuments(Request $req)
     {
-        $req->validate([
-            'applicationId' => 'required|numeric'
-        ]);
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'applicationId' => 'required|numeric'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
         try {
             $mWfActiveDocument = new WfActiveDocument();
             $mWaterApplication = new WaterApplication();
@@ -1155,9 +1222,14 @@ class NewConnectionController extends Controller
      */
     public function getDocToUpload(Request $request)
     {
-        $request->validate([
-            'applicationId' => 'required|numeric'
-        ]);
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'applicationId' => 'required|numeric'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
         try {
             $refApplication         = (array)null;
             $refOwneres             = (array)null;
@@ -1489,9 +1561,15 @@ class NewConnectionController extends Controller
      */
     public function getDocList(Request $req)
     {
-        $req->validate([
-            'applicationId' => 'required|numeric'
-        ]);
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'applicationId' => 'required|numeric'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
         try {
             $mWaterApplication  = new WaterApplication();
             $mWaterApplicant    = new WaterApplicant();
@@ -1692,11 +1770,17 @@ class NewConnectionController extends Controller
      */
     public function searchWaterConsumer(Request $request)
     {
-        $request->validate([
-            'filterBy'  => 'required',
-            'parameter' => 'required',
-            'pages'     => 'nullable',
-        ]);
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'filterBy'  => 'required',
+                'parameter' => 'required',
+                'pages'     => 'nullable',
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
         try {
             $mWaterConsumer = new WaterConsumer();
             $key            = $request->filterBy;
@@ -1760,12 +1844,16 @@ class NewConnectionController extends Controller
      */
     public function getActiveApplictaions(Request $request)
     {
-        $request->validate([
-            'filterBy'  => 'required|in:newConnection,regularization,name,mobileNo,safNo,holdingNo',
-            'parameter' => $request->filterBy == 'mobileNo' ? 'required|numeric|digits:10' : "required",
-            'pages'     => 'nullable|integer',
-        ]);
-
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'filterBy'  => 'required|in:newConnection,regularization,name,mobileNo,safNo,holdingNo',
+                'parameter' => $request->filterBy == 'mobileNo' ? 'required|numeric|digits:10' : "required",
+                'pages'     => 'nullable|integer',
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
         try {
             $key                = $request->filterBy;
             $parameter          = $request->parameter;
@@ -1834,13 +1922,17 @@ class NewConnectionController extends Controller
      */
     public function docVerifyRejects(Request $req)
     {
-        $req->validate([
-            'id'            => 'required|digits_between:1,9223372036854775807',
-            'applicationId' => 'required|digits_between:1,9223372036854775807',
-            'docRemarks'    =>  $req->docStatus == "Rejected" ? 'required|regex:/^[a-zA-Z1-9][a-zA-Z1-9\. \s]+$/' : "nullable",
-            'docStatus'     => 'required|in:Verified,Rejected'
-        ]);
-
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'id'            => 'required|digits_between:1,9223372036854775807',
+                'applicationId' => 'required|digits_between:1,9223372036854775807',
+                'docRemarks'    =>  $req->docStatus == "Rejected" ? 'required|regex:/^[a-zA-Z1-9][a-zA-Z1-9\. \s]+$/' : "nullable",
+                'docStatus'     => 'required|in:Verified,Rejected'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
         try {
             # Variable Assignments
             $mWfDocument        = new WfActiveDocument();
@@ -1950,9 +2042,14 @@ class NewConnectionController extends Controller
      */
     public function getApplicationDetailById(Request $request)
     {
-        $request->validate([
-            'applicationId' => 'required|integer',
-        ]);
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'applicationId' => 'required|integer',
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
         try {
             $mWaterConnectionCharge     = new WaterConnectionCharge();
             $mWaterApplication          = new WaterApplication();
@@ -2052,10 +2149,16 @@ class NewConnectionController extends Controller
      */
     public function listApplicationBydate(Request $request)
     {
-        $request->validate([
-            'fromDate' => 'required|date_format:Y-m-d',
-            'toDate'   => 'required|date_format:Y-m-d',
-        ]);
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'fromDate' => 'required|date_format:Y-m-d',
+                'toDate'   => 'required|date_format:Y-m-d',
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
         try {
             $mWaterConnectionCharge     = new WaterConnectionCharge();
             $mWaterPenaltyInstallment   = new WaterPenaltyInstallment();
@@ -2143,12 +2246,18 @@ class NewConnectionController extends Controller
     {
         $filterBy   = Config::get('waterConstaint.FILTER_BY');
         $roleId     = Config::get('waterConstaint.ROLE-LABEL.JE');
-        $request->validate([
-            'filterBy'  => 'required',
-            'parameter' => $request->filterBy == $filterBy['APPLICATION'] ? 'required' : 'nullable',
-            'fromDate'  => $request->filterBy == $filterBy['DATE'] ? 'required|date_format:Y-m-d' : 'nullable',
-            'toDate'    => $request->filterBy == $filterBy['DATE'] ? 'required|date_format:Y-m-d' : 'nullable',
-        ]);
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'filterBy'  => 'required',
+                'parameter' => $request->filterBy == $filterBy['APPLICATION'] ? 'required' : 'nullable',
+                'fromDate'  => $request->filterBy == $filterBy['DATE'] ? 'required|date_format:Y-m-d' : 'nullable',
+                'toDate'    => $request->filterBy == $filterBy['DATE'] ? 'required|date_format:Y-m-d' : 'nullable',
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
         try {
             $key = $request->filterBy;
             $mWaterApplicant = new WaterApplication();
@@ -2224,9 +2333,15 @@ class NewConnectionController extends Controller
      */
     public function cancelSiteInspection(Request $request)
     {
-        $request->validate([
-            'applicationId' => 'required',
-        ]);
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'applicationId' => 'required',
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
         try {
             $this->checkForSaveDateTime($request);
             $this->checkforPaymentStatus($request);
@@ -2290,12 +2405,18 @@ class NewConnectionController extends Controller
      */
     public function saveInspectionDateTime(Request $request)
     {
-        try {
-            $request->validate([
+        $validated = Validator::make(
+            $request->all(),
+            [
                 'applicationId'     => 'required',
                 'inspectionDate'    => 'required|date|date_format:Y-m-d',
                 'inspectionTime'    => 'required|date_format:H:i'
-            ]);
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
             $this->checkForSaveDateTime($request);
             $mWaterSiteInspectionsScheduling = new WaterSiteInspectionsScheduling();
             $refDate = Carbon::now()->format('Y-m-d');
@@ -2353,10 +2474,16 @@ class NewConnectionController extends Controller
      */
     public function getSiteInspectionDetails(Request $request)
     {
-        try {
-            $request->validate([
+        $validated = Validator::make(
+            $request->all(),
+            [
                 'applicationId' => 'required',
-            ]);
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
             $mWaterSiteInspectionsScheduling = new WaterSiteInspectionsScheduling();
             $siteInspection = $mWaterSiteInspectionsScheduling->getInspectionById($request->applicationId)->first();
             if (isset($siteInspection)) {
@@ -2408,14 +2535,20 @@ class NewConnectionController extends Controller
      */
     public function onlineSiteInspection(Request $request)
     {
-        $request->validate([
-            'applicationId' => 'required',
-            'waterLockArng' => 'required',
-            'gateValve'     => 'required',
-            'pipelineSize'  => 'required',
-            'pipeSize'      => 'required|in:15,20,25',
-            'ferruleType'   => 'required|in:6,10,12,16'
-        ]);
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'applicationId' => 'required',
+                'waterLockArng' => 'required',
+                'gateValve'     => 'required',
+                'pipelineSize'  => 'required',
+                'pipeSize'      => 'required|in:15,20,25',
+                'ferruleType'   => 'required|in:6,10,12,16'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
         try {
             $user                   = authUser($request);
             $current                = Carbon::now();
@@ -2498,9 +2631,14 @@ class NewConnectionController extends Controller
      */
     public function getJeSiteDetails(Request $request)
     {
-        $request->validate([
-            'applicationId' => 'required',
-        ]);
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'applicationId' => 'required',
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
         try {
             # variable defining
             $returnData['final_verify']         = false;
@@ -2534,9 +2672,15 @@ class NewConnectionController extends Controller
      */
     public function getTechnicalInsDetails(Request $request)
     {
-        $request->validate([
-            'applicationId' => 'required',
-        ]);
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'applicationId' => 'required',
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
         try {
             # variable defining
             $mWaterSiteInspection   = new WaterSiteInspection();

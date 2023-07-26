@@ -66,6 +66,7 @@ class WaiverController extends Controller
                 "userId" => $user->id,
                 "workflowId" => 195,
                 "currentRole" => 3,
+                "ulbId" => 2,
             ]);
 
             $data = $mPropActiveWaiver->addWaiver($request);
@@ -83,21 +84,22 @@ class WaiverController extends Controller
         $docUpload = new DocUpload;
         $mWfActiveDocument = new WfActiveDocument();
         $relativePath = Config::get('PropertyConstaint.WAIVER_RELATIVE_PATH');
+        $user = authUser($request);
         $refImageName = $request->docCode;
         $refImageName = $data->id . '-' . str_replace(' ', '_', $refImageName);
-        $document = $request['doc'];
+        $document = $request->waiverDocument;
 
         $imageName = $docUpload->upload($refImageName, $document, $relativePath);
-        $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
-        $metaReqs['activeId'] = $data->id;
-        $metaReqs['workflowId'] = $data->workflow_id;
-        $metaReqs['ulbId'] = $data->ulb_id;
-        $metaReqs['document'] = $imageName;
+        $metaReqs['moduleId']     = Config::get('module-constants.PROPERTY_MODULE_ID');
+        $metaReqs['activeId']     = $data->id;
+        $metaReqs['workflowId']   = $data->workflow_id;
+        $metaReqs['ulbId']        = $data->ulb_id;
+        $metaReqs['document']     = $imageName;
         $metaReqs['relativePath'] = $relativePath;
-        $metaReqs['docCode'] = $request->docCode;
+        $metaReqs['docCode']      = $request->docCode;
 
         $metaReqs = new Request($metaReqs);
-        $mWfActiveDocument->postDocuments($metaReqs);
+        $mWfActiveDocument->postDocuments($metaReqs, $user);
     }
 
     /**

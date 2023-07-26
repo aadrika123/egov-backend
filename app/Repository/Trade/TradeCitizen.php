@@ -301,8 +301,8 @@ class TradeCitizen implements ITradeCitizen
             DB::commit();
             #----------End transaction------------------------
             #----------Response------------------------------
-            $res['transactionId'] = $transaction_id;
-            $res['paymentReceipt'] = config('app.url') . "/api/trade/payment-receipt/" . $licenceId . "/" . $transaction_id;
+            $res['transactionId'] = $transaction_id; #config('app.url') .
+            $res['paymentReceipt'] =  "/api/trade/payment-receipt/" . $licenceId . "/" . $transaction_id;
             return responseMsg(true, "", $res);
         } catch (Exception $e) {
             DB::rollBack();
