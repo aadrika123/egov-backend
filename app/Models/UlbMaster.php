@@ -12,7 +12,32 @@ use Illuminate\Support\Facades\DB;
 class UlbMaster extends Model
 {
     use HasFactory;
-    use SoftDeletes;
+    // use SoftDeletes;
+
+    protected $dates = ['deleted_at'];
+
+    protected $guarded = [];
+
+
+    public function store(array $req)
+    {
+        UlbMaster::create($req);
+    }
+
+    public function show(array $req)
+    {
+        UlbMaster::view($req);
+    }
+
+    public function edit(array $req)
+    {
+        UlbMaster::update($req);
+    }
+
+    public function deactivated(array $req)
+    {
+        UlbMaster::update($req);
+    }
 
     /**
      * | Get Ulbs by district code

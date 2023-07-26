@@ -45,6 +45,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
 
@@ -317,7 +318,9 @@ class HoldingTaxController extends Controller
             $ipAddress = getClientIpAddress();
             $mPropRazorPayRequest = new PropRazorpayRequest();
             $postRazorPayPenaltyRebate = new PostRazorPayPenaltyRebate;
-
+            $url            = Config::get('razorpay.PAYMENT_GATEWAY_URL');
+            $endPoint       = Config::get('razorpay.PAYMENT_GATEWAY_END_POINT');
+            $authUser      = authUser($req);
             $demand = $this->getHoldingDues($req);
             if ($demand->original['status'] == false)
                 throw new Exception($demand->original['message']);
@@ -336,12 +339,18 @@ class HoldingTaxController extends Controller
                 'departmentId' => $departmentId,
                 'ulbId' => $propDtls->ulb_id,
                 'id' => $req->propId,
-                'ghostUserId' => 0
+                'ghostUserId' => 0,
+                'auth' => $authUser
             ]);
             DB::beginTransaction();
-            $orderDetails = $this->saveGenerateOrderid($req);                                      //<---------- Generate Order ID Trait
+            // $orderDetails = $this->saveGenerateOrderid($req);                                      //<---------- Generate Order ID Trait
+            $orderDetails = Http::withHeaders([])
+                ->post($url . $endPoint, $req->toArray());
+
+            $orderDetails = collect(json_decode($orderDetails));
+
             $demands = array_merge($demands->toArray(), [
-                'orderId' => $orderDetails['orderId']
+                'orderId' => $orderDetails['data']->orderId
             ]);
             // Store Razor pay Request
             $razorPayRequest = [
@@ -364,7 +373,7 @@ class HoldingTaxController extends Controller
             $postRazorPayPenaltyRebate->_razorPayRequestId = $storedRazorPayReqs['razorPayReqId'];
             $postRazorPayPenaltyRebate->postRazorPayPenaltyRebates($demands);
             DB::commit();
-            return responseMsgs(true, "Order id Generated", remove_null($orderDetails), "011603", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true, "Order id Generated", remove_null($orderDetails['data']), "011603", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsgs(false, $e->getMessage(), "", "011603", "1.0", "", "POST", $req->deviceId ?? "");

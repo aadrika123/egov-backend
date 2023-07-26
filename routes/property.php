@@ -22,7 +22,9 @@ use App\Http\Controllers\Property\HoldingTaxController;
 use App\Http\Controllers\Property\PropertyController;
 use App\Http\Controllers\Property\ReportController;
 use App\Http\Controllers\Property\SafDocController;
+use App\Http\Controllers\Property\WaiverController;
 use App\Http\Controllers\Property\ZoneController;
+use App\Http\Controllers\ReferenceController;
 
 /**
  * | ---------------------------------------------------------------------------
@@ -360,7 +362,6 @@ Route::controller(PropertyController::class)->group(function () {
   Route::post('caretaker-otp', 'caretakerOtp');                             // 01
   Route::post('caretaker-property-tagging', 'caretakerPropertyTag');        // 02
   Route::post('citizen-holding-saf', 'citizenHoldingSaf');                  // 03
-
   Route::post('basic-edit', 'basicPropertyEdit');
   Route::post('check-property', 'CheckProperty');
 });
@@ -450,6 +451,46 @@ Route::controller(JskController::class)->group(function () {
 });
 
 
+Route::controller(WaiverController::class)->group(function () {
+  Route::post('waiver/apply', 'apply');
+  Route::post('waiver/final-approval', 'approvalRejection');
+  Route::post('waiver/approved-list', 'approvedApplication');
+  Route::post('waiver/application-detail', 'applicationDetails');
+  Route::post('waiver/list-inbox', 'inbox');
+  Route::post('waiver/uploaded-documents', 'getUploadedDocuments');
+});
+
+
+
+/**
+ * | Get Reference List and Ulb Master Crud Operation
+ * | Created By : Tannu Verma
+ * | Created At : 20-05-2023
+   | Serial No. : 19
+ * | Status: Open
+ */
+Route::controller(ReferenceController::class)->group(function(){
+   
+  Route::post('v1/building-rental-const', 'listBuildingRentalconst');                              //01
+  Route::post('v1/get-forgery-type', 'listpropForgeryType');                                       //02
+  Route::post('v1/get-rental-value', 'listPropRentalValue');                                       //03
+  Route::post('v1/building-rental-rate', 'listPropBuildingRentalrate');                            //04
+  Route::post('v1/vacant-rental-rate','listPropVacantRentalrate');                                 //05
+  Route::post('v1/get-construction-list','listPropConstructiontype');                              //06
+  Route::post('v1/floor-type','listPropFloor');                                                    //07
+  Route::post('v1/gb-building-usage-type','listPropgbBuildingUsagetype');                          //08
+  Route::post('v1/gb-prop-usage-type','listPropgbPropUsagetype');                                  //09
+  Route::post('v1/prop-objection-type','listPropObjectiontype');                                   //10
+  Route::post('v1/prop-occupancy-factor','listPropOccupancyFactor');                               //11
+  Route::post('v1/prop-occupancy-type','listPropOccupancytype');                                   //12
+  Route::post('v1/prop-ownership-type','listPropOwnershiptype');                                   //13
+  Route::post('v1/prop-penalty-type','listPropPenaltytype');                                       //14
+  Route::post('v1/prop-rebate-type','listPropRebatetype');                                         //15
+  Route::post('v1/prop-road-type','listPropRoadtype');                                             //16
+  Route::post('v1/prop-transfer-mode','listPropTransfermode');                                     //17
+  Route::post('v1/get-prop-type','listProptype');                                                  //18
+  Route::post('v1/prop-usage-type','listPropUsagetype');                                           //19
+});
 
 #Added By Sandeep Bara
 #Date 16/02/2023
