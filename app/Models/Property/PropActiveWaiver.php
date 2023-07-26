@@ -30,10 +30,11 @@ class PropActiveWaiver extends Model
         $data->bill_id = $request->billId;
         $data->property_id = $request->propertyId;
         $data->saf_id = $request->safId;
-        $data->waiver_document = $request->waiverDocument;
+        // $data->waiver_document = $request->waiverDocument;
         $data->description = $request->description;
         $data->user_id = $request->userId;
         $data->workflow_id = $request->workflowId;
+        $data->ulb_id = $request->ulbId;
         $data->current_role = $request->currentRole;
         $data->save();
         return $data;

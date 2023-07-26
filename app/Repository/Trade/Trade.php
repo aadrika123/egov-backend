@@ -826,8 +826,8 @@ class Trade implements ITrade
             DB::commit();
             #----------End transaction------------------------
             #----------Response------------------------------
-            $res['transactionId'] = $transaction_id;
-            $res['paymentReceipt'] = config('app.url') . "/api/trade/application/payment-receipt/" . $licenceId . "/" . $transaction_id;
+            $res['transactionId'] = $transaction_id; #config('app.url') . 
+            $res['paymentReceipt'] = "/api/trade/application/payment-receipt/" . $licenceId . "/" . $transaction_id;
             return responseMsg(true, "", $res);
         } catch (Exception $e) {
             DB::rollBack();
@@ -2550,9 +2550,10 @@ class Trade implements ITrade
             $data = [
                 "application" => $application,
                 "transaction" => $transaction,
-                "penalty"    => $penalty
+                "penalty"    => $penalty 
             ];
-            $data['paymentReceipt'] = config('app.url') . "/api/trade/payment-receipt/" . $id . "/" . $transectionId;
+            #config('app.url') .
+            $data['paymentReceipt'] =  "/api/trade/payment-receipt/" . $id . "/" . $transectionId;
             $data = remove_null($data);
             return responseMsg(true, "", $data);
         } catch (Exception $e) {
