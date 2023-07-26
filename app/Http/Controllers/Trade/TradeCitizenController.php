@@ -630,7 +630,7 @@ class TradeCitizenController extends Controller
     public function expiredLicence(Request $request)
     {
         try {
-            $citizenId = authUser()->id;
+            $citizenId = authUser($request)->id;
             $mApplicationTypeId = $request->applicationType;
             $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
 
@@ -655,9 +655,9 @@ class TradeCitizenController extends Controller
     }
 
     # Serial No
-    public function renewalList()
+    public function renewalList($request)
     {
-        $citizenId = authUser()->id;
+        $citizenId = authUser($request)->id;
         $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
 
         $data = TradeLicence::select('trade_licences.*')
@@ -677,10 +677,10 @@ class TradeCitizenController extends Controller
     }
 
     # Serial No
-    public function amendmentList()
+    public function amendmentList($request)
     {
         try {
-            $citizenId = authUser()->id;
+            $citizenId = authUser($request)->id;
             $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
             // DB::enableQueryLog();
             $data = TradeLicence::select('*')
@@ -702,10 +702,10 @@ class TradeCitizenController extends Controller
     }
 
     # Serial No
-    public function surrenderList()
+    public function surrenderList($request)
     { 
         try {
-            $citizenId = authUser()->id;
+            $citizenId = authUser($request)->id;
             $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
 
             $data = TradeLicence::select('*')

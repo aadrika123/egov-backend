@@ -149,13 +149,13 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
         Route::post('tc-list', 'TcList');
     });
 });
-Route::group(['middleware'=>['json.response','auth_maker']],function(){
+
    Route::controller(TradeApplication::class)->group(function () {
     Route::get('payment-receipt/{id}/{transectionId}', 'paymentReceipt');
     Route::get('provisional-certificate/{id}', 'provisionalCertificate');
     Route::get('license-certificate/{id}', 'licenceCertificate');
 });
-});
+
 
 Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
     Route::controller(TradeController::class)->group(function () {
