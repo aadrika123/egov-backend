@@ -27,6 +27,9 @@ class AuthMaker
                 default                       : Auth::login(new \App\Models\ActiveCitizen($request->auth));
                                                 break;
             }
+            collect($request->auth)->map(function($val,$key){
+                Auth()->user()->$key = $val;
+            });
             Auth()->user()->id=$request->auth["id"];
         }
         return $next($request);
