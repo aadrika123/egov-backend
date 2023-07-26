@@ -1004,7 +1004,8 @@ class NewConnectionController extends Controller
                 'document'      => $imageName,
                 'docCode'       => $req->docCode,
                 'ownerDtlId'    => $req->ownerId,
-                'docCategory'   => $req->docCategory
+                'docCategory'   => $req->docCategory,
+                'auth'          => $user
             ];
 
             if ($user->user_type == "Citizen") {                                                // Static
