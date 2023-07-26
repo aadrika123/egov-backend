@@ -204,7 +204,7 @@ class Trade implements ITrade
                     $val->ward_no = $val->ward_name;
                     return $val;
                 });
-                $data['wardList'] = objToArray($data['wardList']);
+                $data['wardList'] = objToArray($data['wardList']);                
             } else {
                 $data['wardList'] = $this->_COMMON_FUNCTION->WardPermission($refUserId);
             }
@@ -321,10 +321,13 @@ class Trade implements ITrade
                 elseif ($mApplicationTypeId == 1) # code for New License
                 {
                     $wardId = $request->firmDetails['wardNo'];
-                    $mWardNo = array_filter($data['wardList'], function ($val) use ($wardId) {
-                        return $val['id'] == $wardId;
-                    });
-                    $mWardNo = array_values($mWardNo)[0]['ward_no'] ?? "";
+                    $mWardNo = (collect($data['wardList'])->where("id",$wardId)->pluck("ward_no"));
+                    // $mWardNo = array_filter($data['wardList'], function ($val) use ($wardId) {
+                    //     return $val['id'] == $wardId;
+                    // });
+                    
+                    // $mWardNo = array_values($mWardNo)[0]['ward_no'] ?? "";
+                    $mWardNo =  $mWardNo[0]??"";
                     $this->newLicense($licence, $request);
                     $licence->valid_from    = $licence->application_date;
                     $licence->save();
@@ -376,6 +379,7 @@ class Trade implements ITrade
                         $myRequest->request->add(['branchName' => $request->licenseDetails["branchName"]]);
                     }
                     $temp = $this->paymentCounter($myRequest);
+                    dd($temp->original["message"]);
                     if (!$temp->original["status"]) 
                     {
                         throw new Exception($temp->original["message"]);
@@ -408,7 +412,7 @@ class Trade implements ITrade
                 return responseMsg(true, $mAppNo, $res);
             }
         } catch (Exception $e) {
-            DB::rollBack();                 
+            DB::rollBack();   dd($e->getLine(),$e->getFile(),$e->getMessage());              
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
@@ -830,7 +834,7 @@ class Trade implements ITrade
             $res['paymentReceipt'] = "/api/trade/application/payment-receipt/" . $licenceId . "/" . $transaction_id;
             return responseMsg(true, "", $res);
         } catch (Exception $e) {
-            DB::rollBack();
+            DB::rollBack();dd($e->getLine(),$e->getFile(),$e->getMessage());
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
