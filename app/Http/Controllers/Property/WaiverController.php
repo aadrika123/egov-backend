@@ -64,6 +64,7 @@ class WaiverController extends Controller
                 "userId" => $user->id,
                 "workflowId" => 195,
                 "currentRole" => 3,
+                "ulbId" => 2,
             ]);
 
             $data = $mPropActiveWaiver->addWaiver($request);
