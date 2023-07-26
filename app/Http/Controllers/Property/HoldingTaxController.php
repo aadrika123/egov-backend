@@ -228,7 +228,8 @@ class HoldingTaxController extends Controller
                 'onePercPenalty' => $onePercTax,
                 'totalQuarters' => $demandList->count(),
                 'arrear' => $balance,
-                'advanceAmt' => $advanceAmt
+                'advanceAmt' => $advanceAmt,
+                'additionalTax' => $rwhPenaltyTax
             ];
             $currentQtr = calculateQtr($todayDate);
 
