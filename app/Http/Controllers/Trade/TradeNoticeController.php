@@ -8,7 +8,6 @@ use App\Http\Requests\Trade\ReqApplyDenail;
 use App\Models\Trade\ActiveTradeNoticeConsumerDtl;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\WorkflowTrack;
-use Illuminate\Support\Facades\Auth; 
 use App\Repository\Common\CommonFunction;
 use App\Repository\Trade\ITradeNotice;
 use Exception;
@@ -68,21 +67,11 @@ class TradeNoticeController extends Controller
             $rules["document"]="required|mimes:pdf,jpg,jpeg,png|max:2048";
             $request->validate($rules);
 
-            $user = authUser($request);
-
-            // Check if the 'ulb_id' property exists in $user
-            if (property_exists($user, 'ulb_id')) {
-                $ulbId = $user->ulb_id;
-            } else {
-                $ulbId = null;
-            }
-            if ($request->has('ulbId')) {
-                $ulbId = $request->input('ulbId');
-            }
-    
+            $user = Auth()->user();
+            $userId = $user->id;
             $ulbId = $user->ulb_id;
             $refWorkflowId = $this->_WF_MASTER_Id;
-            $role = $this->_COMMON_FUNCTION->getUserRoll($user, $ulbId, $refWorkflowId);
+            $role = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $refWorkflowId);
             // dd($role);
             if (!$role) {
                 throw new Exception("You Are Not Authorized");
@@ -125,7 +114,7 @@ class TradeNoticeController extends Controller
 
         try {
             // Trade Notice Application Update Current Role Updation
-            $user = authUser($request);
+            $user = Auth()->user();
             $user_id = $user->id;
             $ulb_id = $user->ulb_id;
             $refWorkflowId = $this->_WF_MASTER_Id;

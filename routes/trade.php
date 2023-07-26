@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\Mdm\TradeController;
-use App\Http\Controllers\Trade\ReportControlle;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Trade\TradeApplication;
 use App\Http\Controllers\Trade\TradeCitizenController;
@@ -137,7 +136,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
         Route::post("application/valid-expire-list", "valideAndExpired");
         Route::post("application/collection-summary", "CollectionSummary");
         Route::post("application/track-status", "ApplicantionTrackStatus");
-        Route::post("application/application-agent-notice", "applicationAgentNotrequestice"); 
+        Route::post("application/application-agent-notice", "applicationAgentNotice"); 
         Route::post("application/notice-summary", "noticeSummary");
         Route::post("application/levelwisependingform", "levelwisependingform"); 
         Route::post("application/leveluserpending", "levelUserPending"); 
@@ -150,14 +149,14 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
         Route::post('tc-list', 'TcList');
     });
 });
-
-Route::controller(TradeApplication::class)->group(function () {
+//Route::group(['middleware'=>['json.response','auth_maker']],function(){
+   Route::controller(TradeApplication::class)->group(function () {
     Route::get('payment-receipt/{id}/{transectionId}', 'paymentReceipt');
     Route::get('provisional-certificate/{id}', 'provisionalCertificate');
     Route::get('license-certificate/{id}', 'licenceCertificate');
 });
-
-//Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {
+//});
+Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
     Route::controller(TradeController::class)->group(function () {
         // Route::post('firm-type-add', 'addFirmType');
         Route::post('firm-type-list', 'firmTypeList');
@@ -189,5 +188,4 @@ Route::controller(TradeApplication::class)->group(function () {
         Route::post('ownership-type', 'ownershipType');
         // Route::post('ownership-type-update', 'updateOwnershipType');
     });
-
-//});
+});

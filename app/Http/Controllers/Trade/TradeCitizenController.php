@@ -137,7 +137,7 @@ class TradeCitizenController extends Controller
             {
                 throw New Exception("Counter User Not Allowed");
             }
-            $refUser            = authUser($request);
+            $refUser            = Auth()->user();
             $refUserId          = $refUser->id;
             $refUlbId           = $request->ulbId;
             
@@ -198,7 +198,7 @@ class TradeCitizenController extends Controller
         $this->_META_DATA["deviceId"] = $request->ip();
 
         $data = (array)null;
-        $refUser = authUser($request);
+        $refUser = Auth()->user();
         $refUlbId = $request->ulbId;
         $mNoticeNo = null;
         $mNowDate = Carbon::now()->format('Y-m-d'); // todays date
@@ -278,7 +278,7 @@ class TradeCitizenController extends Controller
                 throw New Exception("Counter User Not Allowed");
             }
             #------------------------ Declaration-----------------------
-            $refUser            = authUser($request);
+            $refUser            = Auth()->user();
             $refNoticeDetails   = null;
             $refWorkflowId      = $this->_WF_MASTER_Id;
             $mNoticeDate        = null;
@@ -386,10 +386,10 @@ class TradeCitizenController extends Controller
             );
         }
     }
-    public function razorPayResponse($args,$request)
+    public function razorPayResponse($args)
     {
         try {
-            $refUser        = authUser($request);
+            $refUser        = Auth()->user();
             $refUserId      = $refUser->id ?? $args["userId"];
             $refUlbId       = $refUser->ulb_id ?? $args["ulbId"];
             $refWorkflowId  = $this->_WF_MASTER_Id;
@@ -422,9 +422,9 @@ class TradeCitizenController extends Controller
             $licenceId = $args["id"];
             $refLevelData = $this->_REPOSITORY_TRADE->getWorkflowTrack($licenceId);
             if (!$refLecenceData) {
-                throw new Exception("s Data Not Found !!!!!");
+                throw new Exception("Licence Data Not Found !!!!!");
             } elseif ($refLecenceData->application_type_id == 4) {
-                throw new Exception("Surender Application Not Pay Any Amount");
+                throw new Exception("Surender Application Not Pay Anny Amount");
             } elseif (in_array($refLecenceData->payment_status, [1, 2])) {
                 throw new Exception("Payment Already Done Of This Application");
             }
@@ -518,7 +518,7 @@ class TradeCitizenController extends Controller
                 $refLecenceData->pending_status  = 1;
                 $args["sender_role_id"] = $refWorkflows['initiator']['id'];
                 $args["receiver_role_id"] = $refWorkflows['initiator']['forward_id'];
-                $args["citizen_id"] = $refUserId;
+                $args["citizen_id"] = $refUserId;;
                 $args["ref_table_dot_id"] = "active_trade_licences";
                 $args["ref_table_id_value"] = $licenceId;
                 $args["workflow_id"] = $refWorkflowId;
@@ -557,7 +557,7 @@ class TradeCitizenController extends Controller
             {
                 throw New Exception("Counter User Not Allowed");
             }
-            $refUser     = authUser($request);
+            $refUser     = Auth()->user();
             $application = null;
             $transection = null;
             $path = "/api/trade/paymentReceipt/";
@@ -588,7 +588,7 @@ class TradeCitizenController extends Controller
                 throw new Exception("Application Not Found....");
             }
             if (!$transection) {
-                throw new Exception("Not Transaction Data Found....");
+                throw new Exception("Not Transection Data Found....");
             }
             $data["amount"]            = $TradeRazorPayResponse->amount;
             $data["applicationId"]     = $TradeRazorPayResponse->temp_id;
@@ -630,7 +630,7 @@ class TradeCitizenController extends Controller
     public function expiredLicence(Request $request)
     {
         try {
-            $citizenId = authUser($request)->id;
+            $citizenId = authUser()->id;
             $mApplicationTypeId = $request->applicationType;
             $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
 
@@ -655,9 +655,9 @@ class TradeCitizenController extends Controller
     }
 
     # Serial No
-    public function renewalList($request)
+    public function renewalList()
     {
-        $citizenId = authUser($request)->id;
+        $citizenId = authUser()->id;
         $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
 
         $data = TradeLicence::select('trade_licences.*')
@@ -677,10 +677,10 @@ class TradeCitizenController extends Controller
     }
 
     # Serial No
-    public function amendmentList($request)
+    public function amendmentList()
     {
         try {
-            $citizenId = authUser($request)->id;
+            $citizenId = authUser()->id;
             $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
             // DB::enableQueryLog();
             $data = TradeLicence::select('*')
@@ -702,10 +702,10 @@ class TradeCitizenController extends Controller
     }
 
     # Serial No
-    public function surrenderList($request)
+    public function surrenderList()
     { 
         try {
-            $citizenId = authUser($request)->id;
+            $citizenId = authUser()->id;
             $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
 
             $data = TradeLicence::select('*')
@@ -729,7 +729,7 @@ class TradeCitizenController extends Controller
     public function readAtachedLicenseDtl(Request $request)
     {
         try{
-            $refUser        = authUser($request);
+            $refUser        = Auth()->user();
             $refUserId      = $refUser->id;
             $refWorkflowId      = $this->_WF_MASTER_Id;
 
@@ -898,7 +898,7 @@ class TradeCitizenController extends Controller
                     {
                         $option[]="RENEWAL";
                     }
-                    if(trim($val->license_type)=="approved" && $val->pending_status == 5 && $validUpto >= Carbon::now()->format('d-m-Y')) //date changed y-m-d to d-m-y
+                    if(trim($val->license_type)=="approved" && $val->pending_status == 5 && $validUpto >= Carbon::now()->format('Y-m-d'))
                     {
                         $option[]="AMENDMENT";
                         $option[]="SURRENDER";

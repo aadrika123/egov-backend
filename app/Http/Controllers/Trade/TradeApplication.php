@@ -112,7 +112,7 @@ class TradeApplication extends Controller
     public function getApplyData(Request $request)
     {
         try {
-            $refUser            = authUser($request);
+            $refUser            = Auth()->user();
             $refUserId          = $refUser->id;
             $refUlbId           = $refUser->ulb_id ?? $request->ulbId;
             $refWorkflowId      = $this->_WF_MASTER_Id;
@@ -188,10 +188,10 @@ class TradeApplication extends Controller
     }
     # Serial No : 01
     public function applyApplication(ReqAddRecorde $request)
-    {       
-        $refUser            = authUser($request);
+    {
+        $refUser            = Auth()->user();
         $refUserId          = $refUser->id;
-        $refUlbId           = $refUser->ulb_id??null;
+        $refUlbId           = $refUser->ulb_id;
         if ($refUser->user_type == $this->_TRADE_CONSTAINT["CITIZEN"]) {
             $refUlbId = $request->ulbId ?? 0;
         }
@@ -326,7 +326,7 @@ class TradeApplication extends Controller
                 throw new Exception("Citizen Not Allowed");
             }
             // Variable Assignments
-            $user = authUser($request);
+            $user = Auth()->user();
             $userId = $user->id;
             $ulbId = $user->ulb_id;
             $mWfDocument = new WfActiveDocument();
@@ -410,20 +410,13 @@ class TradeApplication extends Controller
     public function workflowDashordDetails(Request $request)
     {
         try {
-            
+
             $track = new WorkflowTrack();
             $mWfWorkflow = new WfWorkflow();
             $tradC = new Trade();
-            $refUser = authUser($request);
+            $refUser = Auth()->user();
             $refUserId = $refUser->id;
-            
-            if (property_exists($refUser, 'ulb_id')) {
-                $refUlbId = $refUser->ulb_id;
-            } 
-            if ($request->has('ulbId')) {
-                $ulbId = $request->input('ulbId');
-            }
-    
+            $refUlbId = $refUser->ulb_id;
             $refWorkflowId      = $this->_WF_MASTER_Id;
             $userRole = $this->_COMMON_FUNCTION->getUserRoll($refUserId, $refUlbId, $refWorkflowId);
             $wfAllRoles         = $this->_COMMON_FUNCTION->getWorkFlowAllRoles($refUserId, $refUlbId, $refWorkflowId, true);
@@ -475,8 +468,7 @@ class TradeApplication extends Controller
             return responseMsgs(false, $e->getMessage(), "", "01", ".ms", "POST", "");
         }
     }
-
-# Serial No : 15
+    # Serial No : 15
     public function postEscalate(Request $request)
     {
         return $this->_REPOSITORY->postEscalate($request);
@@ -504,7 +496,7 @@ class TradeApplication extends Controller
     # Serial No
     public function backToCitizen(Request $req)
     {
-        $user =  authUser($req);
+        $user = Auth()->user();
         $user_id = $user->id;
         $ulb_id = $user->ulb_id;
 
@@ -572,7 +564,7 @@ class TradeApplication extends Controller
     #please not use custome request
     public function postNextLevel(Request $request)
     {
-        $user =  authUser($request);
+        $user = Auth()->user();
         $user_id = $user->id;
         $ulb_id = $user->ulb_id;
 
@@ -739,7 +731,7 @@ class TradeApplication extends Controller
                 throw new Exception("Citizen Not Allowed");
             }
 
-            $user =  authUser($req);
+            $user = Auth()->user();
             $user_id = $user->id;
             $ulb_id = $user->ulb_id;
             $refWorkflowId = $this->_WF_MASTER_Id;

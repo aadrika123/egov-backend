@@ -262,7 +262,7 @@ class ObjectionController extends Controller
                 $objectionDetails = $this->objectionDetails($objectionList);
                 $objectionElement = [
                     'headerTitle' => 'Objection Details',
-                    'tableHead' => ["#", "Objection Type", "Self-Assessed", "Objection"],
+                    'tableHead' => ["#", "Particular", "Self-Assessed", "Objection"],
                     'tableData' => $objectionDetails
                 ];
                 $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$objectionElement]);

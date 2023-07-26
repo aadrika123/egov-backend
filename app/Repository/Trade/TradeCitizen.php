@@ -75,7 +75,6 @@ class TradeCitizen implements ITradeCitizen
         ];
         
     }
-
     public function addRecord(Request $request)
     {
         $this->_META_DATA["apiId"] = "c2";
@@ -83,7 +82,7 @@ class TradeCitizen implements ITradeCitizen
         $this->_META_DATA["action"]    = $request->getMethod();
         $this->_META_DATA["deviceId"] = $request->ip();        
         try {
-            $refUser            = authUser($request);
+            $refUser            = Auth()->user();
             $refUserId          = $refUser->id;
             $refUlbId           = $request->ulbId;
             $refWorkflowId      = $this->_WF_MASTER_Id;
@@ -146,10 +145,10 @@ class TradeCitizen implements ITradeCitizen
             );
         }
     }
-    public function razorPayResponse($args,$request)
+    public function razorPayResponse($args)
     {
         try {
-            $refUser        = authUser($request);
+            $refUser        = Auth()->user();
             $refUserId      = $refUser->id ?? $args["userId"];
             $refUlbId       = $refUser->ulb_id ?? $args["ulbId"];
             $refWorkflowId  = $this->_WF_MASTER_Id;
@@ -184,7 +183,7 @@ class TradeCitizen implements ITradeCitizen
             if (!$refLecenceData) {
                 throw new Exception("Licence Data Not Found !!!!!");
             } elseif ($refLecenceData->application_type_id == 4) {
-                throw new Exception("Surender Application Not Pay Any Amount");
+                throw new Exception("Surender Application Not Pay Anny Amount");
             } elseif (in_array($refLecenceData->payment_status, [1, 2])) {
                 throw new Exception("Payment Already Done Of This Application");
             }
@@ -312,12 +311,11 @@ class TradeCitizen implements ITradeCitizen
     }
 
     # Serial No : 27
-     
     public function citizenApplication(Request $request)
     {
         try {
 
-            $refUser        = authUser($request);
+            $refUser        = Auth()->user();
             $refUserId      = $refUser->id;
             $refWorkflowId      = $this->_WF_MASTER_Id;
 
@@ -348,6 +346,7 @@ class TradeCitizen implements ITradeCitizen
                         TO_CHAR( CAST(licences.application_date AS DATE), 'DD-MM-YYYY') as application_date
                 "),
             ];
+
             $ActiveSelect = $select;
             $ActiveSelect[] = DB::raw("'active' as license_type");
             $ActiveLicence = DB::TABLE("active_trade_licences AS licences")
@@ -413,6 +412,7 @@ class TradeCitizen implements ITradeCitizen
                 ->where("licences.is_active", true)
                 ->where("licences.citizen_id", $refUserId);
                 // ->get();
+
             
             $OldSelect = $select;        
             $OldSelect[] = DB::raw("'old' as license_type");
@@ -438,7 +438,7 @@ class TradeCitizen implements ITradeCitizen
             $final = $ActiveLicence->union($RejectedLicence)
                     ->union($ApprovedLicence)->union($OldLicence)
                     ->get();
-            $final->map(function($val) use($refUserId,$request){
+            $final->map(function($val) use($refUserId){
                 $option = [];
                 $nextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
                 $validUpto="";
@@ -460,18 +460,14 @@ class TradeCitizen implements ITradeCitizen
                     $option=[];
                 }
                 $val->option = $option;
-                $val->pending_at = $this->_REPOSITORY_TRADE->applicationStatus($val->id,false,$request);                
+                $val->pending_at = $this->_REPOSITORY_TRADE->applicationStatus($val->id,false);                
                 if(str_contains(strtoupper($val->pending_at),strtoupper("All Required Documents Are Uploaded")))
                 {
                     $val->document_upload_status =1; 
                 }
-            
                 return $val;
             });
-            
-            $final = remove_null($final);
-            
-            return responseMsg(true, "", $final);
+            return responseMsg(true, "", remove_null($final));
         } 
         catch (Exception $e) 
         {
@@ -486,14 +482,16 @@ class TradeCitizen implements ITradeCitizen
         try {
            
             $id = $request->id;
-            $refUser        = authUser($request); 
+            $refUser        = Auth()->user(); 
             $refUserId      = $refUser->id;
             $refUlbId       = $refUser->ulb_id ?? 0;
             $refWorkflowId  = $this->_WF_MASTER_Id;
             $modul_id = $this->_MODULE_ID;
+           
+            
             $mUserType      = $this->_COMMON_FUNCTION->userType($refWorkflowId);
             $refApplication = $this->_REPOSITORY_TRADE->getAllLicenceById($id);
-            $mStatus = $this->_REPOSITORY_TRADE->applicationStatus($id,false,$request); //$id
+            $mStatus = $this->_REPOSITORY_TRADE->applicationStatus($id);
             $mItemName      = "";
             $mCods          = "";
             if(!$refApplication)
@@ -517,7 +515,7 @@ class TradeCitizen implements ITradeCitizen
                     $mCods      .= $val->trade_code . ",";
                 }
                 $mItemName = trim($mItemName, ',');
-                $mCods =trim ($mCods,',');
+                $mCods = trim($mCods, ',');
             }
             $refApplication->items      = $mItemName;
             $refApplication->items_code = $mCods;
@@ -552,6 +550,7 @@ class TradeCitizen implements ITradeCitizen
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), '');
         }
+    }
+
     
-}
 }

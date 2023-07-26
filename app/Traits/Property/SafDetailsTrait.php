@@ -362,27 +362,6 @@ trait SafDetailsTrait
     }
 
     /**
-     * | Waiver Details
-     */
-    public function waiverDetails($waiverList)
-    {
-        // return collect($waiverList)->map(function ($objectionList, $key) {
-        return [
-            // $key + 1,
-            $waiverList['is_bill_waiver'],
-            $waiverList['bill_amount'],
-            $waiverList['bill_waiver_amount'],
-            $waiverList['is_one_percent_penalty'],
-            $waiverList['one_percent_penalty_amount'],
-            $waiverList['one_percent_penalty_waiver_amount'],
-            $waiverList['is_rwh_penalty'],
-            $waiverList['rwh_amount'],
-            $waiverList['rwh_waiver_amount'],
-        ];
-        // });
-    }
-
-    /**
      * | Generate Demand Detail
      */
     public function generateDemandDues($demandDues)

@@ -260,7 +260,7 @@ class ReportController extends Controller
         );
         $request->request->add(["metaData" => ["tr10.2.2.2", 1.1, null, $request->getMethod(), null,]]);
 
-        $refUser        =  authUser($request);
+        $refUser        = Auth()->user();
         $refUserId      = $refUser->id;
         $ulbId          = $refUser->ulb_id;
         if ($request->ulbId) {
@@ -316,64 +316,32 @@ class ReportController extends Controller
         return $this->Repository->applicationStatus($request);
     }
 
-    // public function WardList(Request $request)
-    // {
-    //     $request->request->add(["metaData" => ["tr13.1", 1.1, null, $request->getMethod(), null,]]);
-    //     $metaData = collect($request->metaData)->all();
-    //     list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
-    //     try{
-    //         $refUser        = authUser($request);
-    //         $refUserId      = $refUser->id;
-    //         $ulbId          = $refUser->ulb_id;
-    //         if($request->ulbId)
-    //         {
-    //             $ulbId  =   $request->ulbId;
-    //         }
-    //         $wardList = UlbWardMaster::select(DB::raw("min(id) as id ,ward_name as ward_no"))
-    //                     ->WHERE("ulb_id",$ulbId)
-    //                     ->GROUPBY("ward_name")
-    //                     ->ORDERBY("ward_name")
-    //                     ->GET();
-            
-    //         return responseMsgs(true, "", $wardList, $apiId, $version, $queryRunTime, $action, $deviceId);
-    //     }
-    //     catch(Exception $e)
-    //     {
-    //         return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
-    //     }        
-    // }
     public function WardList(Request $request)
-{
-    $request->request->add(["metaData" => ["tr13.1", 1.1, null, $request->getMethod(), null,]]);
-    $metaData = collect($request->metaData)->all();
-    list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
-    try {
-        $refUser = authUser($request);
-        $refUserId = $refUser->id;
-        if (property_exists($refUser, 'ulb_id')) {
-            $ulbId = $refUser->ulb_id;
-        } else {
+    {
+        $request->request->add(["metaData" => ["tr13.1", 1.1, null, $request->getMethod(), null,]]);
+        $metaData = collect($request->metaData)->all();
+        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
+        try{
+            $refUser        = Auth()->user();
+            $refUserId      = $refUser->id;
+            $ulbId          = $refUser->ulb_id;
+            if($request->ulbId)
+            {
+                $ulbId  =   $request->ulbId;
+            }
+            $wardList = UlbWardMaster::select(DB::raw("min(id) as id ,ward_name as ward_no"))
+                        ->WHERE("ulb_id",$ulbId)
+                        ->GROUPBY("ward_name")
+                        ->ORDERBY("ward_name")
+                        ->GET();
             
-            $ulbId = null;
+            return responseMsgs(true, "", $wardList, $apiId, $version, $queryRunTime, $action, $deviceId);
         }
-
-        
-        if ($request->has('ulbId')) {
-            $ulbId = $request->input('ulbId');
-        }
-
-        $wardList = UlbWardMaster::select(DB::raw("min(id) as id ,ward_name as ward_no"))
-            ->where("ulb_id", $ulbId)
-            ->groupBy("ward_name")
-            ->orderBy("ward_name")
-            ->get();
-
-        return responseMsgs(true, "", $wardList, $apiId, $version, $queryRunTime, $action, $deviceId);
-    } catch (Exception $e) {
-        return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
+        catch(Exception $e)
+        {
+            return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
+        }        
     }
-}
-
 
     public function TcList(Request $request)
     {
@@ -382,7 +350,7 @@ class ReportController extends Controller
         list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
         try
         {
-            $refUser        = authUser($request);
+            $refUser        = Auth()->user();
             $refUserId      = $refUser->id;
             $ulbId          = $refUser->ulb_id;
             if($request->ulbId)

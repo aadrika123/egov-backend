@@ -730,8 +730,8 @@ class ActiveSafController extends Controller
             $data = $mPropActiveSaf->getActiveSafDtls()                         // <------- Model function Active SAF Details
                 ->where('prop_active_safs.id', $req->applicationId)
                 ->first();
-            // if (!$data)
-            // throw new Exception("Application Not Found");
+            if (!$data)
+                throw new Exception("Application Not Found");
 
             if (collect($data)->isEmpty()) {
                 $data = $mPropSaf->getSafDtls()
@@ -741,7 +741,7 @@ class ActiveSafController extends Controller
             }
 
             if (collect($data)->isEmpty())
-                throw new Exception("Application Not Found");
+                throw new Exception("Data Not Found");
 
             if ($data->payment_status == 0) {
                 $data->current_role_name = null;
