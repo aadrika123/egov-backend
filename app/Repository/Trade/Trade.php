@@ -379,7 +379,6 @@ class Trade implements ITrade
                         $myRequest->request->add(['branchName' => $request->licenseDetails["branchName"]]);
                     }
                     $temp = $this->paymentCounter($myRequest);
-                    dd($temp->original["message"]);
                     if (!$temp->original["status"]) 
                     {
                         throw new Exception($temp->original["message"]);
@@ -412,7 +411,7 @@ class Trade implements ITrade
                 return responseMsg(true, $mAppNo, $res);
             }
         } catch (Exception $e) {
-            DB::rollBack();   dd($e->getLine(),$e->getFile(),$e->getMessage());              
+            DB::rollBack();             
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
@@ -834,7 +833,7 @@ class Trade implements ITrade
             $res['paymentReceipt'] = "/api/trade/application/payment-receipt/" . $licenceId . "/" . $transaction_id;
             return responseMsg(true, "", $res);
         } catch (Exception $e) {
-            DB::rollBack();dd($e->getLine(),$e->getFile(),$e->getMessage());
+            DB::rollBack();
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
