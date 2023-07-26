@@ -44,6 +44,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Validator;
 use Symfony\Component\CssSelector\Node\FunctionNode;
 
 class WaterConsumer extends Controller
@@ -85,9 +86,15 @@ class WaterConsumer extends Controller
      */
     public function listConsumerDemand(Request $request)
     {
-        $request->validate([
-            'ConsumerId' => 'required|',
-        ]);
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'ConsumerId' => 'required|',
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+            
         try {
             $mWaterConsumerDemand   = new WaterConsumerDemand();
             $mWaterConsumerMeter    = new WaterConsumerMeter();
@@ -149,9 +156,15 @@ class WaterConsumer extends Controller
      */
     public function saveGenerateConsumerDemand(Request $request)
     {
-        $request->validate([
-            'consumerId'    => "required|digits_between:1,9223372036854775807",
-        ]);
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'consumerId'    => "required|digits_between:1,9223372036854775807",
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
         try {
             $mWaterConsumerInitialMeter = new WaterConsumerInitialMeter();
             $mWaterConsumerMeter        = new WaterConsumerMeter();
@@ -175,9 +188,14 @@ class WaterConsumer extends Controller
                 $demandDetails = collect($calculatedDemand['consumer_tax']['0']);
                 switch ($demandDetails['charge_type']) {
                     case ($refMeterConnectionType['1']):
-                        $request->validate([
-                            'document' => "required|mimes:pdf,jpeg,png,jpg",
-                        ]);
+                        $validated = Validator::make(
+                            $request->all(),
+                            [
+                                'document' => "required|mimes:pdf,jpeg,png,jpg",
+                            ]
+                        );
+                        if ($validated->fails())
+                            return validationError($validated);
                         $meterDetails = $mWaterConsumerMeter->saveMeterReading($request);
                         $mWaterConsumerInitialMeter->saveConsumerReading($request, $meterDetails, $userDetails);
                         $demandIds = $this->savingDemand($calculatedDemand, $request, $consumerDetails, $demandDetails['charge_type'], $refMeterConnectionType, $userDetails);
@@ -190,9 +208,14 @@ class WaterConsumer extends Controller
                         });
                         break;
                     case ($refMeterConnectionType['5']):
-                        $request->validate([
-                            'document' => "required|mimes:pdf,jpeg,png,jpg",
-                        ]);
+                        $validated = Validator::make(
+                            $request->all(),
+                            [
+                                'document' => "required|mimes:pdf,jpeg,png,jpg",
+                            ]
+                        );
+                        if ($validated->fails())
+                            return validationError($validated);
                         $meterDetails = $mWaterConsumerMeter->saveMeterReading($request);
                         $mWaterConsumerInitialMeter->saveConsumerReading($request, $meterDetails, $userDetails);
                         $demandIds = $this->savingDemand($calculatedDemand, $request, $consumerDetails, $demandDetails['charge_type'], $refMeterConnectionType, $userDetails);
@@ -206,9 +229,15 @@ class WaterConsumer extends Controller
                         break;
 
                     case ($refMeterConnectionType['2']):
-                        $request->validate([
-                            'document' => "required|mimes:pdf,jpeg,png,jpg",
-                        ]);
+                        $validated = Validator::make(
+                            $request->all(),
+                            [
+                                'document' => "required|mimes:pdf,jpeg,png,jpg",
+                            ]
+                        );
+                        if ($validated->fails())
+                            return validationError($validated);
+
                         $meterDetails = $mWaterConsumerMeter->saveMeterReading($request);
                         $mWaterConsumerInitialMeter->saveConsumerReading($request, $meterDetails, $userDetails);
                         $demandIds = $this->savingDemand($calculatedDemand, $request, $consumerDetails, $demandDetails['charge_type'], $refMeterConnectionType, $userDetails);
@@ -532,9 +561,14 @@ class WaterConsumer extends Controller
      */
     public function getMeterList(Request $request)
     {
-        $request->validate([
-            'consumerId' => "required|digits_between:1,9223372036854775807",
-        ]);
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'consumerId' => "required|digits_between:1,9223372036854775807",
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
 
         try {
             $meterConnectionType    = null;
@@ -582,12 +616,17 @@ class WaterConsumer extends Controller
      */
     public function applyDeactivation(Request $request)
     {
-        $request->validate([
-            'consumerId'    => "required|digits_between:1,9223372036854775807",
-            'ulbId'         => "required",
-            'reason'        => "required",
-            'remarks'       => "required"
-        ]);
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'consumerId'    => "required|digits_between:1,9223372036854775807",
+                'ulbId'         => "required",
+                'reason'        => "required",
+                'remarks'       => "required"
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
 
         try {
             $user                           = authUser($request);
@@ -773,14 +812,20 @@ class WaterConsumer extends Controller
      */
     public function consumerDemandDeactivation(Request $request)
     {
-        try {
-            $request->validate([
+        $validated = Validator::make(
+            $request->all(),
+            [
                 'consumerId'    => "required|digits_between:1,9223372036854775807",
                 'demandId'      => "required|array|unique:water_consumer_demands,id'",
                 'paymentMode'   => "required|in:Cash,Cheque,DD",
                 'amount'        => "required",
                 'reason'        => "required"
-            ]);
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
             $mWaterWaterConsumer = new WaterWaterConsumer();
             $mWaterConsumerDemand = new WaterConsumerDemand();
 
@@ -864,11 +909,17 @@ class WaterConsumer extends Controller
      */
     public function addFixedRate(Request $request)
     {
-        $request->validate([
-            'consumerId'    => "required|digits_between:1,9223372036854775807",
-            'document'      => "required|mimes:pdf,jpg,jpeg,png",
-            'ratePerMonth'  => "required|numeric"
-        ]);
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'consumerId'    => "required|digits_between:1,9223372036854775807",
+                'document'      => "required|mimes:pdf,jpg,jpeg,png",
+                'ratePerMonth'  => "required|numeric"
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
         try {
             $consumerId             = $request->consumerId;
             $mWaterConsumerMeter    = new WaterConsumerMeter();
@@ -936,10 +987,16 @@ class WaterConsumer extends Controller
      */
     public function calculateMeterFixedReading(Request $request)
     {
-        $request->validate([
-            'consumerId'  => "required|",
-            'uptoData'    => "required|date",
-        ]);
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'consumerId'  => "required|",
+                'uptoData'    => "required|date",
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
         try {
             $todayDate                  = Carbon::now();
             $refConsumerId              = $request->consumerId;
@@ -999,9 +1056,15 @@ class WaterConsumer extends Controller
      */
     public function generateMemo(Request $request)
     {
-        $request->validate([
-            'consumerNo'  => "required",
-        ]);
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'consumerNo'  => "required",
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
         try {
             $refConsumerNo          = $request->consumerNo;
             $mWaterWaterConsumer    = new WaterWaterConsumer();
@@ -1067,10 +1130,15 @@ class WaterConsumer extends Controller
      */
     public function searchFixedConsumers(Request $request)
     {
-        $request->validate([
-            // 'filterBy'  => 'required',
-            // 'parameter' => 'required'
-        ]);
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'filterBy'  => 'required',
+                'parameter' => 'required'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
         try {
 
             return $waterReturnDetails = $this->getDetailByConsumerNo($request, 'consumer_no', '2016000500');
@@ -1171,11 +1239,17 @@ class WaterConsumer extends Controller
      */
     public function selfGenerateDemand(Request $req)
     {
-        $req->validate([
-            'id'            => 'required',
-            'finalReading'  => 'required',
-            'document'      => 'required|file|'
-        ]);
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'id'            => 'required',
+                'finalReading'  => 'required',
+                'document'      => 'required|file|'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
         try {
             $today                  = Carbon::now();
             $consumerId             = $req->id;
@@ -1265,13 +1339,18 @@ class WaterConsumer extends Controller
      */
     public function addAdvance(Request $req)
     {
-        $req->validate([
-            'consumerId'    => 'required|int',
-            'amount'        => 'required|int',
-            'document'      => 'required|file|',
-            'remarks'       => 'required',
-            'reason'        => 'nullable'
-        ]);
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'consumerId'    => 'required|int',
+                'amount'        => 'required|int',
+                'document'      => 'required|file|',
+                'remarks'       => 'required',
+                'reason'        => 'nullable'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
         try {
             $user           = authUser($req);
             $docAdvanceCode = Config::get('waterConstaint.WATER_ADVANCE_CODE');

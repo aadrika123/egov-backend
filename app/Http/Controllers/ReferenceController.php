@@ -10,6 +10,7 @@ use App\Models\MPropRentalValue;
 use App\Models\MPropVacanatRentalrate;
 use App\Models\MPropVacantRentalrate;
 use App\Models\PropApartmentdtl;
+use App\Models\Property\RefPropTransferMode;
 use App\Models\RefPropBuildingRenatlRate;
 use App\Models\RefPropConstructionType;
 use App\Models\RefPropFloor;
@@ -28,8 +29,9 @@ use Illuminate\Http\Request;
 
 /**
  * | Creation of Reference APIs
- * | Created By-Tannu Verma
- * | Created On-24-05-2023 
+ * | Created By- Tannu Verma
+ * | Created On- 24-05-2023 
+ * | Serial No. - 21
  * | Status-Open
  */
 
@@ -71,22 +73,13 @@ class ReferenceController extends Controller
             ->get();
 
         if (!$m_buildingRentalconst) {
-            return response()->json([
-                'message' => 'Building Rental Const Not Found',
-                'status' => 'error'
-            ], 404);
+            return responseMsgs(false, "", 'Building Rental Const Not Found', "", "");
         }
-
-        return response()->json([
-            'message' => 'Building Rental Const Retrieved Successfully',
-            'status' => 'success',
-            'data' => $m_buildingRentalconst
-        ]);
+        return responseMsgs(true, $m_buildingRentalconst, 'Building Rental Const Retrieved Successfully', "012101", "");
+        
     } catch (\Exception $e) {
-        return response()->json([
-            'message' => 'Error retrieving Building Rental Const',
-            'status' => 'error'
-        ], 500);
+        return responseMsgs(false, $e->getMessage(), "");
+        
     }
    }
    
@@ -100,26 +93,15 @@ class ReferenceController extends Controller
     try {
         $m_propforgerytype = MPropForgeryType::where('status', 1)
             ->get();
-
         if (!$m_propforgerytype) {
-            return response()->json([
-                'message' => 'Forgery type Not Found',
-                'status' => 'error'
-            ], 404);
+            return responseMsgs(false, "", 'Forgery type Not Found', "", "");  
         }
-
-        return response()->json([
-            'message' => 'Forgery type Retrieved Successfully',
-            'status' => 'success',
-            'data' => $m_propforgerytype
-        ]);
+        return responseMsgs(true, $m_propforgerytype, 'Forgery type Retrieved Successfully', "012102", "");
     } catch (\Exception $e) {
-        return response()->json([
-            'message' => 'Error retrieving  Forgery Type',
-            'status' => 'error'
-        ], 500);
+        return responseMsgs(false, $e->getMessage(), "");
     }
    }
+
 
    /** 
      * 3. listPropRentalValue()
@@ -131,24 +113,12 @@ class ReferenceController extends Controller
      try {
          $m_proprentalvalue = MPropRentalValue::where('status', 1)
              ->get();
- 
          if (!$m_proprentalvalue) {
-             return response()->json([
-                 'message' => 'Rental Value Not Found',
-                 'status' => 'error'
-             ], 404);
+             return responseMsgs(false, "", 'Rental Value Not Found', "", "");
          }
- 
-         return response()->json([
-             'message' => 'Rental Value Retrieved Successfully',
-             'status' => 'success',
-             'data' => $m_proprentalvalue
-         ]);
+         return responseMsgs(true, $m_proprentalvalue, 'Rental Value Retrieved Successfully', "012103", "");
      } catch (\Exception $e) {
-         return response()->json([
-             'message' => 'Error retrieving Rental value',
-             'status' => 'error'
-         ], 500);
+         return responseMsgs(false, $e->getMessage(), "");
      }
     }
 
@@ -165,22 +135,12 @@ class ReferenceController extends Controller
              ->get();
  
          if (!$m_propapartmentdtl) {
-             return response()->json([
-                 'message' => 'Apartment details Not Found',
-                 'status' => 'error'
-             ], 404);
+             return responseMsgs(false, "", 'Apartment details Not Found', "", "");
          }
- 
-         return response()->json([
-             'message' => 'Apartment details Retrieved Successfully',
-             'status' => 'success',
-             'data' => $m_propapartmentdtl
-         ]);
+         return responseMsgs(true, $m_propapartmentdtl, 'Apartment details Retrieved Successfully', "012104", "");
+         
      } catch (\Exception $e) {
-         return response()->json([
-             'message' => 'Error retrieving Apartment Details',
-             'status' => 'error'
-         ], 500);
+         return responseMsgs(false, $e->getMessage(), "");
      }
     }
 
@@ -197,22 +157,12 @@ class ReferenceController extends Controller
              ->get();
  
          if (!$m_propbuildingrentalrate) {
-             return response()->json([
-                 'message' => 'Building Rental Rate Not Found',
-                 'status' => 'error'
-             ], 404);
+             return responseMsgs(false, "", 'Building Rental Rate Not Found', "", "");
          }
- 
-         return response()->json([
-             'message' => 'Building Rental Rate Retrieved Successfully',
-             'status' => 'success',
-             'data' => $m_propbuildingrentalrate
-         ]);
+         return responseMsgs(true, $m_propbuildingrentalrate, 'Building Rental Rate Retrieved Successfully', "012105", "");
+
      } catch (\Exception $e) {
-         return response()->json([
-             'message' => 'Error retrieving Building Rental Rate',
-             'status' => 'error'
-         ], 500);
+         return responseMsgs(false, $e->getMessage(), "");  
      }
     }
 
@@ -224,30 +174,19 @@ class ReferenceController extends Controller
 
     public function listPropVacantRentalrate(Request $request)
    {
-    try {
-        
+    try {        
         $status = $request->input('status', 1); // Status filter, default is 1
         
         $m_propvacantrentalrate = MPropVacantRentalrate::where('status', $status)
             ->get();
 
         if (!$m_propvacantrentalrate->count()) {
-            return response()->json([
-                'message' => 'Vacant Rental Rate Not Found',
-                'status' => 'error'
-            ], 404);
+            return responseMsgs(false, "", 'Vacant Rental Rate Not Found', "", "");
         }
-
-        return response()->json([
-            'message' => 'Vacant Rental Rate Retrieved Successfully',
-            'status' => 'success',
-            'data' => $m_propvacantrentalrate
-        ]);
+        return responseMsgs(true, $m_propvacantrentalrate, 'Vacant Rental Rate Retrieved Successfully', "012106", "");   
     } catch (\Exception $e) {
-        return response()->json([
-            'message' => 'Error retrieving Vacant Rental Rate',
-            'status' => 'error'
-        ], 500);
+        return responseMsgs(false, $e->getMessage(), "");
+        
     }
   }
 
@@ -264,22 +203,12 @@ class ReferenceController extends Controller
              ->get();
 
         if (!$m_propconstructiontype) {
-            return response()->json([
-                'message' => ' Not Found',
-                'status' => 'error'
-            ], 404);
+            return responseMsgs(false, "", 'Construction Type Not Found', "", "");   
         }
-
-        return response()->json([
-            'message' => 'Construction Type Retrieved Successfully',
-            'status' => 'success',
-            'data' => $m_propconstructiontype
-        ]);
+        return responseMsgs(true, $m_propconstructiontype, 'Construction Type Retrieved Successfully', "012107", "");
+        
     } catch (\Exception $e) {
-        return response()->json([
-            'message' => 'Error retrieving Construction Type',
-            'status' => 'error'
-        ], 500);
+        return responseMsgs(false, $e->getMessage(), "");
     }
   }
 
@@ -292,31 +221,21 @@ class ReferenceController extends Controller
     public function listPropFloor(Request $request)
    {
     try {
-        
         $status = $request->input('status', 1); // Status filter, default is 1
-        
+
         $m_propfloor = RefPropFloor::where('status', $status)
             ->get();
 
         if (!$m_propfloor->count()) {
-            return response()->json([
-                'message' => ' Floor Type Not Found',
-                'status' => 'error'
-            ], 404);
+            return responseMsgs(false, "", 'Floor Type Not Found', "", "");
         }
+        return responseMsgs(true, $m_propfloor, 'Floor Type Retrieved Successfully', "012108", "");
 
-        return response()->json([
-            'message' => 'Floor Type Retrieved Successfully',
-            'status' => true,
-            'data' => $m_propfloor
-        ]);
     } catch (\Exception $e) {
-        return response()->json([
-            'message' => 'Error retrieving Construction Type',
-            'status' => 'error'
-        ], 500);
+        return responseMsgs(false, $e->getMessage(), "");
     }
   }
+
 
    /** 
      * 9. listPropgbBuildingUsagetype()
@@ -331,25 +250,14 @@ class ReferenceController extends Controller
         ->get();
 
         if (!$m_propgbbuildingusagetype) {
-            return response()->json([
-                'message' => '  GB Building Usage Type Not Found',
-                'status' => 'error'
-            ], 404);
+            return responseMsgs(false, "", 'GB Building Usage Type Not Found', "", "");
         }
-
-        return response()->json([
-            'message' => 'GB Building Usage Type Retrieved Successfully',
-            'status' => 'success',
-            'data' => $m_propgbbuildingusagetype
-        ]);
+        return responseMsgs(true, $m_propgbbuildingusagetype, 'GB Building Usage Type Retrieved Successfully', "012109", "");
+        
     } catch (\Exception $e) {
-        return response()->json([
-            'message' => 'Error retrieving GB Building Usage Type',
-            'status' => 'error'
-        ], 500);
+        return responseMsgs(false, $e->getMessage(), "");
     }
   }
-
 
 
   /** 
@@ -365,22 +273,12 @@ class ReferenceController extends Controller
         ->get();
 
         if (!$m_propgbpropusagetype) {
-            return response()->json([
-                'message' => '  GB Property Usage Type Not Found',
-                'status' => 'error'
-            ], 404);
+            return responseMsgs(false, "", 'GB Property Usage Type Not Found', "", "");
         }
-
-        return response()->json([
-            'message' => 'GB Property Usage Type Retrieved Successfully',
-            'status' => 'success',
-            'data' => $m_propgbpropusagetype
-        ]);
+        return responseMsgs(true, $m_propgbpropusagetype, 'GB Property Usage Type Retrieved Successfully', "012110", "");
+       
     } catch (\Exception $e) {
-        return response()->json([
-            'message' => 'Error retrieving GB Property Usage Type',
-            'status' => 'error'
-        ], 500);
+        return responseMsgs(false, $e->getMessage(), "");       
     }
   }
 
@@ -397,22 +295,13 @@ class ReferenceController extends Controller
         ->get();
 
         if (!$m_propobjectiontype) {
-            return response()->json([
-                'message' => 'Property Objection Type Not Found',
-                'status' => 'error'
-            ], 404);
+            return responseMsgs(false, "", 'Property Objection Type Not Found', "", "");
+            
         }
-
-        return response()->json([
-            'message' => 'Property Objection Type Retrieved Successfully',
-            'status' => 'success',
-            'data' => $m_propobjectiontype
-        ]);
+        return responseMsgs(true, $m_propobjectiontype, 'Property Objection Type Retrieved Successfully', "012111", "");
+        
     } catch (\Exception $e) {
-        return response()->json([
-            'message' => 'Error retrieving Property Objection Type',
-            'status' => 'error'
-        ], 500);
+        return responseMsgs(false, $e->getMessage(), "");
     }
   }
 
@@ -429,22 +318,13 @@ class ReferenceController extends Controller
         ->get();
 
         if (!$m_propoccupancyfactor) {
-            return response()->json([
-                'message' => 'Property Occupancy Factor Not Found',
-                'status' => 'error'
-            ], 404);
+            return responseMsgs(false, "", 'Property Occupancy Factor Not Found', "", "");
         }
-
-        return response()->json([
-            'message' => 'Property Occupancy Factor Retrieved Successfully',
-            'status' => true,
-            'data' => $m_propoccupancyfactor
-        ]);
+        return responseMsgs(true, $m_propoccupancyfactor, 'Property Occupancy Factor Retrieved Successfully', "012112", "");
+  
     } catch (\Exception $e) {
-        return response()->json([
-            'message' => 'Error retrieving Property Occupancy Factor',
-            'status' => 'error'
-        ], 500);
+        return responseMsgs(false, $e->getMessage(), "");
+        
     }
   }
 
@@ -461,22 +341,11 @@ class ReferenceController extends Controller
         ->get();
 
         if (!$m_propoccupancytype) {
-            return response()->json([
-                'message' => 'Property Occupancy Type Not Found',
-                'status' => 'error'
-            ], 404);
+            return responseMsgs(false, "", 'Property Occupancy Type Not Found', "", "");        
         }
-
-        return response()->json([
-            'message' => 'Property Occupancy Type Retrieved Successfully',
-            'status' => 'success',
-            'data' => $m_propoccupancytype
-        ]);
+        return responseMsgs(true, $m_propoccupancytype, 'Property Occupancy Type Retrieved Successfully', "012113", "");      
     } catch (\Exception $e) {
-        return response()->json([
-            'message' => 'Error retrieving Property Objection Type',
-            'status' => 'error'
-        ], 500);
+        return responseMsgs(false, $e->getMessage(), "");       
     }
   }
 
@@ -492,22 +361,13 @@ class ReferenceController extends Controller
          $m_propownershiptype = RefPropOwnershipType::where('status', 1)
          ->get();
 
-         if(!$m_propownershiptype)
-         return response()->json([
-            'message'=> 'Property Ownership Type not found',
-            'status'=> false
-         ]);
-         
-         return response()->json([
-            'message'=>'Property Ownership Type Retrieved Successfully',
-            'status'=> true,
-            'data'=> $m_propownershiptype
-         ]);
+         if(!$m_propownershiptype){
+         return responseMsgs(false, "", 'Property Ownership Type not found', "", "");
+         }
+         return responseMsgs(true, $m_propownershiptype, 'Property Ownership Type Retrieved Successfully', "012114", "");
+        
         }catch(\Exception $e){
-            return response()->json([
-                'message'=>'Error Retrieving Property Ownership Type',
-                'status'=>'error'
-            ],500);
+            return responseMsgs(false, $e->getMessage(), "");
         }
 
       }
@@ -523,24 +383,14 @@ class ReferenceController extends Controller
             $m_proppenaltytype = RefPropPenaltyType::where('status', 1)
             ->get();
             
-            if(!$m_proppenaltytype)
-            return response()->json([
-                'message'=>'Property Penalty Type not find',
-                'status'=>false,
-            ]);
-
-            return response()->json([
-                'message'=>'Property Penalty Type Retrieved Successfully',
-                'status'=>true,
-                'data'=>$m_proppenaltytype
-            ]);
+            if(!$m_proppenaltytype){
+            return responseMsgs(false, "", 'Property Penalty Type not find', "", "");
+            }
+            return responseMsgs(true, $m_proppenaltytype, 'Property Penalty Type Retrieved Successfully', "012115", "");
 
          } catch(\Exception $e){
-            return response()->json([
-                'message'=>'Error Retrieving Property Penalty Type',
-                'status'=>'error'
-            ],500);
-
+            return responseMsgs(false, $e->getMessage(), "");
+            
         }
     }
 
@@ -555,23 +405,13 @@ class ReferenceController extends Controller
             $m_proprebatetype = RefPropRebateType::where('status', 1)
             ->get();
             
-            if(!$m_proprebatetype)
-            return response()->json([
-                'message'=>'Property Rebate Type not find',
-                'status'=>false,
-            ]);
-
-            return response()->json([
-                'message'=>'Property Rebate Type Retrieved Successfully',
-                'status'=>true,
-                'data'=>$m_proprebatetype
-            ]);
+            if(!$m_proprebatetype){
+            return responseMsgs(false, "", 'Property Rebate Type not find', "", "");
+            }
+            return responseMsgs(true, $m_proprebatetype, 'Property Rebate Type Retrieved Successfully', "012116", "");           
 
          } catch(\Exception $e){
-            return response()->json([
-                'message'=>'Error Retrieving Property Rebate Type',
-                'status'=>'error'
-            ],500);
+            return responseMsgs(false, $e->getMessage(), "");
 
         }
     }
@@ -588,26 +428,18 @@ class ReferenceController extends Controller
             $m_proproadtype = RefPropRoadType::where('status', 1)
             ->get();
             
-            if(!$m_proproadtype)
-            return response()->json([
-                'message'=>'Property Road Type not find',
-                'status'=>false,
-            ]);
-
-            return response()->json([
-                'message'=>'Property Road Type Retrieved Successfully',
-                'status'=>true,
-                'data'=>$m_proproadtype
-            ]);
+            if(!$m_proproadtype){
+            return responseMsgs(false, "", 'Property Road Type not find', "", "");
+            }
+           return responseMsgs(true, $m_proproadtype, 'Property Road Type Retrieved Successfully', "012117", "");
 
          } catch(\Exception $e){
-            return response()->json([
-                'message'=>'Error Retrieving Property Road Type',
-                'status'=>'error'
-            ],500);
-
+            return responseMsgs(false, $e->getMessage(), "");
+            
         }
     }
+
+
 
     /** 
      * 18. listPropTransfermode()
@@ -617,29 +449,19 @@ class ReferenceController extends Controller
     public function listPropTransfermode(Request $request)
     {
         try {
-            $m_proptransfermode = RefPropRebateType::where('status', 1)
+            $m_proptransfermode = RefPropTransferMode::where('status', 1)
             ->get();
             
-            if(!$m_proptransfermode)
-            return response()->json([
-                'message'=>'Property Transfer Mode not find',
-                'status'=>false,
-            ]);
-
-            return response()->json([
-                'message'=>'Property Transfer Mode Retrieved Successfully',
-                'status'=>true,
-                'data'=>$m_proptransfermode
-            ]);
-
+            if(!$m_proptransfermode){
+            return responseMsgs(false, "", 'Property Transfer Mode not find', "", "");
+            }
+            return responseMsgs(true, $m_proptransfermode, 'Property Transfer Mode Retrieved Successfully', "012118", "");
+            
          } catch(\Exception $e){
-            return response()->json([
-                'message'=>'Error Retrieving Property Transfer Mode',
-                'status'=>'error'
-            ],500);
-
+            return responseMsgs(false, $e->getMessage(), "");          
         }
     }
+
 
     /** 
      * 19. listProptype()
@@ -652,26 +474,17 @@ class ReferenceController extends Controller
             $m_proptype = RefPropType::where('status', 1)
             ->get();
             
-            if(!$m_proptype)
-            return response()->json([
-                'message'=>'Property Type not find',
-                'status'=>false,
-            ]);
-
-            return response()->json([
-                'message'=>'Property Type Retrieved Successfully',
-                'status'=>true,
-                'data'=>$m_proptype
-            ]);
+            if(!$m_proptype){
+            return responseMsgs(false, "", 'Property Type not find', "", "");
+            }
+            return responseMsgs(true, $m_proptype, 'Property Type Retrieved Successfully', "012119", "");
 
          } catch(\Exception $e){
-            return response()->json([
-                'message'=>'Error Retrieving Property Type',
-                'status'=>'error'
-            ],500);
+            return responseMsgs(false, $e->getMessage(), "");
+       }
 
-        }
     }
+
 
     /** 
      * 20. listPropUsagetype()
@@ -684,30 +497,16 @@ class ReferenceController extends Controller
             $m_propusagetype = RefPropUsageType::where('status', 1)
             ->get();
             
-            if(!$m_propusagetype)
-            return response()->json([
-                'message'=>'Property Usage Type not find',
-                'status'=>false,
-            ]);
+            if(!$m_propusagetype){
+            return responseMsgs(false, "", 'Property Usage Type not find', "", "");
+            }
 
-            return response()->json([
-                'message'=>'Property Usage Type Retrieved Successfully',
-                'status'=>true,
-                'data'=>$m_propusagetype
-            ]);
+            return responseMsgs(true, $m_propusagetype, 'Property Usage Type Retrieved Successfully', "012120", "");
 
          } catch(\Exception $e){
-            return response()->json([
-                'message'=>'Error Retrieving Property Usage Type',
-                'status'=>'error'
-            ],500);
-
+            return responseMsgs(false, $e->getMessage(), "");
         }
     }
-
-
-    
-      
 
 
 }
