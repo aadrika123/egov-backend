@@ -456,6 +456,8 @@ Route::controller(WaiverController::class)->group(function () {
   Route::post('waiver/final-approval', 'approvalRejection');
   Route::post('waiver/approved-list', 'approvedApplication');
   Route::post('waiver/application-detail', 'applicationDetails');
+  Route::post('waiver/list-inbox', 'inbox');
+  Route::post('waiver/uploaded-documents', 'getUploadedDocuments');
 });
 
 

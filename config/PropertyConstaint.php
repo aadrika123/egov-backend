@@ -423,6 +423,7 @@ return [
     "OBJECTION_RELATIVE_PATH"  => "Uploads/Property/Objection",
     "CONCESSION_RELATIVE_PATH" => "Uploads/Property/Concession",
     "HARVESTING_RELATIVE_PATH" => "Uploads/Property/Harvesting",
+    "WAIVER_RELATIVE_PATH"     => "Uploads/Property/Waiver",
     "CUSTOM_RELATIVE_PATH"     => "Uploads/Custom",
 
     // Rebates
