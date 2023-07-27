@@ -408,6 +408,9 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
     Route::post('waiver/application-detail', 'applicationDetails');
     Route::post('waiver/list-inbox', 'inbox');
     Route::post('waiver/uploaded-documents', 'getUploadedDocuments');
+    Route::post('waiver/verify-document', 'docVerifyReject');
+    Route::post('waiver/static-details', 'staticDetails');
+    Route::post('waiver/final-waived', 'finalWaivedAmount');
   });
 });
 
@@ -474,21 +477,21 @@ Route::controller(ReferenceController::class)->group(function () {
   Route::post('v1/get-forgery-type', 'listpropForgeryType');                                       //02
   Route::post('v1/get-rental-value', 'listPropRentalValue');                                       //03
   Route::post('v1/building-rental-rate', 'listPropBuildingRentalrate');                            //04
-  Route::post('v1/vacant-rental-rate', 'listPropVacantRentalrate');                                 //05
-  Route::post('v1/get-construction-list', 'listPropConstructiontype');                              //06
-  Route::post('v1/floor-type', 'listPropFloor');                                                    //07
-  Route::post('v1/gb-building-usage-type', 'listPropgbBuildingUsagetype');                          //08
-  Route::post('v1/gb-prop-usage-type', 'listPropgbPropUsagetype');                                  //09
-  Route::post('v1/prop-objection-type', 'listPropObjectiontype');                                   //10
-  Route::post('v1/prop-occupancy-factor', 'listPropOccupancyFactor');                               //11
-  Route::post('v1/prop-occupancy-type', 'listPropOccupancytype');                                   //12
-  Route::post('v1/prop-ownership-type', 'listPropOwnershiptype');                                   //13
-  Route::post('v1/prop-penalty-type', 'listPropPenaltytype');                                       //14
-  Route::post('v1/prop-rebate-type', 'listPropRebatetype');                                         //15
-  Route::post('v1/prop-road-type', 'listPropRoadtype');                                             //16
-  Route::post('v1/prop-transfer-mode', 'listPropTransfermode');                                     //17
-  Route::post('v1/get-prop-type', 'listProptype');                                                  //18
-  Route::post('v1/prop-usage-type', 'listPropUsagetype');                                           //19
+  Route::post('v1/vacant-rental-rate', 'listPropVacantRentalrate');                                //05
+  Route::post('v1/get-construction-list', 'listPropConstructiontype');                             //06
+  Route::post('v1/floor-type', 'listPropFloor');                                                   //07
+  Route::post('v1/gb-building-usage-type', 'listPropgbBuildingUsagetype');                         //08
+  Route::post('v1/gb-prop-usage-type', 'listPropgbPropUsagetype');                                 //09
+  Route::post('v1/prop-objection-type', 'listPropObjectiontype');                                  //10
+  Route::post('v1/prop-occupancy-factor', 'listPropOccupancyFactor');                              //11
+  Route::post('v1/prop-occupancy-type', 'listPropOccupancytype');                                  //12
+  Route::post('v1/prop-ownership-type', 'listPropOwnershiptype');                                  //13
+  Route::post('v1/prop-penalty-type', 'listPropPenaltytype');                                      //14
+  Route::post('v1/prop-rebate-type', 'listPropRebatetype');                                        //15
+  Route::post('v1/prop-road-type', 'listPropRoadtype');                                            //16
+  Route::post('v1/prop-transfer-mode', 'listPropTransfermode');                                    //17
+  Route::post('v1/get-prop-type', 'listProptype');                                                 //18
+  Route::post('v1/prop-usage-type', 'listPropUsagetype');                                          //19
 });
 
 

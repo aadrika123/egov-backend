@@ -170,9 +170,9 @@ class TradeApplication extends Controller
                 $data["licenceDtl"]     =  $refOldLicece;
                 $data["ownerDtl"]       = $refOldOwneres;
                 $refUlbId = $refOldLicece->ulb_id;
-            }
-
-            if (in_array(strtoupper($mUserType), ["ONLINE", "JSK", "SUPER ADMIN", "TL"])) {
+            }            
+            
+            if (in_array(strtoupper($mUserType), ["ONLINE", "JSK", "SUPER ADMIN", "TL"])) {               
                 $data['wardList'] = $this->_MODEL_WARD->getOldWard($refUlbId)->map(function ($val) {
                     $val->ward_no = $val->ward_name;
                     return $val;

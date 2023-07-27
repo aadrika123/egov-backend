@@ -36,6 +36,7 @@ class PropActiveWaiver extends Model
         $data->workflow_id = $request->workflowId;
         $data->ulb_id = $request->ulbId;
         $data->current_role = $request->currentRole;
+        $data->application_no = $request->applicationNo;
         $data->save();
         return $data;
     }

@@ -911,8 +911,8 @@ class NewConnectionController extends Controller
 
             # Document Details
             $metaReqs = [
-                'userId' => $user->id,
-                'ulbId' => $user->ulb_id,
+                'userId'    => $user->id,
+                'ulbId'     => $user->ulb_id ?? $applicationDetails['applicationDetails']['ulb_id'],
             ];
             $request->request->add($metaReqs);
             $document = $this->getDocToUpload($request);                                                    // get the doc details

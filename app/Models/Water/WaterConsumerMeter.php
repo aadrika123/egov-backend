@@ -70,7 +70,7 @@ class WaterConsumerMeter extends Model
         $mWaterConsumerMeter = new WaterConsumerMeter();
         $mWaterConsumerMeter->consumer_id               = $req->consumerId;
         $mWaterConsumerMeter->connection_date           = $req->connectionDate;
-        $mWaterConsumerMeter->emp_details_id            = authUser()->id;
+        $mWaterConsumerMeter->emp_details_id            = auth()->user()->id;
         $mWaterConsumerMeter->connection_type           = $req->connectionType;
         $mWaterConsumerMeter->meter_no                  = $req->meterNo ?? null;
         $mWaterConsumerMeter->meter_intallation_date    = $installationDate ?? null;

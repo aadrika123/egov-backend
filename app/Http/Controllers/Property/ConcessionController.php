@@ -1178,11 +1178,6 @@ class ConcessionController extends Controller
         }
 
         return $documentList;
-        // if (!empty($documentList))
-        //     $filteredDocs = $this->filterDocument($documentList, $refApplication);                                     // function(1.2)
-        // else
-        //     $filteredDocs = [];
-        // return $filteredDocs;
     }
 
     /**
