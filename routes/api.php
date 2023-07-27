@@ -352,6 +352,11 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
         Route::post('citizen/caretake-modules', 'careTakeModules');        // CareTake Modules (01)
         Route::post('citizen/caretake-otp', 'careTakeOtp');                  // Otp for caretaker
     });
+
+    Route::controller(ThirdPartyController::class)->group(function () {
+        Route::post('user/send-otp', 'sendOtp');
+        Route::post('user/verify-otp', "verifyOtp");
+    });
 });
 
 Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger', 'expireBearerToken']], function () {
@@ -385,10 +390,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
  * | Created By : Sam kerketta
  * | Created At : 06-03-2023
  */
-Route::controller(ThirdPartyController::class)->group(function () {
-    Route::post('user/send-otp', 'sendOtp');
-    Route::post('user/verify-otp', "verifyOtp");
-});
+
 
 
 
