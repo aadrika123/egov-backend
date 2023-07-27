@@ -125,12 +125,13 @@ class CaretakerController extends Controller
      */
     public function careTakeModules(Request $req)
     {
-        $req->validate([
-            'moduleId' => 'required|integer',
-            'referenceNo' => 'required'
-        ]);
+
 
         try {
+            $req->validate([
+                'moduleId' => 'required|integer',
+                'referenceNo' => 'required'
+            ]);
             $data = array();
             $response = app(Pipeline::class)
                 ->send($data)

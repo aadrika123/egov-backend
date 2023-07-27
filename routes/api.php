@@ -271,79 +271,80 @@ Route::group(['middleware' => ['json.response', 'request_logger', 'expireBearerT
 //  * Modified By :- Mrinal Kumar
 //  */
 
-Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger', 'expireBearerToken']], function () {
+// Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger', 'expireBearerToken']], function () {
 
 
-    /**
-     * workflow roles CRUD operation
-     */
-    Route::controller(WorkflowRoleController::class)->group(function () {
-        Route::post('crud/roles/save-role', 'create');                      // Save Role
-        Route::put('crud/roles/edit-role', 'editRole');                     // edit Role
-        Route::post('crud/roles/get-role', 'getRole');                      // Get Role By Id
-        Route::get('crud/roles/get-all-roles', 'getAllRoles');              // Get All Roles
-        Route::delete('crud/roles/delete-role', 'deleteRole');              // Delete Role
-    });
+/**
+ * workflow roles CRUD operation
+ */
+Route::controller(WorkflowRoleController::class)->group(function () {
+    Route::post('crud/roles/save-role', 'create');                      #_Save Role
+    Route::put('crud/roles/edit-role', 'editRole');                     #_Edit Role
+    Route::post('crud/roles/get-role', 'getRole');                      #_Get Role By Id
+    Route::get('crud/roles/get-all-roles', 'getAllRoles');              #_Get All Roles
+    Route::delete('crud/roles/delete-role', 'deleteRole');              #_Delete Role
+});
 
 
-    /**
-     * ============== To be replaced with upper api  =================
-     */
-    Route::controller(RoleController::class)->group(function () {
-        Route::post('workflow/roles/save', 'createRole');                   // Save Role
-        Route::post('workflow/roles/edit', 'editRole');                     // edit Role
-        Route::post('workflow/roles/get', 'getRole');                       // Get Role By Id
-        Route::post('workflow/roles/list', 'getAllRoles');                  //Get All Roles          
-        Route::post('workflow/roles/delete', 'deleteRole');                 // Delete Role
-    });
-    /**
-     * ===================================================================
-     */
+/**
+ * ============== To be replaced with upper api  =================
+ */
+Route::controller(RoleController::class)->group(function () {
+    Route::post('workflow/roles/save', 'createRole');                   // Save Role
+    Route::post('workflow/roles/edit', 'editRole');                     // edit Role
+    Route::post('workflow/roles/get', 'getRole');                       // Get Role By Id
+    Route::post('workflow/roles/list', 'getAllRoles');                  //Get All Roles          
+    Route::post('workflow/roles/delete', 'deleteRole');                 // Delete Role
+});
+/**
+ * ===================================================================
+ */
 
 
-    /**
-     * Role User Map CRUD operation
-     */
+/**
+ * Role User Map CRUD operation
+ */
 
-    Route::apiResource("roleusermap", WorkflowRoleUserMapController::class);
+Route::apiResource("roleusermap", WorkflowRoleUserMapController::class);
 
 
-    /**
-     * | Created On-14-12-2022 
-     * | Created By-Mrinal Kumar
-     * | Workflow Traits
-     */
-    Route::controller(WcController::class)->group(function () {
-        Route::post('workflow-current-user', 'workflowCurrentUser');
-        Route::post('workflow-initiator', 'workflowInitiatorData');
-        Route::post('role-by-user', 'roleIdByUserId');
-        Route::post('ward-by-user', 'wardByUserId');
-        Route::post('role-by-workflow', 'getRole');
-        Route::post('initiator', 'initiatorId');
-        Route::post('finisher', 'finisherId');
-    });
+/**
+ * | Created On-14-12-2022 
+ * | Created By-Mrinal Kumar
+ * | Workflow Traits
+ */
+Route::controller(WcController::class)->group(function () {
+    Route::post('workflow-current-user', 'workflowCurrentUser');
+    Route::post('workflow-initiator', 'workflowInitiatorData');
+    Route::post('role-by-user', 'roleIdByUserId');
+    Route::post('ward-by-user', 'wardByUserId');
+    Route::post('role-by-workflow', 'getRole');
+    Route::post('initiator', 'initiatorId');
+    Route::post('finisher', 'finisherId');
+});
 
-    /**
-     * | for custom details
+/**
+ * | for custom details
        | Serial No : 09
-     */
-    Route::controller(CustomController::class)->group(function () {
-        Route::post('get-all-custom-tab-data', 'getCustomDetails');
-        Route::post('post-custom-data', 'postCustomDetails');
-        Route::post('get-dues-api', 'duesApi');
-        Route::post('post-geo-location', 'tcGeoLocation');
-        Route::post('list-location', 'locationList');
-        Route::post('tc-collection-route', 'tcCollectionRoute');
-        Route::post('list-quick-access', 'quickAccessList');
-        Route::post('quick-access-byuserid', 'getQuickAccessListByUser');
-        Route::post('add-update-quickaccess', 'addUpdateQuickAccess');
-    });
+ */
+Route::controller(CustomController::class)->group(function () {
+    Route::post('get-all-custom-tab-data', 'getCustomDetails');
+    Route::post('post-custom-data', 'postCustomDetails');
+    Route::post('get-dues-api', 'duesApi');
+    Route::post('post-geo-location', 'tcGeoLocation');
+    Route::post('list-location', 'locationList');
+    Route::post('tc-collection-route', 'tcCollectionRoute');
+    Route::post('list-quick-access', 'quickAccessList');
+    Route::post('quick-access-byuserid', 'getQuickAccessListByUser');
+    Route::post('add-update-quickaccess', 'addUpdateQuickAccess');
+});
 
 
 
-    /**
-     * | Caretaker Property , Water , Trade (10)
-     */
+/**
+ * | Caretaker Property , Water , Trade (10)
+ */
+Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
     Route::controller(CaretakerController::class)->group(function () {
         Route::post('water/caretaker-otp', 'waterCaretakerOtp');
         Route::post('water/caretaker-consumer-tagging', 'caretakerConsumerTag');
@@ -417,27 +418,27 @@ Route::controller(WardListController::class)->group(function () {
 });
 
 
-Route::controller(ReferenceController::class)->group(function(){
-   
+Route::controller(ReferenceController::class)->group(function () {
+
     Route::post('property/building-rental-const', 'listBuildingRentalconst');
     Route::post('property/get-forgery-type', 'listpropForgeryType');
     Route::post('property/get-rental-value', 'listPropRentalValue');
     Route::post('property/building-rental-rate', 'listPropBuildingRentalrate');
-    Route::post('property/vacant-rental-rate','listPropVacantRentalrate');
-    Route::post('property/get-construction-list','listPropConstructiontype');
-    Route::post('property/floor-type','listPropFloor');
-    Route::post('property/gb-building-usage-type','listPropgbBuildingUsagetype');
-    Route::post('property/gb-prop-usage-type','listPropgbPropUsagetype');
-    Route::post('property/prop-objection-type','listPropObjectiontype');
-    Route::post('property/prop-occupancy-factor','listPropOccupancyFactor');
-    Route::post('property/prop-occupancy-type','listPropOccupancytype');
-    Route::post('property/prop-ownership-type','listPropOwnershiptype');
-    Route::post('property/prop-penalty-type','listPropPenaltytype');
-    Route::post('property/prop-rebate-type','listPropRebatetype');
-    Route::post('property/prop-road-type','listPropRoadtype');
-    Route::post('property/prop-transfer-mode','listPropTransfermode');  
-    Route::post('property/get-prop-type','listProptype');
-    Route::post('property/prop-usage-type','listPropUsagetype');
+    Route::post('property/vacant-rental-rate', 'listPropVacantRentalrate');
+    Route::post('property/get-construction-list', 'listPropConstructiontype');
+    Route::post('property/floor-type', 'listPropFloor');
+    Route::post('property/gb-building-usage-type', 'listPropgbBuildingUsagetype');
+    Route::post('property/gb-prop-usage-type', 'listPropgbPropUsagetype');
+    Route::post('property/prop-objection-type', 'listPropObjectiontype');
+    Route::post('property/prop-occupancy-factor', 'listPropOccupancyFactor');
+    Route::post('property/prop-occupancy-type', 'listPropOccupancytype');
+    Route::post('property/prop-ownership-type', 'listPropOwnershiptype');
+    Route::post('property/prop-penalty-type', 'listPropPenaltytype');
+    Route::post('property/prop-rebate-type', 'listPropRebatetype');
+    Route::post('property/prop-road-type', 'listPropRoadtype');
+    Route::post('property/prop-transfer-mode', 'listPropTransfermode');
+    Route::post('property/get-prop-type', 'listProptype');
+    Route::post('property/prop-usage-type', 'listPropUsagetype');
 });
 
 

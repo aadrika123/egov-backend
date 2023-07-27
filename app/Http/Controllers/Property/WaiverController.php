@@ -71,7 +71,7 @@ class WaiverController extends Controller
             /**
                 Request is hard coded
              */
-            $idGeneration = new PrefixIdGenerator($waiverParamId, 2);
+            $idGeneration = new PrefixIdGenerator($waiverParamId, $user->ulb_id);
             $applicationNo = $idGeneration->generate();
 
             $request->merge([
