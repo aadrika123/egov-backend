@@ -8,9 +8,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class UlbWardMaster extends Model
 {
-    use SoftDeletes;
     use HasFactory;
-
+    public $timestamps = false;
     /**
      * | Get the Ward No by ward id
      * | @param id $id

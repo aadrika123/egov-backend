@@ -81,7 +81,7 @@ class WaterTran extends Model
      */
     public function saveZeroConnectionCharg($totalConnectionCharges, $ulbId, $req, $applicationId, $connectionId, $connectionType)
     {
-        $user               = authUser();
+        $user               = auth()->user();
         $refIdGeneration    = new IdGeneration();
         $transactionNo      = $refIdGeneration->generateTransactionNo($ulbId);
         if ($user->user_type == 'Citizen') {
@@ -193,7 +193,7 @@ class WaterTran extends Model
     public function tranDetailByDate()
     {
         $currentDate = Carbon::now()->format('Y-m-d');
-        $userType = authUser()->user_type;
+        $userType = auth()->user()->user_type;
         $rfTransMode = Config::get("payment-constants.PAYMENT_OFFLINE_MODE.5");
 
         return WaterTran::where('tran_date', $currentDate)
