@@ -43,7 +43,7 @@ if (!function_exists("responseMsgs")) {
 if (!function_exists("validationError")) {
     function validationError($validator)
     {
-        return responseMsg(false, $validator->errors()->first(), 'Validation Error');
+        return responseMsg(false, 'Validation Error', $validator->errors()->all());
     }
 }
 
