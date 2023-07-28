@@ -1658,19 +1658,19 @@ class WaterPaymentController extends Controller
             # Demand Collection 
             DB::beginTransaction();
             $refDetails = $this->preOfflinePaymentParams($request, $startingDate, $endDate);
-            $myRequest = [
+            $myRequest = new Request([
                 'amount'        => $request->amount,
                 'workflowId'    => 0,                                                                   // Static
                 'id'            => $request->consumerId,
                 'departmentId'  => $waterModuleId,
                 'ulbId'         => $refDetails['consumer']['ulb_id'],
                 'auth'          => $refUser
-            ];
-            // $temp = $this->saveGenerateOrderid($myRequest);
-            $temp = Http::withHeaders([])
-                ->post($url . $endPoint, $myRequest);                                                   // Static
+            ]);
+            $temp = $this->saveGenerateOrderid($myRequest);
+            // $temp = Http::withHeaders([])
+            //     ->post($url . $endPoint, $myRequest);                                                   // Static
 
-            $temp = $temp['data'];
+            // $temp = $temp['data'];
             $mWaterRazorPayRequest = new WaterRazorPayRequest();
             $mWaterRazorPayRequest->saveRequestData($request, $paymentFor['1'], $temp, $refDetails);
             DB::commit();
