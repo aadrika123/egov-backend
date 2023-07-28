@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -52,12 +53,17 @@ trait Razorpay
 
     public function saveGenerateOrderid($request)
     {
-        $request->validate([
-            'id'            => 'required|integer',
-            'amount'        => 'required|',
-            'workflowId'    => 'required|',
-            'ulbId'         => 'nullable'
-        ]);
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'id'            => 'required|integer',
+                'amount'        => 'required|',
+                'workflowId'    => 'required|',
+                'ulbId'         => 'nullable'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
 
         try {
             $mWfWorkflow    = new WfWorkflow();

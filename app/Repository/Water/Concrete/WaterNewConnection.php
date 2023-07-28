@@ -325,17 +325,17 @@ class WaterNewConnection implements IWaterNewConnection
                 if (!$totalAmount) {
                     throw new Exception("minimum 1 rs to be pay");
                 }
-                $myRequest = [
+                $myRequest = new Request([
                     'amount'        => $totalAmount,
                     'workflowId'    => $application->workflow_id,
                     'id'            => $application->id,
                     'departmentId'  => 2,
                     'auth'          => $refUser,
-                ];
-                // $temp = $this->saveGenerateOrderid($myRequest);
-                $temp = Http::withHeaders([])
-                    ->post($url . $endPoint, $myRequest);                                                   // Static
-                $temp = $temp['data'];
+                ]);
+                $temp = $this->saveGenerateOrderid($myRequest);
+                // $temp = Http::withHeaders([])
+                //     ->post($url . $endPoint, $myRequest);                                                   // Static
+                // $temp = $temp['data'];
 
                 $RazorPayRequest = new WaterRazorPayRequest;
                 $RazorPayRequest->related_id        = $application->id;
