@@ -55,7 +55,7 @@ class TagProperty
             'property_id' => $property->id,
             'date_of_attachment' => $this->_currentDate,
             'mobile_no' => $propOwner->mobile_no,
-            'citizen_id' => authUser()->id
+            'citizen_id' => auth()->user()->id
         ];
         $this->_mActiveCitizenUnderCares->store($underCareReq);
         return "Property Successfully Tagged";
@@ -73,7 +73,7 @@ class TagProperty
 
         $citizens = $taggedPropertyList->pluck('citizen_id');
 
-        if ($citizens->contains(authUser()->id))                                // Check Is the Property already tagged by the citizen 
+        if ($citizens->contains(auth()->user()->id))                                // Check Is the Property already tagged by the citizen 
             throw new Exception("Property Already Tagged");
     }
 }

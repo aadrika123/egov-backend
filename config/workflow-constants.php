@@ -23,6 +23,7 @@ return [
     "PROPERTY_OBJECTION_ASSESSMENT"     => "11",
     "PROPERTY_OBJECTION_FORGERY"        => "12",
     "RAIN_WATER_HARVESTING_ID"          => "13",
+    "PROPERTY_WAIVER_ID"                => "35",
 
     "WATER_MASTER_ID"                   => "15",
     "WATER_DISCONNECTION"               => "33",

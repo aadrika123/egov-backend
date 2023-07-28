@@ -56,7 +56,7 @@ class TagTrade
             'license_id' => $this->_licenseNo,
             'date_of_attachment' => $this->_currentDate,
             'mobile_no' => $tradeOwner->mobile_no ?? null,
-            'citizen_id' => authUser()->id
+            'citizen_id' => auth()->user()->id
         ];
         $this->_mActiveCitizenUnderCares->store($underCareReq);
         return "License Successfully Tagged";
@@ -74,7 +74,7 @@ class TagTrade
 
         $citizens = $taggedTradeList->pluck('citizen_id');
 
-        if ($citizens->contains(authUser()->id))                                // Check Is the Property already tagged by the citizen 
+        if ($citizens->contains(auth()->user()->id))                                // Check Is the Property already tagged by the citizen 
             throw new Exception("License Already Tagged");
     }
 }
