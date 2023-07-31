@@ -1628,18 +1628,18 @@ class ActiveSafController extends Controller
             $req->request->add(['workflowId' => $safDetails->workflow_id, 'ghostUserId' => 0, 'amount' => $totalAmount, 'auth' => $authUser]);
             DB::beginTransaction();
 
-            // $orderDetails = $this->saveGenerateOrderid($req);
-            $orderDetails = Http::withHeaders([])
-                ->post($url . $endPoint, $req->toArray());
+            $orderDetails = $this->saveGenerateOrderid($req);
+            // $orderDetails = Http::withHeaders([])
+            //     ->post($url . $endPoint, $req->toArray());
 
-            $orderDetails = collect(json_decode($orderDetails));
+            // $orderDetails = collect(json_decode($orderDetails));
 
-            $status = isset($orderDetails['status']) ? $orderDetails['status'] : true;                                      //<---------- Generate Order ID Trait
+            // $status = isset($orderDetails['status']) ? $orderDetails['status'] : true;                                      //<---------- Generate Order ID Trait
 
-            if ($status == false)
-                return $orderDetails;
+            // if ($status == false)
+            //     return $orderDetails;
             $demands = array_merge($demands->toArray(), [
-                'orderId' => $orderDetails['data']->orderId
+                'orderId' => $orderDetails['orderId']
             ]);
             // Store Razor pay Request
             $razorPayRequest = [
@@ -1661,7 +1661,7 @@ class ActiveSafController extends Controller
             $postRazorPayPenaltyRebate->_razorPayRequestId = $storedRazorPayReqs['razorPayReqId'];
             $postRazorPayPenaltyRebate->postRazorPayPenaltyRebates($demands);
             DB::commit();
-            return responseMsgs(true, "Order ID Generated", remove_null($orderDetails['data']), "010114", "1.0", "1s", "POST", $req->deviceId);
+            return responseMsgs(true, "Order ID Generated", remove_null($orderDetails), "010114", "1.0", "1s", "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");

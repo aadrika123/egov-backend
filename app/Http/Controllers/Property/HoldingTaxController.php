@@ -344,14 +344,14 @@ class HoldingTaxController extends Controller
                 'auth' => $authUser
             ]);
             DB::beginTransaction();
-            // $orderDetails = $this->saveGenerateOrderid($req);                                      //<---------- Generate Order ID Trait
-            $orderDetails = Http::withHeaders([])
-                ->post($url . $endPoint, $req->toArray());
+            $orderDetails = $this->saveGenerateOrderid($req);                                      //<---------- Generate Order ID Trait
+            // $orderDetails = Http::withHeaders([])
+            //     ->post($url . $endPoint, $req->toArray());
 
-            $orderDetails = collect(json_decode($orderDetails));
+            // $orderDetails = collect(json_decode($orderDetails));
 
             $demands = array_merge($demands->toArray(), [
-                'orderId' => $orderDetails['data']->orderId
+                'orderId' => $orderDetails['orderId']
             ]);
             // Store Razor pay Request
             $razorPayRequest = [
@@ -374,7 +374,7 @@ class HoldingTaxController extends Controller
             $postRazorPayPenaltyRebate->_razorPayRequestId = $storedRazorPayReqs['razorPayReqId'];
             $postRazorPayPenaltyRebate->postRazorPayPenaltyRebates($demands);
             DB::commit();
-            return responseMsgs(true, "Order id Generated", remove_null($orderDetails['data']), "011603", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true, "Order id Generated", remove_null($orderDetails), "011603", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsgs(false, $e->getMessage(), "", "011603", "1.0", "", "POST", $req->deviceId ?? "");
