@@ -192,9 +192,10 @@ class WaterApplication extends Controller
             $dateWiseData = $WorkflowTrack->getWfDashbordData($metaRequest)->get();
             $applicationCount = $mWaterWaterApplication->getApplicationByRole($roleId)
                 ->whereIn('ward_id', $occupiedWards)
+                ->where('ulb_id', $ulbId)
+                ->where('workflow_id', $workflow->id)
                 ->count('id');
             $roleData = WfRole::findOrFail($roleId);
-
             $returnData = [
                 'canView'               => $canView ?? true,
                 'userDetails'           => $user,

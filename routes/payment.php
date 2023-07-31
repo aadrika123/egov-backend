@@ -31,7 +31,7 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
         Route::post('get-paymentgateway-byrequests', 'getPaymentgatewayByrequests');                // 05 returning payment gateway data according to the request data condition
         Route::post('get-pg-details', 'getPgDetails');                                              // 06 returning the payment gateway details accordin to the request data condition
         Route::get('get-webhook-details', 'getWebhookDetails');                                     // 07 returning all the webhook details 
-        // Route::post('verify-payment-status', 'verifyPaymentStatus');                                // 08 verifiying the payment status and saving both success, fails, suspeciousdata  
+        Route::post('verify-payment-status', 'verifyPaymentStatus');                                // 08 verifiying the payment status and saving both success, fails, suspeciousdata  
         Route::post('get-transaction-no-details', 'getTransactionNoDetails');                       // 09 geting details of the transaction according to the orderId, paymentId and payment status
         Route::get('all-module-transaction', 'allModuleTransaction');                               // 10 all details of payments according to user Id 
         Route::post('generate-orderid', 'generateOrderid');

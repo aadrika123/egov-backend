@@ -174,7 +174,7 @@ trait Workflow
     //logged in user role 
     public function getRole($request)
     {
-        $userId = authUser()->id;
+        $userId = auth()->user()->id;
         // DB::enableQueryLog();
         $role = WfRoleusermap::select(
             'wf_workflowrolemaps.*',
