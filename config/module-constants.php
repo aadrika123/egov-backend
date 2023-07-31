@@ -14,4 +14,5 @@ return [
     "SWM_MODULE_ID"           => "4",
     "ADVERTISEMENT_MODULE_ID" => "5",
     "API_KEY"                 => env('API_KEY'),
+    "DOC_URL"                 => env('DOC_URL'),
 ];

@@ -467,6 +467,7 @@ return [
     "HAR_PARAM_ID"  => 9,
     "DEACTIV_PARAM_ID"  => 24,
     "CASH_VERIFICATION_PARAM_ID"  => 33,
+    "WAIVER_PARAM_ID"  => 40,
 
 
     /**

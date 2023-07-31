@@ -43,11 +43,7 @@ if (!function_exists("responseMsgs")) {
 if (!function_exists("validationError")) {
     function validationError($validator)
     {
-        return response()->json([
-            'status'  => false,
-            'message' => 'validation error',
-            'errors'  => $validator->errors()
-        ], 422);
+        return responseMsg(false, 'Validation Error', $validator->errors()->all());
     }
 }
 

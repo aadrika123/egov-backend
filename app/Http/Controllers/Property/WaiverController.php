@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Property;
 
 use App\Http\Controllers\Controller;
 use App\MicroServices\DocUpload;
+use App\MicroServices\IdGenerator\PrefixIdGenerator;
 use App\Models\CustomDetail;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveWaiver;
@@ -60,18 +61,29 @@ class WaiverController extends Controller
         try {
             $user = authUser($request);
             $mPropActiveWaiver = new PropActiveWaiver();
+            $waiverParamId = Config::get('PropertyConstaint.WAIVER_PARAM_ID');
+            $wfMasterId = Config::get('workflow-constants.PROPERTY_WAIVER_ID');
+            $ulbWorkflowId = WfWorkflow::where('wf_master_id', $wfMasterId)
+                ->where('ulb_id', $user->ulb_id)
+                ->first();
+            /**
+                Request is hard coded
+             */
+            $idGeneration = new PrefixIdGenerator($waiverParamId, $user->ulb_id);
+            $applicationNo = $idGeneration->generate();
+
             $request->merge([
-                "userId" => $user->id,
-                "workflowId" => 195,
-                "currentRole" => 3,
-                "ulbId" => 2,
+                "userId"        => $user->id,
+                "workflowId"    => $ulbWorkflowId->id,
+                "currentRole"   => 3,
+                "ulbId"         => $user->ulb_id,
+                "applicationNo" => $applicationNo
             ]);
 
             $data = $mPropActiveWaiver->addWaiver($request);
             $this->saveDoc($request, $data);
 
-
-            return responseMsgs(true, "Data Saved", $data);
+            return responseMsgs(true, "Waiver Application Applied. Your Application No.", $data->application_no);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "");
         }
@@ -255,8 +267,11 @@ class WaiverController extends Controller
     public function approvedApplication(Request $req)
     {
         try {
-            $approvedList = PropActiveWaiver::where('is_approved', true)
-                ->get();
+            $mPropActiveWaiver   = new PropActiveWaiver();
+            $perPage = $req->perPage ?? 10;
+            $approvedList = $mPropActiveWaiver->waiverList()
+                ->where('is_approved', true)
+                ->paginate($perPage);
 
             return responseMsgs(true, "Approved Application", $approvedList, "", '010709', '01', '376ms', 'Post', '');
         } catch (Exception $e) {
@@ -493,7 +508,7 @@ class WaiverController extends Controller
             $roleIds = $mWfRoleUser->getRoleIdByUserId($userId)->pluck('wf_role_id');                      // Model to () get Role By User Id
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleIds)->pluck('workflow_id');
 
-            $safDtl = $mPropActiveWaiver->waiverList()                                         // Repository function to get SAF Details
+            $waiverDtl = $mPropActiveWaiver->waiverList()                                         // Repository function to get SAF Details
                 // ->where('prop_active_waivers.ulb_id', $ulbId)
                 ->where('prop_active_waivers.is_approved', false)
                 // ->where('prop_active_waivers.status', 1)
@@ -501,7 +516,7 @@ class WaiverController extends Controller
                 ->orderByDesc('prop_active_waivers.id')
                 ->paginate($perPage);
 
-            return responseMsgs(true, "Data Fetched", remove_null($safDtl), "010103", "1.0", responseTime(), "POST", "");
+            return responseMsgs(true, "Data Fetched", remove_null($waiverDtl), "010103", "1.0", responseTime(), "POST", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -529,6 +544,199 @@ class WaiverController extends Controller
             return responseMsgs(true, "Uploaded Documents", remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
+    /**
+     * | Document Verify Reject
+     */
+    public function docVerifyReject(Request $req)
+    {
+        $req->validate([
+            'id' => 'required|digits_between:1,9223372036854775807',
+            'applicationId' => 'required|digits_between:1,9223372036854775807',
+            'docRemarks' =>  $req->docStatus == "Rejected" ? 'required|regex:/^[a-zA-Z1-9][a-zA-Z1-9\. \s]+$/' : "nullable",
+            'docStatus' => 'required|in:Verified,Rejected'
+        ]);
+
+        try {
+            // Variable Assignments
+            $mWfDocument = new WfActiveDocument();
+            $mPropActiveWaiver = new PropActiveWaiver();
+            $mWfRoleusermap = new WfRoleusermap();
+            $wfDocId = $req->id;
+            $userId = authUser($req)->id;
+            $applicationId = $req->applicationId;
+            // $wfLevel = Config::get('PropertyConstaint.SAF-LABEL');
+            // Derivative Assigments
+            $waiverDtl = $mPropActiveWaiver::find($applicationId);
+            $safReq = new Request([
+                'userId' => $userId,
+                'workflowId' => $waiverDtl->workflow_id
+            ]);
+            $senderRoleDtls = $mWfRoleusermap->getRoleByUserWfId($safReq);
+            if (!$senderRoleDtls || collect($senderRoleDtls)->isEmpty())
+                throw new Exception("Role Not Available");
+
+            $senderRoleId = $senderRoleDtls->wf_role_id;
+            /**
+                role id is hard coded
+             */
+            if ($senderRoleId != 3)                                // Authorization for Dealing Assistant Only
+                throw new Exception("You are not Authorized");
+
+            if (!$waiverDtl || collect($waiverDtl)->isEmpty())
+                throw new Exception("Application Details Not Found");
+
+            $ifFullDocVerified = $this->ifFullDocVerified($applicationId);       // (Current Object Derivative Function 4.1)
+
+            if ($ifFullDocVerified == 1)
+                throw new Exception("Document Fully Verified");
+
+            DB::beginTransaction();
+            if ($req->docStatus == "Verified") {
+                $status = 1;
+            }
+            if ($req->docStatus == "Rejected") {
+                $status = 2;
+                // For Rejection Doc Upload Status and Verify Status will disabled
+                $waiverDtl->doc_upload_status = 0;
+                $waiverDtl->doc_verify_status = 0;
+                $waiverDtl->save();
+            }
+
+            $reqs = [
+                'remarks' => $req->docRemarks,
+                'verify_status' => $status,
+                'action_taken_by' => $userId
+            ];
+            $mWfDocument->docVerifyReject($wfDocId, $reqs);
+            $ifFullDocVerifiedV1 = $this->ifFullDocVerified($applicationId);
+
+            if ($ifFullDocVerifiedV1 == 1) {                                     // If The Document Fully Verified Update Verify Status
+                $waiverDtl->doc_verify_status = 1;
+                $waiverDtl->save();
+            }
+
+            DB::commit();
+            return responseMsgs(true, $req->docStatus . " Successfully", "", "010204", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), "", "010204", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
+    /**
+     * | Check if the Document is Fully Verified or Not (4.1)
+     */
+    public function ifFullDocVerified($applicationId)
+    {
+        $mPropActiveWaiver = new PropActiveWaiver();
+        $mWfActiveDocument = new WfActiveDocument();
+        $getWaiverDtls = $mPropActiveWaiver::find($applicationId);                      // Get Saf Details
+        $refReq = [
+            'activeId' => $applicationId,
+            'workflowId' => $getWaiverDtls->workflow_id,
+            'moduleId' => Config::get('module-constants.PROPERTY_MODULE_ID')
+        ];
+        $req = new Request($refReq);
+        $refDocList = $mWfActiveDocument->getDocsByActiveId($req);
+        // Property List Documents
+        $ifPropDocUnverified = $refDocList->contains('verify_status', 0);
+        if ($ifPropDocUnverified == 1)
+            return 0;
+        else
+            return 1;
+    }
+
+    /**
+     * | Approved Static Details
+     */
+    public function staticDetails(Request $req)
+    {
+        $req->validate([
+            'applicationId' => 'required|digits_between:1,9223372036854775807',
+        ]);
+        try {
+            $waiverDtl = PropActiveWaiver::find($req->applicationId);
+
+            $bill = PropActiveWaiver::select(
+                'id',
+                'bill_amount as amount',
+                'bill_waiver_amount as waiver_amount',
+                DB::raw("'bill' as key"),
+                DB::raw("'Demand' as col_name"),
+            )
+                ->where('is_bill_waiver', true)
+                ->where('id', $req->applicationId);
+
+            $onePercent = PropActiveWaiver::select(
+                'id',
+                'one_percent_penalty_amount as amount',
+                'one_percent_penalty_waiver_amount as waiver_amount',
+                DB::raw("'one_percent' as key"),
+                DB::raw("'1% Penalty' as col_name"),
+            )
+                ->where('is_one_percent_penalty', true)
+                ->where('id', $req->applicationId);
+
+            $rwh = PropActiveWaiver::select(
+                'id',
+                'rwh_amount as amount',
+                'rwh_waiver_amount as waiver_amount',
+                DB::raw("'rwh' as key"),
+                DB::raw("'RWH Penalty' as col_name"),
+            )
+                ->where('is_rwh_penalty', true)
+                ->where('id', $req->applicationId);
+
+            $lateAssessment = PropActiveWaiver::select(
+                'id',
+                'lateassessment_penalty_amount as amount',
+                'lateassessment_penalty_waiver_amount as waiver_amount',
+                DB::raw("'late_assessment' as key"),
+                DB::raw("'Late Assessment Penalty' as col_name"),
+            )
+                ->where('is_lateassessment_penalty', true)
+                ->where('id', $req->applicationId);
+
+            $approvedList['waiverData'] = $bill
+                ->union($onePercent)
+                ->union($rwh)
+                ->union($lateAssessment)
+                ->get();
+            $approvedList['applicationNo'] = $waiverDtl->application_no;
+
+
+            return responseMsgs(true, "Approved Application", $approvedList, "", '010709', '01', '376ms', 'Post', '');
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | 
+     */
+    public function finalWaivedAmount(Request $req)
+    {
+        $validation = Validator::make($req->all(), [
+            "applicationId" => "required|integer",
+        ]);
+
+        if ($validation->fails()) {
+            return validationError($validation);
+        }
+        try {
+            $waiverDtls = PropActiveWaiver::find($req->applicationId);
+            $waiverDtls->final_bill_waived                   = $req->bill;
+            $waiverDtls->final_one_percent_penalty_waived    = $req->one_percent;
+            $waiverDtls->final_rwh_penalty_waived            = $req->rwh;
+            $waiverDtls->final_lateassessment_penalty_waived = $req->late_assessment;
+            $waiverDtls->save();
+
+            return responseMsgs(true, "", $waiverDtls, "", '010709', '01', '376ms', 'Post', '');
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
         }
     }
 }

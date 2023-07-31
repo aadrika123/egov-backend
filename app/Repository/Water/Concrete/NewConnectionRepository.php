@@ -376,18 +376,20 @@ class NewConnectionRepository implements iNewConnection
                 $waterApplication->is_field_verified = true;
             }
             $metaReqs['verificationStatus'] = 1;
+            $metaReqs['receiverRoleId']     = $forwardBackwardIds->forward_role_id;
             $waterApplication->current_role = $forwardBackwardIds->forward_role_id;
             $waterApplication->last_role_id =  $forwardBackwardIds->forward_role_id;                                      // Update Last Role Id
 
         }
         if ($req->action == 'backward') {
+            $metaReqs['receiverRoleId']     = $forwardBackwardIds->backward_role_id;
             $waterApplication->current_role = $forwardBackwardIds->backward_role_id;
         }
 
         $waterApplication->save();
-        $metaReqs['moduleId']           =  $this->_waterModulId;
+        $metaReqs['moduleId']           = $this->_waterModulId;
         $metaReqs['workflowId']         = $waterApplication->workflow_id;
-        $metaReqs['refTableDotId']      = 'water_applications.id';
+        $metaReqs['refTableDotId']      = 'water_applications.id';                                                          // Static
         $metaReqs['refTableIdValue']    = $req->applicationId;
         $metaReqs['user_id']            = authUser($req)->id;
         $req->request->add($metaReqs);
