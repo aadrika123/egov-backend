@@ -868,7 +868,8 @@ class ActiveSafController extends Controller
         $request->validate([
             'applicationId' => 'required|integer',
             'receiverRoleId' => 'nullable|integer',
-            'action' => 'required|In:forward,backward'
+            'action' => 'required|In:forward,backward',
+            'isBtd' => 'required|boolean',
         ]);
 
         try {
@@ -880,6 +881,7 @@ class ActiveSafController extends Controller
             $track = new WorkflowTrack();
             $mWfWorkflows = new WfWorkflow();
             $mWfRoleMaps = new WfWorkflowrolemap();
+            $mPropSafGeotagUpload = new PropSafGeotagUpload();
             $samHoldingDtls = array();
             $safId = $saf->id;
 
@@ -903,6 +905,17 @@ class ActiveSafController extends Controller
             if ($request->action == 'forward') {
                 $wfMstrId = $mWfMstr->getWfMstrByWorkflowId($saf->workflow_id);
                 $samHoldingDtls = $this->checkPostCondition($senderRoleId, $wfLevels, $saf, $wfMstrId, $userId);          // Check Post Next level condition
+
+                $geotagExist = $mPropSafGeotagUpload->where('saf_id', $saf->id)
+                    ->first();
+                if ($geotagExist)
+                    $forwardBackwardIds->forward_role_id = $wfLevels['UTC'];
+
+                if ($saf->is_bt_da == true) {
+                    $forwardBackwardIds->forward_role_id = $wfLevels['SI'];
+                    $saf->is_bt_da = false;
+                }
+
                 $saf->current_role = $forwardBackwardIds->forward_role_id;
                 $saf->last_role_id =  $forwardBackwardIds->forward_role_id;                     // Update Last Role Id
                 $saf->parked = false;
@@ -912,6 +925,13 @@ class ActiveSafController extends Controller
             // SAF Application Update Current Role Updation
             if ($request->action == 'backward') {
                 $samHoldingDtls = $this->checkBackwardCondition($senderRoleId, $wfLevels, $saf);          // Check Backward condition
+
+                #_Back to Dealing Assistant by Section Incharge
+                if ($request->isBtd == true) {
+                    $saf->is_bt_da = true;
+                    $forwardBackwardIds->backward_role_id = $wfLevels['DA'];
+                }
+
                 $saf->current_role = $forwardBackwardIds->backward_role_id;
                 $metaReqs['verificationStatus'] = 0;
                 $metaReqs['receiverRoleId'] = $forwardBackwardIds->backward_role_id;
@@ -940,6 +960,7 @@ class ActiveSafController extends Controller
                 'forward_date' => $this->_todayDate->format('Y-m-d'),
                 'forward_time' => $this->_todayDate->format('H:i:s')
             ]);
+            // dd();
             DB::commit();
             return responseMsgs(true, "Successfully Forwarded The Application!!", $samHoldingDtls, "010109", "1.0", "", "POST", $request->deviceId);
         } catch (Exception $e) {
@@ -958,6 +979,7 @@ class ActiveSafController extends Controller
         $mPropMemoDtl = new PropSafMemoDtl();
         $mPropSafTax = new PropSafTax();
         $mPropTax = new PropTax();
+        $mPropProperty = new PropProperty();
         $propIdGenerator = new PropIdGenerator;
         $ptParamId = Config::get('PropertyConstaint.PT_PARAM_ID');
         $holdingNoGenerator = new HoldingNoGenerator;
@@ -978,39 +1000,45 @@ class ActiveSafController extends Controller
                     throw new Exception("Demand Not Available for the to Generate SAM");
                 if ($saf->doc_verify_status == 0)
                     throw new Exception("Document Not Fully Verified");
-                $idGeneration = new PrefixIdGenerator($ptParamId, $saf->ulb_id);
 
-                if (in_array($saf->assessment_type, ['New Assessment', 'Bifurcation', 'Amalgamation', 'Mutation'])) { // Make New Property For New Assessment,Bifurcation and Amalgamation & Mutation
-                    // Holding No Generation
-                    $holdingNo = $holdingNoGenerator->generateHoldingNo($saf);
-                    $ptNo = $idGeneration->generate();
-                    $saf->pt_no = $ptNo;                        // Generate New Property Tax No for All Conditions
-                    $saf->holding_no = $holdingNo;
-                    $saf->save();
+                $propertyExist = $mPropProperty->where('saf_id', $saf->id)
+                    ->first();
+
+                if (!$propertyExist) {
+                    $idGeneration = new PrefixIdGenerator($ptParamId, $saf->ulb_id);
+
+                    if (in_array($saf->assessment_type, ['New Assessment', 'Bifurcation', 'Amalgamation', 'Mutation'])) { // Make New Property For New Assessment,Bifurcation and Amalgamation & Mutation
+                        // Holding No Generation
+                        $holdingNo = $holdingNoGenerator->generateHoldingNo($saf);
+                        $ptNo = $idGeneration->generate();
+                        $saf->pt_no = $ptNo;                        // Generate New Property Tax No for All Conditions
+                        $saf->holding_no = $holdingNo;
+                        $saf->save();
+                    }
+                    $ptNo = $saf->pt_no;
+                    // Sam No Generator
+                    $samNo = $propIdGenerator->generateMemoNo("SAM", $saf->ward_mstr_id, $demand->fyear);
+                    $this->replicateSaf($saf->id);
+                    $propId = $this->_replicatedPropId;
+
+                    $mergedDemand = array_merge($demand->toArray(), [       // SAM Memo Generation
+                        'holding_no' => $saf->holding_no,
+                        'memo_type' => 'SAM',
+                        'memo_no' => $samNo,
+                        'pt_no' => $ptNo,
+                        'ward_id' => $saf->ward_mstr_id,
+                        'prop_id' => $propId,
+                        'userId'  => $userId
+                    ]);
+                    $memoReqs = new Request($mergedDemand);
+                    $mPropMemoDtl->postSafMemoDtls($memoReqs);
+
+                    $ifPropTaxExists = $mPropTax->getPropTaxesByPropId($propId);
+                    if ($ifPropTaxExists)
+                        $mPropTax->deactivatePropTax($propId);
+                    $safTaxes = $mPropSafTax->getSafTaxesBySafId($saf->id)->toArray();
+                    $mPropTax->replicateSafTaxes($propId, $safTaxes);
                 }
-                $ptNo = $saf->pt_no;
-                // Sam No Generator
-                $samNo = $propIdGenerator->generateMemoNo("SAM", $saf->ward_mstr_id, $demand->fyear);
-                $this->replicateSaf($saf->id);
-                $propId = $this->_replicatedPropId;
-
-                $mergedDemand = array_merge($demand->toArray(), [       // SAM Memo Generation
-                    'holding_no' => $saf->holding_no,
-                    'memo_type' => 'SAM',
-                    'memo_no' => $samNo,
-                    'pt_no' => $ptNo,
-                    'ward_id' => $saf->ward_mstr_id,
-                    'prop_id' => $propId,
-                    'userId'  => $userId
-                ]);
-                $memoReqs = new Request($mergedDemand);
-                $mPropMemoDtl->postSafMemoDtls($memoReqs);
-
-                $ifPropTaxExists = $mPropTax->getPropTaxesByPropId($propId);
-                if ($ifPropTaxExists)
-                    $mPropTax->deactivatePropTax($propId);
-                $safTaxes = $mPropSafTax->getSafTaxesBySafId($saf->id)->toArray();
-                $mPropTax->replicateSafTaxes($propId, $safTaxes);
                 break;
 
             case $wfLevels['TC']:
@@ -1020,6 +1048,10 @@ class ActiveSafController extends Controller
                     throw new Exception("Geo Tagging Not Done");
                 break;
             case $wfLevels['UTC']:
+                if ($saf->is_field_verified == false)
+                    throw new Exception("Field Verification Not Done");
+
+            case $wfLevels['SI']:
                 if ($saf->is_field_verified == false)
                     throw new Exception("Field Verification Not Done");
                 break;

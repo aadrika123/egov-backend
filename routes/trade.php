@@ -44,82 +44,81 @@ Route::group(['middleware' => ['json.response', "auth_maker"]], function () {
         Route::post('application/upload-document', 'uploadDocument');
 
         Route::post('appliction/documents', 'getUploadDocuments');
-        
+
         Route::post('application/document-verify', 'documentVerify');
-        
+
         Route::post('application/dtl-by-id', 'getLicenceDtl');
-        
+
         Route::post('notice/details', "getDenialDetails");
-        
+
         Route::post('application/search-for-renew', 'searchLicence');
-        
+
         Route::post('application/list', 'readApplication');
-        
+
         Route::post('application/escalate', 'postEscalate');
-        
+
         Route::post('application/btc', 'backToCitizen');
-        
+
         Route::post('workflow/dashboard-data', 'workflowDashordDetails');
-        
-        Route::post('application/escalate-inbox', 'specialInbox');        
-        
+
+        Route::post('application/escalate-inbox', 'specialInbox');
+
         Route::post('application/btc-inbox', 'btcInbox');
-        
+
         Route::post('application/inbox', 'inbox');
-        
+
         Route::post('application/outbox', 'outbox');
-        
+
         Route::post('application/post-next', 'postNextLevel');
-        
+
         Route::post('application/approve-reject', 'approveReject');
-        
+
         Route::post('application/independent-comment', 'addIndependentComment');
-        
+
         Route::post('application/pay-charge', 'PaymentCounter');
-        
+
         Route::post('application/approved-list', 'approvedApplication');
-        
-        Route::post('application/get-independent-comment', 'readIndipendentComment');        
-               
+
+        Route::post('application/get-independent-comment', 'readIndipendentComment');
     });
 
-    Route::controller(TradeNoticeController::class)->group(function(){        
+    Route::controller(TradeNoticeController::class)->group(function () {
         Route::post('notice/add', 'applyDenail');
-        
+
         Route::post('notice/inbox', 'inbox');
-        
+
         Route::post('notice/outbox', 'outbox');
-        
+
         Route::post('notice/btc-inbox', 'btcInbox');
-        
+
         Route::post('notice/post-next', 'postNextLevel');
-        
+
         Route::post('notice/approve-reject', 'approveReject');
-        
+
         Route::post('notice/view', 'denialview');
     });
 
     #------------citizenApplication--------------------- 
     Route::controller(TradeCitizenController::class)->group(function () {
-        
+
         Route::post('application/citizen-ward-list', "getWardList");               #id = c1
-        
+
         Route::post('application/citizen-add', 'applyApplication');                #id = c2        
-              
+
         Route::post('notice/citizen-details', "getDenialDetails");                 #id = c3 
-        
+
         Route::post('application/pay-razorpay-charge', 'handeRazorPay');           #id = c4
-        
+
         Route::post('application/conform-razorpay-tran', 'conformRazorPayTran');   #id = c5
-        
+
         Route::post('application/citizen-application', 'citizenApplication');      #id = c6
-        
+
         Route::post('application/citizen-by-id', 'readCitizenLicenceDtl');         #id = c7
-        
+
         Route::post('application/renewable-list', 'renewalList');                  #id = c8
-        
+
         Route::post('application/amendable-list', 'amendmentList');                 #id = c9
-        
+
         Route::post('application/surrenderable-list', 'surrenderList');             #id = c10
 
         Route::post('application/attached-list', "readAtachedLicenseDtl");
@@ -137,10 +136,10 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
         Route::post("application/valid-expire-list", "valideAndExpired");
         Route::post("application/collection-summary", "CollectionSummary");
         Route::post("application/track-status", "ApplicantionTrackStatus");
-        Route::post("application/application-agent-notice", "applicationAgentNotice"); 
+        Route::post("application/application-agent-notice", "applicationAgentNotice");
         Route::post("application/notice-summary", "noticeSummary");
-        Route::post("application/levelwisependingform", "levelwisependingform"); 
-        Route::post("application/leveluserpending", "levelUserPending"); 
+        Route::post("application/levelwisependingform", "levelwisependingform");
+        Route::post("application/leveluserpending", "levelUserPending");
         Route::post('application/userWiseWardWiseLevelPending', 'userWiseWardWiseLevelPending');
         Route::post('application/levelformdetail', 'levelformdetail');
         Route::post('application/userwiselevelpending', 'userWiseLevelPending');
