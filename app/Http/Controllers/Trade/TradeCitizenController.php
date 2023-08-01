@@ -630,7 +630,7 @@ class TradeCitizenController extends Controller
     public function expiredLicence(Request $request)
     {
         try {
-            $citizenId = authUser()->id;
+            $citizenId = Auth()->user()->id;
             $mApplicationTypeId = $request->applicationType;
             $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
 
@@ -657,7 +657,7 @@ class TradeCitizenController extends Controller
     # Serial No
     public function renewalList()
     {
-        $citizenId = authUser()->id;
+        $citizenId = Auth()->user()->id;
         $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
 
         $data = TradeLicence::select('trade_licences.*')
@@ -680,7 +680,7 @@ class TradeCitizenController extends Controller
     public function amendmentList()
     {
         try {
-            $citizenId = authUser()->id;
+            $citizenId = Auth()->user()->id;
             $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
             // DB::enableQueryLog();
             $data = TradeLicence::select('*')
@@ -705,7 +705,7 @@ class TradeCitizenController extends Controller
     public function surrenderList()
     { 
         try {
-            $citizenId = authUser()->id;
+            $citizenId = Auth()->user()->id;
             $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
 
             $data = TradeLicence::select('*')
@@ -918,7 +918,7 @@ class TradeCitizenController extends Controller
             return responseMsg(true, "", remove_null($data));
         }
         catch (Exception $e) 
-        {dd($e->getLine(),$e->getFile(),$e->getmessage());
+        {
             return responseMsg(false, $e->getMessage(), "");
         }
     }
