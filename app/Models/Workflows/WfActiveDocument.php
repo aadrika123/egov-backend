@@ -133,6 +133,7 @@ class WfActiveDocument extends Model
         return DB::table('wf_active_documents as d')
             ->select(
                 'd.verify_status',
+                'd.id as doc_id',
                 DB::raw("concat('$docUrl/',relative_path,'/',document) as doc_path"),
                 // DB::raw("concat(relative_path,'/',document) as doc_path")
             )

@@ -86,6 +86,7 @@ class SafDocController extends Controller
                 'mobile' => $refOwners['mobile_no'],
                 'guardian' => $refOwners['guardian_name'],
                 'uploadedDoc' => $ownerPhoto->doc_path ?? "",
+                'docId' => $ownerPhoto->doc_id ?? "",
                 'verifyStatus' => ($refSafs->payment_status == 1) ? ($ownerPhoto->verify_status ?? "") : 0
             ];
             $filteredDocs['documents'] = $this->filterDocument($documentList, $refSafs, $refOwners['id']);                                     // function(1.2)
