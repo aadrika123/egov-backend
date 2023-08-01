@@ -731,12 +731,11 @@ class TradeCitizenController extends Controller
         try{
             $refUser        = Auth()->user();
             $refUserId      = $refUser->id;
-            $refWorkflowId      = $this->_WF_MASTER_Id;
-
+            $refWorkflowId      = $this->_WF_MASTER_Id;  
             $data = (array)null;
             $licenseNo = (new ActiveCitizenUndercare())->getDetailsByCitizenId()
                         ->WHERENOTNULL("license_id"); 
-            // dd($licenseNo->implode("license_id",','));
+
             $licenseNo = $licenseNo->implode("license_id",',');
             if($licenseNo)
             { 
@@ -795,6 +794,7 @@ class TradeCitizenController extends Controller
                         $join->on("owner.temp_id", "licences.id");
                     })
                     ->where("licences.is_active", true)
+                    ->where("licences.citizen_id","<>",$refUserId)
                     ->WHERE(FUNCTION($where) use( $licenseNo){
                         $where->WHEREIN("licences.application_no", $licenseNo)
                         ->ORWHEREIN("licences.license_no", $licenseNo);
@@ -822,6 +822,7 @@ class TradeCitizenController extends Controller
                         $join->on("owner.temp_id", "licences.id");
                     })
                     ->where("licences.is_active", true)
+                    ->where("licences.citizen_id","<>",$refUserId)
                     ->WHERE(FUNCTION($where) use( $licenseNo){
                         $where->WHEREIN("licences.application_no", $licenseNo)
                         ->ORWHEREIN("licences.license_no", $licenseNo);
@@ -850,7 +851,8 @@ class TradeCitizenController extends Controller
                                             )owner"), function ($join) {
                         $join->on("owner.temp_id", "licences.id");
                     })
-                    ->where("licences.is_active", true)                    
+                    ->where("licences.is_active", true)    
+                    ->where("licences.citizen_id","<>",$refUserId)                
                     ->WHERE(FUNCTION($where) use( $licenseNo){
                         $where->WHEREIN("licences.application_no", $licenseNo)
                         ->ORWHEREIN("licences.license_no", $licenseNo);
@@ -878,6 +880,7 @@ class TradeCitizenController extends Controller
                         $join->on("owner.temp_id", "licences.id");
                     })
                     ->where("licences.is_active", true)
+                    ->where("licences.citizen_id","<>",$refUserId)
                     ->WHERE(FUNCTION($where) use( $licenseNo){
                         $where->WHEREIN("licences.application_no", $licenseNo)
                         ->ORWHEREIN("licences.license_no", $licenseNo);
@@ -915,7 +918,7 @@ class TradeCitizenController extends Controller
             return responseMsg(true, "", remove_null($data));
         }
         catch (Exception $e) 
-        {
+        {dd($e->getLine(),$e->getFile(),$e->getmessage());
             return responseMsg(false, $e->getMessage(), "");
         }
     }
