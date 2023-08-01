@@ -1050,11 +1050,8 @@ class ActiveSafController extends Controller
                 if ($saf->is_geo_tagged == false)
                     throw new Exception("Geo Tagging Not Done");
                 break;
-            case $wfLevels['UTC']:
-                if ($saf->is_field_verified == false)
-                    throw new Exception("Field Verification Not Done");
 
-            case $wfLevels['SI']:
+            case $wfLevels['UTC']:
                 if ($saf->is_field_verified == false)
                     throw new Exception("Field Verification Not Done");
                 break;
