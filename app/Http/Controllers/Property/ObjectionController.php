@@ -26,6 +26,8 @@ use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\Workflows\WfWorkflowrolemap;
 use App\Models\WorkflowTrack;
+use App\Pipelines\ObjectionInbox\ObjectionByApplicationNo;
+use App\Pipelines\ObjectionInbox\ObjectionByName;
 use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
 use App\Traits\Property\SafDetailsTrait;
 use App\Traits\Property\SafDoc;
@@ -34,6 +36,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Config;
 use Exception;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pipeline\Pipeline;
 use Illuminate\Support\Facades\Redis;
 
 /**
@@ -125,10 +128,20 @@ class ObjectionController extends Controller
                 ->where('prop_active_objections.ulb_id', $ulbId)
                 ->whereIn('prop_active_objections.current_role', $roleId)
                 ->whereIn('p.ward_mstr_id', $occupiedWards)
-                ->orderByDesc('prop_active_objections.id')
+                ->orderByDesc('prop_active_objections.id');
+            // ->paginate($perPage);
+            $inboxList = app(Pipeline::class)
+                ->send(
+                    $objection
+                )
+                ->through([
+                    ObjectionByApplicationNo::class,
+                    ObjectionByName::class
+                ])
+                ->thenReturn()
                 ->paginate($perPage);
 
-            return responseMsgs(true, "", remove_null($objection), '010805', '01', responseTime(), 'Post', '');
+            return responseMsgs(true, "", remove_null($inboxList), '010805', '01', responseTime(), 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }

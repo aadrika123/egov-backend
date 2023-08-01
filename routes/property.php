@@ -408,6 +408,9 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
     Route::post('waiver/application-detail', 'applicationDetails');
     Route::post('waiver/list-inbox', 'inbox');
     Route::post('waiver/uploaded-documents', 'getUploadedDocuments');
+    Route::post('waiver/verify-document', 'docVerifyReject');
+    Route::post('waiver/static-details', 'staticDetails');
+    Route::post('waiver/final-waived', 'finalWaivedAmount');
   });
 });
 

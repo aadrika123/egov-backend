@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Water;
 
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Facades\Config;
 
 class reqMeterEntry extends FormRequest
@@ -43,5 +45,21 @@ class reqMeterEntry extends FormRequest
             $rules['document']              = 'required|mimes:pdf,jpeg,jpg,png|max:2048';
         }
         return $rules;
+    }
+
+
+    // Validation Error Message
+    protected function failedValidation(Validator $validator)
+    {
+        throw new HttpResponseException(
+            response()->json(
+                [
+                    'status'   => false,
+                    'message'  => 'The given data was invalid',
+                    'errors'   => $validator->errors()
+                ],
+                422
+            )
+        );
     }
 }

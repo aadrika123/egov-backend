@@ -475,9 +475,9 @@ class ReferenceController extends Controller
             ->get();
             
             if(!$m_proptype){
-            return responseMsgs(false, "", 'Property Type not find', "", "");
+            return responseMsgs(false, 'Property Type not find',  "", "");
             }
-            return responseMsgs(true, $m_proptype, 'Property Type Retrieved Successfully', "012119", "");
+            return responseMsgs(true,  'Property Type Retrieved Successfully', $m_proptype,"012119", "");
 
          } catch(\Exception $e){
             return responseMsgs(false, $e->getMessage(), "");
@@ -498,10 +498,10 @@ class ReferenceController extends Controller
             ->get();
             
             if(!$m_propusagetype){
-            return responseMsgs(false, "", 'Property Usage Type not find', "", "");
+            return responseMsgs(false, "Property Usage Type not find", '');
             }
 
-            return responseMsgs(true, $m_propusagetype, 'Property Usage Type Retrieved Successfully', "012120", "");
+            return responseMsgs(true, 'Property Usage Type Retrieved Successfully',  $m_propusagetype,  "012120", "");
 
          } catch(\Exception $e){
             return responseMsgs(false, $e->getMessage(), "");

@@ -10,6 +10,7 @@ use App\Models\User;
 use Seshac\Otp\Otp;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use WpOrg\Requests\Auth;
 
@@ -30,11 +31,16 @@ class ThirdPartyController extends Controller
      */
     public function sendOtp(Request $request)
     {
-        try {
-            $request->validate([
+        $validated = Validator::make(
+            $request->all(),
+            [
                 'mobileNo' => "required|digits:10|regex:/[0-9]{10}/", #exists:active_citizens,mobile|
                 'type' => "nullable|in:Register,Forgot",
-            ]);
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+        try {
             $refIdGeneration = new IdGeneration();
             $mOtpRequest = new OtpRequest();
             if ($request->type == "Register") {
@@ -71,11 +77,16 @@ class ThirdPartyController extends Controller
      */
     public function verifyOtp(Request $request)
     {
-        try {
-            $request->validate([
+        $validated = Validator::make(
+            $request->all(),
+            [
                 'otp' => "required|digits:6",
                 'mobileNo' => "required|digits:10|regex:/[0-9]{10}/|exists:otp_requests,mobile_no"
-            ]);
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+        try {
             # model
             $mOtpMaster     = new OtpRequest();
             $mActiveCitizen = new ActiveCitizen();

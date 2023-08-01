@@ -94,7 +94,7 @@ class WaterConsumer extends Controller
         );
         if ($validated->fails())
             return validationError($validated);
-            
+
         try {
             $mWaterConsumerDemand   = new WaterConsumerDemand();
             $mWaterConsumerMeter    = new WaterConsumerMeter();
@@ -613,6 +613,7 @@ class WaterConsumer extends Controller
         | Not Working
         | Serial No : 06
         | Differenciate btw citizen and user 
+        | check if the ulb is same as the consumer details 
      */
     public function applyDeactivation(Request $request)
     {
@@ -630,7 +631,6 @@ class WaterConsumer extends Controller
 
         try {
             $user                           = authUser($request);
-            $currentDate                    = Carbon::now();
             $refRequest                     = array();
             $ulbWorkflowObj                 = new WfWorkflow();
             $mWaterWaterConsumer            = new WaterWaterConsumer();

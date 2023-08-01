@@ -572,9 +572,13 @@ class SafCalculation
             switch ($key) {
                 case "mobileTower";
                     $dateFrom = $this->_mobileTowerInstallDate;
+                    $carbonDateUpto = Carbon::now()->endOfYear()->addMonths(3);           // Get The Full Financial Year
+                    $carbonDateUpto = $carbonDateUpto->format('Y-m-d');
                     break;
                 case "hoardingBoard";
                     $dateFrom = $this->_hoardingBoard['installDate'];
+                    $carbonDateUpto = Carbon::now()->endOfYear()->addMonths(3);           // Get The Full Financial Year
+                    $carbonDateUpto = $carbonDateUpto->format('Y-m-d');
                     break;
                 case "petrolPump";
                     $dateFrom = $this->_petrolPump['installDate'];

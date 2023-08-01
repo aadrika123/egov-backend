@@ -161,7 +161,7 @@ class CashVerificationController extends Controller
     //     $userId =  $req->id;
     //     $date = date('Y-m-d', strtotime($req->date));
 
-    //     // DB::enableQueryLog();
+    //     DB::enableQueryLog();
     //     $propTraDtl = PropTransaction::select(
     //         'users.id',
     //         'users.user_name',

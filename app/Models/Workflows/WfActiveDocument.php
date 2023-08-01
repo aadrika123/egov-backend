@@ -12,8 +12,6 @@ class WfActiveDocument extends Model
     use HasFactory;
     protected $guarded = [];
 
-
-
     /**
      * | Store Wf Active Documents
      */
@@ -108,11 +106,12 @@ class WfActiveDocument extends Model
      */
     public function getDocsByAppId($applicationId, $workflowId, $moduleId)
     {
+        $docUrl = Config::get('module-constants.DOC_URL');
         return DB::table('wf_active_documents as d')
             ->select(
                 'd.id',
                 'd.document',
-                DB::raw("concat(relative_path,'/',document) as doc_path"),
+                DB::raw("concat('$docUrl/',relative_path,'/',document) as doc_path"),
                 'd.remarks',
                 'd.verify_status',
                 'd.doc_code',
@@ -291,8 +290,10 @@ class WfActiveDocument extends Model
      */
     public function getDocByRefIds($activeId, $workflowId, $moduleId)
     {
+        $docUrl = Config::get('module-constants.DOC_URL');
         return WfActiveDocument::select(
-            DB::raw("concat(relative_path,'/',document) as doc_path"),
+            DB::raw("concat('$docUrl/',relative_path,'/',document) as doc_path"),
+            // DB::raw("concat(relative_path,'/',document) as doc_path"),
             '*'
         )
             ->where('active_id', $activeId)

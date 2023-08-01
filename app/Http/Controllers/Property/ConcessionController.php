@@ -17,6 +17,8 @@ use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\Workflows\WfWorkflowrolemap;
 use App\Models\WorkflowTrack;
+use App\Pipelines\ConcessionInbox\ConcessionByApplicationNo;
+use App\Pipelines\ConcessionInbox\ConcessionByName;
 use App\Repository\Property\Concrete\PropertyBifurcation;
 use App\Repository\Property\Interfaces\iConcessionRepository;
 use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
@@ -30,6 +32,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Redis;
 use Exception;
+use Illuminate\Pipeline\Pipeline;
 
 /**
  * | Created On-15-11-2022 
@@ -373,10 +376,20 @@ class ConcessionController extends Controller
                 ->where('prop_active_concessions.ulb_id', $ulbId)
                 ->whereIn('prop_active_concessions.current_role', $roleIds)
                 ->whereIn('a.ward_mstr_id', $occupiedWards)
-                ->orderByDesc('prop_active_concessions.id')
+                ->orderByDesc('prop_active_concessions.id');
+
+            $inboxList = app(Pipeline::class)
+                ->send(
+                    $concessions
+                )
+                ->through([
+                    ConcessionByApplicationNo::class,
+                    ConcessionByName::class
+                ])
+                ->thenReturn()
                 ->paginate($perPage);
 
-            return responseMsgs(true, "Inbox List", remove_null($concessions), '010703', '01', responseTime(), 'Post', '');
+            return responseMsgs(true, "Inbox List", remove_null($inboxList), '010703', '01', responseTime(), 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -1178,11 +1191,6 @@ class ConcessionController extends Controller
         }
 
         return $documentList;
-        // if (!empty($documentList))
-        //     $filteredDocs = $this->filterDocument($documentList, $refApplication);                                     // function(1.2)
-        // else
-        //     $filteredDocs = [];
-        // return $filteredDocs;
     }
 
     /**

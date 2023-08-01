@@ -15,6 +15,7 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Pipeline\Pipeline;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -77,10 +78,16 @@ class CaretakerController extends Controller
      */
     public function caretakerConsumerTag(Request $req)
     {
-        $req->validate([
-            'consumerNo' => 'required|max:255',
-            'otp' => 'required|digits:6'
-        ]);
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'consumerNo' => 'required|max:255',
+                'otp' => 'required|digits:6'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
         try {
             $userId                     = authUser($req)->id;
             $mWaterApprovalApplicant    = new WaterApprovalApplicant();
@@ -125,12 +132,13 @@ class CaretakerController extends Controller
      */
     public function careTakeModules(Request $req)
     {
-        $req->validate([
-            'moduleId' => 'required|integer',
-            'referenceNo' => 'required'
-        ]);
+
 
         try {
+            $req->validate([
+                'moduleId' => 'required|integer',
+                'referenceNo' => 'required'
+            ]);
             $data = array();
             $response = app(Pipeline::class)
                 ->send($data)

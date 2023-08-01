@@ -106,16 +106,17 @@ class SafDocController extends Controller
         $safId = $refSafs->id;
         $workflowId = $refSafs->workflow_id;
         $moduleId = FacadesConfig::get('module-constants.PROPERTY_MODULE_ID');
+        $docUrl = FacadesConfig::get('module-constants.DOC_URL');
         $uploadedDocs = $mWfActiveDocument->getDocByRefIds($safId, $workflowId, $moduleId);
         $explodeDocs = collect(explode('#', $documentList));
 
-        $filteredDocs = $explodeDocs->map(function ($explodeDoc) use ($uploadedDocs, $ownerId, $refSafs) {
+        $filteredDocs = $explodeDocs->map(function ($explodeDoc) use ($uploadedDocs, $ownerId, $refSafs, $docUrl) {
             $document = explode(',', $explodeDoc);
             $key = array_shift($document);
             $label = array_shift($document);
             $documents = collect();
 
-            collect($document)->map(function ($item) use ($uploadedDocs, $documents, $ownerId, $refSafs) {
+            collect($document)->map(function ($item) use ($uploadedDocs, $documents, $ownerId, $refSafs, $docUrl) {
                 $uploadedDoc = $uploadedDocs->where('doc_code', $item)
                     ->where('owner_dtl_id', $ownerId)
                     ->first();
@@ -125,7 +126,7 @@ class SafDocController extends Controller
                         "uploadedDocId" => $uploadedDoc->id ?? "",
                         "documentCode" => $item,
                         "ownerId" => $uploadedDoc->owner_dtl_id ?? "",
-                        "docPath" => $uploadedDoc->doc_path ?? "",
+                        "docPath" =>  $uploadedDoc->doc_path ?? "",
                         "verifyStatus" => $refSafs->payment_status == 1 ? ($uploadedDoc->verify_status ?? "") : 0,
                         "remarks" => $uploadedDoc->remarks ?? "",
                     ];
@@ -223,8 +224,7 @@ class SafDocController extends Controller
                 $isDocRejected = collect($documents)->where('verify_status', 2)->first();
                 if ($isDocRejected)
                     $isDocRejected->update(['status' => 0]);
-
-                $mWfActiveDocument->store($metaReqs);           // Store New Document
+                $mWfActiveDocument->create($metaReqs);           // Store New Document
             }
 
             if (collect($ifDocCategoryExist)->isNotEmpty())
