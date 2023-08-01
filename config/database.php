@@ -122,6 +122,25 @@ return [
             ],
         ],
 
+        #_For Notice Service
+        'pgsql_notice' => [
+            'driver' => 'pgsql',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_NOTIC_HOST', '127.0.0.1'),
+            'port' => env('DB_NOTIC_PORT', '5432'),
+            'database' => env('DB_NOTIC_DATABASE', 'juidco_notice'),
+            'username' => env('DB_NOTIC_USERNAME', 'postgres'),
+            'password' => env('DB_NOTIC_PASSWORD', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'schema' => 'public',
+            'sslmode' => 'prefer',
+            'options'   => [
+                PDO::ATTR_PERSISTENT => true,
+            ],
+        ],
+
         'sqlsrv' => [
             'driver' => 'sqlsrv',
             'url' => env('DATABASE_URL'),
