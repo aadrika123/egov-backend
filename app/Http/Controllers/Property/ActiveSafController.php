@@ -746,6 +746,9 @@ class ActiveSafController extends Controller
             if ($data->payment_status == 0) {
                 $data->current_role_name = null;
                 $data->current_role_name2 = "Payment is Pending";
+            } elseif ($data->payment_status == 2) {
+                $data->current_role_name = null;
+                $data->current_role_name2 = "Payment Under Verification";
             } else
                 $data->current_role_name2 = $data->current_role_name;
 
