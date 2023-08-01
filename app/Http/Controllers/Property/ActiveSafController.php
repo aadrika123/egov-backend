@@ -872,7 +872,7 @@ class ActiveSafController extends Controller
             'applicationId' => 'required|integer',
             'receiverRoleId' => 'nullable|integer',
             'action' => 'required|In:forward,backward',
-            'isBtd' => 'required|boolean',
+            // 'isBtd' => 'required|boolean',
         ]);
 
         try {
