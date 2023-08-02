@@ -354,6 +354,7 @@ class NewConnectionRepository implements iNewConnection
     public function postNextLevel($req)
     {
         $mWfWorkflows       = new WfWorkflow();
+        $waterTrack         = new WorkflowTrack();
         $mWfRoleMaps        = new WfWorkflowrolemap();
         $current            = Carbon::now();
         $wfLevels           = Config::get('waterConstaint.ROLE-LABEL');
@@ -391,10 +392,10 @@ class NewConnectionRepository implements iNewConnection
         $metaReqs['workflowId']         = $waterApplication->workflow_id;
         $metaReqs['refTableDotId']      = 'water_applications.id';                                                          // Static
         $metaReqs['refTableIdValue']    = $req->applicationId;
+        $metaReqs['senderRoleId']       = $senderRoleId;
         $metaReqs['user_id']            = authUser($req)->id;
+        $metaReqs['trackDate']          = $current->format('Y-m-d H:i:s');
         $req->request->add($metaReqs);
-
-        $waterTrack = new WorkflowTrack();
         $waterTrack->saveTrack($req);
 
         # check in all the cases the data if entered in the track table 

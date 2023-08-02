@@ -386,6 +386,13 @@ class PaymentRepository implements iPayment
                         Http::withHeaders([])
                             ->post("$petApi->end_point", $transfer);
                         break;
+                    case ('11'):                                                             
+                        $waterTanker = 77;  
+                        $mApiMaster = new ApiMaster();                                                       
+                        $petApi = $mApiMaster->getApiEndpoint($waterTanker);
+                        $his = Http::withHeaders([])
+                            ->post("$petApi->end_point", $transfer);
+                        break;
                 }
             }
             return responseMsg(true, "Webhook Data Collected!", $request->event);
