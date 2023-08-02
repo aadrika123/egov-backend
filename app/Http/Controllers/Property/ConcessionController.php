@@ -795,7 +795,7 @@ class ConcessionController extends Controller
     {
         try {
             $request->validate([
-                'propId' => "required"
+                'propId' => "required|integer"
             ]);
             $ownerDetails = PropOwner::select(
                 'owner_name as ownerName',
@@ -811,11 +811,10 @@ class ConcessionController extends Controller
                 ->where('status', 1)
                 ->first();
 
-            if ($checkExisting) {
-                $checkExisting->property_id = $request->propId;
-                $checkExisting->save();
+            if ($checkExisting)
                 return responseMsg(1, "User Already Applied", remove_null($ownerDetails), "", '010711', '01', '303ms-406ms', 'Post', '');
-            } else return responseMsg(0, "User Not Exist", remove_null($ownerDetails), "", '010711', '01', '303ms-406ms', 'Post', '');
+
+            return responseMsg(0, "User Not Exist", remove_null($ownerDetails), "", '010711', '01', '303ms-406ms', 'Post', '');
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], "", '010711', '01', '303ms-406ms', 'Post', '');
         }
