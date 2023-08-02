@@ -910,7 +910,7 @@ class ActiveSafController extends Controller
                 $samHoldingDtls = $this->checkPostCondition($senderRoleId, $wfLevels, $saf, $wfMstrId, $userId);          // Check Post Next level condition
 
                 $geotagExist = $saf->is_field_verified == true;
-                // ->first();
+
                 if ($geotagExist && $saf->current_role == $wfLevels['DA'])
                     $forwardBackwardIds->forward_role_id = $wfLevels['UTC'];
 
