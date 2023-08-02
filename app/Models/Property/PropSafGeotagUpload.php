@@ -4,6 +4,7 @@ namespace App\Models\Property;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
 class PropSafGeotagUpload extends Model
@@ -16,8 +17,14 @@ class PropSafGeotagUpload extends Model
      */
     public function getGeoTags($safId)
     {
+        $docUrl = Config::get('module-constants.DOC_URL');
         return DB::table('prop_saf_geotag_uploads as g')
-            ->select('g.*', 'u.user_name as geo_tagged_by', 'u.mobile as geo_tagged_by_mobile')
+            ->select(
+                'g.*',
+                'u.user_name as geo_tagged_by',
+                'u.mobile as geo_tagged_by_mobile',
+                DB::raw("concat('$docUrl/',relative_path,'/',image_path) as image_path"),
+            )
             ->join('users as u', 'u.id', '=', 'g.user_id')
             ->where('g.saf_id', $safId)
             ->where('g.status', 1)
