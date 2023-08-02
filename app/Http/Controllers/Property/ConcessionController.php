@@ -797,7 +797,7 @@ class ConcessionController extends Controller
             $request->validate([
                 'propId' => "required"
             ]);
-            $ownerDetails = PropOwner::select(
+            return $ownerDetails = PropOwner::select(
                 'owner_name as ownerName',
                 'prop_owners.id as ownerId',
                 'ulb_id as ulbId'
@@ -817,7 +817,7 @@ class ConcessionController extends Controller
                 return responseMsgs(1, "User Already Applied", $ownerDetails, "", '010711', '01', '303ms-406ms', 'Post', '');
             } else return responseMsgs(0, "User Not Exist", $ownerDetails, "", '010711', '01', '303ms-406ms', 'Post', '');
         } catch (Exception $e) {
-            echo $e->getMessage();
+            return responseMsgs(false, $e->getMessage(), [], "", '010711', '01', '303ms-406ms', 'Post', '');
         }
     }
 
