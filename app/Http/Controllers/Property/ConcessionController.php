@@ -797,7 +797,7 @@ class ConcessionController extends Controller
             $request->validate([
                 'propId' => "required"
             ]);
-            return $ownerDetails = PropOwner::select(
+            $ownerDetails = PropOwner::select(
                 'owner_name as ownerName',
                 'prop_owners.id as ownerId',
                 'ulb_id as ulbId'
