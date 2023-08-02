@@ -2246,7 +2246,7 @@ class NewConnectionController extends Controller
     {
         $filterBy   = Config::get('waterConstaint.FILTER_BY');
         $roleId     = Config::get('waterConstaint.ROLE-LABEL.JE');
-        $validated = Validator::make(
+        $validated  = Validator::make(
             $request->all(),
             [
                 'filterBy'  => 'required',
