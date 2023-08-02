@@ -807,18 +807,9 @@ class ConcessionController extends Controller
                 ->orderBy('prop_owners.id')
                 ->first();
 
-            $checkExisting = PropActiveConcession::where('property_id', $request->propId)
-                ->where('status', 1)
-                ->first();
-
-            if (isset($checkExisting))
-                return responseMsgs(1, "User Already Applied", remove_null($ownerDetails), "", '010711', '01', '303ms-406ms', 'Post', '');
-            // return responseMsg(true, "User Already Existing", $ownerDetails);
-
-            // return responseMsgs(0, "User Not Exists in Workflow", remove_null($ownerDetails), "", '010711', '01', '303ms-406ms', 'Post', '');
-            return responseMsg(false, "User Not Exists in Workflow", $ownerDetails);
+            return responseMsgs(true, "Property 1st Owner Detail", remove_null($ownerDetails), "", '010711', '01', responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), [], "", '010711', '01', '303ms-406ms', 'Post', '');
+            return responseMsgs(false, $e->getMessage(), [], "", '010711', '01', responseTime(), $request->getMethod(), $request->deviceId);
         }
     }
 
