@@ -948,7 +948,7 @@ class NewConnectionController extends Controller
                 $applicationDetails['applicationDetails']['scheduledDate'] = $inspectionTime->inspection_date ?? null;
             }
 
-            $returnData = array_merge($applicationDetails, $ownerDetails, $documentDetails, $waterTransDetail);
+            $returnData = array_merge($applicationDetails, $ownerDetails, $documentDetails, $waterTransDetail); //
             return responseMsgs(true, "Application Data!", remove_null($returnData), "", "", "", "Post", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
