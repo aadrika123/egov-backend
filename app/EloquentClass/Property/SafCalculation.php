@@ -446,7 +446,7 @@ class SafCalculation
      */
     public function isPropertyTrust()
     {
-        $trustUsageType = "42";
+        $trustUsageType = Config::get('PropertyConstaint.TRUST_USAGE_TYPE_ID');
         if ($this->_propertyDetails['propertyType'] != 4) {
             $floors = $this->_floors;
             $usageTypes = collect($floors)->pluck('useType');

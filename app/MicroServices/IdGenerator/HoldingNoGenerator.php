@@ -115,9 +115,10 @@ class HoldingNoGenerator
     public function read15Digit()
     {
         $digit15 = -1;
-        $pluckedConsType = $this->_readFloors->pluck('const_type_mstr_id');
         if ($this->_activeSafs->prop_type_mstr_id == 4)                     // Vacant Land
             $digit15 = 0;
+        else
+            $pluckedConsType = $this->_readFloors->pluck('const_type_mstr_id');
 
         if (in_array($this->_activeSafs->prop_type_mstr_id, [2, 3])) {          // Multistored Building
             $isConstTypeSame = isElementsSame($pluckedConsType);

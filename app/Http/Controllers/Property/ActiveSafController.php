@@ -909,9 +909,9 @@ class ActiveSafController extends Controller
                 $wfMstrId = $mWfMstr->getWfMstrByWorkflowId($saf->workflow_id);
                 $samHoldingDtls = $this->checkPostCondition($senderRoleId, $wfLevels, $saf, $wfMstrId, $userId);          // Check Post Next level condition
 
-                $geotagExist = $mPropSafGeotagUpload->where('saf_id', $saf->id)
-                    ->first();
-                if ($geotagExist)
+                $geotagExist = $saf->is_field_verified == true;
+
+                if ($geotagExist && $saf->current_role == $wfLevels['DA'])
                     $forwardBackwardIds->forward_role_id = $wfLevels['UTC'];
 
                 if ($saf->is_bt_da == true) {
