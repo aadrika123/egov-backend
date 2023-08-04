@@ -915,8 +915,8 @@ class NewConnectionController extends Controller
                 'ulbId'     => $user->ulb_id ?? $applicationDetails['applicationDetails']['ulb_id'],
             ];
             $request->request->add($metaReqs);
-            $document = $this->getDocToUpload($request);                                                    // get the doc details
-            $documentDetails['documentDetails'] = collect($document)['original']['data'];
+            // $document = $this->getDocToUpload($request);                                                    // get the doc details
+            // $documentDetails['documentDetails'] = collect($document)['original']['data'];
 
             # owner details
             $ownerDetails['ownerDetails'] = $mWaterApplicant->getOwnerList($request->applicationId)->get();
@@ -948,7 +948,7 @@ class NewConnectionController extends Controller
                 $applicationDetails['applicationDetails']['scheduledDate'] = $inspectionTime->inspection_date ?? null;
             }
 
-            $returnData = array_merge($applicationDetails, $ownerDetails, $documentDetails, $waterTransDetail); //
+            $returnData = array_merge($applicationDetails, $ownerDetails, $waterTransDetail); //$documentDetails,
             return responseMsgs(true, "Application Data!", remove_null($returnData), "", "", "", "Post", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
