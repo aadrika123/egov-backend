@@ -312,8 +312,10 @@ class WfActiveDocument extends Model
      */
     public function getDocByRefIdsDocCode($activeId, $workflowId, $moduleId, $docCode)
     {
+        $docUrl = Config::get('module-constants.DOC_URL');
         return WfActiveDocument::select(
-            DB::raw("concat(relative_path,'/',document) as doc_path"),
+            DB::raw("concat('$docUrl/',relative_path,'/',document) as doc_path"),
+            // DB::raw("concat(relative_path,'/',document) as doc_path"),
             '*'
         )
             ->where('active_id', $activeId)
