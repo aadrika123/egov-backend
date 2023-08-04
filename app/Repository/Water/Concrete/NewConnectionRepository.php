@@ -213,6 +213,7 @@ class NewConnectionRepository implements iNewConnection
         $waterTrack->saveTrack($metaReqs);
 
         # watsapp message
+        // Register_message
         // $whatsapp2 = (Whatsapp_Send(
         //     "",
         //     "trn_2_var",
@@ -225,7 +226,6 @@ class NewConnectionRepository implements iNewConnection
         //     ]
         // ));
         DB::commit();
-
         $returnResponse = [
             'applicationNo' => $applicationNo,
             'applicationId' => $applicationId

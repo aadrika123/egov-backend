@@ -473,24 +473,24 @@ class WaterConsumer extends Controller
                 break;
         }
 
-        # if fixed meter connection is changing to meter connection as per rule every connection should be in meter
+        # If Previous meter details exist
         if ($consumerMeterDetails) {
+            # If fixed meter connection is changing to meter connection as per rule every connection should be in meter
             if ($request->connectionType != $refMeterConnType['Fixed'] && $consumerMeterDetails->connection_type == $refMeterConnType['Fixed']) {
                 if ($consumerDemand) {
                     throw new Exception("Please pay the old Demand Amount! as per rule to change fixed connection to meter!");
                 }
                 throw new Exception("Please apply for regularization as per rule 16 your connection shoul be in meter!");
             }
-        }
-        # if there is meter detail exist
-        if (isset($consumerMeterDetails)) {
+
+            # If there is previous meter detail exist
             $reqConnectionDate = $request->connectionDate;
-            switch ($consumerMeterDetails) {
-                case (strtotime($consumerMeterDetails->connection_date) > strtotime($reqConnectionDate)):
-                    throw new Exception("Connection Date should be grater than previous Connection date!");
+            if (strtotime($consumerMeterDetails->connection_date) > strtotime($reqConnectionDate)) {
+                throw new Exception("Connection Date should be grater than previous Connection date!");
             }
         }
-        # if the consumer demand exist
+
+        # If the consumer demand exist
         if (isset($consumerDemand)) {
             $reqConnectionDate = $request->connectionDate;
             $reqConnectionDate = Carbon::parse($reqConnectionDate)->format('m');
@@ -501,7 +501,7 @@ class WaterConsumer extends Controller
                     break;
             }
         }
-        # if the meter detail do not exist 
+        # If the meter detail do not exist 
         if (is_null($consumerMeterDetails)) {
             $returnData['meterStatus'] = false;
         }

@@ -390,7 +390,7 @@ class PaymentRepository implements iPayment
                         $waterTanker = 77;  
                         $mApiMaster = new ApiMaster();                                                       
                         $petApi = $mApiMaster->getApiEndpoint($waterTanker);
-                        $his = Http::withHeaders([])
+                        Http::withHeaders([])
                             ->post("$petApi->end_point", $transfer);
                         break;
                 }
