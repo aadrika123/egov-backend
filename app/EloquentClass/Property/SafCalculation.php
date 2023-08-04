@@ -582,6 +582,8 @@ class SafCalculation
                     break;
                 case "petrolPump";
                     $dateFrom = $this->_petrolPump['installDate'];
+                    $carbonDateUpto = Carbon::now()->endOfYear()->addMonths(3);           // Get The Full Financial Year
+                    $carbonDateUpto = $carbonDateUpto->format('Y-m-d');
                     break;
                 case "vacantLand";
                     $dateFrom = $this->_propertyDetails['landOccupationDate'];

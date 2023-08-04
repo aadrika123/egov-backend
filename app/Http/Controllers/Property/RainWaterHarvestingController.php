@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Property;
 
+use App\BLL\Property\CalculatePropById;
 use App\Http\Controllers\Controller;
 use App\MicroServices\DocUpload;
 use App\MicroServices\IdGenerator\PrefixIdGenerator;
@@ -257,10 +258,20 @@ class RainWaterHarvestingController extends Controller
                 ->where('prop_active_harvestings.ulb_id', $ulbId)                                        // Get harvesting
                 ->where('prop_active_harvestings.is_escalated', true)
                 ->whereIn('a.ward_mstr_id', $occupiedWards)
-                ->orderByDesc('prop_active_harvestings.id')
+                ->orderByDesc('prop_active_harvestings.id');
+
+            $specialList = app(Pipeline::class)
+                ->send(
+                    $harvesting
+                )
+                ->through([
+                    HarvestingByApplicationNo::class,
+                    HarvestingByName::class
+                ])
+                ->thenReturn()
                 ->paginate($perPage);
 
-            return responseMsg(true, "Inbox List", remove_null($harvesting));
+            return responseMsg(true, "Inbox List", remove_null($specialList));
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -326,10 +337,20 @@ class RainWaterHarvestingController extends Controller
                 ->where('prop_active_harvestings.ulb_id', $ulbId)
                 ->whereNotIn('prop_active_harvestings.current_role', $roleId)
                 ->whereIn('a.ward_mstr_id', $occupiedWards)
-                ->orderByDesc('prop_active_harvestings.id')
+                ->orderByDesc('prop_active_harvestings.id');
+
+            $outboxList = app(Pipeline::class)
+                ->send(
+                    $harvesting
+                )
+                ->through([
+                    HarvestingByApplicationNo::class,
+                    HarvestingByName::class
+                ])
+                ->thenReturn()
                 ->paginate($perPage);
 
-            return responseMsg(true, "Outbox List", remove_null($harvesting), '011109', 01, '446ms', 'Post', '');
+            return responseMsg(true, "Outbox List", remove_null($outboxList), '011109', 01, '446ms', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -619,6 +640,8 @@ class RainWaterHarvestingController extends Controller
             // Approval
             if ($req->status == 1) {
                 // Harvesting Application replication
+                $activeHarvesting->approved_date = Carbon::now();
+                $activeHarvesting->save();
 
                 $approvedHarvesting = $activeHarvesting->replicate();
                 $approvedHarvesting->setTable('prop_harvestings');
@@ -632,9 +655,18 @@ class RainWaterHarvestingController extends Controller
                 $approvedProperties->save();
 
                 $propProperties->is_water_harvesting = true;
+                $propProperties->rwh_date_from = $activeHarvesting->date_of_completion;
                 $propProperties->save();
 
-                $msg = "Application Successfully Approved !!";
+                $req->merge([
+                    "property_id" => $activeHarvesting->property_id,
+                ]);
+
+                $calculatePropById = new CalculatePropById;
+                return $demand = $calculatePropById->calculatePropTax($req);
+                dd($demand);
+
+                $msg = "Application Successfully Approved !";
                 $metaReqs['verificationStatus'] = 1;
             }
             // Rejection
@@ -671,7 +703,7 @@ class RainWaterHarvestingController extends Controller
                 'forward_date' => $this->_todayDate->format('Y-m-d'),
                 'forward_time' => $this->_todayDate->format('H:i:s')
             ]);
-
+            dd('ok');
             DB::commit();
             return responseMsgs(true, $msg, "", '011111', 01, '391ms', 'Post', $req->deviceId);
         } catch (Exception $e) {
