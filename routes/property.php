@@ -500,7 +500,6 @@ Route::controller(ReferenceController::class)->group(function () {
  * | Created On-31-01-2023 
  * | Created by-Mrinal Kumar
  * | Payment Cash Verification
-         Serial No : 2
  */
 Route::controller(CashVerificationController::class)->group(function () {
   Route::post('list-cash-verification', 'cashVerificationList');              //01

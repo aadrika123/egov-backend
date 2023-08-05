@@ -901,8 +901,7 @@ class ActiveSafController extends Controller
         $request->validate([
             'applicationId' => 'required|integer',
             'receiverRoleId' => 'nullable|integer',
-            'action' => 'required|In:forward,backward',
-            // 'isBtd' => 'required|boolean',
+            'action' => 'required|In:forward,backward'
         ]);
 
         try {
@@ -1104,7 +1103,7 @@ class ActiveSafController extends Controller
                 $saf->save();
                 break;
             case $wfLevels['UTC']:
-                $saf->is_field_verified = false;
+                $saf->is_geo_tagged = false;
                 $saf->save();
                 break;
         }
