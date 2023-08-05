@@ -52,7 +52,7 @@ class BankReconcillationController extends Controller
             if ($validator->fails()) {
                 return response()->json(['status' => False, 'msg' => $validator()->errors()]);
             }
-            $ulbId = authUser()->ulb_id;
+            $ulbId = authUser($request)->ulb_id;
             $moduleId = $request->moduleId;
             $paymentMode = $request->paymentMode;
             $verifyStatus = $request->verificationType;
@@ -213,7 +213,7 @@ class BankReconcillationController extends Controller
             if ($validator->fails()) {
                 return validationError($validator);
             }
-            $user = authUser();
+            $user = authUser($request);
             $ulbId = $user->ulb_id;
             $userId = $user->id;
             $moduleId = $request->moduleId;
