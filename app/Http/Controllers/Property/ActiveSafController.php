@@ -1097,6 +1097,8 @@ class ActiveSafController extends Controller
      */
     public function checkBackwardCondition($senderRoleId, $wfLevels, $saf)
     {
+        $mPropSafGeotagUpload = new PropSafGeotagUpload();
+
         switch ($senderRoleId) {
             case $wfLevels['TC']:
                 $saf->is_agency_verified = false;
@@ -1105,6 +1107,9 @@ class ActiveSafController extends Controller
             case $wfLevels['UTC']:
                 $saf->is_geo_tagged = false;
                 $saf->save();
+
+                $mPropSafGeotagUpload->where('saf_id', $saf->id)
+                    ->update(['status' => 0]);
                 break;
         }
     }
