@@ -593,8 +593,8 @@ class WaterApplication extends Model
     public function getApplicationByRole($roleId)
     {
         return WaterApplication::where('current_role', $roleId)
-            ->where('water_applications.is_escalate', false)
-            ->where('water_applications.parked', false)
+            ->where('is_escalate', false)
+            ->where('parked', false)
             ->where('status', 1);
     }
 

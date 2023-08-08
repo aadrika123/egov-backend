@@ -446,7 +446,7 @@ class SafCalculation
      */
     public function isPropertyTrust()
     {
-        $trustUsageType = "42";
+        $trustUsageType = Config::get('PropertyConstaint.TRUST_USAGE_TYPE_ID');
         if ($this->_propertyDetails['propertyType'] != 4) {
             $floors = $this->_floors;
             $usageTypes = collect($floors)->pluck('useType');
@@ -582,6 +582,8 @@ class SafCalculation
                     break;
                 case "petrolPump";
                     $dateFrom = $this->_petrolPump['installDate'];
+                    $carbonDateUpto = Carbon::now()->endOfYear()->addMonths(3);           // Get The Full Financial Year
+                    $carbonDateUpto = $carbonDateUpto->format('Y-m-d');
                     break;
                 case "vacantLand";
                     $dateFrom = $this->_propertyDetails['landOccupationDate'];

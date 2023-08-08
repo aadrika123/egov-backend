@@ -129,7 +129,7 @@ class ObjectionController extends Controller
                 ->whereIn('prop_active_objections.current_role', $roleId)
                 ->whereIn('p.ward_mstr_id', $occupiedWards)
                 ->orderByDesc('prop_active_objections.id');
-            // ->paginate($perPage);
+
             $inboxList = app(Pipeline::class)
                 ->send(
                     $objection
@@ -166,10 +166,20 @@ class ObjectionController extends Controller
                 ->where('prop_active_objections.ulb_id', $ulbId)
                 ->whereNotIn('prop_active_objections.current_role', $roleId)
                 ->whereIn('p.ward_mstr_id', $occupiedWards)
-                ->orderByDesc('prop_active_objections.id')
+                ->orderByDesc('prop_active_objections.id');
+
+            $outboxList = app(Pipeline::class)
+                ->send(
+                    $objections
+                )
+                ->through([
+                    ObjectionByApplicationNo::class,
+                    ObjectionByName::class
+                ])
+                ->thenReturn()
                 ->paginate($perPage);
 
-            return responseMsgs(true, "Outbox List", remove_null($objections), '010806', '01', responseTime(), 'Post', '');
+            return responseMsgs(true, "Outbox List", remove_null($outboxList), '010806', '01', responseTime(), 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -420,10 +430,20 @@ class ObjectionController extends Controller
                 ->where('prop_active_objections.ulb_id', $ulbId)
                 ->where('prop_active_objections.is_escalated', true)
                 ->whereIn('prop_active_objections.current_role', $roleId)
-                ->whereIn('p.ward_mstr_id', $occupiedWards)
+                ->whereIn('p.ward_mstr_id', $occupiedWards);
+
+            $specialList = app(Pipeline::class)
+                ->send(
+                    $objections
+                )
+                ->through([
+                    ObjectionByApplicationNo::class,
+                    ObjectionByName::class
+                ])
+                ->thenReturn()
                 ->paginate($perPage);
 
-            return responseMsgs(true, "Data Fetched", remove_null($objections), '010809', '01', responseTime(), 'Post', '');
+            return responseMsgs(true, "Data Fetched", remove_null($specialList), '010809', '01', responseTime(), 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -447,10 +467,20 @@ class ObjectionController extends Controller
             $objections = $this->getObjectionList($workflowIds)
                 ->where('prop_active_objections.ulb_id', $ulbId)
                 ->whereIn('p.ward_mstr_id', $occupiedWards)
-                ->where('prop_active_objections.parked', true)
+                ->where('prop_active_objections.parked', true);
+
+            $btcList = app(Pipeline::class)
+                ->send(
+                    $objections
+                )
+                ->through([
+                    ObjectionByApplicationNo::class,
+                    ObjectionByName::class
+                ])
+                ->thenReturn()
                 ->paginate($perPage);
 
-            return responseMsgs(true, "Data Fetched", remove_null($objections), '010809', '01', responseTime(), 'Post', '');
+            return responseMsgs(true, "Data Fetched", remove_null($btcList), '010809', '01', responseTime(), 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }

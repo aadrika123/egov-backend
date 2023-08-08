@@ -35,4 +35,16 @@ class ApiMaster extends Model
             ->where('id', $adv)
             ->first();
     }
+
+    /**
+     * | get for water tanker
+     */
+    public function getApiEndpoint($id)
+    {
+        return ApiMaster::select(
+            'end_point'
+        )
+            ->where('id', $id)
+            ->first();
+    }
 }

@@ -36,7 +36,7 @@ class CashVerificationController extends Controller
     public function cashVerificationList(Request $request)
     {
         try {
-            $ulbId =  authUser()->ulb_id;
+            $ulbId =  authUser($request)->ulb_id;
             $userId =  $request->id;
             $date = date('Y-m-d', strtotime($request->date));
             $propertyModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
@@ -108,7 +108,7 @@ class CashVerificationController extends Controller
     public function verifiedCashVerificationList(Request $req)
     {
         try {
-            $ulbId =  authUser()->ulb_id;
+            $ulbId =  authUser($request)->ulb_id;
             $userId =  $req->id;
             $date = date('Y-m-d', strtotime($req->date));
             $propertyModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
@@ -254,7 +254,7 @@ class CashVerificationController extends Controller
 
             ]);
             $userId =  $request->userId;
-            $ulbId =  authUser()->ulb_id;
+            $ulbId =  authUser($request)->ulb_id;
             $date = date('Y-m-d', strtotime($request->date));
             $propertyModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
             $waterModuleId = Config::get('module-constants.WATER_MODULE_ID');
@@ -296,7 +296,7 @@ class CashVerificationController extends Controller
                 "userId" => "required|numeric",
             ]);
             $userId =  $request->userId;
-            $ulbId =  authUser()->ulb_id;
+            $ulbId =  authUser($request)->ulb_id;
             $date = date('Y-m-d', strtotime($request->date));
             $propertyModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
             $waterModuleId = Config::get('module-constants.WATER_MODULE_ID');
@@ -679,7 +679,7 @@ class CashVerificationController extends Controller
     public function cashVerify(Request $request)
     {
         try {
-            $user = authUser();
+            $user = authUser($request);
             $userId = $user->id;
             $ulbId = $user->ulb_id;
             $property =  $request->property;
@@ -809,7 +809,7 @@ class CashVerificationController extends Controller
             'receiptNo' => 'required'
         ]);
         try {
-            $ulbId = authUser()->ulb_id;
+            $ulbId = authUser($request)->ulb_id;
             $mUlbMasters = new UlbMaster();
             $propertyModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
             $waterModuleId = Config::get('module-constants.WATER_MODULE_ID');

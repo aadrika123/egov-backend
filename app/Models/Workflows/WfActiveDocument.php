@@ -129,10 +129,13 @@ class WfActiveDocument extends Model
      */
     public function getOwnerPhotograph($applicationId, $workflowId, $moduleId, $ownerId)
     {
+        $docUrl = Config::get('module-constants.DOC_URL');
         return DB::table('wf_active_documents as d')
             ->select(
                 'd.verify_status',
-                DB::raw("concat(relative_path,'/',document) as doc_path")
+                'd.id as doc_id',
+                DB::raw("concat('$docUrl/',relative_path,'/',document) as doc_path"),
+                // DB::raw("concat(relative_path,'/',document) as doc_path")
             )
             ->join('prop_active_safs_owners as o', 'o.id', '=', 'd.owner_dtl_id')
             ->where('d.active_id', $applicationId)
@@ -309,8 +312,10 @@ class WfActiveDocument extends Model
      */
     public function getDocByRefIdsDocCode($activeId, $workflowId, $moduleId, $docCode)
     {
+        $docUrl = Config::get('module-constants.DOC_URL');
         return WfActiveDocument::select(
-            DB::raw("concat(relative_path,'/',document) as doc_path"),
+            DB::raw("concat('$docUrl/',relative_path,'/',document) as doc_path"),
+            // DB::raw("concat(relative_path,'/',document) as doc_path"),
             '*'
         )
             ->where('active_id', $activeId)

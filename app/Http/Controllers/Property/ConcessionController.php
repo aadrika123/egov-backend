@@ -80,7 +80,7 @@ class ConcessionController extends Controller
         ]);
 
         try {
-            $user = auth()->user();
+            $user = authUser($request);
             $userType = $user->user_type;
             $userId = $user->id;
             $track = new WorkflowTrack();
@@ -125,6 +125,10 @@ class ConcessionController extends Controller
             $concession->finisher_role_id = collect($finisherRoleId)->first()->role_id;
             $concession->date = Carbon::now();
 
+            $appliedFor = collect($concessionData)->pluck('appliedFor');
+            $concession->applied_for = $appliedFor->implode(',', $appliedFor);
+            $concession->save();
+
             collect($concessionData)->map(function ($item) use ($concession) {
                 if ($item['appliedFor'] == 'Gender')
                     $this->saveGenderData($item, $concession);
@@ -135,9 +139,6 @@ class ConcessionController extends Controller
                 if ($item['appliedFor'] == 'Armed Force')
                     $this->saveArmedForceData($item, $concession);
             });
-            $appliedFor = collect($concessionData)->pluck('appliedFor');
-            $concession->applied_for = $appliedFor->implode(',', $appliedFor);
-            $concession->save();
 
             $wfReqs['workflowId'] = $ulbWorkflowId->id;
             $wfReqs['refTableDotId'] = 'prop_active_concessions.id';
@@ -160,85 +161,7 @@ class ConcessionController extends Controller
             PropActiveConcession::where('id', $concession->id)
                 ->update(['application_no' => $concessionNo]);
 
-            // //saving document 
-            // if ($file = $request->file('genderDoc')) {
-
-            //     $docUpload = new DocUpload;
-            //     $mWfActiveDocument = new WfActiveDocument();
-            //     $relativePath = Config::get('PropertyConstaint.CONCESSION_RELATIVE_PATH');
-            //     $refImageName = $request->genderCode;
-            //     $refImageName = $concession->id . '-' . str_replace(' ', '_', $refImageName);
-            //     $document = $request->genderDoc;
-
-            //     $imageName = $docUpload->upload($refImageName, $document, $relativePath);
-            //     $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
-            //     $metaReqs['activeId'] = $concession->id;
-            //     $metaReqs['workflowId'] = $concession->workflow_id;
-            //     $metaReqs['ulbId'] = $concession->ulb_id;
-            //     $metaReqs['document'] = $imageName;
-            //     $metaReqs['relativePath'] = $relativePath;
-            //     $metaReqs['docCode'] = $request->genderCode;
-
-            //     $metaReqs = new Request($metaReqs);
-            //     $mWfActiveDocument->postDocuments($metaReqs);
-
-            //     PropActiveConcession::where('id', $concession->id)
-            //         ->update(['doc_upload_status' => 1]);
-            // }
-
-            // // dob Doc
-            // if ($file = $request->file('dobDoc')) {
-
-            //     $docUpload = new DocUpload;
-            //     $mWfActiveDocument = new WfActiveDocument();
-            //     $relativePath = Config::get('PropertyConstaint.CONCESSION_RELATIVE_PATH');
-            //     $refImageName = $request->dobCode;
-            //     $refImageName = $concession->id . '-' . str_replace(' ', '_', $refImageName);
-            //     $document = $request->dobDoc;
-
-            //     $imageName = $docUpload->upload($refImageName, $document, $relativePath);
-            //     $docReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
-            //     $docReqs['activeId'] = $concession->id;
-            //     $docReqs['workflowId'] = $concession->workflow_id;
-            //     $docReqs['ulbId'] = $concession->ulb_id;
-            //     $docReqs['relativePath'] = $relativePath;
-            //     $docReqs['document'] = $imageName;
-            //     $docReqs['docCode'] = $request->dobCode;
-
-            //     $docReqs = new Request($docReqs);
-            //     $mWfActiveDocument->postDocuments($docReqs);
-
-            //     PropActiveConcession::where('id', $concession->id)
-            //         ->update(['doc_upload_status' => 1]);
-            // }
-
-            // // specially abled Doc
-            // if ($file = $request->file('speciallyAbledDoc')) {
-
-            //     $docUpload = new DocUpload;
-            //     $mWfActiveDocument = new WfActiveDocument();
-            //     $relativePath = Config::get('PropertyConstaint.CONCESSION_RELATIVE_PATH');
-            //     $refImageName = $request->speciallyAbledCode;
-            //     $refImageName = $concession->id . '-' . str_replace(' ', '_', $refImageName);
-            //     $document = $request->speciallyAbledDoc;
-
-            //     $imageName = $docUpload->upload($refImageName, $document, $relativePath);
-            //     $speciallyAbledReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
-            //     $speciallyAbledReqs['activeId'] = $concession->id;
-            //     $speciallyAbledReqs['workflowId'] = $concession->workflow_id;
-            //     $speciallyAbledReqs['ulbId'] = $concession->ulb_id;
-            //     $speciallyAbledReqs['relativePath'] = $relativePath;
-            //     $speciallyAbledReqs['document'] = $imageName;
-            //     $speciallyAbledReqs['docCode'] = $request->speciallyAbledCode;
-
-            //     $speciallyAbledReqs = new Request($speciallyAbledReqs);
-            //     $mWfActiveDocument->postDocuments($speciallyAbledReqs);
-
-            //     PropActiveConcession::where('id', $concession->id)
-            //         ->update(['doc_upload_status' => 1]);
-            // }
-
-            // // Armed force Doc
+            // Armed force Doc
             // if ($file = $request->file('armedForceDoc')) {
 
             //     $docUpload = new DocUpload;
@@ -277,7 +200,9 @@ class ConcessionController extends Controller
      */
     public function saveGenderData($req, $concession)
     {
-        $concession->gender = $req['value'];
+        PropActiveConcession::where('id', $concession->id)
+            ->update(['gender' => $req['value']]);
+        // $concession->gender = $req['value'];
         $this->saveDoc($req, $concession);
     }
 
@@ -286,8 +211,10 @@ class ConcessionController extends Controller
      */
     public function saveSeniorCitizenData($req, $concession)
     {
-        $concession->dob = $req['value'];
-        // $this->saveDoc($req, $concession);
+        PropActiveConcession::where('id', $concession->id)
+            ->update(['dob' => $req['value']]);
+        // $concession->dob = $req['value'];
+        $this->saveDoc($req, $concession);
     }
 
     /**
@@ -295,9 +222,14 @@ class ConcessionController extends Controller
      */
     public function saveSpeciallyAbledData($req, $concession)
     {
-        $concession->is_specially_abled = $req['value'];
-        $concession->specially_abled_percentage = $req['percentage'];
-        // $this->saveDoc($req, $concession);
+        PropActiveConcession::where('id', $concession->id)
+            ->update([
+                'is_specially_abled' => $req['value'],
+                'specially_abled_percentage' => $req['percentage'],
+            ]);
+        // $concession->is_specially_abled = $req['value'];
+        // $concession->specially_abled_percentage = $req['percentage'];
+        $this->saveDoc($req, $concession);
     }
 
     /**
@@ -305,8 +237,12 @@ class ConcessionController extends Controller
      */
     public function saveArmedForceData($req, $concession)
     {
-        $concession->is_armed_force = $req['value'];
-        // $this->saveDoc($req, $concession);
+        PropActiveConcession::where('id', $concession->id)
+            ->update([
+                'is_armed_force' => $req['value'],
+            ]);
+        // $concession->is_armed_force = $req['value'];
+        $this->saveDoc($req, $concession);
     }
 
     public function saveDoc($request, $concession)
@@ -412,8 +348,8 @@ class ConcessionController extends Controller
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
             $perPage = $req->perPage ?? 10;
 
-            $userId = auth()->user()->id;
-            $ulbId = auth()->user()->ulb_id;
+            $userId = authUser($req)->id;
+            $ulbId = authUser($req)->ulb_id;
             $occupiedWards = $mWfWardUser->getWardsByUserId($userId)->pluck('ward_id');                       // Model () to get Occupied Wards of Current User
 
             $roleIds = $mWfRoleUser->getRoleIdByUserId($userId)->pluck('wf_role_id');                      // Model to () get Role By User Id
@@ -423,10 +359,20 @@ class ConcessionController extends Controller
                 ->where('prop_active_concessions.ulb_id', $ulbId)
                 ->whereNotIn('prop_active_concessions.current_role', $roleIds)
                 ->whereIn('a.ward_mstr_id', $occupiedWards)
-                ->orderByDesc('prop_active_concessions.id')
+                ->orderByDesc('prop_active_concessions.id');
+
+            $inboxList = app(Pipeline::class)
+                ->send(
+                    $concessions
+                )
+                ->through([
+                    ConcessionByApplicationNo::class,
+                    ConcessionByName::class
+                ])
+                ->thenReturn()
                 ->paginate($perPage);
 
-            return responseMsgs(true, "Outbox List", remove_null($concessions), '010704', '01', '355ms-419ms', 'Post', '');
+            return responseMsgs(true, "Outbox List", remove_null($inboxList), '010704', '01', '355ms-419ms', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -549,8 +495,8 @@ class ConcessionController extends Controller
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
             $perPage = $req->perPage ?? 10;
 
-            $userId = auth()->user()->id;
-            $ulbId = auth()->user()->ulb_id;
+            $userId = authUser($req)->id;
+            $ulbId = authUser($req)->ulb_id;
             $occupiedWards = $mWfWardUser->getWardsByUserId($userId)->pluck('ward_id');                       // Model () to get Occupied Wards of Current User
 
             $roleIds = $mWfRoleUser->getRoleIdByUserId($userId)->pluck('wf_role_id');                      // Model to () get Role By User Id
@@ -560,10 +506,20 @@ class ConcessionController extends Controller
                 ->where('prop_active_concessions.ulb_id', $ulbId)
                 ->where('prop_active_concessions.is_escalate', true)
                 ->whereIn('a.ward_mstr_id', $occupiedWards)
-                ->orderByDesc('prop_active_concessions.id')
+                ->orderByDesc('prop_active_concessions.id');
+
+            $inboxList = app(Pipeline::class)
+                ->send(
+                    $concessions
+                )
+                ->through([
+                    ConcessionByApplicationNo::class,
+                    ConcessionByName::class
+                ])
+                ->thenReturn()
                 ->paginate($perPage);
 
-            return responseMsg(true, "Inbox List", remove_null($concessions), "", '010707', '01', '303ms', 'Post', '');
+            return responseMsg(true, "Inbox List", remove_null($inboxList), "", '010707', '01', '303ms', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -580,8 +536,8 @@ class ConcessionController extends Controller
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
             $perPage = $req->perPage ?? 10;
 
-            $userId = auth()->user()->id;
-            $ulbId = auth()->user()->ulb_id;
+            $userId = authUser($req)->id;
+            $ulbId = authUser($req)->ulb_id;
             $occupiedWards = $mWfWardUser->getWardsByUserId($userId)->pluck('ward_id');                       // Model () to get Occupied Wards of Current User
 
             $roleIds = $mWfRoleUser->getRoleIdByUserId($userId)->pluck('wf_role_id');                      // Model to () get Role By User Id
@@ -592,10 +548,20 @@ class ConcessionController extends Controller
                 ->whereIn('prop_active_concessions.current_role', $roleIds)
                 ->whereIn('a.ward_mstr_id', $occupiedWards)
                 ->where('parked', true)
-                ->orderByDesc('prop_active_concessions.id')
+                ->orderByDesc('prop_active_concessions.id');
+
+            $inboxList = app(Pipeline::class)
+                ->send(
+                    $concessions
+                )
+                ->through([
+                    ConcessionByApplicationNo::class,
+                    ConcessionByName::class
+                ])
+                ->thenReturn()
                 ->paginate($perPage);
 
-            return responseMsgs(true, "BTC Inbox List", remove_null($concessions), 010717, 1.0, "271ms", "POST", "", "");;
+            return responseMsgs(true, "BTC Inbox List", remove_null($inboxList), 010717, 1.0, "271ms", "POST", "", "");;
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", 010717, 1.0, "271ms", "POST", "", "");
         }
@@ -775,7 +741,7 @@ class ConcessionController extends Controller
                 'forward_date' => $this->_todayDate->format('Y-m-d'),
                 'forward_time' => $this->_todayDate->format('H:i:s')
             ]);
-            // dd();
+            // dd('Test');
             DB::commit();
             return responseMsgs(true, $msg, "", "", '010709', '01', '376ms', 'Post', '');
         } catch (Exception $e) {
@@ -859,7 +825,7 @@ class ConcessionController extends Controller
     {
         try {
             $request->validate([
-                'propId' => "required"
+                'propId' => "required|integer"
             ]);
             $ownerDetails = PropOwner::select(
                 'owner_name as ownerName',
@@ -871,17 +837,9 @@ class ConcessionController extends Controller
                 ->orderBy('prop_owners.id')
                 ->first();
 
-            $checkExisting = PropActiveConcession::where('property_id', $request->propId)
-                ->where('status', 1)
-                ->first();
-
-            if ($checkExisting) {
-                $checkExisting->property_id = $request->propId;
-                $checkExisting->save();
-                return responseMsgs(1, "User Already Applied", $ownerDetails, "", '010711', '01', '303ms-406ms', 'Post', '');
-            } else return responseMsgs(0, "User Not Exist", $ownerDetails, "", '010711', '01', '303ms-406ms', 'Post', '');
+            return responseMsgs(true, "Property 1st Owner Detail", remove_null($ownerDetails), "", '010711', '01', responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
-            echo $e->getMessage();
+            return responseMsgs(false, $e->getMessage(), [], "", '010711', '01', responseTime(), $request->getMethod(), $request->deviceId);
         }
     }
 

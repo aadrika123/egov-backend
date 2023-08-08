@@ -104,6 +104,7 @@ return [
     ],
 
     "RELIGIOUS_PLACE_USAGE_TYPE_ID" => "11",                // Religious Place usage type
+    "TRUST_USAGE_TYPE_ID" => "43",                          // Trust usage type
 
     "USAGE-TYPE" => [
         "1" => [

@@ -331,7 +331,7 @@ class  PropActiveSaf extends Model
     {
         return PropActiveSaf::select('*')
             ->where('id', $safId)
-            ->firstOrFail();
+            ->first();
     }
 
     /**
@@ -789,7 +789,7 @@ class  PropActiveSaf extends Model
             'prop_active_safs.assessment_type',
             DB::raw(
                 "case when prop_active_safs.payment_status = 0 then 'Payment Not Done'
-                      when prop_active_safs.payment_status = 2 then 'Payment Under Verification'
+                      when prop_active_safs.payment_status = 2 then 'Cheque Payment Verification Pending'
                     else role_name end
                 as current_role
                 "

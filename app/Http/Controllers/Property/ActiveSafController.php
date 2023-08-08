@@ -411,7 +411,7 @@ class ActiveSafController extends Controller
             $roleIds = $mWfRoleUser->getRoleIdByUserId($mUserId)->pluck('wf_role_id');                 // Model function to get Role By User Id
 
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleIds)->pluck('workflow_id');
-            $safInbox = $this->Repository->getSaf($workflowIds)                 // Repository function getSAF
+            $safDtl = $this->Repository->getSaf($workflowIds)                 // Repository function getSAF
                 ->selectRaw(DB::raw(
                     "case when prop_active_safs.citizen_id is not null then 'true'
                           else false end
@@ -422,7 +422,17 @@ class ActiveSafController extends Controller
                 ->where('prop_active_safs.status', 1)
                 ->whereIn('ward_mstr_id', $occupiedWardsId)
                 ->orderByDesc('id')
-                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name')
+                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name');
+
+            $safInbox = app(Pipeline::class)
+                ->send(
+                    $safDtl
+                )
+                ->through([
+                    SearchByApplicationNo::class,
+                    SearchByName::class
+                ])
+                ->thenReturn()
                 ->paginate($perPage);
 
             return responseMsgs(true, "BTC Inbox List", remove_null($safInbox), 010123, 1.0, responseTime(), "POST", $mDeviceId);
@@ -492,13 +502,23 @@ class ActiveSafController extends Controller
             $wardId = $mWfWardUser->getWardsByUserId($userId)->pluck('ward_id');
 
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleIds)->pluck('workflow_id');
-            $safData = $this->Repository->getSaf($workflowIds)   // Repository function to get SAF
+            $safDtl = $this->Repository->getSaf($workflowIds)   // Repository function to get SAF
                 ->where('prop_active_safs.parked', false)
                 ->where('prop_active_safs.ulb_id', $ulbId)
                 ->whereNotIn('current_role', $roleIds)
                 ->whereIn('ward_mstr_id', $wardId)
                 ->orderByDesc('id')
-                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name')
+                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name');
+
+            $safData = app(Pipeline::class)
+                ->send(
+                    $safDtl
+                )
+                ->through([
+                    SearchByApplicationNo::class,
+                    SearchByName::class
+                ])
+                ->thenReturn()
                 ->paginate($perPage);
 
             return responseMsgs(true, "Data Fetched", remove_null($safData), "010104", "1.0", "274ms", "POST", "");
@@ -533,12 +553,22 @@ class ActiveSafController extends Controller
             $roleIds = $mWfRoleUserMaps->getRoleIdByUserId($userId)->pluck('wf_role_id');
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleIds)->pluck('workflow_id');
 
-            $safData = $this->Repository->getSaf($workflowIds)                      // Repository function to get SAF Details
+            $safDtl = $this->Repository->getSaf($workflowIds)                      // Repository function to get SAF Details
                 ->where('is_escalate', 1)
                 ->where('prop_active_safs.ulb_id', $ulbId)
                 ->whereIn('ward_mstr_id', $wardIds)
                 ->orderByDesc('id')
-                ->groupBy('prop_active_safs.id', 'prop_active_safs.saf_no', 'ward.ward_name', 'p.property_type')
+                ->groupBy('prop_active_safs.id', 'prop_active_safs.saf_no', 'ward.ward_name', 'p.property_type');
+
+            $safData = app(Pipeline::class)
+                ->send(
+                    $safDtl
+                )
+                ->through([
+                    SearchByApplicationNo::class,
+                    SearchByName::class
+                ])
+                ->thenReturn()
                 ->paginate($perPage);
 
             return responseMsgs(true, "Data Fetched", remove_null($safData), "010107", "1.0", "251ms", "POST", "");
@@ -748,7 +778,7 @@ class ActiveSafController extends Controller
                 $data->current_role_name2 = "Payment is Pending";
             } elseif ($data->payment_status == 2) {
                 $data->current_role_name = null;
-                $data->current_role_name2 = "Payment Under Verification";
+                $data->current_role_name2 = "Cheque Payment Verification Pending";
             } else
                 $data->current_role_name2 = $data->current_role_name;
 
@@ -871,8 +901,7 @@ class ActiveSafController extends Controller
         $request->validate([
             'applicationId' => 'required|integer',
             'receiverRoleId' => 'nullable|integer',
-            'action' => 'required|In:forward,backward',
-            // 'isBtd' => 'required|boolean',
+            'action' => 'required|In:forward,backward'
         ]);
 
         try {
@@ -909,9 +938,9 @@ class ActiveSafController extends Controller
                 $wfMstrId = $mWfMstr->getWfMstrByWorkflowId($saf->workflow_id);
                 $samHoldingDtls = $this->checkPostCondition($senderRoleId, $wfLevels, $saf, $wfMstrId, $userId);          // Check Post Next level condition
 
-                $geotagExist = $mPropSafGeotagUpload->where('saf_id', $saf->id)
-                    ->first();
-                if ($geotagExist)
+                $geotagExist = $saf->is_field_verified == true;
+
+                if ($geotagExist && $saf->current_role == $wfLevels['DA'])
                     $forwardBackwardIds->forward_role_id = $wfLevels['UTC'];
 
                 if ($saf->is_bt_da == true) {
@@ -1068,14 +1097,19 @@ class ActiveSafController extends Controller
      */
     public function checkBackwardCondition($senderRoleId, $wfLevels, $saf)
     {
+        $mPropSafGeotagUpload = new PropSafGeotagUpload();
+
         switch ($senderRoleId) {
             case $wfLevels['TC']:
                 $saf->is_agency_verified = false;
                 $saf->save();
                 break;
             case $wfLevels['UTC']:
-                $saf->is_field_verified = false;
+                $saf->is_geo_tagged = false;
                 $saf->save();
+
+                $mPropSafGeotagUpload->where('saf_id', $saf->id)
+                    ->update(['status' => 0]);
                 break;
         }
     }
@@ -2762,6 +2796,9 @@ class ActiveSafController extends Controller
                 $safDetails2["road_type_mstr_id"] = $saf->road_type_mstr_id;
                 $safDetails2["road_width"] = $saf->road_width;
                 $safDetails2["is_gb_saf"] = $saf->is_gb_saf;
+                $safDetails2["is_trust"] = $saf->is_trust;
+                $safDetails2["trust_type"] = $saf->trust_type;
+
 
                 $safDetails2["is_mobile_tower"] = $safDetails2["has_mobile_tower"];
                 $safDetails2["tower_area"] = $safDetails2["tower_area"];
@@ -2839,9 +2876,10 @@ class ActiveSafController extends Controller
                 'agency_verification',
                 "ulb_verification"
             )
-                ->where("prop_saf_verifications.status", 1)
+                // ->where("prop_saf_verifications.status", 1)     #_removed beacuse not showing data after approval
                 ->where("prop_saf_verifications.saf_id", $request->applicationId)
                 ->get();
+
             $data = $verifications->map(function ($val) {
                 $val->veryfied_by = $val->agency_verification ? "AGENCY TC" : "ULB TC";
                 return $val;
