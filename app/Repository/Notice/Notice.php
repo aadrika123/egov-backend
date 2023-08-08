@@ -146,7 +146,7 @@ use Barryvdh\DomPDF\Facade\PDF;
             $noticeApplication->user_id         = $userId;
             $noticeApplication->ulb_id          = $ulbId;
             $id_request = new Request(["ulbId"=>$ulbId,"paramId"=>$this->_APPLICATION_NO_CONST]);
-            $id_respons = $this->_ID_GENERATOR->idGenerator($id_request);
+            $id_respons = $this->_ID_GENERATOR->idGenerator($id_request);dd($id_request->all());
             $noticeApplication->application_no  = $id_respons->original["data"];
             $noticeApplication->save();
             $applicationNo =  $noticeApplication->application_no ;
@@ -165,6 +165,7 @@ use Barryvdh\DomPDF\Facade\PDF;
             }
             $message="Notice Apply Successfully. Your Notice Application No. is: $applicationNo";
             $data["ApplicationNo"]=$applicationNo;
+            
             if($noticeApplication->initater_role==$noticeApplication->finisher_role )
             {
                 $metaReqs["applicationId"] = $notice_id;

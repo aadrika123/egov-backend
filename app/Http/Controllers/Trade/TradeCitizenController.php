@@ -173,7 +173,7 @@ class TradeCitizenController extends Controller
                 throw new Exception("Old licence Id Requird");
             }
             return $this->_REPOSITORY->addRecord($request);
-        } catch (Exception $e) {
+        } catch (Exception $e) {            
             return responseMsgs(
                 false,
                 $e->getMessage(),
