@@ -7,6 +7,10 @@ use App\Http\Requests\Api\ApiStoreRequest;
 use App\Http\Requests\Api\ApiSearchRequest;
 use Illuminate\Http\Request;
 
+use Exception;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
+
 class ApiMasterController extends Controller
 {
     /**
@@ -23,6 +27,7 @@ class ApiMasterController extends Controller
 
     // Initializing Constructor for EloquentApiRepository
     protected $eloquentApi;
+    protected $EloquentApi;
 
     public function __construct(EloquentApiRepository $eloquentApi)
     {
@@ -64,4 +69,48 @@ class ApiMasterController extends Controller
     {
         return $this->EloquentApi->searchApiByTag($request);
     }
+
+
+    /**
+     * -----------------------------------------------------------------------------------------
+     * CreatedOn-06-06-2023
+     * CreatedBy-Sandeep Bara
+     * ------------------------------------------------------------------------------------------
+     * Code Testing
+     * Tested By-
+     * Feedback-
+     * ------------------------------------------------------------------------------------------
+     */
+
+    # Menu-Api-map curde 
+
+    public function getRowApiList(Request $request)
+    {
+        try{ 
+            $routes = collect(\Illuminate\Support\Facades\Route::getRoutes())->map(function ($route) {  
+                return [
+                    'Prefix'=>explode("/",$route->getPrefix())[0]??"",
+                    'Module'=>explode("/",$route->getPrefix())[1]??"",
+                    'Method' => implode('|', $route->methods()),
+                    'URI' => $route->uri(),
+                    'Name' => $route->getName(),
+                    'Action' => ltrim($route->getActionName(), '\\'),
+                    'Middleware' => implode(', ', $route->gatherMiddleware()),
+                ];
+            });
+            $routes =  $routes->where("Prefix","api")->values();
+            if($request->Module)
+            {
+                $routes =  $routes->where("Module",$request->Module)->values();
+            }
+
+            return responseMsgs(true,"data Fetched",remove_null($routes));
+        }
+        catch(Exception $e)
+        {
+            return responseMsgs(false,"data Not Fetched","");
+        }
+        
+    }
+    
 }
