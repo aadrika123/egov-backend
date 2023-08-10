@@ -132,7 +132,7 @@ class Trade implements ITrade
         $this->_MODEL_ActiveTradeOwner  = new ActiveTradeOwner($this->_DB_NAME);
     }
 
-    public function bigin()
+    public function begin()
     {
         DB::beginTransaction();
         $this->_DB->beginTransaction();
@@ -311,7 +311,7 @@ class Trade implements ITrade
                     $mnaturOfBusiness = implode(',', $mnaturOfBusiness);
                 }
                 #
-                $this->bigin();
+                $this->begin();
                 $licence = new ActiveTradeLicence();
                 $licence->application_type_id = $mApplicationTypeId;
                 $licence->ulb_id              = $refUlbId;
@@ -795,7 +795,7 @@ class Trade implements ITrade
             $mDenialAmount = $chargeData['notice_amount'];
             #-------------End Calculation-----------------------------
             #-------- Transection -------------------
-            $this->bigin();
+            $this->begin();
             $Tradetransaction = new TradeTransaction;
             $Tradetransaction->temp_id          = $licenceId;
             $Tradetransaction->ward_id          = $refLecenceData->ward_id;
@@ -1013,7 +1013,7 @@ class Trade implements ITrade
                 else
                     throw new Exception("Property Details Not Found");
             }
-            $this->bigin();
+            $this->begin();
 
             if ($refOldLicece->payment_status == 0) 
             {
@@ -1219,7 +1219,7 @@ class Trade implements ITrade
                     throw new Exception("You Are Not Authorized For This Action");
                 }
 
-                $this->bigin();
+                $this->begin();
                 $tradeDoc = ActiveTradeDocument::find($request->id);
                 $tradeDoc->verify_status = $status;
                 $tradeDoc->remarks = ($status == 2 ? $request->comment : null);
@@ -1397,10 +1397,9 @@ class Trade implements ITrade
             ];
             $validator = Validator::make($request->all(), $rules,);
             if ($validator->fails()) {
-                return responseMsg(false, $validator->errors(), $request->all());
+                return responseMsg(false, $validator->errors(), "");
             }
             $mNoticeNo = $request->noticeNo;
-
             $refDenialDetails = $this->_NOTICE->getDtlByNoticeNo(trim($mNoticeNo),$refUlbId);
             if ($refDenialDetails) {
                 $notice_date = Carbon::parse($refDenialDetails->notice_date)->format('Y-m-d'); //notice date
@@ -1895,7 +1894,7 @@ class Trade implements ITrade
             if ($validator->fails()) {
                 return responseMsg(false, $validator->errors(), $request->all());
             }
-            $this->bigin();
+            $this->begin();
             $licenceId = $request->applicationId;
             $data = ActiveTradeLicence::find($licenceId);
             $data->is_escalate = $request->escalateStatus;
@@ -2939,7 +2938,7 @@ class Trade implements ITrade
             }
 
             // Save On Workflow Track
-            $this->bigin();
+            $this->begin();
             $metaReqs['moduleId'] = $this->_MODULE_ID;
             $metaReqs['workflowId'] = $refLicense->workflow_id;
             $metaReqs['refTableDotId'] = 'active_trade_licences';

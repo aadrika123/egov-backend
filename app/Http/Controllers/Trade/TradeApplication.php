@@ -101,7 +101,7 @@ class TradeApplication extends Controller
         $this->_TRADE_CONSTAINT = Config::get("TradeConstant");
         $this->_REF_TABLE = $this->_TRADE_CONSTAINT["TRADE_REF_TABLE"];
     }
-    public function bigin()
+    public function begin()
     {
         DB::beginTransaction();
         $this->_DB->beginTransaction();
@@ -383,7 +383,7 @@ class TradeApplication extends Controller
             }
             $wfDocId = $request->id;
             $applicationId = $request->applicationId;
-            $this->bigin();
+            $this->begin();
             if ($request->docStatus == "Verified") {
                 $status = 1;
             }
@@ -578,7 +578,7 @@ class TradeApplication extends Controller
                 ->whereNotNull('sender_role_id')
                 ->orderBy("track_date", 'DESC')
                 ->first();
-            $this->bigin();
+            $this->begin();
             $initiatorRoleId = $activeLicence->initiator_role;
             $activeLicence->current_role = $initiatorRoleId;
             $activeLicence->is_parked = true;
@@ -724,7 +724,7 @@ class TradeApplication extends Controller
                 }
             }
 
-            $this->bigin();
+            $this->begin();
             $licence->max_level_attained = ($licence->max_level_attained < ($receiverRole["serial_no"] ?? 0)) ? ($receiverRole["serial_no"] ?? 0) : $licence->max_level_attained;
             $licence->current_role = $request->receiverRoleId;
             if ($licence->is_parked && $request->action == 'forward') {
@@ -824,7 +824,7 @@ class TradeApplication extends Controller
             $metaReqs['verificationStatus'] = 1;
             $req->request->add($metaReqs);
 
-            $this->bigin();
+            $this->begin();
 
             $track->saveTrack($req);
             // Approval

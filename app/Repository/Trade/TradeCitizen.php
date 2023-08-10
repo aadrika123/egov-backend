@@ -91,7 +91,7 @@ class TradeCitizen implements ITradeCitizen
         
     }
 
-    public function bigin()
+    public function begin()
     {
         DB::beginTransaction();
         $this->_DB->beginTransaction();
@@ -152,7 +152,7 @@ class TradeCitizen implements ITradeCitizen
                     throw new Exception("Application ulb Deffrence " . $refOldLicece->application_no);
                 }
             }
-            $this->bigin();
+            $this->begin();
             $response = $this->_REPOSITORY_TRADE->addRecord($request);
             if (!$response->original["status"]) {
                 throw new Exception($response->original["message"]);
@@ -257,7 +257,7 @@ class TradeCitizen implements ITradeCitizen
             $mDenialAmount = $chargeData['notice_amount'];
             #-------------End Calculation-----------------------------
             #-------- Transection -------------------
-            $this->bigin();
+            $this->begin();
 
             $RazorPayResponse = new TradeRazorPayResponse();
             $RazorPayResponse->temp_id   = $RazorPayRequest->temp_id;

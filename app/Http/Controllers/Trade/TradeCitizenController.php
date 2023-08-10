@@ -91,7 +91,7 @@ class TradeCitizenController extends Controller
         ];
     }
 
-    public function bigin()
+    public function begin()
     {
         DB::beginTransaction();
         $this->_DB->beginTransaction();
@@ -372,6 +372,10 @@ class TradeCitizenController extends Controller
             $myRequest->request->add(['departmentId' => 3]);
             $myRequest->request->add(['ulbId' => $refLecenceData->ulb_id]);
             $temp = $this->saveGenerateOrderid($myRequest);
+            if(isset($temp->original) && !$temp->original["status"])
+            {
+                throw new Exception($temp->original["message"]);
+            }
             $this->begin();
             $TradeRazorPayRequest = new TradeRazorPayRequest();
             $TradeRazorPayRequest->temp_id   = $request->licenceId;
@@ -406,7 +410,9 @@ class TradeCitizenController extends Controller
                 $this->_META_DATA["action"],
                 $this->_META_DATA["deviceId"]
             );
-        } catch (Exception $e) {
+        } 
+        catch (Exception $e) 
+        {
             $this->rollBack();
             return responseMsgs(
                 false,
