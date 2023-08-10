@@ -9,6 +9,7 @@ use App\MicroServices\IdGenerator\PrefixIdGenerator;
 use App\Models\CustomDetail;
 use App\Models\Masters\RefRequiredDocument;
 use App\Models\Property\PropActiveHarvesting;
+use App\Models\Property\PropDemand;
 use App\Models\Property\PropFloor;
 use App\Models\Property\PropHarvestingGeotagUpload;
 use App\Models\Property\PropOwner;
@@ -37,6 +38,7 @@ use Exception;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pipeline\Pipeline;
 use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\Validator;
 
 /**
  * | Created On - 18-11-2022
@@ -607,16 +609,22 @@ class RainWaterHarvestingController extends Controller
      */
     public function finalApprovalRejection(Request $req)
     {
-        try {
-            $req->validate([
-                'applicationId' => 'required',
-                'status' => 'required',
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'applicationId' => 'required|integer',
+                'status' => 'required|bool'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
 
-            ]);
+        try {
             // Check if the Current User is Finisher or Not    
             $mWfRoleUsermap = new WfRoleusermap();
             $track = new WorkflowTrack();
             $userId = authUser($req)->id;
+            $currentDate = Carbon::now();
             $activeHarvesting = PropActiveHarvesting::find($req->applicationId);
             $propProperties = PropProperty::where('id', $activeHarvesting->property_id)
                 ->first();
@@ -655,7 +663,7 @@ class RainWaterHarvestingController extends Controller
                 $approvedProperties->save();
 
                 $propProperties->is_water_harvesting = true;
-                $propProperties->rwh_date_from = $activeHarvesting->date_of_completion;
+                $propProperties->rwh_date_from = $activeHarvesting->approved_date;
                 $propProperties->save();
 
                 $req->merge([
@@ -663,8 +671,30 @@ class RainWaterHarvestingController extends Controller
                 ]);
 
                 $calculatePropById = new CalculatePropById;
-                return $demand = $calculatePropById->calculatePropTax($req);
-                dd($demand);
+                $mPropDemand = new PropDemand();
+                $fiscalYearStartMonth = 4; // April
+                $currentQuarter = ceil(($currentDate->month - $fiscalYearStartMonth + 1) / 3);                  #_Get the current quarter
+                $nextQuarter = $currentQuarter + 1;                               #_Get the next quarter
+                if ($nextQuarter > 4) {
+                    $nextQuarter = 1;
+                }
+                $currentFY = getFY();
+                $newDemand = $calculatePropById->calculatePropTax($req);
+                return $propDemandDetail = $mPropDemand->getDemandByFyear($currentFY, $activeHarvesting->property_id);
+
+                if (collect($propDemandDetail)->isNotEmpty()) {
+                    // if demand paid
+                    $propDemandDetail->where('paid_status', 1);
+
+                    // if demand is not paid
+                    $propDemandDetail->where('paid_status', 0);
+                } else {
+                    // demand is not generated for next quater
+                }
+
+                return collect($newDemand)->where('fyear', $currentFY)->where('qtr', '>=', $nextQuarter)->values();
+
+                dd($newDemand);
 
                 $msg = "Application Successfully Approved !";
                 $metaReqs['verificationStatus'] = 1;

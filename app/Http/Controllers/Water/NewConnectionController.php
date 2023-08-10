@@ -2363,6 +2363,7 @@ class NewConnectionController extends Controller
             $mWaterSiteInspectionsScheduling->cancelInspectionDateTime($refApplicationId);
             $mWaterConnectionCharge->deactivateSiteCharges($refApplicationId, $refSiteInspection);
             $mWaterPenaltyInstallment->deactivateSitePenalty($refApplicationId, $refSiteInspection);
+            # Check if the payment status is done or not 
             $mWaterApplication->updateOnlyPaymentstatus($refApplicationId);                                 // make the payment status of the application true
             if (!is_null($refSiteInspection)) {
                 $mWaterSiteInspection->deactivateSiteDetails($refSiteInspection->site_inspection_id);
@@ -2484,6 +2485,7 @@ class NewConnectionController extends Controller
             return validationError($validated);
 
         try {
+            $refReturnData['canInspect'] = false;
             $mWaterSiteInspectionsScheduling = new WaterSiteInspectionsScheduling();
             $siteInspection = $mWaterSiteInspectionsScheduling->getInspectionById($request->applicationId)->first();
             if (isset($siteInspection)) {
@@ -2495,7 +2497,7 @@ class NewConnectionController extends Controller
                 ];
                 return responseMsgs(true, "Site InspectionDetails!", $returnData, "", "01", ".ms", "POST", "");
             }
-            throw new Exception("Invalid data!");
+            return responseMsgs(false, "Data not found!", $refReturnData, "01", responseTime(), "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "", "01", ".ms", "POST", "");
         }
@@ -2645,6 +2647,13 @@ class NewConnectionController extends Controller
             $mWaterSiteInspection               = new WaterSiteInspection();
             $mWaterSiteInspectionsScheduling    = new WaterSiteInspectionsScheduling();
             $refJe                              = Config::get("waterConstaint.ROLE-LABEL.JE");
+            $propertyTypeMapping                = Config::get('waterConstaint.PROPERTY_TYPE');
+            $connectionTypeMapping              = Config::get('waterConstaint.REF_CONNECTION_TYPE');
+            $pipelineTypeMapping                = Config::get('waterConstaint.PARAM_PIPELINE');
+
+            $flipPropertyTypeMapping    = collect($propertyTypeMapping)->flip();
+            $flipConnectionTypeMapping  = collect($connectionTypeMapping)->flip();
+            $flipPipelineTypeMapping    = collect($pipelineTypeMapping)->flip();
 
             # level logic
             $sheduleDate = $mWaterSiteInspectionsScheduling->getInspectionData($request->applicationId)->first();
@@ -2652,7 +2661,10 @@ class NewConnectionController extends Controller
                 $returnData = $mWaterSiteInspection->getSiteDetails($request->applicationId)
                     ->where('order_officer', $refJe)
                     ->first();
-                $returnData['final_verify'] = true;
+                $returnData['final_verify']         = true;
+                $returnData['property_type_name']   = $flipPropertyTypeMapping[$returnData->property_type_id];
+                $returnData['connection_type_name'] = $flipConnectionTypeMapping[$returnData->connection_type_id];
+                $returnData['pipeline_type_name']   = $flipPipelineTypeMapping[$returnData->pipeline_type_id];
                 return responseMsgs(true, "JE Inspection details!", remove_null($returnData), "", "01", ".ms", "POST", $request->deviceId);
             }
             return responseMsgs(true, "Data not Found!", remove_null($returnData), "", "01", ".ms", "POST", $request->deviceId);

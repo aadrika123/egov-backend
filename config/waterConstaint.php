@@ -162,4 +162,9 @@ return [
         "FERRULE_CLEANING_CHECKING" => 4,
         "PIPE_SHIFTING_ALTERATION " => 5
     ],
+
+    "PARAM_PIPELINE" => [
+        "Old Pipeline" => 1,
+        "New Pipeline" => 2
+    ],
 ];

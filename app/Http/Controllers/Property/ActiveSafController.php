@@ -2476,9 +2476,9 @@ class ActiveSafController extends Controller
             $data['existingFloors'] = $existingFloors->values();
             $geoTags = $mSafGeoTag->getGeoTags($req->safId);
             $data['geoTagging'] = $geoTags;
-            return responseMsgs(true, "TC Verification Details", remove_null($data), "010120", "1.0", "258ms", "POST", $req->deviceId);
+            return responseMsgs(true, "TC Verification Details", remove_null($data), "010120", "1.0", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
+            return responseMsgs(false, $e->getMessage(), "", "010120", "1.0", responseTime(), $req->getMethod(), $req->deviceId);
         }
     }
 
@@ -2853,6 +2853,7 @@ class ActiveSafController extends Controller
                 $data["Tax"]["according_verification"] = $safTaxes2["original"]["data"];
                 $data["Tax"]["compairTax"] = $compairTax["original"]["data"];
             }
+
             $data["saf_details"] = $saf;
             $data["employee_details"] = ["user_name" => $verifications->user_name, "date" => ymdToDmyDate($verifications->created_at)];
             $data["property_comparison"] = $prop_compairs;
