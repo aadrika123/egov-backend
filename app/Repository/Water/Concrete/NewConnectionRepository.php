@@ -372,7 +372,7 @@ class NewConnectionRepository implements iNewConnection
 
         DB::beginTransaction();
         if ($req->action == 'forward') {
-            $this->checkPostCondition($req->senderRoleId, $wfLevels, $waterApplication);            // Check Post Next level condition
+            $this->checkPostCondition($senderRoleId, $wfLevels, $waterApplication);            // Check Post Next level condition
             if ($waterApplication->current_role == $wfLevels['JE']) {
                 $waterApplication->is_field_verified = true;
             }

@@ -89,7 +89,7 @@ class TradeCitizenController extends Controller
                 return responseMsgs(
                     false,
                     $validator->errors(),
-                    $request->all(),
+                    "",
                     $this->_META_DATA["apiId"],
                     $this->_META_DATA["version"],
                     $this->_META_DATA["queryRunTime"],
@@ -116,7 +116,7 @@ class TradeCitizenController extends Controller
             return responseMsgs(
                 false,
                 $e->getMessage(),
-                $request->all(),
+                "",
                 $this->_META_DATA["apiId"],
                 $this->_META_DATA["version"],
                 $this->_META_DATA["queryRunTime"],
@@ -173,11 +173,11 @@ class TradeCitizenController extends Controller
                 throw new Exception("Old licence Id Requird");
             }
             return $this->_REPOSITORY->addRecord($request);
-        } catch (Exception $e) {
+        } catch (Exception $e) {            
             return responseMsgs(
                 false,
                 $e->getMessage(),
-                $request->all(),
+                "",
                 $this->_META_DATA["apiId"],
                 $this->_META_DATA["version"],
                 $this->_META_DATA["queryRunTime"],
@@ -213,7 +213,7 @@ class TradeCitizenController extends Controller
             }
             $validator = Validator::make($request->all(), $rules,);
             if ($validator->fails()) {
-                return responseMsg(false, $validator->errors(), $request->all());
+                return responseMsg(false, $validator->errors(), "");
             }
             $mNoticeNo = $request->noticeNo;
 
@@ -250,7 +250,7 @@ class TradeCitizenController extends Controller
             return responseMsgs(
                 false,
                 $e->getMessage(),
-                $request->all(),
+                "",
                 $this->_META_DATA["apiId"],
                 $this->_META_DATA["version"],
                 $this->_META_DATA["queryRunTime"],
@@ -377,7 +377,7 @@ class TradeCitizenController extends Controller
             return responseMsgs(
                 false,
                 $e->getMessage(),
-                $request->all(),
+                "",
                 $this->_META_DATA["apiId"],
                 $this->_META_DATA["version"],
                 $this->_META_DATA["queryRunTime"],
@@ -567,7 +567,7 @@ class TradeCitizenController extends Controller
             ];
             $validator = Validator::make($request->all(), $rules,);
             if ($validator->fails()) {
-                return responseMsg(false, $validator->errors(), $request->all());
+                return responseMsg(false, $validator->errors(), "");
             }
             $TradeRazorPayResponse = TradeRazorPayResponse::select("trade_razor_pay_responses.*", "trade_razor_pay_requests.tran_type")
                 ->join("trade_razor_pay_requests", "trade_razor_pay_requests.id", "trade_razor_pay_responses.request_id")
@@ -607,7 +607,7 @@ class TradeCitizenController extends Controller
             return responseMsg(
                 false,
                 $e->getMessage(),
-                $request->all(),
+                "",
             );
         }
     }
@@ -630,7 +630,7 @@ class TradeCitizenController extends Controller
     public function expiredLicence(Request $request)
     {
         try {
-            $citizenId = authUser()->id;
+            $citizenId = Auth()->user()->id;
             $mApplicationTypeId = $request->applicationType;
             $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
 
@@ -650,14 +650,14 @@ class TradeCitizenController extends Controller
             }
             return responseMsg(true, "", remove_null($data));
         } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), $request->all());
+            return responseMsg(false, $e->getMessage(), "");
         }
     }
 
     # Serial No
     public function renewalList()
     {
-        $citizenId = authUser()->id;
+        $citizenId = Auth()->user()->id;
         $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
 
         $data = TradeLicence::select('trade_licences.*')
@@ -680,7 +680,7 @@ class TradeCitizenController extends Controller
     public function amendmentList()
     {
         try {
-            $citizenId = authUser()->id;
+            $citizenId = Auth()->user()->id;
             $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
             // DB::enableQueryLog();
             $data = TradeLicence::select('*')
@@ -705,7 +705,7 @@ class TradeCitizenController extends Controller
     public function surrenderList()
     { 
         try {
-            $citizenId = authUser()->id;
+            $citizenId = Auth()->user()->id;
             $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
 
             $data = TradeLicence::select('*')
@@ -918,7 +918,7 @@ class TradeCitizenController extends Controller
             return responseMsg(true, "", remove_null($data));
         }
         catch (Exception $e) 
-        {dd($e->getLine(),$e->getFile(),$e->getmessage());
+        {
             return responseMsg(false, $e->getMessage(), "");
         }
     }

@@ -72,7 +72,8 @@ class NoticeController extends Controller
     public function noticeType(Request $request)
     {
         try{
-            $data= NoticeTypeMaster::select("id","notice_type")
+            $data= DB::connection("pgsql_notice")->table("notice_type_masters")
+            ->select("id","notice_type")
                     ->where("status",1)
                     ->get();
             return responseMsg(true, "", $data);
@@ -247,7 +248,6 @@ class NoticeController extends Controller
                 }
             }
 
-            
             return responseMsgs($response->original["status"],$response->original["message"],$response->original["data"]);           
         }
         catch (Exception $e) 
@@ -258,8 +258,7 @@ class NoticeController extends Controller
 
     public function add(Request $request)
     {
-        try {  
-
+        try {              
             $modul = "SAF,PROPERTY,TRADE LICENSE,WATER CONNECTION,WATER CONSUMER,ADVERTISMENT,MARKET,SOLID WASTE";
             $mRegex = '/^[a-zA-Z1-9][a-zA-Z1-9\. \s]+$/';
             $mFramNameRegex = '/^[a-zA-Z1-9][a-zA-Z1-9\.\,\-\_\'&\s]+$/';
