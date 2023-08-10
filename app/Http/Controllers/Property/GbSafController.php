@@ -122,10 +122,20 @@ class GbSafController extends Controller
                 ->where('prop_active_safs.ulb_id', $ulbId)
                 ->whereNotIn('current_role', $roleIds)
                 ->whereIn('ward_mstr_id', $wardId)
-                ->orderByDesc('id')
+                ->orderByDesc('id');
+
+            $safOutbox = app(Pipeline::class)
+                ->send(
+                    $safData
+                )
+                ->through([
+                    GbSafByApplicationNo::class,
+                    GbSafByName::class
+                ])
+                ->thenReturn()
                 ->paginate($perPage);
 
-            return responseMsgs(true, "Data Fetched", remove_null($safData), "010104", "1.0", responseTime(), "POST", "");
+            return responseMsgs(true, "Data Fetched", remove_null($safOutbox), "010104", "1.0", responseTime(), "POST", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -689,7 +699,7 @@ class GbSafController extends Controller
             $roleIds = $mWfRoleUser->getRoleIdByUserId($mUserId)->pluck('wf_role_id');                 // Model function to get Role By User Id
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleIds)->pluck('workflow_id');
 
-            $safInbox = $mpropActiveSafs->getGbSaf($workflowIds)
+            $safData = $mpropActiveSafs->getGbSaf($workflowIds)
                 ->selectRaw(DB::raw(
                     "case when prop_active_safs.citizen_id is not null then 'true'
                       else false end
@@ -700,10 +710,20 @@ class GbSafController extends Controller
                 ->where('prop_active_safs.status', 1)
                 ->whereIn('current_role', $roleIds)
                 ->whereIn('ward_mstr_id', $occupiedWardsId)
-                ->orderByDesc('id')
+                ->orderByDesc('id');
+
+            $btcList = app(Pipeline::class)
+                ->send(
+                    $safData
+                )
+                ->through([
+                    GbSafByApplicationNo::class,
+                    GbSafByName::class
+                ])
+                ->thenReturn()
                 ->paginate($perPage);
 
-            return responseMsgs(true, "BTC Inbox List", remove_null($safInbox), 010123, 1.0, responseTime(), "POST", $mDeviceId);
+            return responseMsgs(true, "BTC Inbox List", remove_null($btcList), 010123, 1.0, responseTime(), "POST", $mDeviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", 010123, 1.0, responseTime(), "POST", $mDeviceId);
         }
@@ -753,10 +773,20 @@ class GbSafController extends Controller
                 ->where('is_escalate', 1)
                 ->where('prop_active_safs.ulb_id', $ulbId)
                 ->whereIn('ward_mstr_id', $wardIds)
-                ->orderByDesc('id')
+                ->orderByDesc('id');
+
+            $specialList = app(Pipeline::class)
+                ->send(
+                    $safData
+                )
+                ->through([
+                    GbSafByApplicationNo::class,
+                    GbSafByName::class
+                ])
+                ->thenReturn()
                 ->paginate($perPage);
 
-            return responseMsgs(true, "Data Fetched", remove_null($safData), "010107", "1.0", responseTime(), "POST", "");
+            return responseMsgs(true, "Data Fetched", remove_null($specialList), "010107", "1.0", responseTime(), "POST", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }

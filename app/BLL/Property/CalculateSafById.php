@@ -345,13 +345,14 @@ class CalculateSafById
             throw new Exception("Previous Saf Demand is Not Available");
 
         $propDemandList = $mPropDemands->getPaidDemandByPropId($propertyId);            // Get Full Demand which is paid by Property id
-        $fullDemandList = $safDemandList->merge($propDemandList);
         $generatedDemand = $generatedDemand->sortBy('due_date');
 
         // Demand Adjustment
         foreach ($generatedDemand as $item) {
             $itemDueDate = $item['due_date'] ?? $item['dueDate'];
-            $demand = $fullDemandList->where('due_date', $itemDueDate)->first();
+            $demand = $propDemandList->where('due_date', $itemDueDate)->first();            // Checking first in Property Table 
+            if (collect($demand)->isEmpty())                                                // If Demand not available in property then check in saf Table
+                $demand = $safDemandList->where('due_date', $itemDueDate)->first();
 
             if (collect($demand)->isEmpty())
                 $item['adjust_amount'] = 0;

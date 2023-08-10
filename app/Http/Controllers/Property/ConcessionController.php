@@ -359,10 +359,20 @@ class ConcessionController extends Controller
                 ->where('prop_active_concessions.ulb_id', $ulbId)
                 ->whereNotIn('prop_active_concessions.current_role', $roleIds)
                 ->whereIn('a.ward_mstr_id', $occupiedWards)
-                ->orderByDesc('prop_active_concessions.id')
+                ->orderByDesc('prop_active_concessions.id');
+
+            $inboxList = app(Pipeline::class)
+                ->send(
+                    $concessions
+                )
+                ->through([
+                    ConcessionByApplicationNo::class,
+                    ConcessionByName::class
+                ])
+                ->thenReturn()
                 ->paginate($perPage);
 
-            return responseMsgs(true, "Outbox List", remove_null($concessions), '010704', '01', '355ms-419ms', 'Post', '');
+            return responseMsgs(true, "Outbox List", remove_null($inboxList), '010704', '01', '355ms-419ms', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -496,10 +506,20 @@ class ConcessionController extends Controller
                 ->where('prop_active_concessions.ulb_id', $ulbId)
                 ->where('prop_active_concessions.is_escalate', true)
                 ->whereIn('a.ward_mstr_id', $occupiedWards)
-                ->orderByDesc('prop_active_concessions.id')
+                ->orderByDesc('prop_active_concessions.id');
+
+            $inboxList = app(Pipeline::class)
+                ->send(
+                    $concessions
+                )
+                ->through([
+                    ConcessionByApplicationNo::class,
+                    ConcessionByName::class
+                ])
+                ->thenReturn()
                 ->paginate($perPage);
 
-            return responseMsg(true, "Inbox List", remove_null($concessions), "", '010707', '01', '303ms', 'Post', '');
+            return responseMsg(true, "Inbox List", remove_null($inboxList), "", '010707', '01', '303ms', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -528,10 +548,20 @@ class ConcessionController extends Controller
                 ->whereIn('prop_active_concessions.current_role', $roleIds)
                 ->whereIn('a.ward_mstr_id', $occupiedWards)
                 ->where('parked', true)
-                ->orderByDesc('prop_active_concessions.id')
+                ->orderByDesc('prop_active_concessions.id');
+
+            $inboxList = app(Pipeline::class)
+                ->send(
+                    $concessions
+                )
+                ->through([
+                    ConcessionByApplicationNo::class,
+                    ConcessionByName::class
+                ])
+                ->thenReturn()
                 ->paginate($perPage);
 
-            return responseMsgs(true, "BTC Inbox List", remove_null($concessions), 010717, 1.0, "271ms", "POST", "", "");;
+            return responseMsgs(true, "BTC Inbox List", remove_null($inboxList), 010717, 1.0, "271ms", "POST", "", "");;
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", 010717, 1.0, "271ms", "POST", "", "");
         }

@@ -54,8 +54,8 @@ class CalculatePropById extends CalculateSafById
         $this->generatePropFloorCalcReq();
         $this->readPropGeneratedDemand();
         $this->generatePropCalculationReq();
-        $this->_newTax = $this->_safCalculation->calculateTax($this->_propCalculationReqs);
-        return $this->adjustPropDemand();
+        return $this->_newTax = $this->_safCalculation->calculateTax($this->_propCalculationReqs);
+        $this->adjustPropDemand();
         return $this->tblUpdateDemandAdjust();
     }
 
@@ -99,7 +99,7 @@ class CalculatePropById extends CalculateSafById
     {
         $propDetails = $this->_propDtls;
         $reqCalculation = [
-            "ulb" => $propDetails['ulb_id'],
+            "ulbId" => $propDetails['ulb_id'],
             "ward" => $propDetails['ward_mstr_id'],
             "propertyType" => $propDetails['prop_type_mstr_id'],
             "landOccupationDate" => $propDetails['land_occupation_date'],
@@ -151,7 +151,7 @@ class CalculatePropById extends CalculateSafById
         foreach ($propTaxes as $propTax) {
             $propQtrDemand = $this->_propDemandDetails->where('due_date', $propTax['due_date']);
             $propQtrDemand = collect($propQtrDemand->toArray())->first();
-            $propQtrDemand = (object) $propQtrDemand;
+            // $propQtrDemand = (object) $propQtrDemand;
 
             if (!empty($propQtrDemand)) {
                 if ($propTax['amount'] > $propQtrDemand['amount']) {

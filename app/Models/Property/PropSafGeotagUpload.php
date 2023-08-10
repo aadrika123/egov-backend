@@ -38,6 +38,7 @@ class PropSafGeotagUpload extends Model
     {
         return PropSafGeotagUpload::where('saf_id', $req->safId)
             ->where('direction_type', $req->directionType)
+            ->where('status', 1)
             ->first();
     }
 

@@ -24,6 +24,7 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Barryvdh\DomPDF\Facade\PDF;
+use Illuminate\Support\Str;
 
 /**
  * Created By Sandeep Bara
@@ -146,7 +147,7 @@ use Barryvdh\DomPDF\Facade\PDF;
             $noticeApplication->user_id         = $userId;
             $noticeApplication->ulb_id          = $ulbId;
             $id_request = new Request(["ulbId"=>$ulbId,"paramId"=>$this->_APPLICATION_NO_CONST]);
-            $id_respons = $this->_ID_GENERATOR->idGenerator($id_request);
+            $id_respons = $this->_ID_GENERATOR->idGenerator($id_request);dd($id_request->all());
             $noticeApplication->application_no  = $id_respons->original["data"];
             $noticeApplication->save();
             $applicationNo =  $noticeApplication->application_no ;
@@ -165,6 +166,7 @@ use Barryvdh\DomPDF\Facade\PDF;
             }
             $message="Notice Apply Successfully. Your Notice Application No. is: $applicationNo";
             $data["ApplicationNo"]=$applicationNo;
+            
             if($noticeApplication->initater_role==$noticeApplication->finisher_role )
             {
                 $metaReqs["applicationId"] = $notice_id;
@@ -865,6 +867,45 @@ use Barryvdh\DomPDF\Facade\PDF;
         } catch (Exception $e) {
             return collect([]);
         }
+    }
+
+    public function getDtlByNoticeNo($noticNO,$ulbId="")
+    {
+        try {
+            $noticeData = NoticeApplication::select(
+                "notice_applications.*",
+                "ulb_masters.ulb_name",
+                )
+            ->JOIN("ulb_masters","ulb_masters.id","notice_applications.ulb_id")
+            ->WHERE("notice_applications.notice_no",Str::upper($noticNO))            
+            ->WHERE("notice_applications.is_closed",FALSE)
+            ->WHERE("notice_applications.status",5);
+            
+        if($ulbId)
+        {
+            $noticeData = $noticeData->WHERE("notice_applications.ulb_id",$ulbId);
+        }
+        $noticeData = $noticeData->first();
+        return $noticeData;
+        }
+        catch (Exception $e) {
+            return null;
+        } 
+    }
+
+    public function noticeClose($id)
+    {
+        $notic = NoticeApplication::find($id);
+        if($notic)
+        {
+            $notic->is_closed = true;
+            $notic->update();
+        }
+    }
+
+    public function getNoticDtlById($id)
+    {
+        return NoticeApplication::find($id);
     }
     
  }

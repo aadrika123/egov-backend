@@ -43,27 +43,27 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
     });
 
 
-    /**
-     * | Created On-31-01-2023 
-     * | Created by-Mrinal Kumar
-     * | Payment Cash Verification
-         Serial No : 2
-     */
-    Route::controller(CashVerificationController::class)->group(function () {
-        Route::post('list-cash-verification', 'cashVerificationList');              //01
-        Route::post('verified-cash-verification', 'verifiedCashVerificationList');  //02
-        Route::post('tc-collections', 'tcCollectionDtl');                           //03
-        Route::post('verified-tc-collections', 'verifiedTcCollectionDtl');          //04
-        Route::post('verify-cash', 'cashVerify');                                   //05
-        Route::post('cash-receipt', 'cashReceipt');                                 //06
-        Route::post('edit-chequedtl', 'editChequeNo');                              //07
-    });
+    // /**
+    //  * | Created On-31-01-2023 
+    //  * | Created by-Mrinal Kumar
+    //  * | Payment Cash Verification
+    //      Serial No : 2
+    //  */
+    // Route::controller(CashVerificationController::class)->group(function () {
+    //     Route::post('list-cash-verification', 'cashVerificationList');              //01
+    //     Route::post('verified-cash-verification', 'verifiedCashVerificationList');  //02
+    //     Route::post('tc-collections', 'tcCollectionDtl');                           //03
+    //     Route::post('verified-tc-collections', 'verifiedTcCollectionDtl');          //04
+    //     Route::post('verify-cash', 'cashVerify');                                   //05
+    //     Route::post('cash-receipt', 'cashReceipt');                                 //06
+    //     Route::post('edit-chequedtl', 'editChequeNo');                              //07
+    // });
 
-    Route::controller(BankReconcillationController::class)->group(function () {
-        Route::post('search-transaction', 'searchTransaction');
-        Route::post('cheque-dtl-by-id', 'chequeDtlById');
-        Route::post('cheque-clearance', 'chequeClearance');
-    });
+    // Route::controller(BankReconcillationController::class)->group(function () {
+    //     Route::post('search-transaction', 'searchTransaction');
+    //     Route::post('cheque-dtl-by-id', 'chequeDtlById');
+    //     Route::post('cheque-clearance', 'chequeClearance');
+    // });
 });
 Route::controller(RazorpayPaymentController::class)->group(function () {
     Route::post('razorpay-webhook', 'gettingWebhookDetails');                                       // 14 collecting the all data provided by the webhook and updating the related database

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\MicroServices\DocUpload;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsOwner;
+use App\Models\Property\PropSaf;
 use App\Models\Workflows\WfActiveDocument;
 use App\Models\Workflows\WfRoleusermap;
 use App\Traits\Property\SafDoc;
@@ -258,9 +259,12 @@ class SafDocController extends Controller
         try {
             $mWfActiveDocument = new WfActiveDocument();
             $mActiveSafs = new PropActiveSaf();
+            $mPropSaf = new PropSaf();
             $moduleId = FacadesConfig::get('module-constants.PROPERTY_MODULE_ID');              // 1
 
             $safDetails = $mActiveSafs->getSafNo($req->applicationId);
+            if (!$safDetails)
+                $safDetails = $mPropSaf->find($req->applicationId);
             if (!$safDetails)
                 throw new Exception("Application Not Found for this application Id");
 
