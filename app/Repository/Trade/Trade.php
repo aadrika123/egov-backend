@@ -886,7 +886,7 @@ class Trade implements ITrade
             return responseMsg(true, "", $res);
         } catch (Exception $e) {
             $this->rollBack();
-            return responseMsg(false, $e->getMessage(), $request->all());
+            return responseMsg(false, $e->getMessage(), "");
         }
     }
     public function postTempTransection(TradeTransaction $refTransection, ActiveTradeLicence $refApplication, $mWardNo = null)
@@ -1911,7 +1911,7 @@ class Trade implements ITrade
 
     public function WorkFlowMetaList()
     {
-        return DB::table("active_trade_licences")
+        return $this->_DB->table("active_trade_licences")
                         ->JOIN("trade_param_application_types", "trade_param_application_types.id", "active_trade_licences.application_type_id")
                         ->join(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
                                                     STRING_AGG(guardian_name,',') AS guardian_name,
@@ -2468,7 +2468,7 @@ class Trade implements ITrade
                         TO_CHAR(cast(licences.valid_upto as date), 'DD-MM-YYYY') AS valid_upto
                         ")
             ];
-            $application = DB::table("active_trade_licences AS licences")->select($select)
+            $application = $this->_DB->table("active_trade_licences AS licences")->select($select)
                 ->join("ulb_masters", "ulb_masters.id", "licences.ulb_id")
                 ->join("ulb_ward_masters", function ($join) {
                     $join->on("ulb_ward_masters.id", "=", "licences.ward_id");
@@ -2488,7 +2488,7 @@ class Trade implements ITrade
                 ->first();
             if (!$application) 
             {
-                $application = DB::table("trade_licences AS licences")->select($select)
+                $application = $this->_DB->table("trade_licences AS licences")->select($select)
                     ->join("ulb_masters", "ulb_masters.id", "licences.ulb_id")
                     ->join("ulb_ward_masters", function ($join) {
                         $join->on("ulb_ward_masters.id", "=", "licences.ward_id");
@@ -2509,7 +2509,7 @@ class Trade implements ITrade
             }
             if (!$application) 
             {
-                $application = DB::table("rejected_trade_licences AS licences")->select($select)
+                $application = $this->_DB->table("rejected_trade_licences AS licences")->select($select)
                     ->join("ulb_masters", "ulb_masters.id", "licences.ulb_id")
                     ->join("ulb_ward_masters", function ($join) {
                         $join->on("ulb_ward_masters.id", "=", "licences.ward_id");
@@ -2530,7 +2530,7 @@ class Trade implements ITrade
             }
             if (!$application) 
             {
-                $application = DB::table("trade_renewals AS licences")->select($select)
+                $application = $this->_DB->table("trade_renewals AS licences")->select($select)
                     ->join("ulb_masters", "ulb_masters.id", "licences.ulb_id")
                     ->join("ulb_ward_masters", function ($join) {
                         $join->on("ulb_ward_masters.id", "=", "licences.ward_id");
@@ -2652,7 +2652,7 @@ class Trade implements ITrade
                         TO_CHAR(CAST(license.valid_upto AS DATE), 'DD-MM-YYYY') as valid_upto
                         ")
             ];
-            $application = DB::table("active_trade_licences as license")
+            $application = $this->_DB->table("active_trade_licences as license")
                 ->select($select)
                 ->join("ulb_masters", "ulb_masters.id", "license.ulb_id")
                 ->join("ulb_ward_masters", function ($join) {
@@ -2673,7 +2673,7 @@ class Trade implements ITrade
                 ->first();
             if (!$application) 
             {
-                $application = DB::table("trade_licences as license")
+                $application = $this->_DB->table("trade_licences as license")
                     ->select($select)
                     ->join("ulb_masters", "ulb_masters.id", "license.ulb_id")
                     ->join("ulb_ward_masters", function ($join) {
@@ -2695,7 +2695,7 @@ class Trade implements ITrade
             }
             if (!$application) 
             {
-                $application = DB::table("rejected_trade_licences as license")
+                $application = $this->_DB->table("rejected_trade_licences as license")
                     ->select($select)
                     ->join("ulb_masters", "ulb_masters.id", "license.ulb_id")
                     ->join("ulb_ward_masters", function ($join) {
@@ -2717,7 +2717,7 @@ class Trade implements ITrade
             }
             if (!$application) 
             {
-                $application = DB::table("trade_renewals as license")
+                $application = $this->_DB->table("trade_renewals as license")
                     ->select($select)
                     ->join("ulb_masters", "ulb_masters.id", "license.ulb_id")
                     ->join("ulb_ward_masters", function ($join) {
@@ -2835,7 +2835,7 @@ class Trade implements ITrade
                         TO_CHAR(CAST(license.valid_upto AS DATE), 'DD-MM-YYYY') as valid_upto
                         ")
             ];
-            $application = DB::table("trade_licences AS license")
+            $application = $this->_DB->table("trade_licences AS license")
                 ->select($select)
                 ->join("ulb_masters", "ulb_masters.id", "license.ulb_id")
                 ->join("ulb_ward_masters", function ($join) {
@@ -2856,7 +2856,7 @@ class Trade implements ITrade
                 ->first();
             if (!$application) 
             {
-                $application = DB::table("trade_renewals AS license")
+                $application = $this->_DB->table("trade_renewals AS license")
                     ->select($select)->join("ulb_masters", "ulb_masters.id", "license.ulb_id")
                     ->join("ulb_ward_masters", function ($join) {
                         $join->on("ulb_ward_masters.id", "=", "license.ward_id");
