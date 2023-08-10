@@ -61,16 +61,22 @@ trait Objection
     /**
      * | check Post Condition for backward forward
      */
-    public function checkPostCondition($senderRoleId, $wfLevels, $concession)
+    public function checkPostCondition($senderRoleId, $wfLevels, $objection, $req)
     {
         switch ($senderRoleId) {
             case $wfLevels['BO']:                        // Back Office Condition
-                if ($concession->doc_upload_status == 0)
+                if ($objection->doc_upload_status == 0)
                     throw new Exception("Document Not Fully Uploaded");
                 break;
             case $wfLevels['SI']:                       // SI Condition
-                if ($concession->doc_verify_status == 0)
+                if ($objection->doc_verify_status == 0)
                     throw new Exception("Document Not Fully Verified");
+                break;
+
+            case $wfLevels['EO']:                       // EO Condition
+                $objection->hearing_date = $req->date;
+                $objection->hearing_place = $req->place;
+                // $objection->save();
                 break;
         }
     }
