@@ -43,6 +43,7 @@ use App\Models\Workflows\WfRole;
 use App\Repository\Common\CommonFunction;
 use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
 use Illuminate\Http\Request;
+use App\Repository\Notice\Notice;
 
 use App\Traits\Auth;
 use App\Traits\Property\WardPermission;
@@ -75,7 +76,10 @@ class Trade implements ITrade
      * | @param Request $request
      * | @param response
      */
-
+    protected $_DB;
+    protected $_DB_NAME;
+    protected $_NOTICE_DB;
+    protected $_NOTICE_DB_NAME;
     protected $_wardNo;
     protected $_licenceId;
     protected $_shortUlbName;
@@ -89,11 +93,28 @@ class Trade implements ITrade
     protected $_MODULE_ID;
     protected $_REF_TABLE;
     protected $_TRADE_CONSTAINT;
+    protected $_NOTICE;
+
+    protected $_MODEL_TradeParamFirmType;
+    protected $_MODEL_TradeParamOwnershipType;
+    protected $_MODEL_TradeParamCategoryType;
+    protected $_MODEL_TradeParamItemType;
+    protected $_MODEL_ActiveTradeLicence;
+    protected $_MODEL_ActiveTradeOwner;
 
     public function __construct()
     {
+        $this->_DB_NAME = "pgsql_trade";
+        $this->_NOTICE_DB = "pgsql_notice";
+        $this->_DB = DB::connection( $this->_DB_NAME );
+        $this->_NOTICE_DB = DB::connection($this->_NOTICE_DB);
+        DB::enableQueryLog();
+        $this->_DB->enableQueryLog();
+        $this->_NOTICE_DB->enableQueryLog();
+
         $this->_MODEL_WARD = new ModelWard();
         $this->_COMMON_FUNCTION = new CommonFunction();
+        $this->_NOTICE = new Notice();
         $this->_WARD_NO = NULL;
         $this->_LICENCE_ID = NULL;
         $this->_SHORT_ULB_NAME = NULL;
@@ -102,6 +123,33 @@ class Trade implements ITrade
         $this->_MODULE_ID = Config::get('module-constants.TRADE_MODULE_ID');
         $this->_TRADE_CONSTAINT = Config::get("TradeConstant");
         $this->_REF_TABLE = $this->_TRADE_CONSTAINT["TRADE_REF_TABLE"];
+
+        $this->_MODEL_TradeParamFirmType = new TradeParamFirmType($this->_DB_NAME );
+        $this->_MODEL_TradeParamOwnershipType = new TradeParamOwnershipType($this->_DB_NAME );
+        $this->_MODEL_TradeParamCategoryType = new TradeParamCategoryType($this->_DB_NAME );
+        $this->_MODEL_TradeParamItemType = new TradeParamItemType($this->_DB_NAME );
+        $this->_MODEL_ActiveTradeLicence = new ActiveTradeLicence( $this->_DB_NAME );
+        $this->_MODEL_ActiveTradeOwner  = new ActiveTradeOwner($this->_DB_NAME);
+    }
+
+    public function bigin()
+    {
+        DB::beginTransaction();
+        $this->_DB->beginTransaction();
+        $this->_NOTICE_DB->beginTransaction();
+    }
+    public function rollback()
+    {
+        DB::rollBack();
+        $this->_DB->rollBack();
+        $this->_NOTICE_DB->rollBack();
+    }
+     
+    public function commit()
+    {
+        DB::commit();
+        $this->_DB->commit();
+        $this->_NOTICE_DB->commit();
     }
     # Serial No : 01
     /**
@@ -168,7 +216,7 @@ class Trade implements ITrade
      * |
      */
     public function addRecord(Request $request)
-    {
+    { 
         try {
             #------------------------ Declaration-----------------------           
             $refUser            = Auth()->user();
@@ -262,8 +310,8 @@ class Trade implements ITrade
                     }, $request->firmDetails['natureOfBusiness']);
                     $mnaturOfBusiness = implode(',', $mnaturOfBusiness);
                 }
-
-                DB::beginTransaction();
+                #
+                $this->bigin();
                 $licence = new ActiveTradeLicence();
                 $licence->application_type_id = $mApplicationTypeId;
                 $licence->ulb_id              = $refUlbId;
@@ -350,14 +398,16 @@ class Trade implements ITrade
                 {
                     $noticeNo = trim($request->initialBusinessDetails['noticeNo']);
                     $firm_date = $request->firmDetails['firmEstdDate'];
-                    $refNoticeDetails = $this->getDenialFirmDetails($refUlbId, strtoupper(trim($noticeNo)));
+                    // $refNoticeDetails = $this->getDenialFirmDetails($refUlbId, strtoupper(trim($noticeNo)));
+                    $refNoticeDetails = $this->_NOTICE->getDtlByNoticeNo(strtoupper(trim($noticeNo)),$refUlbId,);
                     if ($refNoticeDetails) 
                     {
-                        $refDenialId = $refNoticeDetails->dnialid;
+                        $refDenialId = $refNoticeDetails->id;
                         $licence->denial_id = $refDenialId;
                         $licence->update();
-                        $mNoticeDate = date("Y-m-d", strtotime($refNoticeDetails['created_on'])); //notice date  
-                        if ($firm_date < $mNoticeDate) 
+                        $mNoticeDate = date("Y-m-d", strtotime($refNoticeDetails['notice_date'])); //notice date  
+                        
+                        if ($firm_date > $mNoticeDate) 
                         {
                             throw new Exception("Firm Establishment Date Can Not Be Greater Than Notice Date ");
                         }
@@ -390,7 +440,8 @@ class Trade implements ITrade
                 {
                     $licence->denial_id = $refDenialId;
                     $licence->update();
-                    $this->updateStatusFine($refDenialId, 0, $licenceId, 1); //update status and fineAmount                     
+                    $this->_NOTICE->noticeClose($licence->denial_id);
+                    // $this->updateStatusFine($refDenialId, 0, $licenceId, 1); //update status and fineAmount                     
                 }
                 #---------------- End transaction of payment----------------------------
                 if ($mApplicationTypeId == 4) 
@@ -405,14 +456,14 @@ class Trade implements ITrade
                 {
                     throw new Exception("Some Error Ocures!....");
                 }
-                DB::commit();
+                $this->commit();
                 $res['applicationNo'] = $mAppNo;
                 $res['applyLicenseId'] = $licenceId;
                 return responseMsg(true, $mAppNo, $res);
             }
         } catch (Exception $e) {
-            DB::rollBack();             
-            return responseMsg(false, $e->getMessage(), $request->all());
+            $this->rollBack();             
+            return responseMsg(false, $e->getMessage(), "");
         }
     }
 
@@ -708,7 +759,7 @@ class Trade implements ITrade
             if ($refLecenceData->tobacco_status == 1 && $request->licenseFor > 1) {
                 throw new Exception("Tobaco Application Not Take Licence More Than One Year");
             }
-            if ($refNoticeDetails = $this->readNotisDtl($refLecenceData->denial_id)) {
+            if ($refNoticeDetails = $this->_NOTICE->getNoticDtlById($refLecenceData->denial_id)) {
                 $refDenialId = $refNoticeDetails->id;
                 $mNoticeDate = date("Y-m-d", strtotime($refNoticeDetails['notice_date'])); //notice date 
             }
@@ -731,8 +782,8 @@ class Trade implements ITrade
             $args['licenseFor']          = $request->licenseFor;
             $args['nature_of_business']  = $refLecenceData->nature_of_bussiness;
             $args['noticeDate']          = $mNoticeDate;
-            // dd($args);
             $chargeData = $this->cltCharge($args);
+            // dd($args,$chargeData);
             if ($chargeData['response'] == false || $chargeData['total_charge'] != $request->totalCharge) 
             {
                 throw new Exception("Payble Amount Missmatch!!!");
@@ -744,7 +795,7 @@ class Trade implements ITrade
             $mDenialAmount = $chargeData['notice_amount'];
             #-------------End Calculation-----------------------------
             #-------- Transection -------------------
-            DB::beginTransaction();
+            $this->bigin();
             $Tradetransaction = new TradeTransaction;
             $Tradetransaction->temp_id          = $licenceId;
             $Tradetransaction->ward_id          = $refLecenceData->ward_id;
@@ -823,17 +874,18 @@ class Trade implements ITrade
             if ($refNoticeDetails) {
                 $refLecenceData->denial_id = $refDenialId;
                 $refLecenceData->update();
-                $this->updateStatusFine($refDenialId, $chargeData['notice_amount'], $licenceId, 1); //update status and fineAmount                     
+                $this->_NOTICE->noticeClose($refLecenceData->denial_id);
+                // $this->updateStatusFine($refDenialId, $chargeData['notice_amount'], $licenceId, 1); //update status and fineAmount                     
             }
             $this->postTempTransection($Tradetransaction, $refLecenceData, $mWardNo);
-            DB::commit();
+            $this->commit();
             #----------End transaction------------------------
             #----------Response------------------------------
             $res['transactionId'] = $transaction_id; #config('app.url') . 
             $res['paymentReceipt'] = "/api/trade/application/payment-receipt/" . $licenceId . "/" . $transaction_id;
             return responseMsg(true, "", $res);
         } catch (Exception $e) {
-            DB::rollBack();
+            $this->rollBack();
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
@@ -900,7 +952,7 @@ class Trade implements ITrade
                 throw new Exception("No Licence Found");
             }
             $refOldOwneres = ActiveTradeOwner::owneresByLId($mLicenceId);
-            $mnaturOfBusiness = !empty(trim($refOldLicece->nature_of_bussiness)) ? TradeParamItemType::itemsById($refOldLicece->nature_of_bussiness) : [];
+            $mnaturOfBusiness = !empty(trim($refOldLicece->nature_of_bussiness)) ? $this->_MODEL_TradeParamItemType->itemsById($refOldLicece->nature_of_bussiness) : [];
             $natur = array();
             foreach ($mnaturOfBusiness as $val) {
                 $natur[] = [
@@ -919,7 +971,7 @@ class Trade implements ITrade
             $data["natureOfBusiness"]   = TradeParamItemType::List(true);
             return responseMsg(true, "", remove_null($data));
         } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), $request->all());
+            return responseMsg(false, $e->getMessage(), "");
         }
     }
     public function updateBasicDtl(Request $request)
@@ -961,7 +1013,7 @@ class Trade implements ITrade
                 else
                     throw new Exception("Property Details Not Found");
             }
-            DB::beginTransaction();
+            $this->bigin();
 
             if ($refOldLicece->payment_status == 0) 
             {
@@ -1037,10 +1089,10 @@ class Trade implements ITrade
                     throw new Exception("You Can Not Update Owner Document is VeriFy On " . $refOldLicece->doc_verify_date . " !!!");
                 }
             }
-            DB::commit();
+            $this->commit();
             return responseMsg(true, "Application Update SuccessFully!", "");
         } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), $request->all());
+            return responseMsg(false, $e->getMessage(), "");
         }
     }
     
@@ -1167,14 +1219,14 @@ class Trade implements ITrade
                     throw new Exception("You Are Not Authorized For This Action");
                 }
 
-                DB::beginTransaction();
+                $this->bigin();
                 $tradeDoc = ActiveTradeDocument::find($request->id);
                 $tradeDoc->verify_status = $status;
                 $tradeDoc->remarks = ($status == 2 ? $request->comment : null);
                 $tradeDoc->verified_by_emp_id = $user_id;
                 $tradeDoc->lvl_pending_id = $level_data->id;
                 $tradeDoc->update();
-                DB::commit();
+                $this->commit();
                 $sms = $tradeDoc->doc_for . " " . strtoupper($request->btn);
                 return responseMsg(true, $sms, "");
             }
@@ -1349,19 +1401,19 @@ class Trade implements ITrade
             }
             $mNoticeNo = $request->noticeNo;
 
-            $refDenialDetails = $this->getDenialFirmDetails($refUlbId, strtoupper(trim($mNoticeNo)));
-            if ($refDenialDetails && $refDenialDetails->is_active) {
-                $notice_date = Carbon::parse($refDenialDetails->noticedate)->format('Y-m-d'); //notice date
+            $refDenialDetails = $this->_NOTICE->getDtlByNoticeNo(trim($mNoticeNo),$refUlbId);
+            if ($refDenialDetails) {
+                $notice_date = Carbon::parse($refDenialDetails->notice_date)->format('Y-m-d'); //notice date
                 $denialAmount = $this->getDenialAmountTrade($notice_date, $mNowDate);
                 $data['denialDetails'] = $refDenialDetails;
                 $data['denialAmount'] = $denialAmount;
                 return responseMsg(true, "", $data);
             } else {
                 $response = "no Data";
-                return responseMsg(false, $response, $request->all());
+                return responseMsg(false, $response, "");
             }
         } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), $request->all());
+            return responseMsg(false, $e->getMessage(), "");
         }
     }
 
@@ -1384,10 +1436,10 @@ class Trade implements ITrade
             $mNatureOfBussiness = implode(',', $mNatureOfBussiness);
             if (
                 $request->licenceId && ($refLecenceData = ActiveTradeLicence::find($request->licenceId))
-                && ($refNoticeDetails = $this->readNotisDtl($refLecenceData->denial_id))
+                && ($refNoticeDetails = $this->_NOTICE->getNoticDtlById($refLecenceData->denial_id))
             ) {
-                $refDenialId = $refNoticeDetails->dnialid;
-                $mNoticeDate = date("Y-m-d", strtotime($refNoticeDetails['created_on'])); //notice date 
+                $refDenialId = $refNoticeDetails->id;
+                $mNoticeDate = date("Y-m-d", strtotime($refNoticeDetails['notice_date'])); //notice date 
             }
 
             $data["areaSqft"]       = $request->areaSqft;
@@ -1398,8 +1450,9 @@ class Trade implements ITrade
             $data["licenseFor"]     = $request->licenseFor;
             $data["apply_licence_id"]  = $request->licenceId ?? null;
             $data["nature_of_business"] = $mNatureOfBussiness;
-
+            
             $data = $this->cltCharge($data);
+            // dd($data1,$data);
             if ($data['response'])
                 return responseMsg(true, "", $data);
             else
@@ -1842,16 +1895,16 @@ class Trade implements ITrade
             if ($validator->fails()) {
                 return responseMsg(false, $validator->errors(), $request->all());
             }
-            DB::beginTransaction();
+            $this->bigin();
             $licenceId = $request->applicationId;
             $data = ActiveTradeLicence::find($licenceId);
             $data->is_escalate = $request->escalateStatus;
             $data->escalate_by = $userId;
             $data->save();
-            DB::commit();
+            $this->commit();
             return responseMsg(true, $request->escalateStatus == 1 ? 'Application is Escalated' : "Application is removed from Escalated", '');
         } catch (Exception $e) {
-            DB::rollBack();
+            $this->rollBack();
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
@@ -2237,7 +2290,7 @@ class Trade implements ITrade
             ]; 
             return responseMsg(true, "", remove_null($list));
         } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), $request->all());
+            return responseMsg(false, $e->getMessage(), "");
         }
     }
 
@@ -2886,7 +2939,7 @@ class Trade implements ITrade
             }
 
             // Save On Workflow Track
-            DB::beginTransaction();
+            $this->bigin();
             $metaReqs['moduleId'] = $this->_MODULE_ID;
             $metaReqs['workflowId'] = $refLicense->workflow_id;
             $metaReqs['refTableDotId'] = 'active_trade_licences';
@@ -2905,10 +2958,10 @@ class Trade implements ITrade
 
             $track = new WorkflowTrack();
             $track->saveTrack($request);
-            DB::commit();
+            $this->commit();
             return responseMsg(true, "You Have Commented Successfully!!", ['Comment' => $request->comment]);
         } catch (Exception $e) {
-            DB::rollBack();
+            $this->rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
     }
@@ -3076,41 +3129,41 @@ class Trade implements ITrade
             return $response;
         }
     }
-    public function readNotisDtl($id)
-    {
-        try {
-            $data = TradeNoticeConsumerDtl::select(
-                "*",
-                DB::raw("trade_notice_consumer_dtls.notice_date::date AS noticedate")
-            )
-                ->where("id", $id)
-                ->first();
-            return $data;
-        } catch (Exception $e) {
-            echo $e->getMessage();
-        }
-    }
-    public function getDenialFirmDetails($ulb_id, $notice_no) #for apply application
-    {
-        try {
-            DB::enableQueryLog();
-            $data = TradeNoticeConsumerDtl::select(
-                "trade_notice_consumer_dtls.*",
-                DB::raw("trade_notice_consumer_dtls.notice_no,
-                                trade_notice_consumer_dtls.notice_date::date AS noticedate,
-                                trade_notice_consumer_dtls.id as dnialid")
-            )
-                ->where("trade_notice_consumer_dtls.notice_no", $notice_no)
-                // ->where("trade_denial_notices.created_on","<",$firm_date)
-                ->where("trade_notice_consumer_dtls.status", "=", 5)
-                ->where("trade_notice_consumer_dtls.ulb_id", $ulb_id)
-                ->first();
-            // dd(DB::getQueryLog());
-            return $data;
-        } catch (Exception $e) {
-            echo $e->getMessage();
-        }
-    }
+    // public function readNotisDtl($id)
+    // {
+    //     try {
+    //         $data = TradeNoticeConsumerDtl::select(
+    //             "*",
+    //             DB::raw("trade_notice_consumer_dtls.notice_date::date AS noticedate")
+    //         )
+    //             ->where("id", $id)
+    //             ->first();
+    //         return $data;
+    //     } catch (Exception $e) {
+    //         echo $e->getMessage();
+    //     }
+    // }
+    // public function getDenialFirmDetails($ulb_id, $notice_no) #for apply application
+    // {
+    //     try {
+    //         DB::enableQueryLog();
+    //         $data = TradeNoticeConsumerDtl::select(
+    //             "trade_notice_consumer_dtls.*",
+    //             DB::raw("trade_notice_consumer_dtls.notice_no,
+    //                             trade_notice_consumer_dtls.notice_date::date AS noticedate,
+    //                             trade_notice_consumer_dtls.id as dnialid")
+    //         )
+    //             ->where("trade_notice_consumer_dtls.notice_no", $notice_no)
+    //             // ->where("trade_denial_notices.created_on","<",$firm_date)
+    //             ->where("trade_notice_consumer_dtls.status", "=", 5)
+    //             ->where("trade_notice_consumer_dtls.ulb_id", $ulb_id)
+    //             ->first();
+    //         // dd(DB::getQueryLog());
+    //         return $data;
+    //     } catch (Exception $e) {
+    //         echo $e->getMessage();
+    //     }
+    // }
     public function getDenialAmountTrade($notice_date = null, $current_date = null)
     {
         $notice_date = $notice_date ? Carbon::createFromFormat("Y-m-d", $notice_date)->format("Y-m-d") : Carbon::now()->format('Y-m-d');
@@ -3165,7 +3218,7 @@ class Trade implements ITrade
         }
     }
     public function propertyDetailsfortradebyHoldingNo(string $holdingNo, int $ulb_id): array
-    {
+    {        
         // DB::enableQueryLog();
         $property = PropProperty::select("*")
             ->leftjoin(
@@ -3206,18 +3259,18 @@ class Trade implements ITrade
         }
         return ["status" => false, 'property' => '', 'owneres' => ''];
     }
-    public function updateStatusFine($denial_id, $denialAmount, $applyid, $status = 2)
-    {
-        $tradeNotice = TradeNoticeConsumerDtl::where("id", $denial_id)
-            ->orderBy("id", "DESC")
-            ->first();
-        $tradeNotice->fine_amount  =  $denialAmount;
-        $tradeNotice->status =  $status;
-        if ($applyid) {
-            // $tradeNotice->is_active =  false;
-        }
-        $tradeNotice->update();
-    }
+    // public function updateStatusFine($denial_id, $denialAmount, $applyid, $status = 2)
+    // {
+    //     $tradeNotice = TradeNoticeConsumerDtl::where("id", $denial_id)
+    //         ->orderBy("id", "DESC")
+    //         ->first();
+    //     $tradeNotice->fine_amount  =  $denialAmount;
+    //     $tradeNotice->status =  $status;
+    //     if ($applyid) {
+    //         // $tradeNotice->is_active =  false;
+    //     }
+    //     $tradeNotice->update();
+    // }
     public function getLicenceById($id)
     {
         try {
@@ -3476,25 +3529,25 @@ class Trade implements ITrade
         $filePath = $file->storeAs('uploads/Trade', $custumFileName, 'public');
         return  $filePath;
     }
-    public function getDenialDetailsByID($id, $ulb_id)
-    {
-        try {
-            $data = TradeNoticeConsumerDtl::select(
-                "trade_notice_consumer_dtls.*",
-                DB::raw("ulb_ward_masters.ward_name as ward_no
-                        ")
-            )
-                ->join("ulb_ward_masters", function ($join) {
-                    $join->on("ulb_ward_masters.id", "trade_denial_consumer_dtls.ward_id");
-                })
-                ->where("trade_notice_consumer_dtls.id", $id)
-                ->where("trade_notice_consumer_dtls.ulb_id", $ulb_id)
-                ->first();
-            return $data;
-        } catch (Exception $e) {
-            echo $e->getMessage();
-        }
-    }
+    // public function getDenialDetailsByID($id, $ulb_id)
+    // {
+    //     try {
+    //         $data = TradeNoticeConsumerDtl::select(
+    //             "trade_notice_consumer_dtls.*",
+    //             DB::raw("ulb_ward_masters.ward_name as ward_no
+    //                     ")
+    //         )
+    //             ->join("ulb_ward_masters", function ($join) {
+    //                 $join->on("ulb_ward_masters.id", "trade_denial_consumer_dtls.ward_id");
+    //             })
+    //             ->where("trade_notice_consumer_dtls.id", $id)
+    //             ->where("trade_notice_consumer_dtls.ulb_id", $ulb_id)
+    //             ->first();
+    //         return $data;
+    //     } catch (Exception $e) {
+    //         echo $e->getMessage();
+    //     }
+    // }
     public function getDocumentTypeList($refLicense)
     {
         try {

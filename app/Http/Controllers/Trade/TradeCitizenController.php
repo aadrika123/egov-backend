@@ -89,7 +89,7 @@ class TradeCitizenController extends Controller
                 return responseMsgs(
                     false,
                     $validator->errors(),
-                    $request->all(),
+                    "",
                     $this->_META_DATA["apiId"],
                     $this->_META_DATA["version"],
                     $this->_META_DATA["queryRunTime"],
@@ -116,7 +116,7 @@ class TradeCitizenController extends Controller
             return responseMsgs(
                 false,
                 $e->getMessage(),
-                $request->all(),
+                "",
                 $this->_META_DATA["apiId"],
                 $this->_META_DATA["version"],
                 $this->_META_DATA["queryRunTime"],
@@ -177,7 +177,7 @@ class TradeCitizenController extends Controller
             return responseMsgs(
                 false,
                 $e->getMessage(),
-                $request->all(),
+                "",
                 $this->_META_DATA["apiId"],
                 $this->_META_DATA["version"],
                 $this->_META_DATA["queryRunTime"],
@@ -213,7 +213,7 @@ class TradeCitizenController extends Controller
             }
             $validator = Validator::make($request->all(), $rules,);
             if ($validator->fails()) {
-                return responseMsg(false, $validator->errors(), $request->all());
+                return responseMsg(false, $validator->errors(), "");
             }
             $mNoticeNo = $request->noticeNo;
 
@@ -250,7 +250,7 @@ class TradeCitizenController extends Controller
             return responseMsgs(
                 false,
                 $e->getMessage(),
-                $request->all(),
+                "",
                 $this->_META_DATA["apiId"],
                 $this->_META_DATA["version"],
                 $this->_META_DATA["queryRunTime"],
@@ -377,7 +377,7 @@ class TradeCitizenController extends Controller
             return responseMsgs(
                 false,
                 $e->getMessage(),
-                $request->all(),
+                "",
                 $this->_META_DATA["apiId"],
                 $this->_META_DATA["version"],
                 $this->_META_DATA["queryRunTime"],
@@ -567,7 +567,7 @@ class TradeCitizenController extends Controller
             ];
             $validator = Validator::make($request->all(), $rules,);
             if ($validator->fails()) {
-                return responseMsg(false, $validator->errors(), $request->all());
+                return responseMsg(false, $validator->errors(), "");
             }
             $TradeRazorPayResponse = TradeRazorPayResponse::select("trade_razor_pay_responses.*", "trade_razor_pay_requests.tran_type")
                 ->join("trade_razor_pay_requests", "trade_razor_pay_requests.id", "trade_razor_pay_responses.request_id")
@@ -607,7 +607,7 @@ class TradeCitizenController extends Controller
             return responseMsg(
                 false,
                 $e->getMessage(),
-                $request->all(),
+                "",
             );
         }
     }
@@ -650,7 +650,7 @@ class TradeCitizenController extends Controller
             }
             return responseMsg(true, "", remove_null($data));
         } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), $request->all());
+            return responseMsg(false, $e->getMessage(), "");
         }
     }
 

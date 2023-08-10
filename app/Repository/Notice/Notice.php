@@ -24,6 +24,7 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Barryvdh\DomPDF\Facade\PDF;
+use Illuminate\Support\Str;
 
 /**
  * Created By Sandeep Bara
@@ -866,6 +867,45 @@ use Barryvdh\DomPDF\Facade\PDF;
         } catch (Exception $e) {
             return collect([]);
         }
+    }
+
+    public function getDtlByNoticeNo($noticNO,$ulbId="")
+    {
+        try {
+            $noticeData = NoticeApplication::select(
+                "notice_applications.*",
+                "ulb_masters.ulb_name",
+                )
+            ->JOIN("ulb_masters","ulb_masters.id","notice_applications.ulb_id")
+            ->WHERE("notice_applications.notice_no",Str::upper($noticNO))            
+            ->WHERE("notice_applications.is_closed",FALSE)
+            ->WHERE("notice_applications.status",5);
+            
+        if($ulbId)
+        {
+            $noticeData = $noticeData->WHERE("notice_applications.ulb_id",$ulbId);
+        }
+        $noticeData = $noticeData->first();
+        return $noticeData;
+        }
+        catch (Exception $e) {
+            return null;
+        } 
+    }
+
+    public function noticeClose($id)
+    {
+        $notic = NoticeApplication::find($id);
+        if($notic)
+        {
+            $notic->is_closed = true;
+            $notic->update();
+        }
+    }
+
+    public function getNoticDtlById($id)
+    {
+        return NoticeApplication::find($id);
     }
     
  }
