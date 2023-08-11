@@ -1061,10 +1061,13 @@ class TradeApplication extends Controller
             if (in_array($req->docName, explode(",", $ownerDocNames))) {
                 $metaReqs['ownerDtlId'] = $req->ownerId;
             }
-
+            $this->begin();
             #reupload documents;
-            if ($privDoc = $mWfActiveDocument->getTradeAppByAppNoDocId($getLicenceDtls->id, $getLicenceDtls->ulb_id, collect($req->docName), $getLicenceDtls->workflow_id, $metaReqs['ownerDtlId'] ?? null)) {
-                if ($privDoc->verify_status != 2) {
+            $sms = "";
+            if ($privDoc = $mWfActiveDocument->getTradeAppByAppNoDocId($getLicenceDtls->id, $getLicenceDtls->ulb_id, collect($req->docName), $getLicenceDtls->workflow_id, $metaReqs['ownerDtlId'] ?? null)) 
+            {
+                if ($privDoc->verify_status != 2) 
+                {
                     // dd("update");
                     $arr["verify_status"] = 0;
                     $arr['relative_path'] = $relativePath;
@@ -1072,20 +1075,39 @@ class TradeApplication extends Controller
                     $arr['doc_code'] = $req->docName;
                     $arr['owner_dtl_id'] = $metaReqs['ownerDtlId'] ?? null;
                     $mWfActiveDocument->docVerifyReject($privDoc->id, $arr);
-                } else {
+                } 
+                else 
+                {
                     // dd("reupload");
                     $mWfActiveDocument->docVerifyReject($privDoc->id, ["status" => 0]);
                     $metaReqs = new Request($metaReqs);
-                    $mWfActiveDocument->postDocuments($metaReqs);
+                    $metaReqs =  $mWfActiveDocument->metaReqs($metaReqs);
+                    foreach($metaReqs as $key=>$val)
+                    {
+                        $mWfActiveDocument->$key = $val;
+                    }
+                    $mWfActiveDocument->save();
+                    // $mWfActiveDocument->postDocuments($metaReqs);
                 }
-                return responseMsgs(true, $req->docName . " Update Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
+                $sms = " Update Successful";
+                // return responseMsgs(true, $req->docName . " Update Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
             }
-            #new documents;
-
-            $metaReqs = new Request($metaReqs);
-            $mWfActiveDocument->postDocuments($metaReqs);
-            return responseMsgs(true,  $req->docName . " Uploadation Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
+            else{
+                #new documents;
+                $metaReqs = new Request($metaReqs);
+                $metaReqs =  $mWfActiveDocument->metaReqs($metaReqs);
+                foreach($metaReqs as $key=>$val)
+                {
+                    $mWfActiveDocument->$key = $val;
+                }
+                $mWfActiveDocument->save();
+                // $mWfActiveDocument->postDocuments($metaReqs);
+                $sms = " Uploadation Successful";
+            }
+            $this->commit();
+            return responseMsgs(true,  $req->docName . $sms, "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
+            $this->rollback();
             return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
