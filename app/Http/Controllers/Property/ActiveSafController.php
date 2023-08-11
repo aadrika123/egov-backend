@@ -2430,7 +2430,7 @@ class ActiveSafController extends Controller
                     'longitude' => $longitude[$key],
                     'latitude' => $latitude[$key],
                     'relative_path' => $relativePath,
-                    'user_id' => authUser($req)->id
+                    'user_id' => authUser($req)->id ?? 1
                 ];
                 if ($isDocExist)
                     $geoTagging->edit($isDocExist, $docReqs);

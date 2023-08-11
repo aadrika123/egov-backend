@@ -17,20 +17,22 @@ class AuthMaker
      */
     public function handle(Request $request, Closure $next)
     {
-        if(!Auth()->user() && $request->auth)
-        {
-            switch($request->currentAccessToken["tokenable_type"])
-            {
-                case "App\\Models\\Auth\\User": Auth::login(new \App\Models\User($request->auth));
-                                                Auth()->user()->ulb_id=$request->auth["ulb_id"];
-                                                break;
-                default                       : Auth::login(new \App\Models\ActiveCitizen($request->auth));
-                                                break;
+        if (!Auth()->user() && $request->auth) {
+            $auth = json_decode($request->auth);
+            $cat = json_decode($request->currentAccessToken);
+            switch ($cat) {
+                case "App\\Models\\Auth\\User":
+                    Auth::login(new \App\Models\User((array)$auth));
+                    Auth()->user()->ulb_id = $auth->ulb_id;
+                    break;
+                default:
+                    Auth::login(new \App\Models\ActiveCitizen((array)$auth));
+                    break;
             }
-            collect($request->auth)->map(function($val,$key){
+            collect($request->auth)->map(function ($val, $key) {
                 Auth()->user()->$key = $val;
             });
-            Auth()->user()->id=$request->auth["id"];
+            Auth()->user()->id = $auth->id;
         }
         return $next($request);
     }
