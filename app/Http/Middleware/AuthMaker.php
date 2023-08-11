@@ -18,8 +18,15 @@ class AuthMaker
     public function handle(Request $request, Closure $next)
     {
         if (!Auth()->user() && $request->auth) {
-            $auth = json_decode($request->auth);
-            $cat = json_decode($request->currentAccessToken);
+            if (is_array($request->auth))
+                $auth = (object)$request->auth;
+            else
+                $auth = json_decode($request->auth);
+            if (is_array($request->currentAccessToken))
+                $cat = $request->currentAccessToken;
+            else
+                $cat = json_decode($request->currentAccessToken);
+
             switch ($cat) {
                 case "App\\Models\\Auth\\User":
                     Auth::login(new \App\Models\User((array)$auth));
