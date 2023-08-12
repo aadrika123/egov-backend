@@ -951,7 +951,7 @@ class TradeApplication extends Controller
      *  get uploaded documents
      */
     public function getUploadDocuments(Request $req)
-    {
+    {  
         $req->validate([
             'applicationId' => 'required|digits_between:1,9223372036854775807'
         ]);
@@ -980,8 +980,7 @@ class TradeApplication extends Controller
      * 
      */
     public function uploadDocument(Request $req)
-    {
-
+    { 
         try {
             $req->validate([
                 "applicationId" => "required|digits_between:1,9223372036854775807",
