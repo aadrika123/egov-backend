@@ -238,6 +238,7 @@ class SafDocController extends Controller
                     "doc_code" => $req->docCode,
                     "doc_category" => $req->docCategory,
                 ]);
+                return $refRequest->module_id;
                 $mWfActiveDocument->postDocuments($refRequest);
                 // $mWfActiveDocument->create($metaReqs);           // Store New Document
             }
