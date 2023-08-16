@@ -226,6 +226,8 @@ class SafDocController extends Controller
                 $isDocRejected = collect($documents)->where('verify_status', 2)->first();
                 if ($isDocRejected)
                     $isDocRejected->update(['status' => 0]);
+
+                # Changes
                 $refRequest = new Request([
                     "module_id" => $propModuleId,
                     "active_id" => $getSafDtls->id,
