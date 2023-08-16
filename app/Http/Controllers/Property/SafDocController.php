@@ -208,6 +208,7 @@ class SafDocController extends Controller
             $metaReqs['doc_code'] = $req->docCode;
             $metaReqs['doc_category'] = $req->docCategory;
 
+            return  $metaReqs;
             if ($req->docCode == 'PHOTOGRAPH') {
                 $metaReqs['verify_status'] = 1;
             }
@@ -226,11 +227,15 @@ class SafDocController extends Controller
                 $isDocRejected = collect($documents)->where('verify_status', 2)->first();
                 if ($isDocRejected)
                     $isDocRejected->update(['status' => 0]);
-                $mWfActiveDocument->create($metaReqs);           // Store New Document
+                $mWfActiveDocument->postDocuments($metaReqs);
+                // $mWfActiveDocument->create($metaReqs);           // Store New Document
             }
 
-            if (collect($ifDocCategoryExist)->isNotEmpty())
+            if (collect($ifDocCategoryExist)->isNotEmpty()) {
+                // $ifDocCategoryExist->update($metaReqs);
                 $mWfActiveDocument->edit($ifDocCategoryExist, $metaReqs);       // Update Existing Document
+            }
+
 
             $docUploadStatus = $this->checkFullDocUpload($req->applicationId);
             if ($docUploadStatus == 1) {                                        // Doc Upload Status Update
