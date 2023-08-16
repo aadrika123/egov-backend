@@ -226,7 +226,17 @@ class SafDocController extends Controller
                 $isDocRejected = collect($documents)->where('verify_status', 2)->first();
                 if ($isDocRejected)
                     $isDocRejected->update(['status' => 0]);
-                $mWfActiveDocument->postDocuments($metaReqs);
+                $refRequest = new Request([
+                    "module_id" => $propModuleId,
+                    "active_id" => $getSafDtls->id,
+                    "workflow_id" => $getSafDtls->workflow_id,
+                    "ulb_id" => $getSafDtls->ulb_id,
+                    "relative_path" => $relativePath,
+                    "document" => $imageName,
+                    "doc_code" => $req->docCode,
+                    "doc_category" => $req->docCategory,
+                ]);
+                $mWfActiveDocument->postDocuments($refRequest);
                 // $mWfActiveDocument->create($metaReqs);           // Store New Document
             }
 
