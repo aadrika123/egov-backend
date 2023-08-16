@@ -208,7 +208,6 @@ class SafDocController extends Controller
             $metaReqs['doc_code'] = $req->docCode;
             $metaReqs['doc_category'] = $req->docCategory;
 
-            return  $metaReqs;
             if ($req->docCode == 'PHOTOGRAPH') {
                 $metaReqs['verify_status'] = 1;
             }
