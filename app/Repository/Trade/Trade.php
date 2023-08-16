@@ -132,7 +132,7 @@ class Trade implements ITrade
         $this->_MODEL_ActiveTradeOwner  = new ActiveTradeOwner($this->_DB_NAME);
     }
 
-    public function bigin()
+    public function begin()
     {
         DB::beginTransaction();
         $this->_DB->beginTransaction();
@@ -311,7 +311,7 @@ class Trade implements ITrade
                     $mnaturOfBusiness = implode(',', $mnaturOfBusiness);
                 }
                 #
-                $this->bigin();
+                $this->begin();
                 $licence = new ActiveTradeLicence();
                 $licence->application_type_id = $mApplicationTypeId;
                 $licence->ulb_id              = $refUlbId;
@@ -795,7 +795,7 @@ class Trade implements ITrade
             $mDenialAmount = $chargeData['notice_amount'];
             #-------------End Calculation-----------------------------
             #-------- Transection -------------------
-            $this->bigin();
+            $this->begin();
             $Tradetransaction = new TradeTransaction;
             $Tradetransaction->temp_id          = $licenceId;
             $Tradetransaction->ward_id          = $refLecenceData->ward_id;
@@ -886,7 +886,7 @@ class Trade implements ITrade
             return responseMsg(true, "", $res);
         } catch (Exception $e) {
             $this->rollBack();
-            return responseMsg(false, $e->getMessage(), $request->all());
+            return responseMsg(false, $e->getMessage(), "");
         }
     }
     public function postTempTransection(TradeTransaction $refTransection, ActiveTradeLicence $refApplication, $mWardNo = null)
@@ -1013,7 +1013,7 @@ class Trade implements ITrade
                 else
                     throw new Exception("Property Details Not Found");
             }
-            $this->bigin();
+            $this->begin();
 
             if ($refOldLicece->payment_status == 0) 
             {
@@ -1219,7 +1219,7 @@ class Trade implements ITrade
                     throw new Exception("You Are Not Authorized For This Action");
                 }
 
-                $this->bigin();
+                $this->begin();
                 $tradeDoc = ActiveTradeDocument::find($request->id);
                 $tradeDoc->verify_status = $status;
                 $tradeDoc->remarks = ($status == 2 ? $request->comment : null);
@@ -1397,10 +1397,9 @@ class Trade implements ITrade
             ];
             $validator = Validator::make($request->all(), $rules,);
             if ($validator->fails()) {
-                return responseMsg(false, $validator->errors(), $request->all());
+                return responseMsg(false, $validator->errors(), "");
             }
             $mNoticeNo = $request->noticeNo;
-
             $refDenialDetails = $this->_NOTICE->getDtlByNoticeNo(trim($mNoticeNo),$refUlbId);
             if ($refDenialDetails) {
                 $notice_date = Carbon::parse($refDenialDetails->notice_date)->format('Y-m-d'); //notice date
@@ -1895,7 +1894,7 @@ class Trade implements ITrade
             if ($validator->fails()) {
                 return responseMsg(false, $validator->errors(), $request->all());
             }
-            $this->bigin();
+            $this->begin();
             $licenceId = $request->applicationId;
             $data = ActiveTradeLicence::find($licenceId);
             $data->is_escalate = $request->escalateStatus;
@@ -1911,7 +1910,7 @@ class Trade implements ITrade
 
     public function WorkFlowMetaList()
     {
-        return DB::table("active_trade_licences")
+        return $this->_DB->table("active_trade_licences")
                         ->JOIN("trade_param_application_types", "trade_param_application_types.id", "active_trade_licences.application_type_id")
                         ->join(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
                                                     STRING_AGG(guardian_name,',') AS guardian_name,
@@ -2468,7 +2467,7 @@ class Trade implements ITrade
                         TO_CHAR(cast(licences.valid_upto as date), 'DD-MM-YYYY') AS valid_upto
                         ")
             ];
-            $application = DB::table("active_trade_licences AS licences")->select($select)
+            $application = $this->_DB->table("active_trade_licences AS licences")->select($select)
                 ->join("ulb_masters", "ulb_masters.id", "licences.ulb_id")
                 ->join("ulb_ward_masters", function ($join) {
                     $join->on("ulb_ward_masters.id", "=", "licences.ward_id");
@@ -2488,7 +2487,7 @@ class Trade implements ITrade
                 ->first();
             if (!$application) 
             {
-                $application = DB::table("trade_licences AS licences")->select($select)
+                $application = $this->_DB->table("trade_licences AS licences")->select($select)
                     ->join("ulb_masters", "ulb_masters.id", "licences.ulb_id")
                     ->join("ulb_ward_masters", function ($join) {
                         $join->on("ulb_ward_masters.id", "=", "licences.ward_id");
@@ -2509,7 +2508,7 @@ class Trade implements ITrade
             }
             if (!$application) 
             {
-                $application = DB::table("rejected_trade_licences AS licences")->select($select)
+                $application = $this->_DB->table("rejected_trade_licences AS licences")->select($select)
                     ->join("ulb_masters", "ulb_masters.id", "licences.ulb_id")
                     ->join("ulb_ward_masters", function ($join) {
                         $join->on("ulb_ward_masters.id", "=", "licences.ward_id");
@@ -2530,7 +2529,7 @@ class Trade implements ITrade
             }
             if (!$application) 
             {
-                $application = DB::table("trade_renewals AS licences")->select($select)
+                $application = $this->_DB->table("trade_renewals AS licences")->select($select)
                     ->join("ulb_masters", "ulb_masters.id", "licences.ulb_id")
                     ->join("ulb_ward_masters", function ($join) {
                         $join->on("ulb_ward_masters.id", "=", "licences.ward_id");
@@ -2652,7 +2651,7 @@ class Trade implements ITrade
                         TO_CHAR(CAST(license.valid_upto AS DATE), 'DD-MM-YYYY') as valid_upto
                         ")
             ];
-            $application = DB::table("active_trade_licences as license")
+            $application = $this->_DB->table("active_trade_licences as license")
                 ->select($select)
                 ->join("ulb_masters", "ulb_masters.id", "license.ulb_id")
                 ->join("ulb_ward_masters", function ($join) {
@@ -2673,7 +2672,7 @@ class Trade implements ITrade
                 ->first();
             if (!$application) 
             {
-                $application = DB::table("trade_licences as license")
+                $application = $this->_DB->table("trade_licences as license")
                     ->select($select)
                     ->join("ulb_masters", "ulb_masters.id", "license.ulb_id")
                     ->join("ulb_ward_masters", function ($join) {
@@ -2695,7 +2694,7 @@ class Trade implements ITrade
             }
             if (!$application) 
             {
-                $application = DB::table("rejected_trade_licences as license")
+                $application = $this->_DB->table("rejected_trade_licences as license")
                     ->select($select)
                     ->join("ulb_masters", "ulb_masters.id", "license.ulb_id")
                     ->join("ulb_ward_masters", function ($join) {
@@ -2717,7 +2716,7 @@ class Trade implements ITrade
             }
             if (!$application) 
             {
-                $application = DB::table("trade_renewals as license")
+                $application = $this->_DB->table("trade_renewals as license")
                     ->select($select)
                     ->join("ulb_masters", "ulb_masters.id", "license.ulb_id")
                     ->join("ulb_ward_masters", function ($join) {
@@ -2835,7 +2834,7 @@ class Trade implements ITrade
                         TO_CHAR(CAST(license.valid_upto AS DATE), 'DD-MM-YYYY') as valid_upto
                         ")
             ];
-            $application = DB::table("trade_licences AS license")
+            $application = $this->_DB->table("trade_licences AS license")
                 ->select($select)
                 ->join("ulb_masters", "ulb_masters.id", "license.ulb_id")
                 ->join("ulb_ward_masters", function ($join) {
@@ -2856,7 +2855,7 @@ class Trade implements ITrade
                 ->first();
             if (!$application) 
             {
-                $application = DB::table("trade_renewals AS license")
+                $application = $this->_DB->table("trade_renewals AS license")
                     ->select($select)->join("ulb_masters", "ulb_masters.id", "license.ulb_id")
                     ->join("ulb_ward_masters", function ($join) {
                         $join->on("ulb_ward_masters.id", "=", "license.ward_id");
@@ -2939,7 +2938,7 @@ class Trade implements ITrade
             }
 
             // Save On Workflow Track
-            $this->bigin();
+            $this->begin();
             $metaReqs['moduleId'] = $this->_MODULE_ID;
             $metaReqs['workflowId'] = $refLicense->workflow_id;
             $metaReqs['refTableDotId'] = 'active_trade_licences';

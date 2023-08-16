@@ -507,7 +507,11 @@ if (!function_exists('dateDiff')) {
 if (!function_exists('authUser')) {
     function authUser($req)
     {
-        return (object)$req->auth;
+        $auth = $req->auth;
+        if (is_array($auth))
+            return (object)$auth;
+        else
+            return json_decode($req->auth);
     }
 }
 
