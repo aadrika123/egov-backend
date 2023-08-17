@@ -252,9 +252,10 @@ class TradeCitizenController extends Controller
             }
             $mNoticeNo = $request->noticeNo;
 
-            $refDenialDetails =  $this->_REPOSITORY_TRADE->getDenialFirmDetails($refUlbId, strtoupper(trim($mNoticeNo)));
+            // $refDenialDetails =  $this->_REPOSITORY_TRADE->getDenialFirmDetails($refUlbId, strtoupper(trim($mNoticeNo)));
+            $refDenialDetails = $this->_NOTICE->getDtlByNoticeNo(strtoupper(trim($mNoticeNo)),$refUlbId,);
             if ($refDenialDetails) {
-                $notice_date = Carbon::parse($refDenialDetails->noticedate)->format('Y-m-d'); //notice date
+                $notice_date = Carbon::parse($refDenialDetails['notice_date'])->format('Y-m-d'); //notice date
                 $denialAmount =  $this->_REPOSITORY_TRADE->getDenialAmountTrade($notice_date, $mNowDate);
                 $data['denialDetails'] = $refDenialDetails;
                 $data['denialAmount'] = $denialAmount;
