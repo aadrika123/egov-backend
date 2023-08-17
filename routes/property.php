@@ -425,47 +425,46 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
  * | SAF
      | Serial No : 01
  */
+Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
+  Route::controller(ActiveSafController::class)->group(function () {
+    Route::post('saf/master-saf', 'masterSaf');                                                         // Get all master data in Saf(1)
+    Route::post('saf/saf-payment', 'paymentSaf');                                                       // SAF Payment(15)
+    Route::post('saf/calculate-by-saf-id', 'calculateSafBySafId');                                      // Calculate SAF By SAF ID From Citizen(13)
+    Route::post('saf/independent/generate-order-id', 'generateOrderId');                                // Generate Order ID(14)
+    Route::post('saf/payment-receipt', 'generatePaymentReceipt');                                       // Generate payment Receipt(16)
+  });
 
-Route::controller(ActiveSafController::class)->group(function () {
-  Route::post('saf/master-saf', 'masterSaf');                                                          // Get all master data in Saf(1)
-  Route::post('saf/saf-payment', 'paymentSaf');                                                       // SAF Payment(15)
-  Route::post('saf/calculate-by-saf-id', 'calculateSafBySafId');                                      // Calculate SAF By SAF ID From Citizen(13)
-  Route::post('saf/independent/generate-order-id', 'generateOrderId');                                // Generate Order ID(14)
-  Route::post('saf/payment-receipt', 'generatePaymentReceipt');                                       // Generate payment Receipt(16)
-});
-
-/**
- * | Route Outside the Middleware
+  /**
+   * | Route Outside the Middleware
    | Serial No : 
- */
-Route::controller(CalculatorController::class)->group(function () {
-  Route::post('calculatePropertyTax', 'calculator');
-});
+   */
+  Route::controller(CalculatorController::class)->group(function () {
+    Route::post('calculatePropertyTax', 'calculator');
+  });
 
-/**
- * | Route Outside the Authenticated Middleware 
+  /**
+   * | Route Outside the Authenticated Middleware 
     Serial No : 18
- */
-Route::controller(ActiveSafControllerV2::class)->group(function () {
-  Route::post('search-holding', 'searchHolding');                     //04
-});
-/**
- * | Holding Tax Controller(Created By-Anshu Kumar)
+   */
+  Route::controller(ActiveSafControllerV2::class)->group(function () {
+    Route::post('search-holding', 'searchHolding');                     //04
+  });
+  /**
+   * | Holding Tax Controller(Created By-Anshu Kumar)
    | Serial No-16
- */
-Route::controller(HoldingTaxController::class)->group(function () {
-  Route::post('payment-holding', 'paymentHolding');                                         // (04) Payment Holding (For Testing Purpose)
-  Route::post('prop-payment-receipt', 'propPaymentReceipt');                                // (05) Generate Property Payment Receipt
-  Route::post('independent/get-holding-dues', 'getHoldingDues');                            // (07) Property/ Holding Dues
-  Route::post('independent/generate-prop-orderid', 'generateOrderId');                      // (08) Generate Property Order ID
-  Route::post('prop-payment-history', 'propPaymentHistory');                                // (06) Property Payment History
-  Route::post('prop-ulb-receipt', 'proUlbReceipt');                                         // (09) Property Ulb Payment Receipt
-  Route::post('prop-comparative-demand', 'comparativeDemand');                              // (10) Property Comparative Demand
-  Route::post('cluster/payment-history', 'clusterPaymentHistory');                           // (13) Cluster Payment History
-  Route::post('cluster/payment-receipt', 'clusterPaymentReceipt');                           // (14) Generate Cluster Payment Receipt for Saf and Property
+   */
+  Route::controller(HoldingTaxController::class)->group(function () {
+    Route::post('payment-holding', 'paymentHolding');                                         // (04) Payment Holding (For Testing Purpose)
+    Route::post('prop-payment-receipt', 'propPaymentReceipt');                                // (05) Generate Property Payment Receipt
+    Route::post('independent/get-holding-dues', 'getHoldingDues');                            // (07) Property/ Holding Dues
+    Route::post('independent/generate-prop-orderid', 'generateOrderId');                      // (08) Generate Property Order ID
+    Route::post('prop-payment-history', 'propPaymentHistory');                                // (06) Property Payment History
+    Route::post('prop-ulb-receipt', 'proUlbReceipt');                                         // (09) Property Ulb Payment Receipt
+    Route::post('prop-comparative-demand', 'comparativeDemand');                              // (10) Property Comparative Demand
+    Route::post('cluster/payment-history', 'clusterPaymentHistory');                           // (13) Cluster Payment History
+    Route::post('cluster/payment-receipt', 'clusterPaymentReceipt');                           // (14) Generate Cluster Payment Receipt for Saf and Property
+  });
 });
-
-
 /**
  * | Get Reference List and Ulb Master Crud Operation
  * | Created By : Tannu Verma

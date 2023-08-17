@@ -142,9 +142,9 @@ class ActiveSafController extends Controller
             $method = $req->getMethod();
             $redisConn = Redis::connection();
             $data = [];
-            if ($method == 'GET')
+            if ($method == 'GET') {
                 $ulbId = authUser($req)->ulb_id;
-            else
+            } else
                 $ulbId = $req->ulbId;
             if (!$ulbId)
                 throw new Exception('ulbId field is required');
