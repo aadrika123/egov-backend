@@ -72,7 +72,10 @@ class HoldingNoGenerator
      */
     public function countSubHoldings()
     {
-        $previousHoldingId = $this->_activeSafs->previousHoldingId;
+        $previousHoldingId = $this->_activeSafs->previous_holding_id;
+        if (is_null($previousHoldingId))
+            throw new Exception("Previous Holding Id Not Found");
+
         $counterActiveHoldings = $this->_mPropActiveSafs->countPreviousHoldings($previousHoldingId);
         $counterHoldings = $this->_mPropSafs->countPreviousHoldings($previousHoldingId);
         return $counterActiveHoldings + $counterHoldings;

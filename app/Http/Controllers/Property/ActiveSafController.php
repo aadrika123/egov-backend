@@ -142,9 +142,9 @@ class ActiveSafController extends Controller
             $method = $req->getMethod();
             $redisConn = Redis::connection();
             $data = [];
-            if ($method == 'GET')
+            if ($method == 'GET') {
                 $ulbId = authUser($req)->ulb_id;
-            else
+            } else
                 $ulbId = $req->ulbId;
             if (!$ulbId)
                 throw new Exception('ulbId field is required');
@@ -2464,9 +2464,15 @@ class ActiveSafController extends Controller
             $mSafGeoTag = new PropSafGeotagUpload();
 
             $data = $safVerifications->getVerificationsData($req->safId);                       // <--------- Prop Saf Verification Model Function to Get Prop Saf Verifications Data 
-            if (collect($data)->isEmpty())
-                throw new Exception("Tc Verification Not Done");
+            if (collect($data)->isEmpty()) {
+                $geoTags = $mSafGeoTag->getGeoTags($req->safId);
+                $data['geoTagging'] = $geoTags;
 
+                if (collect($geoTags)->isEmpty())
+                    throw new Exception("Tc Verification Not Done");
+
+                return responseMsgs(true, "TC Verification Details", remove_null($data), "010120", "1.0", responseTime(), $req->getMethod(), $req->deviceId);
+            }
             $data = json_decode(json_encode($data), true);
 
             $verificationDtls = $safVerificationDtls->getFullVerificationDtls($data['id']);     // <----- Prop Saf Verification Model Function to Get Verification Floor Dtls
@@ -2608,8 +2614,8 @@ class ActiveSafController extends Controller
                     ->leftjoin('ref_prop_types as p', 'p.id', '=', 'prop_rejected_safs.prop_type_mstr_id')
                     ->leftjoin('ref_prop_road_types as r', 'r.id', '=', 'prop_rejected_safs.road_type_mstr_id')
                     ->leftjoin('ulb_ward_masters as u', 'u.id', '=', 'prop_rejected_safs.ward_mstr_id')
-                    ->leftjoin('ref_prop_ownership_types as ownership_types', 'ownership_types.id', '=', 'prop_rejected_safs.ownership_type_mstr_id')
                     ->leftJoin('ulb_ward_masters as u1', 'u1.id', '=', 'prop_rejected_safs.new_ward_mstr_id')
+                    ->leftjoin('ref_prop_ownership_types as ownership_types', 'ownership_types.id', '=', 'prop_rejected_safs.ownership_type_mstr_id')
                     ->where("prop_rejected_safs.id", $verifications->saf_id)
                     ->first();
                 $tbl = "prop_rejected_safs";
@@ -2627,8 +2633,8 @@ class ActiveSafController extends Controller
                     ->leftjoin('ref_prop_types as p', 'p.id', '=', 'prop_safs.prop_type_mstr_id')
                     ->leftjoin('ref_prop_road_types as r', 'r.id', '=', 'prop_safs.road_type_mstr_id')
                     ->leftjoin('ulb_ward_masters as u', 'u.id', '=', 'prop_safs.ward_mstr_id')
-                    ->leftjoin('ref_prop_ownership_types as ownership_types', 'ownership_types.id', '=', 'prop_safs.ownership_type_mstr_id')
                     ->leftJoin('ulb_ward_masters as u1', 'u1.id', '=', 'prop_safs.new_ward_mstr_id')
+                    ->leftjoin('ref_prop_ownership_types as ownership_types', 'ownership_types.id', '=', 'prop_safs.ownership_type_mstr_id')
                     ->where("prop_safs.id", $verifications->saf_id)
                     ->first();
                 $tbl = "prop_safs";
@@ -2730,7 +2736,7 @@ class ActiveSafController extends Controller
                             "key" => "Usage Type",
                             "values" => ($saf_data[0]->usage_type_mstr_id ?? "") == ($verification[0]['usage_type_id'] ?? ""),
                             "according_application" => $saf_data[0]->usage_type ?? "",
-                            "according_verification" => $verification[0]['usage_type_id'] ?? "",
+                            "according_verification" => $verification[0]['usage_type'] ?? "",
                         ],
                         [
                             "key" => "Occupancy Type",

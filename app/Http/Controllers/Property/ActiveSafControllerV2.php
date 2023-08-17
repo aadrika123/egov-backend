@@ -40,6 +40,7 @@ use App\Repository\Property\Interfaces\iSafRepository;
 use App\Traits\Property\SAF;
 use Carbon\Carbon;
 use Illuminate\Pipeline\Pipeline;
+use Illuminate\Support\Facades\Validator;
 
 /**
  * | Created On-10-02-2023 
@@ -326,22 +327,40 @@ class ActiveSafControllerV2 extends Controller
      */
     public function verifyHoldingNo(Request $req)
     {
-        try {
-            $req->validate([
+        $validated = Validator::make(
+            $req->all(),
+            [
                 'holdingNo' => 'required',
                 'ulbId' => 'required',
-            ]);
+            ]
+        );
+        if ($validated->fails()) {
+            return validationError($validated);
+        }
+        try {
             $mPropProperty = new PropProperty();
-            $data = $mPropProperty->verifyHolding($req);
+            $data = $mPropProperty->verifyHolding($req)
+                ->where('holding_no', $req->holdingNo)
+                ->first();
+
+            if (!$data)
+                $data = $mPropProperty->verifyHolding($req)
+                    ->where('new_holding_no', $req->holdingNo)
+                    ->first();
+
+            if (!$data)
+                $data = $mPropProperty->verifyHolding($req)
+                    ->where('pt_no', $req->holdingNo)
+                    ->first();
 
             if (!isset($data)) {
                 throw new Exception("Enter Valid Holding No.");
             }
             $datas['id'] = $data->id;
 
-            return responseMsgs(true, "Holding Exist", $datas, 010124, 1.0, "308ms", "POST", $req->deviceId);
+            return responseMsgs(true, "Holding Exist", $datas, 010124, 1.0, responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", 010124, 1.0, "308ms", "POST", $req->deviceId);
+            return responseMsgs(false, $e->getMessage(), "", 010124, 1.0, responseTime(), "POST", $req->deviceId);
         }
     }
 

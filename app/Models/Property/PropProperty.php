@@ -411,12 +411,8 @@ class PropProperty extends Model
      */
     public function verifyHolding($req)
     {
-        return PropProperty::select('*')
-            ->where('holding_no', $req->holdingNo)
-            ->orWhere('new_holding_no', $req->holdingNo)
-            ->orWhere('pt_no', $req->holdingNo)
-            ->where('ulb_id', $req->ulbId)
-            ->first();
+        return PropProperty::select('id')
+            ->where('ulb_id', $req->ulbId);
     }
 
     /**

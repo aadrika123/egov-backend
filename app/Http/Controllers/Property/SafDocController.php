@@ -194,6 +194,8 @@ class SafDocController extends Controller
 
             // Derivative Assignments
             $getSafDtls = $mActiveSafs->getSafNo($req->applicationId);
+            if (collect($getSafDtls)->isEmpty())
+                throw new Exception("Saf Application Not Found");
             $refImageName = $req->docCode;
             $refImageName = $getSafDtls->id . '-' . $refImageName;
             $document = $req->document;
