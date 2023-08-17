@@ -76,7 +76,7 @@ class TradeCitizen implements ITradeCitizen
         $this->_MODEL_WARD = new ModelWard();
         $this->_COMMON_FUNCTION = new CommonFunction();
         $this->_REPOSITORY_TRADE = new Trade();
-        $this->_MODEL_WfActiveDocument = new WfActiveDocument($this->_DB_NAME);
+        $this->_MODEL_WfActiveDocument = new WfActiveDocument();
         $this->_WF_MASTER_Id = Config::get('workflow-constants.TRADE_MASTER_ID');
         $this->_WF_NOTICE_MASTER_Id = Config::get('workflow-constants.TRADE_NOTICE_ID');
         $this->_MODULE_ID = Config::get('module-constants.TRADE_MODULE_ID');
@@ -583,7 +583,7 @@ class TradeCitizen implements ITradeCitizen
             $data = remove_null($data);
 
             return responseMsg(true, "", $data);
-        } catch (Exception $e) { dd($e->getMessage(),$e->getFile(),$e->getLine());
+        } catch (Exception $e) { 
             return responseMsg(false, $e->getMessage(), '');
         }
     }

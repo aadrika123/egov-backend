@@ -871,14 +871,14 @@ class NewConnectionRepository implements iNewConnection
         $key = collect($request)->map(function ($value, $key) {
             return $key;
         })->first();
-        $string = preg_replace("/([A-Z])/", "_$1", $key);
-        $refstring = strtolower($string);
-        $approvedWater = $mWaterConsumer->getConsumerByConsumerNo($refstring, $request->id);
+        $string         = preg_replace("/([A-Z])/", "_$1", $key);
+        $refstring      = strtolower($string);
+        $approvedWater  = $mWaterConsumer->getConsumerByConsumerNo($refstring, $request->id);
         $connectionCharge['connectionCharg'] = $mWaterConnectionCharge->getWaterchargesById($approvedWater['apply_connection_id'])
             ->where('charge_category', '!=', 'Site Inspection')                                     # Static
             ->first();
-        $waterOwner['ownerDetails'] = $mWaterConsumerOwner->getConsumerOwner($approvedWater['id']);
-        $water['calcullation'] = $mWaterParamConnFee->getCallParameter($approvedWater['property_type_id'], $approvedWater['area_sqft'])->first();
+        $waterOwner['ownerDetails'] = $mWaterConsumerOwner->getConsumerOwner($approvedWater['consumer_id'])->get();
+        $water['calcullation']      = $mWaterParamConnFee->getCallParameter($approvedWater['property_type_id'], $approvedWater['area_sqft'])->first();
 
         $consumerDetails = collect($approvedWater)->merge($connectionCharge)->merge($waterOwner)->merge($water);
         return remove_null($consumerDetails);

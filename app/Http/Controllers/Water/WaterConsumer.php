@@ -34,6 +34,7 @@ use App\Models\Water\WaterTranDetail;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\Workflows\WfWorkflowrolemap;
+use App\Models\WorkflowTrack;
 use App\Repository\Water\Concrete\WaterNewConnection;
 use App\Repository\Water\Interfaces\IConsumer;
 use App\Traits\Workflow\Workflow;
@@ -187,6 +188,7 @@ class WaterConsumer extends Controller
             if (isset($calculatedDemand)) {
                 $demandDetails = collect($calculatedDemand['consumer_tax']['0']);
                 switch ($demandDetails['charge_type']) {
+                        # For Meter Connection
                     case ($refMeterConnectionType['1']):
                         $validated = Validator::make(
                             $request->all(),
@@ -207,6 +209,7 @@ class WaterConsumer extends Controller
                             $mWaterMeterReadingDoc->saveDemandDocs($meterDetails, $documentPath, $value);
                         });
                         break;
+                        # For Average Connection / Meter.Fixed
                     case ($refMeterConnectionType['5']):
                         $validated = Validator::make(
                             $request->all(),
@@ -227,7 +230,7 @@ class WaterConsumer extends Controller
                             $mWaterMeterReadingDoc->saveDemandDocs($meterDetails, $documentPath, $value);
                         });
                         break;
-
+                        # For Gallon Connection
                     case ($refMeterConnectionType['2']):
                         $validated = Validator::make(
                             $request->all(),
@@ -249,7 +252,7 @@ class WaterConsumer extends Controller
                             $mWaterMeterReadingDoc->saveDemandDocs($meterDetails, $documentPath, $value);
                         });
                         break;
-
+                        # For Fixed connection
                     case ($refMeterConnectionType['3']):
                         $this->savingDemand($calculatedDemand, $request, $consumerDetails, $demandDetails['charge_type'], $refMeterConnectionType, $userDetails);
                         break;
@@ -442,11 +445,12 @@ class WaterConsumer extends Controller
         $mWaterWaterConsumer    = new WaterWaterConsumer();
         $mWaterConsumerMeter    = new WaterConsumerMeter();
         $mWaterConsumerDemand   = new WaterConsumerDemand();
-        $mWaterConsumerCharge   = new WaterConsumerCharge();
         $refMeterConnType       = Config::get('waterConstaint.WATER_MASTER_DATA.METER_CONNECTION_TYPE');
-        $refConsumerChrages     = Config::get('waterConstaint.CONSUMER_CHARGE_CATAGORY');
 
         $refConsumerDetails     = $mWaterWaterConsumer->getConsumerDetailById($refConsumerId);
+        if (!$refConsumerDetails) {
+            throw new Exception("Consumer Details Not Found!");
+        }
         $consumerMeterDetails   = $mWaterConsumerMeter->getMeterDetailsByConsumerId($refConsumerId)->first();
         $consumerDemand         = $mWaterConsumerDemand->getFirstConsumerDemand($refConsumerId)->first();
 
@@ -482,12 +486,13 @@ class WaterConsumer extends Controller
                 }
                 throw new Exception("Please apply for regularization as per rule 16 your connection shoul be in meter!");
             }
-
             # If there is previous meter detail exist
             $reqConnectionDate = $request->connectionDate;
             if (strtotime($consumerMeterDetails->connection_date) > strtotime($reqConnectionDate)) {
                 throw new Exception("Connection Date should be grater than previous Connection date!");
             }
+            # Check the Conversion of the Connection
+            $this->checkConnectionTypeUpdate($request, $consumerMeterDetails, $refMeterConnType);
         }
 
         # If the consumer demand exist
@@ -503,10 +508,59 @@ class WaterConsumer extends Controller
         }
         # If the meter detail do not exist 
         if (is_null($consumerMeterDetails)) {
+            if (!in_array($request->connectionType, [$refMeterConnType['Meter'], $refMeterConnType['Gallon']])) {
+                throw new Exception("New meter connection should be in meter and gallon!");
+            }
             $returnData['meterStatus'] = false;
         }
         return $returnData;
     }
+
+
+    /**
+     * | Check the meter connection type in the case of meter updation 
+     * | If the meter details exist check the connection type 
+        | Serial No :
+        | Under Con
+     */
+    public function checkConnectionTypeUpdate($request, $consumerMeterDetails, $refMeterConnType)
+    {
+        $currentConnectionType      = $consumerMeterDetails->connection_type;
+        $requestedConnectionType    = $request->connectionType;
+
+        switch ($currentConnectionType) {
+                # For Fixed Connection
+            case ($refMeterConnType['Fixed']):
+                if ($requestedConnectionType != $refMeterConnType['Meter'] || $requestedConnectionType != $refMeterConnType['Gallon']) {
+                    throw new Exception("Invalid connection type update for Fixed!");
+                }
+                break;
+                # For Fixed Meter Connection
+            case ($refMeterConnType['Meter']):
+                if ($requestedConnectionType != $refMeterConnType['Meter'] || $requestedConnectionType != $refMeterConnType['Gallon'] || $requestedConnectionType != $refMeterConnType['Meter/Fixed']) {
+                    throw new Exception("Invalid connection type update for Fixed!");
+                }
+                break;
+                # For Fixed Gallon Connection
+            case ($refMeterConnType['Gallon']):
+                if ($requestedConnectionType != $refMeterConnType['Meter']) {
+                    throw new Exception("Invalid connection type update for Fixed!");
+                }
+                break;
+                # For Fixed Meter/Fixed Connection
+            case ($refMeterConnType['Meter/Fixed']):
+                if ($requestedConnectionType != $refMeterConnType['Meter']) {
+                    throw new Exception("Invalid connection type update for Fixed!");
+                }
+                break;
+                # Default
+            default:
+                throw new Exception("invalid Meter Connection!");
+                break;
+        }
+    }
+
+
 
     /**
      * | Check for the Meter/Fixed 
@@ -633,6 +687,7 @@ class WaterConsumer extends Controller
             $user                           = authUser($request);
             $refRequest                     = array();
             $ulbWorkflowObj                 = new WfWorkflow();
+            $mWorkflowTrack                 = new WorkflowTrack();
             $mWaterWaterConsumer            = new WaterWaterConsumer();
             $mWaterConsumerCharge           = new WaterConsumerCharge();
             $mWaterConsumerChargeCategory   = new WaterConsumerChargeCategory();
@@ -642,6 +697,7 @@ class WaterConsumer extends Controller
             $refApplyFrom                   = Config::get('waterConstaint.APP_APPLY_FROM');
             $refWorkflow                    = Config::get('workflow-constants.WATER_DISCONNECTION');
             $refConParamId                  = Config::get('waterConstaint.PARAM_IDS');
+            $confModuleId                   = Config::get('module-constants.WATER_MODULE_ID');
 
             # Check the condition for deactivation
             $refDetails = $this->PreConsumerDeactivationCheck($request, $user);
@@ -699,10 +755,26 @@ class WaterConsumer extends Controller
                 'ruleSet'           => null,
                 'chargeCategoryId'  => $refConsumerCharges['WATER_DISCONNECTION'],
                 'relatedId'         => $deactivatedDetails['id'],
-                'status'            => 2                                                // Static
+                'status'            => 2                                                    // Static
             ];
             $mWaterConsumerCharge->saveConsumerCharges($metaRequest, $request->consumerId, $refChargeList['2']);
             $mWaterWaterConsumer->dissconnetConsumer($request->consumerId, $metaRequest['status']);
+
+            # Save data in track
+            $metaReqs = new Request(
+                [
+                    'citizenId'         => $refRequest['citizenId'] ?? null,
+                    'moduleId'          => $confModuleId,
+                    'workflowId'        => $ulbWorkflowId->id,
+                    'refTableDotId'     => 'water_consumer_active_requests.id',             // Static                          // Static                              // Static
+                    'refTableIdValue'   => $deactivatedDetails['id'],
+                    'user_id'           => $user->id ?? null,
+                    'ulb_id'            => $ulbId,
+                    'senderRoleId'      => $refRequest['empId'] ?? null,
+                    'receiverRoleId'    => collect($initiatorRoleId)->first()->role_id,
+                ]
+            );
+            $mWorkflowTrack->saveTrack($metaReqs);
             DB::commit();
             return responseMsgs(true, "Respective Consumer Deactivated!", "", "", "02", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
@@ -738,9 +810,9 @@ class WaterConsumer extends Controller
         if (isset($request->ulbId) && $request->ulbId != $refConsumerDetails->ulb_id) {
             throw new Exception("ulb not matched according to consumer connection!");
         }
-        if ($refConsumerDetails->user_type == $refUserType['1'] && $user->id != $refConsumerDetails->user_id) {
-            throw new Exception("You are not the autherised user who filled before the connection!");
-        }
+        // if ($refConsumerDetails->user_type == $refUserType['1'] && $user->id != $refConsumerDetails->user_id) {
+        //     throw new Exception("You are not the autherised user who filled before the connection!");
+        // }
         $activeReq = $mWaterConsumerActiveRequest->getRequestByConId($consumerId)->first();
         if ($activeReq) {
             throw new Exception("There are other request applied for respective consumer connection!");
@@ -1400,6 +1472,64 @@ class WaterConsumer extends Controller
     }
 
 
+    /**
+     * | Get meter list for display in the process of meter entry
+        | Serial No 
+        | Working  
+     */
+    public function getConnectionList(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'consumerId' => "required|digits_between:1,9223372036854775807",
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+            $consumerid             = $request->consumerId;
+            $mWaterConsumerMeter    = new WaterConsumerMeter();
+            $refMeterConnType       = Config::get('waterConstaint.WATER_MASTER_DATA.METER_CONNECTION_TYPE');
+            $consumerMeterDetails   = $mWaterConsumerMeter->getMeterDetailsByConsumerId($consumerid)->first();
+
+            # If consumer details are null, set an indicator key and default values
+            if (!$consumerMeterDetails) {
+                $status = false;
+                $defaultTypes = ['Meter', 'Gallon'];
+            }
+            # Consumer details are not null, check connection_type 
+            else {
+                $status = true;
+                $connectionType = $consumerMeterDetails->connection_type;
+                switch ($connectionType) {
+                    case ("1"):
+                        $defaultTypes = ['Meter', 'Gallon', 'Meter/Fixed'];
+                        break;
+                    case ("2"):
+                        $defaultTypes = ['Meter'];
+                        break;
+                    case ("3"):
+                        $defaultTypes = ['Meter'];
+                        break;
+                    case ("4"):
+                        $defaultTypes = ['Meter'];
+                        break;
+                }
+            }
+            foreach ($defaultTypes as $type) {
+                $responseArray['displayData'][] = [
+                    'id'    => $refMeterConnType[$type],
+                    'name'  => strtoupper($type)
+                ];
+            }
+            $responseArray['status'] = $status;
+            return responseMsgs(true, "Meter List!", $responseArray, "", "01", responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], "", "01", responseTime(), $request->getMethod(), $request->deviceId);
+        }
+    }
 
 
 
@@ -1412,6 +1542,9 @@ class WaterConsumer extends Controller
 
 
 
+
+
+    ####################################################################################################
 
     /**
      * | Doc upload through document upload service 
