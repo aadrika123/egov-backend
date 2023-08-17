@@ -17,7 +17,6 @@ class WaterConsumerOwner extends Model
     public function getConsumerOwner($consumerId)
     {
         return WaterConsumerOwner::where('status', true)
-            ->where('consumer_id', $consumerId)
-            ->get();
+            ->where('consumer_id', $consumerId);
     }
 }
