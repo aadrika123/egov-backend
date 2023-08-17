@@ -137,8 +137,8 @@ trait SafDetailsTrait
             ['displayString' => 'Ownership Type', 'key' => 'ownershipType', 'value' => $req->ownership_type],
             ['displayString' => 'Apply-Date', 'key' => 'applyDate', 'value' => $req->application_date],
             ['displayString' => 'Plot-Area(In Decimal)', 'key' => 'plotArea', 'value' => $req->area_of_plot],
-            ['displayString' => 'Is-Water-Harvesting', 'key' => 'isWaterHarvesting', 'value' => ($req->is_water_harvesting == true) ? 'Yes' : 'No'],
-            ['displayString' => 'Is-Hoarding-Board', 'key' => 'isHoardingBoard', 'value' => ($req->is_hoarding_board == true) ? 'Yes' : 'No']
+            ['displayString' => 'Water-Harvesting', 'key' => 'isWaterHarvesting', 'value' => ($req->is_water_harvesting == true) ? 'Yes' : 'No'],
+            ['displayString' => 'Hoarding-Board', 'key' => 'isHoardingBoard', 'value' => ($req->is_hoarding_board == true) ? 'Yes' : 'No']
         ]);
     }
 
@@ -154,8 +154,8 @@ trait SafDetailsTrait
             ['displayString' => 'Holding No', 'key' => 'safNo', 'value' => $req->holding_no],
             ['displayString' => 'DOB', 'key' => 'dob', 'value' => $req->dob],
             ['displayString' => 'Gender', 'key' => 'gender', 'value' => $req->gender],
-            ['displayString' => 'Is Armed Force', 'key' => 'isArmedForce', 'value' => ($req->is_armed_force == true) ? 'Yes' : 'No'],
-            ['displayString' => 'Is Specially Abled', 'key' => 'isSpeciallyAbled', 'value' => ($req->is_specially_abled == true) ? 'Yes' : 'No'],
+            ['displayString' => 'Armed Force', 'key' => 'isArmedForce', 'value' => ($req->is_armed_force == true) ? 'Yes' : 'No'],
+            ['displayString' => 'Specially Abled', 'key' => 'isSpeciallyAbled', 'value' => ($req->is_specially_abled == true) ? 'Yes' : 'No'],
             ['displayString' => 'Owner', 'key' => 'ownerName', 'value' => $req->owner_name],
             ['displayString' => 'Concession Applied For', 'key' => 'appliedFor', 'value' => $req->applied_for],
         ]);
@@ -183,9 +183,9 @@ trait SafDetailsTrait
             ['displayString' => 'Property Type', 'key' => 'propertyType', 'value' => $req->property_type],
             ['displayString' => 'Ownership Type', 'key' => 'ownershipType', 'value' => $req->ownership_type],
             ['displayString' => 'Plot-Area(sqt)', 'key' => 'plotArea', 'value' => $req->area_of_plot],
-            ['displayString' => 'Is Hoarding Board', 'key' => 'isHoardingBoard', 'value' => ($req->is_hoarding_board == true) ? 'Yes' : 'No'],
-            ['displayString' => 'Is Petrol Pump', 'key' => 'isPetrolPump', 'value' => ($req->is_petrol_pump == true) ? 'Yes' : 'No'],
-            ['displayString' => 'Is Water Harvesting', 'key' => 'isWaterHarvesting', 'value' => ($req->is_water_harvesting == true) ? 'Yes' : 'No'],
+            ['displayString' => 'Hoarding Board', 'key' => 'isHoardingBoard', 'value' => ($req->is_hoarding_board == true) ? 'Yes' : 'No'],
+            ['displayString' => 'Petrol Pump', 'key' => 'isPetrolPump', 'value' => ($req->is_petrol_pump == true) ? 'Yes' : 'No'],
+            ['displayString' => 'Water Harvesting', 'key' => 'isWaterHarvesting', 'value' => ($req->is_water_harvesting == true) ? 'Yes' : 'No'],
         ]);
 
         $cardElement = [
@@ -209,8 +209,8 @@ trait SafDetailsTrait
             // ['displayString' => 'Property Type', 'key' => 'propertyType', 'value' => $req->property_type],
             // ['displayString' => 'Ownership Type', 'key' => 'ownershipType', 'value' => $req->ownership_type],
             ['displayString' => 'Plot-Area(decimal)', 'key' => 'plotArea', 'value' => $req->area_of_plot],
-            ['displayString' => 'Is Hoarding Board', 'key' => 'isHoardingBoard', 'value' => ($req->is_hoarding_board == true) ? 'Yes' : 'No'],
-            ['displayString' => 'Is Petrol Pump', 'key' => 'isPetrolPump', 'value' => ($req->is_petrol_pump == true) ? 'Yes' : 'No'],
+            ['displayString' => 'Hoarding Board', 'key' => 'isHoardingBoard', 'value' => ($req->is_hoarding_board == true) ? 'Yes' : 'No'],
+            ['displayString' => 'Petrol Pump', 'key' => 'isPetrolPump', 'value' => ($req->is_petrol_pump == true) ? 'Yes' : 'No'],
             ['displayString' => 'Previous Water Harvesting Status', 'key' => 'isWaterHarvesting', 'value' => ($req->is_water_harvesting == true) ? 'Yes' : 'No'],
             ['displayString' => 'Is Harvesting done before 31-03-2017?', 'key' => 'harvestingBefore2017', 'value' => ($req->harvesting_status == true) ? 'Yes' : 'No'],
             ['displayString' => 'Date of Completion', 'key' => 'dateOfCompletion', 'value' => $req->date_of_completion],
@@ -345,8 +345,8 @@ trait SafDetailsTrait
             ['displayString' => 'Property Usage Type', 'key' => 'propertyUsageType', 'value' => $req->prop_usage_type, 'canBtc' => 'true', 'canEdit' => 'true'],
             ['displayString' => 'Apply-Date', 'key' => 'applyDate', 'value' => $req->application_date],
             ['displayString' => 'Plot-Area(sqt)', 'key' => 'plotArea', 'value' => $req->area_of_plot],
-            ['displayString' => 'Is-Water-Harvesting', 'key' => 'isWaterHarvesting', 'value' => ($req->is_water_harvesting == true) ? 'Yes' : 'No'],
-            ['displayString' => 'Is-Hoarding-Board', 'key' => 'isHoardingBoard', 'value' => ($req->is_hoarding_board == true) ? 'Yes' : 'No']
+            ['displayString' => 'Water-Harvesting', 'key' => 'isWaterHarvesting', 'value' => ($req->is_water_harvesting == true) ? 'Yes' : 'No'],
+            ['displayString' => 'Hoarding-Board', 'key' => 'isHoardingBoard', 'value' => ($req->is_hoarding_board == true) ? 'Yes' : 'No']
         ]);
     }
 

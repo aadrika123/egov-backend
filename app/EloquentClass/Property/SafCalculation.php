@@ -593,7 +593,7 @@ class SafCalculation
             if ($dateFrom < '2016-04-01')
                 $dateFrom = '2016-04-01';
 
-            if ($this->_propertyDetails['propertyType'] == 2) {             // For Independent Building
+            if ($this->_propertyDetails['propertyType'] == 2) {                 // For Independent Building
                 $leastDatedFloor = collect($this->_floors)->sortBy('dateFrom');
                 $floorCalculationStartedDate = $leastDatedFloor->first()['dateFrom'];
                 $carbonDateUpto = Carbon::parse($floorCalculationStartedDate)->format('Y-m-d');

@@ -11,10 +11,7 @@ class WfActiveDocument extends Model
 {
     use HasFactory;
     protected $guarded = [];
-    public function __construct($connection=null)
-    {
-        $this->connection = $connection ? $connection : null;
-    }
+
     /**
      * | Store Wf Active Documents
      */
@@ -62,7 +59,7 @@ class WfActiveDocument extends Model
             $metaReqs = array_merge($metaReqs, [
                 "verify_status" => $req->verifyStatus
             ]);
-        }      
+        }
         WfActiveDocument::create($metaReqs);
     }
 
