@@ -11,10 +11,7 @@ class WfActiveDocument extends Model
 {
     use HasFactory;
     protected $guarded = [];
-    public function __construct($connection = null)
-    {
-        $this->connection = $connection ? $connection : null;
-    }
+
     /**
      * | Store Wf Active Documents
      */
@@ -26,7 +23,7 @@ class WfActiveDocument extends Model
     /**
      * | Edit Wf Active Documents
      */
-    public function edit($wfActiveDocument, $req)
+    public function edit($wfActiveDocument, array $req)
     {
         $wfActiveDocument->update($req);
     }
