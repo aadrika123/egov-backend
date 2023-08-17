@@ -883,12 +883,11 @@ class HoldingTaxController extends Controller
                 throw new Exception("Property Not Found");
 
             $propTrans = $mPropTrans->getPropTransactions($req->propId, 'property_id');         // Holding Payment History
-            if (!$propTrans || $propTrans->isEmpty())
-                throw new Exception("No Transaction Found");
-
-            $propTrans->map(function ($propTran) {
-                $propTran['tran_date'] = Carbon::parse($propTran->tran_date)->format('d-m-Y');
-            });
+            if ($propTrans || $propTrans->isNotEmpty())
+                // throw new Exception("No Transaction Found");
+                $propTrans->map(function ($propTran) {
+                    $propTran['tran_date'] = Carbon::parse($propTran->tran_date)->format('d-m-Y');
+                });
 
             $propSafId = $propertyDtls->saf_id;
 
