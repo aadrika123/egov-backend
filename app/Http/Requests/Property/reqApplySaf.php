@@ -84,15 +84,12 @@ class reqApplySaf extends FormRequest
             $rules['petrolPump.dateFrom'] = "required|date|date_format:Y-m-d|before_or_equal:$mNowDate";
         }
 
-        if ($this->propertyType == 2)                                           // Land Occupation Date for Independent Building
-            $rules['landOccupationDate'] = "required|date|date_format:Y-m-d|before_or_equal:$mNowDate";
-
         if (isset($this->propertyType) && $this->propertyType == 4) {
             $rules['landOccupationDate'] = "required|date|date_format:Y-m-d|before_or_equal:$mNowDate";
         } else {
             $rules['floor']        = "required|array";
             if (isset($this->floor) && $this->floor) {
-                $rules["floor.*.propFloorDetailId"] =   "nullable|numeric";
+                $rules["floor.*.propFloorDetailId"] =   "nullable|integer";
                 $rules["floor.*.floorNo"]           =   "required|int";
                 $rules["floor.*.useType"]           =   "required|int";
                 $rules["floor.*.constructionType"]  =   "required|int|in:1,2,3";
@@ -100,7 +97,7 @@ class reqApplySaf extends FormRequest
 
                 $rules["floor.*.buildupArea"]       =   "required|numeric|not_in:0";
                 $rules["floor.*.dateFrom"]          =   "required|date|date_format:Y-m-d|before_or_equal:$mNowDate";
-                $rules["floor.*.dateUpto"]          =   "nullable|date|date_format:Y-m-d|before_or_equal:$mNowDate|before:$this->dateFrom";
+                $rules["floor.*.dateUpto"]          =   "nullable|date|date_format:Y-m-d|after:floor.*.dateFrom";
             }
         }
         // Condition for the Organizational Institutes running by trust

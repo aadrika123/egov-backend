@@ -191,7 +191,7 @@ class WfActiveDocument extends Model
     public function getTradeDocByAppNo($applicationId, $workflowId, $moduleId)
     {
 
-        return DB::table('wf_active_documents as d')
+        return DB::connection($this->connection)->table('wf_active_documents as d')
             ->select(
                 'd.id',
                 'd.document',

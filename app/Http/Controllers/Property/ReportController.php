@@ -16,6 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\Validator;
 
 #------------date 13/03/2023 -------------------------------------------------------------------------
 #   Code By Sandeep Bara
@@ -510,6 +511,15 @@ class ReportController extends Controller
      */
     public function dcbPieChart(Request $request)
     {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'ulbId' => 'nullable|int',
+            ]
+        );
+        if ($validated->fails()) {
+            return validationError($validated);
+        }
         return $this->Repository->dcbPieChart($request);
     }
 

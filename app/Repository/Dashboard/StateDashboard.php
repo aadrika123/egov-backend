@@ -32,28 +32,24 @@ class StateDashboard
         list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
 
         try {
-            $refUser        = Auth()->user();
+            $refUser        = authUser($request);
             $refUserId      = $refUser->id;
             $ulbId          = $refUser->ulb_id;
             $wardId = null;
             $fiYear = getFY();
-            if ($request->fiYear) 
-            {
+            if ($request->fiYear) {
                 $fiYear = $request->fiYear;
             }
             list($fromYear, $toYear) = explode("-", $fiYear);
-            if ($toYear - $fromYear != 1) 
-            {
+            if ($toYear - $fromYear != 1) {
                 throw new Exception("Enter Valide Financial Year");
             }
             $fromDate = $fromYear . "-04-01";
             $uptoDate = $toYear . "-03-31";
-            if ($request->ulbId) 
-            {
+            if ($request->ulbId) {
                 $ulbId = $request->ulbId;
             }
-            if ($request->wardId) 
-            {
+            if ($request->wardId) {
                 $wardId = $request->wardId;
             }
             $from = "
@@ -172,80 +168,61 @@ class StateDashboard
                             ) AS outstanding                                 
             ";
             $data = DB::select($select . $from);
-            $data = collect($data);            
-           
-            $monthWise["demand"]["quater"] = $data->map(function($val)
-            {
-                return($val->quater);
+            $data = collect($data);
+
+            $monthWise["demand"]["quater"] = $data->map(function ($val) {
+                return ($val->quater);
             });
-            $monthWise["demand"]["propertyCount"] = $data->map(function($val)
-            {
-                return($val->current_hh);
+            $monthWise["demand"]["propertyCount"] = $data->map(function ($val) {
+                return ($val->current_hh);
             });
-            $monthWise["demand"]["arrearDemand"] = $data->map(function($val)
-            {
-                return round(($val->arrear_demand),2);
+            $monthWise["demand"]["arrearDemand"] = $data->map(function ($val) {
+                return round(($val->arrear_demand), 2);
             });
-            $monthWise["demand"]["currentDemand"] = $data->map(function($val)
-            {
-                return round(($val->current_demand),2);
+            $monthWise["demand"]["currentDemand"] = $data->map(function ($val) {
+                return round(($val->current_demand), 2);
             });
-            $monthWise["demand"]["totalDemand"] = $data->map(function($val)
-            {
-                return round(($val->current_demand + $val->arrear_demand),2);
+            $monthWise["demand"]["totalDemand"] = $data->map(function ($val) {
+                return round(($val->current_demand + $val->arrear_demand), 2);
             });
 
             #-----------------------------------------
-            $monthWise["collection"]["quater"] = $data->map(function($val)
-            {
-                return($val->quater);
+            $monthWise["collection"]["quater"] = $data->map(function ($val) {
+                return ($val->quater);
             });
-            $monthWise["collection"]["propertyCount"] = $data->map(function($val)
-            {
-                return($val->collection_from_hh);
+            $monthWise["collection"]["propertyCount"] = $data->map(function ($val) {
+                return ($val->collection_from_hh);
             });
-            $monthWise["collection"]["arrearCollection"] = $data->map(function($val)
-            {
-                return round(($val->arrear_collection),2);
+            $monthWise["collection"]["arrearCollection"] = $data->map(function ($val) {
+                return round(($val->arrear_collection), 2);
             });
-            $monthWise["collection"]["currentCollection"] = $data->map(function($val)
-            {
-                return round(($val->current_collection),2);
+            $monthWise["collection"]["currentCollection"] = $data->map(function ($val) {
+                return round(($val->current_collection), 2);
             });
-            $monthWise["collection"]["totalCollection"] = $data->map(function($val)
-            {
-                return round(($val->arrear_collection + $val->current_collection),2);
+            $monthWise["collection"]["totalCollection"] = $data->map(function ($val) {
+                return round(($val->arrear_collection + $val->current_collection), 2);
             });
 
             #-------------------------------------------
-            $monthWise["balance"]["quater"] = $data->map(function($val)
-            {
-                return($val->quater);
+            $monthWise["balance"]["quater"] = $data->map(function ($val) {
+                return ($val->quater);
             });
-            $monthWise["balance"]["propertyCount"] = $data->map(function($val)
-            {
-                return(($val->current_hh - $val->collection_from_hh));
+            $monthWise["balance"]["propertyCount"] = $data->map(function ($val) {
+                return (($val->current_hh - $val->collection_from_hh));
             });
-            $monthWise["balance"]["arrearBalance"] = $data->map(function($val)
-            {
-                return round(($val->arrear_demand - $val->arrear_collection),2);
+            $monthWise["balance"]["arrearBalance"] = $data->map(function ($val) {
+                return round(($val->arrear_demand - $val->arrear_collection), 2);
             });
-            $monthWise["balance"]["currentBalance"] = $data->map(function($val)
-            {
-                return round(($val->current_demand - $val->current_collection),2);
+            $monthWise["balance"]["currentBalance"] = $data->map(function ($val) {
+                return round(($val->current_demand - $val->current_collection), 2);
             });
-            $monthWise["balance"]["totalBalance"] = $data->map(function($val)
-            {
-                return round((($val->current_demand + $val->arrear_demand)- ($val->arrear_collection + $val->current_collection)),2);
+            $monthWise["balance"]["totalBalance"] = $data->map(function ($val) {
+                return round((($val->current_demand + $val->arrear_demand) - ($val->arrear_collection + $val->current_collection)), 2);
             });
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true, "", $monthWise, $apiId, $version, $queryRunTime, $action, $deviceId);
-        } 
-        catch (Exception $e) 
-        {
+        } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
         }
-
     }
-
 }

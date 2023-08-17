@@ -938,12 +938,12 @@ class ActiveSafController extends Controller
                 $wfMstrId = $mWfMstr->getWfMstrByWorkflowId($saf->workflow_id);
                 $samHoldingDtls = $this->checkPostCondition($senderRoleId, $wfLevels, $saf, $wfMstrId, $userId);          // Check Post Next level condition
 
-                $geotagExist = $saf->is_field_verified == true;
+                $geotagExist = $saf->is_geo_tagged == true;
 
                 if ($geotagExist && $saf->current_role == $wfLevels['DA'])
                     $forwardBackwardIds->forward_role_id = $wfLevels['UTC'];
 
-                if ($saf->is_bt_da == true) {
+                if ($saf->is_bt_da == true && $saf->current_role == $wfLevels['DA']) {
                     $forwardBackwardIds->forward_role_id = $wfLevels['SI'];
                     $saf->is_bt_da = false;
                 }
@@ -2430,7 +2430,7 @@ class ActiveSafController extends Controller
                     'longitude' => $longitude[$key],
                     'latitude' => $latitude[$key],
                     'relative_path' => $relativePath,
-                    'user_id' => authUser($req)->id
+                    'user_id' => authUser($req)->id ?? 1
                 ];
                 if ($isDocExist)
                     $geoTagging->edit($isDocExist, $docReqs);
@@ -2476,9 +2476,9 @@ class ActiveSafController extends Controller
             $data['existingFloors'] = $existingFloors->values();
             $geoTags = $mSafGeoTag->getGeoTags($req->safId);
             $data['geoTagging'] = $geoTags;
-            return responseMsgs(true, "TC Verification Details", remove_null($data), "010120", "1.0", "258ms", "POST", $req->deviceId);
+            return responseMsgs(true, "TC Verification Details", remove_null($data), "010120", "1.0", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
+            return responseMsgs(false, $e->getMessage(), "", "010120", "1.0", responseTime(), $req->getMethod(), $req->deviceId);
         }
     }
 
@@ -2853,6 +2853,7 @@ class ActiveSafController extends Controller
                 $data["Tax"]["according_verification"] = $safTaxes2["original"]["data"];
                 $data["Tax"]["compairTax"] = $compairTax["original"]["data"];
             }
+
             $data["saf_details"] = $saf;
             $data["employee_details"] = ["user_name" => $verifications->user_name, "date" => ymdToDmyDate($verifications->created_at)];
             $data["property_comparison"] = $prop_compairs;

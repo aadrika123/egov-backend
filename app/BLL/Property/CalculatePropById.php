@@ -54,9 +54,12 @@ class CalculatePropById extends CalculateSafById
         $this->generatePropFloorCalcReq();
         $this->readPropGeneratedDemand();
         $this->generatePropCalculationReq();
-        return $this->_newTax = $this->_safCalculation->calculateTax($this->_propCalculationReqs);
+        $this->_newTax = $this->_safCalculation->calculateTax($this->_propCalculationReqs);
+        $this->_calculatedDemand = $this->_newTax->original['data'];
+        $this->generateDemand();
+        return $this->_demandDetails;
         $this->adjustPropDemand();
-        return $this->tblUpdateDemandAdjust();
+        $this->tblUpdateDemandAdjust();
     }
 
     public function readMasters()

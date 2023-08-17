@@ -875,6 +875,7 @@ use Illuminate\Support\Str;
             $noticeData = NoticeApplication::select(
                 "notice_applications.*",
                 "ulb_masters.ulb_name",
+                DB::raw("notice_applications.notice_date AS noticeDate")
                 )
             ->JOIN("ulb_masters","ulb_masters.id","notice_applications.ulb_id")
             ->WHERE("notice_applications.notice_no",Str::upper($noticNO))            

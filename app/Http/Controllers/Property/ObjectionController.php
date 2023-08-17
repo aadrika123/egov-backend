@@ -517,7 +517,7 @@ class ObjectionController extends Controller
 
             DB::beginTransaction();
             if ($req->action == 'forward') {
-                // $this->checkPostCondition($senderRoleId, $wfLevels, $objection);          // Check Post Next level condition
+                $this->checkPostCondition($senderRoleId, $wfLevels, $objection, $req);          // Check Post Next level condition
                 $objection->current_role = $forwardBackwardIds->forward_role_id;
                 $objection->last_role_id =  $forwardBackwardIds->forward_role_id;         // Update Last Role Id
                 $metaReqs['verificationStatus'] = 1;
@@ -701,12 +701,35 @@ class ObjectionController extends Controller
                             );
                     }
                 }
+
+                if ($activeObjection->objection_for == 'Forgery') {
+
+                    PropOwner::where('property_id', $activeObjection->property_id)
+                        ->update(["status" => 0]);
+
+                    $ownerDetails =  $mPropActiveObjectionOwner->getOwnerDetail($activeObjection->id);
+
+                    foreach ($ownerDetails as $ownerDetail) {
+                        $metaReqs =  new Request([
+                            'property_id' => $activeObjection->property_id,
+                            'owner_name' => $ownerDetail->owner_name,
+                            'guardian_name' => $ownerDetail->guardian_name,
+                            'relation_type' => $ownerDetail->relation,
+                            'mobile_no' => $ownerDetail->owner_mobile,
+                            'email' => $ownerDetail->email,
+                            'pan_no' => $ownerDetail->pan,
+                            'gender' => $ownerDetail->gender,
+                            'dob' => $ownerDetail->dob,
+                            'is_armed_force' => $ownerDetail->is_armed_force,
+                            'is_specially_abled' => $ownerDetail->is_specially_abled,
+                            'status' => 1,
+                        ]);
+                        $mPropOwner->postOwner($metaReqs);
+                    }
+                }
+
                 $msg =  "Application Successfully Approved !!";
                 $metaReqs['verificationStatus'] = 1;
-
-                // $var = new CalculatePropById;
-                // return  $data = $var->calculatePropTax($activeObjection);
-                // dd($data);
             }
 
             // Rejection
@@ -900,10 +923,80 @@ class ObjectionController extends Controller
 
             $metaReqs = new Request($metaReqs);
             $mWfActiveDocument->postDocuments($metaReqs);
-            return responseMsgs(true, "Document Uploadation Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
+
+            $docUploadStatus = $this->checkFullDocUpload($getObjectionDtls);
+
+            if ($docUploadStatus == 1) {                                        // Doc Upload Status Update
+                $getObjectionDtls->doc_upload_status = 1;
+                if ($getObjectionDtls->parked == true)                                // Case of Back to Citizen
+                    $getObjectionDtls->parked = false;
+
+                $getObjectionDtls->save();
+            }
+            return responseMsgs(true, "Document Uploaded Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
         }
+    }
+
+    /**
+     * | Check Full Upload Doc Status
+     */
+    public function checkFullDocUpload($objectionDtls)
+    {
+        $applicationId = $objectionDtls->id;
+        $mPropActiveObjection = new PropActiveObjection();
+        $mWfActiveDocument = new WfActiveDocument();
+        $objectionDtls = $mPropActiveObjection->getObjectionNo($applicationId);                      // Get Objection Details
+        $refReq = [
+            'activeId' => $applicationId,
+            'workflowId' => $objectionDtls->workflow_id,
+            'moduleId' => 1
+        ];
+        $req = new Request($refReq);
+        $refDocList = $mWfActiveDocument->getDocsByActiveId($req);
+        return $this->isAllDocs($applicationId, $refDocList, $objectionDtls);
+    }
+
+    public function isAllDocs($applicationId, $refDocList, $objectionDtls)
+    {
+        $docList = array();
+        $verifiedDocList = array();
+        $objectionType = $objectionDtls->objection_for;
+        $mPropActiveObjectionOwner = new PropActiveObjectionOwner();
+        $ownerDetails = $mPropActiveObjectionOwner->getOwnerDetail($applicationId);      // Get Owner Details
+        $objectionDocs = $this->getDocList($objectionDtls, $ownerDetails, $objectionType);
+        $docList['objectionDocs'] = explode('#', $objectionDocs);
+
+        $verifiedDocList['objectionDocs'] = $refDocList->where('owner_dtl_id', '!=', null)->values();
+        $collectUploadDocList = collect();
+        collect($verifiedDocList['objectionDocs'])->map(function ($item) use ($collectUploadDocList) {
+            return $collectUploadDocList->push($item['doc_code']);
+        });
+
+        // $mPropDocs = $objectionDocs;
+        // Property List Documents
+        $flag = 1;
+        foreach ($docList['objectionDocs'] as $item) {
+            $explodeDocs = explode(',', $item);
+            array_shift($explodeDocs);
+            foreach ($explodeDocs as $explodeDoc) {
+                $changeStatus = 0;
+                if (in_array($explodeDoc, $collectUploadDocList->toArray())) {
+                    $changeStatus = 1;
+                    break;
+                }
+            }
+            if ($changeStatus == 0) {
+                $flag = 0;
+                break;
+            }
+        }
+
+        if ($flag == 0)
+            return 0;
+        else
+            return 1;
     }
 
     //get document status by id
@@ -918,10 +1011,12 @@ class ObjectionController extends Controller
             $ownerDetails = $mPropActiveObjectionOwner->getOwnerDetail($req->applicationId);      // Get Owner Details
             if (!$refApplication)
                 throw new Exception("Application Not Found for this id");
-            $objectionDoc['listDocs'] = $this->getDocList($refApplication, $ownerDetails, $objectionType);
-            // $objectionDoc['ownerDocs'] = collect($ownerDetails)->map(function ($owner) use ($refApplication) {
-            //     return $this->getOwnerDocLists($owner, $refApplication);
-            // });
+            $filterDocs = $this->getDocList($refApplication, $ownerDetails, $objectionType);
+
+            if (!empty($filterDocs))
+                $objectionDoc['listDocs'] = $this->filterDocument($filterDocs, $refApplication);                                     // function(1.2)
+            else
+                $objectionDoc['listDocs'] = [];
 
             return responseMsgs(true, "", remove_null($objectionDoc), "010203", "", "", 'POST', "");
         } catch (Exception $e) {
@@ -936,11 +1031,11 @@ class ObjectionController extends Controller
     {
         $mRefReqDocs = new RefRequiredDocument();
         $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
+        $documentList = collect();
         if ($objectionType == 'Clerical Mistake') {
             $ownerDetails = $ownerDetails->first();
             $isOwner = $ownerDetails->owner_name;
             $pincode = $ownerDetails->corr_pin_code;
-            $documentList = "";
 
             if (isset($isOwner))
                 $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "OBJECTION_CLERICAL_ID")->requirements;
@@ -963,13 +1058,19 @@ class ObjectionController extends Controller
                 $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "OBJECTION_FORGERY_SURVIVORSHIP")->requirements;
             if ($refApplication->forgery_type_mstr_id == 3)
                 $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "OBJECTION_FORGERY_TITLE_DISPUTE")->requirements;
+
+            if ($refApplication->hearing_date < $this->_todayDate)
+                $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "OBJECTION_FORGERY_LEGAL_DOCUMENT")->requirements;
         }
 
-        if (!empty($documentList))
-            $filteredDocs = $this->filterDocument($documentList, $refApplication);                                     // function(1.2)
-        else
-            $filteredDocs = [];
-        return $filteredDocs;
+        return $documentList;
+
+
+        // if (!empty($documentList))
+        //     $filteredDocs = $this->filterDocument($documentList, $refApplication);                                     // function(1.2)
+        // else
+        //     $filteredDocs = [];
+        // return $filteredDocs;
     }
 
     /**
@@ -1061,7 +1162,7 @@ class ObjectionController extends Controller
     }
 
     /**
-     *  add members for clerical mistake
+     * | Add members for clerical mistake
      */
     public function addMembers(Request $request)
     {
@@ -1329,8 +1430,8 @@ class ObjectionController extends Controller
 
             $senderRoleId = $senderRoleDtls->wf_role_id;
 
-            if ($senderRoleId != $wfLevel['SI'])                                // Authorization for Dealing Assistant Only
-                throw new Exception("You are not Authorized");
+            // if ($senderRoleId != $wfLevel['SI'])                                // Authorization for Dealing Assistant Only
+            //     throw new Exception("You are not Authorized");
 
             if (!$objectionDtl || collect($objectionDtl)->isEmpty())
                 throw new Exception("Application Details Not Found");
