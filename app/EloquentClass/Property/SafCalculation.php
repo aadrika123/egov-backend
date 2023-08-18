@@ -542,11 +542,13 @@ class SafCalculation
     {
         $readPropertyType = $this->_propertyDetails['propertyType'];
         if (in_array($readPropertyType, [$this->_vacantPropertyTypeId, $this->_individualPropTypeId])) {                                             // Vacant Land condition with independent building
-            $calculateQuaterlyRuleSets = $this->calculateQuaterlyRulesets("vacantLand");
-            $ruleSetsWithMobileTower = collect($this->_mobileQuaterlyRuleSets)->merge($calculateQuaterlyRuleSets);        // Collapse with mobile tower
-            $ruleSetsWithHoardingBoard = collect($this->_hoardingQuaterlyRuleSets)->merge($ruleSetsWithMobileTower);      // Collapse with hoarding board
-            $this->_GRID['vacantDemandDetails'] = $ruleSetsWithHoardingBoard;
-            $this->_GRID['details'] = $this->_GRID['vacantDemandDetails']->merge($this->_GRID['details'] ?? collect());
+            if ($this->_propertyDetails['assessmentType'] == 1 || $readPropertyType == $this->_vacantPropertyTypeId) {      // checking assessment type for individual property and property type for vacant land
+                $calculateQuaterlyRuleSets = $this->calculateQuaterlyRulesets("vacantLand");
+                $ruleSetsWithMobileTower = collect($this->_mobileQuaterlyRuleSets)->merge($calculateQuaterlyRuleSets);        // Collapse with mobile tower
+                $ruleSetsWithHoardingBoard = collect($this->_hoardingQuaterlyRuleSets)->merge($ruleSetsWithMobileTower);      // Collapse with hoarding board
+                $this->_GRID['vacantDemandDetails'] = $ruleSetsWithHoardingBoard;
+                $this->_GRID['details'] = $this->_GRID['vacantDemandDetails']->merge($this->_GRID['details'] ?? collect());
+            }
         }
     }
 
@@ -593,7 +595,7 @@ class SafCalculation
             if ($dateFrom < '2016-04-01')
                 $dateFrom = '2016-04-01';
 
-            if ($this->_propertyDetails['propertyType'] == 2) {                         // For Independent Building and New Assessment
+            if ($this->_propertyDetails['propertyType'] == 2 && $this->_propertyDetails['assessmentType'] == 1) {                         // For Independent Building and New Assessment
                 $leastDatedFloor = collect($this->_floors)->sortBy('dateFrom');
                 $floorCalculationStartedDate = $leastDatedFloor->first()['dateFrom'];
                 $carbonDateUpto = Carbon::parse($floorCalculationStartedDate)->format('Y-m-d');
