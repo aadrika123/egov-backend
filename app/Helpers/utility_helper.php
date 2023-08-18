@@ -418,7 +418,7 @@ if (!function_exists('getIndianCurrency')) {
         }
         $Rupees = implode('', array_reverse($str));
         $paise = ($decimal > 0) ? "." . ($words[$decimal / 10] . " " . $words[$decimal % 10]) . ' Paise' : '';
-        return 'Rupee ' . ($Rupees ? $Rupees  : 'Rupee Zero') . $paise;
+        return ($Rupees ? $Rupees  : 'Rupee Zero') . $paise;
     }
 }
 
