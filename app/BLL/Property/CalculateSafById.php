@@ -99,6 +99,7 @@ class CalculateSafById
                 $this->generateCalculationReq();                                        // (Function 1.3)
                 // Saf Calculation
                 $reqCalculation = $this->_safCalculationReq;
+
                 $calculation = $this->_safCalculation->calculateTax($reqCalculation);
                 // Throw Exception on Calculation Error
                 if ($calculation->original['status'] == false)
@@ -180,6 +181,7 @@ class CalculateSafById
         $safDetails = $this->_safDetails;
         $calculationReq = [
             "ulbId" => $safDetails['ulb_id'],
+            "assessmentType" => $safDetails['assessment_type'],
             "ward" => $safDetails['ward_mstr_id'],
             "propertyType" => $safDetails['prop_type_mstr_id'],
             "landOccupationDate" => $safDetails['land_occupation_date'],
@@ -292,8 +294,6 @@ class CalculateSafById
         });
 
         $groupBy = $filtered->groupBy(['quarterYear', 'qtr']);
-        // echo $groupBy;
-        // die;
 
         $taxes = $groupBy->map(function ($values) {
             return $values->map(function ($collection) {
