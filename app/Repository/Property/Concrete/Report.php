@@ -855,7 +855,7 @@ class Report implements IReport
                             from wf_roleusermaps 
                             join wf_roles on wf_roles.id = wf_roleusermaps.wf_role_id
                                 AND wf_roles.is_suspended = false
-                            join users on users.id = wf_roleusermaps.user_id
+                            join users on users.id = wf_roleusermaps.user_id 
                             left join wf_ward_users on wf_ward_users.user_id = wf_roleusermaps.user_id and wf_ward_users.is_suspended = false
                             where wf_roleusermaps.wf_role_id =$roleId
                                 AND wf_roleusermaps.is_suspended = false
