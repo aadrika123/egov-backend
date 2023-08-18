@@ -292,6 +292,8 @@ class CalculateSafById
         });
 
         $groupBy = $filtered->groupBy(['quarterYear', 'qtr']);
+        // echo $groupBy;
+        // die;
 
         $taxes = $groupBy->map(function ($values) {
             return $values->map(function ($collection) {

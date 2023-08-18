@@ -992,7 +992,7 @@ class ActiveSafController extends Controller
                 'forward_date' => $this->_todayDate->format('Y-m-d'),
                 'forward_time' => $this->_todayDate->format('H:i:s')
             ]);
-            // dd();
+
             DB::commit();
             return responseMsgs(true, "Successfully Forwarded The Application!!", $samHoldingDtls, "010109", "1.0", "", "POST", $request->deviceId);
         } catch (Exception $e) {
@@ -2524,6 +2524,8 @@ class ActiveSafController extends Controller
             else
                 $demand['can_pay'] = false;
 
+            echo $req;
+            die;
             $safTaxes = $this->calculateSafBySafId($req);
             if ($safTaxes->original['status'] == false)
                 throw new Exception($safTaxes->original['message']);

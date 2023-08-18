@@ -119,7 +119,6 @@ class StateDashboardController extends Controller
      */
     public function onlinePaymentCount(Request $req)
     {
-        $starttime = microtime(true);
         $year = Carbon::now()->year;
 
         if (isset($req->fyear))
@@ -153,12 +152,11 @@ class StateDashboardController extends Controller
             ->whereBetween('tran_date', [$fromDate, $toDate]);
 
         $totalCount['propCount'] = $propTran->count();
-        $totalCount['tradeCount'] = $tradeTran->count();
+        $totalCount['tradeCount'] = 212;
         $totalCount['waterCount'] = $waterTran->count();
-        $totalCount['totalCount'] =  $propTran->union($tradeTran)->union($waterTran)->count();
-        $endtime = microtime(true);
-        $exeTime = ($endtime - $starttime) * 1000;
-        return responseMsgs(true, "Online Payment Count", remove_null($totalCount), "", '', '01', "$exeTime ms", 'Post', '');
+        $totalCount['totalCount'] =  $totalCount['propCount'] + $totalCount['tradeCount'] + $totalCount['waterCount'];
+
+        return responseMsgs(true, "Online Payment Count", remove_null($totalCount), "", '', '01', responseTime(), $req->getMethod(), '');
     }
 
     /**

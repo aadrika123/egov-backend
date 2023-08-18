@@ -686,7 +686,7 @@ class PropProperty extends Model
             ->where('prop_properties.holding_no', '!=', null)
             ->orderByDesc('prop_properties.id')
             ->skip(0)
-            ->take(100)
+            ->take(500)
             ->get();
     }
 
