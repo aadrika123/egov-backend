@@ -593,10 +593,14 @@ class SafCalculation
             if ($dateFrom < '2016-04-01')
                 $dateFrom = '2016-04-01';
 
-            if ($this->_propertyDetails['propertyType'] == 2) {                 // For Independent Building
+            if ($this->_propertyDetails['propertyType'] == 2 && $this->_propertyDetails['assessmentType'] == 1) {                         // For Independent Building and New Assessment
                 $leastDatedFloor = collect($this->_floors)->sortBy('dateFrom');
                 $floorCalculationStartedDate = $leastDatedFloor->first()['dateFrom'];
                 $carbonDateUpto = Carbon::parse($floorCalculationStartedDate)->format('Y-m-d');
+
+                // Here we have to set the date upto range to last qtr before the floor upto date so that the vacant land tax not conflict to floor's upto date
+                $floorQtrDueDate = calculateQuaterDueDate($carbonDateUpto);
+                $carbonDateUpto = Carbon::parse($floorQtrDueDate)->addMonths(-3)->startOfMonth()->format('Y-m-d');
             }
 
             if ($this->_propertyDetails['propertyType'] == $this->_vacantPropertyTypeId) {   // Vacant Land
@@ -639,9 +643,6 @@ class SafCalculation
         }
 
         $collectRuleSets = collect($arrayRuleSet);
-
-        // if ($collectRuleSets->isEmpty())
-        //     throw new Exception("No Demand Generated due to invalid Date Range");
 
         $uniqueRuleSets = $collectRuleSets->unique('dueDate');
         $ruleSet = $uniqueRuleSets->values();
