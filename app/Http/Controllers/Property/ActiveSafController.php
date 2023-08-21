@@ -2797,6 +2797,7 @@ class ActiveSafController extends Controller
 
                 $safDetails2["ward_mstr_id"] = $safDetails2["ward_id"];
                 $safDetails2["prop_type_mstr_id"] = $safDetails2["prop_type_id"];
+                $safDetails2["assessment_type"] = $saf->assessment_type;
                 $safDetails2["land_occupation_date"] = $saf->land_occupation_date;
                 $safDetails2["ownership_type_mstr_id"] = $saf->ownership_type_mstr_id;
                 $safDetails2["zone_mstr_id"] = $saf->zone_mstr_id;
