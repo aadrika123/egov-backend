@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 class PaymentRequest extends Model
 {
     use HasFactory;
+    protected $connection = 'pgsql_master';
+
 
     /**
      * |--------------------- Save the details of the Payment requests -------------------------------------|
@@ -18,7 +20,7 @@ class PaymentRequest extends Model
      * | @var transaction 
         | (Working)
      */
-    public function saveRazorpayRequest($userId,$ulbId,$orderId,$request)
+    public function saveRazorpayRequest($userId, $ulbId, $orderId, $request)
     {
         $transaction = new PaymentRequest();
         $transaction->user_id = $userId;

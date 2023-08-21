@@ -104,14 +104,14 @@ return [
         ],
 
         #_For Authorization Service
-        'pgsql_auth' => [
+        'pgsql_master' => [
             'driver' => 'pgsql',
             'url' => env('DATABASE_URL'),
             'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '5432'),
-            'database' => env('DB_DATABASE', 'auth_service'),
-            'username' => env('DB_USERNAME', 'postgres'),
-            'password' => env('DB_PASSWORD', ''),
+            'database' => env('DB_MASTER_DATABASE', 'forge'),
+            'username' => env('DB_MASTER_USERNAME', 'forge'),
+            'password' => env('DB_MASTER_PASSWORD', ''),
             'charset' => 'utf8',
             'prefix' => '',
             'prefix_indexes' => true,
@@ -122,7 +122,7 @@ return [
             ],
         ],
 
-        #_For Notice Service
+        #_For Trade Service
         'pgsql_trade' => [
             'driver' => 'pgsql',
             'url' => env('DATABASE_URL'),

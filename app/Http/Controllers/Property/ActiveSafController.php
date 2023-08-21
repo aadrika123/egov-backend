@@ -767,7 +767,8 @@ class ActiveSafController extends Controller
                 $data = $mPropSaf->getSafDtls()
                     ->where('prop_safs.id', $req->applicationId)
                     ->first();
-                $data->current_role_name = 'Approved By ' . $data->current_role_name;
+                if ($data)
+                    $data->current_role_name = 'Approved By ' . $data->current_role_name;
             }
 
             if (collect($data)->isEmpty())
