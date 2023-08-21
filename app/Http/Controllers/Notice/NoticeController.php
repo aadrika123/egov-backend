@@ -85,6 +85,7 @@ class NoticeController extends Controller
     }
     public function rollback()
     {
+        
         $db1 = DB::connection()->getDatabaseName();
         $db2 = $this->_DB->getDatabaseName();
         DB::rollBack();
