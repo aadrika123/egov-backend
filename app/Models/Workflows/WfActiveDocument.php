@@ -192,7 +192,7 @@ class WfActiveDocument extends Model
     public function getTradeDocByAppNo($applicationId, $workflowId, $moduleId)
     {
         $docUrl = Config::get('module-constants.DOC_URL');
-        return DB::connection($this->connection)->table('wf_active_documents as d')
+        return DB::table('wf_active_documents as d')
             ->select(
                 'd.id',
                 'd.document',

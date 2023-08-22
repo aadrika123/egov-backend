@@ -93,21 +93,37 @@ class TradeCitizenController extends Controller
 
     public function begin()
     {
+        $db1 = DB::connection()->getDatabaseName();
+        $db2 = $this->_DB->getDatabaseName();
+        $db3 = $this->_NOTICE_DB->getDatabaseName();
         DB::beginTransaction();
+        if($db1!=$db2 )
         $this->_DB->beginTransaction();
+        if($db1!=$db3)
         $this->_NOTICE_DB->beginTransaction();
     }
     public function rollback()
     {
+        $db1 = DB::connection()->getDatabaseName();
+        $db2 = $this->_DB->getDatabaseName();
+        $db3 = $this->_NOTICE_DB->getDatabaseName();
         DB::rollBack();
+        if($db1!=$db2 )
         $this->_DB->rollBack();
+        if($db1!=$db3 )
         $this->_NOTICE_DB->rollBack();
     }
      
     public function commit()
     {
+        $db1 = DB::connection()->getDatabaseName();
+        $db2 = $this->_DB->getDatabaseName();
+        $db3 = $this->_NOTICE_DB->getDatabaseName();
+
         DB::commit();
+        if($db1!=$db2 )        
         $this->_DB->commit();
+        if($db1!=$db3 )
         $this->_NOTICE_DB->commit();
     }
 

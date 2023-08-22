@@ -93,18 +93,27 @@ use Illuminate\Support\Str;
 
     public function begin()
     {
+        $db1 = DB::connection()->getDatabaseName();
+        $db2 = $this->_DB->getDatabaseName();
         DB::beginTransaction();
+        if($db1!=$db2 )
         $this->_DB->beginTransaction();
     }
     public function rollback()
     {
+        $db1 = DB::connection()->getDatabaseName();
+        $db2 = $this->_DB->getDatabaseName();
         DB::rollBack();
+        if($db1!=$db2 )
         $this->_DB->rollBack();
     }
      
     public function commit()
     {
+        $db1 = DB::connection()->getDatabaseName();
+        $db2 = $this->_DB->getDatabaseName();
         DB::commit();
+        if($db1!=$db2 )
         $this->_DB->commit();
     }
 
