@@ -99,7 +99,7 @@ class TradeCitizenController extends Controller
         DB::beginTransaction();
         if($db1!=$db2 )
         $this->_DB->beginTransaction();
-        if($db1!=$db3)
+        if($db1!=$db3 && $db2!=$db3)
         $this->_NOTICE_DB->beginTransaction();
     }
     public function rollback()
@@ -110,7 +110,7 @@ class TradeCitizenController extends Controller
         DB::rollBack();
         if($db1!=$db2 )
         $this->_DB->rollBack();
-        if($db1!=$db3 )
+        if($db1!=$db3 && $db2!=$db3)
         $this->_NOTICE_DB->rollBack();
     }
      
@@ -123,7 +123,7 @@ class TradeCitizenController extends Controller
         DB::commit();
         if($db1!=$db2 )        
         $this->_DB->commit();
-        if($db1!=$db3 )
+        if($db1!=$db3 && $db2!=$db3)
         $this->_NOTICE_DB->commit();
     }
 
@@ -391,7 +391,7 @@ class TradeCitizenController extends Controller
             $temp = $this->saveGenerateOrderid($myRequest);
             if(isset($temp->original) && !$temp->original["status"])
             {
-                throw new Exception($temp->original["message"]);
+                throw new Exception($temp->original["message"].(" :".$temp->original["data"]??""));
             }
             $this->begin();
             $TradeRazorPayRequest = new TradeRazorPayRequest();

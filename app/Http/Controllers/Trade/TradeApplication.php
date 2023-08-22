@@ -109,7 +109,7 @@ class TradeApplication extends Controller
         DB::beginTransaction();
         if($db1!=$db2 )
         $this->_DB->beginTransaction();
-        if($db1!=$db3)
+        if($db1!=$db3 && $db2!=$db3)
         $this->_NOTICE_DB->beginTransaction();
     }
     public function rollback()
@@ -120,7 +120,7 @@ class TradeApplication extends Controller
         DB::rollBack();
         if($db1!=$db2 )
         $this->_DB->rollBack();
-        if($db1!=$db3 )
+        if($db1!=$db3 && $db2!=$db3)
         $this->_NOTICE_DB->rollBack();
     }
      
@@ -133,7 +133,7 @@ class TradeApplication extends Controller
         DB::commit();
         if($db1!=$db2 )        
         $this->_DB->commit();
-        if($db1!=$db3 )
+        if($db1!=$db3 && $db2!=$db3)
         $this->_NOTICE_DB->commit();
     }
     public function getMstrForNewLicense(Request $request)

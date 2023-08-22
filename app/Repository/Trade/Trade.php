@@ -142,7 +142,7 @@ class Trade implements ITrade
         DB::beginTransaction();
         if($db1!=$db2 )
         $this->_DB->beginTransaction();
-        if($db1!=$db3)
+        if($db1!=$db3 && $db2!=$db3) 
         $this->_NOTICE_DB->beginTransaction();
     }
     public function rollback()
@@ -153,7 +153,7 @@ class Trade implements ITrade
         DB::rollBack();
         if($db1!=$db2 )
         $this->_DB->rollBack();
-        if($db1!=$db3 )
+        if($db1!=$db3 && $db2!=$db3)
         $this->_NOTICE_DB->rollBack();
     }
      
@@ -166,7 +166,7 @@ class Trade implements ITrade
         DB::commit();
         if($db1!=$db2 )        
         $this->_DB->commit();
-        if($db1!=$db3 )
+        if($db1!=$db3 && $db2!=$db3)
         $this->_NOTICE_DB->commit();
     }
     # Serial No : 01
