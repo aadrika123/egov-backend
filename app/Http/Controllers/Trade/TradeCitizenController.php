@@ -93,21 +93,37 @@ class TradeCitizenController extends Controller
 
     public function begin()
     {
+        $db1 = DB::connection()->getDatabaseName();
+        $db2 = $this->_DB->getDatabaseName();
+        $db3 = $this->_NOTICE_DB->getDatabaseName();
         DB::beginTransaction();
+        if($db1!=$db2 )
         $this->_DB->beginTransaction();
+        if($db1!=$db3 && $db2!=$db3)
         $this->_NOTICE_DB->beginTransaction();
     }
     public function rollback()
     {
+        $db1 = DB::connection()->getDatabaseName();
+        $db2 = $this->_DB->getDatabaseName();
+        $db3 = $this->_NOTICE_DB->getDatabaseName();
         DB::rollBack();
+        if($db1!=$db2 )
         $this->_DB->rollBack();
+        if($db1!=$db3 && $db2!=$db3)
         $this->_NOTICE_DB->rollBack();
     }
      
     public function commit()
     {
+        $db1 = DB::connection()->getDatabaseName();
+        $db2 = $this->_DB->getDatabaseName();
+        $db3 = $this->_NOTICE_DB->getDatabaseName();
+
         DB::commit();
+        if($db1!=$db2 )        
         $this->_DB->commit();
+        if($db1!=$db3 && $db2!=$db3)
         $this->_NOTICE_DB->commit();
     }
 
@@ -252,9 +268,10 @@ class TradeCitizenController extends Controller
             }
             $mNoticeNo = $request->noticeNo;
 
-            $refDenialDetails =  $this->_REPOSITORY_TRADE->getDenialFirmDetails($refUlbId, strtoupper(trim($mNoticeNo)));
+            // $refDenialDetails =  $this->_REPOSITORY_TRADE->getDenialFirmDetails($refUlbId, strtoupper(trim($mNoticeNo)));
+            $refDenialDetails = $this->_NOTICE->getDtlByNoticeNo(strtoupper(trim($mNoticeNo)),$refUlbId,);
             if ($refDenialDetails) {
-                $notice_date = Carbon::parse($refDenialDetails->noticedate)->format('Y-m-d'); //notice date
+                $notice_date = Carbon::parse($refDenialDetails['notice_date'])->format('Y-m-d'); //notice date
                 $denialAmount =  $this->_REPOSITORY_TRADE->getDenialAmountTrade($notice_date, $mNowDate);
                 $data['denialDetails'] = $refDenialDetails;
                 $data['denialAmount'] = $denialAmount;
@@ -374,7 +391,7 @@ class TradeCitizenController extends Controller
             $temp = $this->saveGenerateOrderid($myRequest);
             if(isset($temp->original) && !$temp->original["status"])
             {
-                throw new Exception($temp->original["message"]);
+                throw new Exception($temp->original["message"].(" :".$temp->original["data"]??""));
             }
             $this->begin();
             $TradeRazorPayRequest = new TradeRazorPayRequest();

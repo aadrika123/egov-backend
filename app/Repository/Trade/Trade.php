@@ -94,6 +94,7 @@ class Trade implements ITrade
     protected $_REF_TABLE;
     protected $_TRADE_CONSTAINT;
     protected $_NOTICE;
+    protected $_DOC_URL;
 
     protected $_MODEL_TradeParamFirmType;
     protected $_MODEL_TradeParamOwnershipType;
@@ -123,6 +124,7 @@ class Trade implements ITrade
         $this->_MODULE_ID = Config::get('module-constants.TRADE_MODULE_ID');
         $this->_TRADE_CONSTAINT = Config::get("TradeConstant");
         $this->_REF_TABLE = $this->_TRADE_CONSTAINT["TRADE_REF_TABLE"];
+        $this->_DOC_URL = Config::get("module-constants.DOC_URL");
 
         $this->_MODEL_TradeParamFirmType = new TradeParamFirmType($this->_DB_NAME );
         $this->_MODEL_TradeParamOwnershipType = new TradeParamOwnershipType($this->_DB_NAME );
@@ -134,21 +136,37 @@ class Trade implements ITrade
 
     public function begin()
     {
+        $db1 = DB::connection()->getDatabaseName();
+        $db2 = $this->_DB->getDatabaseName();
+        $db3 = $this->_NOTICE_DB->getDatabaseName();
         DB::beginTransaction();
+        if($db1!=$db2 )
         $this->_DB->beginTransaction();
+        if($db1!=$db3 && $db2!=$db3) 
         $this->_NOTICE_DB->beginTransaction();
     }
     public function rollback()
     {
+        $db1 = DB::connection()->getDatabaseName();
+        $db2 = $this->_DB->getDatabaseName();
+        $db3 = $this->_NOTICE_DB->getDatabaseName();
         DB::rollBack();
+        if($db1!=$db2 )
         $this->_DB->rollBack();
+        if($db1!=$db3 && $db2!=$db3)
         $this->_NOTICE_DB->rollBack();
     }
      
     public function commit()
     {
+        $db1 = DB::connection()->getDatabaseName();
+        $db2 = $this->_DB->getDatabaseName();
+        $db3 = $this->_NOTICE_DB->getDatabaseName();
+
         DB::commit();
+        if($db1!=$db2 )        
         $this->_DB->commit();
+        if($db1!=$db3 && $db2!=$db3)
         $this->_NOTICE_DB->commit();
     }
     # Serial No : 01
@@ -1355,6 +1373,7 @@ class Trade implements ITrade
             $levelComment = $mWorkflowTracks->getTracksByRefId($mRefTable, $licenseDetail->id)->map(function($val){  
                 $val->forward_date = $val->forward_date?Carbon::parse($val->forward_date)->format("d-m-Y"):"";
                 $val->track_date = $val->track_date?Carbon::parse($val->track_date)->format("d-m-Y"):"";
+                $val->duration = (Carbon::parse($val->forward_date)->diffInDays(Carbon::parse($val->track_date))) . " Days";
                 return $val;
             });
             $fullDetailsData['levelComment'] = $levelComment;
@@ -2601,7 +2620,7 @@ class Trade implements ITrade
             $transaction->delay_fee = number_format($delay_fee, 2);
             $transaction->denial_fee = number_format($denial_fee, 2);
             $transaction->paid_amount_in_words = getIndianCurrency($transaction->paid_amount);
-
+            $application->ulb_logo = $application->ulb_logo ? ($this->_DOC_URL."/".$application->ulb_logo):"";
             $data = [
                 "application" => $application,
                 "transaction" => $transaction,
@@ -2781,6 +2800,7 @@ class Trade implements ITrade
                 $pen += $val->amount;
             }
             $transaction->rate = $transaction->paid_amount - $pen;
+            $application->ulb_logo = $application->ulb_logo ? ($this->_DOC_URL."/".$application->ulb_logo):"";
             $data["application"] = $application;
             $data["transaction"] = $transaction;
             $data["penalty"]    = $penalty;
@@ -2900,6 +2920,7 @@ class Trade implements ITrade
             {
                 $this->temCalValidity($application);
             }
+            $application->ulb_logo = $application->ulb_logo ? ($this->_DOC_URL."/".$application->ulb_logo):"";
             $data["application"] = $application;
             $data = remove_null($data);
             return  responseMsg(true, "", $data);

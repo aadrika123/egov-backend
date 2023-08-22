@@ -883,12 +883,11 @@ class HoldingTaxController extends Controller
                 throw new Exception("Property Not Found");
 
             $propTrans = $mPropTrans->getPropTransactions($req->propId, 'property_id');         // Holding Payment History
-            if (!$propTrans || $propTrans->isEmpty())
-                throw new Exception("No Transaction Found");
-
-            $propTrans->map(function ($propTran) {
-                $propTran['tran_date'] = Carbon::parse($propTran->tran_date)->format('d-m-Y');
-            });
+            if ($propTrans || $propTrans->isNotEmpty())
+                // throw new Exception("No Transaction Found");
+                $propTrans->map(function ($propTran) {
+                    $propTran['tran_date'] = Carbon::parse($propTran->tran_date)->format('d-m-Y');
+                });
 
             $propSafId = $propertyDtls->saf_id;
 
@@ -1202,15 +1201,16 @@ class HoldingTaxController extends Controller
         // Mobile Tower
         if ($basicDetails->is_mobile_tower == true) {
             $safCalculation->_mobileTowerArea = $basicDetails->tower_area;
+            $dateFrom = $basicDetails->tower_installation_date;
             if ($basicDetails->tower_installation_date < $safCalculation->_effectiveDateRule2) {
-                $rule2 = $safCalculation->calculateRuleSet2("mobileTower", $onePercPenalty);
+                $rule2 = $safCalculation->calculateRuleSet2("mobileTower", $onePercPenalty, $dateFrom);
                 $rule2['floor'] = "mobileTower";
                 $rule2['usageFactor'] = $rule2['multiFactor'];
                 $rule2['arvPsf'] = $rule2['arv'];
                 array_push($array['arvRule'], $this->responseDemand($rule2)); // (16.1)
             }
 
-            $rule3 = $safCalculation->calculateRuleSet3("mobileTower", $onePercPenalty);
+            $rule3 = $safCalculation->calculateRuleSet3("mobileTower", $onePercPenalty, $dateFrom);
             $rule3['floor'] = "mobileTower";
             $rule3['rentalRate'] = $rule3['matrixFactor'];
             $rule3['cvArvPropTax'] = $rule3['arv'];
@@ -1219,15 +1219,16 @@ class HoldingTaxController extends Controller
         // Hoarding Board
         if ($basicDetails->is_hoarding_board == true) {
             $safCalculation->_hoardingBoard['area'] = $basicDetails->hoarding_area;
+            $dateFrom = $basicDetails->hoarding_installation_date;
             if ($basicDetails->hoarding_installation_date < $safCalculation->_effectiveDateRule2) {
-                $rule2 = $safCalculation->calculateRuleSet2("hoardingBoard", $onePercPenalty);
+                $rule2 = $safCalculation->calculateRuleSet2("hoardingBoard", $onePercPenalty, $dateFrom);
                 $rule2['floor'] = "hoardingBoard";
                 $rule2['usageFactor'] = $rule2['multiFactor'];
                 $rule2['arvPsf'] = $rule2['arv'];
                 array_push($array['arvRule'], $this->responseDemand($rule2)); // (16.1)
             }
 
-            $rule3 = $safCalculation->calculateRuleSet3("hoardingBoard", $onePercPenalty);
+            $rule3 = $safCalculation->calculateRuleSet3("hoardingBoard", $onePercPenalty, $dateFrom);
             $rule3['floor'] = "hoardingBoard";
             $rule3['rentalRate'] = $rule3['matrixFactor'];
             $rule3['cvArvPropTax'] = $rule3['arv'];
@@ -1236,15 +1237,16 @@ class HoldingTaxController extends Controller
         // Petrol Pump
         if ($basicDetails->is_petrol_pump == true) {
             $safCalculation->_petrolPump['area'] = $basicDetails->under_ground_area;
+            $dateFrom = $basicDetails->petrol_pump_completion_date;
             if ($basicDetails->petrol_pump_completion_date < $safCalculation->_effectiveDateRule2) {
-                $rule2 = $safCalculation->calculateRuleSet2("petrolPump", $onePercPenalty);
+                $rule2 = $safCalculation->calculateRuleSet2("petrolPump", $onePercPenalty, $dateFrom);
                 $rule2['floor'] = "petrolPump";
                 $rule2['usageFactor'] = $rule2['multiFactor'];
                 $rule2['arvPsf'] = $rule2['arv'];
                 array_push($array['arvRule'], $this->responseDemand($rule2)); // (16.1)
             }
 
-            $rule3 = $safCalculation->calculateRuleSet3("petrolPump", $onePercPenalty);
+            $rule3 = $safCalculation->calculateRuleSet3("petrolPump", $onePercPenalty, $dateFrom);
             $rule3['floor'] = "petrolPump";
             $rule3['rentalRate'] = $rule3['matrixFactor'];
             $rule3['cvArvPropTax'] = $rule3['arv'];

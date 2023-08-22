@@ -542,11 +542,13 @@ class SafCalculation
     {
         $readPropertyType = $this->_propertyDetails['propertyType'];
         if (in_array($readPropertyType, [$this->_vacantPropertyTypeId, $this->_individualPropTypeId])) {                                             // Vacant Land condition with independent building
-            $calculateQuaterlyRuleSets = $this->calculateQuaterlyRulesets("vacantLand");
-            $ruleSetsWithMobileTower = collect($this->_mobileQuaterlyRuleSets)->merge($calculateQuaterlyRuleSets);        // Collapse with mobile tower
-            $ruleSetsWithHoardingBoard = collect($this->_hoardingQuaterlyRuleSets)->merge($ruleSetsWithMobileTower);      // Collapse with hoarding board
-            $this->_GRID['vacantDemandDetails'] = $ruleSetsWithHoardingBoard;
-            $this->_GRID['details'] = $this->_GRID['vacantDemandDetails']->merge($this->_GRID['details'] ?? collect());
+            if (in_array($this->_propertyDetails['assessmentType'], [1, 'New Assessment']) || $readPropertyType == $this->_vacantPropertyTypeId) {      // checking assessment type for individual property and property type for vacant land
+                $calculateQuaterlyRuleSets = $this->calculateQuaterlyRulesets("vacantLand");
+                $ruleSetsWithMobileTower = collect($this->_mobileQuaterlyRuleSets)->merge($calculateQuaterlyRuleSets);        // Collapse with mobile tower
+                $ruleSetsWithHoardingBoard = collect($this->_hoardingQuaterlyRuleSets)->merge($ruleSetsWithMobileTower);      // Collapse with hoarding board
+                $this->_GRID['vacantDemandDetails'] = $ruleSetsWithHoardingBoard;
+                $this->_GRID['details'] = $this->_GRID['vacantDemandDetails']->merge($this->_GRID['details'] ?? collect());
+            }
         }
     }
 
@@ -593,10 +595,14 @@ class SafCalculation
             if ($dateFrom < '2016-04-01')
                 $dateFrom = '2016-04-01';
 
-            if ($this->_propertyDetails['propertyType'] == 2) {                 // For Independent Building
+            if ($this->_propertyDetails['propertyType'] == 2 && in_array($this->_propertyDetails['assessmentType'], [1, 'New Assessment'])) {                         // For Independent Building and New Assessment
                 $leastDatedFloor = collect($this->_floors)->sortBy('dateFrom');
                 $floorCalculationStartedDate = $leastDatedFloor->first()['dateFrom'];
                 $carbonDateUpto = Carbon::parse($floorCalculationStartedDate)->format('Y-m-d');
+
+                // Here we have to set the date upto range to last qtr before the floor upto date so that the vacant land tax not conflict to floor's upto date
+                $floorQtrDueDate = calculateQuaterDueDate($carbonDateUpto);
+                $carbonDateUpto = Carbon::parse($floorQtrDueDate)->addMonths(-3)->startOfMonth()->format('Y-m-d');
             }
 
             if ($this->_propertyDetails['propertyType'] == $this->_vacantPropertyTypeId) {   // Vacant Land
@@ -639,9 +645,6 @@ class SafCalculation
         }
 
         $collectRuleSets = collect($arrayRuleSet);
-
-        // if ($collectRuleSets->isEmpty())
-        //     throw new Exception("No Demand Generated due to invalid Date Range");
 
         $uniqueRuleSets = $collectRuleSets->unique('dueDate');
         $ruleSet = $uniqueRuleSets->values();
