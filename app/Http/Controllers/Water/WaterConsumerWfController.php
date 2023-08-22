@@ -53,7 +53,7 @@ class WaterConsumerWfController extends Controller
         );
         if ($validated->fails())
             return validationError($validated);
-            
+
         try {
             $user                   = authUser($req);
             $pages                  = $req->perPage ?? 10;
@@ -125,4 +125,34 @@ class WaterConsumerWfController extends Controller
             return responseMsgs(false, $e->getMessage(), [], '', '01', responseTime(), "POST", $req->deviceId);
         }
     }
+
+    /**
+     * | Get details of application for displaying 
+        | Serial No :
+        | Under Con
+     */
+    public function getConApplicationDetails(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'applicationId' => 'nullable|integer',
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+            $returDetails = $this->getConActiveAppDetails($request->applicationId)
+                ->where('wc.status', 2)
+                ->first();
+            if (!$returDetails) {
+                throw new Exception("Application Details Not found!");
+            }
+            return responseMsgs(true, "Application Detials!", remove_null($returDetails), '', '01', responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], '', '01', responseTime(), $request->getMethod(), $request->deviceId);
+        }
+    }
+
 }

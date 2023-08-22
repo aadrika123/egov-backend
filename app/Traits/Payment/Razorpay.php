@@ -104,7 +104,7 @@ trait Razorpay
             $saveRequestObj = new PaymentRequest();
             $saveRequestObj->saveRazorpayRequest($userId, $ulbId, $Returndata['orderId'], $request);
 
-            return $Returndata;
+            return (array)$Returndata;
         } catch (Exception $error) {
             return responseMsg(false, "Error Listed Below!", $error->getMessage());
         }

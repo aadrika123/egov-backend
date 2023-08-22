@@ -38,4 +38,13 @@ class WaterConsumerCharge extends Model
             "id" => $mWaterConsumerCharge->id
         ];
     }
+
+    /**
+     * | Get Consumer charges by application id
+     */
+    public function getConsumerChargesById($applicationId)
+    {
+        return WaterConsumerCharge::where('related_id', $applicationId)
+            ->where('status', 1);
+    }
 }

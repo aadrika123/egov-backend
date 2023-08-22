@@ -4,6 +4,7 @@ namespace App\Models\Citizen;
 
 use App\Models\Property\PropProperty;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -63,6 +64,9 @@ class ActiveCitizenUndercare extends Model
     public function getDetailsByCitizenId()
     {
         $user = auth()->user();
+        if (!$user) {
+            throw new Exception("User Details Not found!");
+        }
         return ActiveCitizenUndercare::where('citizen_id', $user->id)
             ->where('deactive_status', false)
             ->get();

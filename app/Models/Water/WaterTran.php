@@ -52,6 +52,12 @@ class WaterTran extends Model
             ->where('status', 1)
             ->orderByDesc('id');
     }
+    public function getTransNoForConsumer($applicationId, $applicationFor)
+    {
+        return WaterTran::where('related_id', $applicationId)
+            ->where('tran_type', $applicationFor)
+            ->where('status', 1);
+    }
 
     /**
      * | Get Transaction Details According to TransactionId

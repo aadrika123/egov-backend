@@ -91,6 +91,8 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
         Route::post('consumer/online-demand-payment', 'initiateOnlineDemandPayment');                   // Citizen
         Route::post('citizen/payment-history', 'paymentHistory');                                       // Citizen  
         Route::post('consumer/water-user-charges', 'getWaterUserCharges');                              // Admin / Citizen
+        Route::post('consumer/online-request-payment', 'initiateOnlineConRequestPayment');              // Citizen
+        Route::post('consumer/offline-request-payment', 'offlineConReqPayment');                        // Admin
 
         # Site inspection 
         Route::post('site-verification/save-site-details', 'saveSitedetails');                          // Admin
@@ -121,6 +123,9 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
         # Deactivation
         Route::post('admin/consumer/apply-deactivation', 'applyDeactivation');                          // Admin / Not Used
         Route::post('admin/consumer/demand-deactivation', 'consumerDemandDeactivation');  // Here       // Admin / Not used
+
+        # Ferrul Cleaning and Pipe shifting
+        Route::post('consumer/apply-consumer-request', 'applyConsumerRequest');                         // Admin / Citizen
     });
 
 
@@ -132,12 +137,13 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
     Route::controller(WaterConsumerWfController::class)->group(function () {
         Route::post('consumer/req/inbox', 'consumerInbox');                                         // Workflow
         Route::post('consumer/req/outbox', 'consumerOutbox');                                       // Workflow
-        Route::post('consumer/req/post-next-level', 'consumerPostNextLevel');           // Here
-        Route::post('consumer/req/list-req-docs', 'listDocToUpload');                   // Here
-        Route::post('consumer/req/doc-verify-reject', 'consumerDocVerifyReject');       // Here
-        Route::post('consumer/req/upload-document', 'consumerDocUpload');               // Here
-        Route::post('consumer/req/get-upload-documents', 'getConsumerDocs');            // Here
-        Route::post('consumer/req/approval-rejection', 'consumerApprovalRejection');    // Here
+        Route::post('consumer/req/post-next-level', 'consumerPostNextLevel');               // Here
+        Route::post('consumer/req/list-req-docs', 'listDocToUpload');                       // Here
+        Route::post('consumer/req/doc-verify-reject', 'consumerDocVerifyReject');           // Here
+        Route::post('consumer/req/upload-document', 'consumerDocUpload');                   // Here
+        Route::post('consumer/req/get-upload-documents', 'getConsumerDocs');                // Here
+        Route::post('consumer/req/approval-rejection', 'consumerApprovalRejection');        // Here
+        Route::post('consumer/req/get-application-details', 'getConApplicationDetails');     //                 
     });
 
     /**

@@ -114,7 +114,7 @@ class WaterConsumer extends Model
             ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_consumers.id')
             ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_consumers.ward_mstr_id')
             ->where('water_consumer_owners.' . $key, 'LIKE', '%' . $refVal . '%')
-            ->where('water_consumers.status', true)
+            ->where('water_consumers.status', 1)
             ->where('ulb_ward_masters.status', true);
     }
 
@@ -141,7 +141,7 @@ class WaterConsumer extends Model
             ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_consumers.id')
             ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_consumers.ward_mstr_id')
             ->where('water_approval_application_details.application_no', 'LIKE', '%' . $refVal . '%')
-            ->where('water_consumers.status', true)
+            ->where('water_consumers.status', 1)
             ->where('ulb_ward_masters.status', true);
     }
 
@@ -184,7 +184,7 @@ class WaterConsumer extends Model
             ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_consumers.id')
             ->where('water_consumers.user_id', authUser($req)->id)
             ->where('water_consumers.user_type', authUser($req)->user_type)
-            ->where('water_consumers.status', true)
+            ->where('water_consumers.status', 1)
             // ->where('water_consumers.ulb_id', authUser($req)->ulb_id)
             ->groupBy(
                 'water_consumers.id',
@@ -239,7 +239,7 @@ class WaterConsumer extends Model
 
             ->Join('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_consumers.ward_mstr_id')
             ->where('water_consumers.' . $key, $parameter)
-            ->where('water_consumers.status', true)
+            ->where('water_consumers.status', 1)
             ->firstOrFail();
     }
 
@@ -272,7 +272,7 @@ class WaterConsumer extends Model
             ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_consumers.id')
             ->where('water_consumers.id', $consumerId)
             ->where('water_consumer_demands.id', $demandId)
-            ->where('water_consumers.status', true)
+            ->where('water_consumers.status', 1)
             ->where('water_consumer_demands.status', true)
             ->where('water_consumer_owners.status', true)
             ->groupBy(
@@ -302,7 +302,7 @@ class WaterConsumer extends Model
     public function getConsumerDetailById($consumerId)
     {
         return WaterConsumer::where('id', $consumerId)
-            ->where('status', true)
+            ->where('status', 1)
             ->firstOrFail();
     }
 
@@ -355,7 +355,7 @@ class WaterConsumer extends Model
             ->join('ulb_masters', 'ulb_masters.id', 'water_consumers.ulb_id')
             ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_consumers.ward_mstr_id')
             ->where('water_consumers.' . $key, $refNo)
-            ->where('water_consumers.status', true)
+            ->where('water_consumers.status', 1)
             ->where('ulb_ward_masters.status', true)
             ->groupBy(
                 'water_consumers.saf_no',

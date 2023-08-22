@@ -675,7 +675,7 @@ class WaterConsumer extends Controller
             $request->all(),
             [
                 'consumerId'    => "required|digits_between:1,9223372036854775807",
-                'ulbId'         => "required",
+                'ulbId'         => "nullable|",
                 'reason'        => "required",
                 'remarks'       => "required"
             ]
@@ -720,6 +720,9 @@ class WaterConsumer extends Controller
             if ($user->user_type != $refUserType['1']) {
                 $request->request->add(['workflowId' => $refWorkflow]);
                 $roleDetails = $this->getRole($request);
+                if (!$roleDetails) {
+                    throw new Exception("Role detail Not found!");
+                }
                 $roleId = $roleDetails['wf_role_id'];
                 $refRequest = [
                     "applyFrom" => $user->user_type,
@@ -740,7 +743,7 @@ class WaterConsumer extends Controller
             $refRequest["finisherRoleId"]    = collect($finisherRoleId)->first()->role_id;
             $refRequest["roleId"]            = $roleId ?? null;
             $refRequest["ulbWorkflowId"]     = $ulbWorkflowId->id;
-            $refRequest["chargeCatagoryId"]  = $refConsumerCharges['WATER_DISCONNECTION'];
+            $refRequest["chargeCategoryId"]  = $refConsumerCharges['WATER_DISCONNECTION'];
             $refRequest["amount"]            = $chargeAmount->amount;
             $refRequest['userType']          = $user->user_type;
 
@@ -768,7 +771,7 @@ class WaterConsumer extends Controller
                     'workflowId'        => $ulbWorkflowId->id,
                     'refTableDotId'     => 'water_consumer_active_requests.id',             // Static                          // Static                              // Static
                     'refTableIdValue'   => $deactivatedDetails['id'],
-                    'user_id'           => $user->id ?? null,
+                    'user_id'           => $refRequest['empId'] ?? null,
                     'ulb_id'            => $ulbId,
                     'senderRoleId'      => $refRequest['empId'] ?? null,
                     'receiverRoleId'    => collect($initiatorRoleId)->first()->role_id,
@@ -791,6 +794,7 @@ class WaterConsumer extends Controller
         | Serial No : 06.01
         | Recheck the amount and the order from weaver committee 
         | Check if the consumer applied for other requests
+        | Ceheck the date of the consumer demand
      */
     public function PreConsumerDeactivationCheck($request, $user)
     {
@@ -1530,6 +1534,187 @@ class WaterConsumer extends Controller
             return responseMsgs(false, $e->getMessage(), [], "", "01", responseTime(), $request->getMethod(), $request->deviceId);
         }
     }
+
+
+    /**
+     * | Apply for Ferule cleaning and Pipe shifting
+        | Serial No :
+        | Working
+     */
+    public function applyConsumerRequest(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                "consumerId"  => 'required',
+                "remarks"     => 'required',
+                "mobileNo"    => 'required|numeric',            // Corresponding Mobile no
+                "requestType" => 'required|in:4,5'              // Charge Catagory Id
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+            $user       = authUser($request);
+            $penalty    = 0;                                  // Static
+            $consumerId = $request->consumerId;
+
+            $mWfWorkflow                    = new WfWorkflow();
+            $mWorkflowTrack                 = new WorkflowTrack();
+            $mWaterWaterConsumer            = new WaterWaterConsumer();
+            $mWaterConsumerActiveRequest    = new WaterConsumerActiveRequest();
+            $mwaterConsumerCharge           = new WaterConsumerCharge();
+            $mWaterConsumerChargeCategory   = new WaterConsumerChargeCategory();
+
+            $refChargeCatagory  = Config::get("waterConstaint.CONSUMER_CHARGE_CATAGORY");
+            $refUserType        = Config::get('waterConstaint.REF_USER_TYPE');
+            $refApplyFrom       = Config::get('waterConstaint.APP_APPLY_FROM');
+            $refModuleId        = Config::get('module-constants.WATER_MODULE_ID');
+
+            $waterConsumerDetails   = $mWaterWaterConsumer->getConsumerDetailById($consumerId);
+            $ulbId                  = $waterConsumerDetails['ulb_id'];
+            $request->merge(["ulbId" => $ulbId]);
+
+            # Check param for appliying for requests
+            $refRelatedDetails = $this->checkParamForFeruleAndPipe($request, $waterConsumerDetails);
+            $consumerCharges = $mWaterConsumerChargeCategory->getChargesByid($request->requestType);
+            if (!$consumerCharges || !in_array($request->requestType, [$refChargeCatagory['FERRULE_CLEANING_CHECKING'], $refChargeCatagory['PIPE_SHIFTING_ALTERATION']])) {
+                throw new Exception("Consumer charges not found");
+            }
+
+            # Get wf details
+            $ulbWorkflowId  = $mWfWorkflow->getulbWorkflowId($refRelatedDetails['workflowMasterId'], $ulbId);
+            if (!$ulbWorkflowId) {
+                throw new Exception("Respective ULB IS NOT MAPED TO WORKFLOW!");
+            }
+
+            # If the user is not citizen
+            if ($user->user_type != $refUserType['1']) {
+                $request->request->add(['workflowId' => $ulbWorkflowId->id]);
+                $roleDetails = $this->getRole($request);
+                if (!$roleDetails) {
+                    throw new exception('role not found');
+                }
+                $roleId = $roleDetails['wf_role_id'];
+                $refRequest = [
+                    "applyFrom" => $user->user_type,
+                    "empId"     => $user->id
+                ];
+            } else {
+                $refRequest = [
+                    "applyFrom" => $refApplyFrom['1'],
+                    "citizenId" => $user->id
+                ];
+            }
+
+            # Get Initiater and finisher role 
+            $refInitiaterRoleId  = $this->getInitiatorId($ulbWorkflowId->id);
+            $refFinisherRoleId   = $this->getFinisherId($ulbWorkflowId->id);
+            $finisherRoleId      = DB::select($refFinisherRoleId);
+            $initiatorRoleId     = DB::select($refInitiaterRoleId);
+            if (!$finisherRoleId || !$initiatorRoleId) {
+                throw new Exception('initiator or finisher not found ');
+            }
+            $refRequest["initiatorRoleId"]  = collect($initiatorRoleId)->first()->role_id;
+            $refRequest["finisherRoleId"]   = collect($finisherRoleId)->first()->role_id;
+            $refRequest["roleId"]           = $roleId ?? null;
+            $refRequest["userType"]         = $user->user_type;
+            $refRequest["amount"]           = $consumerCharges->amount + $penalty;
+            $refRequest["ulbWorkflowId"]    = $ulbWorkflowId->id;
+            $refRequest["chargeCategory"]   = $consumerCharges->charge_category;
+            $refRequest["chargeAmount"]     = $consumerCharges->amount;
+            $refRequest["ruleSet"]          = null;
+            $refRequest["chargeCategoryId"] = $consumerCharges->id;
+
+            DB::beginTransaction();
+            $idGeneration   = new PrefixIdGenerator($refRelatedDetails['idGenParam'], $ulbId);
+            $applicationNo  = $idGeneration->generate();
+            $applicationNo  = str_replace('/', '-', $applicationNo);
+
+            $consumerRequestDetails = $mWaterConsumerActiveRequest->saveRequestDetails($request, $waterConsumerDetails, $refRequest, $applicationNo);
+            $refRequest["relatedId"] = $consumerRequestDetails['id'];
+            $mwaterConsumerCharge->saveConsumerCharges($refRequest, $consumerId, $consumerCharges->charge_category);
+
+            # Save data in track
+            $metaReqs = new Request(
+                [
+                    'citizenId'         => $refRequest['citizenId'] ?? null,
+                    'moduleId'          => $refModuleId,
+                    'workflowId'        => $ulbWorkflowId->id,
+                    'refTableDotId'     => 'water_consumer_active_requests.id',             // Static    
+                    'refTableIdValue'   => $consumerRequestDetails['id'],
+                    'user_id'           => $user->id ?? null,
+                    'ulb_id'            => $ulbId,
+                    'senderRoleId'      => $refRequest['empId'] ?? null,
+                    'receiverRoleId'    => collect($initiatorRoleId)->first()->role_id,
+                ]
+            );
+            $mWorkflowTrack->saveTrack($metaReqs);
+            DB::commit();
+            $returnData = [
+                "ApplicationNo" => $applicationNo
+            ];
+            return responseMsgs(true, "Successfully applied for the Request!", $returnData, "", "01", responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), [], "", "01", responseTime(), $request->getMethod(), $request->deviceId);
+        }
+    }
+
+
+    /**
+     * | Check param before appliying for pipe shifting and ferrul cleaning
+        | Serial No :
+        | Under Con
+     */
+    public function checkParamForFeruleAndPipe($request, $waterConsumerDetails)
+    {
+        $mWaterConsumerActiveRequest    = new WaterConsumerActiveRequest();
+        $refWorkflow                    = Config::get('workflow-constants.WATER_CONSUMER_WF');
+        $refChargeCatagory              = Config::get('waterConstaint.CONSUMER_CHARGE_CATAGORY');
+        $refConParamId                  = Config::get('waterConstaint.PARAM_IDS');
+
+        if (!$waterConsumerDetails) {
+            throw new Exception("Water Consumer not found for given consumer Id!");
+        }
+        if ($request->requestType == $refChargeCatagory['FERRULE_CLEANING_CHECKING']) {
+            $workflowId = $refWorkflow['FERRULE_CLEANING_CHECKING'];
+            $refConParamId = $refConParamId['WFC'];
+        } else {
+            $workflowId = $refWorkflow['PIPE_SHIFTING_ALTERATION'];
+            $refConParamId = $refConParamId['WPS'];
+        }
+
+        # Check if the request is already running 
+        $isPerReq = $mWaterConsumerActiveRequest->getRequestByConId($request->consumerId)
+            ->where('charge_catagory_id', $request->requestType)
+            ->first();
+        if ($isPerReq) {
+            throw new Exception("Pre Request are in process!");
+        }
+        return [
+            "workflowMasterId"  => $workflowId,
+            "idGenParam"        => $refConParamId
+        ];
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

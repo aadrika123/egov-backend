@@ -31,4 +31,5 @@ class WaterConsumerChargeCategory extends Model
             ->where('status', 1)
             ->first();
     }
+
 }
