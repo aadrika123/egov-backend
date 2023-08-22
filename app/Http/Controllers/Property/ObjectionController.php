@@ -65,7 +65,7 @@ class ObjectionController extends Controller
     public function applyObjection(Request $request)
     {
         $request->validate([
-            'propId' => 'required|integer'
+            'propId' => 'required'
         ]);
         return $this->Repository->applyObjection($request);
     }

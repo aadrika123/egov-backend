@@ -95,16 +95,21 @@ class RainWaterHarvestingController extends Controller
     public function waterHarvestingApplication(Request $request)
     {
         try {
-            $request->validate([
-                // 'isWaterHarvestingBefore' => 'required',
-                'dateOfCompletion' => 'required|date',
-                'propertyId' => 'required',
-                'ulbId' => 'required'
-            ]);
-
-            $ulbId = $request->ulbId;
-            $userId = authUser($request)->id;
-            $userType = authUser($request)->user_type;
+            $validated = Validator::make(
+                $request->all(),
+                [
+                    'dateOfCompletion' => 'required|date',
+                    'propertyId' => 'required',
+                    'ulbId' => 'nullable'
+                ]
+            );
+            if ($validated->fails()) {
+                return validationError($validated);
+            }
+            $user = authUser($request);
+            $userId = $user->id;
+            $userType = $user->user_type;
+            $ulbId = $request->ulbId ?? $user->ulb_id;
             $track = new WorkflowTrack();
             $harParamId = Config::get('PropertyConstaint.HAR_PARAM_ID');
 
