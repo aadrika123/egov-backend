@@ -155,4 +155,27 @@ class WaterConsumerWfController extends Controller
         }
     }
 
+    /**
+     * | Get the Citizen applied applications 
+     * | Application list according to citizen 
+        | Serial No :
+        | Under Con
+     */
+    public function getRequestedApplication(Request $request)
+    {
+        try {
+            $user                           = authUser($request);
+            $mWaterConsumerActiveRequest    = new WaterConsumerActiveRequest();
+            $refUserType                    = Config::get('waterConstaint.REF_USER_TYPE');
+
+            # User type changes 
+            $detailsDisconnections = $mWaterConsumerActiveRequest->getApplicationByUser($user->id)->get();
+            if (!collect($detailsDisconnections)->first()) {
+                throw new Exception("Data not found!");
+            }
+            return responseMsgs(true, "list of disconnection ", remove_null($detailsDisconnections), "", "1.0", "350ms", "POST", $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", $e->getCode(), "1.0", "", 'POST', "");
+        }
+    }
 }

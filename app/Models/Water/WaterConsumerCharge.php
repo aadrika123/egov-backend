@@ -47,4 +47,27 @@ class WaterConsumerCharge extends Model
         return WaterConsumerCharge::where('related_id', $applicationId)
             ->where('status', 1);
     }
+
+
+
+    /**
+        | Serial No :
+        | Remove   
+     */
+
+    public function saveConsumerChargesDiactivation($consumerId, $meteReq, $var)
+    {
+        $mWaterConsumerCharge = new WaterConsumerCharge();
+        $mWaterConsumerCharge->consumer_id = $consumerId;
+        $mWaterConsumerCharge->charge_category = $meteReq["chargeCategory"]; // Access the correct key from $meteReq array
+        $mWaterConsumerCharge->charge_amount = $meteReq['chargeAmount'];
+        $mWaterConsumerCharge->penalty = $meteReq['penalty'];
+        $mWaterConsumerCharge->amount = $meteReq['amount'];
+        $mWaterConsumerCharge->rule_set = $meteReq['ruleSet'];
+        $mWaterConsumerCharge->charge_category_id = $meteReq['chargeCategoryID'];
+        $mWaterConsumerCharge->related_id    = $var['relatedId'];
+
+        $mWaterConsumerCharge->save();
+        return $mWaterConsumerCharge;
+    }
 }

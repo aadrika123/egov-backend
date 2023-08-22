@@ -1508,16 +1508,16 @@ class WaterConsumer extends Controller
                 $status = true;
                 $connectionType = $consumerMeterDetails->connection_type;
                 switch ($connectionType) {
-                    case ("1"):
+                    case ("1"):                                 // Static
                         $defaultTypes = ['Meter', 'Gallon', 'Meter/Fixed'];
                         break;
-                    case ("2"):
+                    case ("2"):                                 // Static
                         $defaultTypes = ['Meter'];
                         break;
-                    case ("3"):
+                    case ("3"):                                 // Static
                         $defaultTypes = ['Meter'];
                         break;
-                    case ("4"):
+                    case ("4"):                                 // Static
                         $defaultTypes = ['Meter'];
                         break;
                 }
@@ -1700,6 +1700,145 @@ class WaterConsumer extends Controller
     }
 
 
+    /**
+     * this function for apply disconnection water.
+        | Change the process
+        | Remove
+     */
+    public function applyWaterDisconnection(Request $request)
+    {
+        $request->validate([
+            "consumerId"    => 'required',
+            "remarks"       => 'required',
+            "reason"        => 'required',
+            "mobileNo"      => 'required|numeric',
+            "address"       => 'required',
+
+        ]);
+        try {
+            $user                         = authUser($request);
+            $penalty                      = 0;
+            $consumerId                   = $request->consumerId;
+            $applydate                    = Carbon::now();
+            $currentDate                  = $applydate->format('Y-m-d H:i:s');
+            $mWaterConsumer               = new WaterWaterConsumer();
+            $ulbWorkflowObj               = new WfWorkflow();
+            $mwaterConsumerDemand         = new WaterConsumerDemand();
+            $mWaterConsumerActive         = new WaterConsumerActiveRequest();
+            $mwaterConsumerCharge         = new WaterConsumerCharge();
+            $mWaterConsumerChargeCategory = new WaterConsumerChargeCategory();
+            $waterTrack                   = new WorkflowTrack();
+            $refUserType                  = Config::get('waterConstaint.REF_USER_TYPE');
+            $refApplyFrom                 = Config::get('waterConstaint.APP_APPLY_FROM');
+            $watercharges                 = Config::get("waterConstaint.CONSUMER_CHARGE_CATAGORY");
+            $waterRole                    = Config::get("waterConstaint.ROLE-LABEL");
+            $refWorkflow                  = config::get('workflow-constants.WATER_DISCONNECTION');
+            $refConParamId                = Config::get("waterConstaint.PARAM_IDS");
+            $waterConsumer                = WaterWaterConsumer::where('id', $consumerId)->first(); // Get the consumer ID from the database based on the given consumer Id
+            if (!$waterConsumer) {
+                throw new Exception("Water Consumer not found on the given consumer Id");
+            }
+            // $this->checkprecondition($request);
+            $ulbId      = $request->ulbId ?? $waterConsumer['ulb_id'];
+            $ulbWorkflowId  = $ulbWorkflowObj->getulbWorkflowId($refWorkflow, $ulbId);
+            if (!$ulbWorkflowId) {
+                throw new Exception("Respective ULB IS NOT MAPED TO WATER WORKFLOW");
+            }
+            $refInitiaterRoleId  = $this->getInitiatorId($ulbWorkflowId->id);
+            $refFinisherRoleId   = $this->getFinisherId($ulbWorkflowId->id);
+            $finisherRoleId      = DB::select($refFinisherRoleId);
+            $initiatorRoleId     = DB::select($refInitiaterRoleId);
+            if (!$finisherRoleId || !$initiatorRoleId) {
+                throw new Exception('initiator or finisher not found ');
+            }
+
+
+            $consumerCharges = $mWaterConsumerChargeCategory->getChargesByid($watercharges['WATER_DISCONNECTION']);
+            if ($consumerCharges == null) {
+                throw new Exception("Consumer charges not found");
+            }
+            $meteReq = [
+                "chargeAmount"      => $consumerCharges->amount,
+                "chargeCategory"    => $consumerCharges->charge_category,
+                "penalty"           => $penalty,
+                "amount"            => $consumerCharges->amount + $penalty,
+                "ruleSet"           => "test",
+                "ulbId"             => $waterConsumer->ulb_id,
+                "applydate"         => $currentDate,
+                "wardmstrId"        => $waterConsumer->ward_mstr_id,
+                "empDetailsId"      => $waterConsumer->emp_details_id,
+                "chargeCategoryID"  => $consumerCharges->id,
+                "ulbWorkflowId"     => $ulbWorkflowId->id
+
+            ];
+            # If the user is not citizen
+            if ($user->user_type != $refUserType['1']) {
+                $request->request->add(['workflowId' => $refWorkflow]);
+                $roleDetails = $this->getRole($request);
+                $roleId = $roleDetails['wf_role_id'];
+                $refRequest = [
+                    "applyFrom" => $user->user_type,
+                    "empId"     => $user->id
+                ];
+            } else {
+                $refRequest = [
+                    "applyFrom" => $refApplyFrom['1'],
+                    "citizenId" => $user->id
+                ];
+            }
+
+            $refRequest["initiatorRoleId"]   = collect($initiatorRoleId)->first()->role_id;
+            $refRequest["finisherRoleId"]    = collect($finisherRoleId)->first()->role_id;
+            $refRequest['roleId']            = $roleId ?? null;
+            $refRequest['userType']          = $user->user_type;
+            DB::beginTransaction();
+            // Save water disconnection charge using the saveConsumerCharges function
+            $idGeneration            =  new PrefixIdGenerator($refConParamId['WCD'], $ulbId);
+            $applicationNo           =  $idGeneration->generate();
+            $applicationNo           = str_replace('/', '-', $applicationNo);
+            $savewaterDisconnection = $mWaterConsumerActive->saveWaterConsumerActive($request, $consumerId, $meteReq, $refRequest, $applicationNo); // Call the storeActive method of WaterConsumerActiveRequest and pass the consumerId
+            $var = [
+                'relatedId' => $savewaterDisconnection->id,
+                "Status"    => 2,
+
+            ];
+
+            $savewaterDisconnection = $mwaterConsumerCharge->saveConsumerChargesDiactivation($consumerId, $meteReq, $var);
+            # save for  work flow track
+            if ($user->user_type == "Citizen") {                                                        // Static
+                $receiverRoleId = $waterRole['DA'];
+            }
+            if ($user->user_type != "Citizen") {                                                        // Static
+                $receiverRoleId = collect($initiatorRoleId)->first()->role_id;
+            }
+            $metaReqs = new Request(
+                [
+                    'citizenId'         => $refRequest['citizenId'] ?? null,
+                    'moduleId'          => 2,
+                    'workflowId'        => $ulbWorkflowId['id'],
+                    'refTableDotId'     => 'water_consumer_active_request.id',                                     // Static
+                    'refTableIdValue'   => $var['relatedId'],
+                    'user_id'           => $user->id,
+                    'ulb_id'            => $ulbId,
+                    'senderRoleId'      => $senderRoleId ?? null,
+                    'receiverRoleId'    => $receiverRoleId ?? null
+                ]
+            );
+            $waterTrack->saveTrack($metaReqs);
+            $mWaterConsumer->dissconnetConsumer($consumerId, $var['Status']);
+            $returnData = [
+                'applicationDetails'    => $meteReq,
+                'applicationNo'         => $applicationNo,
+                'Id'                    => $var['relatedId'],
+
+            ];
+            DB::commit();
+            return responseMsgs(true, "Successfully apply disconnection ", remove_null($returnData), "1.0", "350ms", "POST", $request->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), "", $e->getCode(), "1.0", "", 'POST', "");
+        }
+    }
 
 
 

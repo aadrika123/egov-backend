@@ -85,4 +85,51 @@ class WaterConsumerActiveRequest extends Model
             ->where('status', 1)
             ->update($req);
     }
+
+    /**
+     * | Get the Application according to user details 
+     */
+    public function getApplicationByUser($userId)
+    {
+        return WaterConsumerActiveRequest::where('citizen_id', $userId)
+            ->where('status', 1)
+            ->orderByDesc('id');
+    }
+
+
+
+
+
+
+
+
+    ///////////////////////////////////////////////////////////////////////////////
+    public function saveWaterConsumerActive($req, $consumerId, $meteReq, $refRequest, $applicationNo)
+    {
+        $mWaterConsumeActive = new WaterConsumerActiveRequest();
+        $mWaterConsumeActive->id;
+        $mWaterConsumeActive->ulb_id                   = $meteReq['ulbId'];
+        $mWaterConsumeActive->application_no           = $applicationNo;
+        $mWaterConsumeActive->consumer_id              = $consumerId;
+        $mWaterConsumeActive->emp_details_id           = $refRequest['empId'] ?? null;
+        $mWaterConsumeActive->citizen_id               = $refRequest["citizenId"] ?? null;
+        $mWaterConsumeActive->apply_from               = $refRequest['applyFrom'];
+        $mWaterConsumeActive->apply_date               = $meteReq['applydate'];
+        $mWaterConsumeActive->amount                   = $meteReq['amount'];
+        $mWaterConsumeActive->reason                   = $req->reason;
+        $mWaterConsumeActive->remarks                  = $req->remarks;
+        $mWaterConsumeActive->doc_verify_status        = $req->doc_verify_status;
+        // $mWaterConsumeActive->payment_status           = $req->payment_status;
+        $mWaterConsumeActive->charge_catagory_id       = $meteReq['chargeCategoryID'];
+        $mWaterConsumeActive->corresponding_mobile_no  = $req->mobileNo;
+        $mWaterConsumeActive->corresponding_address    = $req->address;
+        $mWaterConsumeActive->ward_mstr_id             = $meteReq['wardmstrId'];
+        $mWaterConsumeActive->initiator                = $refRequest['initiatorRoleId'];
+        $mWaterConsumeActive->finisher                 = $refRequest['finisherRoleId'];
+        $mWaterConsumeActive->user_type                = $refRequest['userType'];
+        $mWaterConsumeActive->workflow_id              = $meteReq['ulbWorkflowId'];
+        $mWaterConsumeActive->current_role             = $refRequest['initiatorRoleId'];
+        $mWaterConsumeActive->save();
+        return $mWaterConsumeActive;
+    }
 }
