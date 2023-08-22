@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class PaymentRequest extends Model
 {
     use HasFactory;
-    protected $connection = 'pgsql_master';
+    // protected $connection = 'pgsql_master';
 
 
     /**

@@ -336,7 +336,6 @@ class WaterNewConnection implements IWaterNewConnection
                 // $temp = Http::withHeaders([])
                 //     ->post($url . $endPoint, $myRequest);                                                   // Static
                 // $temp = $temp['data'];
-                return responseMsgs(true, "", $temp, "", "01", responseTime(), $request->getMethod(), $request->deviceId);
                 
                 $RazorPayRequest = new WaterRazorPayRequest;
                 $RazorPayRequest->related_id        = $application->id;
