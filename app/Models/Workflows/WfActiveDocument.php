@@ -11,7 +11,7 @@ class WfActiveDocument extends Model
 {
     use HasFactory;
     protected $guarded = [];
-    protected $connection = 'pgsql_master';
+    // protected $connection = 'pgsql_master';
 
     /**
      * | Store Wf Active Documents
