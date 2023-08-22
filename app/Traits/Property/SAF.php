@@ -205,6 +205,7 @@ trait SAF
         $array = array();
 
         $array['ward'] = $req['ward_mstr_id'];
+        $array['assessmentType'] = $req['assessment_type'];
         $array['propertyType'] = $req['prop_type_mstr_id'];
         $array['dateOfPurchase'] = $req['land_occupation_date'];
         $array['landOccupationDate'] = $req['land_occupation_date'];
