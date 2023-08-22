@@ -99,7 +99,7 @@ class TradeCitizen implements ITradeCitizen
         DB::beginTransaction();
         if($db1!=$db2 )
         $this->_DB->beginTransaction();
-        if($db1!=$db3)
+        if($db1!=$db3 && $db2!=$db3)
         $this->_NOTICE_DB->beginTransaction();
     }
     public function rollback()
@@ -110,7 +110,7 @@ class TradeCitizen implements ITradeCitizen
         DB::rollBack();
         if($db1!=$db2 )
         $this->_DB->rollBack();
-        if($db1!=$db3 )
+        if($db1!=$db3 && $db2!=$db3)
         $this->_NOTICE_DB->rollBack();
     }
      
@@ -123,7 +123,7 @@ class TradeCitizen implements ITradeCitizen
         DB::commit();
         if($db1!=$db2 )        
         $this->_DB->commit();
-        if($db1!=$db3 )
+        if($db1!=$db3 && $db2!=$db3)
         $this->_NOTICE_DB->commit();
     }
 
