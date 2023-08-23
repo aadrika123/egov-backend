@@ -148,7 +148,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
         Route::post('consumer/req/approval-rejection', 'consumerApprovalRejection');                // Here
 
         # Consuemr Request View Api
-        Route::post('consumer/req/get-application-details', 'getConApplicationDetails');            // Admin                 
+        Route::post('get-details-applications', 'getConApplicationDetails');            // Admin                 
         Route::post('get-details-disconnections', 'getRequestedApplication');                       // Citizen / Changes the route name
     });
 
