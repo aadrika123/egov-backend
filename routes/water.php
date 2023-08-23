@@ -122,12 +122,12 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
         # Testing
         Route::post('check-doc', 'checkDoc'); // testing document service
 
-        # Deactivation
+        # Deactivation // Arshad
         Route::post('apply-water-disconnection', 'applyWaterDisconnection');                //<----remove
         Route::post('admin/consumer/apply-deactivation', 'applyDeactivation');                              // Admin / Not Used
         Route::post('admin/consumer/demand-deactivation', 'consumerDemandDeactivation');    // Here         // Admin / Not used
 
-        # Ferrul Cleaning and Pipe shifting
+        # Ferrul Cleaning and Pipe shifting // Arshad
         Route::post('applywater-ferule-cleaning', 'applyConsumerRequest');                  //<---- cheange the route name Admin / Citizen
     });
 
@@ -147,8 +147,8 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
         Route::post('consumer/req/get-upload-documents', 'getConsumerDocs');                        // Here
         Route::post('consumer/req/approval-rejection', 'consumerApprovalRejection');                // Here
 
-        # Consuemr Request View Api
-        Route::post('get-details-applications', 'getConApplicationDetails');            // Admin                 
+        # Consuemr Request View Api // Arshad
+        Route::post('get-details-applications', 'getConApplicationDetails');                        // Admin / Changes             
         Route::post('get-details-disconnections', 'getRequestedApplication');                       // Citizen / Changes the route name
     });
 

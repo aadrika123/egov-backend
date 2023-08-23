@@ -2186,7 +2186,7 @@ class WaterPaymentController extends Controller
             throw new Exception("Transaction details is present in Database!");
         }
         return [
-            "chargeCatagory" => $ref[$applicationDetails->charge_catagory_id]
+            "chargeCatagory" => $ref["$applicationDetails->charge_catagory_id"]
         ];
     }
 
