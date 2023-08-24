@@ -144,7 +144,8 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
         Route::post('consumer/req/post-next-level', 'consumerPostNextLevel');                       // Here
         Route::post('consumer/req/list-req-docs', 'listDocToUpload');                               // Here
         Route::post('consumer/req/doc-verify-reject', 'consumerDocVerifyReject');                   // Here
-        Route::post('consumer/req/get-upload-documents', 'getConsumerDocs');                        // Here
+        Route::post('consumer/req/get-upload-documents', 'getConsumerDocs'); 
+        Route::post('consumer/req/get-worklfow-by-id','getWorkflow');                       // Here
         Route::post('consumer/req/approval-rejection', 'consumerApprovalRejection');                // Here
 
         # Consuemr Request View Api // Arshad
