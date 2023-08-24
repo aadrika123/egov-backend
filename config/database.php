@@ -137,6 +137,25 @@ return [
                 PDO::ATTR_PERSISTENT => true,
             ],
         ],
+        
+        #_For Water Service
+        'pgsql_water' => [
+            'driver' => 'pgsql',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_WATER_HOST', '127.0.0.1'),
+            'port' => env('DB_WATER_PORT', '5432'),
+            'database' => env('DB_WATER_DATABASE', 'forge'),
+            'username' => env('DB_WATER_USERNAME', 'forge'),
+            'password' => env('DB_WATER_PASSWORD', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'schema' => 'public',
+            'sslmode' => 'prefer',
+            'options'   => [
+                PDO::ATTR_PERSISTENT => true,
+            ],
+        ],
 
         'sqlsrv' => [
             'driver' => 'sqlsrv',
