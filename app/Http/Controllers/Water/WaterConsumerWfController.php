@@ -41,13 +41,50 @@ class WaterConsumerWfController extends Controller
 
     private $_waterRoles;
     private $_waterModuleId;
+    protected $_DB_NAME;
+    protected $_DB;
 
     public function __construct()
     {
         $this->_waterRoles      = Config::get('waterConstaint.ROLE-LABEL');
         $this->_waterModuleId   = Config::get('module-constants.WATER_MODULE_ID');
+        $this->_DB_NAME = "pgsql_water";
+        $this->_DB = DB::connection($this->_DB_NAME);
     }
 
+    /**
+     * | Database transaction
+     */
+    public function begin()
+    {
+        $db1 = DB::connection()->getDatabaseName();
+        $db2 = $this->_DB->getDatabaseName();
+        $this->begin();
+        if ($db1 != $db2)
+            $this->_DB->beginTransaction();
+    }
+    /**
+     * | Database transaction
+     */
+    public function rollback()
+    {
+        $db1 = DB::connection()->getDatabaseName();
+        $db2 = $this->_DB->getDatabaseName();
+        $this->rollback();
+        if ($db1 != $db2)
+            $this->_DB->rollBack();
+    }
+    /**
+     * | Database transaction
+     */
+    public function commit()
+    {
+        $db1 = DB::connection()->getDatabaseName();
+        $db2 = $this->_DB->getDatabaseName();
+        $this->commit();
+        if ($db1 != $db2)
+            $this->_DB->commit();
+    }
 
     /**
      * | List the consumer request inbox details 

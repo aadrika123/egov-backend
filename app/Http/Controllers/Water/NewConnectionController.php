@@ -77,14 +77,52 @@ class NewConnectionController extends Controller
     private $_waterRoles;
     protected $_commonFunction;
     private $_waterModulId;
+    protected $_DB_NAME;
+    protected $_DB;
 
     public function __construct(iNewConnection $newConnection)
     {
+        $this->_DB_NAME = "pgsql_water";
+        $this->_DB = DB::connection($this->_DB_NAME);
         $this->_commonFunction = new CommonFunction();
         $this->newConnection = $newConnection;
         $this->_dealingAssistent = Config::get('workflow-constants.DEALING_ASSISTENT_WF_ID');
         $this->_waterRoles = Config::get('waterConstaint.ROLE-LABEL');
         $this->_waterModulId = Config::get('module-constants.WATER_MODULE_ID');
+    }
+
+    /**
+     * | Database transaction
+     */
+    public function begin()
+    {
+        $db1 = DB::connection()->getDatabaseName();
+        $db2 = $this->_DB->getDatabaseName();
+        $this->begin();
+        if ($db1 != $db2)
+            $this->_DB->beginTransaction();
+    }
+    /**
+     * | Database transaction
+     */
+    public function rollback()
+    {
+        $db1 = DB::connection()->getDatabaseName();
+        $db2 = $this->_DB->getDatabaseName();
+        $this->rollback();
+        if ($db1 != $db2)
+            $this->_DB->rollBack();
+    }
+    /**
+     * | Database transaction
+     */
+    public function commit()
+    {
+        $db1 = DB::connection()->getDatabaseName();
+        $db2 = $this->_DB->getDatabaseName();
+        $this->commit();
+        if ($db1 != $db2)
+            $this->_DB->commit();
     }
 
 
@@ -100,7 +138,7 @@ class NewConnectionController extends Controller
         try {
             return $this->newConnection->store($request);
         } catch (Exception $error) {
-            DB::rollBack();
+            $this->rollback();
             return responseMsg(false, $error->getMessage(), "");
         }
     }
@@ -292,7 +330,7 @@ class NewConnectionController extends Controller
         try {
             return $this->newConnection->postNextLevel($request);
         } catch (Exception $error) {
-            DB::rollBack();
+            $this->rollback();
             return responseMsg(false, $error->getMessage(), "");
         }
     }
@@ -384,12 +422,12 @@ class NewConnectionController extends Controller
             if ($roleId != $waterDetails->finisher) {
                 throw new Exception("You are not the Finisher!");
             }
-            DB::beginTransaction();
+            $this->begin();
             $returnData = $this->newConnection->approvalRejectionWater($request, $roleId);
-            DB::commit();
+            $this->commit();
             return $returnData;
         } catch (Exception $e) {
-            DB::rollBack();
+            $this->rollback();
             return responseMsg(false, $e->getMessage(), "");
         }
     }
@@ -435,7 +473,7 @@ class NewConnectionController extends Controller
                 'refTableIdValue'   => $applicationId->id,
                 'message'           => $request->comment
             ];
-            DB::beginTransaction();
+            $this->begin();
             if ($userType != 'Citizen') {                                                           // Static
                 $roleReqs = new Request([
                     'workflowId' => $applicationId->workflow_id,
@@ -453,10 +491,10 @@ class NewConnectionController extends Controller
             }
             $request->request->add($metaReqs);
             $workflowTrack->saveTrack($request);
-            DB::commit();
+            $this->commit();
             return responseMsgs(true, "You Have Commented Successfully!!", ['Comment' => $request->comment], "010108", "1.0", "427ms", "POST", "");
         } catch (Exception $e) {
-            DB::rollBack();
+            $this->rollback();
             return responseMsg(false, $e->getMessage(), "");
         }
     }
@@ -624,7 +662,7 @@ class NewConnectionController extends Controller
             $role = $this->_commonFunction->getUserRoll($user->id, $mWaterApplication->ulb_id, $refWorkflowId);
             $this->btcParamcheck($role, $mWaterApplication);
 
-            DB::beginTransaction();
+            $this->begin();
             # if application is not applied by citizen 
             if ($mWaterApplication->apply_from != $refApplyFrom['1']) {
                 $mWaterApplication->current_role = $mWaterApplication->initiator_role_id;
@@ -645,10 +683,10 @@ class NewConnectionController extends Controller
             $req->request->add($metaReqs);
             $WorkflowTrack->saveTrack($req);
 
-            DB::commit();
+            $this->commit();
             return responseMsgs(true, "Successfully Done", "", "", "1.0", "350ms", "POST", $req->deviceId);
         } catch (Exception $e) {
-            DB::rollBack();
+            $this->rollback();
             return responseMsg(false, $e->getMessage(), "");
         }
     }
@@ -705,15 +743,15 @@ class NewConnectionController extends Controller
             $applicantDetals = $mWaterApplication->getWaterApplicationsDetails($req->applicationId);
             $this->checkParamsForApplicationDelete($applicantDetals, $user);
 
-            DB::beginTransaction();
+            $this->begin();
             $mWaterApplication->deleteWaterApplication($req->applicationId);
             $mWaterApplicant->deleteWaterApplicant($req->applicationId);
             $mWaterConnectionCharge->deleteWaterConnectionCharges($req->applicationId);
             $mWaterPenaltyInstallment->deleteWaterPenelty($req->applicationId);
-            DB::commit();
+            $this->commit();
             return responseMsgs(true, "Application Successfully Deleted", "", "", "1.0", "", "POST", $req->deviceId);
         } catch (Exception $e) {
-            DB::rollBack();
+            $this->rollback();
             return responseMsg(false, $e->getMessage(), "");
         }
     }
@@ -775,7 +813,7 @@ class NewConnectionController extends Controller
             $refWaterApplications = $mWaterApplication->getApplicationById($refApplicationId)->firstorFail();
             $this->checkEditParameters($req, $refWaterApplications);
 
-            DB::beginTransaction();
+            $this->begin();
             if ($refWaterApplications->current_role == $levelRoles['BO']) {
                 $this->boApplicationEdit($req, $refWaterApplications, $mWaterApplication);
                 return responseMsgs(true, "application Modified!", "", "", "01", "ms", "POST", "");
@@ -807,10 +845,10 @@ class NewConnectionController extends Controller
             //     'owners'                => $that,
             // ])
             $repNewConnectionRepository->store($req); // here<-----------------------
-            DB::commit();
+            $this->commit();
             return responseMsgs(true, "Successfully Updated the Data", "", 010124, 1.0, "308ms", "POST", $req->deviceId);
         } catch (Exception $e) {
-            DB::rollBack();
+            $this->rollback();
             return responseMsgs(false, $e->getMessage(), "", 010124, 1.0, "308ms", "POST", $req->deviceId);
         }
     }
@@ -1016,7 +1054,7 @@ class NewConnectionController extends Controller
                 $this->checkParamForDocUpload($isCitizen, $getWaterDetails, $user);
             }
 
-            DB::beginTransaction();
+            $this->begin();
             $ifDocExist = $mWfActiveDocument->isDocCategoryExists($getWaterDetails->id, $getWaterDetails->workflow_id, $refmoduleId, $req->docCategory, $req->ownerId)->first();   // Checking if the document is already existing or not
             $metaReqs = new Request($metaReqs);
             if (collect($ifDocExist)->isEmpty()) {
@@ -1049,10 +1087,10 @@ class NewConnectionController extends Controller
                     $mWaterApplication->updateParkedstatus($status, $applicationId);
                 }
             }
-            DB::commit();
+            $this->commit();
             return responseMsgs(true, "Document Uploadation Successful", "", "", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            DB::rollBack();
+            $this->rollback();
             return responseMsgs(false, $e->getMessage(), "", "", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
@@ -1968,7 +2006,7 @@ class NewConnectionController extends Controller
             if ($ifFullDocVerified == 1)
                 throw new Exception("Document Fully Verified");
 
-            DB::beginTransaction();
+            $this->begin();
             if ($req->docStatus == "Verified") {
                 $status = 1;
             }
@@ -1993,10 +2031,10 @@ class NewConnectionController extends Controller
             if ($ifFullDocVerifiedV1 == 1) {                                        // If The Document Fully Verified Update Verify Status
                 $mWaterApplication->updateAppliVerifyStatus($applicationId);
             }
-            DB::commit();
+            $this->commit();
             return responseMsgs(true, $req->docStatus . " Successfully", "", "010204", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            DB::rollBack();
+            $this->rollback();
             return responseMsgs(false, $e->getMessage(), "", "010204", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
@@ -2359,7 +2397,7 @@ class NewConnectionController extends Controller
                 ->where('order_officer', $refJeRole)
                 ->first();
 
-            DB::beginTransaction();
+            $this->begin();
             $mWaterSiteInspectionsScheduling->cancelInspectionDateTime($refApplicationId);
             $mWaterConnectionCharge->deactivateSiteCharges($refApplicationId, $refSiteInspection);
             $mWaterPenaltyInstallment->deactivateSitePenalty($refApplicationId, $refSiteInspection);
@@ -2368,10 +2406,10 @@ class NewConnectionController extends Controller
             if (!is_null($refSiteInspection)) {
                 $mWaterSiteInspection->deactivateSiteDetails($refSiteInspection->site_inspection_id);
             }
-            DB::commit();
+            $this->commit();
             return responseMsgs(true, "Scheduled Date is Cancelled!", "", "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
-            DB::rollBack();
+            $this->rollback();
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", "");
         }
     }
@@ -2422,17 +2460,17 @@ class NewConnectionController extends Controller
             $mWaterSiteInspectionsScheduling = new WaterSiteInspectionsScheduling();
             $refDate = Carbon::now()->format('Y-m-d');
 
-            DB::beginTransaction();
+            $this->begin();
             $mWaterSiteInspectionsScheduling->saveSiteDateTime($request);
             if ($request->inspectionDate == $refDate) {
                 $canView['canView'] = true;
             } else {
                 $canView['canView'] = false;
             }
-            DB::commit();
+            $this->commit();
             return responseMsgs(true, "Date for the Site Inspection is Saved!", $canView, "", "01", ".ms", "POST", "");
         } catch (Exception $e) {
-            DB::rollBack();
+            $this->rollback();
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", "");
         }
     }
@@ -2571,15 +2609,15 @@ class NewConnectionController extends Controller
                 'inspectionDate'    => $currentDate,
                 'inspectionTime'    => $currentTime
             ]);
-            DB::beginTransaction();
+            $this->begin();
             $mWaterSiteInspection->saveOnlineSiteDetails($request);
             if ($refTechnicalDetails) {
                 $mWaterSiteInspection->deactivateSiteDetails($refTechnicalDetails->site_inspection_id);
             }
-            DB::commit();
+            $this->commit();
             return responseMsgs(true, "Technical Inspection Completed!", "", "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
-            DB::rollBack();
+            $this->rollback();
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", "");
         }
     }
@@ -2757,7 +2795,7 @@ class NewConnectionController extends Controller
     //         $mWaterApplication = new WaterApplication();
 
     //         $mWaterApplication->getWaterApplicationsDetails($applicationId);
-    //         DB::beginTransaction();
+    //         $this->begin();
     //         #check full doc upload
     //         $refCheckDocument = $this->checkFullDocUpload($req);
     //         # Update the Doc Upload Satus in Application Table
@@ -2768,7 +2806,7 @@ class NewConnectionController extends Controller
     //             $status = true;
     //             $mWaterApplication->updateParkedstatus($status, $applicationId);
     //         }
-    //         DB::commit();
+    //         $this->commit();
     //         if ($response == false)
     //             throw new Exception("Full document not uploaded!");
     //         return responseMsgs(true, "Document Uploadation Successful", "", "", "1.0", "", "POST", $req->deviceId ?? "");
