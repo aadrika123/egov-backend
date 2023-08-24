@@ -79,6 +79,8 @@ class WaterPaymentController extends Controller
     private $_accDescription;
     private $_departmentSection;
     private $_paymentModes;
+    protected $_DB_NAME;
+    protected $_DB;
 
     public function __construct()
     {
@@ -89,6 +91,42 @@ class WaterPaymentController extends Controller
         $this->_accDescription      = Config::get('waterConstaint.ACCOUNT_DESCRIPTION');
         $this->_departmentSection   = Config::get('waterConstaint.DEPARTMENT_SECTION');
         $this->_paymentModes        = Config::get('payment-constants.PAYMENT_OFFLINE_MODE');
+        $this->_DB_NAME             = "pgsql_water";
+        $this->_DB                  = DB::connection($this->_DB_NAME);
+    }
+
+    /**
+     * | Database transaction
+     */
+    public function begin()
+    {
+        $db1 = DB::connection()->getDatabaseName();
+        $db2 = $this->_DB->getDatabaseName();
+        $this->begin();
+        if ($db1 != $db2)
+            $this->_DB->beginTransaction();
+    }
+    /**
+     * | Database transaction
+     */
+    public function rollback()
+    {
+        $db1 = DB::connection()->getDatabaseName();
+        $db2 = $this->_DB->getDatabaseName();
+        $this->rollback();
+        if ($db1 != $db2)
+            $this->_DB->rollBack();
+    }
+    /**
+     * | Database transaction
+     */
+    public function commit()
+    {
+        $db1 = DB::connection()->getDatabaseName();
+        $db2 = $this->_DB->getDatabaseName();
+        $this->commit();
+        if ($db1 != $db2)
+            $this->_DB->commit();
     }
 
 
@@ -416,7 +454,7 @@ class WaterPaymentController extends Controller
                 ->where('charge_category', '!=', $connectionCatagory['SITE_INSPECTON'])
                 ->firstOrFail();
 
-            DB::beginTransaction();
+            $this->begin();
             # Generating Demand for new InspectionData
             $newConnectionCharges = objToArray($mWaterNewConnection->calWaterConCharge($request));
             if (!$newConnectionCharges['status']) {
@@ -433,10 +471,10 @@ class WaterPaymentController extends Controller
             # Store the site inspection details
             $mWaterSiteInspection->storeInspectionDetails($request, $waterFeeId, $waterDetails, $refRoleDetails, $paymentstatus);
             $mWaterSiteInspectionsScheduling->saveInspectionStatus($request);
-            DB::commit();
+            $this->commit();
             return responseMsgs(true, "Site Inspection Done!", $request->applicationId, "", "01", "ms", "POST", "");
         } catch (Exception $e) {
-            DB::rollBack();
+            $this->rollback();
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", "ms", "POST", "");
         }
     }
@@ -656,7 +694,7 @@ class WaterPaymentController extends Controller
             }
             $finalCharges = $this->preOfflinePaymentParams($request, $startingDate, $endDate);
 
-            DB::beginTransaction();
+            $this->begin();
             $tranNo = $midGeneration->generateTransactionNo($user->ulb_id);
             $request->merge([
                 'userId'            => $user->id,
@@ -700,10 +738,10 @@ class WaterPaymentController extends Controller
                 $this->saveConsumerPaymentStatus($request, $offlinePaymentModes, $charges, $waterTrans);
                 $mWaterConsumerCollection->saveConsumerCollection($charges, $waterTrans, $user->id);
             }
-            DB::commit();
+            $this->commit();
             return responseMsgs(true, "payment Done!", "", "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
-            DB::rollBack();
+            $this->rollback();
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", $request->deviceId);
         }
     }
@@ -1013,7 +1051,7 @@ class WaterPaymentController extends Controller
                 'isPenalty'     => $refCharges['isPenalty']
             ]);
 
-            DB::beginTransaction();
+            $this->begin();
             # Save the Details of the transaction
             $wardId['ward_mstr_id'] = $refWaterApplication['ward_id'];
             $waterTrans = $waterTran->waterTransaction($req, $wardId);
@@ -1049,10 +1087,10 @@ class WaterPaymentController extends Controller
             if ($req->chargeCategory == $paramChargeCatagory['SITE_INSPECTON']) {
                 $mWaterSiteInspection->saveSitePaymentStatus($req->applicationId);
             }
-            DB::commit();
+            $this->commit();
             return responseMsgs(true, "Payment Successfully Done",  ['TransactionNo' => $tranNo], "", "1.0", "ms", "POST", $req->deviceId);
         } catch (Exception $e) {
-            DB::rollBack();
+            $this->rollback();
             return responseMsg(false, $e->getMessage(), "");
         }
     }
@@ -1658,7 +1696,7 @@ class WaterPaymentController extends Controller
             // $endPoint       = Config::get('razorpay.PAYMENT_GATEWAY_END_POINT');
 
             # Demand Collection 
-            DB::beginTransaction();
+            $this->begin();
             $refDetails = $this->preOfflinePaymentParams($request, $startingDate, $endDate);
             $myRequest = new Request([
                 'amount'        => $request->amount,
@@ -1675,7 +1713,7 @@ class WaterPaymentController extends Controller
             // $temp = $temp['data'];
             $mWaterRazorPayRequest = new WaterRazorPayRequest();
             $mWaterRazorPayRequest->saveRequestData($request, $paymentFor['1'], $temp, $refDetails);
-            DB::commit();
+            $this->commit();
 
             $temp['name']   = $refUser->user_name;
             $temp['mobile'] = $refUser->mobile;
@@ -1684,7 +1722,7 @@ class WaterPaymentController extends Controller
             $temp['ulbId']  = $refUser->ulb_id;
             return responseMsgs(true, "", $temp, "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
-            DB::rollBack();
+            $this->rollback();
             return responseMsgs(false, $e->getMessage(), [], "", "03", ".ms", "POST", $request->deviceId);
         }
     }
@@ -1734,7 +1772,7 @@ class WaterPaymentController extends Controller
                 throw new Exception("Payble Amount Missmatch!!!");
             }
 
-            DB::beginTransaction();
+            $this->begin();
             # save payment data in razorpay response table
             $paymentResponseId = $mWaterRazorPayResponse->savePaymentResponse($RazorPayRequest, $webhookData);
 
@@ -1783,11 +1821,11 @@ class WaterPaymentController extends Controller
                 $demand->paid_status = 1;                                          // Static
                 $demand->update();
             }
-            DB::commit();
+            $this->commit();
             $res['transactionId'] = $transactionId['id'];
             return responseMsg(true, "", $res);
         } catch (Exception $e) {
-            DB::rollBack();
+            $this->rollback();
             return responseMsg(false, $e->getMessage(), $webhookData);
         }
     }
@@ -1935,7 +1973,7 @@ class WaterPaymentController extends Controller
             # Pre condition check
             $refDetails = $this->preConsumerPaymentReq($request);
 
-            DB::beginTransaction();
+            $this->begin();
             $myRequest = new Request([
                 'amount'        => $refDetails['totalAmount'],
                 'workflowId'    => $refDetails['ulbWorkflowId'],                                                                   // Static
@@ -1947,7 +1985,7 @@ class WaterPaymentController extends Controller
             $temp = $this->saveGenerateOrderid($myRequest);
             $mWaterRazorPayRequest = new WaterRazorPayRequest();
             $mWaterRazorPayRequest->saveRequestData($request, $paymentFor[$refDetails['chargeCatagoryId']], $temp, $refDetails);
-            DB::commit();
+            $this->commit();
             # Return Details 
             $temp['name']       = $refUser->user_name;
             $temp['mobile']     = $refUser->mobile;
@@ -1955,7 +1993,7 @@ class WaterPaymentController extends Controller
             $temp['userId']     = $refUser->id;
             return responseMsgs(true, "Order Id generation succefully!", remove_null($temp), "", "01", responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
-            DB::rollBack();
+            $this->rollback();
             return responseMsgs(false, $e->getMessage(), [], "", "01", responseTime(), $request->getMethod(), $request->deviceId);
         }
     }
@@ -2029,7 +2067,7 @@ class WaterPaymentController extends Controller
             }
             $this->checkPaymentRequest($RazorPayRequest, $webhookData, $demandDetails, $consumerReqDetails);
 
-            DB::beginTransaction();
+            $this->begin();
             # save payment data in razorpay response table
             $paymentResponseId = $mWaterRazorPayResponse->savePaymentResponse($RazorPayRequest, $webhookData);
 
@@ -2065,11 +2103,11 @@ class WaterPaymentController extends Controller
                 "current_role"      => $consumerReqDetails->initiator
             ];
             $mWaterConsumerActiveRequest->updateDataForPayment($consumerReqDetails->id, $updateStatus);
-            DB::commit();
+            $this->commit();
             $res['transactionId'] = $transactionId['id'];
             return responseMsg(true, "Data saved succesfully!", $res);
         } catch (Exception $e) {
-            DB::rollBack();
+            $this->rollback();
             return responseMsg(false, $e->getMessage(), $webhookData);
         }
     }
@@ -2132,7 +2170,7 @@ class WaterPaymentController extends Controller
             }
             $chargeCatagory = $this->checkConReqPayment($activeConRequest);
 
-            DB::beginTransaction();
+            $this->begin();
             $tranNo = $idGeneration->generateTransactionNo($user->ulb_id);
             $request->merge([
                 'userId'            => $user->id,
@@ -2164,10 +2202,10 @@ class WaterPaymentController extends Controller
             }
             # Save the transaction details for offline mode  
             $this->saveConsumerRequestStatus($request, $offlinePaymentModes, $activeConsumercharges, $waterTrans, $activeConRequest);
-            DB::commit();
+            $this->commit();
             return responseMsgs(true, "Payment Done!", remove_null($request->all()), "", "01", responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
-            DB::rollBack();
+            $this->rollback();
             return responseMsgs(false, $e->getMessage(), [], "", "03", ".ms", "POST", $request->deviceId);
         }
     }

@@ -53,9 +53,47 @@ class WaterConsumer extends Controller
     use Workflow;
 
     private $Repository;
+    protected $_DB_NAME;
+    protected $_DB;
+
     public function __construct(IConsumer $Repository)
     {
         $this->Repository = $Repository;
+        $this->_DB_NAME = "pgsql_water";
+        $this->_DB = DB::connection($this->_DB_NAME);
+    }
+    /**
+     * | Database transaction
+     */
+    public function begin()
+    {
+        $db1 = DB::connection()->getDatabaseName();
+        $db2 = $this->_DB->getDatabaseName();
+        $this->begin();
+        if ($db1 != $db2)
+            $this->_DB->beginTransaction();
+    }
+    /**
+     * | Database transaction
+     */
+    public function rollback()
+    {
+        $db1 = DB::connection()->getDatabaseName();
+        $db2 = $this->_DB->getDatabaseName();
+        $this->rollback();
+        if ($db1 != $db2)
+            $this->_DB->rollBack();
+    }
+    /**
+     * | Database transaction
+     */
+    public function commit()
+    {
+        $db1 = DB::connection()->getDatabaseName();
+        $db2 = $this->_DB->getDatabaseName();
+        $this->commit();
+        if ($db1 != $db2)
+            $this->_DB->commit();
     }
 
 
@@ -183,7 +221,7 @@ class WaterConsumer extends Controller
             }
 
             # Save demand details 
-            DB::beginTransaction();
+            $this->begin();
             $userDetails = $this->checkUserType($request);
             if (isset($calculatedDemand)) {
                 $demandDetails = collect($calculatedDemand['consumer_tax']['0']);
@@ -257,11 +295,11 @@ class WaterConsumer extends Controller
                         $this->savingDemand($calculatedDemand, $request, $consumerDetails, $demandDetails['charge_type'], $refMeterConnectionType, $userDetails);
                         break;
                 }
-                DB::commit();
+                $this->commit();
                 return responseMsgs(true, "Demand Generated! for" . " " . $request->consumerId, "", "", "02", ".ms", "POST", "");
             }
         } catch (Exception $e) {
-            DB::rollBack();
+            $this->rollback();
             return responseMsgs(false, $e->getMessage(), [], "", "01", "ms", "POST", "");
         }
     }
@@ -407,7 +445,7 @@ class WaterConsumer extends Controller
             $meterRefImageName      = config::get('waterConstaint.WATER_METER_CODE');
             $param                  = $this->checkParamForMeterEntry($request);
 
-            DB::beginTransaction();
+            $this->begin();
             $metaRequest = new Request([
                 "consumerId"    => $request->consumerId,
                 "finalRading"   => $request->oldMeterFinalReading,
@@ -419,10 +457,10 @@ class WaterConsumer extends Controller
             }
             $documentPath = $this->saveDocument($request, $meterRefImageName);
             $mWaterConsumerMeter->saveMeterDetails($request, $documentPath, $fixedRate = null);
-            DB::commit();
+            $this->commit();
             return responseMsgs(true, "Meter Detail Entry Success !", "", "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
-            DB::rollBack();
+            $this->rollback();
             return responseMsgs(false, $e->getMessage(), "", "", "01", ".ms", "POST", "");
         }
     }
@@ -747,7 +785,7 @@ class WaterConsumer extends Controller
             $refRequest["amount"]            = $chargeAmount->amount;
             $refRequest['userType']          = $user->user_type;
 
-            DB::beginTransaction();
+            $this->begin();
             $idGeneration       = new PrefixIdGenerator($refConParamId['WCD'], $ulbId);
             $applicationNo      = $idGeneration->generate();
             $applicationNo      = str_replace('/', '-', $applicationNo);
@@ -778,10 +816,10 @@ class WaterConsumer extends Controller
                 ]
             );
             $mWorkflowTrack->saveTrack($metaReqs);
-            DB::commit();
+            $this->commit();
             return responseMsgs(true, "Respective Consumer Deactivated!", "", "", "02", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
-            DB::rollBack();
+            $this->rollback();
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", "");
         }
     }
@@ -1009,17 +1047,17 @@ class WaterConsumer extends Controller
                 'newMeterInitialReading'    => $relatedDetails['meterDetails']['initial_reading']
             ]);
 
-            DB::beginTransaction();
+            $this->begin();
             $refDocument = $this->saveDocument($request, $fixedMeterCode);
             $document = [
                 'relaivePath'   => $refDocument['relaivePath'],
                 'document'      => $refDocument['document']
             ];
             $mWaterConsumerMeter->saveMeterDetails($metaRequest, $document, $request->ratePerMonth);
-            DB::commit();
+            $this->commit();
             return responseMsgs(true, "Fixed rate entered successfully!", "", "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
-            DB::rollBack();
+            $this->rollback();
             return responseMsgs(false, $e->getMessage(), [""], "", "01", ".ms", "POST", $request->deviceId);
         }
     }
@@ -1440,7 +1478,7 @@ class WaterConsumer extends Controller
             $roleId = $roleDetails['wf_role_id'];
             $req->request->add(['roleId' => $roleId]);
 
-            DB::beginTransaction();
+            $this->begin();
             $docDetails = $this->saveDocument($req, $docAdvanceCode);
             $req->merge([
                 "relatedId" => $req->consumerId,
@@ -1448,10 +1486,10 @@ class WaterConsumer extends Controller
                 "userType"  => $user->user_type,
             ]);
             $mWaterAdvance->saveAdvanceDetails($req, $refAdvanceFor['1'], $docDetails);
-            DB::commit();
+            $this->commit();
             return responseMsgs(true, "Advance Details saved successfully!", [], "", "01", ".ms", "POST", $req->deviceId);
         } catch (Exception $e) {
-            DB::rollBack();
+            $this->rollback();
             return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $req->deviceId);
         }
     }
@@ -1627,7 +1665,7 @@ class WaterConsumer extends Controller
             $refRequest["ruleSet"]          = null;
             $refRequest["chargeCategoryId"] = $consumerCharges->id;
 
-            DB::beginTransaction();
+            $this->begin();
             $idGeneration   = new PrefixIdGenerator($refRelatedDetails['idGenParam'], $ulbId);
             $applicationNo  = $idGeneration->generate();
             $applicationNo  = str_replace('/', '-', $applicationNo);
@@ -1651,13 +1689,13 @@ class WaterConsumer extends Controller
                 ]
             );
             $mWorkflowTrack->saveTrack($metaReqs);
-            DB::commit();
+            $this->commit();
             $returnData = [
                 "ApplicationNo" => $applicationNo
             ];
             return responseMsgs(true, "Successfully applied for the Request!", $returnData, "", "01", responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
-            DB::rollBack();
+            $this->rollback();
             return responseMsgs(false, $e->getMessage(), [], "", "01", responseTime(), $request->getMethod(), $request->deviceId);
         }
     }
@@ -1791,7 +1829,7 @@ class WaterConsumer extends Controller
             $refRequest["finisherRoleId"]    = collect($finisherRoleId)->first()->role_id;
             $refRequest['roleId']            = $roleId ?? null;
             $refRequest['userType']          = $user->user_type;
-            DB::beginTransaction();
+            $this->begin();
             // Save water disconnection charge using the saveConsumerCharges function
             $idGeneration            =  new PrefixIdGenerator($refConParamId['WCD'], $ulbId);
             $applicationNo           =  $idGeneration->generate();
@@ -1832,10 +1870,10 @@ class WaterConsumer extends Controller
                 'Id'                    => $var['relatedId'],
 
             ];
-            DB::commit();
+            $this->commit();
             return responseMsgs(true, "Successfully apply disconnection ", remove_null($returnData), "1.0", "350ms", "POST", $request->deviceId);
         } catch (Exception $e) {
-            DB::rollBack();
+            $this->rollback();
             return responseMsgs(false, $e->getMessage(), "", $e->getCode(), "1.0", "", 'POST', "");
         }
     }
