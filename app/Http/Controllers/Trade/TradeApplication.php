@@ -994,10 +994,12 @@ class TradeApplication extends Controller
 
     /**
      * 
+     * 
      */
     public function uploadDocument(Request $req)
     { 
         try {
+
             $req->validate([
                 "applicationId" => "required|digits_between:1,9223372036854775807",
                 "document" => "required|mimes:pdf,jpeg,png,jpg,gif",
@@ -1021,6 +1023,16 @@ class TradeApplication extends Controller
             if (!$documents->original["status"]) {
                 throw new Exception($documents->original["message"]);
             };
+
+            $refUlbDtl      = UlbMaster::find($getLicenceDtls->ulb_id);
+            $mShortUlbName  = $refUlbDtl->short_name??"";
+            if(!$mShortUlbName){
+                foreach ((explode(' ', $refUlbDtl->ulb_name)??"") as $val) {
+                    $mShortUlbName .= $val[0];
+                }
+            }
+            $relativePath = trim($relativePath."/".$mShortUlbName,"/");
+
             $applicationDoc = $documents->original["data"]["listDocs"];
             $applicationDocName = $applicationDoc->implode("docName", ",");
             $applicationDocCode = $applicationDoc->where("docName", $req->docName)->first();
