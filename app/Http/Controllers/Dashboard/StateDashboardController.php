@@ -205,7 +205,6 @@ class StateDashboardController extends Controller
             }
             return responseMsgs(true, "state wise collection percentage!", remove_null($returnData), "", "01", ".ms", "POST", $req->deviceId);
         } catch (Exception $e) {
-            dd($e->getLine());
             return responseMsgs(false, $e->getMessage(), "", "", "01", ".ms", "POST", $req->deviceId);
         }
     }
