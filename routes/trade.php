@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\Mdm\TradeController;
-use App\Http\Controllers\Trade\ReportControlle;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Trade\TradeApplication;
 use App\Http\Controllers\Trade\TradeCitizenController;
@@ -182,6 +181,7 @@ Route::group(['middleware' => ['json.response', "auth_maker"]], function () {
     });
 });
 
+# unauthicated Api
 Route::controller(TradeApplication::class)->group(function () {
     Route::get('payment-receipt/{id}/{transectionId}', 'paymentReceipt');
     Route::get('provisional-certificate/{id}', 'provisionalCertificate');

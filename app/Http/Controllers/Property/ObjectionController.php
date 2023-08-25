@@ -616,39 +616,39 @@ class ObjectionController extends Controller
                                     'mobile_no' => $ownerDtl->owner_mobile,
                                 ]
                             );
-                    }
-                    //create log missing
-                    if ($ownerDtl->corr_address) {
-                        PropProperty::where('id', $activeObjection->id)
-                            ->update(
-                                [
-                                    'corr_address' => $ownerDtl->corr_address,
-                                    'corr_city' => $ownerDtl->corr_city,
-                                    'corr_dist' => $ownerDtl->corr_dist,
-                                    'corr_pin_code' => $ownerDtl->corr_pin_code,
-                                    'corr_state' => $ownerDtl->corr_state,
-                                ]
-                            );
-                    }
 
-                    $ownerDetails =  $mPropActiveObjectionOwner->getOwnerDetail($activeObjection->id);
+                        //create log missing
+                        if ($ownerDtl->corr_address) {
+                            PropProperty::where('id', $activeObjection->id)
+                                ->update(
+                                    [
+                                        'corr_address' => $ownerDtl->corr_address,
+                                        'corr_city' => $ownerDtl->corr_city,
+                                        'corr_dist' => $ownerDtl->corr_dist,
+                                        'corr_pin_code' => $ownerDtl->corr_pin_code,
+                                        'corr_state' => $ownerDtl->corr_state,
+                                    ]
+                                );
+                        }
+                    } else {
+                        $ownerDetails =  $mPropActiveObjectionOwner->getOwnerDetail($activeObjection->id);
+                        foreach ($ownerDetails as $ownerDetail) {
 
-                    foreach ($ownerDetails as $ownerDetail) {
-
-                        $metaReqs =  new Request([
-                            'property_id' => $activeObjection->property_id,
-                            'owner_name' => $ownerDetail->owner_name,
-                            'guardian_name' => $ownerDetail->guardian_name,
-                            'relation_type' => $ownerDetail->relation,
-                            'mobile_no' => $ownerDetail->owner_mobile,
-                            'email' => $ownerDetail->email,
-                            'pan_no' => $ownerDetail->pan,
-                            'gender' => $ownerDetail->gender,
-                            'dob' => $ownerDetail->dob,
-                            'is_armed_force' => $ownerDetail->is_armed_force,
-                            'is_specially_abled' => $ownerDetail->is_specially_abled,
-                        ]);
-                        $mPropOwner->postOwner($metaReqs);
+                            $metaReqs =  new Request([
+                                'property_id' => $activeObjection->property_id,
+                                'owner_name' => $ownerDetail->owner_name,
+                                'guardian_name' => $ownerDetail->guardian_name,
+                                'relation_type' => $ownerDetail->relation,
+                                'mobile_no' => $ownerDetail->owner_mobile,
+                                'email' => $ownerDetail->email,
+                                'pan_no' => $ownerDetail->pan,
+                                'gender' => $ownerDetail->gender,
+                                'dob' => $ownerDetail->dob,
+                                'is_armed_force' => $ownerDetail->is_armed_force,
+                                'is_specially_abled' => $ownerDetail->is_specially_abled,
+                            ]);
+                            $mPropOwner->postOwner($metaReqs);
+                        }
                     }
                 }
 
@@ -887,7 +887,7 @@ class ObjectionController extends Controller
     }
 
     /**
-     * | 
+     * | For Document Uploadation
      */
     public function uploadDocument(Request $req)
     {
@@ -968,7 +968,7 @@ class ObjectionController extends Controller
         $objectionDocs = $this->getDocList($objectionDtls, $ownerDetails, $objectionType);
         $docList['objectionDocs'] = explode('#', $objectionDocs);
 
-        $verifiedDocList['objectionDocs'] = $refDocList->where('owner_dtl_id', '!=', null)->values();
+        $verifiedDocList['objectionDocs'] = $refDocList->where('owner_dtl_id', null)->values();
         $collectUploadDocList = collect();
         collect($verifiedDocList['objectionDocs'])->map(function ($item) use ($collectUploadDocList) {
             return $collectUploadDocList->push($item['doc_code']);

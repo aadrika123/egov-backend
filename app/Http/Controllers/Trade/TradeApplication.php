@@ -300,7 +300,7 @@ class TradeApplication extends Controller
             return responseMsg(false, $e->getMessage(), "");
         }
     }
-    # Serial No : 02
+    # Serial No : 02 
     public function updateLicenseBo(ReqGetUpdateBasicDtl $request)
     {
         return $this->_REPOSITORY->updateLicenseBo($request);

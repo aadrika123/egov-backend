@@ -119,15 +119,16 @@ return [
                 PDO::ATTR_PERSISTENT => true,
             ],
         ],
+
         #_For Notice Service
         'pgsql_notice' => [
             'driver' => 'pgsql',
             'url' => env('DATABASE_URL'),
-            'host' => env('DB_NOTIC_HOST', '127.0.0.1'),
-            'port' => env('DB_NOTIC_PORT', '5432'),
-            'database' => env('DB_NOTIC_DATABASE', 'juidco_notice'),
-            'username' => env('DB_NOTIC_USERNAME', 'postgres'),
-            'password' => env('DB_NOTIC_PASSWORD', ''),
+            'host' => env('DB_NOTICE_HOST', '127.0.0.1'),
+            'port' => env('DB_NOTICE_PORT', '5432'),
+            'database' => env('DB_NOTICE_DATABASE', 'juidco_notice'),
+            'username' => env('DB_NOTICE_USERNAME', 'postgres'),
+            'password' => env('DB_NOTICE_PASSWORD', ''),
             'charset' => 'utf8',
             'prefix' => '',
             'prefix_indexes' => true,
@@ -137,7 +138,7 @@ return [
                 PDO::ATTR_PERSISTENT => true,
             ],
         ],
-        
+
         #_For Water Service
         'pgsql_water' => [
             'driver' => 'pgsql',

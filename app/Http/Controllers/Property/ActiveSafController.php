@@ -1412,7 +1412,6 @@ class ActiveSafController extends Controller
 
                 $previousHoldingDeactivation->deactivatePreviousHoldings($safDetails);  // Previous holding deactivation in case of Mutation, Amalgamation, Bifurcation
             }
-
             // Rejection
             if ($req->status == 0) {
                 $this->finalRejectionSafReplica($activeSaf, $ownerDetails, $floorDetails);
