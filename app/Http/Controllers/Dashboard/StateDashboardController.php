@@ -144,7 +144,7 @@ class StateDashboardController extends Controller
             ->where('payment_mode', 'ONLINE')
             ->whereBetween('tran_date', [$fromDate, $toDate]);
         $tradeTran = TradeTransaction::select('id')
-            ->where('payment_mode', 'Online')
+            ->whereIN(DB::raw('upper(payment_mode)'), ['ONLINE',"ONL"])
             ->whereBetween('tran_date', [$fromDate, $toDate]);
 
         $waterTran = WaterTran::select('id')
@@ -152,7 +152,7 @@ class StateDashboardController extends Controller
             ->whereBetween('tran_date', [$fromDate, $toDate]);
 
         $totalCount['propCount'] = $propTran->count();
-        $totalCount['tradeCount'] = 212;
+        $totalCount['tradeCount'] = $tradeTran->count();
         $totalCount['waterCount'] = $waterTran->count();
         $totalCount['totalCount'] =  $totalCount['propCount'] + $totalCount['tradeCount'] + $totalCount['waterCount'];
 
@@ -205,7 +205,6 @@ class StateDashboardController extends Controller
             }
             return responseMsgs(true, "state wise collection percentage!", remove_null($returnData), "", "01", ".ms", "POST", $req->deviceId);
         } catch (Exception $e) {
-            dd($e->getLine());
             return responseMsgs(false, $e->getMessage(), "", "", "01", ".ms", "POST", $req->deviceId);
         }
     }

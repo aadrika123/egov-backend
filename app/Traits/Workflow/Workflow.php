@@ -266,4 +266,14 @@ trait Workflow
             ->where('is_suspended', false)
             ->first();
     }
+
+    /**
+     * | Get Workflow id by ulbworkflow Id
+     */
+    public function getUlbWfById($id)
+    {
+        return WfWorkflow::where('id', $id)
+            ->where('is_suspended', false)
+            ->first();
+    }
 }

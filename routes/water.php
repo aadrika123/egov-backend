@@ -91,6 +91,8 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
         Route::post('consumer/online-demand-payment', 'initiateOnlineDemandPayment');                   // Citizen
         Route::post('citizen/payment-history', 'paymentHistory');                                       // Citizen  
         Route::post('consumer/water-user-charges', 'getWaterUserCharges');                              // Admin / Citizen
+        Route::post('consumer/online-request-payment', 'initiateOnlineConRequestPayment');              // Citizen
+        Route::post('consumer/offline-request-payment', 'offlineConReqPayment');                        // Admin
 
         # Site inspection 
         Route::post('site-verification/save-site-details', 'saveSitedetails');                          // Admin
@@ -116,11 +118,17 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
         Route::post('consumer/generate-memo', 'generateMemo');                      // Here             // Admin / Citizen
         Route::post('consumer/search-fixed-connections', 'searchFixedConsumers');   // Here             // Admin / Not used
         Route::post('consumer/add-advance', 'addAdvance');                                              // Admin
+
+        # Testing
         Route::post('check-doc', 'checkDoc'); // testing document service
 
-        # Deactivation
-        Route::post('admin/consumer/apply-deactivation', 'applyDeactivation');                          // Admin / Not Used
-        Route::post('admin/consumer/demand-deactivation', 'consumerDemandDeactivation');  // Here       // Admin / Not used
+        # Deactivation // Arshad
+        Route::post('apply-water-disconnection', 'applyWaterDisconnection');                //<----remove
+        Route::post('admin/consumer/apply-deactivation', 'applyDeactivation');                              // Admin / Not Used
+        Route::post('admin/consumer/demand-deactivation', 'consumerDemandDeactivation');    // Here         // Admin / Not used
+
+        # Ferrul Cleaning and Pipe shifting // Arshad
+        Route::post('applywater-ferule-cleaning', 'applyConsumerRequest');                  //<---- cheange the route name Admin / Citizen
     });
 
 
@@ -130,14 +138,19 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
      * |------------ Water Consumer Workflow -------------|
      */
     Route::controller(WaterConsumerWfController::class)->group(function () {
+        # Workflow 
         Route::post('consumer/req/inbox', 'consumerInbox');                                         // Workflow
         Route::post('consumer/req/outbox', 'consumerOutbox');                                       // Workflow
-        Route::post('consumer/req/post-next-level', 'consumerPostNextLevel');           // Here
-        Route::post('consumer/req/list-req-docs', 'listDocToUpload');                   // Here
-        Route::post('consumer/req/doc-verify-reject', 'consumerDocVerifyReject');       // Here
-        Route::post('consumer/req/upload-document', 'consumerDocUpload');               // Here
-        Route::post('consumer/req/get-upload-documents', 'getConsumerDocs');            // Here
-        Route::post('consumer/req/approval-rejection', 'consumerApprovalRejection');    // Here
+        Route::post('consumer/req/post-next-level', 'consumerPostNextLevel');                       // Here
+        Route::post('consumer/req/list-req-docs', 'listDocToUpload');                               // Here
+        Route::post('consumer/req/doc-verify-reject', 'consumerDocVerifyReject');                   // Here
+        Route::post('consumer/req/get-upload-documents', 'getConsumerDocs'); 
+        Route::post('consumer/req/get-worklfow-by-id','getWorkflow');                       // Here
+        Route::post('consumer/req/approval-rejection', 'consumerApprovalRejection');                // Here
+
+        # Consuemr Request View Api // Arshad
+        Route::post('get-details-applications', 'getConApplicationDetails');                        // Admin / Changes             
+        Route::post('get-details-disconnections', 'getRequestedApplication');                       // Citizen / Changes the route name
     });
 
     /**
