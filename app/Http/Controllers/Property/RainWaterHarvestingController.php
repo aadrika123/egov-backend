@@ -130,7 +130,9 @@ class RainWaterHarvestingController extends Controller
             $finisherRoleId = DB::select($refFinisherRoleId);
             $initiatorRoleId = DB::select($refInitiatorRoleId);
 
+            #_Multiple Database Connection Started
             DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
             $mPropActiveHarvesting = new PropActiveHarvesting();
             $waterHaravesting  = $mPropActiveHarvesting->saves($request, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId,  $userId);
 
@@ -188,9 +190,11 @@ class RainWaterHarvestingController extends Controller
             $request->request->add($wfReqs);
             $track->saveTrack($request);
             DB::commit();
+            DB::connection('pgsql_master')->commit();
             return responseMsgs(true, "Application applied!", $harvestingNo);
         } catch (Exception $error) {
             DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
             return responseMsgs(false, "Error!", $error->getMessage());
         }
     }
@@ -573,7 +577,9 @@ class RainWaterHarvestingController extends Controller
             ]);
             $forwardBackwardIds = $mWfRoleMaps->getWfBackForwardIds($roleMapsReqs);
 
+            #_Multiple Database Connection Started
             DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
             if ($req->action == 'forward') {
                 $wfMstrId = $mWfWorkflows->getWfMstrByWorkflowId($harvesting->workflow_id);
                 $this->checkPostCondition($senderRoleId, $wfLevels, $harvesting);          // Check Post Next level condition
@@ -600,9 +606,11 @@ class RainWaterHarvestingController extends Controller
             $track->saveTrack($req);
 
             DB::commit();
+            DB::connection('pgsql_master')->commit();
             return responseMsgs(true, "Successfully Forwarded The Application!!", "", '011110', 01, '446ms', 'Post', $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
     }
@@ -649,7 +657,9 @@ class RainWaterHarvestingController extends Controller
                 return responseMsg(false, " Access Forbidden", "");
             }
 
+            #_Multiple Database Connection Started
             DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
             // Approval
             if ($req->status == 1) {
                 // Harvesting Application replication
@@ -738,11 +748,12 @@ class RainWaterHarvestingController extends Controller
                 'forward_date' => $this->_todayDate->format('Y-m-d'),
                 'forward_time' => $this->_todayDate->format('H:i:s')
             ]);
-            dd('ok');
             DB::commit();
+            DB::connection('pgsql_master')->commit();
             return responseMsgs(true, $msg, "", '011111', 01, '391ms', 'Post', $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
     }
@@ -835,6 +846,7 @@ class RainWaterHarvestingController extends Controller
             $mModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs = array();
             DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
             // Save On Workflow Track For Level Independent
             $metaReqs = [
                 'workflowId' => $harvesting->workflow_id,
@@ -853,7 +865,6 @@ class RainWaterHarvestingController extends Controller
                 $metaReqs = array_merge($metaReqs, ['senderRoleId' => $wfRoleId->wf_role_id]);
                 $metaReqs = array_merge($metaReqs, ['user_id' => $userId]);
             }
-            DB::beginTransaction();
             // For Citizen Independent Comment
             if ($userType == 'Citizen') {
                 $metaReqs = array_merge($metaReqs, ['citizenId' => $userId]);
@@ -865,9 +876,11 @@ class RainWaterHarvestingController extends Controller
             $workflowTrack->saveTrack($request);
 
             DB::commit();
+            DB::connection('pgsql_master')->commit();
             return responseMsgs(true, "You Have Commented Successfully!!", ['Comment' => $request->comment], "010108", "1.0", "", "POST", "");
         } catch (Exception $e) {
             DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
     }
@@ -967,7 +980,9 @@ class RainWaterHarvestingController extends Controller
                     ->first();
                 $redis->set('workflow_initiator_' . $workflowId, json_encode($backId));
             }
-
+            #_Multiple Database Connection Started
+            DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
             $harvesting->current_role = $backId->wf_role_id;
             $harvesting->parked = 1;
             $harvesting->save();
@@ -981,9 +996,12 @@ class RainWaterHarvestingController extends Controller
             $req->request->add($metaReqs);
             $track = new WorkflowTrack();
             $track->saveTrack($req);
-
+            DB::commit();
+            DB::connection('pgsql_master')->commit();
             return responseMsgs(true, "Successfully Done", "", "", '010710', '01', '358ms', 'Post', '');
         } catch (Exception $e) {
+            DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
     }
@@ -1150,6 +1168,8 @@ class RainWaterHarvestingController extends Controller
                 throw new Exception("Document Fully Verified");
 
             DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
+
             if ($req->docStatus == "Verified") {
                 $status = 1;
             }
@@ -1175,9 +1195,11 @@ class RainWaterHarvestingController extends Controller
             }
 
             DB::commit();
+            DB::connection('pgsql_master')->commit();
             return responseMsgs(true, $req->docStatus . " Successfully", "", "010204", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
             return responseMsgs(false, $e->getMessage(), "", "010204", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
@@ -1274,7 +1296,8 @@ class RainWaterHarvestingController extends Controller
                     $imageName = $docUpload->upload($refImageName, $images, $relativePath);         // <------- Get uploaded image name and move the image in folder
                     $geoTagging->add($docReqs);
                     // $geoTagging->add($req, $imageName, $relativePath, $geoTagging);
-
+                    DB::beginTransaction();
+                    DB::connection('pgsql_master')->beginTransaction();
                     $metaReqs['moduleId'] = $moduleId;
                     $metaReqs['activeId'] = $req->applicationId;
                     $metaReqs['workflowId'] = $applicationDtls->workflow_id;
@@ -1288,7 +1311,7 @@ class RainWaterHarvestingController extends Controller
                     $mWfActiveDocument->postDocuments($metaReqs);
 
                     break;
-                    DB::beginTransaction();
+
                 case $ulbTaxCollectorRole;                                                                // In Case of Ulb Tax Collector
                     if ($verificationStatus == 1) {
                         $req->ulbVerification = true;
@@ -1315,9 +1338,11 @@ class RainWaterHarvestingController extends Controller
             $verificationId = $verification->store($req);
 
             DB::commit();
+            DB::connection('pgsql_master')->commit();
             return responseMsgs(true, $msg, "", "010118", "1.0", "310ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
     }

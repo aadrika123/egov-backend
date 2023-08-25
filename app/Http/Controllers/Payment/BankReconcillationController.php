@@ -232,7 +232,11 @@ class BankReconcillationController extends Controller
                 $applicationPaymentStatus = 0;
             }
 
+            #_Multiple Database Connection Started
             DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
+            DB::connection('pgsql_water')->beginTransaction();
+            DB::connection('pgsql_trade')->beginTransaction();
 
             if ($moduleId == $propertyModuleId) {
                 $mChequeDtl =  PropChequeDtl::find($request->chequeId);
@@ -468,10 +472,17 @@ class BankReconcillationController extends Controller
                 // return $request;
                 $mPaymentReconciliation->addReconcilation($request);
             }
+
             DB::commit();
+            DB::connection('pgsql_master')->commit();
+            DB::connection('pgsql_water')->commit();
+            DB::connection('pgsql_trade')->commit();
             return responseMsg(true, "Data Updated!", '');
         } catch (Exception $error) {
             DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
+            DB::connection('pgsql_water')->rollBack();
+            DB::connection('pgsql_trade')->rollBack();
             return responseMsg(false, "ERROR!", $error->getMessage());
         }
     }

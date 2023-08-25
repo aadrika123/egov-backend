@@ -394,21 +394,17 @@ class ObjectionController extends Controller
     {
         try {
             $req->validate([
-                'escalateStatus' => 'required|bool',
-                'applicationId' => 'required|integer'
+                'applicationId' => 'required|integer',
+                'escalateStatus' => 'required|bool'
             ]);
 
-            DB::beginTransaction();
             $userId = authUser($req)->id;
-            $objId = $req->applicationId;
-            $data = PropActiveObjection::find($objId);
+            $data = PropActiveObjection::find($req->applicationId);
             $data->is_escalated = $req->escalateStatus;
             $data->escalated_by = $userId;
             $data->save();
-            DB::commit();
             return responseMsgs(true, $req->escalateStatus == 1 ? 'Objection is Escalated' : "Objection is removed from Escalated", '', '010808', '01', responseTime(), 'Post', '');
         } catch (Exception $e) {
-            DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
     }
@@ -515,7 +511,9 @@ class ObjectionController extends Controller
             ]);
             $forwardBackwardIds = $mWfRoleMaps->getWfBackForwardIds($roleMapsReqs);
 
+            #_Multiple Database Connection Started
             DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
             if ($req->action == 'forward') {
                 $this->checkPostCondition($senderRoleId, $wfLevels, $objection, $req);          // Check Post Next level condition
                 $objection->current_role = $forwardBackwardIds->forward_role_id;
@@ -542,9 +540,11 @@ class ObjectionController extends Controller
             $track->saveTrack($req);
 
             DB::commit();
+            DB::connection('pgsql_master')->commit();
 
             return responseMsgs(true, "Successfully Forwarded The Application!!", "", '010810', '01', responseTime(), 'Post', '');
         } catch (Exception $e) {
+            DB::rollBack();
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -590,7 +590,9 @@ class ObjectionController extends Controller
             if ($refGetFinisher->role_id != $roleId) {
                 return responseMsg(false, "Forbidden Access", "");
             }
+            #_Multiple Database Connection Started
             DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
 
             // Approval
             if ($req->status == 1) {
@@ -769,11 +771,12 @@ class ObjectionController extends Controller
                 'forward_time' => $this->_todayDate->format('H:i:s')
             ]);
             DB::commit();
-
+            DB::connection('pgsql_master')->commit();
             return responseMsgs(true, $msg, "", '010811', '01', responseTime(), 'Post', '');
         } catch (Exception $e) {
             DB::rollBack();
-            return responseMsg(false, $e->getMessage(), "");
+            DB::connection('pgsql_master')->rollBack();
+            return responseMsgs(false,  $e->getMessage(), "", '010811', '01', responseTime(), 'Post', '');
         }
     }
 
@@ -786,18 +789,15 @@ class ObjectionController extends Controller
         try {
             $redis = Redis::connection();
             $objection = PropActiveObjection::find($req->applicationId);
-            $workflowId = $objection->workflow_id;
             $senderRoleId = $objection->current_role;
             $mRefTable = Config::get('PropertyConstaint.SAF_OBJECTION_REF_TABLE');
-            $backId = json_decode(Redis::get('workflow_initiator_' . $workflowId));
-            if (!$backId) {
-                $backId = WfWorkflowrolemap::where('workflow_id', $workflowId)
-                    ->where('is_initiator', true)
-                    ->first();
-                $redis->set('workflow_initiator_' . $workflowId, json_encode($backId));
-            }
+            $initiatorRoleId = $objection->initiator_role_id;
+
+            #_Multiple Database Connection Started
             DB::beginTransaction();
-            $objection->current_role = $backId->wf_role_id;
+            DB::connection('pgsql_master')->beginTransaction();
+
+            $objection->current_role = $initiatorRoleId;
             $objection->parked = 1;
             $objection->save();
 
@@ -812,9 +812,11 @@ class ObjectionController extends Controller
             $track->saveTrack($req);
 
             DB::commit();
+            DB::connection('pgsql_master')->commit();
             return responseMsgs(true, "Successfully Done", "", '010812', '01', responseTime(), 'Post', '');
         } catch (Exception $e) {
             DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
             return responseMsg(false, $e->getMessage(), "", "", '010812', '01', responseTime(), 'Post', '');
         }
     }
@@ -836,7 +838,9 @@ class ObjectionController extends Controller
             $mModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
             $mRefTable = Config::get('PropertyConstaint.SAF_OBJECTION_REF_TABLE');
             $metaReqs = array();
+            #_Multiple Database Connection Started
             DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
             // Save On Workflow Track For Level Independent
             $metaReqs = [
                 'workflowId' => $objection->workflow_id,
@@ -854,9 +858,11 @@ class ObjectionController extends Controller
             $workflowTrack->saveTrack($req);
 
             DB::commit();
+            DB::connection('pgsql_master')->commit();
             return responseMsgs(true, "You Have Commented Successfully!!", ['Comment' => $req->comment], "010108", "1.0", "", "POST", "");
         } catch (Exception $e) {
             DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
     }
@@ -922,6 +928,10 @@ class ObjectionController extends Controller
             $metaReqs['docCode'] = $req->docCode;
 
             $metaReqs = new Request($metaReqs);
+
+            #_Multiple Database Connection Started
+            DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
             $mWfActiveDocument->postDocuments($metaReqs);
 
             $docUploadStatus = $this->checkFullDocUpload($getObjectionDtls);
@@ -933,8 +943,12 @@ class ObjectionController extends Controller
 
                 $getObjectionDtls->save();
             }
+            DB::commit();
+            DB::connection('pgsql_master')->commit();
             return responseMsgs(true, "Document Uploaded Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
+            DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
             return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
@@ -1193,7 +1207,9 @@ class ObjectionController extends Controller
             $initiatorRoleId = DB::select($refInitiatorRoleId);
             $finisherRoleId = DB::select($refFinisherRoleId);
 
+            #_Multiple Database Connection Started
             DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
 
             //saving objection details
             # Flag : call model <-----
@@ -1268,9 +1284,13 @@ class ObjectionController extends Controller
                 $objectionOwner->save();
             }
             DB::commit();
+            DB::connection('pgsql_master')->commit();
 
             return responseMsgs(true, "member added use this for future use", $objectionNo, "010201", "1.0", responseTime(), "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
+            DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
+
             return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", responseTime(), "POST", $request->deviceId ?? "");
         }
     }
@@ -1441,7 +1461,9 @@ class ObjectionController extends Controller
             if ($ifFullDocVerified == 1)
                 throw new Exception("Document Fully Verified");
 
+            #_Multiple Database Connection Started
             DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
             if ($req->docStatus == "Verified") {
                 $status = 1;
             }
@@ -1467,9 +1489,11 @@ class ObjectionController extends Controller
             }
 
             DB::commit();
+            DB::connection('pgsql_master')->commit();
             return responseMsgs(true, $req->docStatus . " Successfully", "", "010204", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
             return responseMsgs(false, $e->getMessage(), "", "010204", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
