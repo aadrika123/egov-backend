@@ -378,6 +378,9 @@ class NewConnectionController extends Controller
             $userId = authUser($request)->id;
             $applicationId = $request->applicationId;
             $applicationsData = WaterApplication::find($applicationId);
+            if (!$applicationsData) {
+                throw new Exception("Application details not found!");
+            }
             $applicationsData->is_escalate = $request->escalateStatus;
             $applicationsData->escalate_by = $userId;
             $applicationsData->save();
