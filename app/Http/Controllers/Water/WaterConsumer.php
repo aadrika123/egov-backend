@@ -69,7 +69,7 @@ class WaterConsumer extends Controller
     {
         $db1 = DB::connection()->getDatabaseName();
         $db2 = $this->_DB->getDatabaseName();
-        $this->begin();
+        DB::beginTransaction();
         if ($db1 != $db2)
             $this->_DB->beginTransaction();
     }
@@ -80,7 +80,7 @@ class WaterConsumer extends Controller
     {
         $db1 = DB::connection()->getDatabaseName();
         $db2 = $this->_DB->getDatabaseName();
-        $this->rollback();
+        DB::rollBack();
         if ($db1 != $db2)
             $this->_DB->rollBack();
     }
@@ -91,7 +91,7 @@ class WaterConsumer extends Controller
     {
         $db1 = DB::connection()->getDatabaseName();
         $db2 = $this->_DB->getDatabaseName();
-        $this->commit();
+        DB::commit();
         if ($db1 != $db2)
             $this->_DB->commit();
     }
