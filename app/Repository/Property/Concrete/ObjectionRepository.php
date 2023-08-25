@@ -123,7 +123,7 @@ class ObjectionRepository implements iObjectionRepository
                 $objectionOwner = new PropActiveObjectionOwner();
                 $objectionOwner->objection_id = $objection->id;
                 $objectionOwner->prop_owner_id = $request->ownerId;
-                $objectionOwner->owner_name = $request->ownerName;
+                $objectionOwner->owner_name = strtoupper($request->ownerName);
                 $objectionOwner->owner_mobile = $request->mobileNo;
                 $objectionOwner->corr_address = $request->corrAddress;
                 $objectionOwner->corr_city = $request->corrCity;

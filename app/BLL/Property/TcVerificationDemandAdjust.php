@@ -163,7 +163,19 @@ class TcVerificationDemandAdjust
                 if ($tax['totalTax'] > $safQtrDemand->amount) {                                         // Case IF The Demand is Increasing
                     $adjustAmt = roundFigure($safQtrDemand->amount - $safQtrDemand->adjust_amount);
                     $balance = roundFigure($tax['balance'] - $adjustAmt);
-                    $taxes = $this->generatePropDemandTax($tax, $adjustAmt, $balance);                  // Saf Demand details generation to be saved on table (1.2.3)
+
+                    $differenceAmt = $tax['totalTax'] - $safQtrDemand->amount;
+                    $differencePercent = ($differenceAmt * 100) / $safQtrDemand->amount;
+
+                    #_If Difference Amt is more than 10% then impose 100% Penalty
+                    if ($differencePercent > 10) {
+                        $penalty100 = $balance;
+                        $balance = roundFigure($balance * 2);
+                        $this->_adjustmentType = "Demand Adjustment with 100% Penalty";
+                        // 100% penalty tax also be added
+                    }
+
+                    $taxes = $this->generatePropDemandTax($tax, $adjustAmt, $balance, $penalty100);                  // Saf Demand details generation to be saved on table (1.2.3)
                     $newDemand->push($taxes);
                 }
                 if ($tax['totalTax'] < $safQtrDemand->amount) {                                       // Case if the Demand is Decreasing
@@ -249,7 +261,7 @@ class TcVerificationDemandAdjust
     /**
      * | Generate Property Demands Tax (1.2.3)
      */
-    public function generatePropDemandTax($tax, $adjustAmt, $balance)
+    public function generatePropDemandTax($tax, $adjustAmt, $balance, $penalty100 = null)
     {
         return [
             'property_id' => $this->_reqs['propId'],
@@ -270,6 +282,7 @@ class TcVerificationDemandAdjust
             'adjust_type' => $this->_adjustmentType,
             'ulb_id' => $this->_reqs['ulbId'],
             'user_id' => $this->_tcId,
+            'hundred_percent_penalty_tax' => $penalty100,
             'created_at' => Carbon::now(),
             'updated_at' => Carbon::now()
         ];
