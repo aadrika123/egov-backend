@@ -119,6 +119,7 @@ return [
                 PDO::ATTR_PERSISTENT => true,
             ],
         ],
+
         #_For Notice Service
         'pgsql_notice' => [
             'driver' => 'pgsql',
@@ -137,7 +138,7 @@ return [
                 PDO::ATTR_PERSISTENT => true,
             ],
         ],
-        
+
         #_For Water Service
         'pgsql_water' => [
             'driver' => 'pgsql',
