@@ -106,6 +106,18 @@ return [
             'driver' => 'pgsql',
             'url' => env('DATABASE_URL'),
             'host' => env('DB_TRADE_HOST', '127.0.0.1'),
+            'read' => [
+                'host' => [
+                    env('DB_TRADE_READ_HOST1', env('DB_TRADE_HOST1', '127.0.0.1')),
+                ],
+                // 'port' => env('DB_TRADE_READ_PORT1', env('DB_TRADE_PORT1', '5432')),
+                // 'database' => env('DB_TRADE_READ_DATABASE1', env('DB_TRADE_DATABASE1', 'db_juidco')),
+                // 'username' => env('DB_TRADE_READ_USERNAME1', env('DB_TRADE_USERNAME1', 'postgres')),
+                "password" => env('DB_TRADE_READ_PASSWORD1', env('DB_TRADE_PASSWORD1', 'root')),
+            ],
+            'write' => [
+                'host' => env('DB_TRADE_HOST', '127.0.0.1'),
+            ],
             'port' => env('DB_TRADE_PORT', '5432'),
             'database' => env('DB_TRADE_DATABASE', 'forge'),
             'username' => env('DB_TRADE_USERNAME', 'forge'),
@@ -124,6 +136,18 @@ return [
             'driver' => 'pgsql',
             'url' => env('DATABASE_URL'),
             'host' => env('DB_NOTICE_HOST', '127.0.0.1'),
+            'read' => [
+                'host' => [
+                    env('DB_NOTICE_READ_HOST', env('DB_NOTICE_HOST', '127.0.0.1')),
+                ],
+                'port' => env('DB_NOTICE_READ_PORT', env('DB_NOTICE_PORT', '5432')),
+                'database' => env('DB_NOTICE_READ_DATABASE', env('DB_NOTICE_DATABASE', 'forge')),
+                'username' => env('DB_NOTICE_READ_USERNAME', env('DB_NOTICE_USERNAME', 'forge')),
+                "password" => env('DB_NOTICE_READ_PASSWORD', env('DB_NOTICE_PASSWORD', '')),
+            ],
+            'write' => [
+                'host' => env('DB_TRADE_HOST', '127.0.0.1'),
+            ],
             'port' => env('DB_NOTICE_PORT', '5432'),
             'database' => env('DB_NOTICE_DATABASE', 'juidco_notice'),
             'username' => env('DB_NOTICE_USERNAME', 'postgres'),

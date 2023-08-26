@@ -133,7 +133,6 @@ class Trade implements ITrade
         $this->_MODEL_ActiveTradeLicence = new ActiveTradeLicence( $this->_DB_NAME );
         $this->_MODEL_ActiveTradeOwner  = new ActiveTradeOwner($this->_DB_NAME);
     }
-
     public function begin()
     {
         $db1 = DB::connection()->getDatabaseName();
@@ -3149,41 +3148,7 @@ class Trade implements ITrade
             return $response;
         }
     }
-    // public function readNotisDtl($id)
-    // {
-    //     try {
-    //         $data = TradeNoticeConsumerDtl::select(
-    //             "*",
-    //             DB::raw("trade_notice_consumer_dtls.notice_date::date AS noticedate")
-    //         )
-    //             ->where("id", $id)
-    //             ->first();
-    //         return $data;
-    //     } catch (Exception $e) {
-    //         echo $e->getMessage();
-    //     }
-    // }
-    // public function getDenialFirmDetails($ulb_id, $notice_no) #for apply application
-    // {
-    //     try {
-    //         DB::enableQueryLog();
-    //         $data = TradeNoticeConsumerDtl::select(
-    //             "trade_notice_consumer_dtls.*",
-    //             DB::raw("trade_notice_consumer_dtls.notice_no,
-    //                             trade_notice_consumer_dtls.notice_date::date AS noticedate,
-    //                             trade_notice_consumer_dtls.id as dnialid")
-    //         )
-    //             ->where("trade_notice_consumer_dtls.notice_no", $notice_no)
-    //             // ->where("trade_denial_notices.created_on","<",$firm_date)
-    //             ->where("trade_notice_consumer_dtls.status", "=", 5)
-    //             ->where("trade_notice_consumer_dtls.ulb_id", $ulb_id)
-    //             ->first();
-    //         // dd(DB::getQueryLog());
-    //         return $data;
-    //     } catch (Exception $e) {
-    //         echo $e->getMessage();
-    //     }
-    // }
+    
     public function getDenialAmountTrade($notice_date = null, $current_date = null)
     {
         $notice_date = $notice_date ? Carbon::createFromFormat("Y-m-d", $notice_date)->format("Y-m-d") : Carbon::now()->format('Y-m-d');
@@ -3279,22 +3244,11 @@ class Trade implements ITrade
         }
         return ["status" => false, 'property' => '', 'owneres' => ''];
     }
-    // public function updateStatusFine($denial_id, $denialAmount, $applyid, $status = 2)
-    // {
-    //     $tradeNotice = TradeNoticeConsumerDtl::where("id", $denial_id)
-    //         ->orderBy("id", "DESC")
-    //         ->first();
-    //     $tradeNotice->fine_amount  =  $denialAmount;
-    //     $tradeNotice->status =  $status;
-    //     if ($applyid) {
-    //         // $tradeNotice->is_active =  false;
-    //     }
-    //     $tradeNotice->update();
-    // }
+    
     public function getLicenceById($id)
     {
         try {
-            $application = TradeLicence::select(
+            $application = TradeLicence::readConnection()->select(
                 "trade_licences.*",
                 "trade_param_application_types.application_type",
                 "trade_param_category_types.category_type",
@@ -3319,6 +3273,7 @@ class Trade implements ITrade
             echo $e->getMessage();
         }
     }
+    
     public function getActiveLicenseById($id)
     {
         try {
@@ -3549,25 +3504,7 @@ class Trade implements ITrade
         $filePath = $file->storeAs('uploads/Trade', $custumFileName, 'public');
         return  $filePath;
     }
-    // public function getDenialDetailsByID($id, $ulb_id)
-    // {
-    //     try {
-    //         $data = TradeNoticeConsumerDtl::select(
-    //             "trade_notice_consumer_dtls.*",
-    //             DB::raw("ulb_ward_masters.ward_name as ward_no
-    //                     ")
-    //         )
-    //             ->join("ulb_ward_masters", function ($join) {
-    //                 $join->on("ulb_ward_masters.id", "trade_denial_consumer_dtls.ward_id");
-    //             })
-    //             ->where("trade_notice_consumer_dtls.id", $id)
-    //             ->where("trade_notice_consumer_dtls.ulb_id", $ulb_id)
-    //             ->first();
-    //         return $data;
-    //     } catch (Exception $e) {
-    //         echo $e->getMessage();
-    //     }
-    // }
+    
     public function getDocumentTypeList($refLicense)
     {
         try {

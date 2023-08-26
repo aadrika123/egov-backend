@@ -11,11 +11,9 @@ use App\Repository\Trade\Trade;
 use App\MicroServices\DocUpload;
 use App\Models\Trade\TradeOwner;
 use App\Repository\Trade\ITrade;
-use App\Models\Trade\TradeLicence;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Models\Workflows\WfWorkflow;
-use Illuminate\Foundation\Auth\User;
 use App\Http\Requests\Trade\ReqInbox;
 use Illuminate\Support\Facades\Config;
 use App\EloquentModels\Common\ModelWard;
@@ -27,51 +25,72 @@ use Illuminate\Support\Facades\Validator;
 use App\Http\Requests\Trade\ReqAddRecorde;
 use App\Models\Workflows\WfActiveDocument;
 use App\Http\Requests\Trade\paymentCounter;
-use App\Http\Requests\Trade\ReqApplyDenail;
 use App\Http\Requests\Trade\ReqGetUpdateBasicDtl;
 use App\Http\Requests\Trade\ReqPaybleAmount;
 use App\Models\Trade\TradeParamCategoryType;
 use App\Models\Trade\TradeParamOwnershipType;
 use App\Http\Requests\Trade\ReqUpdateBasicDtl;
 use App\Models\Trade\ActiveTradeOwner;
-use App\Models\Trade\RejectedTradeOwner;
-use App\Models\Workflows\WfRoleusermap;
 use App\Traits\Trade\TradeTrait;
 
 class TradeApplication extends Controller
 {
     use TradeTrait;
 
-    /**
-     * | Created On-01-10-2022 
-     * | Created By-Sandeep Bara
-     * --------------------------------------------------------------------------------------
-     * | Controller regarding with Trade Module
-     */
+    #====================[🅾️OWNER DETAILS🅾️]==========================
+        /**
+         * | Created On-01-10-2022
+         * | Created By-Sandeep Bara
+         * --------------------------------------------------------------------------------------
+         * | Controller regarding with Trade Module
+         STATUS [OPEN]
+        */
 
-    // Initializing function for Repository
+    #======================[❎VARIABLES❎]============================
+        /**
+         * @var  obj -> $_DB  | trade connection instanse 
+         */
+        protected $_DB;
 
-    protected $_DB;
-    protected $_DB_NAME;    
-    protected $_NOTICE_DB;
-    protected $_NOTICE_DB_NAME;
-    protected $_MODEL_WARD;
-    protected $_COMMON_FUNCTION;
-    protected $_REPOSITORY;
-    protected $_WF_MASTER_Id;
-    protected $_WF_NOTICE_MASTER_Id;
-    protected $_MODULE_ID;
-    protected $_REF_TABLE;
-    protected $_TRADE_CONSTAINT;
+        /**
+         * @var string -> $_DB_NAME | trade connection name
+         */
+        protected $_DB_NAME; 
+        
+        /**
+         * @var obj -> $_NOTICE_DB | notice connection instanse
+         */
+        protected $_NOTICE_DB;
 
-    protected $_CONTROLLER_TRADE;
+        /**
+         * @var string -> $_NOTICE_DB_NAME | notice connection name
+         */
+        protected $_NOTICE_DB_NAME;
 
-    protected $_MODEL_TradeParamFirmType;
-    protected $_MODEL_TradeParamOwnershipType;
-    protected $_MODEL_TradeParamCategoryType;
-    protected $_MODEL_TradeParamItemType;
-    protected $_MODEL_ActiveTradeLicence;
-    protected $_MODEL_ActiveTradeOwner;
+        /**
+         * @var class -> $_MODEL_WARD
+         */
+        protected $_MODEL_WARD;
+
+        /**
+         * @var class -> $_COMMON_FUNCTION
+         */
+        protected $_COMMON_FUNCTION;
+        protected $_REPOSITORY;
+        protected $_WF_MASTER_Id;
+        protected $_WF_NOTICE_MASTER_Id;
+        protected $_MODULE_ID;
+        protected $_REF_TABLE;
+        protected $_TRADE_CONSTAINT;
+    #======================[❎REPOSITRY AND CONTROLLER VARIABLE❎]============================
+        protected $_CONTROLLER_TRADE;
+    #======================[❎MODEL VARIABLE❎]============================
+        protected $_MODEL_TradeParamFirmType;
+        protected $_MODEL_TradeParamOwnershipType;
+        protected $_MODEL_TradeParamCategoryType;
+        protected $_MODEL_TradeParamItemType;
+        protected $_MODEL_ActiveTradeLicence;
+        protected $_MODEL_ActiveTradeOwner;
 
     public function __construct(ITrade $TradeRepository)
     {        
@@ -101,6 +120,15 @@ class TradeApplication extends Controller
         $this->_TRADE_CONSTAINT = Config::get("TradeConstant");
         $this->_REF_TABLE = $this->_TRADE_CONSTAINT["TRADE_REF_TABLE"];
     }
+    
+
+    #=======================[❤️TRANSACTION BEGIN❤️]==============================
+        /** 
+         * @var $db1 default database name
+         * @var $db2 trade database name
+         * @var $db3 notice database name
+         * @return void
+         */
     public function begin()
     {
         $db1 = DB::connection()->getDatabaseName();
@@ -112,6 +140,14 @@ class TradeApplication extends Controller
         if($db1!=$db3 && $db2!=$db3)
         $this->_NOTICE_DB->beginTransaction();
     }
+
+    #=======================[❤️TRANSACTION ROLLBACK❤️]==============================
+        /** 
+         * @var $db1 default database name
+         * @var $db2 trade database name
+         * @var $db3 notice database name
+         * @return void
+         */
     public function rollback()
     {
         $db1 = DB::connection()->getDatabaseName();
@@ -124,6 +160,13 @@ class TradeApplication extends Controller
         $this->_NOTICE_DB->rollBack();
     }
      
+    #=======================[❤️TRANSACTION COMMIT❤️]==============================
+        /** 
+         * @var $db1 default database name
+         * @var $db2 trade database name
+         * @var $db3 notice database name
+         * @return void
+         */
     public function commit()
     {
         $db1 = DB::connection()->getDatabaseName();
@@ -136,44 +179,10 @@ class TradeApplication extends Controller
         if($db1!=$db3 && $db2!=$db3)
         $this->_NOTICE_DB->commit();
     }
-    public function getMstrForNewLicense(Request $request)
-    {
-        try {
-            $request->request->add(["applicationType" => "NEWLICENSE"]);
-            return $this->getApplyData($request);
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-    public function getMstrForRenewal(Request $request)
-    {
-        try {
-            $request->request->add(["applicationType" => "RENEWAL"]);
-            return $this->getApplyData($request);
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-    public function getMstrForAmendment(Request $request)
-    {
-        try {
-            $request->request->add(["applicationType" => "AMENDMENT"]);
-            return $this->getApplyData($request);
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-    public function getMstrForSurender(Request $request)
-    {
-        try {
-            $request->request->add(["applicationType" => "SURRENDER"]);
-            return $this->getApplyData($request);
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
+    
+    #=======================[📖 MDM DATA FOR APPLICATION APPLY | S.L (1.0) 📖]===============================================        
     public function getApplyData(Request $request)
-    {
+    {        
         try {
             $refUser            = Auth()->user();
             $refUserId          = $refUser->id;
@@ -206,7 +215,7 @@ class TradeApplication extends Controller
                     throw new Exception("Old Licence Not Found");
                 }
                 if (!$refOldLicece->is_active) {
-                    $newLicense = $this->_MODEL_ActiveTradeLicence->where("license_no", $refOldLicece->license_no)
+                    $newLicense = $this->_MODEL_ActiveTradeLicence->readConnection()->where("license_no", $refOldLicece->license_no)
                         ->orderBy("id")
                         ->first();
                     throw new Exception("Application Already Apply Please Track  " . $newLicense->application_no);
@@ -220,8 +229,8 @@ class TradeApplication extends Controller
                 if ($refOldLicece->pending_status != 5) {
                     throw new Exception("Application not approved Please Track  " . $refOldLicece->application_no);
                 }
-                $refOldOwneres = TradeOwner::owneresByLId($request->licenseId);
-                $mnaturOfBusiness = $this->_MODEL_TradeParamItemType->itemsById($refOldLicece->nature_of_bussiness);
+                $refOldOwneres = TradeOwner::readConnection()->owneresByLId($request->licenseId);
+                $mnaturOfBusiness = $this->_MODEL_TradeParamItemType->readConnection()->itemsById($refOldLicece->nature_of_bussiness);
                 $natur = array();
                 foreach ($mnaturOfBusiness as $val) {
                     $natur[] = [
@@ -248,6 +257,8 @@ class TradeApplication extends Controller
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+
+    #=====================[📝 📖 STORING DATA | S.L (2.0) 📖 📝]========================================================
     # Serial No : 01
     public function applyApplication(ReqAddRecorde $request)
     {

@@ -6,14 +6,14 @@ use App\Models\Workflows\WfActiveDocument;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class ActiveTradeOwner extends Model
+class ActiveTradeOwner extends TradeParamModel
 {
     use HasFactory;
     public $timestamps=false;
     protected $connection;
     public function __construct($DB=null)
     {
-       $this->connection = $DB ? $DB:"pgsql_trade";
+        parent::__construct($DB);
     }
     
     public function application()

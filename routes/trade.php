@@ -7,27 +7,22 @@ use App\Http\Controllers\Trade\TradeCitizenController;
 use App\Http\Controllers\Trade\TradeNoticeController;
 use App\Http\Controllers\Trade\ReportController;
 
+#===========================[🅾️OWNER DITAILS🅾️]===============================
 /**
+ *  -----------------------------------------------------------------
+ * |                TRADE MODULE                                      |
+ *  ------------------------------------------------------------------  
  * | Created On-06-10-2022 
  * | Created For-The Routes defined for the Water Usage Charge Management System Module
  * | Created By-SandeepBara  
+ STATUS [OPEN]
  */
 
 Route::group(['middleware' => ['json.response', "auth_maker"]], function () {
-    /**
-     *  -----------------------------------------------------------------
-     * |                TRADE MODULE                                      |
-     *  ------------------------------------------------------------------  
-     * Created on- 06-10-2022
-     * Created By- Sandeep Bara
-     *  
-     */
+    
     Route::controller(TradeApplication::class)->group(function () {
         Route::post("getApplyData", "getApplyData");
-        // Route::post("application/new-license", "getMstrForNewLicense");
-        // Route::post("application/renewal", "getMstrForRenewal");
-        // Route::post("application/amendment", "getMstrForAmendment");
-        // Route::post("application/surrender", "getMstrForSurender");
+
         Route::post('application/add', 'applyApplication');
 
         Route::post('application/get-demand', 'paybleAmount');
