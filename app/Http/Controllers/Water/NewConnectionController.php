@@ -98,7 +98,7 @@ class NewConnectionController extends Controller
     {
         $db1 = DB::connection()->getDatabaseName();
         $db2 = $this->_DB->getDatabaseName();
-        $this->begin();
+        DB::beginTransaction();
         if ($db1 != $db2)
             $this->_DB->beginTransaction();
     }
@@ -109,7 +109,7 @@ class NewConnectionController extends Controller
     {
         $db1 = DB::connection()->getDatabaseName();
         $db2 = $this->_DB->getDatabaseName();
-        $this->rollback();
+        DB::rollBack();
         if ($db1 != $db2)
             $this->_DB->rollBack();
     }
@@ -120,7 +120,7 @@ class NewConnectionController extends Controller
     {
         $db1 = DB::connection()->getDatabaseName();
         $db2 = $this->_DB->getDatabaseName();
-        $this->commit();
+        DB::commit();
         if ($db1 != $db2)
             $this->_DB->commit();
     }
@@ -378,6 +378,9 @@ class NewConnectionController extends Controller
             $userId = authUser($request)->id;
             $applicationId = $request->applicationId;
             $applicationsData = WaterApplication::find($applicationId);
+            if (!$applicationsData) {
+                throw new Exception("Application details not found!");
+            }
             $applicationsData->is_escalate = $request->escalateStatus;
             $applicationsData->escalate_by = $userId;
             $applicationsData->save();

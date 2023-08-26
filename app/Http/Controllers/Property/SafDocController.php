@@ -25,6 +25,7 @@ use Illuminate\Support\Facades\Facade;
 class SafDocController extends Controller
 {
     use SafDoc;
+
     /**
      * | Get Document Lists
      */
@@ -223,6 +224,7 @@ class SafDocController extends Controller
                 $ifDocCategoryExist = collect($documents)->where('verify_status', 0)->first();   // Checking if the document is already existing or not
 
             DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
             if (collect($ifDocCategoryExist)->isEmpty()) {
                 // Check if the New Uploaded Document is Rejected Or Not
                 $isDocRejected = collect($documents)->where('verify_status', 2)->first();
@@ -243,9 +245,11 @@ class SafDocController extends Controller
                 $getSafDtls->save();
             }
             DB::commit();
+            DB::connection('pgsql_master')->commit();
             return responseMsgs(true, "Document Uploadation Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
             return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
@@ -342,6 +346,7 @@ class SafDocController extends Controller
                 throw new Exception("Document Fully Verified");
 
             DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
             if ($req->docStatus == "Verified") {
                 $status = 1;
                 // trust verification in case of trust upload
@@ -377,9 +382,11 @@ class SafDocController extends Controller
                 $safDtls->save();
             }
             DB::commit();
+            DB::connection('pgsql_master')->commit();
             return responseMsgs(true, $req->docStatus . " Successfully", "", "010204", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
             return responseMsgs(false, $e->getMessage(), "", "010204", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         }
     }

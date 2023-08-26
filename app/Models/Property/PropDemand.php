@@ -52,7 +52,8 @@ class PropDemand extends Model
             'fyear',
             'adjust_amt',
             'due_date',
-            'paid_status'
+            'paid_status',
+            'hundred_percent_penalty_tax'
         )
             ->where('property_id', $propId)
             ->where('paid_status', 0)

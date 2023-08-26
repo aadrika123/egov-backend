@@ -67,7 +67,7 @@ class ObjectionRepository implements iObjectionRepository
             $ulbId = $request->ulbId ?? $user->ulb_id;
             $userType = $user->user_type;
             $objectionFor = $request->objectionFor;
-            $tracks = new WorkflowTrack();
+            $mWorkflowTrack = new WorkflowTrack();
             $objParamId = Config::get('PropertyConstaint.OBJ_PARAM_ID');
             $objectionNo = "";
             $objNo = "";
@@ -81,7 +81,9 @@ class ObjectionRepository implements iObjectionRepository
             $initiatorRoleId = DB::select($refInitiatorRoleId);
             $finisherRoleId = DB::select($refFinisherRoleId);
 
+
             DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
             if ($objectionFor == "Clerical Mistake") {
 
                 //saving objection details
@@ -123,7 +125,7 @@ class ObjectionRepository implements iObjectionRepository
                 $objectionOwner = new PropActiveObjectionOwner();
                 $objectionOwner->objection_id = $objection->id;
                 $objectionOwner->prop_owner_id = $request->ownerId;
-                $objectionOwner->owner_name = $request->ownerName;
+                $objectionOwner->owner_name = strtoupper($request->ownerName);
                 $objectionOwner->owner_mobile = $request->mobileNo;
                 $objectionOwner->corr_address = $request->corrAddress;
                 $objectionOwner->corr_city = $request->corrCity;
@@ -452,13 +454,17 @@ class ObjectionRepository implements iObjectionRepository
             $wfReqs['receiverRoleId'] = $objection->current_role;
             $wfReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
             $request->request->add($wfReqs);
-            $tracks->saveTrack($request);
-            DB::commit();
+            $mWorkflowTrack->saveTrack($request);
 
-            return responseMsgs(true, "Successfully Applied Application", $objectionNo, '010801', '01', '382ms-547ms', 'Post', '');
+            DB::commit();
+            DB::connection('pgsql_master')->commit();
+
+            return responseMsgs(true, "Successfully Applied Application", $objectionNo, '010801', '01', responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
+
             DB::rollBack();
-            return response()->json($e->getMessage());
+            DB::connection('pgsql_master')->rollBack();
+            return responseMsgs(false, $e->getMessage(), "", '010801', '01', responseTime(), $request->getMethod(), $request->deviceId);
         }
     }
 

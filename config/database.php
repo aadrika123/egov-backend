@@ -67,6 +67,16 @@ return [
         'pgsql' => [
             'driver' => 'pgsql',
             'url' => env('DATABASE_URL'),
+            'read' => [
+                'host' => [
+                    env('DB_HOST', '127.0.0.1'),
+                ],
+            ],
+            'write' => [
+                'host' => [
+                    env('DB_HOST', '127.0.0.1'),
+                ],
+            ],
             'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '5432'),
             'database' => env('DB_DATABASE', 'forge'),
@@ -131,6 +141,7 @@ return [
                 PDO::ATTR_PERSISTENT => true,
             ],
         ],
+
         #_For Notice Service
         'pgsql_notice' => [
             'driver' => 'pgsql',
@@ -161,7 +172,7 @@ return [
                 PDO::ATTR_PERSISTENT => true,
             ],
         ],
-        
+
         #_For Water Service
         'pgsql_water' => [
             'driver' => 'pgsql',

@@ -430,6 +430,8 @@ class ApplySafController extends Controller
                 'trust_type' => $req->trustType ?? null
             ];
             DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
+
             $createSaf = $propActiveSafs->storeGBSaf($safReq);           // Store Saf
             $safId = $createSaf->original['safId'];
             $safNo = $createSaf->original['safNo'];
@@ -457,6 +459,8 @@ class ApplySafController extends Controller
             $postSafPropTax->postSafTaxes($safId, $generatedDemand['details']->toArray(), $ulbId);                        // Saf Tax Generation
 
             DB::commit();
+            DB::connection('pgsql_master')->commit();
+
             return responseMsgs(true, "Successfully Submitted Your Application Your SAF No. $safNo", [
                 "safNo" => $safNo,
                 "applyDate" => Carbon::parse($applicationDate)->format('d-m-Y'),
@@ -465,6 +469,8 @@ class ApplySafController extends Controller
             ], "010102", "1.0", "1s", "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
+
             return responseMsgs(false, $e->getMessage(), "", "010103", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
