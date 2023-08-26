@@ -118,12 +118,12 @@ return [
             'host' => env('DB_TRADE_HOST', '127.0.0.1'),
             'read' => [
                 'host' => [
-                    env('DB_TRADE_READ_HOST1', env('DB_TRADE_HOST1', '127.0.0.1')),
+                    env('DB_TRADE_READ_HOST', env('DB_TRADE_HOST', '127.0.0.1')),
                 ],
-                // 'port' => env('DB_TRADE_READ_PORT1', env('DB_TRADE_PORT1', '5432')),
-                // 'database' => env('DB_TRADE_READ_DATABASE1', env('DB_TRADE_DATABASE1', 'db_juidco')),
-                // 'username' => env('DB_TRADE_READ_USERNAME1', env('DB_TRADE_USERNAME1', 'postgres')),
-                "password" => env('DB_TRADE_READ_PASSWORD1', env('DB_TRADE_PASSWORD1', 'root')),
+                'port' => env('DB_TRADE_READ_PORT', env('DB_TRADE_PORT', '5432')),
+                'database' => env('DB_TRADE_READ_DATABASE', env('DB_TRADE_DATABASE', 'db_juidco')),
+                'username' => env('DB_TRADE_READ_USERNAME', env('DB_TRADE_USERNAME', 'postgres')),
+                "password" => env('DB_TRADE_READ_PASSWORD', env('DB_TRADE_PASSWORD', 'root')),
             ],
             'write' => [
                 'host' => env('DB_TRADE_HOST', '127.0.0.1'),

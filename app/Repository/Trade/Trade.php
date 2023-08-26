@@ -3806,11 +3806,11 @@ class Trade implements ITrade
             'applicationId' => 'required|numeric'
         ]);
         try {
-            $refApplication = ActiveTradeLicence::find($request->applicationId);
+            $refApplication = ActiveTradeLicence::readConnection()->find($request->applicationId);
             if (!$refApplication) {
                 throw new Exception("Application Not Found for this id");
             }
-            $refOwners = ActiveTradeOwner::owneresByLId($request->applicationId);
+            $refOwners = ActiveTradeOwner::readConnection()->owneresByLId($request->applicationId);
             $DocsType['listDocs'] = $this->getApplTypeDocList($refApplication);
             $DocsType['ownerDocs'] = collect($refOwners)->map(function ($owner) use ($refApplication) {
                 return $this->getOwnerDocLists($owner, $refApplication);

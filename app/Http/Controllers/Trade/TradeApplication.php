@@ -258,8 +258,7 @@ class TradeApplication extends Controller
         }
     }
 
-    #=====================[📝 📖 STORING DATA | S.L (2.0) 📖 📝]========================================================
-    # Serial No : 01
+    #=====================[📝 📖 CREATE NEW APPLICATION | S.L (2.0) 📖 📝]========================================================
     public function applyApplication(ReqAddRecorde $request)
     {
         $refUser            = Auth()->user();
@@ -300,6 +299,8 @@ class TradeApplication extends Controller
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+
+    #====================[📝📖 CREATE NEW PAYMENT | S.L (2.1) 📖📝]========================================================
     public function paymentCounter(paymentCounter $request)
     {
         try {
@@ -311,17 +312,25 @@ class TradeApplication extends Controller
             return responseMsg(false, $e->getMessage(), "");
         }
     }
-    # Serial No : 02 
+
+    #====================[📖 APPLICATION DTL | S.L (2.1.1) 📖]========================================================
+    public function paybleAmount(ReqPaybleAmount $request)
+    {
+        return $this->_REPOSITORY->getPaybleAmount($request);
+    }
+    #====================[📖 UPDATE NEW APPLICATION | S.L (3.0) 📖]========================================================
     public function updateLicenseBo(ReqGetUpdateBasicDtl $request)
     {
         return $this->_REPOSITORY->updateLicenseBo($request);
     }
 
+    #====================[📝📖 UPDATE NEW APPLICATION | S.L (3.1) 📖📝]========================================================
     public function updateBasicDtl(ReqUpdateBasicDtl $request)
     {
         return $this->_REPOSITORY->updateBasicDtl($request);
     }
 
+    #====================[📖 APPLICATION REQUIED DOC LIST | S.L (4.0) 📖]========================================================
     public function getDocList(Request $request)
     {
         $tradC = $this->_CONTROLLER_TRADE;
@@ -365,27 +374,177 @@ class TradeApplication extends Controller
         return $response;
     }
 
+    #====================[📖 APPLICATION UPLOADED DOC LIST | S.L (4.1) 📖]========================================================
+    public function getUploadDocuments(Request $req)
+    {  
+        $req->validate([
+            'applicationId' => 'required|digits_between:1,9223372036854775807'
+        ]);
+        try {
+            $mWfActiveDocument = new WfActiveDocument();
+            $mActiveTradeLicence = $this->_MODEL_ActiveTradeLicence;
+            $modul_id = $this->_MODULE_ID;
+            $licenceDetails = $mActiveTradeLicence->getLicenceNo($req->applicationId);
+            if (!$licenceDetails)
+                throw new Exception("Application Not Found for this application Id");
 
-    # Serial No : 04
-    public function paymentReceipt(Request $request)
-    {
-        $id = $request->id;
-        $transectionId =  $request->transectionId;
-        $request->setMethod('POST');
-        $request->request->add(["id" => $id, "transectionId" => $transectionId]);
-        $rules = [
-            "id" => "required|digits_between:1,9223372036854775807",
-            "transectionId" => "required|digits_between:1,9223372036854775807",
-        ];
-        $validator = Validator::make($request->all(), $rules,);
-        if ($validator->fails()) {
-            return responseMsg(false, $validator->errors(), $request->all());
+            $appNo = $licenceDetails->application_no;
+            $tradR = $this->_CONTROLLER_TRADE;
+            $documents = $mWfActiveDocument->getTradeDocByAppNo($licenceDetails->id, $licenceDetails->workflow_id, $modul_id);
+
+            $doc = $tradR->getLicenseDocLists($req);
+            $docVerifyStatus = $doc->original["data"]["docVerifyStatus"] ?? 0;
+            return responseMsgs(true, ["docVerifyStatus" => $docVerifyStatus], remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
         }
-        return $this->_REPOSITORY->readPaymentReceipt($id, $transectionId);
     }
-    
 
-    # Serial No : 07
+    #====================[📝📖 APPLICATION DOC UPLOAD | S.L (4.2) 📖📝]========================================================
+    public function uploadDocument(Request $req)
+    { 
+        try {
+
+            $req->validate([
+                "applicationId" => "required|digits_between:1,9223372036854775807",
+                "document" => "required|mimes:pdf,jpeg,png,jpg,gif",
+                "docName" => "required",
+                "docCode" => "required",
+                "ownerId" => "nullable|digits_between:1,9223372036854775807"
+            ]);
+            $tradC = $this->_CONTROLLER_TRADE;
+            $docUpload = new DocUpload;
+            $mWfActiveDocument = new WfActiveDocument();
+            $mActiveTradeLicence = $this->_MODEL_ActiveTradeLicence;
+            $relativePath = $this->_TRADE_CONSTAINT["TRADE_RELATIVE_PATH"];
+            $getLicenceDtls = $mActiveTradeLicence->getLicenceNo($req->applicationId);
+            if (!$getLicenceDtls) {
+                throw new Exception("Data Not Found!!!!!");
+            }
+            if ($getLicenceDtls->is_doc_verified) {
+                throw new Exception("Document Are Verifed You Cant Reupload Documents");
+            }
+            $documents = $tradC->getLicenseDocLists($req);
+            if (!$documents->original["status"]) {
+                throw new Exception($documents->original["message"]);
+            };
+
+            $refUlbDtl      = UlbMaster::find($getLicenceDtls->ulb_id);
+            $mShortUlbName  = $refUlbDtl->short_name??"";
+            if(!$mShortUlbName){
+                foreach ((explode(' ', $refUlbDtl->ulb_name)??"") as $val) {
+                    $mShortUlbName .= $val[0];
+                }
+            }
+            $relativePath = trim($relativePath."/".$mShortUlbName,"/");
+
+            $applicationDoc = $documents->original["data"]["listDocs"];
+            $applicationDocName = $applicationDoc->implode("docName", ",");
+            $applicationDocCode = $applicationDoc->where("docName", $req->docName)->first();
+            $applicationCode = $applicationDocCode ? $applicationDocCode["masters"]->implode("documentCode", ",") : "";
+            // $mandetoryDoc = $applicationDoc->whereIn("docType",["R","OR"]);
+
+            $ownerDoc = $documents->original["data"]["ownerDocs"];
+            $ownerDocsName = $ownerDoc->map(function ($val) {
+                $doc = $val["documents"]->map(function ($val1) {
+                    return ["docType" => $val1["docType"], "docName" => $val1["docName"], "documentCode" => $val1["masters"]->implode("documentCode", ",")];
+                });
+                $ownereId = $val["ownerDetails"]["ownerId"];
+                $docNames = $val["documents"]->implode("docName", ",");
+                return ["ownereId" => $ownereId, "docNames" => $docNames, "doc" => $doc];
+            });
+            $ownerDocNames = $ownerDocsName->implode("docNames", ",");
+
+            $ownerIds = $ownerDocsName->implode("ownereId", ",");
+            $particuler = (collect($ownerDocsName)->where("ownereId", $req->ownerId)->values())->first();
+
+            $ownereDocCode = $particuler ? collect($particuler["doc"])->where("docName", $req->docName)->all() : "";
+
+            $particulerDocCode = collect($ownereDocCode)->implode("documentCode", ",");
+            if (!(in_array($req->docName, explode(",", $applicationDocName)) == true || in_array($req->docName, explode(",", $ownerDocNames)) == true)) {
+                throw new Exception("Invalid Doc Name Pass");
+            }
+            if (in_array($req->docName, explode(",", $applicationDocName)) && (empty($applicationDocCode) || !(in_array($req->docCode, explode(",", $applicationCode))))) {
+                throw new Exception("Invalid Application Doc Code Pass");
+            }
+            if (in_array($req->docName, explode(",", $ownerDocNames)) && (!(in_array($req->ownerId, explode(",", $ownerIds))))) {
+                throw new Exception("Invalid ownerId Pass");
+            }
+            if (in_array($req->docName, explode(",", $ownerDocNames)) && ($ownereDocCode && !(in_array($req->docCode, explode(",", $particulerDocCode))))) {
+                throw new Exception("Invalid Ownere Doc Code Pass");
+            }
+
+            $metaReqs = array();
+
+            $refImageName = $req->docCode;
+            $refImageName = $getLicenceDtls->id . '-' . str_replace(' ', '_', $refImageName);
+            $document = $req->document;
+
+            $imageName = $docUpload->upload($refImageName, $document, $relativePath);
+
+            $metaReqs['moduleId'] = $this->_MODULE_ID;
+            $metaReqs['activeId'] = $getLicenceDtls->id;
+            $metaReqs['workflowId'] = $getLicenceDtls->workflow_id;
+            $metaReqs['ulbId'] = $getLicenceDtls->ulb_id;
+            $metaReqs['relativePath'] = $relativePath;
+            $metaReqs['document'] = $imageName;
+            $metaReqs['docCode'] = $req->docName; //$req->docCode;
+
+            if (in_array($req->docName, explode(",", $ownerDocNames))) {
+                $metaReqs['ownerDtlId'] = $req->ownerId;
+            }
+            $this->begin();
+            #reupload documents;
+            $sms = "";
+            if ($privDoc = $mWfActiveDocument->getTradeAppByAppNoDocId($getLicenceDtls->id, $getLicenceDtls->ulb_id, collect($req->docName), $getLicenceDtls->workflow_id, $metaReqs['ownerDtlId'] ?? null)) 
+            {
+                if ($privDoc->verify_status != 2) 
+                {
+                    // dd("update");
+                    $arr["verify_status"] = 0;
+                    $arr['relative_path'] = $relativePath;
+                    $arr['document'] = $imageName;
+                    $arr['doc_code'] = $req->docName;
+                    $arr['owner_dtl_id'] = $metaReqs['ownerDtlId'] ?? null;
+                    $mWfActiveDocument->docVerifyReject($privDoc->id, $arr);
+                } 
+                else 
+                {
+                    // dd("reupload");
+                    $mWfActiveDocument->docVerifyReject($privDoc->id, ["status" => 0]);
+                    $metaReqs = new Request($metaReqs);
+                    $metaReqs =  $mWfActiveDocument->metaReqs($metaReqs);
+                    foreach($metaReqs as $key=>$val)
+                    {
+                        $mWfActiveDocument->$key = $val;
+                    }
+                    $mWfActiveDocument->save();
+                    // $mWfActiveDocument->postDocuments($metaReqs);
+                }
+                $sms = " Update Successful";
+                // return responseMsgs(true, $req->docName . " Update Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
+            }
+            else{
+                #new documents;
+                $metaReqs = new Request($metaReqs);
+                $metaReqs =  $mWfActiveDocument->metaReqs($metaReqs);
+                foreach($metaReqs as $key=>$val)
+                {
+                    $mWfActiveDocument->$key = $val;
+                }
+                $mWfActiveDocument->save();
+                // $mWfActiveDocument->postDocuments($metaReqs);
+                $sms = " Uploadation Successful";
+            }
+            $this->commit();
+            return responseMsgs(true,  $req->docName . $sms, "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            $this->rollback();
+            return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
+    #====================[📝📖 APPLICATION DOC VERIFICATION | S.L (4.3) 📖📝]========================================================
     public function documentVerify(Request $request)
     {
         $request->validate([
@@ -435,7 +594,8 @@ class TradeApplication extends Controller
             return responseMsgs(false, $e->getMessage(), "", "tc7.1", "1.0", "", "POST", $request->deviceId ?? "");
         }
     }
-    # Serial No : 08 
+    
+    #====================[📖 APPLICATION DTL FOR WF | S.L (5.0) 📖]========================================================
     public function getLicenceDtl(Request $request)
     {
 
@@ -446,28 +606,26 @@ class TradeApplication extends Controller
         }
         return $this->_REPOSITORY->readLicenceDtl($request);
     }
-    # Serial No : 09 
+
+    #====================[📖 APPLICATION NOTIC DTL | S.L (6.0) 📖]========================================================
     public function getDenialDetails(Request $request)
     {
         return $this->_REPOSITORY->readDenialdtlbyNoticno($request);
     }
-    # Serial No : 10 
-    public function paybleAmount(ReqPaybleAmount $request)
-    {
-        return $this->_REPOSITORY->getPaybleAmount($request);
-    }
 
-    # Serial No : 12 
+    #====================[📖 VALIDATE HOLDING NO | S.L (7.0) 📖]========================================================
     public function validateHoldingNo(Request $request)
     {
         return $this->_REPOSITORY->isvalidateHolding($request);
     }
-    # Serial No : 13 
+
+    #====================[📖 APPLICATION DTL SEARCH | S.L (8.0) 📖]========================================================
     public function searchLicence(Request $request)
     {
         return $this->_REPOSITORY->searchLicenceByNo($request);
     }
-    # Serial No : 14
+
+    #====================[📖 APPLICATION FULL DTL | S.L (9.0) 📖]========================================================
     public function readApplication(Request $request)
     {
         $rules = [
@@ -480,6 +638,8 @@ class TradeApplication extends Controller
         }
         return $this->_REPOSITORY->readApplication($request);
     }
+
+    #====================[📖 WF DASHBOARD DTL | S.L (10.0) 📖]========================================================
     public function workflowDashordDetails(Request $request)
     {
         try {
@@ -541,32 +701,39 @@ class TradeApplication extends Controller
             return responseMsgs(false, $e->getMessage(), "", "01", ".ms", "POST", "");
         }
     }
-    # Serial No : 15
+
+    #====================[📝📖 APPLICATION ESCALATE DTL | S.L (11.0) 📖📝]========================================================
     public function postEscalate(Request $request)
     {
         return $this->_REPOSITORY->postEscalate($request);
     }
+
+    #====================[📖 ESCALATE APPLICATION LIST | S.L (12.0) 📖]========================================================
     public function specialInbox(ReqInbox $request)
     {
         return $this->_REPOSITORY->specialInbox($request);
     }
+
+    #====================[📖 BTC APPLICATION LIST | S.L (13.0) 📖]========================================================
     public function btcInbox(ReqInbox $request)
     {
         return $this->_REPOSITORY->btcInbox($request);
     }
-    # Serial No : 16 App\Http\Requests\Trade\ReqInbox
+    
+    #====================[📖 PENDING APPLICATION AT CURRENT USER LIST | S.L (14.0) 📖]========================================================
     public function inbox(ReqInbox $request)
     {
         return $this->_REPOSITORY->inbox($request);
     }
-    # Serial No : 17
+    
+    #====================[📖 PENDING APPLICATION AT ANOTHER USER LIST | S.L (15.0) 📖]========================================================
     public function outbox(ReqInbox $request)
     {
         return $this->_REPOSITORY->outbox($request);
     }
 
 
-    # Serial No
+    #====================[📝📖 BTC THE APPLICATION | S.L (16.0) 📖📝]========================================================
     public function backToCitizen(Request $req)
     {
         $user = Auth()->user();
@@ -923,6 +1090,23 @@ class TradeApplication extends Controller
         }
     }
 
+    # Serial No : 04
+    public function paymentReceipt(Request $request)
+    {
+        $id = $request->id;
+        $transectionId =  $request->transectionId;
+        $request->setMethod('POST');
+        $request->request->add(["id" => $id, "transectionId" => $transectionId]);
+        $rules = [
+            "id" => "required|digits_between:1,9223372036854775807",
+            "transectionId" => "required|digits_between:1,9223372036854775807",
+        ];
+        $validator = Validator::make($request->all(), $rules,);
+        if ($validator->fails()) {
+            return responseMsg(false, $validator->errors(), $request->all());
+        }
+        return $this->_REPOSITORY->readPaymentReceipt($id, $transectionId);
+    }
 
     # Serial No : 19
     public function provisionalCertificate(Request $request)
@@ -972,181 +1156,5 @@ class TradeApplication extends Controller
         return $this->_REPOSITORY->approvedApplication($request);
     }
 
-
-
-    /**
-     *  get uploaded documents
-     */
-    public function getUploadDocuments(Request $req)
-    {  
-        $req->validate([
-            'applicationId' => 'required|digits_between:1,9223372036854775807'
-        ]);
-        try {
-            $mWfActiveDocument = new WfActiveDocument();
-            $mActiveTradeLicence = $this->_MODEL_ActiveTradeLicence;
-            $modul_id = $this->_MODULE_ID;
-            $licenceDetails = $mActiveTradeLicence->getLicenceNo($req->applicationId);
-            if (!$licenceDetails)
-                throw new Exception("Application Not Found for this application Id");
-
-            $appNo = $licenceDetails->application_no;
-            $tradR = $this->_CONTROLLER_TRADE;
-            $documents = $mWfActiveDocument->getTradeDocByAppNo($licenceDetails->id, $licenceDetails->workflow_id, $modul_id);
-
-            $doc = $tradR->getLicenseDocLists($req);
-            $docVerifyStatus = $doc->original["data"]["docVerifyStatus"] ?? 0;
-            return responseMsgs(true, ["docVerifyStatus" => $docVerifyStatus], remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");
-        } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
-        }
-    }
-
-
-    /**
-     * 
-     * 
-     */
-    public function uploadDocument(Request $req)
-    { 
-        try {
-
-            $req->validate([
-                "applicationId" => "required|digits_between:1,9223372036854775807",
-                "document" => "required|mimes:pdf,jpeg,png,jpg,gif",
-                "docName" => "required",
-                "docCode" => "required",
-                "ownerId" => "nullable|digits_between:1,9223372036854775807"
-            ]);
-            $tradC = $this->_CONTROLLER_TRADE;
-            $docUpload = new DocUpload;
-            $mWfActiveDocument = new WfActiveDocument();
-            $mActiveTradeLicence = $this->_MODEL_ActiveTradeLicence;
-            $relativePath = $this->_TRADE_CONSTAINT["TRADE_RELATIVE_PATH"];
-            $getLicenceDtls = $mActiveTradeLicence->getLicenceNo($req->applicationId);
-            if (!$getLicenceDtls) {
-                throw new Exception("Data Not Found!!!!!");
-            }
-            if ($getLicenceDtls->is_doc_verified) {
-                throw new Exception("Document Are Verifed You Cant Reupload Documents");
-            }
-            $documents = $tradC->getLicenseDocLists($req);
-            if (!$documents->original["status"]) {
-                throw new Exception($documents->original["message"]);
-            };
-
-            $refUlbDtl      = UlbMaster::find($getLicenceDtls->ulb_id);
-            $mShortUlbName  = $refUlbDtl->short_name??"";
-            if(!$mShortUlbName){
-                foreach ((explode(' ', $refUlbDtl->ulb_name)??"") as $val) {
-                    $mShortUlbName .= $val[0];
-                }
-            }
-            $relativePath = trim($relativePath."/".$mShortUlbName,"/");
-
-            $applicationDoc = $documents->original["data"]["listDocs"];
-            $applicationDocName = $applicationDoc->implode("docName", ",");
-            $applicationDocCode = $applicationDoc->where("docName", $req->docName)->first();
-            $applicationCode = $applicationDocCode ? $applicationDocCode["masters"]->implode("documentCode", ",") : "";
-            // $mandetoryDoc = $applicationDoc->whereIn("docType",["R","OR"]);
-
-            $ownerDoc = $documents->original["data"]["ownerDocs"];
-            $ownerDocsName = $ownerDoc->map(function ($val) {
-                $doc = $val["documents"]->map(function ($val1) {
-                    return ["docType" => $val1["docType"], "docName" => $val1["docName"], "documentCode" => $val1["masters"]->implode("documentCode", ",")];
-                });
-                $ownereId = $val["ownerDetails"]["ownerId"];
-                $docNames = $val["documents"]->implode("docName", ",");
-                return ["ownereId" => $ownereId, "docNames" => $docNames, "doc" => $doc];
-            });
-            $ownerDocNames = $ownerDocsName->implode("docNames", ",");
-
-            $ownerIds = $ownerDocsName->implode("ownereId", ",");
-            $particuler = (collect($ownerDocsName)->where("ownereId", $req->ownerId)->values())->first();
-
-            $ownereDocCode = $particuler ? collect($particuler["doc"])->where("docName", $req->docName)->all() : "";
-
-            $particulerDocCode = collect($ownereDocCode)->implode("documentCode", ",");
-            if (!(in_array($req->docName, explode(",", $applicationDocName)) == true || in_array($req->docName, explode(",", $ownerDocNames)) == true)) {
-                throw new Exception("Invalid Doc Name Pass");
-            }
-            if (in_array($req->docName, explode(",", $applicationDocName)) && (empty($applicationDocCode) || !(in_array($req->docCode, explode(",", $applicationCode))))) {
-                throw new Exception("Invalid Application Doc Code Pass");
-            }
-            if (in_array($req->docName, explode(",", $ownerDocNames)) && (!(in_array($req->ownerId, explode(",", $ownerIds))))) {
-                throw new Exception("Invalid ownerId Pass");
-            }
-            if (in_array($req->docName, explode(",", $ownerDocNames)) && ($ownereDocCode && !(in_array($req->docCode, explode(",", $particulerDocCode))))) {
-                throw new Exception("Invalid Ownere Doc Code Pass");
-            }
-
-            $metaReqs = array();
-
-            $refImageName = $req->docCode;
-            $refImageName = $getLicenceDtls->id . '-' . str_replace(' ', '_', $refImageName);
-            $document = $req->document;
-
-            $imageName = $docUpload->upload($refImageName, $document, $relativePath);
-
-            $metaReqs['moduleId'] = $this->_MODULE_ID;
-            $metaReqs['activeId'] = $getLicenceDtls->id;
-            $metaReqs['workflowId'] = $getLicenceDtls->workflow_id;
-            $metaReqs['ulbId'] = $getLicenceDtls->ulb_id;
-            $metaReqs['relativePath'] = $relativePath;
-            $metaReqs['document'] = $imageName;
-            $metaReqs['docCode'] = $req->docName; //$req->docCode;
-
-            if (in_array($req->docName, explode(",", $ownerDocNames))) {
-                $metaReqs['ownerDtlId'] = $req->ownerId;
-            }
-            $this->begin();
-            #reupload documents;
-            $sms = "";
-            if ($privDoc = $mWfActiveDocument->getTradeAppByAppNoDocId($getLicenceDtls->id, $getLicenceDtls->ulb_id, collect($req->docName), $getLicenceDtls->workflow_id, $metaReqs['ownerDtlId'] ?? null)) 
-            {
-                if ($privDoc->verify_status != 2) 
-                {
-                    // dd("update");
-                    $arr["verify_status"] = 0;
-                    $arr['relative_path'] = $relativePath;
-                    $arr['document'] = $imageName;
-                    $arr['doc_code'] = $req->docName;
-                    $arr['owner_dtl_id'] = $metaReqs['ownerDtlId'] ?? null;
-                    $mWfActiveDocument->docVerifyReject($privDoc->id, $arr);
-                } 
-                else 
-                {
-                    // dd("reupload");
-                    $mWfActiveDocument->docVerifyReject($privDoc->id, ["status" => 0]);
-                    $metaReqs = new Request($metaReqs);
-                    $metaReqs =  $mWfActiveDocument->metaReqs($metaReqs);
-                    foreach($metaReqs as $key=>$val)
-                    {
-                        $mWfActiveDocument->$key = $val;
-                    }
-                    $mWfActiveDocument->save();
-                    // $mWfActiveDocument->postDocuments($metaReqs);
-                }
-                $sms = " Update Successful";
-                // return responseMsgs(true, $req->docName . " Update Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
-            }
-            else{
-                #new documents;
-                $metaReqs = new Request($metaReqs);
-                $metaReqs =  $mWfActiveDocument->metaReqs($metaReqs);
-                foreach($metaReqs as $key=>$val)
-                {
-                    $mWfActiveDocument->$key = $val;
-                }
-                $mWfActiveDocument->save();
-                // $mWfActiveDocument->postDocuments($metaReqs);
-                $sms = " Uploadation Successful";
-            }
-            $this->commit();
-            return responseMsgs(true,  $req->docName . $sms, "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
-        } catch (Exception $e) {
-            $this->rollback();
-            return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
-        }
-    }
+    
 }
