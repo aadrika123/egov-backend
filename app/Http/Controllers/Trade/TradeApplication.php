@@ -182,7 +182,7 @@ class TradeApplication extends Controller
     
     #=======================[📖 MDM DATA FOR APPLICATION APPLY | S.L (1.0) 📖]===============================================        
     public function getApplyData(Request $request)
-    {        
+    {
         try {
             $refUser            = Auth()->user();
             $refUserId          = $refUser->id;
@@ -192,7 +192,7 @@ class TradeApplication extends Controller
             $mApplicationTypeId = $this->_TRADE_CONSTAINT["APPLICATION-TYPE"][$request->applicationType] ?? null;
             $mnaturOfBusiness   = null;
             $data               = array();
-            $rules["applicationType"] = "required|string|in:NEWLICENSE,RENEWAL,AMENDMENT,SURRENDER";
+            $rules["applicationType"] = "required|string|in:".collect(flipConstants($this->_TRADE_CONSTAINT["APPLICATION-TYPE"]))->implode(",");
             if (!in_array($mApplicationTypeId, [1])) {
                 $rules["licenseId"] = "required|digits_between:1,9223372036854775807";
             }
@@ -200,13 +200,8 @@ class TradeApplication extends Controller
             if ($validator->fails()) {
                 return responseMsg(false, $validator->errors(), "");
             }
-            #------------------------End Declaration-----------------------                       
+            #------------------------End Declaration-----------------------  
             
-            $data['userType']           = $mUserType;
-            $data["firmTypeList"]       =$this->_MODEL_TradeParamFirmType->List();
-            $data["ownershipTypeList"]  =$this->_MODEL_TradeParamOwnershipType->List();
-            $data["categoryTypeList"]   =$this->_MODEL_TradeParamCategoryType->List();
-            $data["natureOfBusiness"]   =$this->_MODEL_TradeParamItemType->List(true);
             if (isset($request->licenseId) && $request->licenseId  && $mApplicationTypeId != 1) {
                 $mOldLicenceId = $request->licenseId;
                 $nextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
@@ -229,7 +224,7 @@ class TradeApplication extends Controller
                 if ($refOldLicece->pending_status != 5) {
                     throw new Exception("Application not approved Please Track  " . $refOldLicece->application_no);
                 }
-                $refOldOwneres = TradeOwner::readConnection()->owneresByLId($request->licenseId);
+                $refOldOwneres = $refOldLicece->owneres()->get();
                 $mnaturOfBusiness = $this->_MODEL_TradeParamItemType->readConnection()->itemsById($refOldLicece->nature_of_bussiness);
                 $natur = array();
                 foreach ($mnaturOfBusiness as $val) {
@@ -241,9 +236,14 @@ class TradeApplication extends Controller
                 $refOldLicece->nature_of_bussiness = $natur;
                 $data["licenceDtl"]     =  $refOldLicece;
                 $data["ownerDtl"]       = $refOldOwneres;
+                $data['userType']           = $mUserType;
+                $data["firmTypeList"]       =$this->_MODEL_TradeParamFirmType->List();
+                $data["ownershipTypeList"]  =$this->_MODEL_TradeParamOwnershipType->List();
+                $data["categoryTypeList"]   =$this->_MODEL_TradeParamCategoryType->List();
+                $data["natureOfBusiness"]   =$this->_MODEL_TradeParamItemType->List(true);
                 $refUlbId = $refOldLicece->ulb_id;
             } 
-            if (in_array(strtoupper($mUserType), ["ONLINE", "JSK", "SUPER ADMIN", "TL"])) {               
+            if (in_array(strtoupper($mUserType), $this->_TRADE_CONSTAINT["CANE-NO-HAVE-WARD"])) {               
                 $data['wardList'] = $this->_MODEL_WARD->getOldWard($refUlbId)->map(function ($val) {
                     $val->ward_no = $val->ward_name;
                     return $val;
@@ -260,7 +260,7 @@ class TradeApplication extends Controller
 
     #=====================[📝 📖 CREATE NEW APPLICATION | S.L (2.0) 📖 📝]========================================================
     public function applyApplication(ReqAddRecorde $request)
-    {
+    { 
         $refUser            = Auth()->user();
         $refUserId          = $refUser->id;
         $refUlbId           = $refUser->ulb_id;
@@ -272,10 +272,10 @@ class TradeApplication extends Controller
         $refWorkflows       = $this->_COMMON_FUNCTION->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
         $mApplicationTypeId = ($this->_TRADE_CONSTAINT["APPLICATION-TYPE"][$request->applicationType] ?? null);
         try {
-            if ((!$this->_COMMON_FUNCTION->checkUsersWithtocken("users")) && (strtoupper($mUserType) == "ONLINE")) {
+            if ((!$this->_COMMON_FUNCTION->checkUsersWithtocken("users"))) {
                 throw new Exception("Citizen Not Allowed");
             }
-            if (!in_array(strtoupper($mUserType), ["ONLINE", "JSK", "UTC", "TC", "SUPER ADMIN", "TL"])) {
+            if (!in_array(strtoupper($mUserType), $this->_TRADE_CONSTAINT["CANE-APPLY-APPLICATION"])) {
                 throw new Exception("You Are Not Authorized For This Action !");
             }
             if (!$mApplicationTypeId) {
@@ -289,11 +289,7 @@ class TradeApplication extends Controller
             }
             if (!$refWorkflows['finisher']) {
                 throw new Exception("Finisher Not Available");
-            }
-            // return $request->applicationType;
-            if (in_array($mApplicationTypeId, ["2", "3", "4"]) && (!$request->licenseId || !is_numeric($request->licenseId))) {
-                throw new Exception("Old licence Id Requird");
-            }
+            }            
             return $this->_REPOSITORY->addRecord($request);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
@@ -1072,13 +1068,13 @@ class TradeApplication extends Controller
                 }
                 $activeLicence->delete();
                 $msg = "Application Successfully Rejected !!";
-                // $sms = trade(["application_no"=>$approvedLicence->application_no,"licence_no"=>$approvedLicence->license_no,"ulb_name"=>$refUlbDtl->ulb_name??""],"Application Approved");
+                $sms = trade(["application_no"=>$approvedLicence->application_no,"licence_no"=>$approvedLicence->license_no,"ulb_name"=>$refUlbDtl->ulb_name??""],"Application Reject");
             }
             if (($sms["status"] ?? false)) {
                 $tradC = $this->_CONTROLLER_TRADE;
                 $owners = $tradC->getAllOwnereDtlByLId($req->applicationId);
                 foreach ($owners as $val) {
-                    // $respons=send_sms($val["mobile_no"],$sms["sms"],$sms["temp_id"]);
+                    $respons=send_sms($val["mobile_no"],$sms["sms"],$sms["temp_id"]);
                 }
             }
             $this->commit();

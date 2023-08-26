@@ -168,7 +168,7 @@ class Trade implements ITrade
         if($db1!=$db3 && $db2!=$db3)
         $this->_NOTICE_DB->commit();
     }
-    # Serial No : 01
+    #=====================[📝 📖 CREATE NEW APPLICATION | S.L (1.0) 📖 📝]========================================================
     /**
      * | Apply Of Application
      * | --------------------descriptin------------------------------------
@@ -264,17 +264,22 @@ class Trade implements ITrade
                 $mShortUlbName .= $mval[0];
             }
             #------------------------End Declaration-----------------------
-            if (in_array(strtoupper($mUserType), ["ONLINE", "JSK", "SUPER ADMIN", "TL"])) {
+            if (in_array(strtoupper($mUserType), ["ONLINE", "JSK", "SUPER ADMIN", "TL"])) 
+            {
                 $data['wardList'] = $this->_MODEL_WARD->getAllWard($refUlbId)->map(function ($val) {
                     $val->ward_no = $val->ward_name;
                     return $val;
                 });
                 $data['wardList'] = objToArray($data['wardList']);                
-            } else {
+            } 
+            else 
+            {
                 $data['wardList'] = $this->_COMMON_FUNCTION->WardPermission($refUserId);
             }
-            if ($request->getMethod() == "POST") {
-                if ($request->firmDetails['holdingNo']) {
+            if ($request->getMethod() == "POST") 
+            {
+                if ($request->firmDetails['holdingNo']) 
+                {
                     $property = $this->propertyDetailsfortradebyHoldingNo($request->firmDetails['holdingNo'], $refUlbId);
                     if ($property['status'])
                         $mProprtyId = $property['property']['id'];
@@ -360,7 +365,8 @@ class Trade implements ITrade
                         $owner->user_id  = $refUserId;
                         $owner->save();
                     }
-                } elseif ($mApplicationTypeId == 3) # code for Amendment
+                } 
+                elseif ($mApplicationTypeId == 3) # code for Amendment
                 {
                     $this->amedmentLicense($licence, $refOldLicece, $request);
                     $licence->valid_from    = date('Y-m-d');
@@ -386,12 +392,7 @@ class Trade implements ITrade
                 elseif ($mApplicationTypeId == 1) # code for New License
                 {
                     $wardId = $request->firmDetails['wardNo'];
-                    $mWardNo = (collect($data['wardList'])->where("id",$wardId)->pluck("ward_no"));
-                    // $mWardNo = array_filter($data['wardList'], function ($val) use ($wardId) {
-                    //     return $val['id'] == $wardId;
-                    // });
-                    
-                    // $mWardNo = array_values($mWardNo)[0]['ward_no'] ?? "";
+                    $mWardNo = (collect($data['wardList'])->where("id",$wardId)->pluck("ward_no"));                    
                     $mWardNo =  $mWardNo[0]??"";
                     $this->newLicense($licence, $request);
                     $licence->valid_from    = $licence->application_date;
@@ -415,7 +416,6 @@ class Trade implements ITrade
                 {
                     $noticeNo = trim($request->initialBusinessDetails['noticeNo']);
                     $firm_date = $request->firmDetails['firmEstdDate'];
-                    // $refNoticeDetails = $this->getDenialFirmDetails($refUlbId, strtoupper(trim($noticeNo)));
                     $refNoticeDetails = $this->_NOTICE->getDtlByNoticeNo(strtoupper(trim($noticeNo)),$refUlbId,);
                     if ($refNoticeDetails) 
                     {
@@ -457,8 +457,7 @@ class Trade implements ITrade
                 {
                     $licence->denial_id = $refDenialId;
                     $licence->update();
-                    $this->_NOTICE->noticeClose($licence->denial_id);
-                    // $this->updateStatusFine($refDenialId, 0, $licenceId, 1); //update status and fineAmount                     
+                    $this->_NOTICE->noticeClose($licence->denial_id);                   
                 }
                 #---------------- End transaction of payment----------------------------
                 if ($mApplicationTypeId == 4) 
@@ -945,7 +944,9 @@ class Trade implements ITrade
             }
         }
     }
-    # Serial No : 02
+
+
+    #=====================[ 📖 UPDATE APPLICATION | S.L (2.0) 📖 ]========================================================
     public function updateLicenseBo(Request $request)
     {
         try {
@@ -968,7 +969,7 @@ class Trade implements ITrade
             if (!$refOldLicece) {
                 throw new Exception("No Licence Found");
             }
-            $refOldOwneres = ActiveTradeOwner::owneresByLId($mLicenceId);
+            $refOldOwneres = ActiveTradeOwner::readConnectin()->owneresByLId($mLicenceId);
             $mnaturOfBusiness = !empty(trim($refOldLicece->nature_of_bussiness)) ? $this->_MODEL_TradeParamItemType->itemsById($refOldLicece->nature_of_bussiness) : [];
             $natur = array();
             foreach ($mnaturOfBusiness as $val) {
@@ -982,15 +983,17 @@ class Trade implements ITrade
             $data["licenceDtl"]         =  $refOldLicece;
             $data["ownerDtl"]           = $refOldOwneres;
             $data['userType']           = $mUserType;
-            $data["firmTypeList"]       = TradeParamFirmType::List();
-            $data["ownershipTypeList"]  = TradeParamOwnershipType::List();
-            $data["categoryTypeList"]   = TradeParamCategoryType::List();
-            $data["natureOfBusiness"]   = TradeParamItemType::List(true);
+            $data["firmTypeList"]       = TradeParamFirmType::readConnectin()->List();
+            $data["ownershipTypeList"]  = TradeParamOwnershipType::readConnectin()->List();
+            $data["categoryTypeList"]   = TradeParamCategoryType::readConnectin()->List();
+            $data["natureOfBusiness"]   = TradeParamItemType::readConnectin()->List(true);
             return responseMsg(true, "", remove_null($data));
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+
+    #=====================[📝📖 UPDATE APPLICATION | S.L (2.1) 📖📝]========================================================
     public function updateBasicDtl(Request $request)
     {
         $user       = Auth()->user();
@@ -3277,7 +3280,7 @@ class Trade implements ITrade
     public function getActiveLicenseById($id)
     {
         try {
-            $application = ActiveTradeLicence::select(
+            $application = ActiveTradeLicence::readConnection()->select(
                 "active_trade_licences.*",
                 "trade_param_application_types.application_type",
                 "trade_param_category_types.category_type",

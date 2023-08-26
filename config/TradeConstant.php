@@ -30,6 +30,7 @@ return [
     ],
     "USER-TYPE-SHORT-NAME" =>
     [
+        ""                 =>"ONLINE",
         "SUPER ADMIN"       =>  "SUPER ADMIN",
         "ADMIN"             =>  "ADMIN",
         "PROJECT MANAGER"   =>  "PM",
@@ -62,4 +63,7 @@ return [
         "EO"                =>  "EO",
 
     ],
+    "CANE-NO-HAVE-WARD"=>["ONLINE", "JSK","BO" ,"PM","SUPER ADMIN", "TL"],
+    "CANE-APPLY-APPLICATION"=>["ONLINE", "JSK", "UTC", "TC", "SUPER ADMIN", "TL"],
+    "CANE-CUTE-PAYMENT"=>["JSK", "UTC", "TC", "SUPER ADMIN", "TL"],
 ];
