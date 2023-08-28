@@ -16,7 +16,7 @@ class UlbWardMaster extends Model
      */
     public function getWardById($id)
     {
-        return UlbWardMaster::find($id);
+        return UlbWardMaster::on('pgsql::read')->find($id);
     }
 
     /**
@@ -25,7 +25,7 @@ class UlbWardMaster extends Model
      */
     public function getWardByUlbId($ulbId)
     {
-        return UlbWardMaster::select('id', 'ward_name')
+        return UlbWardMaster::on('pgsql::read')->select('id', 'ward_name')
             ->where('ulb_id', $ulbId)
             ->where('status', 1)
             ->get();
@@ -37,7 +37,7 @@ class UlbWardMaster extends Model
      */
     public function getWard($id)
     {
-        return UlbWardMaster::where('id', $id)
+        return UlbWardMaster::on('pgsql::read')->where('id', $id)
             ->firstOrFail();
     }
 
@@ -47,7 +47,7 @@ class UlbWardMaster extends Model
      */
     public function getExistWard($id)
     {
-        return UlbWardMaster::where('id', $id)
+        return UlbWardMaster::on('pgsql::read')->where('id', $id)
             ->first();
     }
 }

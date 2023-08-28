@@ -13,7 +13,7 @@ class RefPropUsageType extends Model
 
     public function propUsageType()
     {
-        return RefPropUsageType::select(
+        return RefPropUsageType::on('pgsql::read')->select(
             'id',
             DB::raw('INITCAP(usage_type) as usage_type'),
             'usage_code'
@@ -25,7 +25,7 @@ class RefPropUsageType extends Model
 
     public function propAllUsageType()
     {
-        return RefPropUsageType::select(
+        return RefPropUsageType::on('pgsql::read')->select(
             'id',
             DB::raw('INITCAP(usage_type) as usage_type'),
             'usage_code'

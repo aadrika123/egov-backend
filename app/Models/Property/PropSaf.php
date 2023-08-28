@@ -15,7 +15,8 @@ class PropSaf extends Model
      */
     public function getSafDtlsBySafNo($safNo)
     {
-        return DB::table('prop_safs as s')
+        return DB::connection('pgsql::read')
+            ->table('prop_safs as s')
             ->where('s.saf_no', strtoupper($safNo))
             ->select(
                 's.id',
@@ -68,7 +69,8 @@ class PropSaf extends Model
      */
     public function getGbSafDtlsBySafNo($safNo)
     {
-        return DB::table('prop_safs as s')
+        return DB::connection('pgsql::read')
+            ->table('prop_safs as s')
             ->where('s.saf_no', strtoupper($safNo))
             ->select(
                 's.id',
@@ -116,29 +118,30 @@ class PropSaf extends Model
      */
     public function searchSafs()
     {
-        return PropSaf::select(
-            'prop_safs.id',
-            DB::raw("'approved' as status"),
-            'prop_safs.saf_no',
-            'prop_safs.assessment_type',
-            DB::raw(
-                "case when prop_safs.payment_status = 0 then 'Payment Not Done'
+        return PropSaf::on('pgsql::read')
+            ->select(
+                'prop_safs.id',
+                DB::raw("'approved' as status"),
+                'prop_safs.saf_no',
+                'prop_safs.assessment_type',
+                DB::raw(
+                    "case when prop_safs.payment_status = 0 then 'Payment Not Done'
                       when prop_safs.payment_status = 2 then 'Cheque Payment Verification Pending'
                       else role_name end
                       as current_role
                 "
-            ),
-            'role_name as currentRole',
-            'u.ward_name as old_ward_no',
-            'uu.ward_name as new_ward_no',
-            'prop_address',
-            DB::raw(
-                "case when prop_safs.user_id is not null then 'TC/TL/JSK' when 
+                ),
+                'role_name as currentRole',
+                'u.ward_name as old_ward_no',
+                'uu.ward_name as new_ward_no',
+                'prop_address',
+                DB::raw(
+                    "case when prop_safs.user_id is not null then 'TC/TL/JSK' when 
                 prop_safs.citizen_id is not null then 'Citizen' end as appliedBy"
-            ),
-            DB::raw("string_agg(so.mobile_no::VARCHAR,',') as mobile_no"),
-            DB::raw("string_agg(so.owner_name,',') as owner_name"),
-        )
+                ),
+                DB::raw("string_agg(so.mobile_no::VARCHAR,',') as mobile_no"),
+                DB::raw("string_agg(so.owner_name,',') as owner_name"),
+            )
             ->leftjoin('wf_roles', 'wf_roles.id', 'prop_safs.current_role')
             ->join('ulb_ward_masters as u', 'u.id', 'prop_safs.ward_mstr_id')
             ->leftjoin('ulb_ward_masters as uu', 'uu.id', 'prop_safs.new_ward_mstr_id')
@@ -150,25 +153,28 @@ class PropSaf extends Model
      */
     public function searchGbSafs()
     {
-        return PropSaf::select(
-            'prop_safs.id',
-            DB::raw("'approved' as status"),
-            'prop_safs.saf_no',
-            'prop_safs.assessment_type',
-            DB::raw(
-                "case when prop_safs.payment_status!=1 then 'Payment Not Done'
+        return PropSaf::on('pgsql::read')
+            ->select(
+                'prop_safs.id',
+                DB::raw("'approved' as status"),
+                'prop_safs.saf_no',
+                'prop_safs.assessment_type',
+                DB::raw(
+                    "case when prop_safs.payment_status!=1 then 'Payment Not Done'
                       else role_name end
                       as current_role
                 "
-            ),
-            'role_name as currentRole',
-            'ward_name as old_ward_no',
-            'prop_address',
-            'gbo.officer_name',
-            'gbo.mobile_no'
-        )
+                ),
+                'role_name as currentRole',
+                'u.ward_name as old_ward_no',
+                'uu.ward_name as new_ward_no',
+                'prop_address',
+                'gbo.officer_name',
+                'gbo.mobile_no',
+            )
             ->leftjoin('wf_roles', 'wf_roles.id', 'prop_safs.current_role')
-            ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_safs.ward_mstr_id')
+            ->join('ulb_ward_masters as u', 'u.id', 'prop_safs.ward_mstr_id')
+            ->leftjoin('ulb_ward_masters as uu', 'uu.id', 'prop_safs.new_ward_mstr_id')
             ->join('prop_gbofficers as gbo', 'gbo.saf_id', 'prop_safs.id');
     }
 
@@ -177,7 +183,8 @@ class PropSaf extends Model
      */
     public function getSafDtls()
     {
-        return DB::table('prop_safs')
+        return DB::connection('pgsql::read')
+            ->table('prop_safs')
             ->select(
                 'prop_safs.*',
                 'prop_safs.assessment_type as assessment',
@@ -224,7 +231,8 @@ class PropSaf extends Model
      */
     public function countPreviousHoldings($previousHoldingId)
     {
-        return PropSaf::where('previous_holding_id', $previousHoldingId)
+        return PropSaf::on('pgsql::read')
+            ->where('previous_holding_id', $previousHoldingId)
             ->count();
     }
 }

@@ -12,7 +12,7 @@ class RefPropOccupancyType extends Model
 
     public function propOccupancyType()
     {
-        return RefPropOccupancyType::select(
+        return RefPropOccupancyType::on('pgsql::read')->select(
             'id',
             DB::raw('INITCAP(occupancy_type) as occupancy_type')
         )

@@ -20,7 +20,8 @@ class PropSafVerificationDtl extends Model
     // Get Full Verification Details
     public function getFullVerificationDtls($verifyId)
     {
-        return DB::table('prop_saf_verification_dtls as v')
+        return DB::connection('pgsql::read')
+            ->table('prop_saf_verification_dtls as v')
             ->select(
                 'v.id',
                 'v.verification_id',

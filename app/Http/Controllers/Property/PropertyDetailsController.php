@@ -387,9 +387,9 @@ class PropertyDetailsController extends Controller
         $request->validate([
             'filteredBy' => "required",
             'parameter' => "nullable",
-            // 'plotNo' => 'sometimes|required_if:filteredBy=khataNo',
+            // 'khataNo' => 'sometimes|required_if:filteredBy=khataNo',
             // 'plotNo' => 'sometimes|required_if:filteredBy=khataNo'
-            // 'plotNo' => 'sometimes|required_if:filteredBy=khataNo'
+            // 'maujaName' => 'sometimes|required_if:filteredBy=khataNo'
         ]);
 
         try {

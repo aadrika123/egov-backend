@@ -27,17 +27,12 @@ class PropRwhVerification extends Model
      */
     public function getVerificationsData($applicationId)
     {
-        return DB::table('prop_rwh_verifications')
+        return PropRwhVerification::on('pgsql::read')
             ->select(
                 '*',
                 'prop_rwh_verifications.harvesting_status',
                 'agency_verification'
-                // 'p.property_type',
-                // 'r.road_type',
-                // 'u.ward_name as ward_no'
             )
-            // ->join('ulb_ward_masters as u', 'u.id', '=', 'prop_saf_verifications.ward_id')
-            // ->join('prop_properties', 'prop_properties.id', 'prop_rwh_verifications.property_id')
             ->where('prop_rwh_verifications.harvesting_id', $applicationId)
             ->where('prop_rwh_verifications.agency_verification', true)
             ->first();

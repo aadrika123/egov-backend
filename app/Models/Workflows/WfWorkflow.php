@@ -19,7 +19,8 @@ class WfWorkflow extends Model
      */
     public function getulbWorkflowId($wfMstId, $ulbId)
     {
-        return  WfWorkflow::where('wf_master_id', $wfMstId)
+        return  WfWorkflow::on('pgsql::read')
+            ->where('wf_master_id', $wfMstId)
             ->where('ulb_id', $ulbId)
             ->where('is_suspended', false)
             ->first();
@@ -99,7 +100,8 @@ class WfWorkflow extends Model
      */
     public function getWfMstrByWorkflowId($workflowId)
     {
-        return WfWorkflow::select('wf_master_id')
+        return WfWorkflow::on('pgsql::read')
+            ->select('wf_master_id')
             ->where('id', $workflowId)
             ->firstOrFail();
     }
@@ -109,6 +111,7 @@ class WfWorkflow extends Model
      */
     public function getWfDetails($ulbWorkflowId)
     {
-        return WfWorkflow::findOrFail($ulbWorkflowId);
+        return WfWorkflow::on('pgsql::read')
+            ->findOrFail($ulbWorkflowId);
     }
 }

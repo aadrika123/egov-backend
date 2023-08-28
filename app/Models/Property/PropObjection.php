@@ -50,8 +50,9 @@ class PropObjection extends Model
             'u.ward_name as old_ward_no',
             'uu.ward_name as new_ward_no',
             'prop_address',
-            // DB::raw("string_agg(prop_owners.mobile_no::VARCHAR,',') as mobile_no"),
-            // DB::raw("string_agg(prop_owners.owner_name,',') as owner_name"),
+            'new_holding_no',
+            DB::raw("(SELECT owner_name FROM prop_owners WHERE property_id=pp.id order by id LIMIT 1)"),
+            DB::raw("(SELECT mobile_no FROM prop_owners WHERE property_id=pp.id order by id LIMIT 1)"),
         )
 
             ->join('wf_roles', 'wf_roles.id', 'prop_objections.current_role')

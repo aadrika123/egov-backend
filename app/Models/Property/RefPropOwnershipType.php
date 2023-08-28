@@ -15,7 +15,7 @@ class RefPropOwnershipType extends Model
      */
     public function getPropOwnerTypes()
     {
-        return RefPropOwnershipType::select(
+        return RefPropOwnershipType::on('pgsql::read')->select(
             'id',
             DB::raw('INITCAP(ownership_type) as ownership_type')
         )

@@ -15,7 +15,7 @@ class RefPropTransferMode extends Model
      */
     public function getTransferModes()
     {
-        return RefPropTransferMode::select(
+        return RefPropTransferMode::on('pgsql::read')->select(
             'id',
             DB::raw('INITCAP(transfer_mode) as transfer_mode')
         )

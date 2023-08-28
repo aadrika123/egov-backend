@@ -180,15 +180,19 @@ class PropActiveConcession extends Model
             'prop_active_concessions.application_no',
             'prop_active_concessions.current_role',
             'role_name as currentRole',
-            'ward_name',
+            'u.ward_name as old_ward_no',
+            'uu.ward_name as new_ward_no',
             'prop_address',
-            // DB::raw("string_agg(prop_owners.mobile_no::VARCHAR,',') as mobile_no"),
-            // DB::raw("string_agg(prop_owners.owner_name,',') as owner_name"),
+            'owner_name',
+            'prop_owners.mobile_no',
+            'new_holding_no',
+            'pp.id as property_id'
         )
 
             ->leftjoin('wf_roles', 'wf_roles.id', 'prop_active_concessions.current_role')
             ->join('prop_properties as pp', 'pp.id', 'prop_active_concessions.property_id')
-            ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'pp.ward_mstr_id')
-            ->join('prop_owners', 'prop_owners.property_id', 'pp.id');
+            ->join('ulb_ward_masters as u', 'u.id', 'pp.ward_mstr_id')
+            ->join('ulb_ward_masters as uu', 'uu.id', 'pp.new_ward_mstr_id')
+            ->join('prop_owners', 'prop_owners.property_id', 'prop_active_concessions.prop_owner_id');
     }
 }

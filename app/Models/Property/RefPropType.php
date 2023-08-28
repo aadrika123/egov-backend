@@ -16,7 +16,7 @@ class RefPropType extends Model
      */
     public function propPropertyType()
     {
-        return RefPropType::select(
+        return RefPropType::on('pgsql::read')->select(
             'id',
             DB::raw('INITCAP(property_type) as property_type')
         )

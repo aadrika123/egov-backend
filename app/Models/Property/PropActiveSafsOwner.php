@@ -35,6 +35,7 @@ class PropActiveSafsOwner extends Model
 
     /**
      * | Get Owners by SAF Id
+     * | read / write
      */
     public function getOwnersBySafId($safId)
     {
@@ -51,7 +52,7 @@ class PropActiveSafsOwner extends Model
      */
     public function getOwnerDtlsBySafId($safId)
     {
-        return PropActiveSafsOwner::where('saf_id', $safId)
+        return PropActiveSafsOwner::on('pgsql::read')
             ->select(
                 'owner_name as ownerName',
                 'mobile_no as mobileNo',
@@ -61,6 +62,7 @@ class PropActiveSafsOwner extends Model
                 'is_armed_force',
                 'is_specially_abled'
             )
+            ->where('saf_id', $safId)
             ->orderBy('id')
             ->get();
     }
