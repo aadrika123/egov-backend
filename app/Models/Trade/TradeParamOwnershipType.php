@@ -31,7 +31,7 @@ class TradeParamOwnershipType extends TradeParamModel
     {
         return $this->hasMany(TradeRenewal::class,'ownership_type_id',"id");
     }
-    public static function List()
+    public function List()
     {
          return self::select("id","ownership_type")
                 ->where("status",1)

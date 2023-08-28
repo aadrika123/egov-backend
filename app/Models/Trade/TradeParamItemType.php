@@ -13,7 +13,7 @@ class TradeParamItemType extends TradeParamModel
     {
         parent::__construct($DB);
     }
-    public static function List($all=false)
+    public  function List($all=false)
     {
         if($all)
         {

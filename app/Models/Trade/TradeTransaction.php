@@ -16,7 +16,7 @@ class TradeTransaction extends TradeParamModel
         parent::__construct($DB);
     }
 
-    public static function listByLicId($licenseId)
+    public function listByLicId($licenseId)
     {
         return self::select("*")
             ->where("temp_id", $licenseId)
@@ -24,7 +24,7 @@ class TradeTransaction extends TradeParamModel
             ->get();
     }
 
-    public static function chequeTranDtl($ulbId)
+    public function chequeTranDtl($ulbId)
     {
         return  TradeTransaction::select(
             'trade_cheque_dtls.*',

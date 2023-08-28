@@ -31,7 +31,7 @@ class TradeParamFirmType extends TradeParamModel
         return $this->hasMany(TradeRenewal::class,'firm_type_id',"id");
     }
 
-    public static function List()
+    public function List()
     {
         return self::select("id","firm_type")
                 ->where("status",1)
