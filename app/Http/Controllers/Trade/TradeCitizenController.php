@@ -33,14 +33,15 @@ class TradeCitizenController extends Controller
 {
     use Auth;               // Trait Used added by sandeep bara date 17-09-2022    
     use Razorpay;
-    /**
-     * | Created On-22-12-2022 
-     * | Created By-Sandeep Bara
-     * --------------------------------------------------------------------------------------
-     * | Controller regarding with Trade Module
-     */
+    #====================[🅾️OWNER DETAILS🅾️]==========================
+        /**
+         * | Created On-22-12-2022 
+         * | Created By-Sandeep Bara
+         * --------------------------------------------------------------------------------------
+         * | Controller regarding with Trade Module
+         */
 
-    // Initializing function for Repository
+    #======================[❎VARIABLES❎]============================
 
     protected $_DB;
     protected $_DB_NAME;    
@@ -243,73 +244,7 @@ class TradeCitizenController extends Controller
      */
     public function getDenialDetails(Request $request)
     {
-        $this->_META_DATA["apiId"] = "c3";
-        $this->_META_DATA["queryRunTime"] = 2.48;
-        $this->_META_DATA["action"]    = $request->getMethod();
-        $this->_META_DATA["deviceId"] = $request->ip();
-
-        $data = (array)null;
-        $refUser = Auth()->user();
-        $refUlbId = $request->ulbId;
-        $mNoticeNo = null;
-        $mNowDate = Carbon::now()->format('Y-m-d'); // todays date
-        try {
-            $rules = [
-                "noticeNo" => "required|string",
-                "ulbId"    => "required|digits_between:1,92"
-            ];
-            if(!$this->_COMMON_FUNCTION->checkUsersWithtocken("active_citizens"))
-            {
-                throw New Exception("Counter User Not Allowed");
-            }
-            $validator = Validator::make($request->all(), $rules,);
-            if ($validator->fails()) {
-                return responseMsg(false, $validator->errors(), "");
-            }
-            $mNoticeNo = $request->noticeNo;
-
-            // $refDenialDetails =  $this->_REPOSITORY_TRADE->getDenialFirmDetails($refUlbId, strtoupper(trim($mNoticeNo)));
-            $refDenialDetails = $this->_NOTICE->getDtlByNoticeNo(strtoupper(trim($mNoticeNo)),$refUlbId,);
-            if ($refDenialDetails) {
-                $notice_date = Carbon::parse($refDenialDetails['notice_date'])->format('Y-m-d'); //notice date
-                $denialAmount =  $this->_REPOSITORY_TRADE->getDenialAmountTrade($notice_date, $mNowDate);
-                $data['denialDetails'] = $refDenialDetails;
-                $data['denialAmount'] = $denialAmount;
-                return responseMsgs(
-                    true,
-                    "",
-                    $data,
-                    $this->_META_DATA["apiId"],
-                    $this->_META_DATA["version"],
-                    $this->_META_DATA["queryRunTime"],
-                    $this->_META_DATA["action"],
-                    $this->_META_DATA["deviceId"]
-                );
-            } else {
-                $response = "no Data";
-                return responseMsgs(
-                    false,
-                    $response,
-                    $request->all(),
-                    $this->_META_DATA["apiId"],
-                    $this->_META_DATA["version"],
-                    $this->_META_DATA["queryRunTime"],
-                    $this->_META_DATA["action"],
-                    $this->_META_DATA["deviceId"]
-                );
-            }
-        } catch (Exception $e) {
-            return responseMsgs(
-                false,
-                $e->getMessage(),
-                "",
-                $this->_META_DATA["apiId"],
-                $this->_META_DATA["version"],
-                $this->_META_DATA["queryRunTime"],
-                $this->_META_DATA["action"],
-                $this->_META_DATA["deviceId"]
-            );
-        }
+        return($this->_REPOSITORY_TRADE->readDenialdtlbyNoticno($request));        
     }
 
     # Serial No : 04
