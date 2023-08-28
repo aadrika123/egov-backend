@@ -16,7 +16,7 @@ class PropFloor extends Model
      */
     public function getPropFloors($propertyId)
     {
-        return DB::table('prop_floors')
+        return PropFloor::on('pgsql::read')
             ->select(
                 'prop_floors.*',
                 'f.floor_name',
@@ -168,7 +168,8 @@ class PropFloor extends Model
      */
     public function getFloorByFloorMstrId($floorId)
     {
-        return PropFloor::where('prop_floors.id', $floorId)
+        return PropFloor::on('pgsql::read')
+            ->where('prop_floors.id', $floorId)
             ->join('ref_prop_usage_types', 'ref_prop_usage_types.id', 'prop_floors.usage_type_mstr_id')
             ->join('ref_prop_floors', 'ref_prop_floors.id', 'prop_floors.floor_mstr_id')
             ->join('ref_prop_occupancy_types', 'ref_prop_occupancy_types.id', 'prop_floors.occupancy_type_mstr_id')

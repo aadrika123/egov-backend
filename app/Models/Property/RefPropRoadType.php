@@ -14,7 +14,7 @@ class RefPropRoadType extends Model
     public function propRoadType()
     {
 
-        return RefPropRoadType::select(
+        return RefPropRoadType::on('pgsql::read')->select(
             'id',
             DB::raw('INITCAP(road_type) as road_type')
         )

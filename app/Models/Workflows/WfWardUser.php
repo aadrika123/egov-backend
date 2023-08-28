@@ -16,7 +16,8 @@ class WfWardUser extends Model
      */
     public function getWardsByUserId($userId)
     {
-        return WfWardUser::select('id', 'ward_id')
+        return WfWardUser::on('pgsql::read')
+            ->select('id', 'ward_id')
             ->where('user_id', $userId)
             ->orderBy('ward_id')
             ->get();
@@ -51,14 +52,15 @@ class WfWardUser extends Model
     //list ward user by id
     public function listbyId($req)
     {
-        $data = WfWardUser::select(
-            'wf_ward_users.id',
-            'user_id',
-            'ward_id',
-            'is_admin',
-            'user_name',
-            'ward_name',
-        )
+        $data = WfWardUser::on('pgsql::read')
+            ->select(
+                'wf_ward_users.id',
+                'user_id',
+                'ward_id',
+                'is_admin',
+                'user_name',
+                'ward_name',
+            )
             ->join('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'wf_ward_users.ward_id')
             ->join('users', 'users.id', 'wf_ward_users.user_id')
             ->where('wf_ward_users.id', $req->id)
@@ -70,14 +72,15 @@ class WfWardUser extends Model
     //list ward user
     public function listWardUser()
     {
-        $data = WfWardUser::select(
-            'wf_ward_users.id',
-            'user_id',
-            'ward_id',
-            'is_admin',
-            'user_name',
-            'ward_name'
-        )
+        $data = WfWardUser::on('pgsql::read')
+            ->select(
+                'wf_ward_users.id',
+                'user_id',
+                'ward_id',
+                'is_admin',
+                'user_name',
+                'ward_name'
+            )
             ->join('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'wf_ward_users.ward_id')
             ->join('users', 'users.id', 'wf_ward_users.user_id')
             ->where('is_suspended', 'false')

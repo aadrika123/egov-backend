@@ -15,7 +15,8 @@ class WfRoleusermap extends Model
      */
     public function getRoleIdByUserId($userId)
     {
-        return WfRoleusermap::select('id', 'wf_role_id', 'user_id')
+        return WfRoleusermap::on('pgsql::read')
+            ->select('id', 'wf_role_id', 'user_id')
             ->where('user_id', $userId)
             ->where('is_suspended', false)
             ->get();
@@ -26,10 +27,11 @@ class WfRoleusermap extends Model
      */
     public function getRoleDetailsByUserId($userId)
     {
-        return WfRoleusermap::select(
-            'wf_roles.role_name AS roles',
-            'wf_roles.id AS roleId'
-        )
+        return WfRoleusermap::on('pgsql::read')
+            ->select(
+                'wf_roles.role_name AS roles',
+                'wf_roles.id AS roleId'
+            )
             ->join('wf_roles', 'wf_roles.id', '=', 'wf_roleusermaps.wf_role_id')
             ->where('wf_roleusermaps.user_id', $userId)
             ->where('wf_roleusermaps.is_suspended', false)
@@ -42,7 +44,8 @@ class WfRoleusermap extends Model
      */
     public function getRoleByUserWfId($req)
     {
-        return DB::table('wf_roleusermaps as r')
+        return DB::connection('pgsql::read')
+            ->table('wf_roleusermaps as r')
             ->select(
                 'r.wf_role_id',
                 'w.forward_role_id',
@@ -57,6 +60,8 @@ class WfRoleusermap extends Model
 
     /**
      * | Get role by User Id
+        to be checked
+     * 
      */
     public function getRoleByUserId($req)
     {
@@ -76,13 +81,14 @@ class WfRoleusermap extends Model
      */
     public function getTcList($ulbId)
     {
-        return WfRoleusermap::select(
-            'users.id',
-            'name',
-            'user_type',
-            'role_name',
-            DB::raw("CONCAT(name,'(',role_name,')') AS user_name"),
-        )
+        return WfRoleusermap::on('pgsql::read')
+            ->select(
+                'users.id',
+                'name',
+                'user_type',
+                'role_name',
+                DB::raw("CONCAT(name,'(',role_name,')') AS user_name"),
+            )
             ->join('users', 'users.id', 'wf_roleusermaps.user_id')
             ->join('wf_roles', 'wf_roles.id', 'wf_roleusermaps.wf_role_id')
             ->where('users.ulb_id', $ulbId)

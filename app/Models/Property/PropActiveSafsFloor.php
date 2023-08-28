@@ -28,7 +28,7 @@ class PropActiveSafsFloor extends Model
      */
     public function getFloorsBySafId($safId)
     {
-        return DB::table('prop_active_safs_floors')
+        return PropActiveSafsFloor::on('pgsql::read')
             ->select(
                 'prop_active_safs_floors.*',
                 'f.floor_name',

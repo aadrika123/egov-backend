@@ -23,7 +23,8 @@ class PropRazorpayPenalrebate extends Model
      */
     public function getPenalRebatesByReqId($razorPayReqId)
     {
-        return PropRazorpayPenalrebate::where('razorpay_request_id', $razorPayReqId)
+        return PropRazorpayPenalrebate::on('pgsql::read')
+            ->where('razorpay_request_id', $razorPayReqId)
             ->get();
     }
 }
