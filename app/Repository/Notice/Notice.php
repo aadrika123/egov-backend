@@ -902,7 +902,7 @@ use Illuminate\Support\Str;
         }
     }
 
-    public function getDtlByNoticeNo($noticNO,$ulbId="")
+    public function getDtlByNoticeNo($noticNO,$ulbId="",$moduleId=null)
     {
         try {
             $noticeData = NoticeApplication::select(
@@ -918,6 +918,10 @@ use Illuminate\Support\Str;
         if($ulbId)
         {
             $noticeData = $noticeData->WHERE("notice_applications.ulb_id",$ulbId);
+        }
+        if($moduleId)
+        {
+            $noticeData = $noticeData->WHERE("notice_applications.module_id",$moduleId);
         }
         $noticeData = $noticeData->first();
         return $noticeData;
