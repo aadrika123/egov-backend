@@ -40,8 +40,7 @@ class PropFloor extends Model
      */
     public function getFloorsByPropId($propertyId)
     {
-        return DB::table('prop_floors')
-            ->where('property_id', $propertyId)
+        return PropFloor::where('property_id', $propertyId)
             ->where('status', 1)
             ->get();
     }
@@ -51,8 +50,7 @@ class PropFloor extends Model
      */
     public function deactivateFloorsByPropId($propId)
     {
-        DB::table('prop_floors')
-            ->where('property_id', $propId)
+        PropFloor::where('property_id', $propId)
             ->where('status', 1)
             ->update([
                 'status' => 0

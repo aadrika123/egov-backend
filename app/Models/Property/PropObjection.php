@@ -41,19 +41,20 @@ class PropObjection extends Model
      */
     public function searchObjections()
     {
-        return PropObjection::select(
-            'prop_objections.id',
-            DB::raw("'approved' as status"),
-            'prop_objections.objection_no as application_no',
-            'prop_objections.current_role',
-            'role_name as currentRole',
-            'u.ward_name as old_ward_no',
-            'uu.ward_name as new_ward_no',
-            'prop_address',
-            'new_holding_no',
-            DB::raw("(SELECT owner_name FROM prop_owners WHERE property_id=pp.id order by id LIMIT 1)"),
-            DB::raw("(SELECT mobile_no FROM prop_owners WHERE property_id=pp.id order by id LIMIT 1)"),
-        )
+        return PropObjection::on('pgsql::read')
+            ->select(
+                'prop_objections.id',
+                DB::raw("'approved' as status"),
+                'prop_objections.objection_no as application_no',
+                'prop_objections.current_role',
+                'role_name as currentRole',
+                'u.ward_name as old_ward_no',
+                'uu.ward_name as new_ward_no',
+                'prop_address',
+                'new_holding_no',
+                DB::raw("(SELECT owner_name FROM prop_owners WHERE property_id=pp.id order by id LIMIT 1)"),
+                DB::raw("(SELECT mobile_no FROM prop_owners WHERE property_id=pp.id order by id LIMIT 1)"),
+            )
 
             ->join('wf_roles', 'wf_roles.id', 'prop_objections.current_role')
             ->join('prop_properties as pp', 'pp.id', 'prop_objections.property_id')

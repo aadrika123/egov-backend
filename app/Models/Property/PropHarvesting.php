@@ -46,19 +46,20 @@ class PropHarvesting extends Model
      */
     public function searchHarvesting()
     {
-        return PropHarvesting::select(
-            'prop_harvestings.id',
-            DB::raw("'approved' as status"),
-            'prop_harvestings.application_no',
-            'prop_harvestings.current_role',
-            'role_name as currentRole',
-            'u.ward_name as old_ward_no',
-            'uu.ward_name as new_ward_no',
-            'prop_address',
-            'new_holding_no',
-            DB::raw("(SELECT owner_name FROM prop_owners WHERE property_id=pp.id order by id LIMIT 1)"),
-            DB::raw("(SELECT mobile_no FROM prop_owners WHERE property_id=pp.id order by id LIMIT 1)"),
-        )
+        return PropHarvesting::on('pgsql::read')
+            ->select(
+                'prop_harvestings.id',
+                DB::raw("'approved' as status"),
+                'prop_harvestings.application_no',
+                'prop_harvestings.current_role',
+                'role_name as currentRole',
+                'u.ward_name as old_ward_no',
+                'uu.ward_name as new_ward_no',
+                'prop_address',
+                'new_holding_no',
+                DB::raw("(SELECT owner_name FROM prop_owners WHERE property_id=pp.id order by id LIMIT 1)"),
+                DB::raw("(SELECT mobile_no FROM prop_owners WHERE property_id=pp.id order by id LIMIT 1)"),
+            )
 
             ->join('wf_roles', 'wf_roles.id', 'prop_harvestings.current_role')
             ->join('prop_properties as pp', 'pp.id', 'prop_harvestings.property_id')

@@ -17,16 +17,17 @@ class PropActiveConcession extends Model
      */
     public function getDetailsById($id)
     {
-        $details = PropActiveConcession::select(
-            'prop_active_concessions.*',
-            'prop_active_concessions.applicant_name as owner_name',
-            's.*',
-            'u.ward_name as old_ward_no',
-            'u1.ward_name as new_ward_no',
-            'p.property_type',
-            'o.ownership_type',
-            'r.road_type as road_type_master'
-        )
+        $details = PropActiveConcession::on('pgsql::read')
+            ->select(
+                'prop_active_concessions.*',
+                'prop_active_concessions.applicant_name as owner_name',
+                's.*',
+                'u.ward_name as old_ward_no',
+                'u1.ward_name as new_ward_no',
+                'p.property_type',
+                'o.ownership_type',
+                'r.road_type as road_type_master'
+            )
             ->leftJoin('prop_properties as s', 's.id', '=', 'prop_active_concessions.property_id')
             ->leftJoin('ulb_ward_masters as u', 'u.id', '=', 's.ward_mstr_id')
             ->leftJoin('ulb_ward_masters as u1', 'u.id', '=', 's.new_ward_mstr_id')
@@ -119,9 +120,10 @@ class PropActiveConcession extends Model
     public function todayAppliedApplications($userId)
     {
         $date = Carbon::now();
-        return PropActiveConcession::select(
-            'id'
-        )
+        return PropActiveConcession::on('pgsql::read')
+            ->select(
+                'id'
+            )
             ->where('user_id', $userId)
             ->where('date', $date);
     }
@@ -131,13 +133,14 @@ class PropActiveConcession extends Model
      */
     public function recentApplication($userId)
     {
-        $data = PropActiveConcession::select(
-            'id',
-            'application_no as applicationNo',
-            DB::raw("TO_CHAR(date, 'DD-MM-YYYY') as applydate"),
-            'applied_for as assessmentType',
-            "applicant_name as applicantname",
-        )
+        $data = PropActiveConcession::on('pgsql::read')
+            ->select(
+                'id',
+                'application_no as applicationNo',
+                DB::raw("TO_CHAR(date, 'DD-MM-YYYY') as applydate"),
+                'applied_for as assessmentType',
+                "applicant_name as applicantname",
+            )
             ->where('prop_active_concessions.user_id', $userId)
             ->orderBydesc('prop_active_concessions.id')
             ->take(10)
@@ -156,10 +159,11 @@ class PropActiveConcession extends Model
     public function todayReceivedApplication($currentRole, $ulbId)
     {
         $date = Carbon::now()->format('Y-m-d');
-        return PropActiveConcession::select(
-            'application_no as applicationNo',
-            'date as applyDate',
-        )
+        return PropActiveConcession::on('pgsql::read')
+            ->select(
+                'application_no as applicationNo',
+                'date as applyDate',
+            )
 
             ->join('workflow_tracks', 'workflow_tracks.ref_table_id_value', 'prop_active_concessions.id')
             ->where('workflow_tracks.receiver_role_id', $currentRole)
@@ -174,20 +178,21 @@ class PropActiveConcession extends Model
      */
     public function searchConcessions()
     {
-        return PropActiveConcession::select(
-            'prop_active_concessions.id',
-            DB::raw("'active' as status"),
-            'prop_active_concessions.application_no',
-            'prop_active_concessions.current_role',
-            'role_name as currentRole',
-            'u.ward_name as old_ward_no',
-            'uu.ward_name as new_ward_no',
-            'prop_address',
-            'owner_name',
-            'prop_owners.mobile_no',
-            'new_holding_no',
-            'pp.id as property_id'
-        )
+        return PropActiveConcession::on('pgsql::read')
+            ->select(
+                'prop_active_concessions.id',
+                DB::raw("'active' as status"),
+                'prop_active_concessions.application_no',
+                'prop_active_concessions.current_role',
+                'role_name as currentRole',
+                'u.ward_name as old_ward_no',
+                'uu.ward_name as new_ward_no',
+                'prop_address',
+                'owner_name',
+                'prop_owners.mobile_no',
+                'new_holding_no',
+                'pp.id as property_id'
+            )
 
             ->leftjoin('wf_roles', 'wf_roles.id', 'prop_active_concessions.current_role')
             ->join('prop_properties as pp', 'pp.id', 'prop_active_concessions.property_id')

@@ -55,7 +55,7 @@ class PropActiveObjection extends Model
      */
     public function getObjectionById($objId)
     {
-        return  DB::table('prop_active_objections')
+        return  PropActiveObjection::on('pgsql::read')
             ->select(
                 'prop_active_objections.*',
                 'prop_active_objections.date',
@@ -133,9 +133,10 @@ class PropActiveObjection extends Model
     public function todayAppliedApplications($userId)
     {
         $date = Carbon::now();
-        return PropActiveObjection::select(
-            'id'
-        )
+        return PropActiveObjection::on('pgsql::read')
+            ->select(
+                'id'
+            )
             ->where('user_id', $userId)
             ->where('date', $date);
     }
@@ -145,13 +146,14 @@ class PropActiveObjection extends Model
      */
     public function recentApplication($userId)
     {
-        $data = PropActiveObjection::select(
-            'prop_active_objections.id',
-            'objection_no as applicationNo',
-            'date as applydate',
-            'objection_for as assessmentType',
-            DB::raw("string_agg(owner_name,',') as applicantName"),
-        )
+        $data = PropActiveObjection::on('pgsql::read')
+            ->select(
+                'prop_active_objections.id',
+                'objection_no as applicationNo',
+                'date as applydate',
+                'objection_for as assessmentType',
+                DB::raw("string_agg(owner_name,',') as applicantName"),
+            )
             ->join('prop_owners', 'prop_owners.property_id', 'prop_active_objections.property_id')
             ->where('prop_active_objections.user_id', $userId)
             ->orderBydesc('prop_active_objections.id')
@@ -172,12 +174,13 @@ class PropActiveObjection extends Model
     public function todayReceivedApplication($currentRole, $ulbId)
     {
         $date = Carbon::now()->format('Y-m-d');
-        return PropActiveObjection::select(
-            'objection_no as applicationNo',
-            'date as applyDate',
-            // 'assessment_type as assessmentType',
-            // DB::raw("string_agg(owner_name,',') as applicantName"),
-        )
+        return PropActiveObjection::on('pgsql::read')
+            ->select(
+                'objection_no as applicationNo',
+                'date as applyDate',
+                // 'assessment_type as assessmentType',
+                // DB::raw("string_agg(owner_name,',') as applicantName"),
+            )
 
             ->join('workflow_tracks', 'workflow_tracks.ref_table_id_value', 'prop_active_objections.id')
             ->where('workflow_tracks.receiver_role_id', $currentRole)
@@ -192,19 +195,20 @@ class PropActiveObjection extends Model
      */
     public function searchObjections()
     {
-        return PropActiveObjection::select(
-            'prop_active_objections.id',
-            DB::raw("'active' as status"),
-            'prop_active_objections.objection_no',
-            'prop_active_objections.current_role',
-            'role_name as currentRole',
-            'u.ward_name as old_ward_no',
-            'uu.ward_name as new_ward_no',
-            'prop_address',
-            'new_holding_no',
-            DB::raw("(SELECT owner_name FROM prop_owners WHERE property_id=pp.id order by id LIMIT 1)"),
-            DB::raw("(SELECT mobile_no FROM prop_owners WHERE property_id=pp.id order by id LIMIT 1)"),
-        )
+        return PropActiveObjection::on('pgsql::read')
+            ->select(
+                'prop_active_objections.id',
+                DB::raw("'active' as status"),
+                'prop_active_objections.objection_no',
+                'prop_active_objections.current_role',
+                'role_name as currentRole',
+                'u.ward_name as old_ward_no',
+                'uu.ward_name as new_ward_no',
+                'prop_address',
+                'new_holding_no',
+                DB::raw("(SELECT owner_name FROM prop_owners WHERE property_id=pp.id order by id LIMIT 1)"),
+                DB::raw("(SELECT mobile_no FROM prop_owners WHERE property_id=pp.id order by id LIMIT 1)"),
+            )
 
             ->join('wf_roles', 'wf_roles.id', 'prop_active_objections.current_role')
             ->join('prop_properties as pp', 'pp.id', 'prop_active_objections.property_id')
