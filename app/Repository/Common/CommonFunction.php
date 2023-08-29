@@ -73,6 +73,7 @@ class CommonFunction implements ICommonFunction
                     wf_workflows.ulb_id,
                     wf_workflowrolemaps.can_escalate,
                     wf_workflowrolemaps.serial_no,wf_workflowrolemaps.is_btc,
+                    wf_workflowrolemaps.can_edit,
                     wf_workflowrolemaps.can_upload_document,
                     wf_workflowrolemaps.can_verify_document"
                     // "*"

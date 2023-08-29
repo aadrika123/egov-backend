@@ -1406,7 +1406,7 @@ class Trade implements ITrade
             $rules = [
                 "safNo" => "required|string",
             ];
-            if ($mUserType == "ONLINE") {
+            if (strtoupper($mUserType) == $this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][""]) {
                 $rules["ulbId"] = "required|digits_between:1,92";
             }
             $validator = Validator::make($request->all(), $rules,);
@@ -1439,7 +1439,7 @@ class Trade implements ITrade
             $rules = [
                 "holdingNo" => "required|string",
             ];
-            if ($mUserType == "Online") {
+            if (strtoupper($mUserType) == $this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][""]) {
                 $rules["ulbId"] = "required|digits_between:1,92";
             }
             $validator = Validator::make($request->all(), $rules,);
@@ -1491,7 +1491,7 @@ class Trade implements ITrade
             $refWorkflowId      = $this->_WF_MASTER_Id;
             $mUserType          = $this->_COMMON_FUNCTION->userType($refWorkflowId);
             $request->request->add(['ulbId'=>$refUlbId]);
-            if (in_array(strtoupper($mUserType), ["ONLINE"])) {
+            if (in_array(strtoupper($mUserType), [$this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][""]])) {
                 $rules["ulbId"]     = "required|digits_between:1,92";
             }
 
@@ -2008,7 +2008,7 @@ class Trade implements ITrade
             if (!$role) {
                 throw new Exception("You Are Not Authorized");
             }
-            if ($role->is_initiator || in_array(strtoupper($mUserType), ["JSK", "SUPER ADMIN", "ADMIN", "TL", "PMU", "PM"])) {
+            if ($role->is_initiator || in_array(strtoupper($mUserType), $this->_TRADE_CONSTAINT["CANE-NO-HAVE-WARD"])) {
 
                 $ward_permission = $this->_MODEL_WARD->getAllWard($ulb_id)->map(function ($val) {
                     $val->ward_no = $val->ward_name;
@@ -2089,7 +2089,7 @@ class Trade implements ITrade
             $ward_permission = $this->_COMMON_FUNCTION->WardPermission($refUserId);
             $role = $this->_COMMON_FUNCTION->getUserRoll($refUserId, $refUlbId, $refWorkflowId);
 
-            if ($role->is_initiator || in_array(strtoupper($mUserType), ["JSK", "SUPER ADMIN", "ADMIN", "TL", "PMU", "PM"])) {
+            if ($role->is_initiator || in_array(strtoupper($mUserType), $this->_TRADE_CONSTAINT["CANE-NO-HAVE-WARD"])) {
 
                 $ward_permission = $this->_MODEL_WARD->getAllWard($refUlbId)->map(function ($val) {
                     $val->ward_no = $val->ward_name;
@@ -2238,7 +2238,7 @@ class Trade implements ITrade
             $refWorkflowId      = $this->_WF_MASTER_Id;
             $mUserType          = $this->_COMMON_FUNCTION->userType($refWorkflowId);
 
-            if (in_array(strtoupper($mUserType), ["ONLINE", "JSK", "BO", "SUPER ADMIN", "TL"])) 
+            if (in_array(strtoupper($mUserType), $this->_TRADE_CONSTAINT["CANE-NO-HAVE-WARD"])) 
             {
                 $mWardPermission = $this->_MODEL_WARD->getAllWard($refUlbId)->map(function ($val) {
                     $val->ward_no = $val->ward_name;
@@ -2263,7 +2263,7 @@ class Trade implements ITrade
             {
                 $uptoDate = $request->uptoDate;
             }
-            if (in_array(strtoupper($mUserType), ["ONLINE"])) 
+            if (in_array(strtoupper($mUserType), [$this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][""]])) 
             {
                 $fromDate = $uptoDate = null;
             }
@@ -2338,7 +2338,7 @@ class Trade implements ITrade
                         ->whereBetween('trade_licences.license_date', [$fromDate, $uptoDate]);
             }
 
-            if (in_array(strtoupper($mUserType), ["ONLINE"])) 
+            if (in_array(strtoupper($mUserType), [$this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][""]])) 
             {
                 $license = $license
                     ->where("citizen_id", $refUserId);
@@ -2352,7 +2352,7 @@ class Trade implements ITrade
                 "data" => $paginator->items(),
                 "total" => $paginator->total(),
             ]; 
-            if (in_array(strtoupper($mUserType), ["ONLINE"])) 
+            if (in_array(strtoupper($mUserType), [$this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][""]])) 
             {
                 $license = $license
                     ->get();
@@ -3563,7 +3563,7 @@ class Trade implements ITrade
         } elseif (!$application->is_active) {
             $status = "Application rejected ";
         } 
-        elseif ($docChequ2 && strtoupper($mUserType) == "ONLINE" && $application->citizen_id == $refUserId && $application->document_upload_status == 0 && $application->payment_status == 0) {
+        elseif ($docChequ2 && strtoupper($mUserType) == $this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][""] && $application->citizen_id == $refUserId && $application->document_upload_status == 0 && $application->payment_status == 0) {
             $request = new Request(["applicationId" => $licenceId, "ulb_id" => $refUlbId, "user_id" => $refUserId]);
             $doc_status = $this->checkWorckFlowForwardBackord($request);
             if ($doc_status && $application->payment_status == 0) {
@@ -3658,7 +3658,7 @@ class Trade implements ITrade
         if (!empty($allRolse)) {
             $fromRole = array_values(objToArray($allRolse->where("id", $request->senderRoleId)))[0] ?? [];
         }
-        if (strtoupper($mUserType) == "ONLINE" || ($fromRole["can_upload_document"] ?? false) ||  ($fromRole["can_verify_document"] ?? false)) 
+        if (strtoupper($mUserType) == $this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][""] || ($fromRole["can_upload_document"] ?? false) ||  ($fromRole["can_verify_document"] ?? false)) 
         {
             $documents = $this->getLicenseDocLists($request);
             if (!$documents->original["status"]) 
@@ -3704,7 +3704,7 @@ class Trade implements ITrade
             $is_ownerDocVerify              = $Wdocuments->where("is_docVerify", false);
             $is_ownerDocRejected            = $Wdocuments->where("is_docRejected", true);
             $is_ownerMadetoryDocRejected    = $Wdocuments->where("is_madetory_docRejected", true);
-            if (($fromRole["can_upload_document"] ?? false) || strtoupper($mUserType) == "ONLINE") 
+            if (($fromRole["can_upload_document"] ?? false) || strtoupper($mUserType) == $this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][""]) 
             {
                 return (empty($is_ownerUploadedDoc->all()) && empty($is_ownerDocRejected->all()) && empty($is_appMandUploadedDoc->all()) && empty($is_appUploadedDocRejected->all()));
             }
