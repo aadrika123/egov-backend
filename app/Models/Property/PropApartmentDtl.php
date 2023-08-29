@@ -14,7 +14,8 @@ class PropApartmentDtl extends Model
      */
     public function apartmentList($req)
     {
-        return PropApartmentDtl::select('id', 'apt_code', 'apartment_name')
+        return PropApartmentDtl::on('pgsql::read')
+            ->select('id', 'apt_code', 'apartment_name')
             ->where('ward_mstr_id', $req->wardMstrId)
             ->where('ulb_id', $req->ulbId)
             ->get();

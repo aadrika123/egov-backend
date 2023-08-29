@@ -136,7 +136,8 @@ class PropActiveSafsFloor extends Model
      */
     public function getSafAppartmentFloor($safIds)
     {
-        return PropActiveSafsFloor::select('prop_active_safs_floors.*')
+        return PropActiveSafsFloor::on('pgsql::read')
+            ->select('prop_active_safs_floors.*')
             ->whereIn('prop_active_safs_floors.saf_id', $safIds)
             ->where('prop_active_safs_floors.status', 1)
             ->orderByDesc('id');

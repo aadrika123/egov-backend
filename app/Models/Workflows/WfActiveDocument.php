@@ -136,9 +136,8 @@ class WfActiveDocument extends Model
                 'd.verify_status',
                 'd.id as doc_id',
                 DB::raw("concat('$docUrl/',relative_path,'/',document) as doc_path"),
-                // DB::raw("concat(relative_path,'/',document) as doc_path")
             )
-            ->join('prop_active_safs_owners as o', 'o.id', '=', 'd.owner_dtl_id')
+            ->leftJoin('prop_active_safs_owners as o', 'o.id', '=', 'd.owner_dtl_id')
             ->where('d.active_id', $applicationId)
             ->where('d.workflow_id', $workflowId)
             ->where('d.module_id', $moduleId)
