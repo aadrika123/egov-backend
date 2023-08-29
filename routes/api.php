@@ -79,7 +79,7 @@ Route::controller(ApiMasterController::class)->group(function () {
  */
 Route::controller(ApiMasterController::class)->group(function () {
     # menu api map api list
-    Route::match(["get","post"],'row-api-list/{Module?}', 'getRowApiList');    
+    Route::match(["get", "post"], 'row-api-list/{Module?}', 'getRowApiList');
 });
 
 /**

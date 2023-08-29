@@ -12,6 +12,7 @@ class ActiveCitizenUndercare extends Model
 {
     use HasFactory;
     protected $guarded = [];
+    protected $connection = 'pgsql_master';
 
     /**
      * | Store
