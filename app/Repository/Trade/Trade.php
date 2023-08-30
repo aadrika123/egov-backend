@@ -3685,8 +3685,10 @@ class Trade implements ITrade
             $is_appUploadedDocVerified          = $appUploadedDocVerified->where("is_docVerify", false);
             $is_appUploadedDocRejected          = $appUploadedDocRejected->where("is_docRejected", true);
             $is_appUploadedMadetoryDocRejected  = $appMadetoryDocRejected->where("is_docRejected", true);
-            $is_appMandUploadedDoc              = $appMandetoryDoc->whereNull("uploadedDoc");
-            
+            // $is_appMandUploadedDoc              = $appMandetoryDoc->whereNull("uploadedDoc");
+            $is_appMandUploadedDoc = $appMandetoryDoc->filter(function($val){
+                return ($val["uploadedDoc"]=="" || $val["uploadedDoc"]==null);
+            });
             $Wdocuments = collect();
             $ownerDoc->map(function ($val) use ($Wdocuments) {
                 $ownerId = $val["ownerDetails"]["ownerId"] ?? "";
