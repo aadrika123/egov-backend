@@ -2404,7 +2404,7 @@ class Trade implements ITrade
             ];
             $application = $this->_DB->table("active_trade_licences AS licences")->select($select)
                 ->join("ulb_masters", "ulb_masters.id", "licences.ulb_id")
-                ->join("ulb_ward_masters", function ($join) {
+                ->leftjoin("ulb_ward_masters", function ($join) {
                     $join->on("ulb_ward_masters.id", "=", "licences.ward_id");
                 })
                 ->leftjoin(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
@@ -2424,7 +2424,7 @@ class Trade implements ITrade
             {
                 $application = $this->_DB->table("trade_licences AS licences")->select($select)
                     ->join("ulb_masters", "ulb_masters.id", "licences.ulb_id")
-                    ->join("ulb_ward_masters", function ($join) {
+                    ->leftjoin("ulb_ward_masters", function ($join) {
                         $join->on("ulb_ward_masters.id", "=", "licences.ward_id");
                     })
                     ->leftjoin(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
@@ -2445,7 +2445,7 @@ class Trade implements ITrade
             {
                 $application = $this->_DB->table("rejected_trade_licences AS licences")->select($select)
                     ->join("ulb_masters", "ulb_masters.id", "licences.ulb_id")
-                    ->join("ulb_ward_masters", function ($join) {
+                    ->leftjoin("ulb_ward_masters", function ($join) {
                         $join->on("ulb_ward_masters.id", "=", "licences.ward_id");
                     })
                     ->leftjoin(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
@@ -2466,7 +2466,7 @@ class Trade implements ITrade
             {
                 $application = $this->_DB->table("trade_renewals AS licences")->select($select)
                     ->join("ulb_masters", "ulb_masters.id", "licences.ulb_id")
-                    ->join("ulb_ward_masters", function ($join) {
+                    ->leftjoin("ulb_ward_masters", function ($join) {
                         $join->on("ulb_ward_masters.id", "=", "licences.ward_id");
                     })
                     ->leftjoin(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
@@ -2589,7 +2589,7 @@ class Trade implements ITrade
             $application = $this->_DB->table("active_trade_licences as license")
                 ->select($select)
                 ->join("ulb_masters", "ulb_masters.id", "license.ulb_id")
-                ->join("ulb_ward_masters", function ($join) {
+                ->leftjoin("ulb_ward_masters", function ($join) {
                     $join->on("ulb_ward_masters.id", "=", "license.ward_id");
                 })
                 ->join(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
@@ -2610,7 +2610,7 @@ class Trade implements ITrade
                 $application = $this->_DB->table("trade_licences as license")
                     ->select($select)
                     ->join("ulb_masters", "ulb_masters.id", "license.ulb_id")
-                    ->join("ulb_ward_masters", function ($join) {
+                    ->leftjoin("ulb_ward_masters", function ($join) {
                         $join->on("ulb_ward_masters.id", "=", "license.ward_id");
                     })
                     ->join(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
@@ -2632,7 +2632,7 @@ class Trade implements ITrade
                 $application = $this->_DB->table("rejected_trade_licences as license")
                     ->select($select)
                     ->join("ulb_masters", "ulb_masters.id", "license.ulb_id")
-                    ->join("ulb_ward_masters", function ($join) {
+                    ->leftjoin("ulb_ward_masters", function ($join) {
                         $join->on("ulb_ward_masters.id", "=", "license.ward_id");
                     })
                     ->join(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
@@ -2654,7 +2654,7 @@ class Trade implements ITrade
                 $application = $this->_DB->table("trade_renewals as license")
                     ->select($select)
                     ->join("ulb_masters", "ulb_masters.id", "license.ulb_id")
-                    ->join("ulb_ward_masters", function ($join) {
+                    ->leftjoin("ulb_ward_masters", function ($join) {
                         $join->on("ulb_ward_masters.id", "=", "license.ward_id");
                     })
                     ->join(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
@@ -2773,7 +2773,7 @@ class Trade implements ITrade
             $application = $this->_DB->table("trade_licences AS license")
                 ->select($select)
                 ->join("ulb_masters", "ulb_masters.id", "license.ulb_id")
-                ->join("ulb_ward_masters", function ($join) {
+                ->leftjoin("ulb_ward_masters", function ($join) {
                     $join->on("ulb_ward_masters.id", "=", "license.ward_id");
                 })
                 ->leftjoin(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
@@ -2792,8 +2792,9 @@ class Trade implements ITrade
             if (!$application) 
             {
                 $application = $this->_DB->table("trade_renewals AS license")
-                    ->select($select)->join("ulb_masters", "ulb_masters.id", "license.ulb_id")
-                    ->join("ulb_ward_masters", function ($join) {
+                    ->select($select)
+                    ->join("ulb_masters", "ulb_masters.id", "license.ulb_id")
+                    ->leftjoin("ulb_ward_masters", function ($join) {
                         $join->on("ulb_ward_masters.id", "=", "license.ward_id");
                     })
                     ->leftjoin(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
