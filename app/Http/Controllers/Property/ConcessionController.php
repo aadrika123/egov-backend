@@ -37,6 +37,7 @@ use Illuminate\Pipeline\Pipeline;
 /**
  * | Created On-15-11-2022 
  * | Created By-Mrinal Kumar
+ * | Status : Closed
  * --------------------------------------------------------------------------------------
  * | Controller for Concession
  * | --------------------------- Workflow Parameters ---------------------------------------
@@ -179,8 +180,9 @@ class ConcessionController extends Controller
     {
         PropActiveConcession::where('id', $concession->id)
             ->update(['gender' => $req['value']]);
-        // $concession->gender = $req['value'];
-        $this->saveDoc($req, $concession);
+
+        if ($req['doc'] != 'null')
+            $this->saveDoc($req, $concession);
     }
 
     /**
@@ -190,8 +192,9 @@ class ConcessionController extends Controller
     {
         PropActiveConcession::where('id', $concession->id)
             ->update(['dob' => $req['value']]);
-        // $concession->dob = $req['value'];
-        $this->saveDoc($req, $concession);
+
+        if ($req['doc'] != 'null')
+            $this->saveDoc($req, $concession);
     }
 
     /**
@@ -204,9 +207,9 @@ class ConcessionController extends Controller
                 'is_specially_abled' => $req['value'],
                 'specially_abled_percentage' => $req['percentage'],
             ]);
-        // $concession->is_specially_abled = $req['value'];
-        // $concession->specially_abled_percentage = $req['percentage'];
-        $this->saveDoc($req, $concession);
+
+        if ($req['doc'] != 'null')
+            $this->saveDoc($req, $concession);
     }
 
     /**
@@ -218,8 +221,9 @@ class ConcessionController extends Controller
             ->update([
                 'is_armed_force' => $req['value'],
             ]);
-        // $concession->is_armed_force = $req['value'];
-        $this->saveDoc($req, $concession);
+
+        if ($req['doc'] != 'null')
+            $this->saveDoc($req, $concession);
     }
 
     public function saveDoc($request, $concession)
@@ -242,25 +246,6 @@ class ConcessionController extends Controller
 
         $metaReqs = new Request($metaReqs);
         $mWfActiveDocument->postDocuments($metaReqs);
-    }
-
-    //post Holding
-    public function postHolding(Request $request)
-    {
-        $request->validate([
-            'holdingNo' => 'required'
-        ]);
-        try {
-            $user = PropProperty::where('holding_no', $request->holdingNo)
-                ->get();
-            if (!empty($user['0'])) {
-                return responseMsgs(true, 'True', $user, '010702', '01', '334ms-401ms', 'Post', '');
-            }
-            return responseMsg(false, "False", "");
-            // return $user['0'];
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
     }
 
     /**

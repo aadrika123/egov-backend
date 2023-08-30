@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Property;
 
 use App\BLL\Property\CalculatePropById;
+use App\BLL\Property\PostSafPropTaxes;
 use App\Repository\Property\Interfaces\iObjectionRepository;
 use App\Http\Controllers\Controller;
 use App\MicroServices\DocUpload;
@@ -14,6 +15,7 @@ use App\Models\PropActiveObjectionFloor;
 use App\Models\Property\MPropForgeryType;
 use App\Models\Property\PropActiveObjection;
 use App\Models\Property\PropActiveObjectionOwner;
+use App\Models\Property\PropDemand;
 use App\Models\Property\PropFloor;
 use Illuminate\Http\Request;
 use App\Traits\Workflow\Workflow as WorkflowTrait;
@@ -567,6 +569,7 @@ class ObjectionController extends Controller
             $mPropActiveObjectionDtl = new PropActiveObjectionDtl();
             $mPropActiveObjectionFloor = new PropActiveObjectionFloor();
             $track = new WorkflowTrack();
+            $currentDate = Carbon::now();
             $userId = authUser($req)->id;
             $activeObjection = PropActiveObjection::where('id', $req->applicationId)
                 ->first();
@@ -580,6 +583,7 @@ class ObjectionController extends Controller
 
             $workflowId = $activeObjection->workflow_id;
             $senderRoleId = $activeObjection->current_role;
+            $propertyId = $activeObjection->property_id;
             $getRoleReq = new Request([                                                 // make request to get role id of the user
                 'userId' => $userId,
                 'workflowId' => $workflowId
@@ -684,26 +688,57 @@ class ObjectionController extends Controller
                             }
                         }
                     }
-                }
-                $floorDtls = $mPropActiveObjectionFloor->getfloorObjectionId($activeObjection->id);
-                //create log
-                if ($floorDtls->isNotEmpty()) {
 
-                    foreach ($floorDtls as $floorDtl) {
-                        PropFloor::where('id', $floorDtl->prop_floor_id)
-                            ->update(
-                                [
-                                    'floor_mstr_id' => $floorDtl->floor_mstr_id,
-                                    'usage_type_mstr_id' => $floorDtl->usage_type_mstr_id,
-                                    'occupancy_type_mstr_id' => $floorDtl->occupancy_type_mstr_id,
-                                    'const_type_mstr_id' => $floorDtl->const_type_mstr_id,
-                                    'builtup_area' => $floorDtl->builtup_area,
-                                    'carpet_area' => $floorDtl->carpet_area,
-                                ]
-                            );
+                    $floorDtls = $mPropActiveObjectionFloor->getfloorObjectionId($activeObjection->id);
+                    //create log
+                    if ($floorDtls->isNotEmpty()) {
+
+                        foreach ($floorDtls as $floorDtl) {
+                            PropFloor::where('id', $floorDtl->prop_floor_id)
+                                ->update(
+                                    [
+                                        'floor_mstr_id' => $floorDtl->floor_mstr_id,
+                                        'usage_type_mstr_id' => $floorDtl->usage_type_mstr_id,
+                                        'occupancy_type_mstr_id' => $floorDtl->occupancy_type_mstr_id,
+                                        'const_type_mstr_id' => $floorDtl->const_type_mstr_id,
+                                        'builtup_area' => $floorDtl->builtup_area,
+                                        'carpet_area' => $floorDtl->carpet_area,
+                                    ]
+                                );
+                        }
                     }
-                }
 
+                    $req->merge([
+                        "property_id" => $propertyId,
+                    ]);
+                    $calculatePropById = new CalculatePropById;
+                    $mPropDemand = new PropDemand();
+                    $fiscalYearStartMonth = 4; // April
+                    $currentQuarter = ceil(($currentDate->month - $fiscalYearStartMonth + 1) / 3);                  #_Get the current quarter
+                    $nextQuarter = $currentQuarter + 1;                               #_Get the next quarter
+                    if ($nextQuarter > 4) {
+                        $nextQuarter = 1;
+                    }
+                    $currentFY = getFY();
+                    $newDemand = $calculatePropById->calculatePropTax($req);
+                    $propDemandDetail = $mPropDemand->getDemandByFyear($currentFY, $propertyId);
+
+                    // if (collect($propDemandDetail)->isNotEmpty()) {
+                    //     // if demand paid
+                    //     $propDemandDetail->where('paid_status', 1);
+
+                    //     // if demand is not paid
+                    //     $propDemandDetail->where('paid_status', 0);
+                    // } else {
+                    //     // demand is not generated for next quater
+                    // }
+
+                    $finalDemand = collect($newDemand)->where('fyear', $currentFY)->where('qtr', '>=', $nextQuarter)->values();
+                    $finalDemand = $finalDemand->toArray();
+
+                    $postSafPropTaxes = new PostSafPropTaxes;
+                    $postSafPropTaxes->postNewPropTaxes($propertyId, $finalDemand);                  // Save Taxes
+                }
                 if ($activeObjection->objection_for == 'Forgery') {
 
                     PropOwner::where('property_id', $activeObjection->property_id)
@@ -733,7 +768,7 @@ class ObjectionController extends Controller
                 $msg =  "Application Successfully Approved !!";
                 $metaReqs['verificationStatus'] = 1;
             }
-
+            // dd('Test');
             // Rejection
             if ($req->status == 0) {
                 // Objection Application replication

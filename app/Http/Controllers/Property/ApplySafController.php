@@ -162,6 +162,8 @@ class ApplySafController extends Controller
             $demandResponse = $generateSafApplyDemandResponse->generateResponse($generatedDemand, $isResidential);
 
             DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
+
             $createSaf = $saf->store($request);                                         // Store SAF Using Model function 
             $safId = $createSaf->original['safId'];
             $safNo = $createSaf->original['safNo'];
@@ -187,17 +189,18 @@ class ApplySafController extends Controller
                 }
             }
             // Citizen Notification
-            // if ($userType == 'Citizen') {
-            //     $mreq['userType']  = 'Citizen';
-            //     $mreq['citizenId'] = $user_id;
-            //     $mreq['category']  = 'Recent Application';
-            //     $mreq['ulbId']     = $ulb_id;
-            //     $mreq['ephameral'] = 0;
-            //     $mreq['notification'] = "Successfully Submitted Your Application Your SAF No. $safNo";
-            //     $rEloquentAuthRepository = new EloquentAuthRepository();
-            //     $rEloquentAuthRepository->addNotification($mreq);
-            // }
+            if ($userType == 'Citizen') {
+                $mreq['userType']  = 'Citizen';
+                $mreq['citizenId'] = $user_id;
+                $mreq['category']  = 'Recent Application';
+                $mreq['ulbId']     = $ulb_id;
+                $mreq['ephameral'] = 0;
+                $mreq['notification'] = "Successfully Submitted Your Application Your SAF No. $safNo";
+                $rEloquentAuthRepository = new EloquentAuthRepository();
+                $rEloquentAuthRepository->addNotification($mreq);
+            }
             DB::commit();
+            DB::connection('pgsql_master')->commit();
             return responseMsgs(true, "Successfully Submitted Your Application Your SAF No. $safNo", [
                 "safNo" => $safNo,
                 "applyDate" => ymdToDmyDate($mApplyDate),
@@ -206,6 +209,7 @@ class ApplySafController extends Controller
             ], "010102", "1.0", "1s", "POST", $request->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
             return responseMsgs(false, $e->getMessage(), "", "010102", "1.0", "1s", "POST", $request->deviceId);
         }
     }
@@ -457,6 +461,8 @@ class ApplySafController extends Controller
             // Demand Saved
             $insertTax->insertTax($safId, $ulbId, $demandToBeSaved, $userId);
             $postSafPropTax->postSafTaxes($safId, $generatedDemand['details']->toArray(), $ulbId);                        // Saf Tax Generation
+
+
 
             DB::commit();
             DB::connection('pgsql_master')->commit();

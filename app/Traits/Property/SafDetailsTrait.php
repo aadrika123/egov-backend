@@ -206,15 +206,15 @@ trait SafDetailsTrait
             ['displayString' => 'Holding No', 'key' => 'holdingNo', 'value' => $req->holding_no],
             ['displayString' => 'Harvesting No.', 'key' => 'harvestingNo', 'value' => $req->application_no],
             // ['displayString' => 'Owners', 'key' => 'ownerName', 'value' => $owners],
-            // ['displayString' => 'Property Type', 'key' => 'propertyType', 'value' => $req->property_type],
             // ['displayString' => 'Ownership Type', 'key' => 'ownershipType', 'value' => $req->ownership_type],
+            ['displayString' => 'Property Type', 'key' => 'propertyType', 'value' => $req->property_type],
             ['displayString' => 'Plot-Area(decimal)', 'key' => 'plotArea', 'value' => $req->area_of_plot],
             ['displayString' => 'Hoarding Board', 'key' => 'isHoardingBoard', 'value' => ($req->is_hoarding_board == true) ? 'Yes' : 'No'],
             ['displayString' => 'Petrol Pump', 'key' => 'isPetrolPump', 'value' => ($req->is_petrol_pump == true) ? 'Yes' : 'No'],
             ['displayString' => 'Previous Water Harvesting Status', 'key' => 'isWaterHarvesting', 'value' => ($req->is_water_harvesting == true) ? 'Yes' : 'No'],
-            ['displayString' => 'Is Harvesting done before 31-03-2017?', 'key' => 'harvestingBefore2017', 'value' => ($req->harvesting_status == true) ? 'Yes' : 'No'],
+            // ['displayString' => 'Is Harvesting done before 31-03-2017?', 'key' => 'harvestingBefore2017', 'value' => ($req->harvesting_status == true) ? 'Yes' : 'No'],
             ['displayString' => 'Date of Completion', 'key' => 'dateOfCompletion', 'value' => $req->date_of_completion],
-            ['displayString' => 'Pending At', 'key' => 'pendingStatus', 'value' => $req->current_role],
+            ['displayString' => 'Pending At', 'key' => 'pendingStatus', 'value' => $req->currentRole],
         ]);
 
         $cardElement = [

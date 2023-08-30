@@ -157,7 +157,6 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
    */
   Route::controller(ConcessionController::class)->group(function () {
     Route::post('concession/apply-concession', 'applyConcession');                      //01                
-    Route::post('concession/postHolding', 'postHolding');                               //02  
     Route::post('concession/inbox', 'inbox');                    #_READ                       //03               // Concession Inbox 
     Route::post('concession/outbox', 'outbox');                   #_READ                      //04               // Concession Outbox
     Route::post('concession/details', 'getDetailsById');          #_READ                      //05               // Get Concession Details by ID

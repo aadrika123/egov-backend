@@ -54,7 +54,7 @@ class PropActiveHarvesting extends Model
             );
     }
 
-    public function saves($request, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId,  $userId)
+    public function saves($request, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId,  $userId, $ulbId)
     {
 
         $waterHaravesting = new PropActiveHarvesting();
@@ -68,7 +68,7 @@ class PropActiveHarvesting extends Model
         $waterHaravesting->finisher_role_id = collect($finisherRoleId)->first()->role_id;
         $waterHaravesting->user_id = $userId;
         $waterHaravesting->date = Carbon::now();
-        $waterHaravesting->ulb_id = $request->ulbId;
+        $waterHaravesting->ulb_id = $ulbId;
         return $waterHaravesting;
     }
 
