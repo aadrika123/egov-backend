@@ -1923,7 +1923,7 @@ class WaterConsumer extends Controller
             $api = "http://192.168.0.122:8001/document/upload";
             $transfer = [
                 "file" => $request->document,
-                "tags" => "good",
+                "tags" => "good,ghdt",
                 // "reference" => 425
             ];
             $returnData = Http::withHeaders([
