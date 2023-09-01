@@ -80,4 +80,33 @@ class PostSafPropTaxes
             $this->_mPropTaxes->postTaxes($reqPost);
         }
     }
+
+    /**
+     * | Post New Prop Taxes for Objection and Harvesting
+     */
+    public function postNewPropTaxes($propId, array $demands)
+    {
+        $groupByQuaterlyTax = collect($demands)->groupBy('totalTax');
+        $ifTaxesExists = $this->_mPropTaxes->getPropTaxesByPropId($propId);
+        if ($ifTaxesExists)
+            $this->_mPropTaxes->deactivatePropTax($propId);
+
+        foreach ($groupByQuaterlyTax as $item) {
+            $firstTax = $item->first();
+            $reqPost = [
+                'prop_id' => $propId,
+                'arv' => $firstTax['arv'],
+                'holding_tax' =>  $firstTax['holding_tax'],
+                'water_tax' => $firstTax['water_tax'],
+                'education_cess' =>  $firstTax['education_cess'],
+                'health_cess' => $firstTax['health_cess'],
+                'latrine_tax' =>  $firstTax['latrine_tax'],
+                'additional_tax' =>  $firstTax['additional_tax'],
+                'qtr' => $firstTax['qtr'],
+                'fyear' => $firstTax['fyear'],
+                'quarterly_tax' => $firstTax['amount']
+            ];
+            $this->_mPropTaxes->postTaxes($reqPost);
+        }
+    }
 }

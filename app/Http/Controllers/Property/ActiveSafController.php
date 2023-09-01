@@ -94,7 +94,7 @@ class ActiveSafController extends Controller
     /**
      * | Created On-10-08-2022
      * | Created By-Anshu Kumar
-     * | Status - Open
+     * | Status - CLosed
      * -----------------------------------------------------------------------------------------
      * | SAF Module all operations 
      * | --------------------------- Workflow Parameters ---------------------------------------
@@ -871,6 +871,7 @@ class ActiveSafController extends Controller
                 $metaReqs = array_merge($metaReqs, ['user_id' => $userId]);
             }
             DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
             // For Citizen Independent Comment
             if ($userType == 'Citizen') {
                 $metaReqs = array_merge($metaReqs, ['citizenId' => $userId]);
@@ -882,9 +883,11 @@ class ActiveSafController extends Controller
             $workflowTrack->saveTrack($request);
 
             DB::commit();
+            DB::connection('pgsql_master')->commit();
             return responseMsgs(true, "You Have Commented Successfully!!", ['Comment' => $request->comment], "010108", "1.0", "", "POST", "");
         } catch (Exception $e) {
             DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
     }
@@ -894,6 +897,7 @@ class ActiveSafController extends Controller
      * | @param mixed $request
      * | @var preLevelPending Get the Previous level pending data for the saf id
      * | @var levelPending new Level Pending to be add
+     * | Multiple Database Connection
      * | Status-Closed
      * | Rating-3 
      */
@@ -934,7 +938,11 @@ class ActiveSafController extends Controller
                 'roleId' => $senderRoleId
             ]);
             $forwardBackwardIds = $mWfRoleMaps->getWfBackForwardIds($roleMapsReqs);
+
+            #_Multiple Database Connection Started
             DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
+
             if ($request->action == 'forward') {
                 $wfMstrId = $mWfMstr->getWfMstrByWorkflowId($saf->workflow_id);
                 $samHoldingDtls = $this->checkPostCondition($senderRoleId, $wfLevels, $saf, $wfMstrId, $userId);          // Check Post Next level condition
@@ -995,9 +1003,11 @@ class ActiveSafController extends Controller
             ]);
 
             DB::commit();
+            DB::connection('pgsql_master')->commit();
             return responseMsgs(true, "Successfully Forwarded The Application!!", $samHoldingDtls, "010109", "1.0", "", "POST", $request->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
             return responseMsg(false, $e->getMessage(), "", "010109", "1.0", "", "POST", $request->deviceId);
         }
     }
@@ -1306,6 +1316,7 @@ class ActiveSafController extends Controller
      * | $req->status (if 1 Application to be approved && if 0 application to be rejected)
      * ------------------- Dump --------------------------
      * | @return msg
+     * | Multiple Database Connection
      * | Status-Closed
      * | Query Cost-430ms 
      * | Rating-3
@@ -1371,7 +1382,10 @@ class ActiveSafController extends Controller
             if (collect($fieldVerifiedSaf)->isEmpty())
                 throw new Exception("Site Verification not Exist");
 
+            #_Multiple Database Connection Started
             DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
+
             // Approval
             if ($req->status == 1) {
                 $safDetails->saf_pending_status = 0;
@@ -1412,6 +1426,7 @@ class ActiveSafController extends Controller
 
                 $previousHoldingDeactivation->deactivatePreviousHoldings($safDetails);  // Previous holding deactivation in case of Mutation, Amalgamation, Bifurcation
             }
+            // dd('ok');
             // Rejection
             if ($req->status == 0) {
                 $this->finalRejectionSafReplica($activeSaf, $ownerDetails, $floorDetails);
@@ -1445,9 +1460,11 @@ class ActiveSafController extends Controller
             $propSafVerification->deactivateVerifications($req->applicationId);                 // Deactivate Verification From Table
             $propSafVerificationDtl->deactivateVerifications($req->applicationId);              // Deactivate Verification from Saf floor Dtls
             DB::commit();
+            DB::connection('pgsql_master')->commit();
             return responseMsgs(true, $msg, ['holdingNo' => $safDetails->holding_no, 'ptNo' => $safDetails->pt_no], "010110", "1.0", "410ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
     }
@@ -1544,6 +1561,7 @@ class ActiveSafController extends Controller
      * | @param Request $req
      * | @var redis Establishing Redis Connection
      * | @var workflowId Workflow id of the SAF 
+     * | Multiple Database Connection
      * | Status-Closed
      * | Query Costing-401ms
      * | Rating-1 
@@ -1586,7 +1604,9 @@ class ActiveSafController extends Controller
             } else
                 $saf->parked = true;                        // If the Application has been applied from Citizen
 
+            #_Multiple Database Connection Started
             DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
             $saf->save();
 
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
@@ -1600,9 +1620,11 @@ class ActiveSafController extends Controller
             $track->saveTrack($req);
 
             DB::commit();
+            DB::connection('pgsql_master')->commit();
             return responseMsgs(true, "Successfully Done", "", "010111", "1.0", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
     }
@@ -1840,7 +1862,10 @@ class ActiveSafController extends Controller
                 throw new Exception("Demand Not Available for Payment");
             // Property Transactions
             $activeSaf->payment_status = 1;             // Paid for Online
+
             DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
+
             $activeSaf->save();
             // Replication of Prop Transactions
             $tranReqs = [
@@ -1920,16 +1945,20 @@ class ActiveSafController extends Controller
             $this->sendToWorkflow($activeSaf);                                   // Send to Workflow(15.2)
             $demands = collect($demands)->toArray();
             $postSafPropTaxes->postSafTaxes($safId, $demands, $activeSaf->ulb_id);                  // Save Taxes
+
             DB::commit();
+            DB::connection('pgsql_master')->commit();
             return responseMsgs(true, "Payment Successfully Done",  ['TransactionNo' => $tranNo], "010115", "1.0", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
     }
 
     /**
      * | Offline Saf Payment
+     * | Multiple Database Connection
      */
     public function offlinePaymentSaf(ReqPayment $req)
     {
@@ -1988,6 +2017,8 @@ class ActiveSafController extends Controller
                 $activeSaf->payment_status = 2;         // Under Verification for Cheque, Cash, DD
             }
             DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
+
             $propTrans = $propTrans->postSafTransaction($req, $demands);
 
             if (in_array($req['paymentMode'], $offlinePaymentModes)) {
@@ -2037,9 +2068,11 @@ class ActiveSafController extends Controller
             $demands = collect($demands)->toArray();
             $postSafPropTaxes->postSafTaxes($safId, $demands, $activeSaf->ulb_id);                  // Save Taxes
             DB::commit();
+            DB::connection('pgsql_master')->commit();
             return responseMsgs(true, "Payment Successfully Done",  ['TransactionNo' => $tranNo], "010115", "1.0", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
     }

@@ -198,7 +198,7 @@ class CitizenController extends Controller
         ]);
     }
 
-    
+
     public function citizenEditProfile(Request $request)
     {
         $validator = Validator::make(request()->all(), [

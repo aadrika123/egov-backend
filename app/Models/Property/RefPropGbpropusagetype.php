@@ -15,7 +15,7 @@ class RefPropGbpropusagetype extends Model
      */
     public function getGbpropusagetypes()
     {
-        return RefPropGbpropusagetype::select(
+        return RefPropGbpropusagetype::on('pgsql::read')->select(
             'id',
             DB::raw('INITCAP(prop_usage_type) as prop_usage_type'),
         )

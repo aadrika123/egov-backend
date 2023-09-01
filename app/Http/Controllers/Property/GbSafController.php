@@ -211,7 +211,9 @@ class GbSafController extends Controller
                 'roleId' => $senderRoleId
             ]);
             $forwardBackwardIds = $mWfRoleMaps->getWfBackForwardIds($roleMapsReqs);
+            #_Multiple Database Connection Started
             DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
             if ($request->action == 'forward') {
                 $wfMstrId = $mWfMstr->getWfMstrByWorkflowId($saf->workflow_id);
                 $samHoldingDtls = $this->checkPostCondition($senderRoleId, $wfLevels, $saf, $userId);          // Check Post Next level condition
@@ -239,9 +241,11 @@ class GbSafController extends Controller
 
             $track->saveTrack($request);
             DB::commit();
+            DB::connection('pgsql_master')->commit();
             return responseMsgs(true, "Successfully Forwarded The Application!!", $samHoldingDtls, "010109", "1.0", responseTime(), "POST", $request->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
             return responseMsg(false, $e->getMessage(), "", "010109", "1.0", responseTime(), "POST", $request->deviceId);
         }
     }
@@ -654,11 +658,14 @@ class GbSafController extends Controller
         try {
             $saf = PropActiveSaf::find($req->applicationId);
             $track = new WorkflowTrack();
-            DB::beginTransaction();
             $senderRoleId = $saf->current_role;
             $initiatorRoleId = $saf->initiator_role_id;
             $saf->current_role = $initiatorRoleId;
             $saf->parked = true;                        //<------ SAF Pending Status true
+
+            #_Multiple Database Connection Started
+            DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
             $saf->save();
 
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
@@ -672,9 +679,11 @@ class GbSafController extends Controller
             $track->saveTrack($req);
 
             DB::commit();
+            DB::connection('pgsql_master')->commit();
             return responseMsgs(true, "Successfully Done", "", "010111", "1.0", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
     }
@@ -886,7 +895,9 @@ class GbSafController extends Controller
             if (collect($fieldVerifiedSaf)->isEmpty())
                 throw new Exception("Site Verification not Exist");
 
+            #_Multiple Database Connection Started
             DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
             // Approval
             if ($req->status == 1) {
                 $safDetails->saf_pending_status = 0;
@@ -924,9 +935,11 @@ class GbSafController extends Controller
             $propSafVerification->deactivateVerifications($req->applicationId);                 // Deactivate Verification From Table
             $propSafVerificationDtl->deactivateVerifications($req->applicationId);              // Deactivate Verification from Saf floor Dtls
             DB::commit();
+            DB::connection('pgsql_master')->commit();
             return responseMsgs(true, $msg, ['holdingNo' => $safDetails->holding_no], "010110", "1.0", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
     }
@@ -1215,7 +1228,9 @@ class GbSafController extends Controller
             if ($ifFullDocVerified == 1)
                 throw new Exception("Document Fully Verified");
 
+            #_Multiple Database Connection Started
             DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
             if ($req->docStatus == "Verified") {
                 $status = 1;
             }
@@ -1241,9 +1256,11 @@ class GbSafController extends Controller
             }
 
             DB::commit();
+            DB::connection('pgsql_master')->commit();
             return responseMsgs(true, $req->docStatus . " Successfully", "", "010204", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
             return responseMsgs(false, $e->getMessage(), "", "010204", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         }
     }
@@ -1306,7 +1323,9 @@ class GbSafController extends Controller
                 $metaReqs = array_merge($metaReqs, ['senderRoleId' => $wfRoleId->wf_role_id]);
                 $metaReqs = array_merge($metaReqs, ['user_id' => $userId]);
             }
+            #_Multiple Database Connection Started
             DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
             // For Citizen Independent Comment
             if ($userType == 'Citizen') {
                 $metaReqs = array_merge($metaReqs, ['citizenId' => $userId]);
@@ -1318,9 +1337,11 @@ class GbSafController extends Controller
             $workflowTrack->saveTrack($request);
 
             DB::commit();
+            DB::connection('pgsql_master')->commit();
             return responseMsgs(true, "You Have Commented Successfully!!", ['Comment' => $request->comment], "010108", "1.0", responseTime(), "POST", "");
         } catch (Exception $e) {
             DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
     }

@@ -37,6 +37,7 @@ use Illuminate\Pipeline\Pipeline;
 /**
  * | Created On-15-11-2022 
  * | Created By-Mrinal Kumar
+ * | Status : Closed
  * --------------------------------------------------------------------------------------
  * | Controller for Concession
  * | --------------------------- Workflow Parameters ---------------------------------------
@@ -72,8 +73,6 @@ class ConcessionController extends Controller
      */
     public function applyConcession(Request $request)
     {
-        // return $request;
-
         $request->validate([
             'propId' => "required",
             "applicantName" => "required"
@@ -102,6 +101,7 @@ class ConcessionController extends Controller
             $finisherRoleId = DB::select($refFinisherRoleId);
 
             DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
             $concession = new PropActiveConcession;
             $concession->property_id = $request->propId;
             $concession->prop_owner_id = $request->ownerId;
@@ -161,36 +161,14 @@ class ConcessionController extends Controller
             PropActiveConcession::where('id', $concession->id)
                 ->update(['application_no' => $concessionNo]);
 
-            // Armed force Doc
-            // if ($file = $request->file('armedForceDoc')) {
-
-            //     $docUpload = new DocUpload;
-            //     $mWfActiveDocument = new WfActiveDocument();
-            //     $relativePath = Config::get('PropertyConstaint.CONCESSION_RELATIVE_PATH');
-            //     $refImageName = $request->armedForceCode;
-            //     $refImageName = $concession->id . '-' . str_replace(' ', '_', $refImageName);
-            //     $document = $request->armedForceDoc;
-
-            //     $imageName = $docUpload->upload($refImageName, $document, $relativePath);
-            //     $armedForceReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
-            //     $armedForceReqs['activeId'] = $concession->id;
-            //     $armedForceReqs['workflowId'] = $concession->workflow_id;
-            //     $armedForceReqs['ulbId'] = $concession->ulb_id;
-            //     $armedForceReqs['relativePath'] = $relativePath;
-            //     $armedForceReqs['document'] = $imageName;
-            //     $armedForceReqs['docCode'] = $request->armedForceCode;
-
-            //     $armedForceReqs = new Request($armedForceReqs);
-            //     $mWfActiveDocument->postDocuments($armedForceReqs);
-
-            //     PropActiveConcession::where('id', $concession->id)
-            //         ->update(['doc_upload_status' => 1]);
-            // }
-
             DB::commit();
+            DB::connection('pgsql_master')->commit();
+
             return responseMsgs(true, 'Successfully Applied The Application', $concessionNo, '010701', '01', '382ms-547ms', 'Post', '');
         } catch (Exception $e) {
             DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
+
             return responseMsg(false, $e->getMessage(), "");
         }
     }
@@ -202,8 +180,9 @@ class ConcessionController extends Controller
     {
         PropActiveConcession::where('id', $concession->id)
             ->update(['gender' => $req['value']]);
-        // $concession->gender = $req['value'];
-        $this->saveDoc($req, $concession);
+
+        if ($req['doc'] != 'null')
+            $this->saveDoc($req, $concession);
     }
 
     /**
@@ -213,8 +192,9 @@ class ConcessionController extends Controller
     {
         PropActiveConcession::where('id', $concession->id)
             ->update(['dob' => $req['value']]);
-        // $concession->dob = $req['value'];
-        $this->saveDoc($req, $concession);
+
+        if ($req['doc'] != 'null')
+            $this->saveDoc($req, $concession);
     }
 
     /**
@@ -227,9 +207,9 @@ class ConcessionController extends Controller
                 'is_specially_abled' => $req['value'],
                 'specially_abled_percentage' => $req['percentage'],
             ]);
-        // $concession->is_specially_abled = $req['value'];
-        // $concession->specially_abled_percentage = $req['percentage'];
-        $this->saveDoc($req, $concession);
+
+        if ($req['doc'] != 'null')
+            $this->saveDoc($req, $concession);
     }
 
     /**
@@ -241,8 +221,9 @@ class ConcessionController extends Controller
             ->update([
                 'is_armed_force' => $req['value'],
             ]);
-        // $concession->is_armed_force = $req['value'];
-        $this->saveDoc($req, $concession);
+
+        if ($req['doc'] != 'null')
+            $this->saveDoc($req, $concession);
     }
 
     public function saveDoc($request, $concession)
@@ -265,25 +246,6 @@ class ConcessionController extends Controller
 
         $metaReqs = new Request($metaReqs);
         $mWfActiveDocument->postDocuments($metaReqs);
-    }
-
-    //post Holding
-    public function postHolding(Request $request)
-    {
-        $request->validate([
-            'holdingNo' => 'required'
-        ]);
-        try {
-            $user = PropProperty::where('holding_no', $request->holdingNo)
-                ->get();
-            if (!empty($user['0'])) {
-                return responseMsgs(true, 'True', $user, '010702', '01', '334ms-401ms', 'Post', '');
-            }
-            return responseMsg(false, "False", "");
-            // return $user['0'];
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
     }
 
     /**
@@ -596,6 +558,7 @@ class ConcessionController extends Controller
             $forwardBackwardIds = $mWfRoleMaps->getWfBackForwardIds($roleMapsReqs);
 
             DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
             if ($req->action == 'forward') {
                 $this->checkPostCondition($senderRoleId, $wfLevels, $concession);          // Check Post Next level condition
                 $concession->current_role = $forwardBackwardIds->forward_role_id;
@@ -635,9 +598,11 @@ class ConcessionController extends Controller
             ]);
 
             DB::commit();
+            DB::connection('pgsql_master')->commit();
             return responseMsgs(true, "Successfully Forwarded The Application!!", "", "", '010708', '01', '', 'Post', '');
         } catch (Exception $e) {
             DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
     }
@@ -682,6 +647,7 @@ class ConcessionController extends Controller
                 return responseMsg(false, "Forbidden Access", "");
             }
             DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
 
             // Approval
             if ($req->status == 1) {
@@ -741,11 +707,12 @@ class ConcessionController extends Controller
                 'forward_date' => $this->_todayDate->format('Y-m-d'),
                 'forward_time' => $this->_todayDate->format('H:i:s')
             ]);
-            // dd('Test');
             DB::commit();
+            DB::connection('pgsql_master')->commit();
             return responseMsgs(true, $msg, "", "", '010709', '01', '376ms', 'Post', '');
         } catch (Exception $e) {
             DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
     }
@@ -787,20 +754,19 @@ class ConcessionController extends Controller
             'applicationId' => "required"
         ]);
         try {
-            $redis = Redis::connection();
+            $mWorkflowTrack = new WorkflowTrack();
             $concession = PropActiveConcession::find($req->applicationId);
+            if ($concession)
+                throw new Exception("Application Not Found");
+
             $senderRoleId = $concession->current_role;
+            $initiatorRoleId = $concession->initiator_role_id;
 
-            $workflowId = $concession->workflow_id;
-            $backId = json_decode(Redis::get('workflow_initiator_' . $workflowId));
-            if (!$backId) {
-                $backId = WfWorkflowrolemap::where('workflow_id', $workflowId)
-                    ->where('is_initiator', true)
-                    ->first();
-                $redis->set('workflow_initiator_' . $workflowId, json_encode($backId));
-            }
+            #_Multiple Database Connection Started
+            DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
 
-            $concession->current_role = $backId->wf_role_id;
+            $concession->current_role = $initiatorRoleId;
             $concession->parked = 1;
             $concession->save();
 
@@ -811,11 +777,14 @@ class ConcessionController extends Controller
             $metaReqs['verificationStatus'] = 2;
             $metaReqs['senderRoleId'] = $senderRoleId;
             $req->request->add($metaReqs);
-            $track = new WorkflowTrack();
-            $track->saveTrack($req);
+            $mWorkflowTrack->saveTrack($req);
 
+            DB::commit();
+            DB::connection('pgsql_master')->commit();
             return responseMsgs(true, "Successfully Done", "", "", '010710', '01', '358ms', 'Post', '');
         } catch (Exception $e) {
+            DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
     }
@@ -857,11 +826,13 @@ class ConcessionController extends Controller
         ]);
 
         try {
-            $workflowTrack = new WorkflowTrack();
+            $mWorkflowTrack = new WorkflowTrack();
             $concession = PropActiveConcession::find($req->applicationId);                         // Concessions
             $mModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs = array();
+
             DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
             // Save On Workflow Track For Level Independent
             $metaReqs = [
                 'workflowId' => $concession->workflow_id,
@@ -876,12 +847,14 @@ class ConcessionController extends Controller
             }
 
             $req->request->add($metaReqs);
-            $workflowTrack->saveTrack($req);
+            $mWorkflowTrack->saveTrack($req);
 
             DB::commit();
+            DB::connection('pgsql_master')->commit();
             return responseMsgs(true, "You Have Commented Successfully!!", ['Comment' => $req->comment], "010108", "1.0", "", "POST", "");
         } catch (Exception $e) {
             DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
     }
@@ -1019,6 +992,9 @@ class ConcessionController extends Controller
             $metaReqs['ownerDtlId'] = $getConcessionDtls->prop_owner_id;
 
             $metaReqs = new Request($metaReqs);
+
+            DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
             $mWfActiveDocument->postDocuments($metaReqs);
 
             $docUploadStatus = $this->checkFullDocUpload($req->applicationId);
@@ -1029,8 +1005,12 @@ class ConcessionController extends Controller
 
                 $getConcessionDtls->save();
             }
+            DB::commit();
+            DB::connection('pgsql_master')->commit();
             return responseMsgs(true, "Document Uploadation Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
+            DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
             return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
@@ -1255,6 +1235,7 @@ class ConcessionController extends Controller
                 throw new Exception("Document Fully Verified");
 
             DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
             if ($req->docStatus == "Verified") {
                 $status = 1;
             }
@@ -1280,9 +1261,11 @@ class ConcessionController extends Controller
             }
 
             DB::commit();
+            DB::connection('pgsql_master')->commit();
             return responseMsgs(true, $req->docStatus . " Successfully", "", "010204", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
             return responseMsgs(false, $e->getMessage(), "", "010204", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }

@@ -5,16 +5,15 @@ namespace App\Models\Trade;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class TradeParamItemType extends Model
+class TradeParamItemType extends TradeParamModel
 {
     use HasFactory;
     public $timestamps=false;
-    protected $connection;
     public function __construct($DB=null)
     {
-       $this->connection = $DB ? $DB:"pgsql_trade";
+        parent::__construct($DB);
     }
-    public static function List($all=false)
+    public  function List($all=false)
     {
         if($all)
         {

@@ -20,7 +20,8 @@ class PropHarvestingGeotagUpload extends Model
 
     public function getLatLong($applicationId)
     {
-        return PropHarvestingGeotagUpload::where('application_id', $applicationId)
+        return PropHarvestingGeotagUpload::on('pgsql::read')
+            ->where('application_id', $applicationId)
             ->orderbydesc('id')
             ->first();
     }

@@ -11,7 +11,7 @@ use Illuminate\Http\Request;
  * | Add Notification
  * | Created By-Mrinal Kumar
  * | Created On-08-06-2023 
- * | Status: Open
+ * | Status: Closed
  */
 
 class AddNotification

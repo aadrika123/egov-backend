@@ -32,9 +32,10 @@ class PropSafsOwner extends Model
 
     public function getOwnersBySafId($safId)
     {
-        return PropSafsOwner::select(
-            'prop_safs_owners.*'
-        )
+        return PropSafsOwner::on('pgsql::read')
+            ->select(
+                'prop_safs_owners.*'
+            )
             ->where('saf_id', $safId)
             ->where('status', 1)
             ->get();

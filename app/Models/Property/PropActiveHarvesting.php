@@ -18,23 +18,24 @@ class PropActiveHarvesting extends Model
      */
     public function getHarvestingList($workflowIds)
     {
-        return PropActiveHarvesting::select(
-            'prop_active_harvestings.id',
-            'prop_active_harvestings.workflow_id',
-            'prop_active_harvestings.application_no',
-            DB::raw("string_agg(owner_name,',') as applicant_name"),
-            'a.ward_mstr_id',
-            'u.ward_name as ward_no',
-            'a.holding_no',
-            'new_holding_no',
-            'pt_no',
-            DB::raw("TO_CHAR(date, 'DD-MM-YYYY') as apply_date"),
-            'a.prop_type_mstr_id',
-            'p.property_type',
-            'prop_active_harvestings.workflow_id',
-            'prop_active_harvestings.current_role as role_id',
-            'date'
-        )
+        return PropActiveHarvesting::on('pgsql::read')
+            ->select(
+                'prop_active_harvestings.id',
+                'prop_active_harvestings.workflow_id',
+                'prop_active_harvestings.application_no',
+                DB::raw("string_agg(owner_name,',') as applicant_name"),
+                'a.ward_mstr_id',
+                'u.ward_name as ward_no',
+                'a.holding_no',
+                'new_holding_no',
+                'pt_no',
+                DB::raw("TO_CHAR(date, 'DD-MM-YYYY') as apply_date"),
+                'a.prop_type_mstr_id',
+                'p.property_type',
+                'prop_active_harvestings.workflow_id',
+                'prop_active_harvestings.current_role as role_id',
+                'date'
+            )
             ->join('prop_properties as a', 'a.id', '=', 'prop_active_harvestings.property_id')
             ->join('prop_owners', 'prop_owners.property_id', 'a.id')
             ->leftjoin('ref_prop_types as p', 'p.id', '=', 'a.prop_type_mstr_id')
@@ -53,7 +54,7 @@ class PropActiveHarvesting extends Model
             );
     }
 
-    public function saves($request, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId,  $userId)
+    public function saves($request, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId,  $userId, $ulbId)
     {
 
         $waterHaravesting = new PropActiveHarvesting();
@@ -67,7 +68,7 @@ class PropActiveHarvesting extends Model
         $waterHaravesting->finisher_role_id = collect($finisherRoleId)->first()->role_id;
         $waterHaravesting->user_id = $userId;
         $waterHaravesting->date = Carbon::now();
-        $waterHaravesting->ulb_id = $request->ulbId;
+        $waterHaravesting->ulb_id = $ulbId;
         return $waterHaravesting;
     }
 
@@ -76,9 +77,9 @@ class PropActiveHarvesting extends Model
      */
     public function getDetailsById($id)
     {
-        return DB::table('prop_active_harvestings as h')
+        return DB::connection('pgsql::read')
+            ->table('prop_active_harvestings as h')
             ->select(
-
                 'h.user_id as citizen_user_id',
                 'pp.*',
                 'w.ward_name as old_ward_no',
@@ -148,19 +149,6 @@ class PropActiveHarvesting extends Model
     }
 
     /**
-     * 
-     */
-    public function harvestingNo($id)
-    {
-        $count = PropActiveHarvesting::where('id', $id)
-            ->select('id')
-            ->get();
-        $harvestingNo = 'HAR' . "/" . str_pad($count['0']->id, 5, '0', STR_PAD_LEFT);
-
-        return $harvestingNo;
-    }
-
-    /**
      * | Enable Field Verification Status
      */
     public function verifyFieldStatus($applicationId)
@@ -178,9 +166,10 @@ class PropActiveHarvesting extends Model
     public function todayAppliedApplications($userId)
     {
         $date = Carbon::now();
-        return PropActiveHarvesting::select(
-            'id'
-        )
+        return PropActiveHarvesting::on('pgsql::read')
+            ->select(
+                'id'
+            )
             ->where('user_id', $userId)
             ->where('date', $date);
     }
@@ -190,15 +179,16 @@ class PropActiveHarvesting extends Model
      */
     public function recentApplication($userId)
     {
-        $data = PropActiveHarvesting::select(
-            'prop_active_harvestings.id',
-            'application_no as applicationNo',
-            'date as applydate',
-            // "'Rain Water Harvesting' as 'assessmentType'",
-            // 'applied_for as assessmentType',
-            DB::raw("('Rain Water Harvesting') as assessmentType"),
-            DB::raw("string_agg(owner_name,',') as applicantName"),
-        )
+        $data = PropActiveHarvesting::on('pgsql::read')
+            ->select(
+                'prop_active_harvestings.id',
+                'application_no as applicationNo',
+                'date as applydate',
+                // "'Rain Water Harvesting' as 'assessmentType'",
+                // 'applied_for as assessmentType',
+                DB::raw("('Rain Water Harvesting') as assessmentType"),
+                DB::raw("string_agg(owner_name,',') as applicantName"),
+            )
             ->join('prop_owners', 'prop_owners.property_id', 'prop_active_harvestings.property_id')
             ->where('prop_active_harvestings.user_id', $userId)
             ->orderBydesc('prop_active_harvestings.id')
@@ -219,10 +209,11 @@ class PropActiveHarvesting extends Model
     public function todayReceivedApplication($currentRole, $ulbId)
     {
         $date = Carbon::now()->format('Y-m-d');
-        return PropActiveHarvesting::select(
-            'application_no as applicationNo',
-            'date as applyDate',
-        )
+        return PropActiveHarvesting::on('pgsql::read')
+            ->select(
+                'application_no as applicationNo',
+                'date as applyDate',
+            )
 
             ->join('workflow_tracks', 'workflow_tracks.ref_table_id_value', 'prop_active_harvestings.id')
             ->where('workflow_tracks.receiver_role_id', $currentRole)
@@ -237,21 +228,25 @@ class PropActiveHarvesting extends Model
      */
     public function searchHarvesting()
     {
-        return PropActiveHarvesting::select(
-            'prop_active_harvestings.id',
-            DB::raw("'active' as status"),
-            'prop_active_harvestings.application_no',
-            'prop_active_harvestings.current_role',
-            'role_name as currentRole',
-            'ward_name',
-            'prop_address',
-            // DB::raw("string_agg(prop_owners.mobile_no::VARCHAR,',') as mobile_no"),
-            // DB::raw("string_agg(prop_owners.owner_name,',') as owner_name"),
-        )
+        return PropActiveHarvesting::on('pgsql::read')
+            ->select(
+                'prop_active_harvestings.id',
+                DB::raw("'active' as status"),
+                'prop_active_harvestings.application_no',
+                'prop_active_harvestings.current_role',
+                'role_name as currentRole',
+                'u.ward_name as old_ward_no',
+                'uu.ward_name as new_ward_no',
+                'prop_address',
+                'new_holding_no',
+                DB::raw("(SELECT owner_name FROM prop_owners WHERE property_id=pp.id order by id LIMIT 1)"),
+                DB::raw("(SELECT mobile_no FROM prop_owners WHERE property_id=pp.id order by id LIMIT 1)"),
+            )
 
             ->join('wf_roles', 'wf_roles.id', 'prop_active_harvestings.current_role')
             ->join('prop_properties as pp', 'pp.id', 'prop_active_harvestings.property_id')
-            ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'pp.ward_mstr_id')
+            ->leftjoin('ulb_ward_masters as u', 'u.id', 'pp.ward_mstr_id')
+            ->leftjoin('ulb_ward_masters as uu', 'uu.id', 'pp.new_ward_mstr_id')
             ->join('prop_owners', 'prop_owners.property_id', 'pp.id');
     }
 }

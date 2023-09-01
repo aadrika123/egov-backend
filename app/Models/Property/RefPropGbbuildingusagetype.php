@@ -15,7 +15,7 @@ class RefPropGbbuildingusagetype extends Model
      */
     public function getGbbuildingusagetypes()
     {
-        return RefPropGbbuildingusagetype::select(
+        return RefPropGbbuildingusagetype::on('pgsql::read')->select(
             'id',
             DB::raw('INITCAP(building_type) as building_type'),
             'status'

@@ -12,10 +12,12 @@ class PropProperty extends Model
     use HasFactory;
     protected $guarded = [];
 
-    // Get Property Of the Citizen
-    public function getUserProperties($userId)
+    /**
+     * | Get Property Of the Citizen
+     */
+    public function getUserProperties($citizenId)
     {
-        return PropProperty::where('user_id', $userId)
+        return PropProperty::where('citizen', $citizenId)
             ->get();
     }
 
@@ -39,7 +41,8 @@ class PropProperty extends Model
     // Get SAf id by Prop Id
     public function getSafByPropId($propId)
     {
-        return PropProperty::select('saf_id')
+        return PropProperty::on('pgsql::read')
+            ->select('saf_id')
             ->where('id', $propId)
             ->first();
     }
@@ -58,7 +61,7 @@ class PropProperty extends Model
      */
     public function getPropDtls()
     {
-        return DB::table('prop_properties')
+        return PropProperty::on('pgsql::read')
             ->select(
                 'prop_properties.*',
                 DB::raw("REPLACE(prop_properties.holding_type, '_', ' ') AS holding_type"),
@@ -130,26 +133,27 @@ class PropProperty extends Model
      */
     public function getPropByHolding($holdingNo, $ulbId)
     {
-        $oldHolding = PropProperty::select(
-            'prop_properties.id',
-            'prop_properties.holding_no',
-            'prop_properties.new_holding_no',
-            'prop_properties.ward_mstr_id',
-            'prop_properties.new_ward_mstr_id',
-            'prop_properties.elect_consumer_no',
-            'prop_properties.elect_acc_no',
-            'prop_properties.elect_bind_book_no',
-            'prop_properties.elect_cons_category',
-            'prop_properties.prop_pin_code',
-            'prop_properties.corr_pin_code',
-            'prop_properties.prop_address',
-            'prop_properties.corr_address',
-            'prop_properties.apartment_details_id',
-            'prop_properties.area_of_plot as total_area_in_desimal',
-            'prop_properties.prop_type_mstr_id',
-            'ulb_ward_masters.ward_name as old_ward_no',
-            'u.ward_name as new_ward_no',
-        )
+        $oldHolding = PropProperty::on('pgsql::read')
+            ->select(
+                'prop_properties.id',
+                'prop_properties.holding_no',
+                'prop_properties.new_holding_no',
+                'prop_properties.ward_mstr_id',
+                'prop_properties.new_ward_mstr_id',
+                'prop_properties.elect_consumer_no',
+                'prop_properties.elect_acc_no',
+                'prop_properties.elect_bind_book_no',
+                'prop_properties.elect_cons_category',
+                'prop_properties.prop_pin_code',
+                'prop_properties.corr_pin_code',
+                'prop_properties.prop_address',
+                'prop_properties.corr_address',
+                'prop_properties.apartment_details_id',
+                'prop_properties.area_of_plot as total_area_in_desimal',
+                'prop_properties.prop_type_mstr_id',
+                'ulb_ward_masters.ward_name as old_ward_no',
+                'u.ward_name as new_ward_no',
+            )
             ->join('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'prop_properties.ward_mstr_id')
             ->leftJoin('ulb_ward_masters as u', 'u.id', '=', 'prop_properties.new_ward_mstr_id')
             ->where('prop_properties.holding_no', $holdingNo)
@@ -161,26 +165,27 @@ class PropProperty extends Model
             return $oldHolding;
         }
 
-        $newHolding = PropProperty::select(
-            'prop_properties.id',
-            'prop_properties.holding_no',
-            'prop_properties.new_holding_no',
-            'prop_properties.ward_mstr_id',
-            'prop_properties.new_ward_mstr_id',
-            'prop_properties.elect_consumer_no',
-            'prop_properties.elect_acc_no',
-            'prop_properties.elect_bind_book_no',
-            'prop_properties.elect_cons_category',
-            'prop_properties.prop_pin_code',
-            'prop_properties.corr_pin_code',
-            'prop_properties.prop_address',
-            'prop_properties.corr_address',
-            'prop_properties.apartment_details_id',
-            'prop_properties.area_of_plot as total_area_in_desimal',
-            'prop_properties.prop_type_mstr_id',
-            'ulb_ward_masters.ward_name as old_ward_no',
-            'u.ward_name as new_ward_no',
-        )
+        $newHolding = PropProperty::on('pgsql::read')
+            ->select(
+                'prop_properties.id',
+                'prop_properties.holding_no',
+                'prop_properties.new_holding_no',
+                'prop_properties.ward_mstr_id',
+                'prop_properties.new_ward_mstr_id',
+                'prop_properties.elect_consumer_no',
+                'prop_properties.elect_acc_no',
+                'prop_properties.elect_bind_book_no',
+                'prop_properties.elect_cons_category',
+                'prop_properties.prop_pin_code',
+                'prop_properties.corr_pin_code',
+                'prop_properties.prop_address',
+                'prop_properties.corr_address',
+                'prop_properties.apartment_details_id',
+                'prop_properties.area_of_plot as total_area_in_desimal',
+                'prop_properties.prop_type_mstr_id',
+                'ulb_ward_masters.ward_name as old_ward_no',
+                'u.ward_name as new_ward_no',
+            )
             ->join('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'prop_properties.ward_mstr_id')
             ->leftJoin('ulb_ward_masters as u', 'u.id', '=', 'prop_properties.new_ward_mstr_id')
             ->where('prop_properties.new_holding_no', $holdingNo)
@@ -208,16 +213,17 @@ class PropProperty extends Model
      */
     public function searchHolding($ulbId)
     {
-        return PropProperty::select(
-            'prop_properties.id',
-            'prop_properties.new_ward_mstr_id AS wardId',
-            'prop_properties.prop_address AS address',
-            'ref_prop_types.property_type AS propertyType',
-            'prop_properties.new_holding_no as holding_no',
-            DB::raw("string_agg(prop_owners.owner_name,',') as ownerName"),
-            DB::raw("string_agg(prop_owners.mobile_no::VARCHAR,',') as mobileNo"),
-            'prop_properties.holding_no as holdingNo'
-        )
+        return PropProperty::on('pgsql::read')
+            ->select(
+                'prop_properties.id',
+                'prop_properties.new_ward_mstr_id AS wardId',
+                'prop_properties.prop_address AS address',
+                'ref_prop_types.property_type AS propertyType',
+                'prop_properties.new_holding_no as holding_no',
+                DB::raw("string_agg(prop_owners.owner_name,',') as ownerName"),
+                DB::raw("string_agg(prop_owners.mobile_no::VARCHAR,',') as mobileNo"),
+                'prop_properties.holding_no as holdingNo'
+            )
             ->join('prop_owners', 'prop_owners.saf_id', '=', 'prop_properties.saf_id')
             ->join('ref_prop_types', 'ref_prop_types.id', '=', 'prop_properties.prop_type_mstr_id')
             ->where('prop_properties.status', 1)
@@ -230,8 +236,7 @@ class PropProperty extends Model
      */
     public function searchPropByCluster($clusterId)
     {
-        return  PropProperty::leftjoin('prop_owners', 'prop_owners.property_id', '=', 'prop_properties.id')
-            ->join('ref_prop_types', 'ref_prop_types.id', '=', 'prop_properties.prop_type_mstr_id')
+        return  PropProperty::on('pgsql::read')
             ->select(
                 'prop_properties.id',
                 'prop_properties.new_ward_mstr_id AS new_ward_id',
@@ -244,6 +249,8 @@ class PropProperty extends Model
                 'prop_properties.ulb_id',
                 'prop_properties.ward_mstr_id as ward_id'
             )
+            ->leftjoin('prop_owners', 'prop_owners.property_id', '=', 'prop_properties.id')
+            ->join('ref_prop_types', 'ref_prop_types.id', '=', 'prop_properties.prop_type_mstr_id')
             ->where('prop_properties.cluster_id', $clusterId)
             ->where('prop_properties.status', 1)
             ->where('ref_prop_types.status', 1)
@@ -267,7 +274,8 @@ class PropProperty extends Model
      */
     public function getPropIdBySafId($safId)
     {
-        return PropProperty::select('id')
+        return PropProperty::on('pgsql::read')
+            ->select('id')
             ->where('saf_id', $safId)
             ->firstOrFail();
     }
@@ -411,7 +419,8 @@ class PropProperty extends Model
      */
     public function verifyHolding($req)
     {
-        return PropProperty::select('id')
+        return PropProperty::on('pgsql::read')
+            ->select('id')
             ->where('ulb_id', $req->ulbId);
     }
 
@@ -420,7 +429,8 @@ class PropProperty extends Model
      */
     public function getComparativeBasicDtls($propId)
     {
-        return DB::table('prop_properties as p')
+        return DB::connection('pgsql::read')
+            ->table('prop_properties as p')
             ->select(
                 'p.holding_no',
                 'p.new_holding_no',
@@ -465,7 +475,8 @@ class PropProperty extends Model
      */
     public function getCitizenHoldings($citizenId, $ulbId)
     {
-        return PropProperty::select('id', 'new_holding_no', 'citizen_id')
+        return PropProperty::on('pgsql::read')
+            ->select('id', 'new_holding_no', 'citizen_id')
             ->where('ulb_id', $ulbId)
             ->where('citizen_id', $citizenId)
             ->orderByDesc('id')
@@ -477,7 +488,8 @@ class PropProperty extends Model
      */
     public function getCitizenPtn($citizenId, $ulbId)
     {
-        return PropProperty::select('id', 'pt_no', 'citizen_id')
+        return PropProperty::on('pgsql::read')
+            ->select('id', 'pt_no', 'citizen_id')
             ->where('ulb_id', $ulbId)
             ->where('citizen_id', $citizenId)
             ->orderByDesc('id')
@@ -489,7 +501,8 @@ class PropProperty extends Model
      */
     public function getPropsByClusterId($clusterId)
     {
-        return PropProperty::where('cluster_id', $clusterId)
+        return PropProperty::on('pgsql::read')
+            ->where('cluster_id', $clusterId)
             ->get();
     }
 
@@ -630,21 +643,19 @@ class PropProperty extends Model
      */
     public function searchHoldingNo($ulbId)
     {
-        return PropProperty::select(
-            'prop_properties.id',
-            'ulb_name as ulb',
-            'prop_properties.holding_no',
-            'prop_properties.new_holding_no',
-            'prop_properties.pt_no',
-            'ward_name',
-            'prop_address',
-            'prop_properties.status',
-            // 'prop_owners.mobile_no',
-            // 'prop_owners.owner_name'
-        )
+        return PropProperty::on('pgsql::read')
+            ->select(
+                'prop_properties.id',
+                'ulb_name as ulb',
+                'prop_properties.holding_no',
+                'prop_properties.new_holding_no',
+                'prop_properties.pt_no',
+                'ward_name',
+                'prop_address',
+                'prop_properties.status',
+            )
             ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
             ->join('ulb_masters', 'ulb_masters.id', 'prop_properties.ulb_id')
-            // ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
             ->where('prop_properties.ulb_id', $ulbId)
             ->where('prop_properties.status', 1);
     }
@@ -654,7 +665,8 @@ class PropProperty extends Model
      */
     public function getPropByPtnOrHolding($refrenceNo)
     {
-        return PropProperty::select('id')
+        return PropProperty::on('pgsql::read')
+            ->select('id')
             ->where('holding_no', $refrenceNo)
             ->orWhere('new_holding_no', $refrenceNo)
             ->orWhere('pt_no', $refrenceNo)
@@ -667,19 +679,20 @@ class PropProperty extends Model
      */
     public function getPropLatlong($wardId)
     {
-        return PropProperty::select(
-            'prop_properties.id as property_id',
-            'prop_saf_geotag_uploads.id as geo_id',
-            'prop_properties.holding_no',
-            'prop_properties.new_holding_no',
-            'prop_properties.pt_no',
-            'prop_properties.prop_address',
-            'prop_saf_geotag_uploads.latitude',
-            'prop_owners.mobile_no',
-            'prop_saf_geotag_uploads.longitude',
-            'prop_saf_geotag_uploads.created_at',
-            DB::raw("concat(relative_path,'/',image_path) as doc_path"),
-        )
+        return PropProperty::on('pgsql::read')
+            ->select(
+                'prop_properties.id as property_id',
+                'prop_saf_geotag_uploads.id as geo_id',
+                'prop_properties.holding_no',
+                'prop_properties.new_holding_no',
+                'prop_properties.pt_no',
+                'prop_properties.prop_address',
+                'prop_saf_geotag_uploads.latitude',
+                'prop_owners.mobile_no',
+                'prop_saf_geotag_uploads.longitude',
+                'prop_saf_geotag_uploads.created_at',
+                DB::raw("concat(relative_path,'/',image_path) as doc_path"),
+            )
             ->join('prop_saf_geotag_uploads', 'prop_saf_geotag_uploads.saf_id', '=', 'prop_properties.saf_id')
             ->join('prop_owners', 'prop_owners.property_id', '=', 'prop_properties.id')
             ->where('prop_properties.ward_mstr_id', $wardId)
@@ -695,7 +708,8 @@ class PropProperty extends Model
      */
     public function getNewholding($propertyId)
     {
-        return PropProperty::select('id', 'new_holding_no', 'citizen_id')
+        return PropProperty::on('pgsql::read')
+            ->select('id', 'new_holding_no', 'citizen_id')
             ->whereIn('id', $propertyId)
             ->orderByDesc('id')
             ->get();
@@ -706,7 +720,8 @@ class PropProperty extends Model
      */
     public function getPtn($propertyId)
     {
-        return PropProperty::select('id', 'pt_no', 'citizen_id')
+        return PropProperty::on('pgsql::read')
+            ->select('id', 'pt_no', 'citizen_id')
             ->whereIn('id', $propertyId)
             ->orderByDesc('id')
             ->get();

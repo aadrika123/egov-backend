@@ -38,7 +38,8 @@ class PropSafMemoDtl extends Model
      */
     public function memoLists($safId)
     {
-        return DB::table('prop_saf_memo_dtls as m')
+        return DB::connection('pgsql::read')
+            ->table('prop_saf_memo_dtls as m')
             ->select(
                 'm.id',
                 'm.saf_id',
@@ -89,7 +90,7 @@ class PropSafMemoDtl extends Model
                             LEFT JOIN ulb_ward_masters AS nw ON nw.id=s.new_ward_mstr_id
                             WHERE d.id=$memoId AND d.status=1
                     LIMIT 1";
-        return DB::select($query);
+        return DB::connection('pgsql::read')->select($query);
     }
 
     /**
@@ -120,6 +121,6 @@ class PropSafMemoDtl extends Model
                             LEFT JOIN ulb_ward_masters AS nw ON nw.id=s.new_ward_mstr_id
                             WHERE d.id=$memoId AND d.status=1
                     LIMIT 1";
-        return DB::select($query);
+        return DB::connection('pgsql::read')->select($query);
     }
 }

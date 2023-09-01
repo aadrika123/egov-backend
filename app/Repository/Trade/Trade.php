@@ -4,6 +4,7 @@ namespace App\Repository\Trade;
 
 use Illuminate\Support\Facades\Storage;
 use App\EloquentModels\Common\ModelWard;
+use App\Http\Requests\Trade\ReqGetUpdateBasicDtl;
 use App\Models\CustomDetail;
 use App\Models\Payment\TempTransaction;
 use App\Models\Property\ActiveSafsOwnerDtl;
@@ -56,6 +57,7 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
+use App\Http\Requests\Trade\ReqUpdateBasicDtl;
 
 class Trade implements ITrade
 {
@@ -64,44 +66,79 @@ class Trade implements ITrade
     use Razorpay;
     use TradeTrait;
 
-    /**
-     * | Created On-01-10-2022 
-     * | Created By-Sandeep Bara
-     * | Status (open)
-     * |
-     * |----------------------
-     * | Applying For Trade License
-     * | Proper Validation will be applied 
-     * | @param Illuminate\Http\Request
-     * | @param Request $request
-     * | @param response
-     */
-    protected $_DB;
-    protected $_DB_NAME;
-    protected $_NOTICE_DB;
-    protected $_NOTICE_DB_NAME;
-    protected $_wardNo;
-    protected $_licenceId;
-    protected $_shortUlbName;
-    protected $_MODEL_WARD;
-    protected $_COMMON_FUNCTION;
-    protected $_WARD_NO;
-    protected $_LICENCE_ID;
-    protected $_SHORT_ULB_NAME;
-    protected $_WF_MASTER_Id;
-    protected $_WF_NOTICE_MASTER_Id;
-    protected $_MODULE_ID;
-    protected $_REF_TABLE;
-    protected $_TRADE_CONSTAINT;
-    protected $_NOTICE;
-    protected $_DOC_URL;
+    #====================[🅾️OWNER DETAILS🅾️]==========================
+        /**
+         * | Created On-01-10-2022 
+         * | Created By-Sandeep Bara
+         STATUS [OPEN]
+        * |
+        * |----------------------
+        * | Applying For Trade License
+        * | Proper Validation will be applied 
+        * | @param Illuminate\Http\Request
+        * | @param Request $request
+        * | @param response
+        */
+    
+    #======================[❎VARIABLES❎]============================
+        /**
+         * @var  obj -> $_DB  | trade connection instanse 
+         */
+        protected $_DB;
 
-    protected $_MODEL_TradeParamFirmType;
-    protected $_MODEL_TradeParamOwnershipType;
-    protected $_MODEL_TradeParamCategoryType;
-    protected $_MODEL_TradeParamItemType;
-    protected $_MODEL_ActiveTradeLicence;
-    protected $_MODEL_ActiveTradeOwner;
+        /**
+         * @var string -> $_DB_NAME | trade connection name
+         */
+        protected $_DB_NAME;
+
+        /**
+         * @var obj -> $_NOTICE_DB | notice connection instanse
+         */
+        protected $_NOTICE_DB;
+
+        /**
+         * @var string -> $_NOTICE_DB_NAME | notice connection name
+         */
+        protected $_NOTICE_DB_NAME;
+        
+        /**
+         * @var class -> $_MODEL_WARD
+         */        
+        protected $_MODEL_WARD;
+
+        /**
+         * @var class -> $_COMMON_FUNCTION
+         */
+        protected $_COMMON_FUNCTION;
+
+        /**
+         * @var string -> $_WARD_NO 
+         */
+        protected $_WARD_NO;
+        
+        protected $_LICENCE_ID;
+        protected $_SHORT_ULB_NAME;
+        protected $_WF_MASTER_Id;
+        protected $_WF_NOTICE_MASTER_Id;
+        protected $_MODULE_ID;
+        protected $_REF_TABLE;
+        protected $_TRADE_CONSTAINT;
+        protected $_DOC_URL;
+        
+    #======================[❎REPOSITRY AND CONTROLLER VARIABLE❎]============================
+        protected $_NOTICE;
+
+    #======================[❎MODEL VARIABLE❎]============================
+        protected $_MODEL_TradeParamFirmType;
+        protected $_MODEL_TradeParamOwnershipType;
+        protected $_MODEL_TradeParamCategoryType;
+        protected $_MODEL_TradeParamItemType;
+        protected $_MODEL_ActiveTradeLicence;
+        protected $_MODEL_ActiveTradeOwner;
+        protected $_MODEL_TradeTransaction;
+        protected $_MODEL_WorkflowTrack ;
+        protected $_MODEL_CustomDetail ;
+        protected $_MODEL_WorkflowMap ;
 
     public function __construct()
     {
@@ -116,6 +153,7 @@ class Trade implements ITrade
         $this->_MODEL_WARD = new ModelWard();
         $this->_COMMON_FUNCTION = new CommonFunction();
         $this->_NOTICE = new Notice();
+
         $this->_WARD_NO = NULL;
         $this->_LICENCE_ID = NULL;
         $this->_SHORT_ULB_NAME = NULL;
@@ -132,8 +170,20 @@ class Trade implements ITrade
         $this->_MODEL_TradeParamItemType = new TradeParamItemType($this->_DB_NAME );
         $this->_MODEL_ActiveTradeLicence = new ActiveTradeLicence( $this->_DB_NAME );
         $this->_MODEL_ActiveTradeOwner  = new ActiveTradeOwner($this->_DB_NAME);
+        $this->_MODEL_TradeTransaction = new TradeTransaction($this->_DB_NAME);
+
+        $this->_MODEL_WorkflowTrack = new WorkflowTrack();
+        $this->_MODEL_CustomDetail = new CustomDetail();
+        $this->_MODEL_WorkflowMap = new WorkflowMap();
     }
 
+    #=======================[❤️TRANSACTION BEGIN❤️]==============================
+        /** 
+         * @var $db1 default database name
+         * @var $db2 trade database name
+         * @var $db3 notice database name
+         * @return void
+         */
     public function begin()
     {
         $db1 = DB::connection()->getDatabaseName();
@@ -145,6 +195,14 @@ class Trade implements ITrade
         if($db1!=$db3 && $db2!=$db3) 
         $this->_NOTICE_DB->beginTransaction();
     }
+
+    #=======================[❤️TRANSACTION ROLLBACK❤️]==============================
+        /** 
+         * @var $db1 default database name
+         * @var $db2 trade database name
+         * @var $db3 notice database name
+         * @return void
+         */
     public function rollback()
     {
         $db1 = DB::connection()->getDatabaseName();
@@ -157,6 +215,13 @@ class Trade implements ITrade
         $this->_NOTICE_DB->rollBack();
     }
      
+    #=======================[❤️TRANSACTION COMMIT❤️]==============================
+        /** 
+         * @var $db1 default database name
+         * @var $db2 trade database name
+         * @var $db3 notice database name
+         * @return void
+         */
     public function commit()
     {
         $db1 = DB::connection()->getDatabaseName();
@@ -169,7 +234,7 @@ class Trade implements ITrade
         if($db1!=$db3 && $db2!=$db3)
         $this->_NOTICE_DB->commit();
     }
-    # Serial No : 01
+    #=====================[📝 📖 CREATE NEW APPLICATION | S.L (1.0) 📖 📝]========================================================
     /**
      * | Apply Of Application
      * | --------------------descriptin------------------------------------
@@ -265,227 +330,223 @@ class Trade implements ITrade
                 $mShortUlbName .= $mval[0];
             }
             #------------------------End Declaration-----------------------
-            if (in_array(strtoupper($mUserType), ["ONLINE", "JSK", "SUPER ADMIN", "TL"])) {
+            if (in_array(strtoupper($mUserType), $this->_TRADE_CONSTAINT["CANE-NO-HAVE-WARD"])) 
+            {
                 $data['wardList'] = $this->_MODEL_WARD->getAllWard($refUlbId)->map(function ($val) {
                     $val->ward_no = $val->ward_name;
                     return $val;
                 });
                 $data['wardList'] = objToArray($data['wardList']);                
-            } else {
+            } 
+            else 
+            {
                 $data['wardList'] = $this->_COMMON_FUNCTION->WardPermission($refUserId);
             }
-            if ($request->getMethod() == "POST") {
-                if ($request->firmDetails['holdingNo']) {
-                    $property = $this->propertyDetailsfortradebyHoldingNo($request->firmDetails['holdingNo'], $refUlbId);
-                    if ($property['status'])
-                        $mProprtyId = $property['property']['id'];
-                    else
-                        throw new Exception("Property Details Not Found");
-                }                
-                if ($mApplicationTypeId != 1) 
-                {
-                    $mOldLicenceId = $request->licenseId;
-                    $nextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
-                    $refOldLicece = TradeLicence::find($mOldLicenceId);
-                    if (!$refOldLicece) {
-                        throw new Exception("Old Licence Not Found");
-                    }
-                    if (!$refOldLicece->is_active) {
-                        $newLicense = ActiveTradeLicence::where("license_no", $refOldLicece->license_no)
-                            ->orderBy("id")
-                            ->first();
-                        throw new Exception("Application Aready Apply Please Track  " . $newLicense->application_no);
-                    }
-                    if (!$refOldLicece->application_type_id == 4) {
-                        throw new Exception("Surender License Can Not Apply Renewal Or Amendment ");
-                    }
-                    if ($refOldLicece->valid_upto > $nextMonth && !in_array($mApplicationTypeId, [3, 4])) {
-                        throw new Exception("Licence Valice Upto " . $refOldLicece->valid_upto);
-                    }
-                    if ($refOldLicece->valid_upto < (Carbon::now()->format('Y-m-d')) && in_array($mApplicationTypeId, [3, 4])) {
-                        throw new Exception("Licence Was Expired Please Renewal First");
-                    }
-                    if ($refOldLicece->pending_status != 5) {
-                        throw new Exception("Application Aready Apply Please Track  " . $refOldLicece->application_no);
-                    }
-                    if (in_array($mApplicationTypeId, [3, 4]) && $refOldLicece->valid_upto < Carbon::now()->format('Y-m-d')) {
-                        throw new Exception("Application was Expired.You Can't Apply " . $request->applicationType . ". Please Renew First.");
-                    }
+            if ($request->firmDetails['holdingNo']) 
+            {
+                $property = $this->propertyDetailsfortradebyHoldingNo($request->firmDetails['holdingNo'], $refUlbId);
+                if ($property['status'])
+                    $mProprtyId = $property['property']['id'];
+                else
+                    throw new Exception("Property Details Not Found");
+            }                
+            if ($mApplicationTypeId != 1) 
+            {
+                $mOldLicenceId = $request->licenseId;
+                $nextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
+                $refOldLicece = TradeLicence::find($mOldLicenceId);
+                if (!$refOldLicece) {
+                    throw new Exception("Old Licence Not Found");
+                }
+                if (!$refOldLicece->is_active) {
+                    $newLicense = ActiveTradeLicence::where("license_no", $refOldLicece->license_no)
+                        ->orderBy("id")
+                        ->first();
+                    throw new Exception("Application Aready Apply Please Track  " . $newLicense->application_no);
+                }
+                if (!$refOldLicece->application_type_id == 4) {
+                    throw new Exception("Surender License Can Not Apply Renewal Or Amendment ");
+                }
+                if ($refOldLicece->valid_upto > $nextMonth && !in_array($mApplicationTypeId, [3, 4])) {
+                    throw new Exception("Licence Valice Upto " . $refOldLicece->valid_upto);
+                }
+                if ($refOldLicece->valid_upto < (Carbon::now()->format('Y-m-d')) && in_array($mApplicationTypeId, [3, 4])) {
+                    throw new Exception("Licence Was Expired Please Renewal First");
+                }
+                if ($refOldLicece->pending_status != 5) {
+                    throw new Exception("Application Aready Apply Please Track  " . $refOldLicece->application_no);
+                }
+                if (in_array($mApplicationTypeId, [3, 4]) && $refOldLicece->valid_upto < Carbon::now()->format('Y-m-d')) {
+                    throw new Exception("Application was Expired.You Can't Apply " . $request->applicationType . ". Please Renew First.");
+                }
 
-                    $mnaturOfBusiness = $refOldLicece->nature_of_bussiness;
-                    $wardId = $refOldLicece->ward_mstr_id;
-                    $mWardNo = array_filter($data['wardList'], function ($val) use ($wardId) {
-                        return $val['id'] == $wardId;
-                    });
-                    $mWardNo = array_values($mWardNo)[0]['ward_no'] ?? "";
-                    $refOldowners = TradeOwner::where('temp_id', $mOldLicenceId)
-                        ->get();
-                }
-                if (in_array($mApplicationTypeId,[1,3])) 
-                {
-                    $mnaturOfBusiness = array_map(function ($val) {
-                        return $val['id'];
-                    }, $request->firmDetails['natureOfBusiness']);
-                    $mnaturOfBusiness = implode(',', $mnaturOfBusiness);
-                }
-                #
-                $this->begin();
-                $licence = new ActiveTradeLicence();
-                $licence->application_type_id = $mApplicationTypeId;
-                $licence->ulb_id              = $refUlbId;
-                $licence->trade_id            = $mOldLicenceId;
-                $licence->property_id         = $mProprtyId;
-                $licence->user_id             = $refUserId;
-                $licence->application_date    = $mNowdate;
-                $licence->apply_from          = $mUserType;
-                $licence->current_role        = $refWorkflows['initiator']['id'];
-                $licence->initiator_role      = $refWorkflows['initiator']['id'];
-                $licence->finisher_role       = $refWorkflows['finisher']['id'];
-                $licence->workflow_id         = $refWfWorkflow->id;
+                $mnaturOfBusiness = $refOldLicece->nature_of_bussiness;
+                $wardId = $refOldLicece->ward_mstr_id;
+                $mWardNo = array_filter($data['wardList'], function ($val) use ($wardId) {
+                    return $val['id'] == $wardId;
+                });
+                $mWardNo = array_values($mWardNo)[0]['ward_no'] ?? "";
+                $refOldowners = TradeOwner::where('temp_id', $mOldLicenceId)
+                    ->get();
+            }
+            if (in_array($mApplicationTypeId,[1,3])) 
+            {
+                $mnaturOfBusiness = array_map(function ($val) {
+                    return $val['id'];
+                }, $request->firmDetails['natureOfBusiness']);
+                $mnaturOfBusiness = implode(',', $mnaturOfBusiness);
+            }
+            #
+            $this->begin();
+            $licence = new ActiveTradeLicence();
+            $licence->application_type_id = $mApplicationTypeId;
+            $licence->ulb_id              = $refUlbId;
+            $licence->trade_id            = $mOldLicenceId;
+            $licence->property_id         = $mProprtyId;
+            $licence->user_id             = $refUserId;
+            $licence->application_date    = $mNowdate;
+            $licence->apply_from          = $mUserType;
+            $licence->current_role        = $refWorkflows['initiator']['id'];
+            $licence->initiator_role      = $refWorkflows['initiator']['id'];
+            $licence->finisher_role       = $refWorkflows['finisher']['id'];
+            $licence->workflow_id         = $refWfWorkflow->id;
 
-                if (strtoupper($mUserType) == "ONLINE") {
-                    $licence->citizen_id      = $refUserId;
+            if (strtoupper($mUserType) == $this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][""]) {
+                $licence->citizen_id      = $refUserId;
+            }
+            #----------------Crate Application--------------------
+            if (in_array($mApplicationTypeId, ["2", "4"])) # code for Renewal,Surender respectively
+            {
+                $licence->licence_for_years   = $mApplicationTypeId == 2 ? $request->licenseDetails['licenseFor'] : $refOldLicece->licence_for_years;
+                $this->renewalAndSurenderLicense($licence, $refOldLicece, $request);
+                $licence->valid_from    = $refOldLicece->valid_upto;
+                $licence->save();
+                $licenceId = $licence->id;
+                foreach ($refOldowners as $owners) {
+                    $owner = new ActiveTradeOwner();
+                    $owner->temp_id      = $licenceId;
+                    $this->transerOldOwneres($owner, $owners);
+                    $owner->user_id  = $refUserId;
+                    $owner->save();
                 }
-                #----------------Crate Application--------------------
-                if (in_array($mApplicationTypeId, ["2", "4"])) # code for Renewal,Surender respectively
+            } 
+            elseif ($mApplicationTypeId == 3) # code for Amendment
+            {
+                $this->amedmentLicense($licence, $refOldLicece, $request);
+                $licence->valid_from    = date('Y-m-d');
+                $licence->save();
+                $licenceId = $licence->id;
+                foreach ($refOldowners as $owners) 
                 {
-                    $licence->licence_for_years   = $mApplicationTypeId == 2 ? $request->licenseDetails['licenseFor'] : $refOldLicece->licence_for_years;
-                    $this->renewalAndSurenderLicense($licence, $refOldLicece, $request);
-                    $licence->valid_from    = $refOldLicece->valid_upto;
-                    $licence->save();
-                    $licenceId = $licence->id;
-                    foreach ($refOldowners as $owners) {
-                        $owner = new ActiveTradeOwner();
-                        $owner->temp_id      = $licenceId;
-                        $this->transerOldOwneres($owner, $owners);
-                        $owner->user_id  = $refUserId;
-                        $owner->save();
-                    }
-                } elseif ($mApplicationTypeId == 3) # code for Amendment
-                {
-                    $this->amedmentLicense($licence, $refOldLicece, $request);
-                    $licence->valid_from    = date('Y-m-d');
-                    $licence->save();
-                    $licenceId = $licence->id;
-                    foreach ($refOldowners as $owners) 
-                    {
-                        $owner = new ActiveTradeOwner();
-                        $owner->temp_id      = $licenceId;
-                        $this->transerOldOwneres($owner, $owners);
-                        $owner->user_id  = $refUserId;
-                        $owner->save();
-                    }
-                    foreach ($request->ownerDetails as $owners) 
-                    {
-                        $owner = new ActiveTradeOwner();
-                        $owner->temp_id      = $licenceId;
-                        $this->addNewOwners($owner, $owners);
-                        $owner->user_id  = $refUserId;
-                        $owner->save();
-                    }
-                } 
-                elseif ($mApplicationTypeId == 1) # code for New License
-                {
-                    $wardId = $request->firmDetails['wardNo'];
-                    $mWardNo = (collect($data['wardList'])->where("id",$wardId)->pluck("ward_no"));
-                    // $mWardNo = array_filter($data['wardList'], function ($val) use ($wardId) {
-                    //     return $val['id'] == $wardId;
-                    // });
-                    
-                    // $mWardNo = array_values($mWardNo)[0]['ward_no'] ?? "";
-                    $mWardNo =  $mWardNo[0]??"";
-                    $this->newLicense($licence, $request);
-                    $licence->valid_from    = $licence->application_date;
-                    $licence->save();
-                    $licenceId = $licence->id;
-                    foreach ($request->ownerDetails as $owners) {
-                        $owner = new ActiveTradeOwner();
-                        $owner->temp_id      = $licenceId;
-                        $this->addNewOwners($owner, $owners);
-                        $owner->user_id      = $refUserId;
-                        $owner->save();
-                    }
+                    $owner = new ActiveTradeOwner();
+                    $owner->temp_id      = $licenceId;
+                    $this->transerOldOwneres($owner, $owners);
+                    $owner->user_id  = $refUserId;
+                    $owner->save();
                 }
-                $licence->nature_of_bussiness = $mnaturOfBusiness;
-                $mAppNo = $this->createApplicationNo($mWardNo, $licenceId,$mShortUlbName);
-                $licence->application_no = $mAppNo;
-                $licence->update();
-                #----------------End Crate Application--------------------
-                #---------------- transaction of payment-------------------------------
-                if ($mApplicationTypeId == 1 && $request->initialBusinessDetails['applyWith'] == 1) 
+                foreach ($request->ownerDetails as $owners) 
                 {
-                    $noticeNo = trim($request->initialBusinessDetails['noticeNo']);
-                    $firm_date = $request->firmDetails['firmEstdDate'];
-                    // $refNoticeDetails = $this->getDenialFirmDetails($refUlbId, strtoupper(trim($noticeNo)));
-                    $refNoticeDetails = $this->_NOTICE->getDtlByNoticeNo(strtoupper(trim($noticeNo)),$refUlbId,);
-                    if ($refNoticeDetails) 
-                    {
-                        $refDenialId = $refNoticeDetails->id;
-                        $licence->denial_id = $refDenialId;
-                        $licence->update();
-                        $mNoticeDate = date("Y-m-d", strtotime($refNoticeDetails['notice_date'])); //notice date  
-                        
-                        if ($firm_date > $mNoticeDate) 
-                        {
-                            throw new Exception("Firm Establishment Date Can Not Be Greater Than Notice Date ");
-                        }
-                    }
+                    $owner = new ActiveTradeOwner();
+                    $owner->temp_id      = $licenceId;
+                    $this->addNewOwners($owner, $owners);
+                    $owner->user_id  = $refUserId;
+                    $owner->save();
                 }
-                if (in_array(strtoupper($mUserType), ["JSK", "UTC", "TC", "SUPER ADMIN", "TL"]) && $mApplicationTypeId != 4) 
+            } 
+            elseif ($mApplicationTypeId == 1) # code for New License
+            {
+                $wardId = $request->firmDetails['wardNo'];
+                $mWardNo = (collect($data['wardList'])->where("id",$wardId)->pluck("ward_no"));                    
+                $mWardNo =  $mWardNo[0]??"";
+                $this->newLicense($licence, $request);
+                $licence->valid_from    = $licence->application_date;
+                $licence->save();
+                $licenceId = $licence->id;
+                foreach ($request->ownerDetails as $owners) {
+                    $owner = new ActiveTradeOwner();
+                    $owner->temp_id      = $licenceId;
+                    $this->addNewOwners($owner, $owners);
+                    $owner->user_id      = $refUserId;
+                    $owner->save();
+                }
+            }
+            $licence->nature_of_bussiness = $mnaturOfBusiness;
+            $mAppNo = $this->createApplicationNo($mWardNo, $licenceId,$mShortUlbName);
+            $licence->application_no = $mAppNo;
+            $licence->update();
+            #----------------End Crate Application--------------------
+            #---------------- transaction of payment-------------------------------
+            if ($mApplicationTypeId == 1 && $request->initialBusinessDetails['applyWith'] == 1) 
+            {
+                $noticeNo = trim($request->initialBusinessDetails['noticeNo']);
+                $firm_date = $request->firmDetails['firmEstdDate'];
+                $refNoticeDetails = $this->_NOTICE->getDtlByNoticeNo(strtoupper(trim($noticeNo)),$refUlbId,);
+                if ($refNoticeDetails) 
                 {
-                    $myRequest = new \Illuminate\Http\Request();
-                    $myRequest->setMethod('POST');
-                    $myRequest->request->add(['paymentMode' => $request->licenseDetails['paymentMode']]);
-                    $myRequest->request->add(['licenceId'   => $licence->id]);
-                    $myRequest->request->add(['licenseFor' => $licence->licence_for_years]);
-                    $myRequest->request->add(['totalCharge' => $request->licenseDetails["totalCharge"]]);
-                    if ($request->licenseDetails['paymentMode'] != "CASH") 
-                    {
-                        $myRequest->request->add(['chequeNo' => $request->licenseDetails["chequeNo"]]);
-                        $myRequest->request->add(['chequeDate' => $request->licenseDetails["chequeDate"]]);
-                        $myRequest->request->add(['bankName' => $request->licenseDetails["bankName"]]);
-                        $myRequest->request->add(['branchName' => $request->licenseDetails["branchName"]]);
-                    }
-                    $temp = $this->paymentCounter($myRequest);
-                    if (!$temp->original["status"]) 
-                    {
-                        throw new Exception($temp->original["message"]);
-                    }
-                    $res['transactionId']   = $temp->original["data"]["transactionId"];
-                    $res['paymentReceipt']   = $temp->original["data"]["paymentReceipt"];
-                } 
-                elseif ($refNoticeDetails) 
-                {
+                    $refDenialId = $refNoticeDetails->id;
                     $licence->denial_id = $refDenialId;
                     $licence->update();
-                    $this->_NOTICE->noticeClose($licence->denial_id);
-                    // $this->updateStatusFine($refDenialId, 0, $licenceId, 1); //update status and fineAmount                     
+                    $mNoticeDate = date("Y-m-d", strtotime($refNoticeDetails['notice_date'])); //notice date  
+                    
+                    if ($firm_date > $mNoticeDate) 
+                    {
+                        throw new Exception("Firm Establishment Date Can Not Be Greater Than Notice Date ");
+                    }
                 }
-                #---------------- End transaction of payment----------------------------
-                if ($mApplicationTypeId == 4) 
-                {
-                    $mProvno                         = $this->createProvisinalNo($mShortUlbName, $mWardNo, $licenceId);
-                    $licence->provisional_license_no = $mProvno;
-                    $licence->payment_status         = 1;
-                    $licence->update();
-                }
-                #frize Priviuse License
-                if ($mApplicationTypeId != 1 && !$this->transferExpire($mOldLicenceId)) 
-                {
-                    throw new Exception("Some Error Ocures!....");
-                }
-                $this->commit();
-                $res['applicationNo'] = $mAppNo;
-                $res['applyLicenseId'] = $licenceId;
-                return responseMsg(true, $mAppNo, $res);
             }
+            if (in_array(strtoupper($mUserType), $this->_TRADE_CONSTAINT["CANE-CUTE-PAYMENT"]) && $mApplicationTypeId != 4) 
+            {
+                $myRequest = new \Illuminate\Http\Request();
+                $myRequest->setMethod('POST');
+                $myRequest->request->add(['paymentMode' => $request->licenseDetails['paymentMode']]);
+                $myRequest->request->add(['licenceId'   => $licence->id]);
+                $myRequest->request->add(['licenseFor' => $licence->licence_for_years]);
+                $myRequest->request->add(['totalCharge' => $request->licenseDetails["totalCharge"]]);
+                if ($request->licenseDetails['paymentMode'] != "CASH") 
+                {
+                    $myRequest->request->add(['chequeNo' => $request->licenseDetails["chequeNo"]]);
+                    $myRequest->request->add(['chequeDate' => $request->licenseDetails["chequeDate"]]);
+                    $myRequest->request->add(['bankName' => $request->licenseDetails["bankName"]]);
+                    $myRequest->request->add(['branchName' => $request->licenseDetails["branchName"]]);
+                }
+                $temp = $this->paymentCounter($myRequest);
+                if (!$temp->original["status"]) 
+                {
+                    throw new Exception($temp->original["message"]);
+                }
+                $res['transactionId']   = $temp->original["data"]["transactionId"];
+                $res['paymentReceipt']   = $temp->original["data"]["paymentReceipt"];
+            } 
+            elseif ($refNoticeDetails) 
+            {
+                $licence->denial_id = $refDenialId;
+                $licence->update();
+                $this->_NOTICE->noticeClose($licence->denial_id);                   
+            }
+            #---------------- End transaction of payment----------------------------
+            if ($mApplicationTypeId == 4) 
+            {
+                $mProvno                         = $this->createProvisinalNo($mShortUlbName, $mWardNo, $licenceId);
+                $licence->provisional_license_no = $mProvno;
+                $licence->payment_status         = 1;
+                $licence->update();
+            }
+            #frize Priviuse License
+            if ($mApplicationTypeId != 1 && !$this->transferExpire($mOldLicenceId)) 
+            {
+                throw new Exception("Some Error Ocures!....");
+            }
+            $this->commit();
+            $res['applicationNo'] = $mAppNo;
+            $res['applyLicenseId'] = $licenceId;
+            return responseMsg(true, $mAppNo, $res);
         } catch (Exception $e) {
             $this->rollBack();             
             return responseMsg(false, $e->getMessage(), "");
         }
     }
 
-    # Serial No : 01.01
+    #=====================[📝 MODEL FILLING NEWLICENSE | S.L (1.1) 📝]========================================================
     public function newLicense($refActiveLicense, $request)
     {
         $refActiveLicense->firm_type_id        = $request->initialBusinessDetails['firmType'];
@@ -516,7 +577,7 @@ class Trade implements ITrade
         $refActiveLicense->property_type       = "Property";
         $refActiveLicense->is_tobacco      = $request->firmDetails['tocStatus'];
     }
-    # Serial No : 01.02
+    #=====================[📝 MODEL FILLING AMENDMENT | S.L (1.2) 📝]========================================================
     public function amedmentLicense($refActiveLicense, $refOldLicece, $request)
     {
         $refActiveLicense->parent_ids          = trim(($refActiveLicense->trade_id . "," . $refOldLicece->parent_ids), ',');
@@ -558,7 +619,7 @@ class Trade implements ITrade
         }
     }
 
-    # Serial No : 01.03
+    #=====================[📝 MODEL FILLING RENEWAL AND SUREND | S.L (1.3) 📝]========================================================
     public function renewalAndSurenderLicense($refActiveLicense, $refOldLicece, $request)
     {
         $refActiveLicense->parent_ids          = trim(($refActiveLicense->trade_id . "," . $refOldLicece->parent_ids), ',');
@@ -597,7 +658,7 @@ class Trade implements ITrade
         }
     }
 
-    # Serial No : 01.04
+    #=====================[📝 MODEL FILLING NEW OWNERE | S.L (1.4) 📝]========================================================
     public function addNewOwners($refOwner, $owners)
     {
         $refOwner->owner_name      = $owners['businessOwnerName'];
@@ -610,7 +671,7 @@ class Trade implements ITrade
         $refOwner->email_id         = $owners['email'] ?? null;
     }
 
-    # Serial No : 01.05
+    #=====================[📝 MODEL FILLING OLD OWNERE | S.L (1.5) 📝]========================================================
     public function transerOldOwneres($refOwner, $owners)
     {
         $refOwner->owner_name      = $owners->owner_name;
@@ -623,7 +684,7 @@ class Trade implements ITrade
         $refOwner->email_id         = $owners->emailid;
     }
 
-    # Serial No : 01.06
+    #=====================[📝📖 OLD APPLICATION FRIZING | S.L (1.6) 📖📝]========================================================
     public function transferExpire(int $licenceId)
     {
         try {
@@ -637,6 +698,8 @@ class Trade implements ITrade
             echo $e->getMessage();
         }
     }
+
+    #=====================[📝📖 APPLICATION TRANSACTION | S.L (2.0) 📖📝]========================================================
     /**
      * | Trade Licence Charge Payment (offline Mode)
      * | --------------------descriptin------------------------------------
@@ -761,7 +824,7 @@ class Trade implements ITrade
             }
 
             #-----------valication-------------------                            
-            if (!in_array($mUserType, ["JSK", "UTC", "TC", "SUPER ADMIN", "TL"])) {
+            if (!in_array($mUserType, $this->_TRADE_CONSTAINT["CANE-CUTE-PAYMENT"])) {
                 throw new Exception("You Are Not Authorized For Payment Cut");
             }
             $refLecenceData = ActiveTradeLicence::find($request->licenceId);
@@ -907,6 +970,8 @@ class Trade implements ITrade
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+
+    #=====================[📝📖 PUSH TEMP TRANSACTION | S.L (2.1) 📖📝]========================================================
     public function postTempTransection(TradeTransaction $refTransection, ActiveTradeLicence $refApplication, $mWardNo = null)
     {
         $module_id = $this->_MODULE_ID;
@@ -942,12 +1007,14 @@ class Trade implements ITrade
         if ($sms["status"]) {
             $owners = $this->getAllOwnereDtlByLId($refApplication->id);
             foreach ($owners as $val) {
-                // $respons = send_sms($val["mobile_no"], $sms["sms"], $sms["temp_id"]);
+                $respons = send_sms($val["mobile_no"], $sms["sms"], $sms["temp_id"]);
             }
         }
     }
-    # Serial No : 02
-    public function updateLicenseBo(Request $request)
+
+
+    #=====================[ 📖 UPDATE APPLICATION | S.L (3.0) 📖 ]========================================================
+    public function updateLicenseBo(ReqGetUpdateBasicDtl $request)
     {
         try {
             $refUser            = Auth()->user();
@@ -955,7 +1022,7 @@ class Trade implements ITrade
             $refUlbId           = $refUser->ulb_id;
             $refWorkflowId = $this->_WF_MASTER_Id;
             $mUserType          = $this->_COMMON_FUNCTION->userType($refWorkflowId);
-            if (in_array(strtoupper($mUserType), ["SUPER ADMIN", "BO"])) {
+            if (in_array(strtoupper($mUserType), $this->_TRADE_CONSTAINT["CANE-NO-HAVE-WARD"])) {
                 $data['wardList'] = $this->_MODEL_WARD->getAllWard($refUlbId)->map(function ($val) {
                     $val->ward_no = $val->ward_name;
                     return $val;
@@ -969,7 +1036,7 @@ class Trade implements ITrade
             if (!$refOldLicece) {
                 throw new Exception("No Licence Found");
             }
-            $refOldOwneres = ActiveTradeOwner::owneresByLId($mLicenceId);
+            $refOldOwneres = $refOldLicece->owneres()->get();
             $mnaturOfBusiness = !empty(trim($refOldLicece->nature_of_bussiness)) ? $this->_MODEL_TradeParamItemType->itemsById($refOldLicece->nature_of_bussiness) : [];
             $natur = array();
             foreach ($mnaturOfBusiness as $val) {
@@ -979,38 +1046,34 @@ class Trade implements ITrade
                 ];
             }
             $refOldLicece->nature_of_bussiness = $natur;
-
             $data["licenceDtl"]         =  $refOldLicece;
             $data["ownerDtl"]           = $refOldOwneres;
             $data['userType']           = $mUserType;
-            $data["firmTypeList"]       = TradeParamFirmType::List();
-            $data["ownershipTypeList"]  = TradeParamOwnershipType::List();
-            $data["categoryTypeList"]   = TradeParamCategoryType::List();
-            $data["natureOfBusiness"]   = TradeParamItemType::List(true);
+            $data["firmTypeList"]       = $this->_MODEL_TradeParamFirmType->List();
+            $data["ownershipTypeList"]  = $this->_MODEL_TradeParamOwnershipType->List();
+            $data["categoryTypeList"]   = $this->_MODEL_TradeParamCategoryType->List();
+            $data["natureOfBusiness"]   = $this->_MODEL_TradeParamItemType->List(true);
+
             return responseMsg(true, "", remove_null($data));
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
     }
-    public function updateBasicDtl(Request $request)
+
+    #=====================[📝📖 UPDATE APPLICATION | S.L (3.1) 📖📝]========================================================
+    public function updateBasicDtl(ReqUpdateBasicDtl $request)
     {
         $user       = Auth()->user();
         $refUserId  = $user->id;
         $refUlbId   = $user->ulb_id;
-        $redis      = new Redis;
-        $mUserData  = json_decode($redis::get('user:' . $refUserId), true);
         $refWorkflowId = $this->_WF_MASTER_Id;
-        $rollId     =  $mUserData['role_id'] ?? ($this->_COMMON_FUNCTION->getUserRoll($refUserId, $refUlbId, $refWorkflowId)->role_id ?? -1);
+        $role = $this->_COMMON_FUNCTION->getUserRoll($refUserId, $refUlbId, $refWorkflowId);
+        $rollId     =  ($role->role_id ?? -1);
 
         $mUserType = $this->_COMMON_FUNCTION->userType($refWorkflowId);
-        $mProprtyId = null;
-        $rules = [];
-        $message = [];
-
-        $mRegex = '/^[a-zA-Z1-9][a-zA-Z1-9\.\, \s]+$/';
-        $mFramNameRegex = '/^[a-zA-Z1-9][a-zA-Z1-9\.&\s]+$/';
+        $mProprtyId = null;        
         try {
-            if ($rollId == -1 || (!in_array($mUserType, ['BO', 'SUPER ADMIN']))) {
+            if ($rollId == -1 || !$role->can_edit ) {
                 throw new Exception("You Are Not Authorized");
             }
             $mLicenceId         = $request->initialBusinessDetails['id'];
@@ -1025,7 +1088,7 @@ class Trade implements ITrade
             $mnaturOfBusiness = implode(',', $mnaturOfBusiness);
             if ($request->firmDetails['holdingNo'])
             {
-                $property = $this->propertyDetailsfortradebyHoldingNo($request->firmDetails['holdingNo'], $refUlbId);
+                $property = $this->propertyDetailsfortradebyHoldingNo($request->firmDetails['holdingNo'], $refOldLicece->ulb_id);
                 if ($property['status'])
                     $mProprtyId = $property['property']['id'];
                 else
@@ -1113,149 +1176,8 @@ class Trade implements ITrade
             return responseMsg(false, $e->getMessage(), "");
         }
     }
-    
-    # Serial No : 06
-    public function getUploadDocuments(Request $request)
-    {
-        try {
-            $licenceId = $request->id;
-            if (!$licenceId) {
-                throw new Exception("Licence Id Required");
-            }
-            $refLicence = $this->getAllLicenceById($licenceId);
-            if (!$refLicence) {
-                throw new Exception("Data Not Found");
-            }
-            $tbl = $refLicence->tbl == "active_trade_licences" ? "active_" : ($refLicence->tbl == "rejected_trade_licences" ? "rejected_" : "");
-            $mUploadDocument = $this->getLicenceDocuments($licenceId, $tbl)->map(function ($val) {
-                if (isset($val["document_path"])) {
-                    $path = $this->readDocumentPath($val["document_path"]);
-                    $val["document_path"] = !empty(trim($val["document_path"])) ? $path : null;
-                }
-                return $val;
-            });
-            $data["uploadDocument"] = $mUploadDocument;
-            return responseMsg(true, "", $data);
-        } catch (Exception $e) {
 
-            return responseMsg(false, $e->getMessage(), $request->all());
-        }
-    }
-
-    # Serial No : 07
-    public function documentVirify(Request $request)
-    {
-        $user = Auth()->user();
-        $user_id = $user->id;
-        $ulb_id = $user->ulb_id;
-        $workflow_id = $this->_WF_MASTER_Id;
-        $workflows = $this->_COMMON_FUNCTION->iniatorFinisher($user_id, $ulb_id, $workflow_id);
-        $rolles = $this->_COMMON_FUNCTION->getUserRoll($user_id, $ulb_id, $workflow_id);
-        $roll_id =  $rolles->role_id ?? null;
-        $mUserType = $this->_COMMON_FUNCTION->userType($workflow_id);
-
-        $licenceId = $request->licenceId;
-        $rules = [];
-        $message = [];
-        try {
-            if (!$roll_id || !$rolles->can_verify_document) {
-                throw new Exception("You are Not Authorized For Document Verify");
-            }
-            if (!$licenceId) {
-                throw new Exception("Data Not Found");
-            }
-            $licence = $this->getActiveLicenseById($licenceId);
-            if (!$licence) {
-                throw new Exception("Data Not Found2");
-            }
-            $item_name = "";
-            $cods = "";
-            if ($licence->nature_of_bussiness) {
-                $items = TradeParamItemType::itemsById($licence->nature_of_bussiness);
-                foreach ($items as $val) {
-                    $item_name .= $val->trade_item . ",";
-                    $cods .= $val->trade_code . ",";
-                }
-                $item_name = trim($item_name, ',');
-                $cods = trim($cods, ',');
-            }
-            $licence->items = $item_name;
-            $licence->items_code = $cods;
-            $owneres = $this->getAllOwnereDtlByLId($licenceId);
-            $mUploadDocument = $this->getLicenceDocuments($licenceId)->map(function ($val) {
-                if (isset($val["document_path"])) {
-                    $path = $this->readDocumentPath($val["document_path"]);
-                    $val["document_path"] = !empty(trim($val["document_path"])) ? $path : null;
-                }
-                return $val;
-            });
-            foreach ($owneres as $key => $val) {
-                $owneres[$key]["Identity Proof"] = $this->check_doc_exist_owner($licenceId, $val->id);
-                if (isset($refOwneres[$key]["Identity Proof"]["document_path"])) {
-                    $path = $this->readDocumentPath($owneres[$key]["Identity Proof"]["document_path"]);
-                    // $refOwneres[$key]["Identity Proof"]["document_path"] = !empty(trim($refOwneres[$key]["Identity Proof"]["document_path"]))?storage_path('app/public/' . $refOwneres[$key]["Identity Proof"]["document_path"]):null;
-                    $owneres[$key]["Identity Proof"]["document_path"] = !empty(trim($owneres[$key]["Identity Proof"]["document_path"])) ? $path : null;
-                }
-                $owneres[$key]["image"] = $this->check_doc_exist_owner($licenceId, $val->id, 0);
-                if (isset($owneres[$key]["image"]["document_path"])) {
-                    $path = $this->readDocumentPath($owneres[$key]["image"]["document_path"]);
-                    $owneres[$key]["image"]["document_path"] = !empty(trim($owneres[$key]["image"]["document_path"])) ? $path : null;
-                }
-            }
-            $data["uploadDocs"] = $mUploadDocument;
-            $data["licence"] = $licence;
-            $data["owneres"] = $owneres;
-            if ($request->getMethod() == "GET") 
-            {
-                return responseMsg(true, "", remove_null($data));
-            } 
-            elseif ($request->getMethod() == "POST") 
-            {
-                $rules = [];
-                $message = [];
-                $nowdate = Carbon::now()->format('Y-m-d');
-                $timstamp = Carbon::now()->format('Y-m-d H:i:s');
-                $regex = '/^[a-zA-Z1-9][a-zA-Z1-9\.\s]+$/';
-                $rules = [
-                    'btn' => 'required|in:verify,reject',
-                    'id' => 'required',
-                ];
-                $status = 1;
-                if ($request->btn == "reject") 
-                {
-                    $status = 2;
-                    $rules["comment"] = "required|regex:$regex|min:10";
-                }
-                $validator = Validator::make($request->all(), $rules, $message);
-                if ($validator->fails()) 
-                {
-                    return responseMsg(false, $validator->errors(), $request->all());
-                }
-                $level_data = $this->getWorkflowTrack($request->licenceId); //TradeLevelPending::getLevelData($licenceId);
-                if (!$level_data || $level_data->receiver_role_id != $roll_id) 
-                {
-                    throw new Exception("You Are Not Authorized For This Action");
-                }
-
-                $this->begin();
-                $tradeDoc = ActiveTradeDocument::find($request->id);
-                $tradeDoc->verify_status = $status;
-                $tradeDoc->remarks = ($status == 2 ? $request->comment : null);
-                $tradeDoc->verified_by_emp_id = $user_id;
-                $tradeDoc->lvl_pending_id = $level_data->id;
-                $tradeDoc->update();
-                $this->commit();
-                $sms = $tradeDoc->doc_for . " " . strtoupper($request->btn);
-                return responseMsg(true, $sms, "");
-            }
-        } 
-        catch (Exception $e) 
-        {
-            return responseMsg(false, $e->getMessage(), $request->all());
-        }
-    }
-
-    # Serial No : 08 
+    #=====================[📖 APPLICATION DTL FOR WF | S.L (4.0) 📖]========================================================  
     /**
      * | Get License All Dtl
      * |-------------------------------------------------------------------------
@@ -1266,14 +1188,11 @@ class Trade implements ITrade
      * | @var refTransactionDtl  = TradeTransaction::listByLicId(id)    | read Transaction Dtl
      * | @var refTimeLine    = this->getTimelin(id)      | read Level remarks
      * | @var refUploadDocuments = this->getLicenceDocuments(id)    | read upload Documents
-     */
+     */     
     public function readLicenceDtl($request)
     {
 
-        try {
-            $mWorkflowTracks = new WorkflowTrack();
-            $mCustomDetails = new CustomDetail();
-            $forwardBackward = new WorkflowMap;
+        try {            
             $id = $request->applicationId;
             $refUser        = Auth()->user();
             $refUserId      = $refUser->id;
@@ -1297,7 +1216,7 @@ class Trade implements ITrade
             $mItemName      = "";
             $mCods          = "";
             if (trim($refApplication->nature_of_bussiness)) {
-                $items = TradeParamItemType::itemsById($refApplication->nature_of_bussiness);
+                $items = $this->_MODEL_TradeParamItemType->itemsById($refApplication->nature_of_bussiness);
                 foreach ($items as $val) {
                     $mItemName  .= $val->trade_item . ",";
                     $mCods      .= $val->trade_code . ",";
@@ -1305,11 +1224,10 @@ class Trade implements ITrade
                 $mItemName = trim($mItemName, ',');
                 $mCods = trim($mCods, ',');
             }
-            $tbl = $refApplication->tbl == "active_trade_licences" ? "active_" : ($refApplication->tbl == "rejected_trade_licences" ? "rejected_" : "");
             $refApplication->items      = $mItemName;
             $refApplication->items_code = $mCods;
-            $refOwnerDtl                = $this->getAllOwnereDtlByLId($id);
-            $refTransactionDtl          = TradeTransaction::listByLicId($id)->map(function($val){
+            $refOwnerDtl                = $refApplication->owneres()->get();
+            $refTransactionDtl          = $this->_MODEL_TradeTransaction->readConnection()->listByLicId($id)->map(function($val){
                 $val->tran_date = $val->tran_date?Carbon::parse($val->tran_date)->format("d-m-Y"):"";
                 return $val;
             });
@@ -1327,8 +1245,6 @@ class Trade implements ITrade
             $data["userType"]       = $mUserType;
             $data["roles"]          = $mileSton;
 
-            
-            $newData = array();
             $fullDetailsData = array();
             $basicDetails = $this->generateBasicDetails($licenseDetail);      // Trait function to get Basic Details
             $basicElement = [
@@ -1348,7 +1264,6 @@ class Trade implements ITrade
             $ownerDetailsTable = $this->generateOwnerDetails($ownerDetails);
             $ownerElement = [
                 'headerTitle' => 'Owner Details',
-                // 'tableHead' => ["#", "Owner Name", "Gender", "DOB", "Guardian Name", "Relation", "Mobile No", "Aadhar", "PAN", "Email", "Address"],
                 'tableHead' => ["#", "Owner Name",  "Guardian Name",  "Mobile No",  "Email", ],
                 'tableData' => $ownerDetailsTable
             ];
@@ -1370,7 +1285,7 @@ class Trade implements ITrade
             $metaReqs['wfRoleId'] = $licenseDetail->current_role;
             $metaReqs['workflowId'] = $licenseDetail->workflow_id;
             $metaReqs['lastRoleId'] = $licenseDetail->last_role_id;
-            $levelComment = $mWorkflowTracks->getTracksByRefId($mRefTable, $licenseDetail->id)->map(function($val){  
+            $levelComment = $this->_MODEL_WorkflowTrack->getTracksByRefId($mRefTable, $licenseDetail->id)->map(function($val){  
                 $val->forward_date = $val->forward_date?Carbon::parse($val->forward_date)->format("d-m-Y"):"";
                 $val->track_date = $val->track_date?Carbon::parse($val->track_date)->format("d-m-Y"):"";
                 $val->duration = (Carbon::parse($val->forward_date)->diffInDays(Carbon::parse($val->track_date))) . " Days";
@@ -1378,16 +1293,16 @@ class Trade implements ITrade
             });
             $fullDetailsData['levelComment'] = $levelComment;
 
-            $citizenComment = $mWorkflowTracks->getCitizenTracks($mRefTable, $licenseDetail->id, $licenseDetail->user_id);
+            $citizenComment = $this->_MODEL_WorkflowTrack->getCitizenTracks($mRefTable, $licenseDetail->id, $licenseDetail->user_id);
             $fullDetailsData['citizenComment'] = $citizenComment;
 
             $request->request->add($metaReqs);
-            $forwardBackward = $forwardBackward->getRoleDetails($request);
+            $forwardBackward = $this->_MODEL_WorkflowMap->getRoleDetails($request);
             $fullDetailsData['roleDetails'] = collect($forwardBackward)['original']['data'];
 
             $fullDetailsData['timelineData'] = collect($request);
 
-            $custom = $mCustomDetails->getCustomDetails($request);
+            $custom = $this->_MODEL_CustomDetail->getCustomDetails($request);
             $fullDetailsData['departmentalPost'] = collect($custom)['original']['data'];
 
             return responseMsgs(true, 'Data Fetched', remove_null($fullDetailsData), "010104", "1.0", "303ms", "POST", $request->deviceId);
@@ -1398,7 +1313,7 @@ class Trade implements ITrade
         }
     }
 
-    # Serial No : 09 
+    #=====================[📖 NOTICE DTL FOR APPLY APPLICATION | S.L (5.0) 📖]========================================================
     /**
      * | Get Notice Data
      */
@@ -1435,7 +1350,7 @@ class Trade implements ITrade
         }
     }
 
-    # Serial No : 10 
+    #=====================[❎📖 APPLICATION PAYBLE AMT| S.L (6.0) 📖❎]========================================================
     /**
      * | @var data = this->cltCharge(data) | get the calculated Charge
      */
@@ -1480,7 +1395,7 @@ class Trade implements ITrade
         }
     }
 
-    # Serial No : 11 
+    #=====================[📖 SAF VALIDATE | S.L (7.0) 📖]========================================================
     public function isvalidateSaf(Request $request)
     {
         $ferUser = Auth()->user();
@@ -1491,7 +1406,7 @@ class Trade implements ITrade
             $rules = [
                 "safNo" => "required|string",
             ];
-            if ($mUserType == "ONLINE") {
+            if (strtoupper($mUserType) == $this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][""]) {
                 $rules["ulbId"] = "required|digits_between:1,92";
             }
             $validator = Validator::make($request->all(), $rules,);
@@ -1512,7 +1427,7 @@ class Trade implements ITrade
         return json_encode($response);
     }
 
-    # Serial No : 12 
+    #=====================[❎📖 PROPERTY VALIDATE | S.L (8.0) 📖❎]========================================================
     public function isvalidateHolding(Request $request)
     {
         $refUser = Auth()->user();
@@ -1524,7 +1439,7 @@ class Trade implements ITrade
             $rules = [
                 "holdingNo" => "required|string",
             ];
-            if ($mUserType == "Online") {
+            if (strtoupper($mUserType) == $this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][""]) {
                 $rules["ulbId"] = "required|digits_between:1,92";
             }
             $validator = Validator::make($request->all(), $rules,);
@@ -1545,7 +1460,7 @@ class Trade implements ITrade
         return responseMsg($response['status'], $response["message"], remove_null($response["data"]));
     }
 
-    # Serial No : 13 
+    #=====================[📖 SEARCH APPLICATION FOR RENEWAL, AMENDMENT, SURENDER | S.L (9.0) 📖]========================================================
     /**
      * | Validate The Licence No Befor Apply(reniwal/surrend/amendment)
         query cost(***)
@@ -1576,7 +1491,7 @@ class Trade implements ITrade
             $refWorkflowId      = $this->_WF_MASTER_Id;
             $mUserType          = $this->_COMMON_FUNCTION->userType($refWorkflowId);
             $request->request->add(['ulbId'=>$refUlbId]);
-            if (in_array(strtoupper($mUserType), ["ONLINE"])) {
+            if (in_array(strtoupper($mUserType), [$this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][""]])) {
                 $rules["ulbId"]     = "required|digits_between:1,92";
             }
 
@@ -1597,9 +1512,7 @@ class Trade implements ITrade
             } elseif ($mApplicationTypeId == 1) {
                 throw new Exception("You Can Not Apply New Licence");
             }
-            DB::enableQueryLog();
-
-            $data = TradeLicence::select(
+            $data = TradeLicence::readConnection()->select(
                 "trade_licences.*",
                 "owner.*",
                 DB::raw("ulb_ward_masters.ward_name as ward_no,'trade_licences' AS tbl")
@@ -1625,7 +1538,7 @@ class Trade implements ITrade
                 ->first();
 
             if (!$data) {
-                $data = ActiveTradeLicence::select(
+                $data = ActiveTradeLicence::readConnection()->select(
                     "active_trade_licences.*",
                     "owner.*",
                     DB::raw("ulb_ward_masters.ward_name as ward_no,'active_trade_licences' AS tbl")
@@ -1651,7 +1564,7 @@ class Trade implements ITrade
                     ->first();
             }
             if (!$data) {
-                $data = RejectedTradeLicence::select(
+                $data = RejectedTradeLicence::readConnection()->select(
                     "rejected_trade_licences.*",
                     "owner.*",
                     DB::raw("ulb_ward_masters.ward_name as ward_no,'rejected_trade_licences' AS tbl")
@@ -1702,7 +1615,7 @@ class Trade implements ITrade
         }
     }
 
-    # Serial No : 14
+    #=====================[📖 GET APPLICATION BY CONDITIONAL | S.L (10.0) 📖]========================================================
     /**
      * | Get 10 Application List Only
          query cost(**)
@@ -1722,8 +1635,7 @@ class Trade implements ITrade
             $refUser    = Auth()->user();
             $refUlbId   = $refUser->ulb_id;
             $mInputs    = $request->all();
-            DB::enableQueryLog();
-            $licence = ActiveTradeLicence::select(
+            $licence = ActiveTradeLicence::readConnection()->select(
                 "active_trade_licences.id",
                 "active_trade_licences.application_no",
                 "active_trade_licences.provisional_license_no",
@@ -1749,9 +1661,8 @@ class Trade implements ITrade
                                     )owner"), function ($join) {
                     $join->on("owner.temp_id", "active_trade_licences.id");
                 });
-            // ->where("active_trade_licences.status",1) 
 
-            $aropved = TradeLicence::select(
+            $aropved = TradeLicence::readConnection()->select(
                 "trade_licences.id",
                 "trade_licences.application_no",
                 "trade_licences.provisional_license_no",
@@ -1778,7 +1689,7 @@ class Trade implements ITrade
                     $join->on("owner.temp_id", "trade_licences.id");
                 });
 
-            $old = tradeRenewal::select(
+            $old = tradeRenewal::readConnection()->select(
                 "trade_renewals.id",
                 "trade_renewals.application_no",
                 "trade_renewals.provisional_license_no",
@@ -1894,7 +1805,7 @@ class Trade implements ITrade
         }
     }
 
-    # Serial No : 15
+    #=====================[📝📖 ESCALATE APPLICATION BY ID | S.L (11.0) 📖📝]========================================================
     public function postEscalate(Request $request)
     {
         try {
@@ -1907,7 +1818,7 @@ class Trade implements ITrade
             // Validation Message
             $message = [
                 "escalateStatus.required" => "Escalate Status Is Required",
-                // "id.required" => "Application Id Is Required",
+                "iapplicationIdd.required" => "Application Id Is Required",
             ];
             $validator = Validator::make($request->all(), $rules, $message);
             if ($validator->fails()) {
@@ -1927,6 +1838,7 @@ class Trade implements ITrade
         }
     }
 
+    #=====================[📝📖 | S.L (12.0) 📖📝]========================================================
     public function WorkFlowMetaList()
     {
         return $this->_DB->table("active_trade_licences")
@@ -1965,7 +1877,8 @@ class Trade implements ITrade
                     )
                     ->WHERE("active_trade_licences.is_active",TRUE);
     }
-    # Serial No : 16
+    
+    #=====================[📖 INBOX | S.L (12.1) 📖]========================================================
     /**
      * | Trade module WorkFlow Inbox 
      * |
@@ -2024,7 +1937,6 @@ class Trade implements ITrade
             }, $mWardPermission);
 
             $mRoleId = $mRole->role_id;
-
             $license = $this->WorkFlowMetaList()
                         ->where("active_trade_licences.is_parked", FALSE)
                         ->where("active_trade_licences.payment_status", 1)
@@ -2058,6 +1970,7 @@ class Trade implements ITrade
                 $license= $license->get();
                 return responseMsg(true, "", $license);
             } 
+            
             $perPage = $request->perPage ? $request->perPage :  10;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
 
@@ -2071,11 +1984,11 @@ class Trade implements ITrade
             return responseMsg(true, "", remove_null($list));     
             
         } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), $request->all());
+            return responseMsg(false, $e->getMessage(), "");
         }
     }
 
-    # Serial No : 17
+    #=====================[📖 OUTBOX | S.L (12.2) 📖]========================================================
     public function outbox(Request $request)
     {
         try {
@@ -2095,7 +2008,7 @@ class Trade implements ITrade
             if (!$role) {
                 throw new Exception("You Are Not Authorized");
             }
-            if ($role->is_initiator || in_array(strtoupper($mUserType), ["JSK", "SUPER ADMIN", "ADMIN", "TL", "PMU", "PM"])) {
+            if ($role->is_initiator || in_array(strtoupper($mUserType), $this->_TRADE_CONSTAINT["CANE-NO-HAVE-WARD"])) {
 
                 $ward_permission = $this->_MODEL_WARD->getAllWard($ulb_id)->map(function ($val) {
                     $val->ward_no = $val->ward_name;
@@ -2158,6 +2071,7 @@ class Trade implements ITrade
         }
     }
 
+    #=====================[📖 ECALATED | S.L (12.3) 📖]========================================================
     public function specialInbox(Request $request)
     {
         try {
@@ -2175,7 +2089,7 @@ class Trade implements ITrade
             $ward_permission = $this->_COMMON_FUNCTION->WardPermission($refUserId);
             $role = $this->_COMMON_FUNCTION->getUserRoll($refUserId, $refUlbId, $refWorkflowId);
 
-            if ($role->is_initiator || in_array(strtoupper($mUserType), ["JSK", "SUPER ADMIN", "ADMIN", "TL", "PMU", "PM"])) {
+            if ($role->is_initiator || in_array(strtoupper($mUserType), $this->_TRADE_CONSTAINT["CANE-NO-HAVE-WARD"])) {
 
                 $ward_permission = $this->_MODEL_WARD->getAllWard($refUlbId)->map(function ($val) {
                     $val->ward_no = $val->ward_name;
@@ -2234,6 +2148,8 @@ class Trade implements ITrade
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
+
+    #=====================[📖 BTC APPLICATION | S.L (12.4) 📖]========================================================
     public function btcInbox(Request $request)
     {
         try {
@@ -2312,7 +2228,7 @@ class Trade implements ITrade
         }
     }
 
-    # Serial No : 26
+    #=====================[📝📖 APROVED APPLICATION LST | S.L (13.0) 📖📝]========================================================
     public function approvedApplication(Request $request)
     {
         try {
@@ -2322,7 +2238,7 @@ class Trade implements ITrade
             $refWorkflowId      = $this->_WF_MASTER_Id;
             $mUserType          = $this->_COMMON_FUNCTION->userType($refWorkflowId);
 
-            if (in_array(strtoupper($mUserType), ["ONLINE", "JSK", "BO", "SUPER ADMIN", "TL"])) 
+            if (in_array(strtoupper($mUserType), $this->_TRADE_CONSTAINT["CANE-NO-HAVE-WARD"])) 
             {
                 $mWardPermission = $this->_MODEL_WARD->getAllWard($refUlbId)->map(function ($val) {
                     $val->ward_no = $val->ward_name;
@@ -2347,7 +2263,7 @@ class Trade implements ITrade
             {
                 $uptoDate = $request->uptoDate;
             }
-            if (in_array(strtoupper($mUserType), ["ONLINE"])) 
+            if (in_array(strtoupper($mUserType), [$this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][""]])) 
             {
                 $fromDate = $uptoDate = null;
             }
@@ -2359,7 +2275,7 @@ class Trade implements ITrade
             {
                 $wardNo = [$request->wardNo];
             }
-            $license = TradeLicence::select(
+            $license = TradeLicence::readConnection()->select(
                     "trade_licences.id",
                     "trade_licences.application_no",
                     "trade_licences.provisional_license_no",
@@ -2422,7 +2338,7 @@ class Trade implements ITrade
                         ->whereBetween('trade_licences.license_date', [$fromDate, $uptoDate]);
             }
 
-            if (in_array(strtoupper($mUserType), ["ONLINE"])) 
+            if (in_array(strtoupper($mUserType), [$this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][""]])) 
             {
                 $license = $license
                     ->where("citizen_id", $refUserId);
@@ -2436,7 +2352,7 @@ class Trade implements ITrade
                 "data" => $paginator->items(),
                 "total" => $paginator->total(),
             ]; 
-            if (in_array(strtoupper($mUserType), ["ONLINE"])) 
+            if (in_array(strtoupper($mUserType), [$this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][""]])) 
             {
                 $license = $license
                     ->get();
@@ -2488,7 +2404,7 @@ class Trade implements ITrade
             ];
             $application = $this->_DB->table("active_trade_licences AS licences")->select($select)
                 ->join("ulb_masters", "ulb_masters.id", "licences.ulb_id")
-                ->join("ulb_ward_masters", function ($join) {
+                ->leftjoin("ulb_ward_masters", function ($join) {
                     $join->on("ulb_ward_masters.id", "=", "licences.ward_id");
                 })
                 ->leftjoin(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
@@ -2508,7 +2424,7 @@ class Trade implements ITrade
             {
                 $application = $this->_DB->table("trade_licences AS licences")->select($select)
                     ->join("ulb_masters", "ulb_masters.id", "licences.ulb_id")
-                    ->join("ulb_ward_masters", function ($join) {
+                    ->leftjoin("ulb_ward_masters", function ($join) {
                         $join->on("ulb_ward_masters.id", "=", "licences.ward_id");
                     })
                     ->leftjoin(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
@@ -2529,7 +2445,7 @@ class Trade implements ITrade
             {
                 $application = $this->_DB->table("rejected_trade_licences AS licences")->select($select)
                     ->join("ulb_masters", "ulb_masters.id", "licences.ulb_id")
-                    ->join("ulb_ward_masters", function ($join) {
+                    ->leftjoin("ulb_ward_masters", function ($join) {
                         $join->on("ulb_ward_masters.id", "=", "licences.ward_id");
                     })
                     ->leftjoin(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
@@ -2550,7 +2466,7 @@ class Trade implements ITrade
             {
                 $application = $this->_DB->table("trade_renewals AS licences")->select($select)
                     ->join("ulb_masters", "ulb_masters.id", "licences.ulb_id")
-                    ->join("ulb_ward_masters", function ($join) {
+                    ->leftjoin("ulb_ward_masters", function ($join) {
                         $join->on("ulb_ward_masters.id", "=", "licences.ward_id");
                     })
                     ->leftjoin(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
@@ -2673,7 +2589,7 @@ class Trade implements ITrade
             $application = $this->_DB->table("active_trade_licences as license")
                 ->select($select)
                 ->join("ulb_masters", "ulb_masters.id", "license.ulb_id")
-                ->join("ulb_ward_masters", function ($join) {
+                ->leftjoin("ulb_ward_masters", function ($join) {
                     $join->on("ulb_ward_masters.id", "=", "license.ward_id");
                 })
                 ->join(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
@@ -2694,7 +2610,7 @@ class Trade implements ITrade
                 $application = $this->_DB->table("trade_licences as license")
                     ->select($select)
                     ->join("ulb_masters", "ulb_masters.id", "license.ulb_id")
-                    ->join("ulb_ward_masters", function ($join) {
+                    ->leftjoin("ulb_ward_masters", function ($join) {
                         $join->on("ulb_ward_masters.id", "=", "license.ward_id");
                     })
                     ->join(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
@@ -2716,7 +2632,7 @@ class Trade implements ITrade
                 $application = $this->_DB->table("rejected_trade_licences as license")
                     ->select($select)
                     ->join("ulb_masters", "ulb_masters.id", "license.ulb_id")
-                    ->join("ulb_ward_masters", function ($join) {
+                    ->leftjoin("ulb_ward_masters", function ($join) {
                         $join->on("ulb_ward_masters.id", "=", "license.ward_id");
                     })
                     ->join(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
@@ -2738,7 +2654,7 @@ class Trade implements ITrade
                 $application = $this->_DB->table("trade_renewals as license")
                     ->select($select)
                     ->join("ulb_masters", "ulb_masters.id", "license.ulb_id")
-                    ->join("ulb_ward_masters", function ($join) {
+                    ->leftjoin("ulb_ward_masters", function ($join) {
                         $join->on("ulb_ward_masters.id", "=", "license.ward_id");
                     })
                     ->join(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
@@ -2857,7 +2773,7 @@ class Trade implements ITrade
             $application = $this->_DB->table("trade_licences AS license")
                 ->select($select)
                 ->join("ulb_masters", "ulb_masters.id", "license.ulb_id")
-                ->join("ulb_ward_masters", function ($join) {
+                ->leftjoin("ulb_ward_masters", function ($join) {
                     $join->on("ulb_ward_masters.id", "=", "license.ward_id");
                 })
                 ->leftjoin(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
@@ -2876,8 +2792,9 @@ class Trade implements ITrade
             if (!$application) 
             {
                 $application = $this->_DB->table("trade_renewals AS license")
-                    ->select($select)->join("ulb_masters", "ulb_masters.id", "license.ulb_id")
-                    ->join("ulb_ward_masters", function ($join) {
+                    ->select($select)
+                    ->join("ulb_masters", "ulb_masters.id", "license.ulb_id")
+                    ->leftjoin("ulb_ward_masters", function ($join) {
                         $join->on("ulb_ward_masters.id", "=", "license.ward_id");
                     })
                     ->leftjoin(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
@@ -2937,10 +2854,11 @@ class Trade implements ITrade
             $mRegex     = '/^[a-zA-Z1-9][a-zA-Z1-9\. \s]+$/';
             $userId = auth()->user()->id;
             $ulbId  = auth()->user()->ulb_id;
+            $authTBL = auth()->user()->gettable();
             $role_id = 0;
             $refWorkflowId = $this->_WF_MASTER_Id;
             $role = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $refWorkflowId);
-            if ($role && auth()->user()->gettable()=='users') {
+            if ($role && $authTBL=='users') {
                 $role_id = $role->role_id??0;
             }
 
@@ -2965,7 +2883,7 @@ class Trade implements ITrade
             $metaReqs['refTableDotId'] = 'active_trade_licences';
             $metaReqs['refTableIdValue'] = $refLicense->id;
             $metaReqs['senderRoleId'] = $role_id;
-            if(auth()->user()->gettable()=='users')
+            if($authTBL=='users')
             {
                 $metaReqs['user_id'] = $userId;
             }
@@ -3149,41 +3067,7 @@ class Trade implements ITrade
             return $response;
         }
     }
-    // public function readNotisDtl($id)
-    // {
-    //     try {
-    //         $data = TradeNoticeConsumerDtl::select(
-    //             "*",
-    //             DB::raw("trade_notice_consumer_dtls.notice_date::date AS noticedate")
-    //         )
-    //             ->where("id", $id)
-    //             ->first();
-    //         return $data;
-    //     } catch (Exception $e) {
-    //         echo $e->getMessage();
-    //     }
-    // }
-    // public function getDenialFirmDetails($ulb_id, $notice_no) #for apply application
-    // {
-    //     try {
-    //         DB::enableQueryLog();
-    //         $data = TradeNoticeConsumerDtl::select(
-    //             "trade_notice_consumer_dtls.*",
-    //             DB::raw("trade_notice_consumer_dtls.notice_no,
-    //                             trade_notice_consumer_dtls.notice_date::date AS noticedate,
-    //                             trade_notice_consumer_dtls.id as dnialid")
-    //         )
-    //             ->where("trade_notice_consumer_dtls.notice_no", $notice_no)
-    //             // ->where("trade_denial_notices.created_on","<",$firm_date)
-    //             ->where("trade_notice_consumer_dtls.status", "=", 5)
-    //             ->where("trade_notice_consumer_dtls.ulb_id", $ulb_id)
-    //             ->first();
-    //         // dd(DB::getQueryLog());
-    //         return $data;
-    //     } catch (Exception $e) {
-    //         echo $e->getMessage();
-    //     }
-    // }
+    
     public function getDenialAmountTrade($notice_date = null, $current_date = null)
     {
         $notice_date = $notice_date ? Carbon::createFromFormat("Y-m-d", $notice_date)->format("Y-m-d") : Carbon::now()->format('Y-m-d');
@@ -3279,22 +3163,11 @@ class Trade implements ITrade
         }
         return ["status" => false, 'property' => '', 'owneres' => ''];
     }
-    // public function updateStatusFine($denial_id, $denialAmount, $applyid, $status = 2)
-    // {
-    //     $tradeNotice = TradeNoticeConsumerDtl::where("id", $denial_id)
-    //         ->orderBy("id", "DESC")
-    //         ->first();
-    //     $tradeNotice->fine_amount  =  $denialAmount;
-    //     $tradeNotice->status =  $status;
-    //     if ($applyid) {
-    //         // $tradeNotice->is_active =  false;
-    //     }
-    //     $tradeNotice->update();
-    // }
+    
     public function getLicenceById($id)
     {
         try {
-            $application = TradeLicence::select(
+            $application = TradeLicence::readConnection()->select(
                 "trade_licences.*",
                 "trade_param_application_types.application_type",
                 "trade_param_category_types.category_type",
@@ -3319,10 +3192,11 @@ class Trade implements ITrade
             echo $e->getMessage();
         }
     }
+    
     public function getActiveLicenseById($id)
     {
         try {
-            $application = ActiveTradeLicence::select(
+            $application = ActiveTradeLicence::readConnection()->select(
                 "active_trade_licences.*",
                 "trade_param_application_types.application_type",
                 "trade_param_category_types.category_type",
@@ -3350,9 +3224,9 @@ class Trade implements ITrade
     public function getAllLicenceById($id)
     {
         try {
-            $test = TradeLicence::select("id")->find($id);
+            $test = TradeLicence::readConnection()->select("id")->find($id);
             $table = "trade_licences";
-            $application = TradeLicence::select(
+            $application = TradeLicence::readConnection()->select(
                 "trade_licences.*",
                 "trade_param_application_types.application_type",
                 "trade_param_category_types.category_type",
@@ -3362,9 +3236,9 @@ class Trade implements ITrade
             );
             if (!$test) 
             {
-                $test = RejectedTradeLicence::select("id")->find($id);
+                $test = RejectedTradeLicence::readConnection()->select("id")->find($id);
                 $table = "rejected_trade_licences";
-                $application = RejectedTradeLicence::select(
+                $application = RejectedTradeLicence::readConnection()->select(
                     "rejected_trade_licences.*",
                     "trade_param_application_types.application_type",
                     "trade_param_category_types.category_type",
@@ -3375,9 +3249,9 @@ class Trade implements ITrade
             }
             if (!$test) 
             {
-                $test = ActiveTradeLicence::select("id")->find($id);
+                $test = ActiveTradeLicence::readConnection()->select("id")->find($id);
                 $table = "active_trade_licences";
-                $application = ActiveTradeLicence::select(
+                $application = ActiveTradeLicence::readConnection()->select(
                     "active_trade_licences.*",
                     "trade_param_application_types.application_type",
                     "trade_param_category_types.category_type",
@@ -3390,7 +3264,7 @@ class Trade implements ITrade
             if (!$test) 
             {
                 $table = "trade_renewals";
-                $application = TradeRenewal::select(
+                $application = TradeRenewal::readConnection()->select(
                     "trade_renewals.*",
                     "trade_param_application_types.application_type",
                     "trade_param_category_types.category_type",
@@ -3516,6 +3390,7 @@ class Trade implements ITrade
             echo $e->getMessage();
         }
     }
+
     public function searchLicence(string $licence_no, $ulb_id)
     {
         try {
@@ -3549,25 +3424,7 @@ class Trade implements ITrade
         $filePath = $file->storeAs('uploads/Trade', $custumFileName, 'public');
         return  $filePath;
     }
-    // public function getDenialDetailsByID($id, $ulb_id)
-    // {
-    //     try {
-    //         $data = TradeNoticeConsumerDtl::select(
-    //             "trade_notice_consumer_dtls.*",
-    //             DB::raw("ulb_ward_masters.ward_name as ward_no
-    //                     ")
-    //         )
-    //             ->join("ulb_ward_masters", function ($join) {
-    //                 $join->on("ulb_ward_masters.id", "trade_denial_consumer_dtls.ward_id");
-    //             })
-    //             ->where("trade_notice_consumer_dtls.id", $id)
-    //             ->where("trade_notice_consumer_dtls.ulb_id", $ulb_id)
-    //             ->first();
-    //         return $data;
-    //     } catch (Exception $e) {
-    //         echo $e->getMessage();
-    //     }
-    // }
+    
     public function getDocumentTypeList($refLicense)
     {
         try {
@@ -3707,7 +3564,7 @@ class Trade implements ITrade
         } elseif (!$application->is_active) {
             $status = "Application rejected ";
         } 
-        elseif ($docChequ2 && strtoupper($mUserType) == "ONLINE" && $application->citizen_id == $refUserId && $application->document_upload_status == 0 && $application->payment_status == 0) {
+        elseif ($docChequ2 && strtoupper($mUserType) == $this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][""] && $application->citizen_id == $refUserId && $application->document_upload_status == 0 && $application->payment_status == 0) {
             $request = new Request(["applicationId" => $licenceId, "ulb_id" => $refUlbId, "user_id" => $refUserId]);
             $doc_status = $this->checkWorckFlowForwardBackord($request);
             if ($doc_status && $application->payment_status == 0) {
@@ -3797,13 +3654,12 @@ class Trade implements ITrade
         $ulb_id = $user->ulb_id ?? $request->ulb_id;
         $refWorkflowId = $this->_WF_MASTER_Id;
         $allRolse = collect($this->_COMMON_FUNCTION->getAllRoles($user_id, $ulb_id, $refWorkflowId, 0, true));
-        // $init_finish = $this->_COMMON_FUNCTION->iniatorFinisher($user_id, $ulb_id, $refWorkflowId);
         $mUserType      = $this->_COMMON_FUNCTION->userType($refWorkflowId, $ulb_id);
         $fromRole = [];
         if (!empty($allRolse)) {
             $fromRole = array_values(objToArray($allRolse->where("id", $request->senderRoleId)))[0] ?? [];
         }
-        if (strtoupper($mUserType) == "ONLINE" || ($fromRole["can_upload_document"] ?? false) ||  ($fromRole["can_verify_document"] ?? false)) 
+        if (strtoupper($mUserType) == $this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][""] || ($fromRole["can_upload_document"] ?? false) ||  ($fromRole["can_verify_document"] ?? false)) 
         {
             $documents = $this->getLicenseDocLists($request);
             if (!$documents->original["status"]) 
@@ -3814,7 +3670,6 @@ class Trade implements ITrade
             $ownerDoc = $documents->original["data"]["ownerDocs"];
             $appMandetoryDoc = $applicationDoc->whereIn("docType", ["R", "OR"]);
             $appUploadedDoc = $applicationDoc->whereNotNull("uploadedDoc");
-            // dd($ownerDoc,$applicationDoc,$fromRole["can_upload_document"]);
             $appUploadedDocVerified = collect();
             $appUploadedDocRejected = collect();
             $appMadetoryDocRejected  = collect(); 
@@ -3830,8 +3685,10 @@ class Trade implements ITrade
             $is_appUploadedDocVerified          = $appUploadedDocVerified->where("is_docVerify", false);
             $is_appUploadedDocRejected          = $appUploadedDocRejected->where("is_docRejected", true);
             $is_appUploadedMadetoryDocRejected  = $appMadetoryDocRejected->where("is_docRejected", true);
-            $is_appMandUploadedDoc              = $appMandetoryDoc->whereNull("uploadedDoc");
-            
+            // $is_appMandUploadedDoc              = $appMandetoryDoc->whereNull("uploadedDoc");
+            $is_appMandUploadedDoc = $appMandetoryDoc->filter(function($val){
+                return ($val["uploadedDoc"]=="" || $val["uploadedDoc"]==null);
+            });
             $Wdocuments = collect();
             $ownerDoc->map(function ($val) use ($Wdocuments) {
                 $ownerId = $val["ownerDetails"]["ownerId"] ?? "";
@@ -3850,7 +3707,7 @@ class Trade implements ITrade
             $is_ownerDocVerify              = $Wdocuments->where("is_docVerify", false);
             $is_ownerDocRejected            = $Wdocuments->where("is_docRejected", true);
             $is_ownerMadetoryDocRejected    = $Wdocuments->where("is_madetory_docRejected", true);
-            if (($fromRole["can_upload_document"] ?? false) || strtoupper($mUserType) == "ONLINE") 
+            if (($fromRole["can_upload_document"] ?? false) || strtoupper($mUserType) == $this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][""]) 
             {
                 return (empty($is_ownerUploadedDoc->all()) && empty($is_ownerDocRejected->all()) && empty($is_appMandUploadedDoc->all()) && empty($is_appUploadedDocRejected->all()));
             }
@@ -3869,11 +3726,11 @@ class Trade implements ITrade
             'applicationId' => 'required|numeric'
         ]);
         try {
-            $refApplication = ActiveTradeLicence::find($request->applicationId);
+            $refApplication = ActiveTradeLicence::readConnection()->find($request->applicationId);
             if (!$refApplication) {
                 throw new Exception("Application Not Found for this id");
             }
-            $refOwners = ActiveTradeOwner::owneresByLId($request->applicationId);
+            $refOwners = ActiveTradeOwner::readConnection()->owneresByLId($request->applicationId);
             $DocsType['listDocs'] = $this->getApplTypeDocList($refApplication);
             $DocsType['ownerDocs'] = collect($refOwners)->map(function ($owner) use ($refApplication) {
                 return $this->getOwnerDocLists($owner, $refApplication);

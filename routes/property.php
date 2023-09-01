@@ -1,9 +1,9 @@
 <?php
 
+use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Dashboard\JskController;
 use App\Http\Controllers\Payment\BankReconcillationController;
 use App\Http\Controllers\Payment\CashVerificationController;
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Property\ActiveSafController;
 use App\Http\Controllers\Property\ActiveSafControllerV2;
 use App\Http\Controllers\Property\ApplySafController;
@@ -66,31 +66,31 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
   });
 
   Route::controller(ActiveSafController::class)->group(function () {
-    Route::get('saf/master-saf', 'masterSaf');                                                          // Get all master data in Saf(1)
-    Route::post('saf/edit', 'editSaf');                                                                 // Edit Saf By Back Office(24)
-    Route::post('saf/inbox', 'inbox');                                                                  // Saf Inbox(3)
-    Route::post('saf/btc-inbox', 'btcInbox');                                                           // Saf Inbox for Back To citizen(23)
-    Route::post('saf/field-verified-inbox', 'fieldVerifiedInbox');                                      // Field Verified Inbox (25)
-    Route::post('saf/outbox', 'outbox');                                                                 // Saf Workflow Outbox and Outbox By search key(4)
-    Route::post('saf-details', 'safDetails');                                                           // Saf Workflow safDetails and safDetails By ID(5)
-    Route::post('saf/escalate', 'postEscalate');                                                        // Saf Workflow special and safDetails By id(6)
-    Route::post('saf/escalate/inbox/{key?}', 'specialInbox');                                            // Saf workflow Inbox and Inbox By search key(7)
-    Route::post('saf/independent-comment', 'commentIndependent');                                       // Independent Comment for SAF Application(8)
-    Route::post('saf/post/level', 'postNextLevel');                                                     // Forward or Backward Application(9)
-    Route::post('saf/approvalrejection', 'approvalRejectionSaf');                                       // Approval Rejection SAF Application(10)
-    Route::post('saf/back-to-citizen', 'backToCitizen');                                                // Saf Application Back To Citizen(11)
-    Route::post('saf/get-prop-byholding', 'getPropByHoldingNo');                                        // get Property (search) by ward no and holding no(12)
-    Route::post('saf/generate-order-id', 'generateOrderId');                                            // Generate Order ID(14)
-    Route::get('saf/prop-transactions', 'getPropTransactions');                                         // Get Property Transactions(17)
-    Route::post('saf/site-verification', 'siteVerification');                                           // Ulb TC Site Verification(18)
-    Route::post('saf/geotagging', 'geoTagging');                                                        // Geo Tagging(19)
-    Route::post('saf/get-tc-verifications', 'getTcVerifications');                                      // Get TC Verifications  Data(20)
-    Route::post('saf/proptransaction-by-id', 'getTransactionBySafPropId');                              // Get Property Transaction by Property ID or SAF id(22)
-    Route::post('saf/get-demand-by-id', 'getDemandBySafId');                                            // Get the demandable Amount of the Property from Admin Side(26)
-    Route::post('saf/verifications-comp', 'getVerifications');
-    Route::post('saf/IndiVerificationsList', 'getSafVerificationList');
-    Route::post('saf/static-saf-dtls', 'getStaticSafDetails');                                          // (27) Static SAf Details
-    Route::post('saf/offline-saf-payment', 'offlinePaymentSaf');                                               // SAF Payment(15)
+    Route::get('saf/master-saf', 'masterSaf');                      #_READ->DONE                     // Get all master data in Saf(1)
+    Route::post('saf/edit', 'editSaf');                                                    // Edit Saf By Back Office(24)
+    Route::post('saf/inbox', 'inbox');                              #_READ                       // Saf Inbox(3)
+    Route::post('saf/btc-inbox', 'btcInbox');                       #_READ                       // Saf Inbox for Back To citizen(23)
+    Route::post('saf/field-verified-inbox', 'fieldVerifiedInbox');  #_READ                       // Field Verified Inbox (25)
+    Route::post('saf/outbox', 'outbox');                            #_READ                       // Saf Workflow Outbox and Outbox By search key(4)
+    Route::post('saf-details', 'safDetails');                       #_READ                       // Saf Workflow safDetails and safDetails By ID(5)
+    Route::post('saf/escalate', 'postEscalate');                                           // Saf Workflow special and safDetails By id(6)
+    Route::post('saf/escalate/inbox/{key?}', 'specialInbox');      #_READ                        // Saf workflow Inbox and Inbox By search key(7)
+    Route::post('saf/independent-comment', 'commentIndependent');                          // Independent Comment for SAF Application(8)
+    Route::post('saf/post/level', 'postNextLevel');                                        // Forward or Backward Application(9)
+    Route::post('saf/approvalrejection', 'approvalRejectionSaf');                          // Approval Rejection SAF Application(10)
+    Route::post('saf/back-to-citizen', 'backToCitizen');                                   // Saf Application Back To Citizen(11)
+    Route::post('saf/get-prop-byholding', 'getPropByHoldingNo');     #_READ                      // get Property (search) by ward no and holding no(12)
+    Route::post('saf/generate-order-id', 'generateOrderId');                               // Generate Order ID(14)
+    Route::get('saf/prop-transactions', 'getPropTransactions');       #_READ                     // Get Property Transactions(17)
+    Route::post('saf/site-verification', 'siteVerification');                              // Ulb TC Site Verification(18)
+    Route::post('saf/geotagging', 'geoTagging');                                           // Geo Tagging(19)
+    Route::post('saf/get-tc-verifications', 'getTcVerifications'); #_READ                        // Get TC Verifications  Data(20)
+    Route::post('saf/proptransaction-by-id', 'getTransactionBySafPropId');  #_READ               // Get Property Transaction by Property ID or SAF id(22)
+    Route::post('saf/get-demand-by-id', 'getDemandBySafId');          #_READ                     // Get the demandable Amount of the Property from Admin Side(26)
+    Route::post('saf/verifications-comp', 'getVerifications'); #_READ
+    Route::post('saf/IndiVerificationsList', 'getSafVerificationList'); #_READ
+    Route::post('saf/static-saf-dtls', 'getStaticSafDetails');          #_READ                   // (27) Static SAf Details
+    Route::post('saf/offline-saf-payment', 'offlinePaymentSaf');                                  // SAF Payment(15)
   });
 
   /**
@@ -99,8 +99,8 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
    */
   Route::controller(SafDocController::class)->group(function () {
     Route::post('saf/document-upload', 'docUpload');                                                    // Upload Documents for SAF (01)
-    Route::post('saf/get-uploaded-documents', 'getUploadDocuments');                                    // View Uploaded Documents for SAF (02)
-    Route::post('saf/get-doc-list', 'getDocList');                                                      // Get Document Lists(03)
+    Route::post('saf/get-uploaded-documents', 'getUploadDocuments');    #_READ                                // View Uploaded Documents for SAF (02)
+    Route::post('saf/get-doc-list', 'getDocList');                     #_READ                                 // Get Document Lists(03)
     Route::post('saf/doc-verify-reject', 'docVerifyReject');                                            // Verify or Reject Saf Documents(04)
   });
 
@@ -119,18 +119,18 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
        | Serial No : 05
    */
   Route::controller(PropertyDeactivateController::class)->group(function () {
-    Route::post('searchByHoldingNo', "readHoldigbyNo");
-    Route::post("get-prop-dtl-for-deactivation", "readPorertyById");
+    Route::post('searchByHoldingNo', "readHoldigbyNo");                     #_READ
+    Route::post("get-prop-dtl-for-deactivation", "readPorertyById");        #_READ
     Route::post('deactivationRequest', "deactivatProperty");
-    Route::post('inboxDeactivation', "inbox");
-    Route::post('outboxDeactivation', "outbox");
-    Route::post('specialDeactivation', "specialInbox");
+    Route::post('inboxDeactivation', "inbox");                               #_READ
+    Route::post('outboxDeactivation', "outbox");                             #_READ
+    Route::post('specialDeactivation', "specialInbox");                      #_READ
     Route::post('postNextDeactivation', "postNextLevel");
     Route::post('commentIndependentPrpDeactivation', "commentIndependent");
     Route::post('postEscalateDeactivation', "postEscalate");
-    Route::post('getDocumentsPrpDeactivation', "getUplodedDocuments");
+    Route::post('getDocumentsPrpDeactivation', "getUplodedDocuments");        #_READ
     Route::post('approve-reject-deactivation-request', "approvalRejection");
-    Route::post('getDeactivationDtls', "readDeactivationReq");
+    Route::post('getDeactivationDtls', "readDeactivationReq");                #_READ
   });
 
   /**
@@ -157,33 +157,24 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
    */
   Route::controller(ConcessionController::class)->group(function () {
     Route::post('concession/apply-concession', 'applyConcession');                      //01                
-    Route::post('concession/postHolding', 'postHolding');                               //02  
-    Route::post('concession/inbox', 'inbox');                                           //03               // Concession Inbox 
-    Route::post('concession/outbox', 'outbox');                                         //04               // Concession Outbox
-    Route::post('concession/details', 'getDetailsById');                                //05               // Get Concession Details by ID
+    Route::post('concession/inbox', 'inbox');                    #_READ                       //03               // Concession Inbox 
+    Route::post('concession/outbox', 'outbox');                   #_READ                      //04               // Concession Outbox
+    Route::post('concession/details', 'getDetailsById');          #_READ                      //05               // Get Concession Details by ID
     Route::post('concession/escalate', 'escalateApplication');                          //06               // escalate application
-    Route::post('concession/special-inbox', 'specialInbox');                            //07               // escalated application inbox
-    Route::post('concession/btc-inbox', 'btcInbox');                                    //17               // Back To Citizen Inbox
+    Route::post('concession/special-inbox', 'specialInbox');      #_READ                      //07               // escalated application inbox
+    Route::post('concession/btc-inbox', 'btcInbox');              #_READ                      //17               // Back To Citizen Inbox
 
     Route::post('concession/next-level', 'postNextLevel');                              //08               // Backward Forward Application
     Route::post('concession/approvalrejection', 'approvalRejection');                   //09               // Approve Reject Application
     Route::post('concession/backtocitizen', 'backToCitizen');                           //10               // Back To Citizen 
-    Route::post('concession/owner-details', 'getOwnerDetails');                         //11
+    Route::post('concession/owner-details', 'getOwnerDetails');    #_READ                     //11
 
     Route::post('concession/comment-independent', 'commentIndependent');                //18               ( Citizen Independent comment and Level Pendings )
-    Route::post('concession/get-doc-type', 'getDocType');
-    Route::post('concession/doc-list', 'concessionDocList');                            //14
+    Route::post('concession/get-doc-type', 'getDocType');               #_READ
+    Route::post('concession/doc-list', 'concessionDocList');            #_READ                //14
     Route::post('concession/upload-document', 'uploadDocument');
-    Route::post('concession/get-uploaded-documents', 'getUploadedDocuments');
+    Route::post('concession/get-uploaded-documents', 'getUploadedDocuments'); #_READ
     Route::post('concession/doc-verify-reject', 'docVerifyReject');
-  });
-
-  /**
-   * | Property Concession doc Controller
-   * | Serial No : 16
-   */
-  Route::controller(ConcessionDocController::class)->group(function () {
-    Route::post('concession/document-list', 'docList');                                //01
   });
 
 
@@ -197,7 +188,6 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
     Route::post('objection/owner-detailById', 'ownerDetailById');         //03
     Route::post('objection/forgery-type', 'forgeryType');                 //04
     Route::post('objection/citizen-forgery-doclist', 'citizenForgeryDocList');
-
 
     Route::post('objection/inbox', 'inbox');                              //05        //Inbox
     Route::post('objection/outbox', 'outbox');                            //06        //Outbox

@@ -15,7 +15,7 @@ class RefPropFloor extends Model
      */
     public function getPropTypes()
     {
-        return RefPropFloor::select(
+        return RefPropFloor::on('pgsql::read')->select(
             'id',
             DB::raw('INITCAP(floor_name) as floor_name')
         )

@@ -590,7 +590,9 @@ class ActiveSafControllerV2 extends Controller
                 'clusterType' => "Saf"
             ]);
 
+            #_Multiple Database Connection Started
             DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
             $propTrans = $mPropTrans->postClusterTransactions($req, $demands, 'Saf');
             if (in_array($req['paymentMode'], $offlinePaymentModes)) {
                 $req->merge([
@@ -622,9 +624,11 @@ class ActiveSafControllerV2 extends Controller
             // Replication Prop Rebates Penalties
             $activeSafController->postPenaltyRebates($dues1, null, $propTrans['id'], $clusterId);
             DB::commit();
+            DB::connection('pgsql_master')->commit();
             return responseMsgs(true, "Payment Successfully Done", ["tranNo" => $tranNo], "011612", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
             return responseMsgs(false, $e->getMessage(), "", "011612", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }

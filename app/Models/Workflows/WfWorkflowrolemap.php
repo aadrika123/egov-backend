@@ -91,7 +91,7 @@ class WfWorkflowrolemap extends Model
      */
     public function roleMaps()
     {
-        $data = DB::table('wf_workflowrolemaps')
+        $data = WfWorkflowrolemap::on('pgsql::read')
             ->select(
                 'wf_workflowrolemaps.*',
                 'r.role_name as forward_role_name',
@@ -127,7 +127,8 @@ class WfWorkflowrolemap extends Model
      */
     public function getWfBackForwardIds($req)
     {
-        return WfWorkflowrolemap::select('forward_role_id', 'backward_role_id')
+        return WfWorkflowrolemap::on('pgsql::read')
+            ->select('forward_role_id', 'backward_role_id')
             ->where('workflow_id', $req->workflowId)
             ->where('wf_role_id', $req->roleId)
             ->where('is_suspended', false)
@@ -139,7 +140,8 @@ class WfWorkflowrolemap extends Model
      */
     public function getWfByRoleId($roleIds)
     {
-        return WfWorkflowrolemap::select('workflow_id')
+        return WfWorkflowrolemap::on('pgsql::read')
+            ->select('workflow_id')
             ->whereIn('wf_role_id', $roleIds)
             ->get();
     }

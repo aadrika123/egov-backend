@@ -26,11 +26,12 @@ class PropActiveGbOfficer extends Model
      */
     public function getOfficerBySafId($safId)
     {
-        return PropActiveGbOfficer::select(
-            'officer_name',
-            'designation',
-            'mobile_no'
-        )
+        return PropActiveGbOfficer::on('pgsql::read')
+            ->select(
+                'officer_name',
+                'designation',
+                'mobile_no'
+            )
             ->where('saf_id', $safId)
             ->first();
     }

@@ -136,9 +136,8 @@ class WfActiveDocument extends Model
                 'd.verify_status',
                 'd.id as doc_id',
                 DB::raw("concat('$docUrl/',relative_path,'/',document) as doc_path"),
-                // DB::raw("concat(relative_path,'/',document) as doc_path")
             )
-            ->join('prop_active_safs_owners as o', 'o.id', '=', 'd.owner_dtl_id')
+            ->leftJoin('prop_active_safs_owners as o', 'o.id', '=', 'd.owner_dtl_id')
             ->where('d.active_id', $applicationId)
             ->where('d.workflow_id', $workflowId)
             ->where('d.module_id', $moduleId)
@@ -196,7 +195,7 @@ class WfActiveDocument extends Model
     public function getTradeDocByAppNo($applicationId, $workflowId, $moduleId)
     {
         $docUrl = Config::get('module-constants.DOC_URL');
-        return DB::table('wf_active_documents as d')
+        return DB::connection("pgsql_trade")->table('wf_active_documents as d')
             ->select(
                 'd.id',
                 'd.document',
@@ -276,7 +275,7 @@ class WfActiveDocument extends Model
         if (!$workflowId) {
             $workflowId = Config::get('workflow-constants.TRADE_WORKFLOW_ID');
         }
-        $data = DB::table('wf_active_documents as d')
+        $data = DB::connection("pgsql_trade")->table('wf_active_documents as d')
             ->select(
                 'd.id',
                 'd.verify_status',
@@ -405,7 +404,8 @@ class WfActiveDocument extends Model
      */
     public function readRejectedDocuments(array $metaReqs)
     {
-        return WfActiveDocument::where('active_id', $metaReqs['activeId'])
+        return WfActiveDocument::on('pgsql::read')
+            ->where('active_id', $metaReqs['activeId'])
             ->where('workflow_id', $metaReqs['workflowId'])
             ->where('module_id', $metaReqs['moduleId'])
             ->where('verify_status', 2)

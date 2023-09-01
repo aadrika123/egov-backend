@@ -118,7 +118,7 @@ class PropSafVerification extends Model
         $query = "SELECT *,v.id as id FROM prop_saf_verification_dtls AS v
                     JOIN (SELECT * FROM prop_saf_verifications WHERE saf_id=$safId AND ulb_verification=TRUE ORDER BY id DESC LIMIT 1) AS p ON p.id=v.verification_id
                     WHERE v.saf_id=$safId";
-        return DB::select($query);
+        return DB::connection('pgsql::read')->select($query);
     }
 
     /**
@@ -127,6 +127,6 @@ class PropSafVerification extends Model
     public function getVerifications($safId)
     {
         $query = "SELECT * FROM prop_saf_verifications WHERE saf_id=$safId AND ulb_verification=TRUE ORDER BY id DESC LIMIT 1";
-        return DB::select($query);
+        return DB::connection('pgsql::read')->select($query);
     }
 }

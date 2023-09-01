@@ -18,7 +18,9 @@ class PropSafGeotagUpload extends Model
     public function getGeoTags($safId)
     {
         $docUrl = Config::get('module-constants.DOC_URL');
-        return DB::table('prop_saf_geotag_uploads as g')
+
+        return DB::connection('pgsql::read')
+            ->table('prop_saf_geotag_uploads as g')
             ->select(
                 'g.*',
                 'u.user_name as geo_tagged_by',

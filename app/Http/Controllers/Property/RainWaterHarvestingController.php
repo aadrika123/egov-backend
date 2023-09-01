@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Property;
 
 use App\BLL\Property\CalculatePropById;
+use App\BLL\Property\PostSafPropTaxes;
 use App\Http\Controllers\Controller;
 use App\MicroServices\DocUpload;
 use App\MicroServices\IdGenerator\PrefixIdGenerator;
@@ -16,6 +17,7 @@ use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropRwhVerification;
 use App\Models\Workflows\WfActiveDocument;
+use App\Models\Workflows\WfRole;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\Workflows\WfWorkflowrolemap;
@@ -43,7 +45,8 @@ use Illuminate\Support\Facades\Validator;
 /**
  * | Created On - 18-11-2022
  * | Created By -  Mrinal Kumar
- * | Property RainWaterHarvesting apply
+ * | Property RainWaterHarvesting Apply 
+ * | Status : closed
  */
 
 class RainWaterHarvestingController extends Controller
@@ -130,9 +133,11 @@ class RainWaterHarvestingController extends Controller
             $finisherRoleId = DB::select($refFinisherRoleId);
             $initiatorRoleId = DB::select($refInitiatorRoleId);
 
+            #_Multiple Database Connection Started
             DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
             $mPropActiveHarvesting = new PropActiveHarvesting();
-            $waterHaravesting  = $mPropActiveHarvesting->saves($request, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId,  $userId);
+            $waterHaravesting  = $mPropActiveHarvesting->saves($request, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId,  $userId, $ulbId);
 
             if ($userType == 'Citizen') {
                 $waterHaravesting->current_role = collect($initiatorRoleId)->first()->forward_role_id;
@@ -188,9 +193,11 @@ class RainWaterHarvestingController extends Controller
             $request->request->add($wfReqs);
             $track->saveTrack($request);
             DB::commit();
+            DB::connection('pgsql_master')->commit();
             return responseMsgs(true, "Application applied!", $harvestingNo);
         } catch (Exception $error) {
             DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
             return responseMsgs(false, "Error!", $error->getMessage());
         }
     }
@@ -461,6 +468,9 @@ class RainWaterHarvestingController extends Controller
             if (!$details)
                 throw new Exception("Application Not Found for this id");
 
+            $currentRole = WfRole::find($details->current_role);
+            $details->currentRole = $currentRole->role_name;
+
             // Data Array
             $basicDetails = $this->generateBasicDetails($details);         // (Basic Details) Trait function to get Basic Details
             $basicElement = [
@@ -473,18 +483,6 @@ class RainWaterHarvestingController extends Controller
                 'headerTitle' => "Property Details & Address",
                 'data' => $propertyDetails
             ];
-
-            // $corrDetails = $this->generateCorrDtls($details);              // (Corresponding Address Details) Trait function to generate corresponding address details
-            // $corrElement = [
-            //     'headerTitle' => 'Corresponding Address',
-            //     'data' => $corrDetails,
-            // ];
-
-            // $electDetails = $this->generateElectDtls($details);            // (Electricity & Water Details) Trait function to generate Electricity Details
-            // $electElement = [
-            //     'headerTitle' => 'Electricity & Water Details',
-            //     'data' => $electDetails
-            // ];
 
             $fullDetailsData['application_no'] = $details->application_no;
             $fullDetailsData['apply_date'] = Carbon::parse($details->created_at)->format('Y-m-d');
@@ -499,14 +497,6 @@ class RainWaterHarvestingController extends Controller
                 'tableHead' => ["#", "Owner Name", "Gender", "DOB", "Guardian Name", "Relation", "Mobile No", "Aadhar", "PAN", "Email", "IsArmedForce", "isSpeciallyAbled"],
                 'tableData' => $ownerDetails
             ];
-
-            // $floorList = $mPropFloors->getPropFloors($details->property_id);    // Model Function to Get Floor Details
-            // $floorDetails = $this->generateFloorDetails($floorList);
-            // $floorElement = [
-            //     'headerTitle' => 'Floor Details',
-            //     'tableHead' => ["#", "Floor", "Usage Type", "Occupancy Type", "Construction Type", "Build Up Area", "From Date", "Upto Date"],
-            //     'tableData' => $floorDetails
-            // ];
 
             $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$ownerElement]);
             // Card Details
@@ -573,7 +563,9 @@ class RainWaterHarvestingController extends Controller
             ]);
             $forwardBackwardIds = $mWfRoleMaps->getWfBackForwardIds($roleMapsReqs);
 
+            #_Multiple Database Connection Started
             DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
             if ($req->action == 'forward') {
                 $wfMstrId = $mWfWorkflows->getWfMstrByWorkflowId($harvesting->workflow_id);
                 $this->checkPostCondition($senderRoleId, $wfLevels, $harvesting);          // Check Post Next level condition
@@ -600,9 +592,11 @@ class RainWaterHarvestingController extends Controller
             $track->saveTrack($req);
 
             DB::commit();
+            DB::connection('pgsql_master')->commit();
             return responseMsgs(true, "Successfully Forwarded The Application!!", "", '011110', 01, '446ms', 'Post', $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
     }
@@ -631,6 +625,7 @@ class RainWaterHarvestingController extends Controller
             $userId = authUser($req)->id;
             $currentDate = Carbon::now();
             $activeHarvesting = PropActiveHarvesting::find($req->applicationId);
+            $propertyId = $activeHarvesting->property_id;
             $propProperties = PropProperty::where('id', $activeHarvesting->property_id)
                 ->first();
 
@@ -649,7 +644,9 @@ class RainWaterHarvestingController extends Controller
                 return responseMsg(false, " Access Forbidden", "");
             }
 
+            #_Multiple Database Connection Started
             DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
             // Approval
             if ($req->status == 1) {
                 // Harvesting Application replication
@@ -672,7 +669,7 @@ class RainWaterHarvestingController extends Controller
                 $propProperties->save();
 
                 $req->merge([
-                    "property_id" => $activeHarvesting->property_id,
+                    "property_id" => $propertyId,
                 ]);
 
                 $calculatePropById = new CalculatePropById;
@@ -685,25 +682,28 @@ class RainWaterHarvestingController extends Controller
                 }
                 $currentFY = getFY();
                 $newDemand = $calculatePropById->calculatePropTax($req);
-                return $propDemandDetail = $mPropDemand->getDemandByFyear($currentFY, $activeHarvesting->property_id);
+                $propDemandDetail = $mPropDemand->getDemandByFyear($currentFY, $propertyId);
 
-                if (collect($propDemandDetail)->isNotEmpty()) {
-                    // if demand paid
-                    $propDemandDetail->where('paid_status', 1);
+                // if (collect($propDemandDetail)->isNotEmpty()) {
+                //     // if demand paid
+                //     $propDemandDetail->where('paid_status', 1);
 
-                    // if demand is not paid
-                    $propDemandDetail->where('paid_status', 0);
-                } else {
-                    // demand is not generated for next quater
-                }
+                //     // if demand is not paid
+                //     $propDemandDetail->where('paid_status', 0);
+                // } else {
+                //     // demand is not generated for next quater
+                // }
 
-                return collect($newDemand)->where('fyear', $currentFY)->where('qtr', '>=', $nextQuarter)->values();
+                $finalDemand = collect($newDemand)->where('fyear', $currentFY)->where('qtr', '>=', $nextQuarter)->values();
+                $finalDemand = $finalDemand->toArray();
 
-                dd($newDemand);
+                $postSafPropTaxes = new PostSafPropTaxes;
+                $postSafPropTaxes->postNewPropTaxes($propertyId, $finalDemand);                  // Save Taxes
 
                 $msg = "Application Successfully Approved !";
                 $metaReqs['verificationStatus'] = 1;
             }
+
             // Rejection
             if ($req->status == 0) {
                 // Harvesting Application replication
@@ -738,11 +738,12 @@ class RainWaterHarvestingController extends Controller
                 'forward_date' => $this->_todayDate->format('Y-m-d'),
                 'forward_time' => $this->_todayDate->format('H:i:s')
             ]);
-            dd('ok');
             DB::commit();
+            DB::connection('pgsql_master')->commit();
             return responseMsgs(true, $msg, "", '011111', 01, '391ms', 'Post', $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
     }
@@ -750,7 +751,6 @@ class RainWaterHarvestingController extends Controller
     /**
      * |-------------------------------------  Rejection of the Harvesting ------------------------------------------------|
      * | Rating- 
-     * | Status - open
      */
     public function rejectionOfHarvesting(Request $req)
     {
@@ -785,37 +785,6 @@ class RainWaterHarvestingController extends Controller
         }
     }
 
-    // //harvesting doc by id
-    // public function harvestingDocList(Request $req)
-    // {
-    //     try {
-    //         $list = PropHarvestingDoc::select(
-    //             'id',
-    //             'doc_type as docName',
-    //             'relative_path',
-    //             'doc_name as docUrl',
-    //             'verify_status as docStatus',
-    //             'remarks as docRemarks'
-    //         )
-    //             ->where('prop_harvesting_docs.status', 1)
-    //             ->where('prop_harvesting_docs.harvesting_id', $req->id)
-    //             ->get();
-
-    //         $list = $list->map(function ($val) {
-    //             $path = $this->_bifuraction->readDocumentPath($val->relative_path . $val->docUrl);
-    //             $val->docUrl = $path;
-    //             return $val;
-    //         });
-
-    //         if ($list == Null) {
-    //             return responseMsg(false, "No Data Found", '');
-    //         } else
-    //             return responseMsgs(true, "Success", remove_null($list), '011105', 01, '311ms - 379ms', 'Post', $req->deviceId);
-    //     } catch (Exception $e) {
-    //         echo $e->getMessage();
-    //     }
-    // }
-
     /**
      * | Independent Comments
      */
@@ -835,6 +804,7 @@ class RainWaterHarvestingController extends Controller
             $mModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs = array();
             DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
             // Save On Workflow Track For Level Independent
             $metaReqs = [
                 'workflowId' => $harvesting->workflow_id,
@@ -853,7 +823,6 @@ class RainWaterHarvestingController extends Controller
                 $metaReqs = array_merge($metaReqs, ['senderRoleId' => $wfRoleId->wf_role_id]);
                 $metaReqs = array_merge($metaReqs, ['user_id' => $userId]);
             }
-            DB::beginTransaction();
             // For Citizen Independent Comment
             if ($userType == 'Citizen') {
                 $metaReqs = array_merge($metaReqs, ['citizenId' => $userId]);
@@ -865,9 +834,11 @@ class RainWaterHarvestingController extends Controller
             $workflowTrack->saveTrack($request);
 
             DB::commit();
+            DB::connection('pgsql_master')->commit();
             return responseMsgs(true, "You Have Commented Successfully!!", ['Comment' => $request->comment], "010108", "1.0", "", "POST", "");
         } catch (Exception $e) {
             DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
     }
@@ -967,7 +938,9 @@ class RainWaterHarvestingController extends Controller
                     ->first();
                 $redis->set('workflow_initiator_' . $workflowId, json_encode($backId));
             }
-
+            #_Multiple Database Connection Started
+            DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
             $harvesting->current_role = $backId->wf_role_id;
             $harvesting->parked = 1;
             $harvesting->save();
@@ -981,9 +954,12 @@ class RainWaterHarvestingController extends Controller
             $req->request->add($metaReqs);
             $track = new WorkflowTrack();
             $track->saveTrack($req);
-
+            DB::commit();
+            DB::connection('pgsql_master')->commit();
             return responseMsgs(true, "Successfully Done", "", "", '010710', '01', '358ms', 'Post', '');
         } catch (Exception $e) {
+            DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
     }
@@ -1125,7 +1101,7 @@ class RainWaterHarvestingController extends Controller
             $wfDocId = $req->id;
             $userId = authUser($req)->id;
             $applicationId = $req->applicationId;
-            $wfLevel = Config::get('PropertyConstaint.SAF-LABEL');
+            $wfLevel = Config::get('PropertyConstaint.HARVESTING-LABEL');
             // Derivative Assigments
             $harvestingDtl = $mPropActiveHarvesting->getHarvestingNo($applicationId);
             $safReq = new Request([
@@ -1138,7 +1114,7 @@ class RainWaterHarvestingController extends Controller
 
             $senderRoleId = $senderRoleDtls->wf_role_id;
 
-            if ($senderRoleId != $wfLevel['UTC'])                                // Authorization for Dealing Assistant Only
+            if ($senderRoleId != $wfLevel['SI'])                                // Authorization for Dealing Assistant Only
                 throw new Exception("You are not Authorized");
 
             if (!$harvestingDtl || collect($harvestingDtl)->isEmpty())
@@ -1150,6 +1126,8 @@ class RainWaterHarvestingController extends Controller
                 throw new Exception("Document Fully Verified");
 
             DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
+
             if ($req->docStatus == "Verified") {
                 $status = 1;
             }
@@ -1175,9 +1153,11 @@ class RainWaterHarvestingController extends Controller
             }
 
             DB::commit();
+            DB::connection('pgsql_master')->commit();
             return responseMsgs(true, $req->docStatus . " Successfully", "", "010204", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
             return responseMsgs(false, $e->getMessage(), "", "010204", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
@@ -1274,7 +1254,8 @@ class RainWaterHarvestingController extends Controller
                     $imageName = $docUpload->upload($refImageName, $images, $relativePath);         // <------- Get uploaded image name and move the image in folder
                     $geoTagging->add($docReqs);
                     // $geoTagging->add($req, $imageName, $relativePath, $geoTagging);
-
+                    DB::beginTransaction();
+                    DB::connection('pgsql_master')->beginTransaction();
                     $metaReqs['moduleId'] = $moduleId;
                     $metaReqs['activeId'] = $req->applicationId;
                     $metaReqs['workflowId'] = $applicationDtls->workflow_id;
@@ -1288,7 +1269,7 @@ class RainWaterHarvestingController extends Controller
                     $mWfActiveDocument->postDocuments($metaReqs);
 
                     break;
-                    DB::beginTransaction();
+
                 case $ulbTaxCollectorRole;                                                                // In Case of Ulb Tax Collector
                     if ($verificationStatus == 1) {
                         $req->ulbVerification = true;
@@ -1315,9 +1296,11 @@ class RainWaterHarvestingController extends Controller
             $verificationId = $verification->store($req);
 
             DB::commit();
+            DB::connection('pgsql_master')->commit();
             return responseMsgs(true, $msg, "", "010118", "1.0", "310ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
     }

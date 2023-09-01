@@ -13,7 +13,7 @@ class RefPropObjectionType extends Model
     //objection type master data
     public function objectionType()
     {
-        $objectionType = RefPropObjectionType::where('status', 1)
+        $objectionType = RefPropObjectionType::on('pgsql::read')->where('status', 1)
             ->select('id', 'type')
             ->get();
         return $objectionType;

@@ -478,9 +478,9 @@ class EloquentAuthRepository implements AuthRepository
     public function addNotification($req)
     {
         try {
-            $user = authUser();
-            $userId = $user->id;
-            $ulbId = $user->ulb_id;
+            // $user = authUser($req);
+            // $userId = $user->id;
+            // $ulbId = $user->ulb_id;
             $citizenId = $req['citizenId'];
             $muserNotification = new UserNotification();
             $mMirrorUserNotification = new MirrorUserNotification();
@@ -503,7 +503,7 @@ class EloquentAuthRepository implements AuthRepository
                 "created_at" => Carbon::now(),
             ]);
             $id = $muserNotification->addNotification($mreq);
-            $addNotification->notificationAddition($mreq, $id);           #calling BLL
+            // $addNotification->notificationAddition($mreq, $id);           #calling BLL
 
             return responseMsgs(true, "Notificationn Addedd", '', "010108", "1.0", "", "POST", "");
         } catch (Exception $e) {

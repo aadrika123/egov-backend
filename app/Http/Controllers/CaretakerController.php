@@ -11,6 +11,7 @@ use App\Pipelines\CareTakers\CareTakeProperty;
 use App\Pipelines\CareTakers\CareTakerTrade;
 use App\Pipelines\CareTakers\TagProperty;
 use App\Pipelines\CareTakers\TagTrade;
+use App\Repository\Auth\EloquentAuthRepository;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
@@ -147,7 +148,6 @@ class CaretakerController extends Controller
                     TagTrade::class
                 ])
                 ->thenReturn();
-            return responseMsgs(true, $response, [], '1001', '1.0', "", 'POST', $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], '1001', '1.0', "", 'POST', $req->deviceId);
         }

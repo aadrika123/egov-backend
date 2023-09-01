@@ -291,19 +291,20 @@ class PropTransaction extends Model
      */
     public function recentPayment($userId)
     {
-        return PropTransaction::select(
-            'property_id',
-            'saf_id',
-            'tran_no as transactionNo',
-            'tran_date as transactionDate',
-            'payment_mode as paymentMode',
-            'amount',
-            DB::raw(
-                "case when prop_transactions.property_id is not null then 'Property' when 
+        return PropTransaction::on('pgsql::read')
+            ->select(
+                'property_id',
+                'saf_id',
+                'tran_no as transactionNo',
+                'tran_date as transactionDate',
+                'payment_mode as paymentMode',
+                'amount',
+                DB::raw(
+                    "case when prop_transactions.property_id is not null then 'Property' when 
                 prop_transactions.saf_id is not null then 'Saf' end as tran_type
             "
-            ),
-        )
+                ),
+            )
             ->where('user_id', $userId)
             ->orderBydesc('id')
             ->take(10)

@@ -167,7 +167,7 @@ class  PropActiveSaf extends Model
     // Get Active SAF Details
     public function getActiveSafDtls()
     {
-        return DB::table('prop_active_safs')
+        return PropActiveSaf::on('pgsql::read')
             ->select(
                 'prop_active_safs.*',
                 'prop_active_safs.assessment_type as assessment',
@@ -277,7 +277,8 @@ class  PropActiveSaf extends Model
      */
     public function getSafDtlsBySafNo($safNo)
     {
-        return DB::table('prop_active_safs as s')
+        return DB::connection('pgsql::read')
+            ->table('prop_active_safs as s')
             ->where('s.saf_no', strtoupper($safNo))
             ->select(
                 's.id',
@@ -332,16 +333,6 @@ class  PropActiveSaf extends Model
     public function getSafNo($safId)
     {
         return PropActiveSaf::select('*')
-            ->where('id', $safId)
-            ->first();
-    }
-
-    /**
-     * | Get late Assessment by SAF id
-     */
-    public function getLateAssessBySafId($safId)
-    {
-        return PropActiveSaf::select('late_assess_penalty')
             ->where('id', $safId)
             ->first();
     }
@@ -481,7 +472,7 @@ class  PropActiveSaf extends Model
      */
     public function safByCluster($clusterId)
     {
-        return  DB::table('prop_active_safs')
+        return  PropActiveSaf::on('pgsql::read')
             ->leftJoin('prop_active_safs_owners as o', 'o.saf_id', '=', 'prop_active_safs.id')
             ->join('ref_prop_types', 'ref_prop_types.id', '=', 'prop_active_safs.prop_type_mstr_id')
             ->select(
@@ -509,7 +500,8 @@ class  PropActiveSaf extends Model
      */
     public function getSafsByClusterId($clusterId)
     {
-        return PropActiveSaf::where('cluster_id', $clusterId)
+        return PropActiveSaf::on('pgsql::read')
+            ->where('cluster_id', $clusterId)
             ->get();
     }
 
@@ -588,13 +580,14 @@ class  PropActiveSaf extends Model
      */
     public function recentApplication($userId)
     {
-        $data = PropActiveSaf::select(
-            'prop_active_safs.id',
-            'saf_no as applicationNo',
-            'application_date as applyDate',
-            'assessment_type as assessmentType',
-            DB::raw("string_agg(owner_name,',') as applicantName"),
-        )
+        $data = PropActiveSaf::on('pgsql::read')
+            ->select(
+                'prop_active_safs.id',
+                'saf_no as applicationNo',
+                'application_date as applyDate',
+                'assessment_type as assessmentType',
+                DB::raw("string_agg(owner_name,',') as applicantName"),
+            )
             ->join('prop_active_safs_owners', 'prop_active_safs_owners.saf_id', 'prop_active_safs.id')
             ->where('prop_active_safs.user_id', $userId)
             ->orderBydesc('prop_active_safs.id')
@@ -613,7 +606,8 @@ class  PropActiveSaf extends Model
     public function todayAppliedApplications($userId)
     {
         $date = Carbon::now();
-        return PropActiveSaf::select('id')
+        return PropActiveSaf::on('pgsql::read')
+            ->select('id')
             ->where('prop_active_safs.user_id', $userId)
             ->where('application_date', $date);
         // ->get();
@@ -626,12 +620,13 @@ class  PropActiveSaf extends Model
     {
         $date = Carbon::now()->format('Y-m-d');
         // $date =  '2023-01-16';
-        return PropActiveSaf::select(
-            'saf_no as applicationNo',
-            'application_date as applyDate',
-            'assessment_type as assessmentType',
-            DB::raw("string_agg(owner_name,',') as applicantName"),
-        )
+        return PropActiveSaf::on('pgsql::read')
+            ->select(
+                'saf_no as applicationNo',
+                'application_date as applyDate',
+                'assessment_type as assessmentType',
+                DB::raw("string_agg(owner_name,',') as applicantName"),
+            )
 
             ->join('prop_active_safs_owners', 'prop_active_safs_owners.saf_id', 'prop_active_safs.id')
             ->join('workflow_tracks', 'workflow_tracks.ref_table_id_value', 'prop_active_safs.id')
@@ -649,12 +644,7 @@ class  PropActiveSaf extends Model
      */
     public function getGbSaf($workflowIds)
     {
-        $data = DB::table('prop_active_safs')
-            ->join('ref_prop_gbpropusagetypes as p', 'p.id', '=', 'prop_active_safs.gb_usage_types')
-            ->join('ref_prop_gbbuildingusagetypes as q', 'q.id', '=', 'prop_active_safs.gb_prop_usage_types')
-            ->leftjoin('prop_active_safgbofficers as gbo', 'gbo.saf_id', 'prop_active_safs.id')
-            ->join('ulb_ward_masters as ward', 'ward.id', '=', 'prop_active_safs.ward_mstr_id')
-            ->join('ref_prop_road_types as r', 'r.id', 'prop_active_safs.road_type_mstr_id')
+        $data = PropActiveSaf::on('pgsql::read')
             ->select(
                 'prop_active_safs.id',
                 'prop_active_safs.workflow_id',
@@ -678,6 +668,11 @@ class  PropActiveSaf extends Model
                 'designation',
                 'mobile_no'
             )
+            ->join('ref_prop_gbpropusagetypes as p', 'p.id', '=', 'prop_active_safs.gb_usage_types')
+            ->join('ref_prop_gbbuildingusagetypes as q', 'q.id', '=', 'prop_active_safs.gb_prop_usage_types')
+            ->leftjoin('prop_active_safgbofficers as gbo', 'gbo.saf_id', 'prop_active_safs.id')
+            ->join('ulb_ward_masters as ward', 'ward.id', '=', 'prop_active_safs.ward_mstr_id')
+            ->join('ref_prop_road_types as r', 'r.id', 'prop_active_safs.road_type_mstr_id')
             ->whereIn('workflow_id', $workflowIds)
             ->where('is_gb_saf', true);
         return $data;
@@ -713,7 +708,8 @@ class  PropActiveSaf extends Model
      */
     public function getCitizenSafs($citizenId, $ulbId)
     {
-        return PropActiveSaf::select('id', 'saf_no', 'citizen_id')
+        return PropActiveSaf::on('pgsql::read')
+            ->select('id', 'saf_no', 'citizen_id')
             ->where('citizen_id', $citizenId)
             ->where('ulb_id', $ulbId)
             ->orderByDesc('id')
@@ -784,29 +780,30 @@ class  PropActiveSaf extends Model
      */
     public function searchSafs()
     {
-        return PropActiveSaf::select(
-            'prop_active_safs.id',
-            DB::raw("'active' as status"),
-            'prop_active_safs.saf_no',
-            'prop_active_safs.assessment_type',
-            DB::raw(
-                "case when prop_active_safs.payment_status = 0 then 'Payment Not Done'
+        return PropActiveSaf::on('pgsql::read')
+            ->select(
+                'prop_active_safs.id',
+                DB::raw("'active' as status"),
+                'prop_active_safs.saf_no',
+                'prop_active_safs.assessment_type',
+                DB::raw(
+                    "case when prop_active_safs.payment_status = 0 then 'Payment Not Done'
                       when prop_active_safs.payment_status = 2 then 'Cheque Payment Verification Pending'
                     else role_name end
                 as current_role
                 "
-            ),
-            'role_name as currentRole',
-            'u.ward_name as old_ward_no',
-            'uu.ward_name as new_ward_no',
-            'prop_address',
-            DB::raw(
-                "case when prop_active_safs.user_id is not null then 'TC/TL/JSK' when 
+                ),
+                'role_name as currentRole',
+                'u.ward_name as old_ward_no',
+                'uu.ward_name as new_ward_no',
+                'prop_address',
+                DB::raw(
+                    "case when prop_active_safs.user_id is not null then 'TC/TL/JSK' when 
                 prop_active_safs.citizen_id is not null then 'Citizen' end as appliedBy"
-            ),
-            DB::raw("string_agg(so.mobile_no::VARCHAR,',') as mobile_no"),
-            DB::raw("string_agg(so.owner_name,',') as owner_name"),
-        )
+                ),
+                DB::raw("string_agg(so.mobile_no::VARCHAR,',') as mobile_no"),
+                DB::raw("string_agg(so.owner_name,',') as owner_name"),
+            )
             ->leftjoin('wf_roles', 'wf_roles.id', 'prop_active_safs.current_role')
             ->join('ulb_ward_masters as u', 'u.id', 'prop_active_safs.ward_mstr_id')
             ->leftjoin('ulb_ward_masters as uu', 'uu.id', 'prop_active_safs.new_ward_mstr_id')
@@ -818,25 +815,28 @@ class  PropActiveSaf extends Model
      */
     public function searchGbSafs()
     {
-        return PropActiveSaf::select(
-            'prop_active_safs.id',
-            DB::raw("'active' as status"),
-            'prop_active_safs.saf_no',
-            'prop_active_safs.assessment_type',
-            DB::raw(
-                "case when prop_active_safs.payment_status!=1 then 'Payment Not Done'
+        return PropActiveSaf::on('pgsql::read')
+            ->select(
+                'prop_active_safs.id',
+                DB::raw("'active' as status"),
+                'prop_active_safs.saf_no',
+                'prop_active_safs.assessment_type',
+                DB::raw(
+                    "case when prop_active_safs.payment_status!=1 then 'Payment Not Done'
                       else role_name end
                       as current_role
                 "
-            ),
-            'role_name as currentRole',
-            'ward_name',
-            'prop_address',
-            'gbo.officer_name',
-            'gbo.mobile_no'
-        )
+                ),
+                'role_name as currentRole',
+                'u.ward_name as old_ward_no',
+                'uu.ward_name as new_ward_no',
+                'prop_address',
+                'gbo.officer_name',
+                'gbo.mobile_no',
+            )
             ->leftjoin('wf_roles', 'wf_roles.id', 'prop_active_safs.current_role')
-            ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_active_safs.ward_mstr_id')
+            ->join('ulb_ward_masters as u', 'u.id', 'prop_active_safs.ward_mstr_id')
+            ->leftjoin('ulb_ward_masters as uu', 'uu.id', 'prop_active_safs.new_ward_mstr_id')
             ->join('prop_active_safgbofficers as gbo', 'gbo.saf_id', 'prop_active_safs.id');
     }
 
@@ -886,7 +886,8 @@ class  PropActiveSaf extends Model
      */
     public function countPreviousHoldings($previousHoldingId)
     {
-        return PropActiveSaf::where('previous_holding_id', $previousHoldingId)
+        return PropActiveSaf::on('pgsql::read')
+            ->where('previous_holding_id', $previousHoldingId)
             ->count();
     }
 }

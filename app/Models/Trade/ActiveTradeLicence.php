@@ -6,13 +6,25 @@ use App\Models\Workflows\WfActiveDocument;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class ActiveTradeLicence extends Model
+class ActiveTradeLicence extends TradeParamModel
 {
     use HasFactory;
     protected $connection;
     public function __construct($DB=null)
     {
-       $this->connection = $DB ? $DB:"pgsql_trade";
+        parent::__construct($DB);
+    }
+
+    public function readByLiceseNo(string $license_no)
+    {
+        return self::where("license_no", $license_no)
+        ->orderBy("id")
+        ->first();
+    }
+
+    public function readByid($id)
+    {
+        return self::find($id);
     }
     
     # one to one

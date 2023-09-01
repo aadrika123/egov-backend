@@ -13,7 +13,7 @@ class RefPropConstructionType extends Model
 
     public function propConstructionType()
     {
-        return RefPropConstructionType::select(
+        return RefPropConstructionType::on('pgsql::read')->select(
             'id',
             DB::raw('INITCAP(construction_type) as construction_type')
         )

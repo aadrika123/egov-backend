@@ -5,14 +5,14 @@ namespace App\Models\Trade;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class TradeParamFirmType extends Model
+class TradeParamFirmType extends TradeParamModel
 {
     use HasFactory;
     public $timestamps=false;
     protected $connection;
     public function __construct($DB=null)
     {
-       $this->connection = $DB ? $DB:"pgsql_trade";
+        parent::__construct($DB);
     }
     public function activeApplication()
     {
@@ -31,7 +31,7 @@ class TradeParamFirmType extends Model
         return $this->hasMany(TradeRenewal::class,'firm_type_id',"id");
     }
 
-    public static function List()
+    public function List()
     {
         return self::select("id","firm_type")
                 ->where("status",1)
