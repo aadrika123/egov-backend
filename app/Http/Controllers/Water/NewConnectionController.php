@@ -1,5 +1,15 @@
 <?php
 
+/**
+ * | ----------------------------------------------------------------------------------
+ * | Water Module | 
+ * |-----------------------------------------------------------------------------------
+ * | Created On - 08-10-2022 
+ * | Created By - Sam kerketta 
+ * | Created For-Water related Transaction including water apply,workflow and relative view process 
+ */
+
+
 namespace App\Http\Controllers\Water;
 
 use App\Http\Controllers\Controller;
@@ -80,6 +90,9 @@ class NewConnectionController extends Controller
     protected $_DB_NAME;
     protected $_DB;
 
+    /**
+     * | Construct defination
+     */
     public function __construct(iNewConnection $newConnection)
     {
         $this->_DB_NAME = "pgsql_water";
@@ -92,7 +105,7 @@ class NewConnectionController extends Controller
     }
 
     /**
-     * | Database transaction
+     * | Database transaction connection
      */
     public function begin()
     {
@@ -103,7 +116,7 @@ class NewConnectionController extends Controller
             $this->_DB->beginTransaction();
     }
     /**
-     * | Database transaction
+     * | Database transaction connection
      */
     public function rollback()
     {
@@ -114,7 +127,7 @@ class NewConnectionController extends Controller
             $this->_DB->rollBack();
     }
     /**
-     * | Database transaction
+     * | Database transaction connection
      */
     public function commit()
     {
@@ -132,6 +145,8 @@ class NewConnectionController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      * @param \ newApplyRules 
+        | Serial No :
+        | Working
      */
     public function store(newApplyRules $request)
     {
@@ -150,7 +165,7 @@ class NewConnectionController extends Controller
     /**
      * | Water Inbox
      * | workflow
-     * | Repositiory Call
+     * | Display the data for water worflow
         | Serial No :
         | Working
      */
@@ -183,7 +198,7 @@ class NewConnectionController extends Controller
     /**
      * | Water Outbox
      * | Workflow
-     * | Reposotory Call
+     * | Display the data for water worflow
         | Serial No :
         | Working
      */
@@ -223,6 +238,7 @@ class NewConnectionController extends Controller
     /**
      * | Back to citizen Inbox
      * | Workflow
+     * | Display the data for water worflow
      * | @param req
      * | @var mWfWardUser
      * | @var userId
@@ -236,7 +252,7 @@ class NewConnectionController extends Controller
      * | @var filterWaterList
      * | @return filterWaterList 
         | Serial No : 
-        | Use
+        | Working / Use
      */
     public function btcInbox(Request $req)
     {
@@ -275,16 +291,17 @@ class NewConnectionController extends Controller
 
     /**
      * | Water Special Inbox
-     * | excalated applications
+     * | Display excalated applications
         | Serial No :
+        | Working / Use
      */
     public function waterSpecialInbox(Request $request)
     {
         try {
             $mWfWardUser            = new WfWardUser();
             $mWfWorkflowRoleMaps    = new WfWorkflowrolemap();
-            $userId = authUser($request)->id;
-            $ulbId  = authUser($request)->ulb_id;
+            $userId                 = authUser($request)->id;
+            $ulbId                  = authUser($request)->ulb_id;
 
             $occupiedWard = $mWfWardUser->getWardsByUserId($userId);                        // Get All Occupied Ward By user id using trait
             $wardId = $occupiedWard->map(function ($item, $key) {                           // Filter All ward_id in an array using laravel collections
@@ -309,7 +326,10 @@ class NewConnectionController extends Controller
 
     /**
      * | Post next level 
+     * | Post the application to the nest level of workflow
         | Serial No : 
+        | Working
+        | Call Repository
      */
     public function postNextLevel(Request $request)
     {
@@ -338,7 +358,10 @@ class NewConnectionController extends Controller
 
     /**
      * | Water Application details for the view in workflow
+     * | Get Active Application details for workflow
         | Serial No :
+        | Working
+        | Call Repository
      */
     public function getApplicationsDetails(Request $request)
     {
@@ -360,7 +383,9 @@ class NewConnectionController extends Controller
 
     /**
      * | Application's Post Escalated
+     * | Escalate the application for active applications
         | Serial No :
+        | Working
      */
     public function postEscalate(Request $request)
     {
@@ -394,8 +419,9 @@ class NewConnectionController extends Controller
 
     /**
      * | final Approval or Rejection of the Application
+     * | Workflow final process for the active applications 
         | Serial No :
-        | Recheck
+        | Working / Recheck
      */
     public function approvalRejectionWater(Request $request)
     {
@@ -439,8 +465,7 @@ class NewConnectionController extends Controller
     /**
      * | Indipendent Comment on the Water Applications
         | Serial No :  
-        | Recheck
-        | Use
+        | Working / Recheck
      */
     public function commentIndependent(Request $request)
     {
@@ -504,9 +529,10 @@ class NewConnectionController extends Controller
 
 
     /**
-     * | Get Approved Water Appliction 
+     * | Get full details of approved water appliction
+     * | Get all the workflow details and the application related details   
         | Serial No :  
-        | Recheck / Updated 
+        | Working / Updated 
      */
     public function approvedWaterApplications(Request $request)
     {
@@ -607,7 +633,9 @@ class NewConnectionController extends Controller
 
     /**
      * | Get the Field fieldVerifiedInbox 
-        | Serial No : 
+     * | Details for the workflow
+        | Serial No :
+        | Working 
      */
     public function fieldVerifiedInbox(Request $request)
     {
@@ -640,8 +668,10 @@ class NewConnectionController extends Controller
 
     /**
      * | Back to Citizen 
-     * | @param req
+     * | BTC process for document reuplodation 
+        | Serial No : 
         | Check if the current role of the application will be changed for iniciater role 
+        | Working
      */
     public function backToCitizen(Request $req)
     {
@@ -696,7 +726,9 @@ class NewConnectionController extends Controller
 
     /**
      * | check the application for back to citizen case
-     * | check for the
+     * | check for the Doc status
+        | Serial No :
+        | Working
         | Check who can use BTC operatio 
      */
     public function btcParamcheck($role, $mWaterApplication)
@@ -723,6 +755,9 @@ class NewConnectionController extends Controller
 
     /**
      * | Delete the Application
+     * | Process for citizen to delete there applications before payment 
+        | Serial No :
+        | Working
         | Caution Dont Perform Delete Operation
      */
     public function deleteWaterApplication(Request $req)
@@ -763,6 +798,8 @@ class NewConnectionController extends Controller
      * | Check the parameter for deleting Application 
      * | @param applicationDetails
      * | @param user
+        | Serial No :
+        | Working
      */
     public function checkParamsForApplicationDelete($applicationDetails, $user)
     {
@@ -788,8 +825,9 @@ class NewConnectionController extends Controller
 
     /**
      * | Edit the Water Application
+        | Serial No : NA
+        | Under Con 
         | Not / validate the payment status / Check the use / Not used
-        | 00 ->
      */
     public function editWaterAppliction(Request $req)
     {
@@ -859,8 +897,8 @@ class NewConnectionController extends Controller
     /**
      * | Check the Water parameter 
      * | @param req
-        | 01<- 
-        | Not used
+        | Serial No : NA
+        | Under Con / Not used
      */
     public function checkEditParameters($request, $refApplication)
     {
@@ -884,8 +922,9 @@ class NewConnectionController extends Controller
      * | Edit the water aplication by Bo
      * | @param req
      * | @param refApplication
-    | 01<-
-    | Not used
+     * | @param mWaterApplication
+        | Serial NO : NA
+        | Under Con / Not used
      */
     public function boApplicationEdit($req, $refApplication, $mWaterApplication)
     {
@@ -900,13 +939,9 @@ class NewConnectionController extends Controller
 
     /**
      * | Deactivate the Water Deatils
-     * | @param
-     * | @param
-     * | @param
-     * | @param
-        | 01 <-
-        | Not used
-        | Rethink
+     * | @param refWaterApplicationId
+        | Serial No : NA
+        | Under Con / Not used
      */
     public function deactivateAndUpdateWater($refWaterApplicationId)
     {
@@ -923,12 +958,13 @@ class NewConnectionController extends Controller
 
 
     /**
-     * | Citizen view : Get Application Details of viewind
-        | Serial No : 
+     * | Citizen view : Get Application Details 
+     * | Get the active application details for citizen
+        | Serial No :
+        | Working 
      */
     public function getApplicationDetails(Request $request)
     {
-
         $validated = Validator::make(
             $request->all(),
             [
@@ -998,7 +1034,7 @@ class NewConnectionController extends Controller
 
 
     /**
-     * | Upload Application Documents 
+     * | Upload active application documents 
      * | @param req
         | Serial No :
         | Working 
@@ -1105,6 +1141,7 @@ class NewConnectionController extends Controller
      * | @param applicantDetals
      * | @param user
         | Serial No : 
+        | Working
      */
     public function checkParamForDocUpload($isCitizen, $applicantDetals, $user)
     {

@@ -6,9 +6,12 @@ use Exception;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+
+
 class WebhookPaymentData extends Model
 {
     use HasFactory;
+    protected  $connection = 'pgsql_master';
 
     /**
      * |---------------------------------- gtting the notes details from webhook for the user Id ------------------------------|
