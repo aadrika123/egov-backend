@@ -235,12 +235,7 @@ class TradeApplication extends Controller
                 }
                 $refOldLicece->nature_of_bussiness = $natur;
                 $data["licenceDtl"]     =  $refOldLicece;
-                $data["ownerDtl"]       = $refOldOwneres;
-                $data['userType']           = $mUserType;
-                $data["firmTypeList"]       =$this->_MODEL_TradeParamFirmType->List();
-                $data["ownershipTypeList"]  =$this->_MODEL_TradeParamOwnershipType->List();
-                $data["categoryTypeList"]   =$this->_MODEL_TradeParamCategoryType->List();
-                $data["natureOfBusiness"]   =$this->_MODEL_TradeParamItemType->List(true);
+                $data["ownerDtl"]       = $refOldOwneres;                
                 $refUlbId = $refOldLicece->ulb_id;
             } 
             if (in_array(strtoupper($mUserType), $this->_TRADE_CONSTAINT["CANE-NO-HAVE-WARD"])) {               
@@ -252,6 +247,11 @@ class TradeApplication extends Controller
             } else {
                 $data['wardList'] = $this->_COMMON_FUNCTION->oldWardPermission($refUserId);
             }
+            $data['userType']           = $mUserType;
+            $data["firmTypeList"]       =$this->_MODEL_TradeParamFirmType->List();
+            $data["ownershipTypeList"]  =$this->_MODEL_TradeParamOwnershipType->List();
+            $data["categoryTypeList"]   =$this->_MODEL_TradeParamCategoryType->List();
+            $data["natureOfBusiness"]   =$this->_MODEL_TradeParamItemType->List(true);
             return responseMsg(true, "", remove_null($data));
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
