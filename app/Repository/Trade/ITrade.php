@@ -42,6 +42,5 @@ interface ITrade
     public function licenceCertificate($id);
     
     public function approvedApplication(Request $request);
-    public function getLicenceDocuments($id, $tbl = "active_");
     public function getLicenceById($id);
 }
