@@ -435,7 +435,7 @@ class TradeCitizen implements ITradeCitizen
 
             $ActiveSelect = $select;
             $ActiveSelect[] = DB::raw("'active' as license_type");
-            $ActiveLicence = $this->_DB->TABLE("active_trade_licences AS licences")
+            $ActiveLicence = $this->_DB_READ->TABLE("active_trade_licences AS licences")
                 ->select($ActiveSelect)
                 ->join("ulb_masters","ulb_masters.id","licences.ulb_id")
                 ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
@@ -457,7 +457,7 @@ class TradeCitizen implements ITradeCitizen
 
             $RejectedSelect = $select;        
             $RejectedSelect[] = DB::raw("'rejected' as license_type");
-            $RejectedLicence = $this->_DB->TABLE("rejected_trade_licences AS licences")
+            $RejectedLicence = $this->_DB_READ->TABLE("rejected_trade_licences AS licences")
                 ->select($RejectedSelect)
                 ->join("ulb_masters","ulb_masters.id","licences.ulb_id")
                 ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
@@ -479,7 +479,7 @@ class TradeCitizen implements ITradeCitizen
 
             $ApprovedSelect = $select;        
             $ApprovedSelect[] = DB::raw("'approved' as license_type");
-            $ApprovedLicence = $this->_DB->TABLE("trade_licences AS licences")
+            $ApprovedLicence = $this->_DB_READ->TABLE("trade_licences AS licences")
                 ->select($ApprovedSelect)
                 ->join("ulb_masters","ulb_masters.id","licences.ulb_id")
                 ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
@@ -502,7 +502,7 @@ class TradeCitizen implements ITradeCitizen
             
             $OldSelect = $select;        
             $OldSelect[] = DB::raw("'old' as license_type");
-            $OldLicence = $this->_DB->TABLE("trade_renewals AS licences")
+            $OldLicence = $this->_DB_READ->TABLE("trade_renewals AS licences")
                 ->select($OldSelect)
                 ->join("ulb_masters","ulb_masters.id","licences.ulb_id")
                 ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
@@ -595,7 +595,7 @@ class TradeCitizen implements ITradeCitizen
 
             if ($refApplication->nature_of_bussiness) 
             {
-                $items = TradeParamItemType::itemsById($refApplication->nature_of_bussiness);
+                $items = TradeParamItemType::readConnection()->itemsById($refApplication->nature_of_bussiness);
                 foreach ($items as $val) {
                     $mItemName  .= $val->trade_item . ",";
                     $mCods      .= $val->trade_code . ",";
@@ -606,7 +606,7 @@ class TradeCitizen implements ITradeCitizen
             $refApplication->items      = $mItemName;
             $refApplication->items_code = $mCods;
             $refOwnerDtl                = $this->_REPOSITORY_TRADE->getAllOwnereDtlByLId($id);
-            $refTransactionDtl          = (new TradeTransaction)->listByLicId($id);           
+            $refTransactionDtl          = (new TradeTransaction)->readConnection()->listByLicId($id);           
             $refUploadDocuments         = $this->_MODEL_WfActiveDocument->getTradeDocByAppNo($refApplication->id,$refApplication->workflow_id,$modul_id);
             
             $pendingAt  = $init_finish['initiator']['id'];

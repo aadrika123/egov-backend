@@ -667,7 +667,7 @@ class TradeCitizenController extends Controller
                 throw new Exception("You Can Not Apply New Licence");
             }
 
-            $data = TradeLicence::select('*')
+            $data = TradeLicence::readConnection()->select('*')
                 ->join("ulb_ward_masters", "ulb_ward_masters.id", "=", "trade_licences.ward_id")
                 ->where('trade_licences.is_active', TRUE)
                 ->where('trade_licences.user_id', $citizenId)
@@ -689,7 +689,7 @@ class TradeCitizenController extends Controller
         $citizenId = Auth()->user()->id;
         $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
 
-        $data = TradeLicence::select('trade_licences.*')
+        $data = TradeLicence::readConnection()->select('trade_licences.*')
             // ->join("ulb_ward_masters", "ulb_ward_masters.id", "=", "trade_licences.ward_id")
             ->where('trade_licences.is_active', TRUE)
             ->where('trade_licences.citizen_id', $citizenId)
@@ -711,7 +711,7 @@ class TradeCitizenController extends Controller
         try {
             $citizenId = Auth()->user()->id;
             $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
-            $data = TradeLicence::select('*')
+            $data = TradeLicence::readConnection()->select('*')
                 // ->join("ulb_ward_masters", "ulb_ward_masters.id", "=", "trade_licences.ward_id")
                 ->where('trade_licences.is_active', TRUE)
                 ->where('trade_licences.citizen_id', $citizenId)
@@ -734,7 +734,7 @@ class TradeCitizenController extends Controller
             $citizenId = Auth()->user()->id;
             $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
 
-            $data = TradeLicence::select('*')
+            $data = TradeLicence::readConnection()->select('*')
                 // ->join("ulb_ward_masters", "ulb_ward_masters.id", "=", "trade_licences.ward_id")
                 ->where('trade_licences.is_active', TRUE)
                 ->where('trade_licences.citizen_id', $citizenId)
@@ -799,7 +799,7 @@ class TradeCitizenController extends Controller
     
                 $ActiveSelect = $select;
                 $ActiveSelect[] = DB::raw("'active' as license_type");
-                $ActiveLicence = $this->_DB->TABLE("active_trade_licences AS licences")
+                $ActiveLicence = $this->_DB_READ->TABLE("active_trade_licences AS licences")
                     ->select($ActiveSelect)
                     ->join("ulb_masters","ulb_masters.id","licences.ulb_id")
                     ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
@@ -827,7 +827,7 @@ class TradeCitizenController extends Controller
 
                 $RejectedSelect = $select;        
                 $RejectedSelect[] = DB::raw("'rejected' as license_type");
-                $RejectedLicence = $this->_DB->TABLE("rejected_trade_licences AS licences")
+                $RejectedLicence = $this->_DB_READ->TABLE("rejected_trade_licences AS licences")
                     ->select($RejectedSelect)
                     ->join("ulb_masters","ulb_masters.id","licences.ulb_id")
                     ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
@@ -857,7 +857,7 @@ class TradeCitizenController extends Controller
 
                 $ApprovedSelect = $select;        
                 $ApprovedSelect[] = DB::raw("'approved' as license_type");
-                $ApprovedLicence = $this->_DB->TABLE("trade_licences AS licences")
+                $ApprovedLicence = $this->_DB_READ->TABLE("trade_licences AS licences")
                     ->select($ApprovedSelect)
                     ->join("ulb_masters","ulb_masters.id","licences.ulb_id")
                     ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
@@ -885,7 +885,7 @@ class TradeCitizenController extends Controller
 
                 $OldSelect = $select;        
                 $OldSelect[] = DB::raw("'old' as license_type");
-                $OldLicence = $this->_DB->TABLE("trade_renewals AS licences")
+                $OldLicence = $this->_DB_READ->TABLE("trade_renewals AS licences")
                     ->select($OldSelect)
                     ->join("ulb_masters","ulb_masters.id","licences.ulb_id")
                     ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
