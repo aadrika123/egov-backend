@@ -50,7 +50,9 @@ class TradeApplication extends Controller
         /**
          * @var  obj -> $_DB  | trade connection instanse 
          */
-        protected $_DB;
+        protected $_DB;        
+        protected $_DB_READ;
+        protected $_DB_MASTER; 
 
         /**
          * @var string -> $_DB_NAME | trade connection name
@@ -97,6 +99,8 @@ class TradeApplication extends Controller
         $this->_DB_NAME = "pgsql_trade";
         $this->_NOTICE_DB = "pgsql_notice";
         $this->_DB = DB::connection( $this->_DB_NAME );
+        $this->_DB_MASTER = DB::connection("pgsql_master");
+        $this->_DB_READ = DB::connection( $this->_DB_NAME."::read" );
         $this->_NOTICE_DB = DB::connection($this->_NOTICE_DB);
         // DB::enableQueryLog();
         // $this->_DB->enableQueryLog();
@@ -134,11 +138,14 @@ class TradeApplication extends Controller
         $db1 = DB::connection()->getDatabaseName();
         $db2 = $this->_DB->getDatabaseName();
         $db3 = $this->_NOTICE_DB->getDatabaseName();
+        $db4 = $this->_DB_MASTER->getDatabaseName();
         DB::beginTransaction();
         if($db1!=$db2 )
-        $this->_DB->beginTransaction();
+            $this->_DB->beginTransaction();
         if($db1!=$db3 && $db2!=$db3)
-        $this->_NOTICE_DB->beginTransaction();
+            $this->_NOTICE_DB->beginTransaction();
+        if($db1!=$db4 && $db2!=$db4 && $db3!=$db4) 
+            $this->_DB_MASTER->beginTransaction();
     }
 
     #=======================[❤️TRANSACTION ROLLBACK❤️]==============================
@@ -153,11 +160,14 @@ class TradeApplication extends Controller
         $db1 = DB::connection()->getDatabaseName();
         $db2 = $this->_DB->getDatabaseName();
         $db3 = $this->_NOTICE_DB->getDatabaseName();
+        $db4 = $this->_DB_MASTER->getDatabaseName();
         DB::rollBack();
         if($db1!=$db2 )
-        $this->_DB->rollBack();
+            $this->_DB->rollBack();
         if($db1!=$db3 && $db2!=$db3)
-        $this->_NOTICE_DB->rollBack();
+            $this->_NOTICE_DB->rollBack();
+        if($db1!=$db4 && $db2!=$db4 && $db3!=$db4) 
+            $this->_DB_MASTER->rollBack();
     }
      
     #=======================[❤️TRANSACTION COMMIT❤️]==============================
@@ -172,12 +182,14 @@ class TradeApplication extends Controller
         $db1 = DB::connection()->getDatabaseName();
         $db2 = $this->_DB->getDatabaseName();
         $db3 = $this->_NOTICE_DB->getDatabaseName();
-
+        $db4 = $this->_DB_MASTER->getDatabaseName();
         DB::commit();
         if($db1!=$db2 )        
-        $this->_DB->commit();
+            $this->_DB->commit();
         if($db1!=$db3 && $db2!=$db3)
-        $this->_NOTICE_DB->commit();
+            $this->_NOTICE_DB->commit();
+        if($db1!=$db4 && $db2!=$db4 && $db3!=$db4) 
+            $this->_DB_MASTER->commit();
     }
     
     #=======================[📖 MDM DATA FOR APPLICATION APPLY | S.L (1.0) 📖]===============================================        

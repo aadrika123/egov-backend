@@ -222,7 +222,7 @@ class Trade implements ITrade
         if($db1!=$db3 && $db2!=$db3)
         $this->_NOTICE_DB->rollBack();
         if($db1!=$db4 && $db2!=$db4 && $db3!=$db4) 
-        $this->_DB_MASTER->beginTransaction();
+        $this->_DB_MASTER->rollBack();
     }
      
     #=======================[❤️TRANSACTION COMMIT❤️]==============================
@@ -244,7 +244,7 @@ class Trade implements ITrade
         if($db1!=$db3 && $db2!=$db3)
         $this->_NOTICE_DB->commit();
         if($db1!=$db4 && $db2!=$db4 && $db3!=$db4) 
-        $this->_DB_MASTER->beginTransaction();
+        $this->_DB_MASTER->commit();
     }
     #=====================[📝 📖 CREATE NEW APPLICATION | S.L (1.0) 📖 📝]========================================================
     /**
