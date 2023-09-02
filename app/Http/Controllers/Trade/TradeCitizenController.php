@@ -162,6 +162,7 @@ class TradeCitizenController extends Controller
             $this->_DB_MASTER->commit();
     }
 
+    #=======================[📖 OLD WARD LIST | S.L (1.0) 📖]==============================
     public function getWardList(Request $request)
     {
         $this->_META_DATA["apiId"] = "c1";
@@ -212,6 +213,7 @@ class TradeCitizenController extends Controller
         }
     }
 
+    #=======================[📝📖 APPLY APPLICATION | S.L (2.0) 📖📝]==============================
     public function applyApplication(ReqCitizenAddRecorde $request)
     {        
         $this->_META_DATA["apiId"] = "c2";
@@ -272,7 +274,7 @@ class TradeCitizenController extends Controller
             );
         }
     }
-    # Serial No : 03 
+    #=======================[📖 GET NOTICE DTL | S.L (3.0) 📖]==============================
     /**
      * | Get Notice Data
      */
@@ -281,7 +283,7 @@ class TradeCitizenController extends Controller
         return($this->_REPOSITORY_TRADE->readDenialdtlbyNoticno($request));        
     }
 
-    # Serial No : 04
+    #=======================[📝📖 INITIALIZE RAZORPAY MENTENT | S.L (4.0) 📖📝]==============================
     public function handeRazorPay(Request $request)
     {
         $this->_META_DATA["apiId"] = "c4";
