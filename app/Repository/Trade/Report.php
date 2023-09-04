@@ -18,6 +18,7 @@ use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\WorkflowTrack;
 use App\Repository\Common\CommonFunction;
+use App\Repository\Notice\Notice;
 use App\Traits\Auth;
 use Carbon\Carbon;
 use App\Traits\Workflow\Workflow;
@@ -48,6 +49,8 @@ class Report implements IReport
     protected $_MODULE_ID;
     protected $_REF_TABLE;
     protected $_TRADE_CONSTAINT;
+    protected $_NOTICE;
+
     public function __construct()
     {
         $this->_DB_NAME = "pgsql_trade";
@@ -58,10 +61,12 @@ class Report implements IReport
         $this->_NOTICE_DB = DB::connection($this->_NOTICE_DB);
         DB::enableQueryLog();
         $this->_DB->enableQueryLog();
+        $this->_DB_READ->enableQueryLog();
         $this->_NOTICE_DB->enableQueryLog();
 
         $this->_COMMON_FUNCTION = new CommonFunction();
         $this->_MODEL_WARD = new ModelWard();
+        $this->_NOTICE = new Notice();
 
         $this->_WF_MASTER_Id = Config::get('workflow-constants.TRADE_MASTER_ID');
         $this->_WF_NOTICE_MASTER_Id = Config::get('workflow-constants.TRADE_NOTICE_ID');
@@ -1303,10 +1308,9 @@ class Report implements IReport
             }
 
             $select =[
-                DB::RAW("
-                    trade_notice_consumer_dtls.notice_no,
-                    TO_CHAR(cast(trade_notice_consumer_dtls.notice_date as date),'DD-MM-YYYY') as notice_date,
-                    TO_CHAR(cast(trade_notice_consumer_dtls.created_at as date),'DD-MM-YYYY') as notice_apply_date,
+                DB::RAW("                    
+                    licences.denial_id,
+                    licences.id,
                     TO_CHAR(cast(licences.application_date as date),'DD-MM-YYYY') as application_date,
                     licences.application_no,
                     licences.firm_name,
@@ -1318,7 +1322,7 @@ class Report implements IReport
             $active = $this->_DB_READ->TABLE("active_trade_licences AS licences")
                     ->select($select)
                     ->JOIN("ulb_ward_masters","ulb_ward_masters.id","licences.ward_id")
-                    ->JOIN("trade_notice_consumer_dtls","trade_notice_consumer_dtls.id","licences.denial_id")
+                    // ->JOIN("trade_notice_consumer_dtls","trade_notice_consumer_dtls.id","licences.denial_id")
                     ->LEFTJOIN(DB::RAW("(
                         SELECT active_trade_owners.temp_id,
                             string_agg(owner_name,',')as owner_name,
@@ -1340,7 +1344,7 @@ class Report implements IReport
             $rejected = $this->_DB_READ->TABLE("rejected_trade_licences AS licences")
                     ->select($select)
                     ->JOIN("ulb_ward_masters","ulb_ward_masters.id","licences.ward_id")
-                    ->JOIN("trade_notice_consumer_dtls","trade_notice_consumer_dtls.id","licences.denial_id")
+                    // ->JOIN("trade_notice_consumer_dtls","trade_notice_consumer_dtls.id","licences.denial_id")
                     ->LEFTJOIN(DB::RAW("(
                         SELECT rejected_trade_owners.temp_id,
                             string_agg(owner_name,',')as owner_name,
@@ -1362,7 +1366,7 @@ class Report implements IReport
             $approved = $this->_DB_READ->TABLE("trade_licences AS licences")
                     ->select($select)
                     ->JOIN("ulb_ward_masters","ulb_ward_masters.id","licences.ward_id")
-                    ->JOIN("trade_notice_consumer_dtls","trade_notice_consumer_dtls.id","licences.denial_id")
+                    // ->JOIN("trade_notice_consumer_dtls","trade_notice_consumer_dtls.id","licences.denial_id")
                     ->LEFTJOIN(DB::RAW("(
                         SELECT trade_owners.temp_id,
                             string_agg(owner_name,',')as owner_name,
@@ -1384,7 +1388,7 @@ class Report implements IReport
             $old = $this->_DB_READ->TABLE("trade_renewals AS licences")
                     ->select($select)            
                     ->JOIN("ulb_ward_masters","ulb_ward_masters.id","licences.ward_id")
-                    ->JOIN("trade_notice_consumer_dtls","trade_notice_consumer_dtls.id","licences.denial_id")
+                    // ->JOIN("trade_notice_consumer_dtls","trade_notice_consumer_dtls.id","licences.denial_id")
                     ->LEFTJOIN(DB::RAW("(
                         SELECT trade_owners.temp_id,
                             string_agg(owner_name,',')as owner_name,
@@ -1412,7 +1416,12 @@ class Report implements IReport
             $list = [
                 "current_page" => $paginator->currentPage(),
                 "last_page" => $paginator->lastPage(),
-                "data" => $paginator->items(),
+                "data" => collect($paginator->items())->map(function($val){
+                    $noticDtl = $this->_NOTICE->getNoticDtlById($val->denial_id);
+                    $val->notice_no = $noticDtl ? $noticDtl->notice_no : "";
+                    $val->notice_date = $noticDtl && $noticDtl->notice_date ? Carbon::parse($noticDtl->notice_date)->format("d-m-Y") : "";
+                    return $val;
+                }),
                 "total" => $paginator->total(),
             ];
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
@@ -1424,53 +1433,6 @@ class Report implements IReport
         }
     }
 
-    public function noticeSummary(Request $request)
-    {
-        $metaData= collect($request->metaData)->all();
-        list($apiId, $version, $queryRunTime,$action,$deviceId)=$metaData;
-        try{
-            $refUser        = Auth()->user();
-            $refUserId      = $refUser->id;
-            $ulbId          = $refUser->ulb_id;
-            $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
-            $wardId = null;
-            
-            if($request->fromDate)
-            {
-                $fromDate = $request->fromDate;
-            }
-            if($request->uptoDate)
-            {
-                $uptoDate = $request->uptoDate;
-            }
-            if($request->wardId)
-            {
-                $wardId = $request->wardId;
-            }
-            if($request->ulbId)
-            {
-                $ulbId = $request->ulbId;
-            }
-
-            $data["approved"]= TradeNoticeConsumerDtl::WHEREBETWEEN(DB::RAW("cast(created_at as date)"),[$fromDate,$uptoDate])
-                        ->WHERE("ulb_id",$ulbId)
-                        ->count("id");
-            $data["pending"] = ActiveTradeNoticeConsumerDtl::WHEREBETWEEN(DB::RAW("cast(created_at as date)"),[$fromDate,$uptoDate])
-                        ->WHERE("ulb_id",$ulbId)
-                        ->count("id");
-            $data["rejected"] = RejectedTradeNoticeConsumerDtl::WHEREBETWEEN(DB::RAW("cast(created_at as date)"),[$fromDate,$uptoDate])
-                        ->WHERE("ulb_id",$ulbId)
-                        ->count("id");
-            $data["total"] = $data["approved"]+$data["pending"]+$data["rejected"];
-
-            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
-            return responseMsgs(true,"",$data,$apiId, $version, $queryRunTime,$action,$deviceId);
-        }
-        catch(Exception $e)
-        {
-            return responseMsgs(false,$e->getMessage(),$request->all(),$apiId, $version, $queryRunTime,$action,$deviceId);
-        }
-    }
 
     public function levelwisependingform(Request $request)
     {
@@ -1492,7 +1454,7 @@ class Report implements IReport
             {
                 throw new Exception("Workflow Not Available");
             }
-            $workflow_id = $refWfWorkflow->id;
+            $workflow_id = $refWfWorkflow->id;            
             $data = $this->_DB_READ->table("wf_roles")->SELECT(
                     "wf_roles.id",
                     "wf_roles.role_name",
@@ -1507,20 +1469,39 @@ class Report implements IReport
                                 ) AS roles
                     "), function ($join) {
                     $join->on("wf_roles.id", "roles.wf_role_id");
-                })
-                ->LEFTJOIN("active_trade_licences", function ($join) use ($ulbId) {
-                    $join->ON("active_trade_licences.current_role", "roles.wf_role_id")
-                        ->WHERE("active_trade_licences.ulb_id", $ulbId)
-                        ->WHERE("active_trade_licences.is_parked", FALSE)
-                        ->WHERE("active_trade_licences.is_active", TRUE)
-                        ->WHEREIN("active_trade_licences.payment_status", [1,2]);                        
-                })
+                })  
+                ->LEFTJOIN(DB::RAW("(
+                    SELECT active_trade_licences.*
+                    FROM active_trade_licences
+                    JOIN (
+                        SELECT temp_id
+                        FROM active_trade_owners 
+                        WHERE is_active = TRUE 
+                        GROUP BY temp_id 
+                    )AS owners ON owners.temp_id = active_trade_licences.id 
+                    WHERE active_trade_licences.ulb_id = $ulbId
+                        AND active_trade_licences.is_parked = FALSE 
+                        AND active_trade_licences.is_active = TRUE 
+                        AND active_trade_licences.payment_status = 1
+                )AS active_trade_licences"), function ($join) use ($ulbId) {
+                        $join->ON("active_trade_licences.current_role", "roles.wf_role_id");
+                    }
+                )             
+                
                 ->GROUPBY(["wf_roles.id", "wf_roles.role_name"])
                 ->UNION(
                     ActiveTradeLicence::readConnection()->SELECT(
-                        DB::RAW("8 AS id, 'JSK' AS role_name,
-                                COUNT(active_trade_licences.id)")
-                    )
+                            DB::RAW("8 AS id, 'JSK' AS role_name,
+                                    COUNT(active_trade_licences.id)")
+                        )
+                        ->JOIN(DB::RAW("(
+                            SELECT temp_id
+                            FROM active_trade_owners 
+                            WHERE is_active = TRUE 
+                            GROUP BY temp_id 
+                        )AS owners"),function($join){
+                            $join->on("owners.temp_id","active_trade_licences.id");
+                        })
                         ->WHERE("active_trade_licences.ulb_id", $ulbId)
                         ->WHERE("active_trade_licences.is_parked", FALSE)
                         ->WHERE("active_trade_licences.is_active", TRUE)
@@ -1594,6 +1575,14 @@ class Report implements IReport
                         users_role.role_name"
                     )
                 )
+                ->JOIN(DB::RAW("(                        
+                        SELECT temp_id                        
+                        FROM active_trade_owners                         
+                        WHERE is_active = TRUE                         
+                        GROUP BY temp_id                     
+                    )AS owners"),function($join){
+                        $join->on("owners.temp_id","active_trade_licences.id");  
+                    })
                 ->$joins(
                     DB::RAW("(
                         select wf_role_id,user_id,user_name,role_name,concat('{',ward_ids,'}') as ward_ids
@@ -1636,7 +1625,7 @@ class Report implements IReport
                 ->groupBy(["users_role.user_id", "users_role.user_name", "users_role.wf_role_id", "users_role.role_name"]);
                 if (!in_array($roleId, [8])) 
                 {
-                    $data  = $data->WHEREIN("active_trade_licences.payment_status", [1,2]);
+                    $data  = $data->WHEREIN("active_trade_licences.payment_status", [1]);
                 }
                 if (in_array($roleId, [8])) 
                 {
@@ -1714,7 +1703,20 @@ class Report implements IReport
             $data = $this->_DB_READ->TABLE("ulb_ward_masters")->SELECT(
                 DB::RAW(" DISTINCT(ward_name) as ward_no,ulb_ward_masters.id AS ward_id, COUNT(active_trade_licences.id) AS total")
             )
-                ->LEFTJOIN("active_trade_licences", "ulb_ward_masters.id", "active_trade_licences.ward_id");
+                ->LEFTJOIN("active_trade_licences", function($join)use($ulbId){
+                    $join->on("ulb_ward_masters.id", "active_trade_licences.ward_id")
+                    ->WHERE("active_trade_licences.ulb_id", $ulbId)
+                    ->WHERE("active_trade_licences.ulb_id", $ulbId)
+                    ->WHERE("active_trade_licences.is_parked", FALSE);
+                })
+                ->JOIN(DB::RAW("(                        
+                        SELECT temp_id                        
+                        FROM active_trade_owners                         
+                        WHERE is_active = TRUE                         
+                        GROUP BY temp_id                     
+                    )AS owners"),function($join){
+                        $join->on("owners.temp_id","active_trade_licences.id");  
+                });
             if ($roleId == 8) 
             {
                 $data = $data->LEFTJOIN("wf_roles", "wf_roles.id", "active_trade_licences.current_role")
@@ -1727,16 +1729,16 @@ class Report implements IReport
             else 
             {
                 $data = $data->JOIN("wf_roles", "wf_roles.id", "active_trade_licences.current_role")
-                    ->WHERE("wf_roles.id", $roleId);
+                    ->WHERE("wf_roles.id", $roleId)                    
+                    ->WHERE("active_trade_licences.payment_status", 1);
             }
 
             if (!in_array($roleId, [11, 8]) && $userId) 
             {
                 $data = $data->WHEREIN("active_trade_licences.ward_id", $mWardIds);
             }
-            $data = $data->WHERE("active_trade_licences.ulb_id", $ulbId)
-                    ->WHERE("active_trade_licences.is_parked", FALSE)
-                    ->WHERE("active_trade_licences.is_active", TRUE);
+            $data = $data
+                    ->WHERE("ulb_ward_masters.ulb_id", $ulbId);
             $data = $data->groupBy(["ward_name","ulb_ward_masters.id"]);
 
             $perPage = $request->perPage ? $request->perPage : 10;
@@ -1750,7 +1752,7 @@ class Report implements IReport
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true,$header, $list, $apiId, $version, $queryRunTime, $action, $deviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
+            return responseMsgs(false, $e->getMessage(), "", $apiId, $version, $queryRunTime, $action, $deviceId);
         }
     }
 
@@ -1804,7 +1806,7 @@ class Report implements IReport
                         owner.owner_name, owner.mobile_no")
                 )
                 ->JOIN("ulb_ward_masters", "ulb_ward_masters.id", "active_trade_licences.ward_id")
-                ->LEFTJOIN(DB::RAW("( 
+                ->JOIN(DB::RAW("( 
                                 SELECT DISTINCT(active_trade_owners.temp_id) AS temp_id,STRING_AGG(owner_name,',') AS owner_name, 
                                     STRING_AGG(mobile_no::TEXT,',') AS mobile_no
                                 FROM active_trade_owners
@@ -1828,7 +1830,8 @@ class Report implements IReport
             else 
             {
                 $data = $data->JOIN("wf_roles", "wf_roles.id", "active_trade_licences.current_role")
-                    ->WHERE("wf_roles.id", $roleId);
+                    ->WHERE("wf_roles.id", $roleId)
+                    ->WHERE("active_trade_licences.payment_status", 1);
             }
             $data = $data->WHERE("active_trade_licences.ulb_id", $ulbId)
                     ->WHERE("active_trade_licences.is_parked", FALSE)
