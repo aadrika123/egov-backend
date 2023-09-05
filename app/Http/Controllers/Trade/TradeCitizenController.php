@@ -44,6 +44,8 @@ class TradeCitizenController extends Controller
     #======================[❎VARIABLES❎]============================
 
     protected $_DB;
+    protected $_DB_READ;
+    protected $_DB_MASTER; 
     protected $_DB_NAME;    
     protected $_NOTICE_DB;
     protected $_NOTICE_DB_NAME;
@@ -67,10 +69,12 @@ class TradeCitizenController extends Controller
         $this->_DB_NAME = "pgsql_trade";
         $this->_NOTICE_DB = "pgsql_notice";
         $this->_DB = DB::connection( $this->_DB_NAME );
+        $this->_DB_MASTER = DB::connection("pgsql_master");
+        $this->_DB_READ = DB::connection( $this->_DB_NAME."::read" );
         $this->_NOTICE_DB = DB::connection($this->_NOTICE_DB);
-        DB::enableQueryLog();
-        $this->_DB->enableQueryLog();
-        $this->_NOTICE_DB->enableQueryLog();
+        // DB::enableQueryLog();
+        // $this->_DB->enableQueryLog();
+        // $this->_NOTICE_DB->enableQueryLog();
 
         $this->_REPOSITORY = $TradeRepository;
         $this->_MODEL_WARD = new ModelWard();
@@ -92,42 +96,73 @@ class TradeCitizenController extends Controller
         ];
     }
 
+    #=======================[❤️TRANSACTION BEGIN❤️]==============================
+        /** 
+         * @var $db1 default database name
+         * @var $db2 trade database name
+         * @var $db3 notice database name
+         * @return void
+         */
     public function begin()
     {
         $db1 = DB::connection()->getDatabaseName();
         $db2 = $this->_DB->getDatabaseName();
         $db3 = $this->_NOTICE_DB->getDatabaseName();
+        $db4 = $this->_DB_MASTER->getDatabaseName();
         DB::beginTransaction();
         if($db1!=$db2 )
-        $this->_DB->beginTransaction();
+            $this->_DB->beginTransaction();
         if($db1!=$db3 && $db2!=$db3)
-        $this->_NOTICE_DB->beginTransaction();
+            $this->_NOTICE_DB->beginTransaction();
+        if($db1!=$db4 && $db2!=$db4 && $db3!=$db4) 
+            $this->_DB_MASTER->beginTransaction();
     }
+
+    #=======================[❤️TRANSACTION ROLLBACK❤️]==============================
+        /** 
+         * @var $db1 default database name
+         * @var $db2 trade database name
+         * @var $db3 notice database name
+         * @return void
+         */
     public function rollback()
     {
         $db1 = DB::connection()->getDatabaseName();
         $db2 = $this->_DB->getDatabaseName();
         $db3 = $this->_NOTICE_DB->getDatabaseName();
+        $db4 = $this->_DB_MASTER->getDatabaseName();
         DB::rollBack();
         if($db1!=$db2 )
-        $this->_DB->rollBack();
+            $this->_DB->rollBack();
         if($db1!=$db3 && $db2!=$db3)
-        $this->_NOTICE_DB->rollBack();
+            $this->_NOTICE_DB->rollBack();
+        if($db1!=$db4 && $db2!=$db4 && $db3!=$db4) 
+            $this->_DB_MASTER->rollBack();
     }
      
+    #=======================[❤️TRANSACTION COMMIT❤️]==============================
+        /** 
+         * @var $db1 default database name
+         * @var $db2 trade database name
+         * @var $db3 notice database name
+         * @return void
+         */
     public function commit()
     {
         $db1 = DB::connection()->getDatabaseName();
         $db2 = $this->_DB->getDatabaseName();
         $db3 = $this->_NOTICE_DB->getDatabaseName();
-
+        $db4 = $this->_DB_MASTER->getDatabaseName();
         DB::commit();
         if($db1!=$db2 )        
-        $this->_DB->commit();
+            $this->_DB->commit();
         if($db1!=$db3 && $db2!=$db3)
-        $this->_NOTICE_DB->commit();
+            $this->_NOTICE_DB->commit();
+        if($db1!=$db4 && $db2!=$db4 && $db3!=$db4) 
+            $this->_DB_MASTER->commit();
     }
 
+    #=======================[📖 OLD WARD LIST | S.L (1.0) 📖]==============================
     public function getWardList(Request $request)
     {
         $this->_META_DATA["apiId"] = "c1";
@@ -178,6 +213,7 @@ class TradeCitizenController extends Controller
         }
     }
 
+    #=======================[📝📖 APPLY APPLICATION | S.L (2.0) 📖📝]==============================
     public function applyApplication(ReqCitizenAddRecorde $request)
     {        
         $this->_META_DATA["apiId"] = "c2";
@@ -238,7 +274,7 @@ class TradeCitizenController extends Controller
             );
         }
     }
-    # Serial No : 03 
+    #=======================[📖 GET NOTICE DTL | S.L (3.0) 📖]==============================
     /**
      * | Get Notice Data
      */
@@ -247,7 +283,7 @@ class TradeCitizenController extends Controller
         return($this->_REPOSITORY_TRADE->readDenialdtlbyNoticno($request));        
     }
 
-    # Serial No : 04
+    #=======================[📝📖 INITIALIZE RAZORPAY MENTENT | S.L (4.0) 📖📝]==============================
     public function handeRazorPay(Request $request)
     {
         $this->_META_DATA["apiId"] = "c4";
@@ -631,7 +667,7 @@ class TradeCitizenController extends Controller
                 throw new Exception("You Can Not Apply New Licence");
             }
 
-            $data = TradeLicence::select('*')
+            $data = TradeLicence::readConnection()->select('*')
                 ->join("ulb_ward_masters", "ulb_ward_masters.id", "=", "trade_licences.ward_id")
                 ->where('trade_licences.is_active', TRUE)
                 ->where('trade_licences.user_id', $citizenId)
@@ -653,7 +689,7 @@ class TradeCitizenController extends Controller
         $citizenId = Auth()->user()->id;
         $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
 
-        $data = TradeLicence::select('trade_licences.*')
+        $data = TradeLicence::readConnection()->select('trade_licences.*')
             // ->join("ulb_ward_masters", "ulb_ward_masters.id", "=", "trade_licences.ward_id")
             ->where('trade_licences.is_active', TRUE)
             ->where('trade_licences.citizen_id', $citizenId)
@@ -675,7 +711,7 @@ class TradeCitizenController extends Controller
         try {
             $citizenId = Auth()->user()->id;
             $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
-            $data = TradeLicence::select('*')
+            $data = TradeLicence::readConnection()->select('*')
                 // ->join("ulb_ward_masters", "ulb_ward_masters.id", "=", "trade_licences.ward_id")
                 ->where('trade_licences.is_active', TRUE)
                 ->where('trade_licences.citizen_id', $citizenId)
@@ -698,7 +734,7 @@ class TradeCitizenController extends Controller
             $citizenId = Auth()->user()->id;
             $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
 
-            $data = TradeLicence::select('*')
+            $data = TradeLicence::readConnection()->select('*')
                 // ->join("ulb_ward_masters", "ulb_ward_masters.id", "=", "trade_licences.ward_id")
                 ->where('trade_licences.is_active', TRUE)
                 ->where('trade_licences.citizen_id', $citizenId)
@@ -763,7 +799,7 @@ class TradeCitizenController extends Controller
     
                 $ActiveSelect = $select;
                 $ActiveSelect[] = DB::raw("'active' as license_type");
-                $ActiveLicence = $this->_DB->TABLE("active_trade_licences AS licences")
+                $ActiveLicence = $this->_DB_READ->TABLE("active_trade_licences AS licences")
                     ->select($ActiveSelect)
                     ->join("ulb_masters","ulb_masters.id","licences.ulb_id")
                     ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
@@ -791,7 +827,7 @@ class TradeCitizenController extends Controller
 
                 $RejectedSelect = $select;        
                 $RejectedSelect[] = DB::raw("'rejected' as license_type");
-                $RejectedLicence = $this->_DB->TABLE("rejected_trade_licences AS licences")
+                $RejectedLicence = $this->_DB_READ->TABLE("rejected_trade_licences AS licences")
                     ->select($RejectedSelect)
                     ->join("ulb_masters","ulb_masters.id","licences.ulb_id")
                     ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
@@ -821,7 +857,7 @@ class TradeCitizenController extends Controller
 
                 $ApprovedSelect = $select;        
                 $ApprovedSelect[] = DB::raw("'approved' as license_type");
-                $ApprovedLicence = $this->_DB->TABLE("trade_licences AS licences")
+                $ApprovedLicence = $this->_DB_READ->TABLE("trade_licences AS licences")
                     ->select($ApprovedSelect)
                     ->join("ulb_masters","ulb_masters.id","licences.ulb_id")
                     ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
@@ -849,7 +885,7 @@ class TradeCitizenController extends Controller
 
                 $OldSelect = $select;        
                 $OldSelect[] = DB::raw("'old' as license_type");
-                $OldLicence = $this->_DB->TABLE("trade_renewals AS licences")
+                $OldLicence = $this->_DB_READ->TABLE("trade_renewals AS licences")
                     ->select($OldSelect)
                     ->join("ulb_masters","ulb_masters.id","licences.ulb_id")
                     ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,

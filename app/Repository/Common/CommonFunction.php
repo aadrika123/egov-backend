@@ -262,12 +262,11 @@ class CommonFunction implements ICommonFunction
     public function userType($refWorkflowId, $ulb_id = null): string
     {
         $user = Auth()->user();
-        $tableName = $user ? $user->gettable() : null;
         $user_id = $user->id ?? 0;
         $ulb_id = ($ulb_id ? $ulb_id : ($user->ulb_id ?? 0));
         $user_data = $this->getUserRoll($user_id, $ulb_id, $refWorkflowId);
         $roll_id =  $user_data->role_id ?? -1;
-        if ($roll_id != -1 && ($tableName == "users")) {
+        if ($roll_id != -1 && $this->checkUsersWithtocken()) {
             $user_type_sort = Config::get('TradeConstant.USER-TYPE-SHORT-NAME.' . strtoupper($user_data->role_name));
             if (!$user_type_sort) {
                 return "Online";

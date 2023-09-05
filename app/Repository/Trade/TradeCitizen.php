@@ -44,6 +44,8 @@ class TradeCitizen implements ITradeCitizen
     use Razorpay;
 
     protected $_DB;
+    protected $_DB_READ;
+    protected $_DB_MASTER;
     protected $_DB_NAME;
     protected $_NOTICE_DB;
     protected $_NOTICE_DB_NAME;
@@ -67,10 +69,12 @@ class TradeCitizen implements ITradeCitizen
         $this->_DB_NAME = "pgsql_trade";
         $this->_NOTICE_DB = "pgsql_notice";
         $this->_DB = DB::connection( $this->_DB_NAME );
+        $this->_DB_MASTER = DB::connection("pgsql_master");
+        $this->_DB_READ = DB::connection( $this->_DB_NAME."::read" );
         $this->_NOTICE_DB = DB::connection($this->_NOTICE_DB);
-        DB::enableQueryLog();
-        $this->_DB->enableQueryLog();
-        $this->_NOTICE_DB->enableQueryLog();
+        // DB::enableQueryLog();
+        // $this->_DB->enableQueryLog();
+        // $this->_NOTICE_DB->enableQueryLog();
 
         $this->_NOTICE = new Notice();
         $this->_MODEL_WARD = new ModelWard();
@@ -91,40 +95,70 @@ class TradeCitizen implements ITradeCitizen
         
     }
 
+    #=======================[❤️TRANSACTION BEGIN❤️]==============================
+        /** 
+         * @var $db1 default database name
+         * @var $db2 trade database name
+         * @var $db3 notice database name
+         * @return void
+         */
     public function begin()
     {
         $db1 = DB::connection()->getDatabaseName();
         $db2 = $this->_DB->getDatabaseName();
         $db3 = $this->_NOTICE_DB->getDatabaseName();
+        $db4 = $this->_DB_MASTER->getDatabaseName();
         DB::beginTransaction();
         if($db1!=$db2 )
-        $this->_DB->beginTransaction();
+            $this->_DB->beginTransaction();
         if($db1!=$db3 && $db2!=$db3)
-        $this->_NOTICE_DB->beginTransaction();
+            $this->_NOTICE_DB->beginTransaction();
+        if($db1!=$db4 && $db2!=$db4 && $db3!=$db4) 
+            $this->_DB_MASTER->beginTransaction();
     }
+
+    #=======================[❤️TRANSACTION ROLLBACK❤️]==============================
+        /** 
+         * @var $db1 default database name
+         * @var $db2 trade database name
+         * @var $db3 notice database name
+         * @return void
+         */
     public function rollback()
     {
         $db1 = DB::connection()->getDatabaseName();
         $db2 = $this->_DB->getDatabaseName();
         $db3 = $this->_NOTICE_DB->getDatabaseName();
+        $db4 = $this->_DB_MASTER->getDatabaseName();
         DB::rollBack();
         if($db1!=$db2 )
-        $this->_DB->rollBack();
+            $this->_DB->rollBack();
         if($db1!=$db3 && $db2!=$db3)
-        $this->_NOTICE_DB->rollBack();
+            $this->_NOTICE_DB->rollBack();
+        if($db1!=$db4 && $db2!=$db4 && $db3!=$db4) 
+            $this->_DB_MASTER->rollBack();
     }
-     
+        
+    #=======================[❤️TRANSACTION COMMIT❤️]==============================
+        /** 
+         * @var $db1 default database name
+         * @var $db2 trade database name
+         * @var $db3 notice database name
+         * @return void
+         */
     public function commit()
     {
         $db1 = DB::connection()->getDatabaseName();
         $db2 = $this->_DB->getDatabaseName();
         $db3 = $this->_NOTICE_DB->getDatabaseName();
-
+        $db4 = $this->_DB_MASTER->getDatabaseName();
         DB::commit();
         if($db1!=$db2 )        
-        $this->_DB->commit();
+            $this->_DB->commit();
         if($db1!=$db3 && $db2!=$db3)
-        $this->_NOTICE_DB->commit();
+            $this->_NOTICE_DB->commit();
+        if($db1!=$db4 && $db2!=$db4 && $db3!=$db4) 
+            $this->_DB_MASTER->commit();
     }
 
     public function addRecord(Request $request)
@@ -401,7 +435,7 @@ class TradeCitizen implements ITradeCitizen
 
             $ActiveSelect = $select;
             $ActiveSelect[] = DB::raw("'active' as license_type");
-            $ActiveLicence = $this->_DB->TABLE("active_trade_licences AS licences")
+            $ActiveLicence = $this->_DB_READ->TABLE("active_trade_licences AS licences")
                 ->select($ActiveSelect)
                 ->join("ulb_masters","ulb_masters.id","licences.ulb_id")
                 ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
@@ -423,7 +457,7 @@ class TradeCitizen implements ITradeCitizen
 
             $RejectedSelect = $select;        
             $RejectedSelect[] = DB::raw("'rejected' as license_type");
-            $RejectedLicence = $this->_DB->TABLE("rejected_trade_licences AS licences")
+            $RejectedLicence = $this->_DB_READ->TABLE("rejected_trade_licences AS licences")
                 ->select($RejectedSelect)
                 ->join("ulb_masters","ulb_masters.id","licences.ulb_id")
                 ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
@@ -445,7 +479,7 @@ class TradeCitizen implements ITradeCitizen
 
             $ApprovedSelect = $select;        
             $ApprovedSelect[] = DB::raw("'approved' as license_type");
-            $ApprovedLicence = $this->_DB->TABLE("trade_licences AS licences")
+            $ApprovedLicence = $this->_DB_READ->TABLE("trade_licences AS licences")
                 ->select($ApprovedSelect)
                 ->join("ulb_masters","ulb_masters.id","licences.ulb_id")
                 ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
@@ -468,7 +502,7 @@ class TradeCitizen implements ITradeCitizen
             
             $OldSelect = $select;        
             $OldSelect[] = DB::raw("'old' as license_type");
-            $OldLicence = $this->_DB->TABLE("trade_renewals AS licences")
+            $OldLicence = $this->_DB_READ->TABLE("trade_renewals AS licences")
                 ->select($OldSelect)
                 ->join("ulb_masters","ulb_masters.id","licences.ulb_id")
                 ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
@@ -561,7 +595,7 @@ class TradeCitizen implements ITradeCitizen
 
             if ($refApplication->nature_of_bussiness) 
             {
-                $items = TradeParamItemType::itemsById($refApplication->nature_of_bussiness);
+                $items = TradeParamItemType::readConnection()->itemsById($refApplication->nature_of_bussiness);
                 foreach ($items as $val) {
                     $mItemName  .= $val->trade_item . ",";
                     $mCods      .= $val->trade_code . ",";
@@ -572,7 +606,7 @@ class TradeCitizen implements ITradeCitizen
             $refApplication->items      = $mItemName;
             $refApplication->items_code = $mCods;
             $refOwnerDtl                = $this->_REPOSITORY_TRADE->getAllOwnereDtlByLId($id);
-            $refTransactionDtl          = (new TradeTransaction)->listByLicId($id);           
+            $refTransactionDtl          = (new TradeTransaction)->readConnection()->listByLicId($id);           
             $refUploadDocuments         = $this->_MODEL_WfActiveDocument->getTradeDocByAppNo($refApplication->id,$refApplication->workflow_id,$modul_id);
             
             $pendingAt  = $init_finish['initiator']['id'];

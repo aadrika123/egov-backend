@@ -85,6 +85,8 @@ class Trade implements ITrade
          * @var  obj -> $_DB  | trade connection instanse 
          */
         protected $_DB;
+        protected $_DB_READ;
+        protected $_DB_MASTER; 
 
         /**
          * @var string -> $_DB_NAME | trade connection name
@@ -145,10 +147,12 @@ class Trade implements ITrade
         $this->_DB_NAME = "pgsql_trade";
         $this->_NOTICE_DB = "pgsql_notice";
         $this->_DB = DB::connection( $this->_DB_NAME );
+        $this->_DB_MASTER = DB::connection("pgsql_master");
+        $this->_DB_READ = DB::connection( $this->_DB_NAME."::read" );
         $this->_NOTICE_DB = DB::connection($this->_NOTICE_DB);
-        DB::enableQueryLog();
-        $this->_DB->enableQueryLog();
-        $this->_NOTICE_DB->enableQueryLog();
+        // DB::enableQueryLog();
+        // $this->_DB->enableQueryLog();
+        // $this->_NOTICE_DB->enableQueryLog();
 
         $this->_MODEL_WARD = new ModelWard();
         $this->_COMMON_FUNCTION = new CommonFunction();
@@ -189,11 +193,14 @@ class Trade implements ITrade
         $db1 = DB::connection()->getDatabaseName();
         $db2 = $this->_DB->getDatabaseName();
         $db3 = $this->_NOTICE_DB->getDatabaseName();
+        $db4 = $this->_DB_MASTER->getDatabaseName();
         DB::beginTransaction();
         if($db1!=$db2 )
         $this->_DB->beginTransaction();
         if($db1!=$db3 && $db2!=$db3) 
         $this->_NOTICE_DB->beginTransaction();
+        if($db1!=$db4 && $db2!=$db4 && $db3!=$db4) 
+        $this->_DB_MASTER->beginTransaction();
     }
 
     #=======================[❤️TRANSACTION ROLLBACK❤️]==============================
@@ -208,11 +215,14 @@ class Trade implements ITrade
         $db1 = DB::connection()->getDatabaseName();
         $db2 = $this->_DB->getDatabaseName();
         $db3 = $this->_NOTICE_DB->getDatabaseName();
+        $db4 = $this->_DB_MASTER->getDatabaseName();
         DB::rollBack();
         if($db1!=$db2 )
         $this->_DB->rollBack();
         if($db1!=$db3 && $db2!=$db3)
         $this->_NOTICE_DB->rollBack();
+        if($db1!=$db4 && $db2!=$db4 && $db3!=$db4) 
+        $this->_DB_MASTER->rollBack();
     }
      
     #=======================[❤️TRANSACTION COMMIT❤️]==============================
@@ -227,12 +237,14 @@ class Trade implements ITrade
         $db1 = DB::connection()->getDatabaseName();
         $db2 = $this->_DB->getDatabaseName();
         $db3 = $this->_NOTICE_DB->getDatabaseName();
-
+        $db4 = $this->_DB_MASTER->getDatabaseName();
         DB::commit();
         if($db1!=$db2 )        
         $this->_DB->commit();
         if($db1!=$db3 && $db2!=$db3)
         $this->_NOTICE_DB->commit();
+        if($db1!=$db4 && $db2!=$db4 && $db3!=$db4) 
+        $this->_DB_MASTER->commit();
     }
     #=====================[📝 📖 CREATE NEW APPLICATION | S.L (1.0) 📖 📝]========================================================
     /**
@@ -1187,7 +1199,6 @@ class Trade implements ITrade
      * | @var refOwnerDtl    = ActiveLicenceOwner::owneresByLId(id)  | read owner dtl
      * | @var refTransactionDtl  = TradeTransaction::listByLicId(id)    | read Transaction Dtl
      * | @var refTimeLine    = this->getTimelin(id)      | read Level remarks
-     * | @var refUploadDocuments = this->getLicenceDocuments(id)    | read upload Documents
      */     
     public function readLicenceDtl($request)
     {
@@ -1205,7 +1216,10 @@ class Trade implements ITrade
             $finisher['short_user_name'] = $this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][strtoupper($init_finish['finisher']['role_name'])];
             $mUserType      = $this->_COMMON_FUNCTION->userType($refWorkflowId);
             $refApplication = $this->getAllLicenceById($id);
-            
+            if(!$refApplication)
+            {
+                throw new Exception("Data Not Found");
+            }
             $refApplication->application_date = $refApplication->application_date?Carbon::parse($refApplication->application_date)->format("d-m-Y"):"";
             $refApplication->license_date = $refApplication->license_date?Carbon::parse($refApplication->license_date)->format("d-m-Y"):"";
             $refApplication->valid_from = $refApplication->valid_from?Carbon::parse($refApplication->valid_from)->format("d-m-Y"):"";
@@ -1368,7 +1382,7 @@ class Trade implements ITrade
 
             $mNatureOfBussiness = implode(',', $mNatureOfBussiness);
             if (
-                $request->licenceId && ($refLecenceData = ActiveTradeLicence::find($request->licenceId))
+                $request->licenceId && ($refLecenceData = ActiveTradeLicence::readConnection()->find($request->licenceId))
                 && ($refNoticeDetails = $this->_NOTICE->getNoticDtlById($refLecenceData->denial_id))
             ) {
                 $refDenialId = $refNoticeDetails->id;
@@ -1385,7 +1399,6 @@ class Trade implements ITrade
             $data["nature_of_business"] = $mNatureOfBussiness;
             
             $data = $this->cltCharge($data);
-            // dd($data1,$data);
             if ($data['response'])
                 return responseMsg(true, "", $data);
             else
@@ -1395,7 +1408,7 @@ class Trade implements ITrade
         }
     }
 
-    #=====================[📖 SAF VALIDATE | S.L (7.0) 📖]========================================================
+    #=====================[❎📖 SAF VALIDATE | S.L (7.0) 📖❎]========================================================
     public function isvalidateSaf(Request $request)
     {
         $ferUser = Auth()->user();
@@ -1788,7 +1801,6 @@ class Trade implements ITrade
                 ->orderBy("id", "DESC")
                 ->limit(10)
                 ->get();
-            // dd(DB::getQueryLog());
             if ($licence->isEmpty()) {
                 throw new Exception("Application Not Found");
             }
@@ -1841,7 +1853,7 @@ class Trade implements ITrade
     #=====================[📝📖 | S.L (12.0) 📖📝]========================================================
     public function WorkFlowMetaList()
     {
-        return $this->_DB->table("active_trade_licences")
+        return $this->_DB_READ->table("active_trade_licences")
                         ->JOIN("trade_param_application_types", "trade_param_application_types.id", "active_trade_licences.application_type_id")
                         ->join(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
                                                     STRING_AGG(guardian_name,',') AS guardian_name,
@@ -2370,9 +2382,9 @@ class Trade implements ITrade
         }
     }
 
-    # Serial No : 04
+    #=====================[📖 APPLICATION PAYMENT DTL | S.L (14.0) 📖]========================================================
     public function readPaymentReceipt($id, $transectionId) # unauthorised  function
-    {
+    { 
         try {
             $select = [
                 "licences.*",
@@ -2402,7 +2414,7 @@ class Trade implements ITrade
                         TO_CHAR(cast(licences.valid_upto as date), 'DD-MM-YYYY') AS valid_upto
                         ")
             ];
-            $application = $this->_DB->table("active_trade_licences AS licences")->select($select)
+            $application = $this->_DB_READ->table("active_trade_licences AS licences")->select($select)
                 ->join("ulb_masters", "ulb_masters.id", "licences.ulb_id")
                 ->leftjoin("ulb_ward_masters", function ($join) {
                     $join->on("ulb_ward_masters.id", "=", "licences.ward_id");
@@ -2422,7 +2434,7 @@ class Trade implements ITrade
                 ->first();
             if (!$application) 
             {
-                $application = $this->_DB->table("trade_licences AS licences")->select($select)
+                $application = $this->_DB_READ->table("trade_licences AS licences")->select($select)
                     ->join("ulb_masters", "ulb_masters.id", "licences.ulb_id")
                     ->leftjoin("ulb_ward_masters", function ($join) {
                         $join->on("ulb_ward_masters.id", "=", "licences.ward_id");
@@ -2443,7 +2455,7 @@ class Trade implements ITrade
             }
             if (!$application) 
             {
-                $application = $this->_DB->table("rejected_trade_licences AS licences")->select($select)
+                $application = $this->_DB_READ->table("rejected_trade_licences AS licences")->select($select)
                     ->join("ulb_masters", "ulb_masters.id", "licences.ulb_id")
                     ->leftjoin("ulb_ward_masters", function ($join) {
                         $join->on("ulb_ward_masters.id", "=", "licences.ward_id");
@@ -2464,7 +2476,7 @@ class Trade implements ITrade
             }
             if (!$application) 
             {
-                $application = $this->_DB->table("trade_renewals AS licences")->select($select)
+                $application = $this->_DB_READ->table("trade_renewals AS licences")->select($select)
                     ->join("ulb_masters", "ulb_masters.id", "licences.ulb_id")
                     ->leftjoin("ulb_ward_masters", function ($join) {
                         $join->on("ulb_ward_masters.id", "=", "licences.ward_id");
@@ -2487,7 +2499,7 @@ class Trade implements ITrade
             {
                 throw new Exception("Application Not Found");
             }
-            $transaction = TradeTransaction::select(
+            $transaction = TradeTransaction::readConnection()->select(
                     "tran_no",
                     "tran_type",
                     "payment_mode",
@@ -2512,7 +2524,7 @@ class Trade implements ITrade
             {
                 $this->temCalValidity($application);
             }
-            $penalty = TradeFineRebete::select("type", "amount")
+            $penalty = TradeFineRebete::readConnection()->select("type", "amount")
                 ->where('tran_id', $transectionId)
                 ->where("status", 1)
                 ->orderBy("id")
@@ -2551,7 +2563,7 @@ class Trade implements ITrade
         }
     }
 
-    # Serial No : 19
+    #=====================[📖 APPLICATION PROVISIONAL CERTIFICATE | S.L (15.0) 📖]========================================================
     public function provisionalCertificate($id) # unauthorised  function
     {
         try {
@@ -2586,7 +2598,7 @@ class Trade implements ITrade
                         TO_CHAR(CAST(license.valid_upto AS DATE), 'DD-MM-YYYY') as valid_upto
                         ")
             ];
-            $application = $this->_DB->table("active_trade_licences as license")
+            $application = $this->_DB_READ->table("active_trade_licences as license")
                 ->select($select)
                 ->join("ulb_masters", "ulb_masters.id", "license.ulb_id")
                 ->leftjoin("ulb_ward_masters", function ($join) {
@@ -2607,7 +2619,7 @@ class Trade implements ITrade
                 ->first();
             if (!$application) 
             {
-                $application = $this->_DB->table("trade_licences as license")
+                $application = $this->_DB_READ->table("trade_licences as license")
                     ->select($select)
                     ->join("ulb_masters", "ulb_masters.id", "license.ulb_id")
                     ->leftjoin("ulb_ward_masters", function ($join) {
@@ -2629,7 +2641,7 @@ class Trade implements ITrade
             }
             if (!$application) 
             {
-                $application = $this->_DB->table("rejected_trade_licences as license")
+                $application = $this->_DB_READ->table("rejected_trade_licences as license")
                     ->select($select)
                     ->join("ulb_masters", "ulb_masters.id", "license.ulb_id")
                     ->leftjoin("ulb_ward_masters", function ($join) {
@@ -2651,7 +2663,7 @@ class Trade implements ITrade
             }
             if (!$application) 
             {
-                $application = $this->_DB->table("trade_renewals as license")
+                $application = $this->_DB_READ->table("trade_renewals as license")
                     ->select($select)
                     ->join("ulb_masters", "ulb_masters.id", "license.ulb_id")
                     ->leftjoin("ulb_ward_masters", function ($join) {
@@ -2681,7 +2693,7 @@ class Trade implements ITrade
             }
             $vUpto = $application->application_date;
             $application->valid_upto = date('d-m-Y', strtotime(date("$vUpto", mktime(time())) . " + 22 day"));            
-            $transaction = TradeTransaction::select(
+            $transaction = TradeTransaction::readConnection()->select(
                     "trade_transactions.id",
                     "tran_no",
                     "tran_type",
@@ -2705,7 +2717,7 @@ class Trade implements ITrade
             {
                 throw new Exception("Transaction Not Faound");
             }
-            $penalty = TradeFineRebete::select("type", "amount")
+            $penalty = TradeFineRebete::readConnection()->select("type", "amount")
                 ->where('tran_id', $transaction->id)
                 ->where("status", 1)
                 ->orderBy("id")
@@ -2730,7 +2742,7 @@ class Trade implements ITrade
         }
     }
 
-    # Serial No : 20
+    #=====================[📖 APPLICATION LICENSE CERTIFICATE | S.L (16.0) 📖]========================================================
     public function licenceCertificate($id) # unauthorised  function
     {
         try {
@@ -2770,7 +2782,7 @@ class Trade implements ITrade
                         TO_CHAR(CAST(license.valid_upto AS DATE), 'DD-MM-YYYY') as valid_upto
                         ")
             ];
-            $application = $this->_DB->table("trade_licences AS license")
+            $application = $this->_DB_READ->table("trade_licences AS license")
                 ->select($select)
                 ->join("ulb_masters", "ulb_masters.id", "license.ulb_id")
                 ->leftjoin("ulb_ward_masters", function ($join) {
@@ -2791,7 +2803,7 @@ class Trade implements ITrade
                 ->first();
             if (!$application) 
             {
-                $application = $this->_DB->table("trade_renewals AS license")
+                $application = $this->_DB_READ->table("trade_renewals AS license")
                     ->select($select)
                     ->join("ulb_masters", "ulb_masters.id", "license.ulb_id")
                     ->leftjoin("ulb_ward_masters", function ($join) {
@@ -2823,7 +2835,7 @@ class Trade implements ITrade
             $cods = "";
             if ($application->nature_of_bussiness) 
             {
-                $items = TradeParamItemType::itemsById($application->nature_of_bussiness);
+                $items = TradeParamItemType::readConnection()->itemsById($application->nature_of_bussiness);
                 foreach ($items as $val) {
                     $item_name .= $val->trade_item . ",";
                     $cods .= $val->trade_code . ",";
@@ -2847,18 +2859,17 @@ class Trade implements ITrade
     }
 
 
-    # Serial No : 22
+    #=====================[📝📖 APPLICATION INDIPENDENT COMMENT | S.L (17.0) 📖📝]========================================================
     public function addIndependentComment(Request $request)
     {
         try {
             $mRegex     = '/^[a-zA-Z1-9][a-zA-Z1-9\. \s]+$/';
             $userId = auth()->user()->id;
             $ulbId  = auth()->user()->ulb_id;
-            $authTBL = auth()->user()->gettable();
             $role_id = 0;
             $refWorkflowId = $this->_WF_MASTER_Id;
             $role = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $refWorkflowId);
-            if ($role && $authTBL=='users') {
+            if ($role && $this->_COMMON_FUNCTION->checkUsersWithtocken()) {
                 $role_id = $role->role_id??0;
             }
 
@@ -2883,7 +2894,7 @@ class Trade implements ITrade
             $metaReqs['refTableDotId'] = 'active_trade_licences';
             $metaReqs['refTableIdValue'] = $refLicense->id;
             $metaReqs['senderRoleId'] = $role_id;
-            if($authTBL=='users')
+            if($this->_COMMON_FUNCTION->checkUsersWithtocken())
             {
                 $metaReqs['user_id'] = $userId;
             }
@@ -2904,7 +2915,7 @@ class Trade implements ITrade
         }
     }
 
-    # Serial No : 23
+    #=====================[📖 APPLICATION INDIPENDENT COMMENT READ | S.L (18.0) 📖]========================================================
     public function readIndipendentComment(Request $request)
     {
         try {
@@ -2919,7 +2930,8 @@ class Trade implements ITrade
             return responseMsg(false, $e->getMessage(), "");
         }
     }
-    # Serial No : 23.01
+    
+    #=====================[📖 APPLICATION INDIPENDENT COMMENT READ | S.L (18.1) 📖]========================================================
     public function getIndipendentComment($licenceId)
     {
         try {
@@ -2979,6 +2991,7 @@ class Trade implements ITrade
     {
         return "TRANML" . date('d') . $transactionId . date('Y') . date('m') . date('s');
     }
+
     public function cltCharge(array $args)
     {
         $response = ['response' => false];
@@ -3079,10 +3092,11 @@ class Trade implements ITrade
 
         return $denialAmount;
     }
+
     public function getAllApplicationType()
     {
         try {
-            $data = TradeParamApplicationType::select("id", "application_type")
+            $data = TradeParamApplicationType::readConnection()->select("id", "application_type")
                 ->where('status', '1')
                 ->get();
             return $data;
@@ -3093,8 +3107,7 @@ class Trade implements ITrade
     public function getrate(array $input) #stdcl object array
     {
         try {
-            DB::enableQueryLog();
-            $builder = TradeParamLicenceRate::select('id', 'rate')
+            $builder = TradeParamLicenceRate::readConnection()->select('id', 'rate')
                 ->where('application_type_id', $input['application_type_id'])
                 ->where('range_from', '<=', ceil($input['area_in_sqft']))
                 ->where('range_to', '>=', ceil($input['area_in_sqft']))
@@ -3112,7 +3125,7 @@ class Trade implements ITrade
     {
         try {
 
-            $result = TradeChequeDtl::select(DB::raw("coalesce(sum(amount), 0) as penalty"))
+            $result = TradeChequeDtl::readConnection()->select(DB::raw("coalesce(sum(amount), 0) as penalty"))
                 ->where("temp_id", $apply_licence_id)
                 ->where("status", 3)
                 ->first();
@@ -3300,18 +3313,18 @@ class Trade implements ITrade
     public function getAllOwnereDtlByLId($id)
     {
         try {
-            $ownerDtl   = ActiveTradeOwner::select("*")
+            $ownerDtl   = ActiveTradeOwner::readConnection()->select("*")
                 ->where("temp_id", $id)
                 ->where("is_active", 1)
                 ->get();
             if (sizeOf($ownerDtl) < 1) {
-                $ownerDtl   = RejectedTradeOwner::select("*")
+                $ownerDtl   = RejectedTradeOwner::readConnection()->select("*")
                     ->where("temp_id", $id)
                     ->where("is_active", 1)
                     ->get();
             }
             if (sizeOf($ownerDtl) < 1) {
-                $ownerDtl   = TradeOwner::select("*")
+                $ownerDtl   = TradeOwner::readConnection()->select("*")
                     ->where("temp_id", $id)
                     ->where("is_active", 1)
                     ->get();
@@ -3321,10 +3334,10 @@ class Trade implements ITrade
             echo $e->getMessage();
         }
     }
+
     public function getTimelin($id)
     {
         try {
-            //    DB::enableQueryLog();
             $time_line =  workflowTrack::select(
                 "workflow_tracks.message",
                 "workflow_tracks.forward_date",
@@ -3348,53 +3361,17 @@ class Trade implements ITrade
                 )
                 ->orderBy('workflow_tracks.created_at', 'desc')
                 ->get();
-            // dd(DB::getQueryLog());
             return $time_line;
         } catch (Exception $e) {
             echo $e->getMessage();
         }
     }
-    public function getLicenceDocuments($id, $tbl = "active_")
-    {
-        try {
-            $doc =  TradeDocument::select(
-                $tbl . "trade_documents.*",
-                DB::raw("CASE WHEN " . $tbl . "trade_owners.id" . " NOTNULL 
-                                    THEN CONCAT(" . $tbl . "trade_owners.owner_name,'( '," . $tbl . "trade_documents.doc_type_code,' )')
-                                    ELSE " . $tbl . "trade_documents.doc_type_code END doc_type_code")
-            );
-            if ($tbl = "active_") {
-                $doc =  ActiveTradeDocument::select(
-                    $tbl . "trade_documents.*",
-                    DB::raw("CASE WHEN " . $tbl . "trade_owners.id" . " NOTNULL 
-                                        THEN CONCAT(" . $tbl . "trade_owners.owner_name,'( '," . $tbl . "trade_documents.doc_type_code,' )')
-                                        ELSE " . $tbl . "trade_documents.doc_type_code END doc_type_code")
-                );
-            }
-            if ($tbl = "rejected_") {
-                $doc =  RejectedTradeDocument::select(
-                    $tbl . "trade_documents.*",
-                    DB::raw("CASE WHEN " . $tbl . "trade_owners.id" . " NOTNULL 
-                                        THEN CONCAT(" . $tbl . "trade_owners.owner_name,'( '," . $tbl . "trade_documents.doc_type_code,' )')
-                                        ELSE " . $tbl . "trade_documents.doc_type_code END doc_type_code")
-                );
-            }
-            $doc =  $doc->leftjoin($tbl . "trade_owners", function ($join) use ($tbl) {
-                $join->on($tbl . "trade_owners.id", $tbl . "trade_documents.temp_owner_id");
-            })
-                ->where($tbl . "trade_documents.temp_id", $id)
-                ->orderBy($tbl . "trade_documents.id", 'desc')
-                ->get();
-            return $doc;
-        } catch (Exception $e) {
-            echo $e->getMessage();
-        }
-    }
+
 
     public function searchLicence(string $licence_no, $ulb_id)
     {
         try {
-            $data = TradeLicence::select("*")
+            $data = TradeLicence::readConnection()->select("*")
                 ->join(
                     DB::raw("(SELECT licence_id,
                                     string_agg(owner_name,',') as owner_name,
@@ -3418,115 +3395,8 @@ class Trade implements ITrade
             return responseMsg(false, $e->getMessage(), $licence_no);
         }
     }
-
-    public function uplodeFile($file, $custumFileName)
-    {
-        $filePath = $file->storeAs('uploads/Trade', $custumFileName, 'public');
-        return  $filePath;
-    }
     
-    public function getDocumentTypeList($refLicense)
-    {
-        try {
-            $show = '1';
-            if ($refLicense->application_type_id == 1) {
-                if ($refLicense->ownership_type_id == 1) {
-                    $show .= ',' . '2';
-                } else {
-                    $show .= ',' . '3';
-                }
-
-                if ($refLicense->firm_type_id == 2) {
-                    $show .= ',' . '4';
-                } elseif ($refLicense->firm_type_id == 3 || $refLicense->firm_type_id == 4) {
-                    $show .= ',' . '5';
-                }
-                if ($refLicense->category_type_id == 2) {
-                    $show .= ',' . '6';
-                }
-            }
-            $show = explode(",", $show);
-            // DB::enableQueryLog();
-            $data = TradeParamDocumentType::select("doc_for", "is_mandatory", "show")
-                ->where("application_type_id", $refLicense->application_type_id)
-                ->where("status", 1)
-                ->whereIn("show", $show)
-                ->groupBy("doc_for", "is_mandatory", "show");
-            if (strtoupper($refLicense->apply_from) == "ONLINE") {
-                $data = $data->where("doc_for", "<>", "Application Form");
-            }
-            $data =    $data->get();
-            // dd(DB::getQueryLog());
-            return $data;
-        } catch (Exception $e) {
-            return $e->getMessage();
-        }
-    }
-    public function getDocumentList($doc_for, $application_type_id, $show)
-    {
-        try {
-            $data = TradeParamDocumentType::select("id", "doc_name")
-                ->where("status", 1)
-                ->where("doc_for", $doc_for)
-                ->where("application_type_id", $application_type_id)
-                ->where("show", $show)
-                ->get();
-            return $data;
-        } catch (Exception $e) {
-            return $e->getMessage();
-        }
-    }
-    public function check_doc_exist($licenceId, $doc_for, $doc_mstr_id = null, $woner_id = null)
-    {
-        try {
-
-            $doc = ActiveTradeDocument::select("id", "doc_type_code", "is_verified", "remarks", "document_id")
-                ->where('temp_id', $licenceId)
-                ->where('doc_type_code', $doc_for);
-            if ($doc_mstr_id) {
-                $doc = $doc->where('document_id', $doc_mstr_id);
-            }
-            if ($woner_id) {
-                $doc = $doc->where('temp_owner_id', $woner_id);
-            }
-            $doc = $doc->orderBy('id', 'DESC')
-                ->first();
-            return $doc;
-        } catch (Exception $e) {
-            echo $e->getMessage();
-        }
-    }
-
-    public function check_doc_exist_owner($licenceId, $owner_id, $document_id = null, $doc_type_code = null)
-    {
-        try {
-            // DB::enableQueryLog();
-            $doc = ActiveTradeDocument::select("id", "doc_type_code", "is_verified", "remarks",  "document_id")
-                ->where('temp_id', $licenceId)
-                ->where('temp_owner_id', $owner_id);
-            if ($doc_type_code) {
-                $doc = $doc->where('doc_type_code', $doc_type_code);
-            }
-            if ($document_id !== null) {
-                $document_id = (int)$document_id;
-                $doc = $doc->where('document_id', $document_id);
-            } else {
-                $doc = $doc->where("document_id", "<>", 0);
-            }
-            $doc = $doc->orderBy('id', 'DESC')
-                ->first();
-            //    print_var(DB::getQueryLog());                    
-            return $doc;
-        } catch (Exception $e) {
-            return $e->getMessage();
-        }
-    }
-
-    public function readDocumentPath($path)
-    {
-        $path = (config('app.url') . '/api/getImageLink?path=' . $path);
-        return $path;
-    }
+    
     public function applicationStatus($licenceId,$docChequ2=true)
     {
         $refUser        = Auth()->user();
@@ -3534,16 +3404,16 @@ class Trade implements ITrade
         $refUlbId       = $refUser->ulb_id ?? 0;
         $refWorkflowId  = $this->_WF_MASTER_Id;
         $mUserType      = $this->_COMMON_FUNCTION->userType($refWorkflowId, $refUlbId);
-        $application = TradeLicence::find($licenceId);
+        $application = TradeLicence::readConnection()->find($licenceId);
         if (!$application) {
-            $application = ActiveTradeLicence::find($licenceId);
+            $application = ActiveTradeLicence::readConnection()->find($licenceId);
         }
         if (!$application) {
-            $application = RejectedTradeLicence::find($licenceId);
+            $application = RejectedTradeLicence::readConnection()->find($licenceId);
         }
         if(!$application)
         {
-            $application = TradeRenewal::find($licenceId);
+            $application = TradeRenewal::readConnection()->find($licenceId);
         }
         $status = "";
         if ($application->pending_status == 5) {
@@ -3623,6 +3493,7 @@ class Trade implements ITrade
             return [];
         }
     }
+    
     public function insertWorkflowTrack(array $arg)
     {
         try {
