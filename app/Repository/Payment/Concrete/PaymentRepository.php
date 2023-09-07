@@ -381,10 +381,12 @@ class PaymentRepository implements iPayment
                             ->post("$api->end_point", $transfer);
                         break;
                     case ('9'):
+                        $pet = 80;
                         $mApiMaster = new ApiMaster();
-                        $petApi = $mApiMaster->getPetApi();
-                        Http::withHeaders([])
+                        $petApi = $mApiMaster->getApiEndpoint($pet);
+                        $petRequest = Http::withHeaders([])
                             ->post("$petApi->end_point", $transfer);
+                        $petRequest;
                         break;
                     case ('11'):
                         $waterTanker = 77;

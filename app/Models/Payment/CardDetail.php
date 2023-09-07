@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class CardDetail extends Model
 {
     use HasFactory;
+    protected  $connection = 'pgsql_master';
 
     /**
      * |------------------------------- Save Card Details ----------------------------|

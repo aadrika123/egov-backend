@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class PaymentReject extends Model
 {
     use HasFactory;
+    protected  $connection = 'pgsql_master';
 
     /**
      * |------------------------------ Save the rejected data with flag ---------------------------------|
