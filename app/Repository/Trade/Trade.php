@@ -849,6 +849,9 @@ class Trade implements ITrade
             } elseif (in_array($refLecenceData->payment_status, [1, 2])) {
                 throw new Exception("Payment Already Done Of This Application");
             }
+            if (!$refLecenceData->holding_no && $request->licenseFor > 1) {
+                throw new Exception("Without Holding Map You Can Not Take Licence More Than One Year");
+            }
             if ($refLecenceData->tobacco_status == 1 && $request->licenseFor > 1) {
                 throw new Exception("Tobaco Application Not Take Licence More Than One Year");
             }
