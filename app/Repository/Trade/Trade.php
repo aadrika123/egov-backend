@@ -2879,7 +2879,7 @@ class Trade implements ITrade
 
             if ($validator->fails()) 
             {
-                return responseMsg(false, $validator->errors(), $request->all());
+                return responseMsg(false, $validator->errors(), "");
             }
 
             $refLicense = ActiveTradeLicence::find($request->applicationId);
@@ -3135,8 +3135,7 @@ class Trade implements ITrade
         }
     }
     public function propertyDetailsfortradebyHoldingNo(string $holdingNo, int $ulb_id): array
-    {        
-        // DB::enableQueryLog();
+    {   
         $property = PropProperty::select("*")
             ->leftjoin(
                 DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name ,property_id
@@ -3154,7 +3153,27 @@ class Trade implements ITrade
             ->where("new_holding_no", "ILIKE", $holdingNo)
             ->where("ulb_id", $ulb_id)
             ->first();
-        // dd(DB::getQueryLog());
+        if(!$property)
+        {
+            $property = PropProperty::select("*")
+            ->leftjoin(
+                DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name ,property_id
+                                        FROM Prop_OwnerS 
+                                        WHERE status = 1
+                                        GROUP BY property_id
+                                        ) owners
+                                        "),
+                function ($join) {
+                    $join->on("owners.property_id", "=", "prop_properties.id");
+                }
+            )
+            ->where("status", 1)
+            // ->where("new_holding_no", "<>", "")
+            ->where("holding_no", "ILIKE", $holdingNo)
+            ->where("ulb_id", $ulb_id)
+            ->orderBy("id",'DESC')
+            ->first();
+        }
         if ($property) {
             return ["status" => true, 'property' => objToArray($property)];
         }
