@@ -1216,6 +1216,7 @@ class Trade implements ITrade
 
             $init_finish = $this->_COMMON_FUNCTION->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
             $finisher = $init_finish['finisher'];
+            $role = $this->_COMMON_FUNCTION->getUserRoll($refUserId, $refUlbId, $refWorkflowId);
             $finisher['short_user_name'] = $this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][strtoupper($init_finish['finisher']['role_name'])];
             $mUserType      = $this->_COMMON_FUNCTION->userType($refWorkflowId);
             $refApplication = $this->getAllLicenceById($id);
@@ -1299,7 +1300,7 @@ class Trade implements ITrade
             $fullDetailsData['fullDetailsData']['cardArray'] = $cardElement;
 
             $metaReqs['customFor'] = 'Trade';
-            $metaReqs['wfRoleId'] = $licenseDetail->current_role;
+            $metaReqs['wfRoleId'] = ($role && $role->is_initiator && $licenseDetail->is_parked) ? $role->role_id : $licenseDetail->current_role;
             $metaReqs['workflowId'] = $licenseDetail->workflow_id;
             $metaReqs['lastRoleId'] = $licenseDetail->last_role_id;
             $levelComment = $this->_MODEL_WorkflowTrack->getTracksByRefId($mRefTable, $licenseDetail->id)->map(function($val){  
