@@ -750,28 +750,39 @@ class TradeApplication extends Controller
 
         $refWorkflowId = $this->_WF_MASTER_Id;
         $role = $this->_COMMON_FUNCTION->getUserRoll($user_id, $ulb_id, $refWorkflowId);
-
-        $req->validate([
-            'applicationId' => 'required|digits_between:1,9223372036854775807',
-            'workflowId' => 'required|integer',
-            'currentRoleId' => 'required|integer',
-            'comment' => 'required|string'
-        ]);
-
+        
         try {
+            $req->validate([
+                'applicationId' => 'required|digits_between:1,9223372036854775807',
+                'currentRoleId' => 'required|integer',
+                'comment' => 'required|string'
+            ]);
+            $activeLicence = $this->_MODEL_ActiveTradeLicence->find($req->applicationId);
+            if(!$activeLicence)
+            {
+                throw new Exception("Application Not Found");
+            }
+            $req->merge(["workflowId" => $activeLicence->workflow_id]);
+            if($activeLicence->is_parked)
+            {
+                throw new Exception("Application Already BTC");
+            }            
 
             if (!$this->_COMMON_FUNCTION->checkUsersWithtocken("users")) {
                 throw new Exception("Citizen Not Allowed");
             }
             if (!$req->senderRoleId) 
             {
-                $req->request->add(["senderRoleId" => $role->role_id ?? 0]);
+                $req->merge(["senderRoleId" => $role->role_id ?? 0]);
             }
             if (!$req->receiverRoleId) 
             {
-                $req->request->add(["receiverRoleId" => $role->backward_role_id ?? 0]);               
+                $req->merge(["receiverRoleId" => $role->backward_role_id ?? 0]);               
             }
-            $activeLicence = $this->_MODEL_ActiveTradeLicence->find($req->applicationId);
+            if($activeLicence->current_role!= $req->senderRoleId )
+            {
+                throw new Exception("Application Access Forbiden");
+            }
             $track = new WorkflowTrack();
             $lastworkflowtrack = $track->select("*")
                 ->where('ref_table_id_value', $req->applicationId)
@@ -782,7 +793,7 @@ class TradeApplication extends Controller
                 ->first();
             $this->begin();
             $initiatorRoleId = $activeLicence->initiator_role;
-            $activeLicence->current_role = $initiatorRoleId;
+            // $activeLicence->current_role = $initiatorRoleId;
             $activeLicence->is_parked = true;
             $activeLicence->save();
 
@@ -793,14 +804,13 @@ class TradeApplication extends Controller
             $metaReqs['trackDate'] = $lastworkflowtrack && $lastworkflowtrack->forward_date ? ($lastworkflowtrack->forward_date . " " . $lastworkflowtrack->forward_time) : Carbon::now()->format('Y-m-d H:i:s');
             $metaReqs['forwardDate'] = Carbon::now()->format('Y-m-d');
             $metaReqs['forwardTime'] = Carbon::now()->format('H:i:s');
-            $metaReqs['verificationStatus'] = 2;
+            $metaReqs['verificationStatus'] = $this->_TRADE_CONSTAINT["VERIFICATION-STATUS"]["BTC"];#2
             $metaReqs['user_id'] = $user_id;
             $metaReqs['ulb_id'] = $ulb_id;
-            $req->request->add($metaReqs);
+            $req->merge($metaReqs);
             $track->saveTrack($req);
-
             $this->commit();
-            return responseMsgs(true, "Successfully Done", "", "010111", "1.0", "350ms", "POST", $req->deviceId);
+            return responseMsgs(true, "BTC Successfully Done", "", "010111", "1.0", "350ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             $this->rollBack();
             return responseMsg(false, $e->getMessage(), "");
@@ -829,21 +839,21 @@ class TradeApplication extends Controller
 
         try {
             if (!$request->senderRoleId) {
-                $request->request->add(["senderRoleId" => $role->role_id ?? 0]);
+                $request->merge(["senderRoleId" => $role->role_id ?? 0]);
             }
             if (!$request->receiverRoleId) {
                 if ($request->action == 'forward') {
-                    $request->request->add(["receiverRoleId" => $role->forward_role_id ?? 0]);
+                    $request->merge(["receiverRoleId" => $role->forward_role_id ?? 0]);
                 }
                 if ($request->action == 'backward') {
-                    $request->request->add(["receiverRoleId" => $role->backward_role_id ?? 0]);
+                    $request->merge(["receiverRoleId" => $role->backward_role_id ?? 0]);
                 }
             }
 
 
             #if finisher forward then
             if (($role->is_finisher ?? 0) && $request->action == 'forward') {
-                $request->request->add(["status" => 1]);
+                $request->merge(["status" => 1]);
                 return $this->approveReject($request);
             }
 
@@ -873,12 +883,16 @@ class TradeApplication extends Controller
             $initFinish   = $this->_COMMON_FUNCTION->iniatorFinisher($user_id, $ulb_id, $refWorkflowId);
             $receiverRole = array_values(objToArray($allRolse->where("id", $request->receiverRoleId)))[0] ?? [];
             $senderRole   = array_values(objToArray($allRolse->where("id", $request->senderRoleId)))[0] ?? [];
-
+            
             if ($licence->payment_status != 1 && ($role->serial_no  < $receiverRole["serial_no"] ?? 0)) {
                 throw new Exception("Payment Not Clear");
             }
+            if ((!$role->is_finisher ?? 0) && $request->action == 'backward' && $receiverRole["id"] == $initFinish['initiator']['id']) {
+                $request->merge(["currentRoleId" => $request->senderRoleId]);
+                return $this->backToCitizen($request);
+            }
 
-            if ($licence->current_role != $role->role_id && (!$licence->is_parked)) {
+            if ($licence->current_role != $role->role_id && !$role->is_initiato && (!$licence->is_parked)) {
                 throw new Exception("You Have Not Pending This Application");
             }
             if ($licence->is_parked && !$role->is_initiator) {
@@ -953,10 +967,9 @@ class TradeApplication extends Controller
             $metaReqs['trackDate'] = $lastworkflowtrack && $lastworkflowtrack->forward_date ? ($lastworkflowtrack->forward_date . " " . $lastworkflowtrack->forward_time) : Carbon::now()->format('Y-m-d H:i:s');
             $metaReqs['forwardDate'] = Carbon::now()->format('Y-m-d');
             $metaReqs['forwardTime'] = Carbon::now()->format('H:i:s');
-            $metaReqs['verificationStatus'] = 1;
-            $request->request->add($metaReqs);
+            $metaReqs['verificationStatus'] = ($request->action == 'forward') ? $this->_TRADE_CONSTAINT["VERIFICATION-STATUS"]["VERIFY"] : $this->_TRADE_CONSTAINT["VERIFICATION-STATUS"]["BACKWARD"];
+            $request->merge($metaReqs);
             $track->saveTrack($request);
-
             $this->commit();
             return responseMsgs(true, $sms, "", "010109", "1.0", "286ms", "POST", $request->deviceId);
         } catch (Exception $e) {
@@ -996,14 +1009,14 @@ class TradeApplication extends Controller
                 throw new Exception("Forbidden Access");
             }
             if (!$req->senderRoleId) {
-                $req->request->add(["senderRoleId" => $role->role_id ?? 0]);
+                $req->merge(["senderRoleId" => $role->role_id ?? 0]);
             }
             if (!$req->receiverRoleId) {
                 if ($req->action == 'forward') {
-                    $req->request->add(["receiverRoleId" => $role->forward_role_id ?? 0]);
+                    $req->merge(["receiverRoleId" => $role->forward_role_id ?? 0]);
                 }
                 if ($req->action == 'backward') {
-                    $req->request->add(["receiverRoleId" => $role->backward_role_id ?? 0]);
+                    $req->merge(["receiverRoleId" => $role->backward_role_id ?? 0]);
                 }
             }
             $track = new WorkflowTrack();
@@ -1023,8 +1036,8 @@ class TradeApplication extends Controller
             $metaReqs['trackDate'] = $lastworkflowtrack && $lastworkflowtrack->forward_date ? ($lastworkflowtrack->forward_date . " " . $lastworkflowtrack->forward_time) : Carbon::now()->format('Y-m-d H:i:s');
             $metaReqs['forwardDate'] = Carbon::now()->format('Y-m-d');
             $metaReqs['forwardTime'] = Carbon::now()->format('H:i:s');
-            $metaReqs['verificationStatus'] = 1;
-            $req->request->add($metaReqs);
+            $metaReqs['verificationStatus'] = ($req->status == 1) ? $this->_TRADE_CONSTAINT["VERIFICATION-STATUS"]["APROVE"] : $this->_TRADE_CONSTAINT["VERIFICATION-STATUS"]["REJECT"];
+            $req->merge($metaReqs);
 
             $this->begin();
 
@@ -1060,8 +1073,6 @@ class TradeApplication extends Controller
 
             // Rejection
             if ($req->status == 0) {
-                $track = new WorkflowTrack();
-                $d = $track->saveTrack($req);
                 // Objection Application replication
                 $approvedLicence = $activeLicence->replicate();
                 $approvedLicence->setTable('rejected_trade_licences');
