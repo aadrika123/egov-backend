@@ -365,12 +365,12 @@ class WaterConsumer extends Model
                 'water_consumers.id',
                 'water_consumers.ulb_id',
                 'ulb_masters.id',
-                'water_consumers.ulb_id',
                 'water_consumer_owners.consumer_id',
                 'water_consumers.consumer_no',
                 'water_consumers.ward_mstr_id',
                 'ulb_ward_masters.ward_name',
                 'ulb_masters.logo',
+                'ulb_masters.ulb_name'
             );
     }
 
