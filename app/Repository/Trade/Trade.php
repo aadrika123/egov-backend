@@ -1216,6 +1216,7 @@ class Trade implements ITrade
 
             $init_finish = $this->_COMMON_FUNCTION->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
             $finisher = $init_finish['finisher'];
+            $role = $this->_COMMON_FUNCTION->getUserRoll($refUserId, $refUlbId, $refWorkflowId);
             $finisher['short_user_name'] = $this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][strtoupper($init_finish['finisher']['role_name'])];
             $mUserType      = $this->_COMMON_FUNCTION->userType($refWorkflowId);
             $refApplication = $this->getAllLicenceById($id);
@@ -1299,7 +1300,7 @@ class Trade implements ITrade
             $fullDetailsData['fullDetailsData']['cardArray'] = $cardElement;
 
             $metaReqs['customFor'] = 'Trade';
-            $metaReqs['wfRoleId'] = $licenseDetail->current_role;
+            $metaReqs['wfRoleId'] = ($role && $role->is_initiator && $licenseDetail->is_parked) ? $role->role_id : $licenseDetail->current_role;
             $metaReqs['workflowId'] = $licenseDetail->workflow_id;
             $metaReqs['lastRoleId'] = $licenseDetail->last_role_id;
             $levelComment = $this->_MODEL_WorkflowTrack->getTracksByRefId($mRefTable, $licenseDetail->id)->map(function($val){  
@@ -2412,6 +2413,7 @@ class Trade implements ITrade
                         ulb_masters.parent_website as ulb_parent_website,
                         ulb_masters.toll_free_no as ulb_toll_free_no,
                         ulb_masters.mobile_no AS ulb_mobile_no,
+                        ulb_masters.association_with as association_with,
                         TO_CHAR(cast(licences.application_date as date), 'DD-MM-YYYY') AS application_date,
                         TO_CHAR(cast(licences.valid_from as date), 'DD-MM-YYYY') AS valid_from,
                         TO_CHAR(cast(licences.valid_upto as date), 'DD-MM-YYYY') AS valid_upto
@@ -2594,6 +2596,7 @@ class Trade implements ITrade
                         ulb_masters.parent_website as ulb_parent_website,
                         ulb_masters.toll_free_no as ulb_toll_free_no,
                         ulb_masters.mobile_no AS ulb_mobile_no,
+                        ulb_masters.association_with as association_with,
                         TO_CHAR(CAST(license.application_date AS DATE), 'DD-MM-YYYY') as application_date,
                         TO_CHAR(CAST(license.establishment_date AS DATE), 'DD-MM-YYYY') as establishment_date,
                         TO_CHAR(CAST(license.license_date AS DATE), 'DD-MM-YYYY') as license_date,
@@ -2778,6 +2781,7 @@ class Trade implements ITrade
                         ulb_masters.parent_website as ulb_parent_website,
                         ulb_masters.toll_free_no as ulb_toll_free_no,
                         ulb_masters.mobile_no AS ulb_mobile_no,
+                        ulb_masters.association_with as association_with,
                         TO_CHAR(CAST(license.application_date AS DATE), 'DD-MM-YYYY') as application_date,
                         TO_CHAR(CAST(license.establishment_date AS DATE), 'DD-MM-YYYY') as establishment_date,
                         TO_CHAR(CAST(license.license_date AS DATE), 'DD-MM-YYYY') as license_date,
