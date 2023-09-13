@@ -1071,8 +1071,8 @@ class NewConnectionController extends Controller
             $getWaterDetails    = $mWaterApplication->getWaterApplicationsDetails($applicationId);
             $refImageName       = $req->docRefName;
             $refImageName       = $getWaterDetails->id . '-' . str_replace(' ', '_', $refImageName);
-            $imageName          = $docUpload->upload($refImageName, $document, $relativePath);
-            $docDetail = $docUpload->checkDoc($req);
+            // $imageName          = $docUpload->upload($refImageName, $document, $relativePath);
+            $docDetail          = $docUpload->checkDoc($req);
 
             $metaReqs = [
                 'moduleId'      => $refmoduleId,
@@ -1080,13 +1080,13 @@ class NewConnectionController extends Controller
                 'workflowId'    => $getWaterDetails->workflow_id,
                 'ulbId'         => $getWaterDetails->ulb_id,
                 'relativePath'  => $relativePath,
-                'document'      => $imageName,
+                // 'document'      => $imageName,
                 'docCode'       => $req->docCode,
                 'ownerDtlId'    => $req->ownerId,
                 'docCategory'   => $req->docCategory,
                 'auth'          => $user,
-                'uniqueId' => $docDetail['data']['uniqueId'],
-                'referenceNo' => $docDetail['data']['ReferenceNo'],
+                'uniqueId'      => $docDetail['data']['uniqueId'],
+                'referenceNo'   => $docDetail['data']['ReferenceNo'],
 
             ];
 
@@ -1718,13 +1718,13 @@ class NewConnectionController extends Controller
                     ->where('owner_dtl_id', $ownerId)
                     ->first();
                 if ($uploadedDoc) {
-                    $path = $this->readDocumentPath($uploadedDoc->doc_path);
-                    $fullDocPath = !empty(trim($uploadedDoc->doc_path)) ? $path : null;
+                    // $path = $this->readDocumentPath($uploadedDoc->doc_path);
+                    // $fullDocPath = !empty(trim($uploadedDoc->doc_path)) ? $path : null;
                     $response = [
                         "documentCode"  => $item,
                         "uploadedDocId" => $uploadedDoc['id'] ?? "",
                         "ownerId"       => $uploadedDoc['owner_dtl_id'] ?? "",
-                        "docPath"       => $fullDocPath ?? "",
+                        "docPath"       => $uploadedDoc['doc_path'] ?? "",
                         "verifyStatus"  => $uploadedDoc['verify_status'] ?? "",
                         "remarks"       => $uploadedDoc['remarks'] ?? "",
                     ];
@@ -1734,20 +1734,19 @@ class NewConnectionController extends Controller
             $reqDoc['docType']      = $key;
             $reqDoc['uploadedDoc']  = $documents->last();
             $reqDoc['docName']      = substr($label, 1, -1);
-            // $reqDoc['refDocName'] = substr($label, 1, -1);
 
             $reqDoc['masters'] = collect($document)->map(function ($doc) use ($uploadedDocs) {
                 $uploadedDoc = $uploadedDocs->where('doc_code', $doc)->first();
                 $strLower = strtolower($doc);
                 $strReplace = str_replace('_', ' ', $strLower);
-                if (isset($uploadedDoc)) {
-                    $path =  $this->readDocumentPath($uploadedDoc->doc_path);
-                    $fullDocPath = !empty(trim($uploadedDoc->doc_path)) ? $path : null;
-                }
+                // if (isset($uploadedDoc)) {
+                //     $path =  $this->readDocumentPath($uploadedDoc->doc_path);
+                //     $fullDocPath = !empty(trim($uploadedDoc->doc_path)) ? $path : null;
+                // }
                 $arr = [
                     "documentCode"  => $doc,
                     "docVal"        => ucwords($strReplace),
-                    "uploadedDoc"   => $fullDocPath ?? "",
+                    "uploadedDoc"   => $uploadedDoc['doc_path'] ?? "",
                     "uploadedDocId" => $uploadedDoc['id'] ?? "",
                     "verifyStatus'" => $uploadedDoc['verify_status'] ?? "",
                     "remarks"       => $uploadedDoc['remarks'] ?? "",
