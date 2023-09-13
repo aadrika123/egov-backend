@@ -668,9 +668,9 @@ class  PropActiveSaf extends Model
                 'designation',
                 'mobile_no'
             )
-            ->join('ref_prop_gbpropusagetypes as p', 'p.id', '=', 'prop_active_safs.gb_usage_types')
-            ->join('ref_prop_gbbuildingusagetypes as q', 'q.id', '=', 'prop_active_safs.gb_prop_usage_types')
             ->leftjoin('prop_active_safgbofficers as gbo', 'gbo.saf_id', 'prop_active_safs.id')
+            ->leftjoin('ref_prop_gbpropusagetypes as p', 'p.id', '=', 'prop_active_safs.gb_usage_types')
+            ->join('ref_prop_gbbuildingusagetypes as q', 'q.id', '=', 'prop_active_safs.gb_prop_usage_types')
             ->join('ulb_ward_masters as ward', 'ward.id', '=', 'prop_active_safs.ward_mstr_id')
             ->join('ref_prop_road_types as r', 'r.id', 'prop_active_safs.road_type_mstr_id')
             ->whereIn('workflow_id', $workflowIds)

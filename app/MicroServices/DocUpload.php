@@ -2,6 +2,9 @@
 
 namespace App\MicroServices;
 
+use Exception;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Intervention\Image\Facades\Image;
 use Illuminate\Support\Str;
 
@@ -26,5 +29,161 @@ class DocUpload
         $image->move($relativePath, $imageName);
 
         return $imageName;
+    }
+
+
+    /**
+     * | New DMS Code
+     */
+    public function checkDoc($request)
+    {
+        try {
+            // $contentType = (collect(($request->headers->all())['content-type'] ?? "")->first());
+            $file = $request->document;
+            $filePath = $file->getPathname();
+            $hashedFile = hash_file('sha256', $filePath);
+            $filename = ($request->document)->getClientOriginalName();
+            $api = "http://192.168.0.122:8001/backend/document/upload";
+            $transfer = [
+                "file" => $request->document,
+                "tags" => $filename,
+                // "reference" => 425
+            ];
+            $returnData = Http::withHeaders([
+                "x-digest"      => "$hashedFile",
+                "token"         => "8Ufn6Jio6Obv9V7VXeP7gbzHSyRJcKluQOGorAD58qA1IQKYE0",
+                "folderPathId"  => 1
+            ])->attach([
+                [
+                    'file',
+                    file_get_contents($filePath),
+                    $filename
+                ]
+            ])->post("$api", $transfer);
+            if ($returnData->successful()) {
+                return (json_decode($returnData->body(), true));
+            }
+            throw new Exception((json_decode($returnData->body(), true))["message"] ?? "");
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+
+    public function severalDoc(Request $request)
+    {
+        if (!$request->metaData) {
+            $request->merge(["metaData" => ["vsm1.1", 1.1, null, $request->getMethod(), null,]]);
+        }
+        $metaData = collect($request->metaData)->all();
+        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
+        try {
+            $response = ($this->MultipartHandle($request));
+            return responseMsgs(true, "", $response, $apiId, $version, $queryRunTime, $action, $deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", $apiId, $version, $queryRunTime, $action, $deviceId);
+        }
+    }
+
+    public function MultipartHandle(Request $request)
+    {
+        $data = [];
+        $header = apache_request_headers();
+        $header = collect($header)->merge(
+            [
+                "token"         => "8Ufn6Jio6Obv9V7VXeP7gbzHSyRJcKluQOGorAD58qA1IQKYE0",
+                "folderPathId"  => 1
+            ]
+        );
+        $dotIndexes = $this->generateDotIndexes($_FILES);
+        $url = "http://192.168.0.122:8001/backend/document/upload";
+        foreach ($dotIndexes as $val) {
+
+            $patern = "/\.name/i";
+            if (!preg_match($patern, $val)) {
+                continue;
+            }
+            $file = $this->getArrayValueByDotNotation($request->file(), preg_replace($patern, "", $val));
+
+            $filePath = $file->getPathname();
+            $hashedFile = hash_file('sha256', $filePath);
+            $filename = $file->getClientOriginalName();
+            $header = collect($header)->merge(
+                ["x-digest"      => "$hashedFile"]
+            );
+            $postData = [
+                "file" => $file,
+                "tags" => $filename,
+                // "reference" => 425
+            ];
+            $response = Http::withHeaders(
+                // $header->toArray()
+                [
+                    "x-digest"      => "$hashedFile",
+                    "token"         => "8Ufn6Jio6Obv9V7VXeP7gbzHSyRJcKluQOGorAD58qA1IQKYE0",
+                    "folderPathId"  => 1
+                ]
+
+            );
+            $response->attach(
+                [
+                    [
+                        'file',
+                        file_get_contents($filePath),
+                        $filename
+                    ]
+                ]
+
+            );
+            $response = $response->post("$url", $postData);
+            if ($response->successful()) {
+                $response = (json_decode($response->body(), true));
+            } else {
+                $response = [false, json_decode($response->body(), true), ""];
+            }
+            $keys = explode('.', $val);
+            $currentLevel = &$data;
+            foreach ($keys as $index => $key) {
+                $patern = "/name/i";
+                if (preg_match($patern, $key)) {
+                    continue;
+                }
+                if (!isset($currentLevel[$key])) {
+                    $currentLevel[$key] = [];
+                }
+                $currentLevel = &$currentLevel[$key];
+            }
+            $currentLevel = $response;
+        }
+        return $data;
+    }
+
+    public function getArrayValueByDotNotation(array $array, string $key)
+    {
+        $keys = explode('.', $key);
+
+        foreach ($keys as $key) {
+            if (isset($array[$key])) {
+                $array = $array[$key];
+            } else {
+                return null; // Key doesn't exist in the array
+            }
+        }
+
+        return $array;
+    }
+
+    public function generateDotIndexes(array $array, $prefix = '', $result = [])
+    {
+
+        foreach ($array as $key => $value) {
+            $newKey = $prefix . $key;
+            if (is_array($value)) {
+                $result = $this->generateDotIndexes($value, $newKey . '.', $result);
+            } else {
+                $result[] = $newKey;
+            }
+        }
+        return $result;
     }
 }

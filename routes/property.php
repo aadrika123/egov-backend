@@ -459,8 +459,8 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
  * | Get Reference List and Ulb Master Crud Operation
  * | Created By : Tannu Verma
  * | Created At : 20-05-2023
-   | Serial No. : 19
- * | Status: Open
+   | Serial No. : 21
+ * | Status: CLosed
  */
 Route::controller(ReferenceController::class)->group(function () {
 
@@ -505,10 +505,6 @@ Route::controller(BankReconcillationController::class)->group(function () {
   Route::post('cheque-dtl-by-id', 'chequeDtlById');
   Route::post('cheque-clearance', 'chequeClearance');
 });
-
-
-
-
 
 
 

@@ -10,7 +10,8 @@ class RevDailycollection extends Model
 {
     use HasFactory;
 
-    protected $fillable = ["tran_no", "user_id", "deposit_date", "ulb_id", "demand_date", "tc_id"];
+    protected $guarded = [];
+    protected $connection = 'pgsql_master';
 
     /**
      * |

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Property;
 
+use App\BLL\DocUrl;
 use App\Http\Controllers\Controller;
 use App\MicroServices\DocUpload;
 use App\Models\Property\PropActiveSaf;
@@ -79,17 +80,20 @@ class SafDocController extends Controller
         $mWfActiveDocument = new WfActiveDocument();
         $moduleId = FacadesConfig::get('module-constants.PROPERTY_MODULE_ID');
         $documentList = $this->getOwnerDocs($refOwners);
+        $docUrl = new DocUrl;
 
         if (!empty($documentList)) {
             $ownerPhoto = $mWfActiveDocument->getOwnerPhotograph($refSafs['id'], $refSafs->workflow_id, $moduleId, $refOwners['id']);
+            $ownerPhoto = $docUrl->getSingleDocUrl($ownerPhoto);           #_Calling BLL for Document Path from DMS
+
             $filteredDocs['ownerDetails'] = [
                 'ownerId' => $refOwners['id'],
                 'name' => $refOwners['owner_name'],
                 'mobile' => $refOwners['mobile_no'],
                 'guardian' => $refOwners['guardian_name'],
-                'uploadedDoc' => $ownerPhoto->doc_path ?? "",
-                'docId' => $ownerPhoto->doc_id ?? "",
-                'verifyStatus' => ($refSafs->payment_status == 1) ? ($ownerPhoto->verify_status ?? "") : 0
+                'uploadedDoc' => $ownerPhoto['doc_path'] ?? "",
+                'docId' => $ownerPhoto['doc_id'] ?? "",
+                'verifyStatus' => ($refSafs->payment_status == 1) ? ($ownerPhoto['verify_status'] ?? "") : 0
             ];
             $filteredDocs['documents'] = $this->filterDocument($documentList, $refSafs, $refOwners['id']);                                     // function(1.2)
         } else
@@ -106,11 +110,13 @@ class SafDocController extends Controller
     public function filterDocument($documentList, $refSafs, $ownerId = null)
     {
         $mWfActiveDocument = new WfActiveDocument();
+        $docUrl = new DocUrl;
         $safId = $refSafs->id;
         $workflowId = $refSafs->workflow_id;
         $moduleId = FacadesConfig::get('module-constants.PROPERTY_MODULE_ID');
-        $docUrl = FacadesConfig::get('module-constants.DOC_URL');
         $uploadedDocs = $mWfActiveDocument->getDocByRefIds($safId, $workflowId, $moduleId);
+        $uploadedDocs = $docUrl->getDocUrl($uploadedDocs);           #_Calling BLL for Document Path from DMS
+
         $explodeDocs = collect(explode('#', $documentList));
 
         $filteredDocs = $explodeDocs->map(function ($explodeDoc) use ($uploadedDocs, $ownerId, $refSafs, $docUrl) {
@@ -126,12 +132,12 @@ class SafDocController extends Controller
 
                 if ($uploadedDoc) {
                     $response = [
-                        "uploadedDocId" => $uploadedDoc->id ?? "",
                         "documentCode" => $item,
-                        "ownerId" => $uploadedDoc->owner_dtl_id ?? "",
-                        "docPath" =>  $uploadedDoc->doc_path ?? "",
-                        "verifyStatus" => $refSafs->payment_status == 1 ? ($uploadedDoc->verify_status ?? "") : 0,
-                        "remarks" => $uploadedDoc->remarks ?? "",
+                        "uploadedDocId" => $uploadedDoc['id'] ?? "",
+                        "ownerId" => $uploadedDoc['owner_dtl_id'] ?? "",
+                        "docPath" =>  $uploadedDoc['doc_path'] ?? "",
+                        "verifyStatus" => $refSafs->payment_status == 1 ? ($uploadedDoc['verify_status'] ?? "") : 0,
+                        "remarks" => $uploadedDoc['remarks'] ?? "",
                     ];
                     $documents->push($response);
                 }
@@ -155,10 +161,10 @@ class SafDocController extends Controller
                 $arr = [
                     "documentCode" => $doc,
                     "docVal" => ucwords($strReplace),
-                    "uploadedDoc" => $uploadedDoc->doc_path ?? "",
-                    "uploadedDocId" => $uploadedDoc->id ?? "",
-                    "verifyStatus'" => $refSafs->payment_status == 1 ? ($uploadedDoc->verify_status ?? "") : 0,
-                    "remarks" => $uploadedDoc->remarks ?? "",
+                    "uploadedDoc" => $uploadedDoc['doc_path'] ?? "",
+                    "uploadedDocId" => $uploadedDoc['id'] ?? "",
+                    "verifyStatus'" => $refSafs->payment_status == 1 ? ($uploadedDoc['verify_status'] ?? "") : 0,
+                    "remarks" => $uploadedDoc['remarks'] ?? "",
                 ];
                 return $arr;
             });
@@ -200,16 +206,19 @@ class SafDocController extends Controller
             $refImageName = $req->docCode;
             $refImageName = $getSafDtls->id . '-' . $refImageName;
             $document = $req->document;
-            $imageName = $docUpload->upload($refImageName, $document, $relativePath);
+            // $imageName = $docUpload->upload($refImageName, $document, $relativePath);
+            $docDetail = $docUpload->checkDoc($req);
 
             $metaReqs['module_id'] = $propModuleId;
             $metaReqs['active_id'] = $getSafDtls->id;
             $metaReqs['workflow_id'] = $getSafDtls->workflow_id;
             $metaReqs['ulb_id'] = $getSafDtls->ulb_id;
             $metaReqs['relative_path'] = $relativePath;
-            $metaReqs['document'] = $imageName;
+            // $metaReqs['document'] = $imageName;
             $metaReqs['doc_code'] = $req->docCode;
             $metaReqs['doc_category'] = $req->docCategory;
+            $metaReqs['unique_id'] = $docDetail['data']['uniqueId'];
+            $metaReqs['reference_no'] = $docDetail['data']['ReferenceNo'];
 
             if ($req->docCode == 'PHOTOGRAPH') {
                 $metaReqs['verify_status'] = 1;
@@ -266,6 +275,7 @@ class SafDocController extends Controller
             $mWfActiveDocument = new WfActiveDocument();
             $mActiveSafs = new PropActiveSaf();
             $mPropSaf = new PropSaf();
+            $docUrl = new DocUrl;
             $moduleId = FacadesConfig::get('module-constants.PROPERTY_MODULE_ID');              // 1
 
             $safDetails = $mActiveSafs->getSafNo($req->applicationId);
@@ -276,9 +286,12 @@ class SafDocController extends Controller
 
             $workflowId = $safDetails->workflow_id;
             $documents = $mWfActiveDocument->getDocsByAppId($req->applicationId, $workflowId, $moduleId);
-            return responseMsgs(true, ["docVerifyStatus" => $safDetails->doc_verify_status], remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");
+
+            $data = $docUrl->getDocUrl($documents);           #_Calling BLL for Document Path from DMS
+
+            return responseMsgs(true, ["docVerifyStatus" => $safDetails->doc_verify_status], remove_null($data), "010102", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         }
     }
 

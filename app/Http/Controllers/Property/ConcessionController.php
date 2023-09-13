@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Property;
 
+use App\BLL\DocUrl;
 use App\Http\Controllers\Controller;
 use App\MicroServices\DocUpload;
 use App\MicroServices\IdGenerator\PrefixIdGenerator;
@@ -33,6 +34,7 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Redis;
 use Exception;
 use Illuminate\Pipeline\Pipeline;
+use Illuminate\Support\Facades\Http;
 
 /**
  * | Created On-15-11-2022 
@@ -235,14 +237,19 @@ class ConcessionController extends Controller
         $refImageName = $concession->id . '-' . str_replace(' ', '_', $refImageName);
         $document = $request['doc'];
 
-        $imageName = $docUpload->upload($refImageName, $document, $relativePath);
+        $newDocRequest = new Request(["document" => $request['doc']]);
+
+        // $imageName = $docUpload->upload($refImageName, $document, $relativePath);
+        $docDetail = $docUpload->checkDoc($newDocRequest);
         $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
         $metaReqs['activeId'] = $concession->id;
         $metaReqs['workflowId'] = $concession->workflow_id;
         $metaReqs['ulbId'] = $concession->ulb_id;
-        $metaReqs['document'] = $imageName;
+        // $metaReqs['document'] = $imageName;
         $metaReqs['relativePath'] = $relativePath;
         $metaReqs['docCode'] = $request['code'];
+        $metaReqs['uniqueId'] = $docDetail['data']['uniqueId'];
+        $metaReqs['referenceNo'] = $docDetail['data']['ReferenceNo'];
 
         $metaReqs = new Request($metaReqs);
         $mWfActiveDocument->postDocuments($metaReqs);
@@ -940,6 +947,7 @@ class ConcessionController extends Controller
         try {
             $mWfActiveDocument = new WfActiveDocument();
             $mPropActiveConcession = new PropActiveConcession();
+            $docUrl = new DocUrl;
             $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
 
             $concessionDetails = $mPropActiveConcession->getConcessionNo($req->applicationId);
@@ -948,7 +956,9 @@ class ConcessionController extends Controller
 
             $workflowId = $concessionDetails->workflow_id;
             $documents = $mWfActiveDocument->getDocsByAppId($req->applicationId, $workflowId, $moduleId);
-            return responseMsgs(true, "Uploaded Documents", remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");
+            $data = $docUrl->getDocUrl($documents);           #_Calling BLL for Document Path from DMS
+
+            return responseMsgs(true, "Uploaded Documents", remove_null($data), "010102", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
         }
@@ -980,16 +990,19 @@ class ConcessionController extends Controller
             $refImageName = $req->docCode;
             $refImageName = $getConcessionDtls->id . '-' . $refImageName;
             $document = $req->document;
-            $imageName = $docUpload->upload($refImageName, $document, $relativePath);
+            // $imageName = $docUpload->upload($refImageName, $document, $relativePath);
+            $docDetail = $docUpload->checkDoc($req);
 
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs['activeId'] = $getConcessionDtls->id;
             $metaReqs['workflowId'] = $getConcessionDtls->workflow_id;
             $metaReqs['ulbId'] = $getConcessionDtls->ulb_id;
             $metaReqs['relativePath'] = $relativePath;
-            $metaReqs['document'] = $imageName;
+            // $metaReqs['document'] = $imageName;
             $metaReqs['docCode'] = $req->docCode;
             $metaReqs['ownerDtlId'] = $getConcessionDtls->prop_owner_id;
+            $metaReqs['uniqueId'] = $docDetail['data']['uniqueId'];
+            $metaReqs['referenceNo'] = $docDetail['data']['ReferenceNo'];
 
             $metaReqs = new Request($metaReqs);
 
@@ -1083,16 +1096,16 @@ class ConcessionController extends Controller
             $refApplication = $mPropActiveConcession->getConcessionNo($req->applicationId);                      // Get Saf Details
             if (!$refApplication)
                 throw new Exception("Application Not Found for this id");
-            // $concessionDoc['listDocs'] = $this->getDocList($refApplication);             // Current Object(Concession Docuement List)
+
             $filterDocs = $this->getDocList($refApplication);             // Current Object(Saf Docuement List)
             if (!empty($filterDocs))
                 $concessionDoc['listDocs'] = $this->filterDocument($filterDocs, $refApplication);                                     // function(1.2)
             else
                 $concessionDoc['listDocs'] = [];
 
-            return responseMsgs(true, "Successfully Done", remove_null($concessionDoc), "", '010714', '01', '314ms-451ms', 'Post', '');
+            return responseMsgs(true, "Successfully Done", remove_null($concessionDoc), "", '010714', '01', responseTime(), $req->getMethod(), '');
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), '', "", '010714', '01', '314ms-451ms', 'Post', '');
+            return responseMsgs(false, $e->getMessage(), '', "", '010714', '01', responseTime(), $req->getMethod(), '');
         }
     }
 
@@ -1137,10 +1150,13 @@ class ConcessionController extends Controller
     public function filterDocument($documentList, $refApplication)
     {
         $mWfActiveDocument = new WfActiveDocument();
+        $docUrl = new DocUrl;
         $safId = $refApplication->id;
         $workflowId = $refApplication->workflow_id;
         $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
-        $uploadedDocs = $mWfActiveDocument->getDocByRefIds($safId, $workflowId, $moduleId);
+        $documents = $mWfActiveDocument->getDocByRefIds($safId, $workflowId, $moduleId);
+        $uploadedDocs = $docUrl->getDocUrl($documents);           #_Calling BLL for Document Path from DMS
+
         $explodeDocs = $documentList;
 
         $filteredDocs = $explodeDocs->map(function ($explodeDoc) use ($uploadedDocs) {
@@ -1156,12 +1172,12 @@ class ConcessionController extends Controller
 
                 if ($uploadedDoc) {
                     $response = [
-                        "uploadedDocId" => $uploadedDoc->id ?? "",
+                        "uploadedDocId" => $uploadedDoc['id'] ?? "",
                         "documentCode" => $item,
-                        "ownerId" => $uploadedDoc->owner_dtl_id ?? "",
-                        "docPath" => $uploadedDoc->doc_path ?? "",
-                        "verifyStatus" => $uploadedDoc->verify_status ?? "",
-                        "remarks" => $uploadedDoc->remarks ?? "",
+                        "ownerId" => $uploadedDoc['owner_dtl_id'] ?? "",
+                        "docPath" => $uploadedDoc['doc_path'] ?? "",
+                        "verifyStatus" => $uploadedDoc['verify_status'] ?? "",
+                        "remarks" => $uploadedDoc['remarks'] ?? "",
                     ];
                     $documents->push($response);
                 }
@@ -1178,10 +1194,10 @@ class ConcessionController extends Controller
                 $arr = [
                     "documentCode" => $doc,
                     "docVal" => ucwords($strReplace),
-                    "uploadedDoc" => $uploadedDoc->doc_path ?? "",
-                    "uploadedDocId" => $uploadedDoc->id ?? "",
-                    "verifyStatus'" => $uploadedDoc->verify_status ?? "",
-                    "remarks" => $uploadedDoc->remarks ?? "",
+                    "uploadedDoc" => $uploadedDoc['doc_path'] ?? "",
+                    "uploadedDocId" => $uploadedDoc['id'] ?? "",
+                    "verifyStatus'" => $uploadedDoc['verify_status'] ?? "",
+                    "remarks" => $uploadedDoc['remarks'] ?? "",
                 ];
                 return $arr;
             });

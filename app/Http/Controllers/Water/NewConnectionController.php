@@ -12,6 +12,7 @@
 
 namespace App\Http\Controllers\Water;
 
+use App\BLL\DocUrl;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Water\newApplyRules;
 use App\Http\Requests\Water\reqSiteVerification;
@@ -1071,6 +1072,7 @@ class NewConnectionController extends Controller
             $refImageName       = $req->docRefName;
             $refImageName       = $getWaterDetails->id . '-' . str_replace(' ', '_', $refImageName);
             $imageName          = $docUpload->upload($refImageName, $document, $relativePath);
+            $docDetail = $docUpload->checkDoc($req);
 
             $metaReqs = [
                 'moduleId'      => $refmoduleId,
@@ -1082,7 +1084,10 @@ class NewConnectionController extends Controller
                 'docCode'       => $req->docCode,
                 'ownerDtlId'    => $req->ownerId,
                 'docCategory'   => $req->docCategory,
-                'auth'          => $user
+                'auth'          => $user,
+                'uniqueId' => $docDetail['data']['uniqueId'],
+                'referenceNo' => $docDetail['data']['ReferenceNo'],
+
             ];
 
             if ($user->user_type == "Citizen") {                                                // Static
@@ -1273,6 +1278,7 @@ class NewConnectionController extends Controller
         try {
             $mWfActiveDocument = new WfActiveDocument();
             $mWaterApplication = new WaterApplication();
+            $docUrl = new DocUrl;
             $moduleId = Config::get('module-constants.WATER_MODULE_ID');
 
             $waterDetails = $mWaterApplication->getApplicationById($req->applicationId)->first();
@@ -1281,12 +1287,9 @@ class NewConnectionController extends Controller
 
             $workflowId = $waterDetails->workflow_id;
             $documents = $mWfActiveDocument->getWaterDocsByAppNo($req->applicationId, $workflowId, $moduleId);
-            $returnData = collect($documents)->map(function ($value) {                          // Static
-                $path =  $this->readDocumentPath($value->ref_doc_path);
-                $value->doc_path = !empty(trim($value->ref_doc_path)) ? $path : null;
-                return $value;
-            });
-            return responseMsgs(true, "Uploaded Documents", remove_null($returnData), "010102", "1.0", "", "POST", $req->deviceId ?? "");
+            $data = $docUrl->getDocUrl($documents);           #_Calling BLL for Document Path from DMS
+
+            return responseMsgs(true, "Uploaded Documents", remove_null($data), "010102", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
         }
@@ -1693,10 +1696,13 @@ class NewConnectionController extends Controller
     public function filterDocument($documentList, $refWaterApplication, $ownerId = null)
     {
         $mWfActiveDocument  = new WfActiveDocument();
+        $docUrl             = new DocUrl;
         $applicationId      = $refWaterApplication->id;
         $workflowId         = $refWaterApplication->workflow_id;
         $moduleId           = Config::get('module-constants.WATER_MODULE_ID');
         $uploadedDocs       = $mWfActiveDocument->getDocByRefIds($applicationId, $workflowId, $moduleId);
+        $uploadedDocs = $docUrl->getDocUrl($uploadedDocs);           #_Calling BLL for Document Path from DMS
+
 
         $explodeDocs = collect(explode('#', $documentList->requirements));
         $filteredDocs = $explodeDocs->map(function ($explodeDoc) use ($uploadedDocs, $ownerId, $documentList) {
@@ -1715,12 +1721,12 @@ class NewConnectionController extends Controller
                     $path = $this->readDocumentPath($uploadedDoc->doc_path);
                     $fullDocPath = !empty(trim($uploadedDoc->doc_path)) ? $path : null;
                     $response = [
-                        "uploadedDocId" => $uploadedDoc->id ?? "",
                         "documentCode"  => $item,
-                        "ownerId"       => $uploadedDoc->owner_dtl_id ?? "",
+                        "uploadedDocId" => $uploadedDoc['id'] ?? "",
+                        "ownerId"       => $uploadedDoc['owner_dtl_id'] ?? "",
                         "docPath"       => $fullDocPath ?? "",
-                        "verifyStatus"  => $uploadedDoc->verify_status ?? "",
-                        "remarks"       => $uploadedDoc->remarks ?? "",
+                        "verifyStatus"  => $uploadedDoc['verify_status'] ?? "",
+                        "remarks"       => $uploadedDoc['remarks'] ?? "",
                     ];
                     $documents->push($response);
                 }
@@ -1742,9 +1748,9 @@ class NewConnectionController extends Controller
                     "documentCode"  => $doc,
                     "docVal"        => ucwords($strReplace),
                     "uploadedDoc"   => $fullDocPath ?? "",
-                    "uploadedDocId" => $uploadedDoc->id ?? "",
-                    "verifyStatus'" => $uploadedDoc->verify_status ?? "",
-                    "remarks"       => $uploadedDoc->remarks ?? "",
+                    "uploadedDocId" => $uploadedDoc['id'] ?? "",
+                    "verifyStatus'" => $uploadedDoc['verify_status'] ?? "",
+                    "remarks"       => $uploadedDoc['remarks'] ?? "",
                 ];
                 return $arr;
             });

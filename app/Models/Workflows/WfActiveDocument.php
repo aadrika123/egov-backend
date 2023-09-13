@@ -46,7 +46,9 @@ class WfActiveDocument extends Model
             "remarks" => $req->remarks ?? null,
             "doc_code" => $req->docCode,
             "owner_dtl_id" => $req->ownerDtlId,
-            "doc_category" => $req->docCategory ?? null
+            "doc_category" => $req->docCategory ?? null,
+            "unique_id" => $req->uniqueId ?? null,
+            "reference_no" => $req->referenceNo ?? null,
         ];
     }
 
@@ -116,7 +118,10 @@ class WfActiveDocument extends Model
                 'd.remarks',
                 'd.verify_status',
                 'd.doc_code',
-                'o.owner_name'
+                'o.owner_name',
+                'unique_id',
+                'reference_no',
+
             )
             ->leftJoin('prop_active_safs_owners as o', 'o.id', '=', 'd.owner_dtl_id')
             ->where('d.active_id', $applicationId)
@@ -135,7 +140,11 @@ class WfActiveDocument extends Model
             ->select(
                 'd.verify_status',
                 'd.id as doc_id',
+                'doc_code',
+                'owner_name',
                 DB::raw("concat('$docUrl/',relative_path,'/',document) as doc_path"),
+                'unique_id',
+                'reference_no',
             )
             ->leftJoin('prop_active_safs_owners as o', 'o.id', '=', 'd.owner_dtl_id')
             ->where('d.active_id', $applicationId)
@@ -182,7 +191,9 @@ class WfActiveDocument extends Model
                 'd.doc_code',
                 'd.doc_category',
                 'd.status',
-                'o.applicant_name as owner_name'
+                'o.applicant_name as owner_name',
+                'unique_id',
+                'reference_no',
             )
             ->leftJoin('water_applicants as o', 'o.id', '=', 'd.owner_dtl_id')
             ->where('d.active_id', $applicationId)

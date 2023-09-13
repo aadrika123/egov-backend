@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Property;
 
+use App\BLL\DocUrl;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Property\ReqGbSiteVerification;
 use App\MicroServices\DocUpload;
@@ -1037,6 +1038,7 @@ class GbSafController extends Controller
         try {
             $mWfActiveDocument = new WfActiveDocument();
             $mPropActiveSaf = new PropActiveSaf();
+            $docUrl = new DocUrl;
             $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
 
             $safDetails = $mPropActiveSaf->getSafNo($req->applicationId);
@@ -1045,7 +1047,9 @@ class GbSafController extends Controller
 
             $workflowId = $safDetails->workflow_id;
             $documents = $mWfActiveDocument->getDocsByAppId($req->applicationId, $workflowId, $moduleId);
-            return responseMsgs(true, "Uploaded Documents", remove_null($documents), "010102", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+            $data = $docUrl->getDocUrl($documents);           #_Calling BLL for Document Path from DMS
+
+            return responseMsgs(true, "Uploaded Documents", remove_null($data), "010102", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         }
@@ -1078,15 +1082,18 @@ class GbSafController extends Controller
             $refImageName = $req->docCode;
             $refImageName = $getSafDtls->id . '-' . $refImageName;
             $document = $req->document;
-            $imageName = $docUpload->upload($refImageName, $document, $relativePath);
+            // $imageName = $docUpload->upload($refImageName, $document, $relativePath);
+            $docDetail = $docUpload->checkDoc($req);
 
             $metaReqs['moduleId'] = $propModuleId;
             $metaReqs['activeId'] = $getSafDtls->id;
             $metaReqs['workflowId'] = $getSafDtls->workflow_id;
             $metaReqs['ulbId'] = $getSafDtls->ulb_id;
             $metaReqs['relativePath'] = $relativePath;
-            $metaReqs['document'] = $imageName;
             $metaReqs['docCode'] = $req->docCode;
+            $metaReqs['uniqueId'] = $docDetail['data']['uniqueId'];
+            $metaReqs['referenceNo'] = $docDetail['data']['ReferenceNo'];
+            // $metaReqs['document'] = $imageName;
 
             $metaReqs = new Request($metaReqs);
             $mWfActiveDocument->postDocuments($metaReqs);
@@ -1126,12 +1133,14 @@ class GbSafController extends Controller
     {
         $mRefReqDocs = new RefRequiredDocument();
         $mWfActiveDocument = new WfActiveDocument();
+        $docUrl = new DocUrl;
         $applicationId = $refSafs->id;
         $workflowId = $refSafs->workflow_id;
         $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
         $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PROP_GB_SAF")->requirements;
-
         $uploadedDocs = $mWfActiveDocument->getDocByRefIds($applicationId, $workflowId, $moduleId);
+        $uploadedDocs = $docUrl->getDocUrl($uploadedDocs);           #_Calling BLL for Document Path from DMS
+
         $explodeDocs = collect(explode('#', $documentList));
 
         $filteredDocs = $explodeDocs->map(function ($explodeDoc) use ($uploadedDocs, $refSafs) {
@@ -1144,12 +1153,12 @@ class GbSafController extends Controller
                 $uploadedDoc = $uploadedDocs->where('doc_code', $item)->first();
                 if ($uploadedDoc) {
                     $response = [
-                        "uploadedDocId" => $uploadedDoc->id ?? "",
                         "documentCode" => $item,
-                        "ownerId" => $uploadedDoc->owner_dtl_id ?? "",
-                        "docPath" => $uploadedDoc->doc_path ?? "",
-                        "verifyStatus" => $refSafs->payment_status == 1 ? ($uploadedDoc->verify_status ?? "") : 0,
-                        "remarks" => $uploadedDoc->remarks ?? "",
+                        "uploadedDocId" => $uploadedDoc['id'] ?? "",
+                        "ownerId" => $uploadedDoc['owner_dtl_id'] ?? "",
+                        "docPath" => $uploadedDoc['doc_path'] ?? "",
+                        "verifyStatus" => $refSafs->payment_status == 1 ? ($uploadedDoc['verify_status'] ?? "") : 0,
+                        "remarks" => $uploadedDoc['remarks'] ?? "",
                     ];
                     $documents->push($response);
                 }
@@ -1172,10 +1181,10 @@ class GbSafController extends Controller
                 $arr = [
                     "documentCode" => $doc,
                     "docVal" => ucwords($strReplace),
-                    "uploadedDoc" => $uploadedDoc->doc_path ?? "",
-                    "uploadedDocId" => $uploadedDoc->id ?? "",
-                    "verifyStatus'" => $uploadedDoc->verify_status ?? "",
-                    "remarks" => $uploadedDoc->remarks ?? "",
+                    "uploadedDoc" => $uploadedDoc['doc_path'] ?? "",
+                    "uploadedDocId" => $uploadedDoc['id'] ?? "",
+                    "verifyStatus'" => $uploadedDoc['verify_status'] ?? "",
+                    "remarks" => $uploadedDoc['remarks'] ?? "",
                 ];
                 return $arr;
             });

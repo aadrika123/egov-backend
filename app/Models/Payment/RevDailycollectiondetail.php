@@ -9,10 +9,8 @@ class RevDailycollectiondetail extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        "collection_id", "module_id", "demand", "deposit_amount", "cheq_dd_no",
-        "bank_name", "deposit_mode", "application_no", "transaction_id"
-    ];
+    protected $guarded = [];
+    protected $connection = 'pgsql_master';
 
     public function store($req)
     {

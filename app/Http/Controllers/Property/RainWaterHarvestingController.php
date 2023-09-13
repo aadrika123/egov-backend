@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Property;
 
+use App\BLL\DocUrl;
 use App\BLL\Property\CalculatePropById;
 use App\BLL\Property\PostSafPropTaxes;
 use App\Http\Controllers\Controller;
@@ -854,6 +855,7 @@ class RainWaterHarvestingController extends Controller
         try {
             $mWfActiveDocument = new WfActiveDocument();
             $mPropActiveHarvesting = new PropActiveHarvesting();
+            $docUrl = new DocUrl;
             $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
 
             $harvestingDetails = $mPropActiveHarvesting->getHarvestingNo($req->applicationId);
@@ -862,7 +864,9 @@ class RainWaterHarvestingController extends Controller
 
             $workflowId = $harvestingDetails->workflow_id;
             $documents = $mWfActiveDocument->getDocsByAppId($req->applicationId, $workflowId, $moduleId);
-            return responseMsgs(true, "Uploaded Documents", remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");
+            $data = $docUrl->getDocUrl($documents);           #_Calling BLL for Document Path from DMS
+
+            return responseMsgs(true, "Uploaded Documents", remove_null($data), "010102", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
         }
@@ -894,14 +898,17 @@ class RainWaterHarvestingController extends Controller
             $refImageName = $req->docCode;
             $refImageName = $getHarvestingDtls->id . '-' . $refImageName;
             $document = $req->document;
-            $imageName = $docUpload->upload($refImageName, $document, $relativePath);
+            // $imageName = $docUpload->upload($refImageName, $document, $relativePath);
+            $docDetail = $docUpload->checkDoc($req);
 
+            $metaReqs['uniqueId'] = $docDetail['data']['uniqueId'];
+            $metaReqs['referenceNo'] = $docDetail['data']['ReferenceNo'];
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs['activeId'] = $getHarvestingDtls->id;
             $metaReqs['workflowId'] = $getHarvestingDtls->workflow_id;
             $metaReqs['ulbId'] = $getHarvestingDtls->ulb_id;
             $metaReqs['relativePath'] = $relativePath;
-            $metaReqs['document'] = $imageName;
+            // $metaReqs['document'] = $imageName;
             $metaReqs['docCode'] = $req->docCode;
 
             $metaReqs = new Request($metaReqs);
@@ -1020,12 +1027,15 @@ class RainWaterHarvestingController extends Controller
     {
         $mRefReqDocs = new RefRequiredDocument();
         $mWfActiveDocument = new WfActiveDocument();
+        $docUrl = new DocUrl;
         $applicationId = $refApplication->id;
         $workflowId = $refApplication->workflow_id;
         $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
         $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PROP_RAIN_WATER_HARVESTING")->requirements;
 
         $uploadedDocs = $mWfActiveDocument->getDocByRefIds($applicationId, $workflowId, $moduleId);
+        $uploadedDocs = $docUrl->getDocUrl($uploadedDocs);           #_Calling BLL for Document Path from DMS
+
         $explodeDocs = collect(explode('#', $documentList));
 
         $filteredDocs = $explodeDocs->map(function ($explodeDoc) use ($uploadedDocs) {
@@ -1039,8 +1049,8 @@ class RainWaterHarvestingController extends Controller
                 if ($uploadedDoc) {
                     $response = [
                         "documentCode" => $item,
-                        "ownerId" => $uploadedDoc->owner_dtl_id ?? "",
-                        "docPath" => $uploadedDoc->doc_path ?? ""
+                        "ownerId" => $uploadedDoc['owner_dtl_id'] ?? "",
+                        "docPath" => $uploadedDoc['doc_path'] ?? ""
                     ];
                     $documents->push($response);
                 }
@@ -1056,10 +1066,10 @@ class RainWaterHarvestingController extends Controller
                 $arr = [
                     "documentCode" => $doc,
                     "docVal" => ucwords($strReplace),
-                    "uploadedDoc" => $uploadedDoc->doc_path ?? "",
-                    "uploadedDocId" => $uploadedDoc->id ?? "",
-                    "verifyStatus'" => $uploadedDoc->verify_status ?? "",
-                    "remarks" => $uploadedDoc->remarks ?? "",
+                    "uploadedDoc" => $uploadedDoc['doc_path'] ?? "",
+                    "uploadedDocId" => $uploadedDoc['id'] ?? "",
+                    "verifyStatus'" => $uploadedDoc['verify_status'] ?? "",
+                    "remarks" => $uploadedDoc['remarks'] ?? "",
                 ];
                 return $arr;
             });
