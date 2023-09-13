@@ -398,7 +398,14 @@ class TradeApplication extends Controller
 
             $appNo = $licenceDetails->application_no;
             $tradR = $this->_CONTROLLER_TRADE;
-            $documents = $mWfActiveDocument->getTradeDocByAppNo($licenceDetails->id, $licenceDetails->workflow_id, $modul_id);
+            $documents = $mWfActiveDocument->getTradeDocByAppNo($licenceDetails->id, $licenceDetails->workflow_id, $modul_id)->map(function($val){
+                $docUpload = new DocUpload();
+                // $val->reference_no = "REF16946096910491";
+                $api = $docUpload->getSingleDocUrl($val);
+                $val->doc_path = $api["doc_path"]??"";
+                $val->api =$api??"";
+                return $val;
+            });
 
             $doc = $tradR->getLicenseDocLists($req);
             $docVerifyStatus = $doc->original["data"]["docVerifyStatus"] ?? 0;

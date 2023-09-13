@@ -2,6 +2,7 @@
 
 namespace App\Traits\Trade;
 
+use App\MicroServices\DocUpload;
 use Illuminate\Support\Facades\Config;
 use App\Models\Workflows\WfActiveDocument;
 use App\Models\Masters\RefRequiredDocument;
@@ -205,17 +206,21 @@ trait TradeTrait
             $docName =  array_shift($document);
             $docName = str_replace("{","",str_replace("}","",$docName));
             $documents = collect();
-            collect($document)->map(function ($item) use ($uploadedDocs, $documents, $ownerId,$docName) {
-
+            collect($document)->map(function ($item) use ($uploadedDocs, $documents, $ownerId,$docName) {                
+                $docUpload = new DocUpload();
                 $uploadedDoc = $uploadedDocs->where('doc_code', $docName)
                     ->where('owner_dtl_id', $ownerId)
                     ->first();
                 if ($uploadedDoc) {
+                    // $uploadedDoc->reference_no = "REF1694609691049";
+                    $api = $docUpload->getSingleDocUrl($uploadedDoc);
                     $response = [
+                        "api"=>$api??"",
                         "uploadedDocId" => $uploadedDoc->id ?? "",
                         "documentCode" => $item,
                         "ownerId" => $uploadedDoc->owner_dtl_id ?? "",
-                        "docPath" => $uploadedDoc->doc_path ?? "",
+                        // "docPath" => $uploadedDoc->doc_path ?? "",
+                        "docPath" => $api["doc_path"]??"",
                         "verifyStatus" => $uploadedDoc->verify_status ?? "",
                         "remarks" => $uploadedDoc->remarks ?? "",
                     ];
