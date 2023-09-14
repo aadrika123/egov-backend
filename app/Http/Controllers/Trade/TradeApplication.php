@@ -417,16 +417,27 @@ class TradeApplication extends Controller
 
     #====================[📝📖 APPLICATION DOC UPLOAD | S.L (4.2) 📖📝]========================================================
     public function uploadDocument(Request $req)
-    { 
+    {         
         try {
-
-            $req->validate([
+            $rules= [
                 "applicationId" => "required|digits_between:1,9223372036854775807",
                 "document" => "required|mimes:pdf,jpeg,png,jpg,gif",
                 "docName" => "required",
                 "docCode" => "required",
                 "ownerId" => "nullable|digits_between:1,9223372036854775807"
-            ]);
+            ];
+            $validator = Validator::make($req->all(), $rules,);
+            if ($validator->fails()) {
+                return responseMsg(false, $validator->errors(), "");
+            }
+
+            // $req->validate([
+            //     "applicationId" => "required|digits_between:1,9223372036854775807",
+            //     "document" => "required|mimes:pdf,jpeg,png,jpg,gif",
+            //     "docName" => "required",
+            //     "docCode" => "required",
+            //     "ownerId" => "nullable|digits_between:1,9223372036854775807"
+            // ]);
             $tradC = $this->_CONTROLLER_TRADE;
             $docUpload = new DocUpload;
             $mWfActiveDocument = new WfActiveDocument();
