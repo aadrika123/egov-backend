@@ -212,7 +212,7 @@ class DocUpload
                     $key['owner_name'] =  $document->owner_name;
                     $key['remarks'] =  $document->remarks;
                     $key['owner_dtl_id'] =  $document->owner_dtl_id ?? null;
-                    $key['doc_path'] = $responseData['data']['fullPath']??null;
+                    $key['doc_path'] = $responseData['data']['fullPath'] ?? null;
                     $key['responseData'] = $responseData;
                     $data->push($key);
                 }
@@ -245,7 +245,7 @@ class DocUpload
                 $key['verify_status'] =  $document->verify_status;
                 $key['owner_name'] =  $document->owner_name;
                 $key['remarks'] =  $document->remarks ?? null;
-                $key['doc_path'] = $responseData['data']['fullPath']??"";
+                $key['doc_path'] = $responseData['data']['fullPath'] ?? "";
                 $key['responseData'] = $responseData;
                 // $data->push($key);
             }
