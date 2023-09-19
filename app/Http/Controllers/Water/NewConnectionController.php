@@ -184,10 +184,10 @@ class NewConnectionController extends Controller
 
             $waterList = $this->getWaterApplicatioList($workflowIds, $ulbId)
                 ->whereIn('water_applications.current_role', $roleId)
-                ->whereIn('water_applications.ward_id', $occupiedWards)
+                // ->whereIn('water_applications.ward_id', $occupiedWards)
                 ->where('water_applications.is_escalate', false)
                 ->where('water_applications.parked', false)
-                ->orderByDesc('water_applications.id')
+                // ->orderByDesc('water_applications.id')
                 ->get();
             $filterWaterList = collect($waterList)->unique('id')->values();
             return responseMsgs(true, "Inbox List Details!", remove_null($filterWaterList), '', '02', '', 'Post', '');
@@ -226,8 +226,8 @@ class NewConnectionController extends Controller
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
             $waterList = $this->getWaterApplicatioList($workflowIds, $ulbId)
                 ->whereNotIn('water_applications.current_role', $roleId)
-                ->whereIn('water_applications.ward_id', $wardId)
-                ->orderByDesc('water_applications.id')
+                // ->whereIn('water_applications.ward_id', $wardId)
+                // ->orderByDesc('water_applications.id')
                 ->get();
             $filterWaterList = collect($waterList)->unique('id')->values();
             return responseMsgs(true, "Outbox List", remove_null($filterWaterList), '', '01', '.ms', 'Post', '');
@@ -276,9 +276,9 @@ class NewConnectionController extends Controller
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
 
             $waterList = $this->getWaterApplicatioList($workflowIds, $ulbId)
-                ->whereIn('water_applications.ward_id', $wardId)
+                // ->whereIn('water_applications.ward_id', $wardId)
                 ->where('parked', true)
-                ->orderByDesc('water_applications.id')
+                // ->orderByDesc('water_applications.id')
                 ->get();
 
             $filterWaterList = collect($waterList)->unique('id');
@@ -314,8 +314,8 @@ class NewConnectionController extends Controller
 
             $waterData = $this->getWaterApplicatioList($workflowIds, $ulbId)                              // Repository function to get SAF Details
                 ->where('water_applications.is_escalate', 1)
-                ->whereIn('water_applications.ward_id', $wardId)
-                ->orderByDesc('water_applications.id')
+                // ->whereIn('water_applications.ward_id', $wardId)
+                // ->orderByDesc('water_applications.id')
                 ->get();
             $filterWaterList = collect($waterData)->unique('id')->values();
             return responseMsgs(true, "Data Fetched", remove_null($filterWaterList), "010107", "1.0", "251ms", "POST", "");

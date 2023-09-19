@@ -386,9 +386,7 @@ class ReportController extends Controller
                 $receipts->push($receipt);
             }
 
-            $queryRunTime = (collect(DB::getQueryLog($data))->sum("time"));
-
-            return responseMsgs(true, 'Bulk Receipt', remove_null($receipts), '010801', '01', $queryRunTime, 'Post', '');
+            return responseMsgs(true, 'Bulk Receipt', remove_null($receipts), '010801', '01', responseTime(), 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -477,7 +475,7 @@ class ReportController extends Controller
     }
 
     /**
-     * | Not paid from 2019-2017
+     * | Not paid from 2016-2017
      */
     public function notPaidFrom2016(Request $request)
     {
@@ -511,14 +509,9 @@ class ReportController extends Controller
      */
     public function dcbPieChart(Request $request)
     {
-        $validated = Validator::make(
-            $request->all(),
-            [
-                'ulbId' => 'nullable|int',
-            ]
-        );
-        if ($validated->fails()) {
-            return validationError($validated);
+        $validator = Validator::make($request->all(), ['ulbId' => 'nullable|int']);
+        if ($validator->fails()) {
+            return validationError($validator);
         }
         return $this->Repository->dcbPieChart($request);
     }
