@@ -150,9 +150,10 @@ class Trade implements ITrade
         $this->_DB_MASTER = DB::connection("pgsql_master");
         $this->_DB_READ = DB::connection( $this->_DB_NAME."::read" );
         $this->_NOTICE_DB = DB::connection($this->_NOTICE_DB);
-        // DB::enableQueryLog();
-        // $this->_DB->enableQueryLog();
-        // $this->_NOTICE_DB->enableQueryLog();
+        DB::enableQueryLog();
+        $this->_DB->enableQueryLog();
+        $this->_DB_READ->enableQueryLog();
+        $this->_NOTICE_DB->enableQueryLog();
 
         $this->_MODEL_WARD = new ModelWard();
         $this->_COMMON_FUNCTION = new CommonFunction();

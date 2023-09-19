@@ -398,7 +398,14 @@ class TradeApplication extends Controller
 
             $appNo = $licenceDetails->application_no;
             $tradR = $this->_CONTROLLER_TRADE;
-            $documents = $mWfActiveDocument->getTradeDocByAppNo($licenceDetails->id, $licenceDetails->workflow_id, $modul_id);
+            $documents = $mWfActiveDocument->getTradeDocByAppNo($licenceDetails->id, $licenceDetails->workflow_id, $modul_id)->map(function($val){
+                $docUpload = new DocUpload();
+                // $val->reference_no = "REF16946096910491";
+                $api = $docUpload->getSingleDocUrl($val);
+                $val->doc_path = $api["doc_path"]??"";
+                $val->api =$api??"";
+                return $val;
+            });
 
             $doc = $tradR->getLicenseDocLists($req);
             $docVerifyStatus = $doc->original["data"]["docVerifyStatus"] ?? 0;
@@ -410,16 +417,27 @@ class TradeApplication extends Controller
 
     #====================[📝📖 APPLICATION DOC UPLOAD | S.L (4.2) 📖📝]========================================================
     public function uploadDocument(Request $req)
-    { 
+    {         
         try {
-
-            $req->validate([
+            $rules= [
                 "applicationId" => "required|digits_between:1,9223372036854775807",
                 "document" => "required|mimes:pdf,jpeg,png,jpg,gif",
                 "docName" => "required",
                 "docCode" => "required",
                 "ownerId" => "nullable|digits_between:1,9223372036854775807"
-            ]);
+            ];
+            $validator = Validator::make($req->all(), $rules,);
+            if ($validator->fails()) {
+                return responseMsg(false, $validator->errors(), "");
+            }
+
+            // $req->validate([
+            //     "applicationId" => "required|digits_between:1,9223372036854775807",
+            //     "document" => "required|mimes:pdf,jpeg,png,jpg,gif",
+            //     "docName" => "required",
+            //     "docCode" => "required",
+            //     "ownerId" => "nullable|digits_between:1,9223372036854775807"
+            // ]);
             $tradC = $this->_CONTROLLER_TRADE;
             $docUpload = new DocUpload;
             $mWfActiveDocument = new WfActiveDocument();
@@ -487,16 +505,22 @@ class TradeApplication extends Controller
             $refImageName = $req->docCode;
             $refImageName = $getLicenceDtls->id . '-' . str_replace(' ', '_', $refImageName);
             $document = $req->document;
-
-            $imageName = $docUpload->upload($refImageName, $document, $relativePath);
+            $uploads = (object)$docUpload->checkDoc($req);
+            if(!$uploads->status)
+            {
+                throw new Exception($uploads->message);
+            }
+            // $imageName = $docUpload->upload($refImageName, $document, $relativePath);
 
             $metaReqs['moduleId'] = $this->_MODULE_ID;
             $metaReqs['activeId'] = $getLicenceDtls->id;
             $metaReqs['workflowId'] = $getLicenceDtls->workflow_id;
             $metaReqs['ulbId'] = $getLicenceDtls->ulb_id;
             $metaReqs['relativePath'] = $relativePath;
-            $metaReqs['document'] = $imageName;
+            // $metaReqs['document'] = $imageName;
             $metaReqs['docCode'] = $req->docName; //$req->docCode;
+            $metaReqs['uniqueId'] = $uploads->data["uniqueId"]??null;
+            $metaReqs['referenceNo'] = $uploads->data["ReferenceNo"]??null;
 
             if (in_array($req->docName, explode(",", $ownerDocNames))) {
                 $metaReqs['ownerDtlId'] = $req->ownerId;
@@ -511,7 +535,9 @@ class TradeApplication extends Controller
                     // dd("update");
                     $arr["verify_status"] = 0;
                     $arr['relative_path'] = $relativePath;
-                    $arr['document'] = $imageName;
+                    // $arr['document'] = $imageName;
+                    $arr['unique_id'] = $uploads->data["uniqueId"]??null;
+                    $arr['reference_no'] = $uploads->data["ReferenceNo"]??null;
                     $arr['doc_code'] = $req->docName;
                     $arr['owner_dtl_id'] = $metaReqs['ownerDtlId'] ?? null;
                     $mWfActiveDocument->docVerifyReject($privDoc->id, $arr);
