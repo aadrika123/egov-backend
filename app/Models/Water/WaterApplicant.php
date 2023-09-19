@@ -107,7 +107,7 @@ class WaterApplicant extends Model
         collect($approvedWaterApplicant)->map(function ($value) use ($consumerId) {
             $approvedWaterOwners = $value->replicate();
             $approvedWaterOwners->setTable('water_approval_applicants');
-            $approvedWaterOwners->id = $value->id;
+            // $approvedWaterOwners->id = $value->id;
             $approvedWaterOwners->save();
 
             $approvedWaterOwners = $value->replicate();
