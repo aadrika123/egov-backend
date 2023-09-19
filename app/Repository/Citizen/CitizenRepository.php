@@ -341,7 +341,7 @@ class CitizenRepository implements iCitizenRepository
         $propertiesByCitizen = $mActiveCitizenCareTaker->getTaggedPropsByCitizenId($userId);
         $propIds =  ($propertiesByCitizen->pluck('property_id'));
         if ($propIds->isEmpty())
-            throw new Exception('No Caretaker');
+            return $data;
 
         foreach ($propIds as $propId) {
             if (!$propId)
