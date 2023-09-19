@@ -30,7 +30,7 @@ class newApplyRules extends FormRequest
         $rules['ownerType']             = 'required|int|in:1,2';
         $rules['wardId']                = 'required|int';
         $rules['areaSqft']              = 'required|numeric';
-        $rules['pin']                   = "required|digits:6|regex:/^([0-9\s\-\+\(\)]*)$/|";
+        $rules['pin']                   = "nullble|digits:6|regex:/^([0-9\s\-\+\(\)]*)$/|";
         $rules['connection_through']    = 'required|int|in:1,2';
         $rules['ulbId']                 = 'required|int';
         $rules['owners']                = "required|array";
