@@ -2557,6 +2557,9 @@ class ActiveSafController extends Controller
             else
                 $demand['can_pay'] = false;
 
+            if (in_array($safDetails['payment_status'], [1, 2]))
+                $demand['can_pay'] = false;
+
             $safTaxes = $this->calculateSafBySafId($req);
             if ($safTaxes->original['status'] == false)
                 throw new Exception($safTaxes->original['message']);
