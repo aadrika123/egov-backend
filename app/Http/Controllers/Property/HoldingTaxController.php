@@ -581,7 +581,8 @@ class HoldingTaxController extends Controller
             $propCalReq = new Request([
                 'propId' => $req['id'],
                 'fYear' => $req['fYear'],
-                'qtr' => $req['qtr']
+                'qtr' => $req['qtr'],
+                'auth' => $req->auth
             ]);
             $propCalculation = $this->getHoldingDues($propCalReq);
 
