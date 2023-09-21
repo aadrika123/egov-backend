@@ -368,7 +368,8 @@ class PaymentRepository implements iPayment
                         break;
                     case ('2'):                                             //<------------------ (Water)
                         $objWater = new WaterNewConnection();
-                        $objWater->razorPayResponse($transfer);
+                        $data = $objWater->razorPayResponse($transfer);
+                        $data;
                         break;
                     case ('3'):                                             //<------------------ (TRADE)
                         $objTrade = new TradeCitizen();
@@ -402,8 +403,8 @@ class PaymentRepository implements iPayment
                         Http::withHeaders([])
                             ->post("$petApi->end_point", $transfer);
                         break;
-                    case ('10'):
-                        $marriage = 79;
+                    case ('10'):                                            //<-------------------(Marriage)
+                        $marriage = 29;
                         $mApiMaster = new ApiMaster();
                         $marriageApi = $mApiMaster->getApiEndpoint($marriage);
                         $details = Http::withHeaders([])
