@@ -508,6 +508,8 @@ class TradeCitizenController extends Controller
 
             $Tradetransaction = new TradeTransaction;
             $Tradetransaction->temp_id          = $licenceId;
+            $Tradetransaction->payment_gateway_type = "razor_pay";            
+            $Tradetransaction->response_id      = $RazorPayResponse->id;
             $Tradetransaction->ward_id          = $refLecenceData->ward_id;
             $Tradetransaction->tran_type        = $transactionType;
             $Tradetransaction->tran_date        = $mNowDate;

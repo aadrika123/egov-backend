@@ -779,8 +779,8 @@ use Illuminate\Support\Str;
                         ->where("notice_id",$noticeData->id)
                         ->orderBy("created_at","DESC")
                         ->first();
-           
-            if($sedule && ($remider ?($remider->reminder_date == Carbon::now()->format('Y-m-d') && $remider->created_on != Carbon::now()->format('Y-m-d')) : true)) 
+                        // dd($sedule && ($remider ?($remider->reminder_date == Carbon::now()->format('Y-m-d') && $remider->created_on != Carbon::now()->format('Y-m-d')) : true));
+            // if($sedule && ($remider ?($remider->reminder_date == Carbon::now()->format('Y-m-d') && $remider->created_on != Carbon::now()->format('Y-m-d')) : true)) 
             { 
                 $url = $remider->notice_file??"";
                 $temp = explode("/",$url);
