@@ -98,12 +98,12 @@
 
 <body class="container bg-light border border-dark" id="container" style="font-size:small">
     <div class="water-mark">
-        <img style ="max-height:400px;" src="{{public_path('image/logo/jharkhand_log.png')}}" alt="">
+        <img style ="max-height:400px;" src="{{public_path('custom/jhk-govt-logo.png')}}" alt="">
     </div>
     <div >
         <div class="row">
             <div class="col-md-12 text-center">
-                <img src="{{public_path('image/logo/jharkhand_log.png')}}" alt="logo" id="logo">
+                <img src="{{public_path('custom/jhk-govt-logo.png')}}" alt="logo" id="logo">
             </div>
         </div>
         <div class="row">
