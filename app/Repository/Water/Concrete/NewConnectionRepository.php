@@ -176,7 +176,6 @@ class NewConnectionRepository implements iNewConnection
         if (!$ulbWorkflowId) {
             throw new Exception("Respective Ulb is not maped to Water Workflow!");
         }
-        return $req->all();
         $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);
         $refFinisherRoleId  = $this->getFinisherId($ulbWorkflowId->id);
         $finisherRoleId     = DB::select($refFinisherRoleId);
