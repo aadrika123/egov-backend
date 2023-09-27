@@ -134,6 +134,7 @@ class NewConnectionRepository implements iNewConnection
     public function store(Request $req)
     {
         # ref variables
+        return $req->all();
         $user       = authUser($req);
         $vacantLand = $this->_vacantLand;
         $workflowID = $this->_waterWorkflowId;
