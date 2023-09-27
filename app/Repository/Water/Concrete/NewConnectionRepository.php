@@ -176,6 +176,7 @@ class NewConnectionRepository implements iNewConnection
         if (!$ulbWorkflowId) {
             throw new Exception("Respective Ulb is not maped to Water Workflow!");
         }
+        return $req->all();
         $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);
         $refFinisherRoleId  = $this->getFinisherId($ulbWorkflowId->id);
         $finisherRoleId     = DB::select($refFinisherRoleId);
@@ -183,7 +184,7 @@ class NewConnectionRepository implements iNewConnection
         if (!$finisherRoleId || !$initiatorRoleId) {
             throw new Exception("initiatorRoleId or finisherRoleId not found for respective Workflow!");
         }
-
+       
         # Generating Demand 
         $newConnectionCharges = objToArray($mWaterNewConnection->calWaterConCharge($req));
         if (!$newConnectionCharges['status']) {
@@ -194,8 +195,6 @@ class NewConnectionRepository implements iNewConnection
         $installment            = $newConnectionCharges['installment_amount'];
         $waterFeeId             = $newConnectionCharges['water_fee_mstr_id'];
         $totalConnectionCharges = $newConnectionCharges['conn_fee_charge']['amount'];
-
-        return $req->all();
 
         $this->begin();
         # Generating Application No
