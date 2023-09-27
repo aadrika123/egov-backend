@@ -134,7 +134,6 @@ class NewConnectionRepository implements iNewConnection
     public function store(Request $req)
     {
         # ref variables
-        return $req->all();
         $user       = authUser($req);
         $vacantLand = $this->_vacantLand;
         $workflowID = $this->_waterWorkflowId;
@@ -195,6 +194,8 @@ class NewConnectionRepository implements iNewConnection
         $installment            = $newConnectionCharges['installment_amount'];
         $waterFeeId             = $newConnectionCharges['water_fee_mstr_id'];
         $totalConnectionCharges = $newConnectionCharges['conn_fee_charge']['amount'];
+
+        return $req->all();
 
         $this->begin();
         # Generating Application No
