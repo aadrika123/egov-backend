@@ -208,6 +208,8 @@ class SafDocController extends Controller
             $document = $req->document;
             // $imageName = $docUpload->upload($refImageName, $document, $relativePath);
             $docDetail = $docUpload->checkDoc($req);
+            if ($docDetail->original['status'] == false)
+                throw new Exception("Document Uploadation Failed");
 
             $metaReqs['module_id'] = $propModuleId;
             $metaReqs['active_id'] = $getSafDtls->id;
