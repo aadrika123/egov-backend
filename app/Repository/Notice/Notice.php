@@ -812,7 +812,7 @@ use Illuminate\Support\Str;
                 #=========send Notic==========
                 $whatsapp=(Whatsapp_Send($noticeData->mobile_no,"file_test",
                 [
-                    "conten_type"=>"pdf",
+                    "content_type"=>"pdf",
                     [
                         "link"=>config('app.url')."/getImageLink?path=".$url,
                         "filename"=>$this->_NOTICE_CONSTAINT["NOTICE-TYPE-BY-ID"][$noticeData->notice_type_id].".pdf"
@@ -820,7 +820,7 @@ use Illuminate\Support\Str;
                 ]));
 
                 $whatsapp2=(Whatsapp_Send($noticeData->mobile_no,"trn_2_var",
-                ["conten_type"=>"text",
+                ["content_type"=>"text",
                     [
                         "https://www.smartulb.co.in/RMCDMC/getImageLink.php?path=RANCHI/water_consumer_deactivation/26dd0dbc6e3f4c8043749885523d6a25.pdf",
                         "notice.pdf"
