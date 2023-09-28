@@ -183,7 +183,7 @@ class NewConnectionRepository implements iNewConnection
         if (!$finisherRoleId || !$initiatorRoleId) {
             throw new Exception("initiatorRoleId or finisherRoleId not found for respective Workflow!");
         }
-
+       
         # Generating Demand 
         $newConnectionCharges = objToArray($mWaterNewConnection->calWaterConCharge($req));
         if (!$newConnectionCharges['status']) {
