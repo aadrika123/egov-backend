@@ -17,7 +17,7 @@ class DocUrl
      */
     public function getDocUrl($documents)
     {
-        $apiUrl = 'http://192.168.0.122:8001/backend/document/view-by-reference';
+        $apiUrl = 'http://192.168.0.95:888/backend/document/view-by-reference';
         $data = collect();
 
         foreach ($documents as $document) {
@@ -50,7 +50,7 @@ class DocUrl
      */
     public function getSingleDocUrl($document)
     {
-        $apiUrl = 'http://192.168.0.122:8001/backend/document/view-by-reference';
+        $apiUrl = 'http://192.168.0.95:888/backend/document/view-by-reference';
         $key = collect();
 
         if ($document) {

@@ -900,6 +900,8 @@ class RainWaterHarvestingController extends Controller
             $document = $req->document;
             // $imageName = $docUpload->upload($refImageName, $document, $relativePath);
             $docDetail = $docUpload->checkDoc($req);
+            // if ($docDetail->original['status'] == false)
+            //     throw new Exception("Document Uploadation Failed");
 
             $metaReqs['uniqueId'] = $docDetail['data']['uniqueId'];
             $metaReqs['referenceNo'] = $docDetail['data']['ReferenceNo'];

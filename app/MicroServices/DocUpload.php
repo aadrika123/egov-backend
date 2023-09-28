@@ -43,7 +43,7 @@ class DocUpload
             $filePath = $file->getPathname();
             $hashedFile = hash_file('sha256', $filePath);
             $filename = ($request->document)->getClientOriginalName();
-            $api = "http://192.168.0.122:8001/backend/document/upload";
+            $api = "http://192.168.0.95:888/backend/document/upload";
             $transfer = [
                 "file" => $request->document,
                 "tags" => $filename,
@@ -96,7 +96,7 @@ class DocUpload
             ]
         );
         $dotIndexes = $this->generateDotIndexes($_FILES);
-        $url = "http://192.168.0.122:8001/backend/document/upload";
+        $url = "http://192.168.0.95:888/backend/document/upload";
         foreach ($dotIndexes as $val) {
 
             $patern = "/\.name/i";
@@ -192,7 +192,7 @@ class DocUpload
      */
     public function getDocUrl($documents)
     {
-        $apiUrl = 'http://192.168.0.122:8001/backend/document/view-by-reference';
+        $apiUrl = 'http://192.168.0.95:888/backend/document/view-by-reference';
         $data = collect();
 
         foreach ($documents as $document) {
@@ -226,7 +226,7 @@ class DocUpload
      */
     public function getSingleDocUrl($document)
     {
-        $apiUrl = 'http://192.168.0.122:8001/backend/document/view-by-reference';
+        $apiUrl = 'http://192.168.0.95:888/backend/document/view-by-reference';
         $key = collect();
 
         if ($document) {

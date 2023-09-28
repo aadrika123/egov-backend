@@ -1073,6 +1073,8 @@ class NewConnectionController extends Controller
             $refImageName       = $getWaterDetails->id . '-' . str_replace(' ', '_', $refImageName);
             // $imageName          = $docUpload->upload($refImageName, $document, $relativePath);
             $docDetail          = $docUpload->checkDoc($req);
+            // if ($docDetail->original['status'] == false)
+            //     throw new Exception("Document Uploadation Failed");
 
             $metaReqs = [
                 'moduleId'      => $refmoduleId,

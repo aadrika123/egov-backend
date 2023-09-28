@@ -241,6 +241,8 @@ class ConcessionController extends Controller
 
         // $imageName = $docUpload->upload($refImageName, $document, $relativePath);
         $docDetail = $docUpload->checkDoc($newDocRequest);
+        // if ($docDetail->original['status'] == false)
+        //     throw new Exception("Document Uploadation Failed");
         $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
         $metaReqs['activeId'] = $concession->id;
         $metaReqs['workflowId'] = $concession->workflow_id;
@@ -992,6 +994,8 @@ class ConcessionController extends Controller
             $document = $req->document;
             // $imageName = $docUpload->upload($refImageName, $document, $relativePath);
             $docDetail = $docUpload->checkDoc($req);
+            // if ($docDetail->original['status'] == false)
+            //     throw new Exception("Document Uploadation Failed");
 
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs['activeId'] = $getConcessionDtls->id;
