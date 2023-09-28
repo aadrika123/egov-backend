@@ -543,6 +543,7 @@ Route::controller(ReportController::class)->group(function () {
   Route::post('reports/rebate/penalty', 'rebateNpenalty');
 
   Route::post('reports/property/payment-mode-wise-summery', 'PropPaymentModeWiseSummery'); //done
+  Route::post('v2/reports/property/payment-mode-wise-summery', 'V2PropPaymentModeWiseSummery'); 
   Route::post('reports/saf/payment-mode-wise-summery', 'SafPaymentModeWiseSummery');       //done
   Route::post('reports/property/dcb', 'PropDCB');                                         //done
   Route::post('reports/property/ward-wise-dcb', 'PropWardWiseDCB');                       //done

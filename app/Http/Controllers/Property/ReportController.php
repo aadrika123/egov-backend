@@ -200,6 +200,26 @@ class ReportController extends Controller
         return $this->Repository->PropPaymentModeWiseSummery($request);
     }
 
+    public function V2PropPaymentModeWiseSummery(Request $request)
+    {        
+        $request->merge(["metaData" => ["pr1.2", 1.1, null, $request->getMethod(), null,]]);
+        $validation = Validator::make($request->all(),[
+            "fromDate" => "required|date|date_format:Y-m-d",
+            "uptoDate" => "required|date|date_format:Y-m-d",
+            "ulbId" => "nullable|digits_between:1,9223372036854775807",
+            "wardId" => "nullable|digits_between:1,9223372036854775807",
+            "paymentMode" => "nullable",
+            "userId" => "nullable|digits_between:1,9223372036854775807",
+        ]);
+        $metaData = collect($request->metaData)->all();
+        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
+        if($validation->fails())
+        {
+            return responseMsgs(false, "given Data invalid", $validation->errors(), $apiId, $version, $queryRunTime, $action, $deviceId);
+        }
+        return $this->Repository->PropPaymentModeWiseSummery($request);
+    }
+
     public function SafPaymentModeWiseSummery(Request $request)
     {
         $request->validate(

@@ -525,8 +525,7 @@ class StateDashboardController extends Controller
         $metaData = collect($request->metaData)->all();
         list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
         $validation = Validator::make($request->all(),[
-            "fromDate" => "required|date|date_format:Y-m-d",
-            "uptoDate" => "required|date|date_format:Y-m-d",
+            "fiYear" => "nullable||regex:/^\d{4}-\d{4}$/",
             "wardId" => "nullable|digits_between:1,9223372036854775807",
             "userId" => "nullable|digits_between:1,9223372036854775807",
             "ulbId" => "nullable|digits_between:1,9223372036854775807",
@@ -536,7 +535,7 @@ class StateDashboardController extends Controller
             return responseMsgs(false, "given Data invalid", $validation->errors(), $apiId, $version, $queryRunTime, $action, $deviceId);
         }
         try{
-            $fromDate =  $uptoDate=$toDaye = Carbon::now()->format("Y-m-d");
+            $toDaye = Carbon::now()->format("Y-m-d");
             $fiYear = getFY();
             $ulbId = null;
             if ($request->fiYear) {
@@ -546,14 +545,8 @@ class StateDashboardController extends Controller
             if ($toYear - $fromYear != 1) {
                 throw new Exception("Enter Valide Financial Year");
             }
-            if ($request->fromDate) {
-                $fromDate = $request->fromDate;
-            }
-            if ($request->uptoDate) {
-                $uptoDate = $request->uptoDate;
-            }
-            $FfromDate = $fromYear . "-04-01";
-            $FuptoDate = $toYear . "-03-31";
+            $fromDate = $fromYear."-04-01" ;
+            $uptoDate = $toYear."-03-31";
             if ($request->ulbId) {
                 $ulbId = $request->ulbId;
             }
@@ -572,7 +565,7 @@ class StateDashboardController extends Controller
                     ))
                     ->join("ulb_masters","ulb_masters.id","ulb_revenue_targetes.ulb_id")
                     ->where("ulb_revenue_targetes.status",1)
-                    ->whereBetween("ulb_revenue_targetes.effected_from",[$FfromDate,$FuptoDate])
+                    ->whereBetween("ulb_revenue_targetes.effected_from",[$fromDate,$uptoDate])
                     ->groupBy("ulb_revenue_targetes.ulb_id")
                     ->groupBy("ulb_masters.ulb_name");
             if($ulbId)
@@ -695,13 +688,14 @@ class StateDashboardController extends Controller
                 $val->trade_today_coll = $tradeColl->where("ulb_id",$val->ulb_id)->sum("to_day_coll") ;
                 $val->total_today_coll = $propColl->where("ulb_id",$val->ulb_id)->sum("to_day_coll") + $waterColl->where("ulb_id",$val->ulb_id)->sum("to_day_coll") + $tradeColl->where("ulb_id",$val->ulb_id)->sum("to_day_coll");
 
-                $val->prop_per = ($val->prop_coll   / (($val->prop_demand > 0) ? $val->prop_demand : 1 ))*100 ;
-                $val->water_per = ($val->water_coll / (($val->water_demand > 0) ? $val->water_demand : 1 ))*100;
-                $val->trade_per = ($val->trade_coll / (($val->trade_demand > 0) ? $val->trade_demand :1 ))*100;
-                $val->total_per = ($val->total_coll / (($val->total_demand > 0) ? $val->total_demand :1 ))*100;
+                $val->prop_per = number_format(($val->prop_coll   / (($val->prop_demand > 0) ? $val->prop_demand : 1 ))*100,1) ;
+                $val->water_per = number_format(($val->water_coll / (($val->water_demand > 0) ? $val->water_demand : 1 ))*100,1);
+                $val->trade_per = number_format(($val->trade_coll / (($val->trade_demand > 0) ? $val->trade_demand :1 ))*100,1);
+                $val->total_per = number_format(($val->total_coll / (($val->total_demand > 0) ? $val->total_demand :1 ))*100,1);
 
                 return $val;
             });
+            $data["fiYear"] =$fiYear;
             $data["total"] =[
                 "ulb_name"=>"Total",
                 "prop_demand"=>$data["dtl"]->sum("prop_demand"),
