@@ -557,10 +557,6 @@ class StateDashboardController extends Controller
             if ($request->ulbId) {
                 $ulbId = $request->ulbId;
             }
-            DB::enableQueryLog();
-            DB::connection("pgsql_master")->enableQueryLog();
-            DB::connection("pgsql_water")->enableQueryLog();
-            DB::connection("pgsql_trade")->enableQueryLog();
             $target = ulbRevenueTargete::select(DB::raw(
                         "ulb_revenue_targetes.ulb_id,ulb_masters.ulb_name,
                         SUM(ulb_revenue_targetes.amt_prop_trg) AS amt_prop_trg, 
