@@ -338,6 +338,7 @@ class PropertyController extends Controller
             $propDetails    = $mPropProperty->getPropLatlong($req->wardId);
             $propertyIds    = $propDetails->pluck('property_id');
             $propDemand     = $mPropDemand->getDueDemandByPropIdV2($propertyIds);
+            $propDemand     = collect($propDemand);
             $currentDate    = Carbon::now()->format('Y-04-01');
             $refCurrentDate = Carbon::createFromFormat('Y-m-d', $currentDate);
             $ref2023        = Carbon::createFromFormat('Y-m-d', "2023-01-01")->toDateString();
@@ -349,7 +350,7 @@ class PropertyController extends Controller
                 $geoDate = strtotime($value['created_at']);
                 $geoDate = date('Y-m-d', $geoDate);
                 $path = $this->readDocumentPath($value['doc_path']);
-                
+
                 # arrrer,current,paid
                 $refUnpaidPropDemands = $propDemand->where($value['property_id']);
                 $checkPropDemand = collect($refUnpaidPropDemands)->last();
