@@ -731,4 +731,32 @@ class StateDashboardController extends Controller
             return responseMsgs(false, $e->getMessage(), [], $apiId, $version, $queryRunTime, $action, $deviceId);
         }
     }
+
+    public function ulbDCB(Request $request)
+    {
+        if(!$request->metaData)
+        {
+            $request->merge(["metaData" => ["ds11.1", 1.1, null, $request->getMethod(), null,]]);
+        }
+        $metaData = collect($request->metaData)->all();
+        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
+        $validation = Validator::make($request->all(),[
+            "fiYear" => "nullable||regex:/^\d{4}-\d{4}$/",
+            "wardId" => "nullable|digits_between:1,9223372036854775807",
+            "userId" => "nullable|digits_between:1,9223372036854775807",
+            "ulbId" => "nullable|digits_between:1,9223372036854775807",
+        ]);
+        if($validation->fails())
+        {
+            return responseMsgs(false, "given Data invalid", $validation->errors(), $apiId, $version, $queryRunTime, $action, $deviceId);
+        }
+
+        try{
+
+        }
+        catch(Exception $e)
+        {
+            return responseMsgs(false, $e->getMessage(), [], $apiId, $version, $queryRunTime, $action, $deviceId);
+        }
+    }
 }

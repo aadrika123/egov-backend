@@ -1324,6 +1324,38 @@ class Report implements IReport
             return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
         }
     }
+    public function PaymentModeWiseSummery(Request $request)
+    {
+        $metaData = collect($request->metaData)->all();
+        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
+        try{
+            $refUser        = authUser($request);
+            $refUserId      = $refUser->id;
+            $ulbId          = $refUser->ulb_id;
+            $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
+            $wardId = null;
+            $userId = null;
+            $paymentMode = null;
+            if ($request->ulbId) {
+                $ulbId = $request->ulbId;
+            }
+            if ($request->fromDate) {
+                $fromDate = $request->fromDate;
+            }
+            if ($request->uptoDate) {
+                $uptoDate = $request->uptoDate;
+            }
+            if ($request->userId) {
+                $userId = $request->userId;
+            }
+            if ($request->paymentMode) {
+                $paymentMode = $request->paymentMode;
+            }
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
+        }
+
+    }
 
     public function SafPaymentModeWiseSummery(Request $request)
     {
@@ -1725,7 +1757,7 @@ class Report implements IReport
                 FROM (
                     SELECT *
                     FROM prop_properties
-                    WHERE prop_properties.ulb_id = $ulbId
+                    WHERE prop_properties.ulb_id = $ulbId AND  char_length(prop_properties.new_holding_no)>0 AND prop_properties.status = 1
                     ORDER BY id
                     limit $limit offset $offset
                   )prop_properties
@@ -1737,7 +1769,7 @@ class Report implements IReport
                     JOIN (
                         SELECT * 
                         FROM prop_properties
-                        WHERE prop_properties.ulb_id = $ulbId
+                        WHERE prop_properties.ulb_id = $ulbId AND  char_length(prop_properties.new_holding_no)>0 AND prop_properties.status = 1
                         ORDER BY id
                         limit $limit offset $offset
                       )prop_properties ON prop_properties.id = prop_owners.property_id
@@ -1749,21 +1781,21 @@ class Report implements IReport
                 LEFT JOIN (
                     SELECT prop_demands.property_id,
                         SUM(
-                                CASE WHEN prop_demands.due_date BETWEEN '$fromDate' AND '$uptoDate' then prop_demands.amount
+                                CASE WHEN prop_demands.due_date BETWEEN '$fromDate' AND '$uptoDate' then COALESCE(prop_demands.amount,0) -COALESCE(prop_demands.adjust_amt,0)
                                     ELSE 0
                                     END
                         ) AS current_demand,
                         SUM(
-                            CASE WHEN prop_demands.due_date<'$fromDate' then prop_demands.amount
+                            CASE WHEN prop_demands.due_date<'$fromDate' then COALESCE(prop_demands.amount,0) -COALESCE(prop_demands.adjust_amt,0)
                                 ELSE 0
                                 END
                             ) AS arrear_demand,
-                    SUM(prop_demands.amount) AS total_demand
+                    SUM(COALESCE(prop_demands.amount,0) -COALESCE(prop_demands.adjust_amt,0)) AS total_demand
                     FROM prop_demands
                     JOIN (
                         SELECT * 
                         FROM prop_properties
-                        WHERE prop_properties.ulb_id = $ulbId
+                        WHERE prop_properties.ulb_id = $ulbId AND  char_length(prop_properties.new_holding_no)>0 AND prop_properties.status = 1
                         ORDER BY id
                         limit $limit offset $offset
                       )prop_properties ON prop_properties.id = prop_demands.property_id
@@ -1776,21 +1808,21 @@ class Report implements IReport
                 LEFT JOIN (
                     SELECT prop_demands.property_id,
                         SUM(
-                                CASE WHEN prop_demands.due_date BETWEEN '$fromDate' AND '$uptoDate' then prop_demands.amount
+                                CASE WHEN prop_demands.due_date BETWEEN '$fromDate' AND '$uptoDate' then COALESCE(prop_demands.amount,0) -COALESCE(prop_demands.adjust_amt,0)
                                     ELSE 0
                                     END
                         ) AS current_collection,
                         SUM(
-                            cASe when prop_demands.due_date <'$fromDate' then prop_demands.amount
+                            cASe when prop_demands.due_date <'$fromDate' then COALESCE(prop_demands.amount,0) -COALESCE(prop_demands.adjust_amt,0)
                                 ELSE 0
                                 END
                             ) AS arrear_collection,
-                    SUM(prop_demands.amount) AS total_collection
+                    SUM(COALESCE(prop_demands.amount,0) -COALESCE(prop_demands.adjust_amt,0)) AS total_collection
                     FROM prop_demands
                     JOIN (
                         SELECT * 
                         FROM prop_properties
-                        WHERE prop_properties.ulb_id = $ulbId
+                        WHERE prop_properties.ulb_id = $ulbId AND  char_length(prop_properties.new_holding_no)>0 AND prop_properties.status = 1
                         ORDER BY id
                         limit $limit offset $offset
                       )prop_properties ON prop_properties.id = prop_demands.property_id
@@ -1807,12 +1839,12 @@ class Report implements IReport
                 )collection ON collection.property_id = prop_properties.id
                 LEFT JOIN ( 
                     SELECT prop_demands.property_id,
-                    SUM(prop_demands.amount) AS total_prev_collection
+                    SUM(COALESCE(prop_demands.amount,0) -COALESCE(prop_demands.adjust_amt,0)) AS total_prev_collection
                     FROM prop_demands
                     JOIN (
                         SELECT * 
                         FROM prop_properties
-                        WHERE prop_properties.ulb_id = $ulbId
+                        WHERE prop_properties.ulb_id = $ulbId AND  char_length(prop_properties.new_holding_no)>0 AND prop_properties.status = 1
                         ORDER BY id
                         limit $limit offset $offset
                       )prop_properties ON prop_properties.id = prop_demands.property_id
@@ -1827,7 +1859,7 @@ class Report implements IReport
                     GROUP BY prop_demands.property_id
                 )prev_collection ON prev_collection.property_id = prop_properties.id 
                 JOIN ulb_ward_masters ON ulb_ward_masters.id = prop_properties.ward_mstr_id
-                WHERE  prop_properties.ulb_id = $ulbId  
+                WHERE  prop_properties.ulb_id = $ulbId  AND  char_length(prop_properties.new_holding_no)>0 AND prop_properties.status = 1
                     " . ($wardId ? " AND prop_properties.ward_mstr_id = $wardId" : "") . "           
             ";
             $footerfrom = "
@@ -1837,29 +1869,28 @@ class Report implements IReport
                         STRING_AGG(mobile_no::TEXT, ', ') AS mobile_no, 
                         prop_properties.id AS property_id
                     FROM prop_owners 
-                    JOIN prop_properties ON prop_properties.id = prop_owners.property_id
-                        AND prop_properties.ulb_id = $ulbId
-                    WHERE prop_owners.status =1
+                    JOIN prop_properties ON prop_properties.id = prop_owners.property_id                        
+                    WHERE prop_owners.status =1 AND prop_properties.ulb_id = $ulbId AND  char_length(prop_properties.new_holding_no)>0 AND prop_properties.status = 1
                         " . ($wardId ? " AND prop_properties.ward_mstr_id = $wardId" : "") . "
                     GROUP BY prop_properties.id
                 )prop_owner_detail ON prop_owner_detail.property_id = prop_properties.id
                 LEFT JOIN (
                     SELECT prop_demands.property_id,
                         SUM(
-                                CASE WHEN prop_demands.due_date BETWEEN '$fromDate' AND '$uptoDate' then prop_demands.amount
+                                CASE WHEN prop_demands.due_date BETWEEN '$fromDate' AND '$uptoDate' then COALESCE(prop_demands.amount,0) -COALESCE(prop_demands.adjust_amt,0)
                                     ELSE 0
                                     END
                         ) AS current_demand,
                         SUM(
-                            CASE WHEN prop_demands.due_date<'$fromDate' then prop_demands.amount
+                            CASE WHEN prop_demands.due_date<'$fromDate' then COALESCE(prop_demands.amount,0) -COALESCE(prop_demands.adjust_amt,0)
                                 ELSE 0
                                 END
                             ) AS arrear_demand,
-                    SUM(prop_demands.amount) AS total_demand
+                    SUM(COALESCE(prop_demands.amount,0) -COALESCE(prop_demands.adjust_amt,0)) AS total_demand
                     FROM prop_demands
                     JOIN prop_properties ON prop_properties.id = prop_demands.property_id
                     WHERE prop_demands.status =1 
-                        AND prop_demands.ulb_id =$ulbId
+                        AND prop_demands.ulb_id =$ulbId AND char_length(prop_properties.new_holding_no)>0 AND prop_properties.status = 1
                         " . ($wardId ? " AND prop_properties.ward_mstr_id = $wardId" : "") . "
                         AND prop_demands.due_date<='$uptoDate'
                     GROUP BY prop_demands.property_id    
@@ -1867,16 +1898,16 @@ class Report implements IReport
                 LEFT JOIN (
                     SELECT prop_demands.property_id,
                         SUM(
-                                CASE WHEN prop_demands.due_date BETWEEN '$fromDate' AND '$uptoDate' then prop_demands.amount
+                                CASE WHEN prop_demands.due_date BETWEEN '$fromDate' AND '$uptoDate' then COALESCE(prop_demands.amount,0) -COALESCE(prop_demands.adjust_amt,0)
                                     ELSE 0
                                     END
                         ) AS current_collection,
                         SUM(
-                            cASe when prop_demands.due_date <'$fromDate' then prop_demands.amount
+                            cASe when prop_demands.due_date <'$fromDate' then COALESCE(prop_demands.amount,0) -COALESCE(prop_demands.adjust_amt,0)
                                 ELSE 0
                                 END
                             ) AS arrear_collection,
-                    SUM(prop_demands.amount) AS total_collection
+                    SUM(COALESCE(prop_demands.amount,0) -COALESCE(prop_demands.adjust_amt,0)) AS total_collection
                     FROM prop_demands
                     JOIN prop_properties ON prop_properties.id = prop_demands.property_id
                     JOIN prop_tran_dtls ON prop_tran_dtls.prop_demand_id = prop_demands.id 
@@ -1884,7 +1915,7 @@ class Report implements IReport
                     JOIN prop_transactions ON prop_transactions.id = prop_tran_dtls.tran_id 
                         AND prop_transactions.status in (1,2) AND prop_transactions.property_id is not null
                     WHERE prop_demands.status =1 
-                        AND prop_demands.ulb_id =$ulbId
+                        AND prop_demands.ulb_id =$ulbId AND  char_length(prop_properties.new_holding_no)>0 AND prop_properties.status = 1
                         " . ($wardId ? " AND prop_properties.ward_mstr_id = $wardId" : "") . "
                         AND prop_transactions.tran_date  BETWEEN '$fromDate' AND '$uptoDate'
                         AND prop_demands.due_date<='$uptoDate'
@@ -1892,7 +1923,7 @@ class Report implements IReport
                 )collection ON collection.property_id = prop_properties.id
                 LEFT JOIN ( 
                     SELECT prop_demands.property_id,
-                    SUM(prop_demands.amount) AS total_prev_collection
+                    SUM(COALESCE(prop_demands.amount,0) -COALESCE(prop_demands.adjust_amt,0)) AS total_prev_collection
                     FROM prop_demands
                     JOIN prop_properties ON prop_properties.id = prop_demands.property_id
                     JOIN prop_tran_dtls ON prop_tran_dtls.prop_demand_id = prop_demands.id 
@@ -1900,13 +1931,13 @@ class Report implements IReport
                     JOIN prop_transactions ON prop_transactions.id = prop_tran_dtls.tran_id 
                         AND prop_transactions.status in (1,2) AND prop_transactions.property_id is not null
                     WHERE prop_demands.status =1 
-                        AND prop_demands.ulb_id =$ulbId
+                        AND prop_demands.ulb_id =$ulbId AND  char_length(prop_properties.new_holding_no)>0 AND prop_properties.status = 1
                         " . ($wardId ? " AND prop_properties.ward_mstr_id = $wardId" : "") . "
                         AND prop_transactions.tran_date<'$fromDate'
                     GROUP BY prop_demands.property_id
                 )prev_collection ON prev_collection.property_id = prop_properties.id 
                 JOIN ulb_ward_masters ON ulb_ward_masters.id = prop_properties.ward_mstr_id
-                WHERE  prop_properties.ulb_id = $ulbId  
+                WHERE  prop_properties.ulb_id = $ulbId  AND  char_length(prop_properties.new_holding_no)>0 AND prop_properties.status = 1
                     " . ($wardId ? " AND prop_properties.ward_mstr_id = $wardId" : "") . "           
             ";
             $select = "SELECT  prop_properties.id,
@@ -2015,7 +2046,7 @@ class Report implements IReport
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime, $action, $deviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
+            return responseMsgs(false, $e->getMessage(), "", $apiId, $version, $queryRunTime, $action, $deviceId);
         }
     }
 
@@ -2054,7 +2085,7 @@ class Report implements IReport
                             END)
                         ) as current_demand_hh,
                         SUM(
-                                CASE WHEN prop_demands.due_date BETWEEN '$fromDate' AND '$uptoDate' then prop_demands.amount
+                                CASE WHEN prop_demands.due_date BETWEEN '$fromDate' AND '$uptoDate' then COALESCE(prop_demands.amount,0) -COALESCE(prop_demands.adjust_amt,0)
                                     ELSE 0
                                     END
                         ) AS current_demand,
@@ -2064,15 +2095,15 @@ class Report implements IReport
                                 END)
                             ) as arrear_demand_hh,
                         SUM(
-                            CASE WHEN prop_demands.due_date<'$fromDate' then prop_demands.amount
+                            CASE WHEN prop_demands.due_date<'$fromDate' then COALESCE(prop_demands.amount,0) -COALESCE(prop_demands.adjust_amt,0)
                                 ELSE 0
                                 END
                             ) AS arrear_demand,
-                    SUM(prop_demands.amount - prop_demands.adjust_amt) AS total_demand
+                    SUM(COALESCE(prop_demands.amount,0) -COALESCE(prop_demands.adjust_amt,0)) AS total_demand
                     FROM prop_demands
                     JOIN prop_properties ON prop_properties.id = prop_demands.property_id
                     WHERE prop_demands.status =1 
-                        AND prop_demands.ulb_id =$ulbId
+                        AND prop_demands.ulb_id =$ulbId AND  char_length(prop_properties.new_holding_no)>0 AND prop_properties.status = 1
                         " . ($wardId ? " AND prop_properties.ward_mstr_id = $wardId" : "") . "
                         AND prop_demands.due_date<='$uptoDate'
                     GROUP BY prop_properties.ward_mstr_id
@@ -2087,7 +2118,7 @@ class Report implements IReport
 
                         COUNT(DISTINCT(prop_properties.id)) AS collection_from_no_of_hh,
                         SUM(
-                                CASE WHEN prop_demands.due_date BETWEEN '$fromDate' AND '$uptoDate' then prop_demands.amount
+                                CASE WHEN prop_demands.due_date BETWEEN '$fromDate' AND '$uptoDate' then COALESCE(prop_demands.amount,0) -COALESCE(prop_demands.adjust_amt,0)
                                     ELSE 0
                                     END
                         ) AS current_collection,
@@ -2099,18 +2130,18 @@ class Report implements IReport
                             ) as arrear_collection_hh,
 
                         SUM(
-                            CASE when prop_demands.due_date <'$fromDate' then prop_demands.amount
+                            CASE when prop_demands.due_date <'$fromDate' then COALESCE(prop_demands.amount,0) -COALESCE(prop_demands.adjust_amt,0)
                                 ELSE 0
                                 END
                             ) AS arrear_collection,
-                    SUM(prop_demands.amount - prop_demands.adjust_amt) AS total_collection
+                    SUM(COALESCE(prop_demands.amount,0) -COALESCE(prop_demands.adjust_amt,0)) AS total_collection
                     FROM prop_demands
                     JOIN prop_properties ON prop_properties.id = prop_demands.property_id
                     JOIN prop_tran_dtls ON prop_tran_dtls.prop_demand_id = prop_demands.id 
                         AND prop_tran_dtls.prop_demand_id is not null 
                     JOIN prop_transactions ON prop_transactions.id = prop_tran_dtls.tran_id 
                         AND prop_transactions.status in (1,2) AND prop_transactions.property_id is not null
-                    WHERE prop_demands.status =1 
+                    WHERE prop_demands.status =1 AND  char_length(prop_properties.new_holding_no)>0 AND prop_properties.status = 1
                         AND prop_demands.ulb_id =$ulbId
                         " . ($wardId ? " AND prop_properties.ward_mstr_id = $wardId" : "") . "
                         AND prop_transactions.tran_date  BETWEEN '$fromDate' AND '$uptoDate'
@@ -2119,14 +2150,14 @@ class Report implements IReport
                 )collection ON collection.ward_mstr_id = ulb_ward_masters.id
                 LEFT JOIN ( 
                     SELECT prop_properties.ward_mstr_id,
-                    SUM(prop_demands.amount - prop_demands.adjust_amt) AS total_prev_collection
+                    SUM(COALESCE(prop_demands.amount,0) -COALESCE(prop_demands.adjust_amt,0)) AS total_prev_collection
                     FROM prop_demands
                     JOIN prop_properties ON prop_properties.id = prop_demands.property_id
                     JOIN prop_tran_dtls ON prop_tran_dtls.prop_demand_id = prop_demands.id 
                         AND prop_tran_dtls.prop_demand_id is not null 
                     JOIN prop_transactions ON prop_transactions.id = prop_tran_dtls.tran_id 
                         AND prop_transactions.status in (1,2) AND prop_transactions.property_id is not null
-                    WHERE prop_demands.status =1 
+                    WHERE prop_demands.status =1 AND  char_length(prop_properties.new_holding_no)>0 AND prop_properties.status = 1
                         AND prop_demands.ulb_id =$ulbId
                         " . ($wardId ? " AND prop_properties.ward_mstr_id = $wardId" : "") . "
                         AND prop_transactions.tran_date<'$fromDate'
@@ -2213,7 +2244,7 @@ class Report implements IReport
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true, "", $data, $apiId, $version, $queryRunTime, $action, $deviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
+            return responseMsgs(false, $e->getMessage(), "", $apiId, $version, $queryRunTime, $action, $deviceId);
         }
     }
 

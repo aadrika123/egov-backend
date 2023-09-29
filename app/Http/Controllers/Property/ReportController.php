@@ -200,7 +200,7 @@ class ReportController extends Controller
         return $this->Repository->PropPaymentModeWiseSummery($request);
     }
 
-    public function V2PropPaymentModeWiseSummery(Request $request)
+    public function PaymentModeWiseSummery(Request $request)
     {        
         $request->merge(["metaData" => ["pr1.2", 1.1, null, $request->getMethod(), null,]]);
         $validation = Validator::make($request->all(),[
