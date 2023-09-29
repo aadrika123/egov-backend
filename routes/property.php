@@ -558,5 +558,4 @@ Route::controller(ReportController::class)->group(function () {
  */
 Route::controller(PropertyController::class)->group(function () {
   Route::post('getpropLatLong', 'getpropLatLong');                             // 01
-  Route::post('upload-document', 'uploadDocument');                             // 01
 });

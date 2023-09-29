@@ -315,9 +315,9 @@ class PropertyController extends Controller
             } else
                 $msg['inWorkflow'] = false;
 
-            return responseMsgs(true, 'Data Updated', $msg, '010801', '01', '', 'Post', '');
+            return responseMsgs(true, 'Data Updated', $msg, '010801', '01', responseTime(), 'Post', '');
         } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
+            return responseMsg(false, $e->getMessage(), "", '010801', '01', responseTime(), 'Post', '');
         }
     }
 
@@ -380,9 +380,9 @@ class PropertyController extends Controller
             })->filter(function ($refValues) {
                 return $refValues['new_holding_no'] != null;
             });
-            return responseMsgs(true, "latLong Details", remove_null($propDetails), "", "01", ".ms", "POST", $req->deviceId);
+            return responseMsgs(true, "latLong Details", remove_null($propDetails), "", "01", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", $req->deviceId);
+            return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", responseTime(), "POST", $req->deviceId);
         }
     }
     public function readRefDocumentPath($path)

@@ -1995,6 +1995,8 @@ class Report implements IReport
                         ) AS outstanding               
             ";
             $data = DB::TABLE(DB::RAW("($select $from)AS prop"))->get();
+
+
             // $footer = DB::TABLE(DB::RAW("($footerselect $footerfrom)AS prop"))->get();
             $items = $data;
             $total = (collect(DB::SELECT("SELECT COUNT(*) AS total $footerfrom"))->first())->total ?? 0;
@@ -2044,6 +2046,7 @@ class Report implements IReport
             if ($request->wardId) {
                 $wardId = $request->wardId;
             }
+            DB::enableQueryLog();
             $from = "
                 FROM ulb_ward_masters 
                 LEFT JOIN(
@@ -2191,6 +2194,8 @@ class Report implements IReport
             ";
             $dcb = DB::select($select . $from);
 
+            // dd(DB::getQueryLog($dcb));
+
             $data['total_arrear_demand'] = round(collect($dcb)->sum('arrear_demand'), 0);
             $data['total_current_demand'] = round(collect($dcb)->sum('current_demand'), 0);
             $data['total_arrear_collection'] = round(collect($dcb)->sum('arrear_collection'), 0);
@@ -2203,17 +2208,17 @@ class Report implements IReport
             $data['total_current_collection_hh'] = round(collect($dcb)->sum('current_collection_hh'), 0);
             $data['total_arrear_balance_hh'] = round(collect($dcb)->sum('arrear_balance_hh'));
             $data['total_current_balance_hh'] = round(collect($dcb)->sum('current_balance_hh'));
-            $data['total_current_eff'] = round(($data['total_current_collection_hh'] / $data['total_current_demand']) * 100);
-            $data['total_arrear_hh_eff'] = round(($data['total_arrear_collection_hh'] /  $data['total_arrear_demand_hh']) * 100);
-            $data['total_current_hh_eff'] = round(($data['total_current_collection_hh']) / ($data['total_current_demand_hh']) * 100);
-            $data['total_arrear_eff'] = round(($data['total_arrear_collection']) / ($data['total_arrear_demand']) * 100);
-            $data['total_eff'] = round((($data['total_arrear_collection'] + $data['total_current_collection']) / ($data['total_arrear_demand'] + $data['total_current_demand'])) * 100);
+            $data['total_current_eff'] = round(($data['total_current_collection_hh'] ?? 0 / $data['total_current_demand']) * 100);
+            $data['total_arrear_hh_eff'] = round(($data['total_arrear_collection_hh'] ?? 0 /  $data['total_arrear_demand_hh']) * 100);
+            $data['total_current_hh_eff'] = round(($data['total_current_collection_hh']) ?? 0 / ($data['total_current_demand_hh']) * 100);
+            $data['total_arrear_eff'] = round(($data['total_arrear_collection']) ?? 0 / ($data['total_arrear_demand']) * 100);
+            $data['total_eff'] = round((($data['total_arrear_collection'] + $data['total_current_collection']) ?? 0 / ($data['total_arrear_demand'] + $data['total_current_demand'])) * 100);
             $data['dcb'] = $dcb;
 
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
-            return responseMsgs(true, "", $data, $apiId, $version, $queryRunTime, $action, $deviceId);
+            return responseMsgs(true, "", $data, $apiId, $version, responseTime(), $action, $deviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
+            return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, responseTime(), $action, $deviceId);
         }
     }
 
@@ -2232,7 +2237,7 @@ class Report implements IReport
             }
             list($fromYear, $toYear) = explode("-", $fiYear);
             if ($toYear - $fromYear != 1) {
-                throw new Exception("Enter Valide Financial Year");
+                throw new Exception("Enter Valid Financial Year");
             }
             $fromDate = $fromYear . "-04-01";
             $uptoDate = $toYear . "-03-31";
@@ -2842,7 +2847,7 @@ class Report implements IReport
      */
     public function dcbPieChart($request)
     {
-        $ulbId = $request->ulbId ?? authUser($request)->ulb_id;
+        $ulbId = $request->ulbId;
         $currentDate = Carbon::now()->format('Y-m-d');
         $currentYear = Carbon::now()->year;
         $currentFyear = getFinancialYear($currentDate);
@@ -2860,7 +2865,8 @@ class Report implements IReport
                 FROM prop_demands 
                 WHERE prop_demands.status =1 
                 AND  fyear = '$currentFyear'
-                AND  ulb_id = '$ulbId'";
+                " . ($ulbId ? " AND ulb_id = $ulbId" : "") . " ";
+        // AND  ulb_id = '$ulbId'";
 
         $sql2 = "SELECT     
                     '$previousFinancialYear' as fyear,    
@@ -2870,7 +2876,8 @@ class Report implements IReport
                 FROM prop_demands 
                 WHERE prop_demands.status =1 
                 AND fyear = '$previousFinancialYear'
-                AND ulb_id = '$ulbId'";
+                " . ($ulbId ? " AND ulb_id = $ulbId" : "") . " ";
+        // AND ulb_id = '$ulbId'";
 
         $sql3 = "SELECT     
                     '$prePreviousFinancialYear' as fyear,    
@@ -2880,7 +2887,8 @@ class Report implements IReport
                 FROM prop_demands 
                 WHERE prop_demands.status =1 
                 AND  fyear = '$prePreviousFinancialYear'
-                AND  ulb_id = '$ulbId'";
+                " . ($ulbId ? " AND ulb_id = $ulbId" : "") . " ";
+        // AND  ulb_id = '$ulbId'";
 
         $currentYearDcb =  DB::select($sql1);
         $previousYearDcb = DB::select($sql2);
@@ -2892,7 +2900,7 @@ class Report implements IReport
             collect($prePreviousYearDcb)->first()
         ];
 
-        return responseMsgs(true, "", remove_null($data), "010203", "", "", 'POST', "");
+        return responseMsgs(true, "", remove_null($data), "010203", 01, responseTime(), 'POST', $request->deviceId);
     }
 
     /**
