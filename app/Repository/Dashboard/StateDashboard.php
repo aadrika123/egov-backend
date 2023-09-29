@@ -56,6 +56,10 @@ class StateDashboard
             if ($request->wardId) {
                 $wardId = $request->wardId;
             }
+            if(!$ulbId)
+            {
+                $ulbId = 2; #default rmc
+            }
             $from = "
                 FROM (
                     SELECT CASE WHEN TO_CHAR(prop_demands.due_date::DATE,'mm')::INT BETWEEN 4 AND 6 THEN 1
