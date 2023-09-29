@@ -69,21 +69,23 @@ class StateDashboard
                                 ELSE 0 END AS quater,
                         COUNT(DISTINCT(prop_demands.property_id)) AS current_hh,
                         SUM(
-                                CASE WHEN prop_demands.due_date BETWEEN '$fromDate' AND '$uptoDate' then prop_demands.amount
+                                CASE WHEN prop_demands.due_date BETWEEN '$fromDate' AND '$uptoDate' then COALESCE(prop_demands.amount,0) -COALESCE(prop_demands.adjust_amt,0)
                                     ELSE 0
                                     END
                         ) AS current_demand,
                         SUM(
-                            CASE WHEN prop_demands.due_date<'$fromDate' then prop_demands.amount
+                            CASE WHEN prop_demands.due_date<'$fromDate' then COALESCE(prop_demands.amount,0) -COALESCE(prop_demands.adjust_amt,0)
                                 ELSE 0
                                 END
                             ) AS arrear_demand,
-                    SUM(prop_demands.amount) AS total_demand
+                    SUM(COALESCE(prop_demands.amount,0) -COALESCE(prop_demands.adjust_amt,0)) AS total_demand
                     FROM prop_demands
+                    JOIN prop_properties ON prop_properties.id = prop_demands.property_id
                     WHERE prop_demands.status =1 
                         AND prop_demands.ulb_id =$ulbId
                         " . ($wardId ? " AND prop_demands.ward_mstr_id = $wardId" : "") . "
                         AND prop_demands.due_date<='$uptoDate'
+                        AND  char_length(prop_properties.new_holding_no)>0 AND prop_properties.status = 1
                     GROUP BY TO_CHAR(prop_demands.due_date::DATE,'mm')   
                 )demands 
                 LEFT JOIN (
@@ -94,17 +96,18 @@ class StateDashboard
                                 ELSE 0 END AS quater,
                         COUNT(DISTINCT(prop_demands.property_id)) AS collection_from_no_of_hh,
                         SUM(
-                                CASE WHEN prop_demands.due_date BETWEEN '$fromDate' AND '$uptoDate' then prop_demands.amount
+                                CASE WHEN prop_demands.due_date BETWEEN '$fromDate' AND '$uptoDate' then COALESCE(prop_demands.amount,0) -COALESCE(prop_demands.adjust_amt,0)
                                     ELSE 0
                                     END
                         ) AS current_collection,
                         SUM(
-                            cASe when prop_demands.due_date <'$fromDate' then prop_demands.amount
+                            cASe when prop_demands.due_date <'$fromDate' then COALESCE(prop_demands.amount,0) -COALESCE(prop_demands.adjust_amt,0)
                                 ELSE 0
                                 END
                             ) AS arrear_collection,
-                    SUM(prop_demands.amount) AS total_collection
-                    FROM prop_demands                    
+                    SUM(COALESCE(prop_demands.amount,0) -COALESCE(prop_demands.adjust_amt,0)) AS total_collection
+                    FROM prop_demands 
+                    JOIN prop_properties ON prop_properties.id = prop_demands.property_id                   
                     JOIN prop_tran_dtls ON prop_tran_dtls.prop_demand_id = prop_demands.id 
                         AND prop_tran_dtls.prop_demand_id is not null 
                     JOIN prop_transactions ON prop_transactions.id = prop_tran_dtls.tran_id 
@@ -114,6 +117,7 @@ class StateDashboard
                         " . ($wardId ? " AND prop_demands.ward_mstr_id = $wardId" : "") . "
                         AND prop_transactions.tran_date  BETWEEN '$fromDate' AND '$uptoDate'
                         AND prop_demands.due_date<='$uptoDate'
+                        AND  char_length(prop_properties.new_holding_no)>0 AND prop_properties.status = 1
                     GROUP BY TO_CHAR(prop_demands.due_date::DATE,'mm')
                 )collection ON collection.quater =  demands.quater
                 LEFT JOIN ( 
@@ -122,8 +126,9 @@ class StateDashboard
                                 WHEN TO_CHAR(prop_demands.due_date::DATE,'mm')::INT BETWEEN 10 AND 12 THEN 3
                                 WHEN TO_CHAR(prop_demands.due_date::DATE,'mm')::INT BETWEEN 1 AND 3 THEN 4
                                 ELSE 0 END AS quater,
-                        SUM(prop_demands.amount) AS total_prev_collection
+                        SUM(COALESCE(prop_demands.amount,0) -COALESCE(prop_demands.adjust_amt,0)) AS total_prev_collection
                     FROM prop_demands
+                    JOIN prop_properties ON prop_properties.id = prop_demands.property_id
                     JOIN prop_tran_dtls ON prop_tran_dtls.prop_demand_id = prop_demands.id 
                         AND prop_tran_dtls.prop_demand_id is not null 
                     JOIN prop_transactions ON prop_transactions.id = prop_tran_dtls.tran_id 
@@ -132,6 +137,7 @@ class StateDashboard
                         AND prop_demands.ulb_id =$ulbId
                         " . ($wardId ? " AND prop_demands.ward_mstr_id = $wardId" : "") . "
                         AND prop_transactions.tran_date<'$fromDate'
+                        AND  char_length(prop_properties.new_holding_no)>0 AND prop_properties.status = 1
                     GROUP BY TO_CHAR(prop_demands.due_date::DATE,'mm')
                 )prev_collection ON prev_collection.quater =  demands.quater                 
                 ORDER BY demands.quater          
