@@ -29,6 +29,10 @@ Route::controller(StateDashboardController::class)->group(function () {
     Route::post('state/district-wise-data', 'districtWiseData');
 
     Route::post('state/property/DCB', 'stateDashboardDCB');                    //done
+
+    #========created by : sandeep bara | date : 28-09-2023 =================
+    Route::post('ulb/target', 'ulbsTargets');      
+    Route::post('ulb/DCB', 'ulbDCB'); 
 });
 
 /**
