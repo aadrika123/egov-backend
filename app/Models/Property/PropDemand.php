@@ -63,6 +63,38 @@ class PropDemand extends Model
     }
 
     /**
+     * | Get Property Dues Demand by Property Id
+     */
+    public function getDueDemandByPropIdV2($propId)
+    {
+        return PropDemand::select(
+            'id',
+            'property_id',
+            DB::raw("concat(qtr,'/',fyear) as quarterYear"),
+            'arv',
+            'qtr',
+            'holding_tax',
+            'water_tax',
+            'education_cess',
+            'health_cess',
+            'latrine_tax',
+            'additional_tax',
+            'amount',
+            'balance',
+            'fyear',
+            'adjust_amt',
+            'due_date',
+            'paid_status',
+            'hundred_percent_penalty_tax'
+        )
+            ->whereIn('property_id', $propId)
+            ->where('paid_status', 0)
+            ->where('status', 1)
+            ->orderByDesc('due_date')
+            ->get();
+    }
+
+    /**
      * | Get Property Demand by Property ID
      */
     public function getDemandByPropId($propId)
