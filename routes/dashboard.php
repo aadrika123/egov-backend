@@ -33,6 +33,7 @@ Route::controller(StateDashboardController::class)->group(function () {
     #========created by : sandeep bara | date : 28-09-2023 =================
     Route::post('ulb/target', 'ulbsTargets');      
     Route::post('ulb/DCB', 'ulbDCB'); 
+    Route::post('prop/ward_wise-collection', 'propWardWiseCollection'); //done
 });
 
 /**
