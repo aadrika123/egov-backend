@@ -338,6 +338,7 @@ class PropertyController extends Controller
             $propDetails    = $mPropProperty->getPropLatlong($req->wardId);
             $propertyIds    = $propDetails->pluck('property_id');
             $propDemand     = $mPropDemand->getDueDemandByPropIdV2($propertyIds);
+            $propDemand     = collect($propDemand);
             $currentDate    = Carbon::now()->format('Y-04-01');
             $refCurrentDate = Carbon::createFromFormat('Y-m-d', $currentDate);
             $ref2023        = Carbon::createFromFormat('Y-m-d', "2023-01-01")->toDateString();
@@ -346,34 +347,35 @@ class PropertyController extends Controller
             $propDetails = collect($propDetails)->map(function ($value)
             use ($propDemand, $refCurrentDate, $ref2023) {
 
-                $geoDate = strtotime($value['created_at']);
-                $geoDate = date('Y-m-d', $geoDate);
-                $path = $this->readDocumentPath($value['doc_path']);
-                
+                $geoDate    = strtotime($value['created_at']);
+                $geoDate    = date('Y-m-d', $geoDate);
+                $path       = $this->readDocumentPath($value['doc_path']);
+
                 # arrrer,current,paid
-                $refUnpaidPropDemands = $propDemand->where($value['property_id']);
-                $checkPropDemand = collect($refUnpaidPropDemands)->last();
-                if (is_null($checkPropDemand)) {
-                    $currentStatus = 3;                                                             // Static
-                    $statusName = "No Dues";                                                         // Static
+                $refUnpaidPropDemands   = $propDemand->where('property_id', $value['property_id']);
+                $checkPropDemand        = collect($refUnpaidPropDemands)->last();
+                if (!$checkPropDemand) {
+                    $currentStatus  = 3;                                                             // Static
+                    $statusName     = "No Dues";                                                         // Static
                 }
                 if ($checkPropDemand) {
-                    $lastDemand = collect($refUnpaidPropDemands)->last();
-                    if (is_null($lastDemand->due_date)) {
-                        $currentStatus = 3;                                                         // Static
-                        $statusName = "No Dues";                                                     // Static
+                    if (is_null($checkPropDemand->due_date)) {
+                        $currentStatus  = 3;                                                         // Static
+                        $statusName     = "No Dues";                                                     // Static
                     }
-                    $refDate = Carbon::createFromFormat('Y-m-d', $lastDemand->due_date);
+                    $refDate = Carbon::createFromFormat('Y-m-d', $checkPropDemand->due_date);
                     if ($refDate < $refCurrentDate) {
-                        $currentStatus = 1;                                                         // Static
-                        $statusName = "Arrear";                                                    // Static
+                        $currentStatus  = 1;                                                         // Static
+                        $statusName     = "Arrear";                                                    // Static
                     } else {
-                        $currentStatus = 2;                                                         // Static
-                        $statusName = "Current Dues";                                               // Static
+                        $currentStatus  = 2;                                                         // Static
+                        $statusName     = "Current Dues";                                               // Static
                     }
                 }
-                $value['statusName'] = $statusName;
+                $value['statusName']    = $statusName;
                 $value['currentStatus'] = $currentStatus;
+
+                # For the document 
                 if ($geoDate < $ref2023) {
                     $path = $this->readRefDocumentPath($value['doc_path']);
                     $value['full_doc'] = !empty(trim($value['doc_path'])) ? $path : null;
@@ -381,9 +383,7 @@ class PropertyController extends Controller
                 }
                 $value['full_doc'] = !empty(trim($value['doc_path'])) ? $path : null;
                 return $value;
-            })->filter(function ($refValues) {
-                return $refValues['new_holding_no'] != null;
-            });
+            })->filter();
 
             return responseMsgs(true, "latLong Details", remove_null($propDetails), "", "01", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
