@@ -690,11 +690,11 @@ class Trade implements ITrade
         $refOwner->owner_name      = $owners->owner_name;
         $refOwner->guardian_name   = $owners->guardian_name;
         $refOwner->address         = $owners->address;
-        $refOwner->mobile_no          = $owners->mobile;
+        $refOwner->mobile_no          = $owners->mobile_no;
         $refOwner->city            = $owners->city;
         $refOwner->district        = $owners->district;
         $refOwner->state           = $owners->state;
-        $refOwner->email_id         = $owners->emailid;
+        $refOwner->email_id         = $owners->email_id;
     }
 
     #=====================[📝📖 OLD APPLICATION FRIZING | S.L (1.6) 📖📝]========================================================
