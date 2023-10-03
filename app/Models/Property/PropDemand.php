@@ -62,6 +62,7 @@ class PropDemand extends Model
             ->get();
     }
 
+
     /**
      * | Get Property Dues Demand by Property Id
      */
