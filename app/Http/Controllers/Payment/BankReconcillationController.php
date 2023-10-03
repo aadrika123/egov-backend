@@ -163,7 +163,7 @@ class BankReconcillationController extends Controller
             ]);
 
             if ($validator->fails()) {
-                return response()->json(['status' => False, 'msg' => $validator()->errors()]);
+                return validationError($validator);
             }
 
             $moduleId = $request->moduleId;
