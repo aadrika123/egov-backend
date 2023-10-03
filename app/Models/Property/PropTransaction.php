@@ -34,13 +34,35 @@ class PropTransaction extends Model
             'prop_cheque_dtls.branch_name',
             'prop_cheque_dtls.cheque_no',
             'prop_cheque_dtls.cheque_date',
-            'u.user_name as tc_name',
+            'u.name as tc_name',
             'u.mobile as tc_mobile'
         )
-            ->where('tran_no', $tranNo)
             ->leftJoin("prop_cheque_dtls", "prop_cheque_dtls.transaction_id", "prop_transactions.id")
             ->leftJoin("users as u", "u.id", "prop_transactions.user_id")
+            ->where('tran_no', $tranNo)
             ->firstorfail();
+    }
+
+
+    /**
+     * | Get transaction detials with handling transaction status 
+     */
+    public function getPropByTranPropIdV2($tranNo)
+    {
+        return PropTransaction::select(
+            'prop_transactions.*',
+            'prop_cheque_dtls.bank_name',
+            'prop_cheque_dtls.branch_name',
+            'prop_cheque_dtls.cheque_no',
+            'prop_cheque_dtls.cheque_date',
+            'u.name as tc_name',
+            'u.mobile as tc_mobile'
+        )
+            ->leftJoin("prop_cheque_dtls", "prop_cheque_dtls.transaction_id", "prop_transactions.id")
+            ->leftJoin("users as u", "u.id", "prop_transactions.user_id")
+            ->where('prop_transactions.status', 1)
+            ->where('tran_no', $tranNo)
+            ->first();
     }
 
     // getPropTrans as trait function on current object

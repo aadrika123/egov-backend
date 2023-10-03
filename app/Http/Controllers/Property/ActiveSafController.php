@@ -2174,7 +2174,9 @@ class ActiveSafController extends Controller
             $lateAssessKey = $rebatePenalMstrs->where('id', 5)->first()['value'];
             $onlineRebate = $rebatePenalMstrs->where('id', 3)->first()['value'];
 
-            $safTrans = $transaction->getPropByTranPropId($req->tranNo);
+            $safTrans = $transaction->getPropByTranPropIdV2($req->tranNo);
+            if (!$safTrans)
+                throw new Exception("Transaction Not Found");
             // Saf Payment
             $safId = $safTrans->saf_id;
             $reqSafId = new Request(['id' => $safId]);
