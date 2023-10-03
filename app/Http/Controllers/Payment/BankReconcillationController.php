@@ -44,27 +44,30 @@ class BankReconcillationController extends Controller
     {
         try {
             $validator = Validator::make($request->all(), [
-                'fromDate' => 'required',
-                'toDate' => 'required',
-                'moduleId' => 'required'
+                'fromDate'  => 'required',
+                'toDate'    => 'required',
+                'moduleId'  => 'required'
             ]);
 
             if ($validator->fails()) {
                 return response()->json(['status' => False, 'msg' => $validator()->errors()]);
             }
-            $ulbId = authUser($request)->ulb_id;
-            $moduleId = $request->moduleId;
-            $paymentMode = $request->paymentMode;
-            $verifyStatus = $request->verificationType;
-            $fromDate = Carbon::create($request->fromDate)->format('Y-m-d');
-            $toDate = Carbon::create($request->toDate)->format('Y-m-d');
-            $propertyModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
-            $waterModuleId = Config::get('module-constants.WATER_MODULE_ID');
-            $tradeModuleId = Config::get('module-constants.TRADE_MODULE_ID');
-            $mPropTransaction = new PropTransaction();
-            $mTradeTransaction = new TradeTransaction();
-            $mWaterTran = new WaterTran();
+            $ulbId          = authUser($request)->ulb_id;
+            $moduleId       = $request->moduleId;
+            $paymentMode    = $request->paymentMode;
+            $verifyStatus   = $request->verificationType;
 
+            $fromDate           = Carbon::create($request->fromDate)->format('Y-m-d');
+            $toDate             = Carbon::create($request->toDate)->format('Y-m-d');
+            $propertyModuleId   = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $waterModuleId      = Config::get('module-constants.WATER_MODULE_ID');
+            $tradeModuleId      = Config::get('module-constants.TRADE_MODULE_ID');
+
+            $mPropTransaction   = new PropTransaction();
+            $mTradeTransaction  = new TradeTransaction();
+            $mWaterTran         = new WaterTran();
+
+            # For Property
             if ($moduleId == $propertyModuleId) {
                 $chequeTranDtl  = $mPropTransaction->chequeTranDtl($ulbId);
 
@@ -80,8 +83,8 @@ class BankReconcillationController extends Controller
                 }
             }
 
+            # For Water
             if ($moduleId == $waterModuleId) {
-
                 $chequeTranDtl  = $mWaterTran->chequeTranDtl($ulbId);
 
                 if ($request->chequeNo) {
@@ -96,6 +99,7 @@ class BankReconcillationController extends Controller
                 }
             }
 
+            # For Trade
             if ($moduleId == $tradeModuleId) {
                 $chequeTranDtl  = $mTradeTransaction->chequeTranDtl($ulbId);
 
@@ -138,11 +142,11 @@ class BankReconcillationController extends Controller
             }
 
             if (collect($data)->isNotEmpty()) {
-                return responseMsgs(true, "Data Acording to request!", $data, '010801', '01', '382ms-547ms', 'Post', '');
+                return responseMsgs(true, "Data Acording to request!", $data, '010801', '01', responseTime() ?? '382ms-547ms', 'Post', $request->deviceId);
             }
             return responseMsg(false, "data not found!", "");
         } catch (Exception $error) {
-            return responseMsg(false, "ERROR!", $error->getMessage());
+            return responseMsg(false,  $error->getMessage(), [], '010801', '01', responseTime(), 'Post', $request->deviceId);
         }
     }
 
