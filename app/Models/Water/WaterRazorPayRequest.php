@@ -18,18 +18,18 @@ class WaterRazorPayRequest extends Model
     public function saveRequestData($request, $paymentFor, $temp, $refDetails)
     {
         $RazorPayRequest = new WaterRazorPayRequest;
-        $RazorPayRequest->related_id        = $request->consumerId ?? $request->applicationId;
-        $RazorPayRequest->payment_from      = $paymentFor;
-        $RazorPayRequest->amount            = $request->amount ?? $refDetails['totalAmount'];
-        $RazorPayRequest->demand_from_upto  = $request->demandFrom ? ($request->demandFrom . "--" . $request->demandUpto) : null;
-        $RazorPayRequest->ip_address        = $request->ip();
-        $RazorPayRequest->order_id          = $temp["orderId"];
-        $RazorPayRequest->department_id     = $temp["departmentId"];
-        $RazorPayRequest->adjusted_amount   = $refDetails["adjustedAmount"] ?? null;
-        $RazorPayRequest->due_amount        = $refDetails["leftDemandAmount"] ?? null; # dont save 
-        $RazorPayRequest->penalty_amount    = $refDetails["penaltyAmount"] ?? null;
-        $RazorPayRequest->remarks           = $request->remarks;
-        $RazorPayRequest->conumer_charge_id = $refDetails['chargeCatagoryId'] ?? null;
+        $RazorPayRequest->related_id            = $request->consumerId ?? $request->applicationId;
+        $RazorPayRequest->payment_from          = $paymentFor;
+        $RazorPayRequest->amount                = $request->amount ?? $refDetails['totalAmount'];
+        $RazorPayRequest->demand_from_upto      = $request->demandFrom ? ($request->demandFrom . "--" . $request->demandUpto) : null;
+        $RazorPayRequest->ip_address            = $request->ip();
+        $RazorPayRequest->order_id              = $temp["orderId"];
+        $RazorPayRequest->department_id         = $temp["departmentId"];
+        $RazorPayRequest->adjusted_amount       = $refDetails["adjustedAmount"] ?? null;
+        $RazorPayRequest->due_amount            = $refDetails["leftDemandAmount"] ?? null; # dont save 
+        $RazorPayRequest->penalty_amount        = $refDetails["penaltyAmount"] ?? null;
+        $RazorPayRequest->remarks               = $request->remarks;
+        $RazorPayRequest->consumer_charge_id    = $refDetails['chargeCatagoryId'] ?? null;
         $RazorPayRequest->save();
     }
 
