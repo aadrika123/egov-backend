@@ -25,9 +25,9 @@ class CalculatorController extends Controller
 
     public function __construct(iCalculatorRepository $iCalculatorRepository)
     {
-        $this->_roadTypes = Config::get('PropertyConstaint.ROAD_TYPES');
-        $this->Repository = $iCalculatorRepository;
         $this->_mCapitalValueRates = new MCapitalValueRate();
+        $this->Repository = $iCalculatorRepository;
+        $this->_roadTypes = Config::get('PropertyConstaint.ROAD_TYPES');
         $this->_effectiveRuleset2 = Config::get('PropertyConstaint.EFFECTIVE_DATE_RULE2');
         $this->_effectiveRuleset3 = Config::get('PropertyConstaint.EFFECTIVE_DATE_RULE3');
     }

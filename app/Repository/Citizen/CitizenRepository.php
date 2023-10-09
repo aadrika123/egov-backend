@@ -161,6 +161,15 @@ class CitizenRepository implements iCitizenRepository
                 'pt_no',
                 'holding_no',
                 'assessment_type',
+                DB::raw(
+                    "CASE 
+                            WHEN prop_active_safs.assessment_type ='New Assessment' THEN '1'
+                            WHEN prop_active_safs.assessment_type ='Reassessment' THEN '2'  
+                            WHEN prop_active_safs.assessment_type ='Mutation' THEN '3'  
+                            WHEN prop_active_safs.assessment_type ='Bifurcation' THEN '4'  
+                            WHEN prop_active_safs.assessment_type ='Amalgamation' THEN '5'  
+                        END as assessment_type_key"
+                ),
                 'r.role_name as current_level',
                 DB::raw("TO_CHAR(application_date, 'DD-MM-YYYY') as application_date"),
                 'applicant_name',

@@ -421,6 +421,7 @@ class PropProperty extends Model
     {
         return PropProperty::on('pgsql::read')
             ->select('id')
+            ->where('status', 1)
             ->where('ulb_id', $req->ulbId);
     }
 
