@@ -316,6 +316,7 @@ class PropProperty extends Model
             'gb_usage_types' => $fieldVerifiedSaf->gb_usage_types,
             'gb_prop_usage_types' => $fieldVerifiedSaf->gb_prop_usage_types,
             'rwh_date_from' => $fieldVerifiedSaf->rwh_date_from,
+            //road_width muissing
         ];
         $property->update($reqs);
     }

@@ -182,7 +182,7 @@ trait SafDetailsTrait
             ['displayString' => 'Owners', 'key' => 'ownerName', 'value' => $owners],
             ['displayString' => 'Property Type', 'key' => 'propertyType', 'value' => $req->property_type],
             ['displayString' => 'Ownership Type', 'key' => 'ownershipType', 'value' => $req->ownership_type],
-            ['displayString' => 'Plot-Area(sqt)', 'key' => 'plotArea', 'value' => $req->area_of_plot],
+            ['displayString' => 'Plot-Area(Decimal)', 'key' => 'plotArea', 'value' => $req->area_of_plot],
             ['displayString' => 'Hoarding Board', 'key' => 'isHoardingBoard', 'value' => ($req->is_hoarding_board == true) ? 'Yes' : 'No'],
             ['displayString' => 'Petrol Pump', 'key' => 'isPetrolPump', 'value' => ($req->is_petrol_pump == true) ? 'Yes' : 'No'],
             ['displayString' => 'Water Harvesting', 'key' => 'isWaterHarvesting', 'value' => ($req->is_water_harvesting == true) ? 'Yes' : 'No'],
