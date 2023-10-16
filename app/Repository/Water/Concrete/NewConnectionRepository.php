@@ -399,7 +399,6 @@ class NewConnectionRepository implements iNewConnection
         $current            = Carbon::now();
         $wfLevels           = Config::get('waterConstaint.ROLE-LABEL');
         $waterApplication   = WaterApplication::find($req->applicationId);
-        $WfActiveDoc        = WfActiveDocument::where('active_id', $req->applicationId);
 
         # Derivative Assignments
         $senderRoleId = $waterApplication->current_role;
@@ -413,7 +412,7 @@ class NewConnectionRepository implements iNewConnection
 
         $this->begin();
         if ($req->action == 'forward') {
-            $this->checkPostCondition($senderRoleId, $wfLevels, $waterApplication, $WfActiveDoc);            // Check Post Next level condition
+            $this->checkPostCondition($senderRoleId, $wfLevels, $waterApplication);            // Check Post Next level condition
             if ($waterApplication->current_role == $wfLevels['JE']) {
                 $waterApplication->is_field_verified = true;
             }
@@ -463,9 +462,11 @@ class NewConnectionRepository implements iNewConnection
         | working 
         | Check the doc verify for DA ❗❗❗❗
      */
-    public function checkPostCondition($senderRoleId, $wfLevels, $application, $WfActiveDoc)
+    public function checkPostCondition($senderRoleId, $wfLevels, $application)
     {
-        $mWaterSiteInspection = new WaterSiteInspection();
+        $moduleId               = Config::get('module-constants.WATER_MODULE_ID');
+        $mWfActiveDocument      = new WfActiveDocument();
+        $mWaterSiteInspection   = new WaterSiteInspection();
         $refRole = Config::get("waterConstaint.ROLE-LABEL");
         switch ($senderRoleId) {
             case $wfLevels['BO']:                                                                       // Back Office Condition
@@ -473,13 +474,14 @@ class NewConnectionRepository implements iNewConnection
                     throw new Exception("Document Not Fully Uploaded or Payment in not Done!");
                 break;
             case $wfLevels['DA']:                                                                       // DA Condition
+                $docList = $mWfActiveDocument->getApplicatonDoc($application->id, $application->workflow_id, $moduleId);
+                if ($docList) {
+                    throw new Exception("Document not fully verified!");
+                }
                 if ($application->doc_status == false || $application->payment_status != 1)
                     throw new Exception("Document Not Fully Verified");
                 break;
-            case $wfLevels['DA']:                                                                       // DA Condition
-                if ($WfActiveDoc->verify_status == 2 || $application->payment_status != 1)
-                    throw new Exception("Document Not Fully Verified");
-                break;
+
             case $wfLevels['JE']:                                                                       // JE Coditon in case of site adjustment
                 if ($application->doc_status == false || $application->payment_status != 1)
                     throw new Exception("Document Not Fully Verified or Payment in not Done!");

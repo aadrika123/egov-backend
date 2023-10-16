@@ -425,4 +425,18 @@ class WfActiveDocument extends Model
             ->where('status', 1)
             ->get();
     }
+
+    /**
+     * | Get the document using moduleId,applicaionId,workflowId
+     */
+    public function getApplicatonDoc($relatedId, $workfloId, $moduleId)
+    {
+        return WfActiveDocument::on('pgsql::read')
+            ->where('active_id', $relatedId)
+            ->where('workflow_id', $workfloId)
+            ->where('module_id', $moduleId)
+            ->where('verify_status', 2)
+            ->where('status', 1)
+            ->first();
+    }
 }
