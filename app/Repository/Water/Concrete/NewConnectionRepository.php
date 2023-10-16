@@ -183,7 +183,7 @@ class NewConnectionRepository implements iNewConnection
         if (!$finisherRoleId || !$initiatorRoleId) {
             throw new Exception("initiatorRoleId or finisherRoleId not found for respective Workflow!");
         }
-       
+
         # Generating Demand 
         $newConnectionCharges = objToArray($mWaterNewConnection->calWaterConCharge($req));
         if (!$newConnectionCharges['status']) {
@@ -459,6 +459,7 @@ class NewConnectionRepository implements iNewConnection
      * | check Post Condition for backward forward
         | Serial No : 04.01
         | working 
+        | Check the doc verify for DA ❗❗❗❗
      */
     public function checkPostCondition($senderRoleId, $wfLevels, $application)
     {

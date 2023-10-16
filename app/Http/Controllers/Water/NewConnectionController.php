@@ -1101,16 +1101,21 @@ class NewConnectionController extends Controller
             }
 
             $this->begin();
-            $ifDocExist = $mWfActiveDocument->isDocCategoryExists($getWaterDetails->id, $getWaterDetails->workflow_id, $refmoduleId, $req->docCategory, $req->ownerId)->first();   // Checking if the document is already existing or not
-            $metaReqs = new Request($metaReqs);
-            if (collect($ifDocExist)->isEmpty()) {
-                $mWfActiveDocument->postDocuments($metaReqs);
-            }
-            if (collect($ifDocExist)->isNotEmpty()) {
-                $mWfActiveDocument->editDocuments($ifDocExist, $metaReqs);
+            if ($getWaterDetails->parked != true) {
+                $ifDocExist = $mWfActiveDocument->isDocCategoryExists($getWaterDetails->id, $getWaterDetails->workflow_id, $refmoduleId, $req->docCategory, $req->ownerId)->first();   // Checking if the document is already existing or not
+                $metaReqs = new Request($metaReqs);
+                if (collect($ifDocExist)->isEmpty()) {
+                    $mWfActiveDocument->postDocuments($metaReqs);
+                }
+                if (collect($ifDocExist)->isNotEmpty()) {
+                    $mWfActiveDocument->editDocuments($ifDocExist, $metaReqs);
+                }
             }
             # if the application is parked and btc 
             if ($getWaterDetails->parked == true) {
+                # check the doc Existence for updation and post
+                $metaReqs = new Request($metaReqs);
+                $mWfActiveDocument->postDocuments($metaReqs);
                 $mWfActiveDocument->deactivateRejectedDoc($metaReqs);
                 $refReq = new Request([
                     'applicationId' => $applicationId
@@ -1195,7 +1200,7 @@ class NewConnectionController extends Controller
         $checkDocument = collect($refDoc)->map(function ($value, $key) {
             if ($value['isMadatory'] == 1) {
                 $doc = collect($value['uploadDoc'])->first();
-                if (is_null($doc)) {
+                if (is_null($doc) || $value['uploadDoc']['verify_status'] == 2) {
                     return false;
                 }
                 return true;
@@ -1205,7 +1210,7 @@ class NewConnectionController extends Controller
         $checkOwnerDocument = collect($refOwnerDoc)->map(function ($value, $key) {
             if ($value['isMadatory'] == 1) {
                 $doc = collect($value['uploadDoc'])->first();
-                if (is_null($doc)) {
+                if (is_null($doc) || $value['uploadDoc']['verify_status'] == 2) {
                     return false;
                 }
                 return true;
