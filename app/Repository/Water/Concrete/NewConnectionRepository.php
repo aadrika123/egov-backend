@@ -20,6 +20,7 @@ use App\Models\Water\WaterPenaltyInstallment;
 use App\Models\Water\WaterSiteInspection;
 use App\Models\Water\WaterTran;
 use App\Models\Water\WaterTranDetail;
+use App\Models\Workflows\WfActiveDocument;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfWorkflow;
@@ -398,6 +399,7 @@ class NewConnectionRepository implements iNewConnection
         $current            = Carbon::now();
         $wfLevels           = Config::get('waterConstaint.ROLE-LABEL');
         $waterApplication   = WaterApplication::find($req->applicationId);
+        $WfActiveDoc        = WfActiveDocument::where('active_id', $req->applicationId);
 
         # Derivative Assignments
         $senderRoleId = $waterApplication->current_role;
@@ -411,7 +413,7 @@ class NewConnectionRepository implements iNewConnection
 
         $this->begin();
         if ($req->action == 'forward') {
-            $this->checkPostCondition($senderRoleId, $wfLevels, $waterApplication);            // Check Post Next level condition
+            $this->checkPostCondition($senderRoleId, $wfLevels, $waterApplication, $WfActiveDoc);            // Check Post Next level condition
             if ($waterApplication->current_role == $wfLevels['JE']) {
                 $waterApplication->is_field_verified = true;
             }
@@ -461,7 +463,7 @@ class NewConnectionRepository implements iNewConnection
         | working 
         | Check the doc verify for DA ❗❗❗❗
      */
-    public function checkPostCondition($senderRoleId, $wfLevels, $application)
+    public function checkPostCondition($senderRoleId, $wfLevels, $application, $WfActiveDoc)
     {
         $mWaterSiteInspection = new WaterSiteInspection();
         $refRole = Config::get("waterConstaint.ROLE-LABEL");
@@ -472,6 +474,10 @@ class NewConnectionRepository implements iNewConnection
                 break;
             case $wfLevels['DA']:                                                                       // DA Condition
                 if ($application->doc_status == false || $application->payment_status != 1)
+                    throw new Exception("Document Not Fully Verified");
+                break;
+            case $wfLevels['DA']:                                                                       // DA Condition
+                if ($WfActiveDoc->verify_status == 2 || $application->payment_status != 1)
                     throw new Exception("Document Not Fully Verified");
                 break;
             case $wfLevels['JE']:                                                                       // JE Coditon in case of site adjustment
