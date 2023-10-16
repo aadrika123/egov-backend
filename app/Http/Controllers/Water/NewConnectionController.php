@@ -1109,16 +1109,6 @@ class NewConnectionController extends Controller
             if (collect($ifDocExist)->isNotEmpty()) {
                 $mWfActiveDocument->editDocuments($ifDocExist, $metaReqs);
             }
-
-            #check full doc upload
-            $refCheckDocument = $this->checkFullDocUpload($req);
-
-            # Update the Doc Upload Satus in Application Table
-            if ($refCheckDocument->contains(false)) {
-                $mWaterApplication->deactivateUploadStatus($applicationId);
-            } else {
-                $this->updateWaterStatus($req, $getWaterDetails);
-            }
             # if the application is parked and btc 
             if ($getWaterDetails->parked == true) {
                 $mWfActiveDocument->deactivateRejectedDoc($metaReqs);
@@ -1133,6 +1123,16 @@ class NewConnectionController extends Controller
                     $mWaterApplication->updateParkedstatus($status, $applicationId);
                 }
             }
+            #check full doc upload
+            $refCheckDocument = $this->checkFullDocUpload($req);
+
+            # Update the Doc Upload Satus in Application Table
+            if ($refCheckDocument->contains(false)) {
+                $mWaterApplication->deactivateUploadStatus($applicationId);
+            } else {
+                $this->updateWaterStatus($req, $getWaterDetails);
+            }
+
             $this->commit();
             return responseMsgs(true, "Document Uploadation Successful", "", "", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
