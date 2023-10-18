@@ -550,6 +550,8 @@ Route::controller(ReportController::class)->group(function () {
   Route::post('reports/property/holding-wise-fine-rebate', 'PropFineRebate');             //done
   Route::post('reports/property/deactivated-list', 'PropDeactedList');                    //done
 
+  Route::post('reports/mpl', 'mplReport');                    //done
+
 });
 // });
 
