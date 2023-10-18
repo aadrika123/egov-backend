@@ -875,10 +875,10 @@ class ReportController extends Controller
             $data['Compliances']['no_of_property_inspected_this_year'] = $currentYearData->no_of_property_inspected_this_year;
             $data['Compliances']['no_of_defaulter_this_year']          = $currentYearData->no_of_defaulter_this_year;
 
-            // $data['Demand']['prev_year']             = $prevYearData->prev_year;
-            // $data['Demand']['current_year']          = $currentYearData->current_year;
-            // $data['Total Payment From HH']['prev_year']    = $prevYearData->prev_year;
-            // $data['Total Payment From HH']['current_year'] = $currentYearData->current_year;
+            $data['Demand']['prev_year']             = '604529369.42';
+            $data['Demand']['current_year']          = '621337104.08';
+            $data['Total Payment From HH']['prev_year']    = '129059';
+            $data['Total Payment From HH']['current_year'] = '85413';
 
 
             return responseMsgs(true, "Mpl Report", $data, "", 01, responseTime(), $request->getMethod(), $request->deviceId);
