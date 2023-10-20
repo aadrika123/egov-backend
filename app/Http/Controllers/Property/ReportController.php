@@ -752,26 +752,26 @@ class ReportController extends Controller
             $prevYearData =  DB::connection('pgsql_reports')->table('mpl_prev_year')->where('ulb_id', $ulbId)->first();
             $currentYearData =  DB::connection('pgsql_reports')->table('mpl_current_year')->where('ulb_id', $ulbId)->first();
 
-            #_Ass
-            $data['Assessed Properties']['target_for_last_year']    = $prevYearData->target_for_last_year;
-            $data['Assessed Properties']['last_year_achievement']   = $prevYearData->last_year_achievement;
+            #_Assessed Properties ??
+            $data['Assessed Properties']['target_for_last_year']    = $prevYearData->assessed_property_target_for_last_year;
+            $data['Assessed Properties']['last_year_achievement']   = $prevYearData->assessed_property_last_year_achievement;
             $data['Assessed Properties']['target_for_this_year']    = $currentYearData->assessed_property_target_for_this_year;
             $data['Assessed Properties']['this_year_achievement']   = $currentYearData->assessed_property_this_year_achievement;
 
             #_Saf Achievement
-            $data['Saf Achievement']['previous_year_target']        = $prevYearData->previous_year_target;
-            $data['Saf Achievement']['previous_year_achievement']   = $prevYearData->previous_year_achievement;
+            $data['Saf Achievement']['previous_year_target']        = $prevYearData->saf_previous_year_target;
+            $data['Saf Achievement']['previous_year_achievement']   = $prevYearData->saf_previous_year_achievement;
             $data['Saf Achievement']['current_year_target']         = $currentYearData->saf_current_year_target;
             $data['Saf Achievement']['current_year_achievement']    = $currentYearData->saf_current_year_achievement;
 
-            #_Assessment Categories
+            #_Assessment Categories ??
             $data['Assessment Categories']['total_assessment']  = $currentYearData->total_assessment;
             $data['Assessment Categories']['residential']       = $currentYearData->total_assessed_residential;
             $data['Assessment Categories']['commercial']        = $currentYearData->total_assessed_commercial;
             $data['Assessment Categories']['industrial']        = $currentYearData->total_assessed_industrial;
             $data['Assessment Categories']['gbsaf']             = $currentYearData->total_assessed_gbsaf;
 
-            #_Ownership
+            #_Ownership ??
             $data['Ownership']['total_ownership'] = $currentYearData->total_ownership;
             $data['Ownership']['owned_property']  = $currentYearData->owned_property;
             $data['Ownership']['rented_property'] = $currentYearData->rented_property;
@@ -779,20 +779,21 @@ class ReportController extends Controller
 
             #_Unpaid Properties
             $data['Unpaid Properties']['count_not_paid_3yrs']  = $prevYearData->count_not_paid_3yrs;
-            $data['Unpaid Properties']['amount_not_paid_3yrs'] = $prevYearData->amount_not_paid_3yrs;
+            $data['Unpaid Properties']['amount_not_paid_3yrs'] = round(($prevYearData->amount_not_paid_3yrs) / 100, 2); #_in lacs
             $data['Unpaid Properties']['count_not_paid_2yrs']  = $prevYearData->count_not_paid_2yrs;
-            $data['Unpaid Properties']['amount_not_paid_2yrs'] = $prevYearData->amount_not_paid_2yrs;
+            $data['Unpaid Properties']['amount_not_paid_2yrs'] = round(($prevYearData->amount_not_paid_2yrs) / 100, 2); #_in lacs
             $data['Unpaid Properties']['count_not_paid_1yrs']  = $prevYearData->count_not_paid_1yrs;
-            $data['Unpaid Properties']['amount_not_paid_1yrs'] = $prevYearData->amount_not_paid_1yrs;
+            $data['Unpaid Properties']['amount_not_paid_1yrs'] = round(($prevYearData->amount_not_paid_1yrs) / 100, 2); #_in lacs
 
             #_Outstanding Demand Last Year
+            // 604529369.42  =>total demand
             $data['Outstanding Demand Last Year']['outstanding']        = $prevYearData->outstanding;
             $data['Outstanding Demand Last Year']['outstanding_count']  = $prevYearData->outstanding_count;
             $data['Outstanding Demand Last Year']['outstanding_amount'] = $prevYearData->outstanding_amount;
             $data['Outstanding Demand Last Year']['extempted']          = $prevYearData->extempted;
             $data['Outstanding Demand Last Year']['extempted_count']    = $prevYearData->extempted_count;
             $data['Outstanding Demand Last Year']['extempted_amount']   = $prevYearData->extempted_amount;
-            $data['Outstanding Demand Last Year']['recoverable_demand'] = $prevYearData->recoverable_demand;
+            $data['Outstanding Demand Last Year']['recoverable_demand'] = $prevYearData->recoverable_demand; //collection amount
             $data['Outstanding Demand Last Year']['payment_done']       = $prevYearData->payment_done;
             $data['Outstanding Demand Last Year']['payment_due']        = $prevYearData->payment_due;
 
@@ -817,7 +818,7 @@ class ReportController extends Controller
 
             #_Single Payment
             $data['Single Payment']['before_previous_year_count'] = $prevYearData->single_payment_before_previous_year_count;
-            $data['Single Payment']['previous_year_count']        = $currentYearData->single_payment_current_year_count;
+            $data['Single Payment']['previous_year_count']        = $currentYearData->single_payment_current_year_count; // ?? one time payment in saf only
 
             #_Notice
             $data['Notice']['last_year_count']     = $prevYearData->notice_last_year_count;
@@ -833,7 +834,10 @@ class ReportController extends Controller
             $data['Mutation']['this_year_count']  = $currentYearData->mutation_this_year_count;
             $data['Mutation']['this_year_amount'] = $currentYearData->mutation_this_year_amount;
 
-            #_Top Areas Property Transactions
+            #_Top Areas Property Transactions 
+            /**
+             include ward no
+             */
             $data['Top Areas Property Transactions']['ward1_count'] = $currentYearData->top_area_property_transaction_ward1_count;
             $data['Top Areas Property Transactions']['ward2_count'] = $currentYearData->top_area_property_transaction_ward2_count;
             $data['Top Areas Property Transactions']['ward3_count'] = $currentYearData->top_area_property_transaction_ward3_count;
@@ -841,6 +845,9 @@ class ReportController extends Controller
             $data['Top Areas Property Transactions']['ward5_count'] = $currentYearData->top_area_property_transaction_ward5_count;
 
             #_Top Areas Saf
+            /**
+             include ward no
+             */
             $data['Top Areas Saf']['ward1_count'] = $currentYearData->top_area_saf_ward1_count;
             $data['Top Areas Saf']['ward2_count'] = $currentYearData->top_area_saf_ward2_count;
             $data['Top Areas Saf']['ward3_count'] = $currentYearData->top_area_saf_ward3_count;
@@ -877,6 +884,10 @@ class ReportController extends Controller
 
             $data['Demand']['prev_year']             = '604529369.42';
             $data['Demand']['current_year']          = '621337104.08';
+            // $data['Collection']['prev_year']             = '604529369.42';
+            // $data['Collection']['current_year']          = '621337104.08';
+            // $data['Balance']['prev_year']             = '604529369.42';
+            // $data['Balance']['current_year']          = '621337104.08';
             $data['Total Payment From HH']['prev_year']    = '129059';
             $data['Total Payment From HH']['current_year'] = '85413';
 
