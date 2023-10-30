@@ -32,410 +32,337 @@ use Illuminate\Http\Request;
  * | Created By- Tannu Verma
  * | Created On- 24-05-2023 
  * | Serial No. - 21
- * | Status-Open
+ * | Status-Closed
  */
 
- /**
-  * | Functions for creation of Reference APIs
-    * 1. listBuildingRentalconst()
-    * 2. listPropForgeryType()
-    * 3. listPropRentalValue()
-    * 4. listPropApartmentdtl()
-    * 5. listBropBuildingRentalrate()
-    * 6. listPropVacantRentalrate()
-    * 7. listPropConstructiontype()
-    * 8. listPropFloor()
-    * 9. listPropgbBuildingUsagetype()
-    * 10. listPropgbPropUsagetype()
-    * 11. listPropObjectiontype()
-    * 12. listPropOccupancyFactor()
-    * 13. listPropOccupancytype()
-    * 14. listPropOwnershiptype()
-    * 15. listPropPenaltytype()
-    * 16. listPropRebatetype()
-    * 17. listPropRoadtype()
-    * 18. listPropTransfermode()
-    * 19. listPropType()
-    * 20. listPropUsagetype()
-*/
+/**
+ * | Functions for creation of Reference APIs
+ * 1. listBuildingRentalconst()
+ * 2. listPropForgeryType()
+ * 3. listPropRentalValue()
+ * 4. listPropApartmentdtl()
+ * 5. listBropBuildingRentalrate()
+ * 6. listPropVacantRentalrate()
+ * 7. listPropConstructiontype()
+ * 8. listPropFloor()
+ * 9. listPropgbBuildingUsagetype()
+ * 10. listPropgbPropUsagetype()
+ * 11. listPropObjectiontype()
+ * 12. listPropOccupancyFactor()
+ * 13. listPropOccupancytype()
+ * 14. listPropOwnershiptype()
+ * 15. listPropPenaltytype()
+ * 16. listPropRebatetype()
+ * 17. listPropRoadtype()
+ * 18. listPropTransfermode()
+ * 19. listPropType()
+ * 20. listPropUsagetype()
+ */
 
 
 class ReferenceController extends Controller
-{ 
+{
     /** 
      * 1. listBuildingRentalconst()
      *    Display List for Building Rental Const
-    */
+     */
     public function listBuildingRentalconst(Request $request)
-   {
-    try {
-        $m_buildingRentalconst = MPropBuildingRentalconst::where('status', 1)
-            ->get();
+    {
+        try {
+            $m_buildingRentalconst = MPropBuildingRentalconst::where('status', 1)
+                ->get();
 
-        if (!$m_buildingRentalconst) {
-            return responseMsgs(false, "", 'Building Rental Const Not Found', "", "");
+            return responseMsgs(true, 'Building Rental Const Retrieved Successfully', $m_buildingRentalconst, "012101", "01", responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (\Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "",                                                  "012101", "01", responseTime(), $request->getMethod(), $request->deviceId);
         }
-        return responseMsgs(true, $m_buildingRentalconst, 'Building Rental Const Retrieved Successfully', "012101", "");
-        
-    } catch (\Exception $e) {
-        return responseMsgs(false, $e->getMessage(), "");
-        
     }
-   }
-   
-   /** 
+
+    /** 
      * 2. listPropForgeryType()
      *    Display List for Property Forgery type
-    */
+     */
 
-   public function listPropForgeryType(Request $request)
-   {
-    try {
-        $m_propforgerytype = MPropForgeryType::where('status', 1)
-            ->get();
-        if (!$m_propforgerytype) {
-            return responseMsgs(false, "", 'Forgery type Not Found', "", "");  
+    public function listPropForgeryType(Request $request)
+    {
+        try {
+            $m_propforgerytype = MPropForgeryType::where('status', 1)
+                ->get();
+
+            return responseMsgs(true, 'Forgery type Retrieved Successfully', $m_propforgerytype, "012102", "01", responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (\Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "",                                     "012102", "01", responseTime(), $request->getMethod(), $request->deviceId);
         }
-        return responseMsgs(true, $m_propforgerytype, 'Forgery type Retrieved Successfully', "012102", "");
-    } catch (\Exception $e) {
-        return responseMsgs(false, $e->getMessage(), "");
     }
-   }
 
 
-   /** 
+    /** 
      * 3. listPropRentalValue()
      *    Display List for Property rental Value
-    */
+     */
 
     public function listPropRentalValue(Request $request)
     {
-     try {
-         $m_proprentalvalue = MPropRentalValue::where('status', 1)
-             ->get();
-         if (!$m_proprentalvalue) {
-             return responseMsgs(false, "", 'Rental Value Not Found', "", "");
-         }
-         return responseMsgs(true, $m_proprentalvalue, 'Rental Value Retrieved Successfully', "012103", "");
-     } catch (\Exception $e) {
-         return responseMsgs(false, $e->getMessage(), "");
-     }
+        try {
+            $m_proprentalvalue = MPropRentalValue::where('status', 1)
+                ->get();
+
+            return responseMsgs(true, 'Rental Value Retrieved Successfully', $m_proprentalvalue, "012103", "01", responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (\Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "",                                     "012103", "01", responseTime(), $request->getMethod(), $request->deviceId);
+        }
     }
 
 
     /** 
      * 4. listPropApartmentdtl()
      *    Display List for Apartment Detail
-    */
+     */
 
     public function listPropApartmentdtl(Request $request)
     {
-     try {
-         $m_propapartmentdtl = PropApartmentDtl::where('status', 1)
-             ->get();
- 
-         if (!$m_propapartmentdtl) {
-             return responseMsgs(false, "", 'Apartment details Not Found', "", "");
-         }
-         return responseMsgs(true, $m_propapartmentdtl, 'Apartment details Retrieved Successfully', "012104", "");
-         
-     } catch (\Exception $e) {
-         return responseMsgs(false, $e->getMessage(), "");
-     }
+        try {
+            $m_propapartmentdtl = PropApartmentDtl::where('status', 1)
+                ->get();
+
+            return responseMsgs(true, 'Apartment details Retrieved Successfully', $m_propapartmentdtl, "012104", "01", responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (\Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "",                                           "012104", "01", responseTime(), $request->getMethod(), $request->deviceId);
+        }
     }
 
-    
+
     /** 
      * 5. listPropBuildingRentalrate()
      *    Display List for Building Rental Rate
-    */
+     */
 
     public function listPropBuildingRentalrate(Request $request)
     {
-     try {
-         $m_propbuildingrentalrate = MPropBuildingRentalrate::where('status', 1)
-             ->get();
- 
-         if (!$m_propbuildingrentalrate) {
-             return responseMsgs(false, "", 'Building Rental Rate Not Found', "", "");
-         }
-         return responseMsgs(true, $m_propbuildingrentalrate, 'Building Rental Rate Retrieved Successfully', "012105", "");
+        try {
+            $m_propbuildingrentalrate = MPropBuildingRentalrate::where('status', 1)
+                ->get();
 
-     } catch (\Exception $e) {
-         return responseMsgs(false, $e->getMessage(), "");  
-     }
+            return responseMsgs(true, 'Building Rental Rate Retrieved Successfully', $m_propbuildingrentalrate, "012105", "01", responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (\Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "",                                                    "012105", "01", responseTime(), $request->getMethod(), $request->deviceId);
+        }
     }
 
-    
+
     /** 
      * 6. listPropVacantRentalrate()
      *    Display List for Vacant Rental Rate
-    */
+     */
 
     public function listPropVacantRentalrate(Request $request)
-   {
-    try {        
-        $status = $request->input('status', 1); // Status filter, default is 1
-        
-        $m_propvacantrentalrate = MPropVacantRentalrate::where('status', $status)
-            ->get();
+    {
+        try {
+            $status = $request->input('status', 1); // Status filter, default is 1
 
-        if (!$m_propvacantrentalrate->count()) {
-            return responseMsgs(false, "", 'Vacant Rental Rate Not Found', "", "");
+            $m_propvacantrentalrate = MPropVacantRentalrate::where('status', $status)
+                ->get();
+
+            return responseMsgs(true, 'Vacant Rental Rate Retrieved Successfully', $m_propvacantrentalrate,  "012106", "01", responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (\Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "",                                                 "012106", "01", responseTime(), $request->getMethod(), $request->deviceId);
         }
-        return responseMsgs(true, $m_propvacantrentalrate, 'Vacant Rental Rate Retrieved Successfully', "012106", "");   
-    } catch (\Exception $e) {
-        return responseMsgs(false, $e->getMessage(), "");
-        
     }
-  }
 
 
-  /** 
+    /** 
      * 7. listPropConstructiontype()
      *    Display List for Property Construction Type
-    */
+     */
 
     public function listPropConstructiontype(Request $request)
-   {
-    try {
-        $m_propconstructiontype = RefPropConstructionType::where('status', 1)
-             ->get();
+    {
+        try {
+            $m_propconstructiontype = RefPropConstructionType::where('status', 1)
+                ->get();
 
-        if (!$m_propconstructiontype) {
-            return responseMsgs(false, "", 'Construction Type Not Found', "", "");   
+            return responseMsgs(true,  'Construction Type Retrieved Successfully', $m_propconstructiontype, "012107", "01", responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (\Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "",                                                "012107", "01", responseTime(), $request->getMethod(), $request->deviceId);
         }
-        return responseMsgs(true, $m_propconstructiontype, 'Construction Type Retrieved Successfully', "012107", "");
-        
-    } catch (\Exception $e) {
-        return responseMsgs(false, $e->getMessage(), "");
     }
-  }
 
 
-  /** 
+    /** 
      * 8. listPropFloor()
      *    Display List for Property Floor
-    */
+     */
 
     public function listPropFloor(Request $request)
-   {
-    try {
-        $status = $request->input('status', 1); // Status filter, default is 1
+    {
+        try {
+            $m_propfloor = RefPropFloor::where('status', 1)
+                ->get();
 
-        $m_propfloor = RefPropFloor::where('status', $status)
-            ->get();
-
-        if (!$m_propfloor->count()) {
-            return responseMsgs(false, "", 'Floor Type Not Found', "", "");
+            return responseMsgs(true, 'Floor Type Retrieved Successfully', $m_propfloor, "012108", "01", responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (\Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "",                             "012108", "01", responseTime(), $request->getMethod(), $request->deviceId);
         }
-        return responseMsgs(true, $m_propfloor, 'Floor Type Retrieved Successfully', "012108", "");
-
-    } catch (\Exception $e) {
-        return responseMsgs(false, $e->getMessage(), "");
     }
-  }
 
 
-   /** 
+    /** 
      * 9. listPropgbBuildingUsagetype()
      *    Display List for Property GB Building Usage Type
-    */
+     */
 
     public function listPropgbBuildingUsagetype(Request $request)
-   {
-    try {
-        
-        $m_propgbbuildingusagetype = RefPropGbbuildingusagetype::where('status',1)
-        ->get();
+    {
+        try {
+            $m_propgbbuildingusagetype = RefPropGbbuildingusagetype::where('status', 1)
+                ->get();
 
-        if (!$m_propgbbuildingusagetype) {
-            return responseMsgs(false, "", 'GB Building Usage Type Not Found', "", "");
+            return responseMsgs(true, 'GB Building Usage Type Retrieved Successfully', $m_propgbbuildingusagetype, "012109", "01", responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (\Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "",                                                       "012109", "01", responseTime(), $request->getMethod(), $request->deviceId);
         }
-        return responseMsgs(true, $m_propgbbuildingusagetype, 'GB Building Usage Type Retrieved Successfully', "012109", "");
-        
-    } catch (\Exception $e) {
-        return responseMsgs(false, $e->getMessage(), "");
     }
-  }
 
 
-  /** 
+    /** 
      * 10. listPropgbPropUsagetype()
      *    Display List for Property Usage Type
-    */
+     */
 
     public function listPropgbPropUsagetype(Request $request)
-   {
-    try {
-        
-        $m_propgbpropusagetype = RefPropGbpropusagetype::where('status',1)
-        ->get();
+    {
+        try {
 
-        if (!$m_propgbpropusagetype) {
-            return responseMsgs(false, "", 'GB Property Usage Type Not Found', "", "");
+            $m_propgbpropusagetype = RefPropGbpropusagetype::where('status', 1)
+                ->get();
+
+            return responseMsgs(true, 'GB Property Usage Type Retrieved Successfully', $m_propgbpropusagetype, "012110", "01", responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (\Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "",                                                   "012110", "01", responseTime(), $request->getMethod(), $request->deviceId);
         }
-        return responseMsgs(true, $m_propgbpropusagetype, 'GB Property Usage Type Retrieved Successfully', "012110", "");
-       
-    } catch (\Exception $e) {
-        return responseMsgs(false, $e->getMessage(), "");       
     }
-  }
 
 
-  /** 
+    /** 
      * 11. listPropObjectiontype()
      *    Display List for Property Objection Type
-    */
+     */
 
     public function listpropobjectiontype(Request $request)
-   {
-    try {
-        $m_propobjectiontype = RefPropObjectionType::where('status', 1)
-        ->get();
+    {
+        try {
+            $m_propobjectiontype = RefPropObjectionType::where('status', 1)
+                ->get();
 
-        if (!$m_propobjectiontype) {
-            return responseMsgs(false, "", 'Property Objection Type Not Found', "", "");
-            
+            return responseMsgs(true, 'Property Objection Type Retrieved Successfully', $m_propobjectiontype, "012111", "01", responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (\Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "",                                                  "012111", "01", responseTime(), $request->getMethod(), $request->deviceId);
         }
-        return responseMsgs(true, $m_propobjectiontype, 'Property Objection Type Retrieved Successfully', "012111", "");
-        
-    } catch (\Exception $e) {
-        return responseMsgs(false, $e->getMessage(), "");
     }
-  }
 
 
-  /** 
+    /** 
      * 12. listPropOccupancyFactor()
      *    Display List for Property Occupancy Factor
-    */
+     */
 
     public function listPropOccupancyFactor(Request $request)
-   {
-    try {
-        $m_propoccupancyfactor = RefPropOccupancyFactor::where('status', 1)
-        ->get();
+    {
+        try {
+            $m_propoccupancyfactor = RefPropOccupancyFactor::where('status', 1)
+                ->get();
 
-        if (!$m_propoccupancyfactor) {
-            return responseMsgs(false, "", 'Property Occupancy Factor Not Found', "", "");
+            return responseMsgs(true, 'Property Occupancy Factor Retrieved Successfully', $m_propoccupancyfactor, "012112", "01", responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (\Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "",                                                       "012112", "01", responseTime(), $request->getMethod(), $request->deviceId);
         }
-        return responseMsgs(true, $m_propoccupancyfactor, 'Property Occupancy Factor Retrieved Successfully', "012112", "");
-  
-    } catch (\Exception $e) {
-        return responseMsgs(false, $e->getMessage(), "");
-        
     }
-  }
 
 
-  /** 
+    /** 
      * 13. listPropOccupancytype()
      *    Display List for Property Occupancy Type
-    */
+     */
 
     public function listPropOccupancytype(Request $request)
-   {
-    try {
-        $m_propoccupancytype = RefPropOccupancyType::where('status', 1)
-        ->get();
+    {
+        try {
+            $m_propoccupancytype = RefPropOccupancyType::where('status', 1)
+                ->get();
 
-        if (!$m_propoccupancytype) {
-            return responseMsgs(false, "", 'Property Occupancy Type Not Found', "", "");        
+            return responseMsgs(true, 'Property Occupancy Type Retrieved Successfully', $m_propoccupancytype, "012113", "01", responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (\Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "",                                                  "012113", "01", responseTime(), $request->getMethod(), $request->deviceId);
         }
-        return responseMsgs(true, $m_propoccupancytype, 'Property Occupancy Type Retrieved Successfully', "012113", "");      
-    } catch (\Exception $e) {
-        return responseMsgs(false, $e->getMessage(), "");       
     }
-  }
 
 
-   /** 
+    /** 
      * 14. listPropOwnershiptype()
      *    Display List for Property Ownership Type
-    */
-    
+     */
+
     public function listPropOwnershiptype(Request $request)
     {
-      try {
-         $m_propownershiptype = RefPropOwnershipType::where('status', 1)
-         ->get();
+        try {
+            $m_propownershiptype = RefPropOwnershipType::where('status', 1)
+                ->get();
 
-         if(!$m_propownershiptype){
-         return responseMsgs(false, "", 'Property Ownership Type not found', "", "");
-         }
-         return responseMsgs(true, $m_propownershiptype, 'Property Ownership Type Retrieved Successfully', "012114", "");
-        
-        }catch(\Exception $e){
-            return responseMsgs(false, $e->getMessage(), "");
+            return responseMsgs(true, $m_propownershiptype, 'Property Ownership Type Retrieved Successfully', "012114", "01", responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (\Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "",                                                  "012114", "01", responseTime(), $request->getMethod(), $request->deviceId);
         }
-
-      }
+    }
 
     /** 
      * 15. listPropPenaltytype()
      *    Display List for Property Penalty Type
-    */
-    
+     */
+
     public function listPropPenaltytype(Request $request)
     {
         try {
             $m_proppenaltytype = RefPropPenaltyType::where('status', 1)
-            ->get();
-            
-            if(!$m_proppenaltytype){
-            return responseMsgs(false, "", 'Property Penalty Type not find', "", "");
-            }
-            return responseMsgs(true, $m_proppenaltytype, 'Property Penalty Type Retrieved Successfully', "012115", "");
+                ->get();
 
-         } catch(\Exception $e){
-            return responseMsgs(false, $e->getMessage(), "");
-            
+            return responseMsgs(true, $m_proppenaltytype, 'Property Penalty Type Retrieved Successfully', "012115", "01", responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (\Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "",                                              "012115", "01", responseTime(), $request->getMethod(), $request->deviceId);
         }
     }
 
     /** 
      * 16. listPropRebatetype()
      *    Display List for Property Rebate Type
-    */
-    
+     */
+
     public function listPropRebatetype(Request $request)
     {
         try {
             $m_proprebatetype = RefPropRebateType::where('status', 1)
-            ->get();
-            
-            if(!$m_proprebatetype){
-            return responseMsgs(false, "", 'Property Rebate Type not find', "", "");
-            }
-            return responseMsgs(true, $m_proprebatetype, 'Property Rebate Type Retrieved Successfully', "012116", "");           
+                ->get();
 
-         } catch(\Exception $e){
-            return responseMsgs(false, $e->getMessage(), "");
-
+            return responseMsgs(true, $m_proprebatetype, 'Property Rebate Type Retrieved Successfully', "012116", "01", responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (\Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "",                                             "012116", "01", responseTime(), $request->getMethod(), $request->deviceId);
         }
     }
-    
-    
+
+
     /** 
      * 17. listPropRoadtype()
      *    Display List for Property Road Type
-    */
-    
+     */
+
     public function listPropRoadtype(Request $request)
     {
         try {
             $m_proproadtype = RefPropRoadType::where('status', 1)
-            ->get();
-            
-            if(!$m_proproadtype){
-            return responseMsgs(false, "", 'Property Road Type not find', "", "");
-            }
-           return responseMsgs(true, $m_proproadtype, 'Property Road Type Retrieved Successfully', "012117", "");
+                ->get();
 
-         } catch(\Exception $e){
-            return responseMsgs(false, $e->getMessage(), "");
-            
+            return responseMsgs(true, $m_proproadtype, 'Property Road Type Retrieved Successfully', "012117", "01", responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (\Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "",                                        "012117", "01", responseTime(), $request->getMethod(), $request->deviceId);
         }
     }
 
@@ -444,21 +371,17 @@ class ReferenceController extends Controller
     /** 
      * 18. listPropTransfermode()
      *    Display List for Property Transfer Mode
-    */
-    
+     */
+
     public function listPropTransfermode(Request $request)
     {
         try {
             $m_proptransfermode = RefPropTransferMode::where('status', 1)
-            ->get();
-            
-            if(!$m_proptransfermode){
-            return responseMsgs(false, "", 'Property Transfer Mode not find', "", "");
-            }
-            return responseMsgs(true, $m_proptransfermode, 'Property Transfer Mode Retrieved Successfully', "012118", "");
-            
-         } catch(\Exception $e){
-            return responseMsgs(false, $e->getMessage(), "");          
+                ->get();
+
+            return responseMsgs(true, $m_proptransfermode, 'Property Transfer Mode Retrieved Successfully', "012118", "01", responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (\Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "",                                                "012118", "01", responseTime(), $request->getMethod(), $request->deviceId);
         }
     }
 
@@ -466,75 +389,39 @@ class ReferenceController extends Controller
     /** 
      * 19. listProptype()
      *    Display List for Property Type
-    */
-    
+     */
+
     public function listProptype(Request $request)
     {
         try {
             $m_proptype = RefPropType::where('status', 1)
-            ->get();
-            
-            if(!$m_proptype){
-            return responseMsgs(false, 'Property Type not find',  "", "");
-            }
-            return responseMsgs(true,  'Property Type Retrieved Successfully', $m_proptype,"012119", "");
+                ->get();
 
-         } catch(\Exception $e){
-            return responseMsgs(false, $e->getMessage(), "");
-       }
-
+            return responseMsgs(true, 'Property Type Retrieved Successfully', $m_proptype, "012119", "01", responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (\Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "",                               "012119", "01", responseTime(), $request->getMethod(), $request->deviceId);
+        }
     }
 
 
     /** 
      * 20. listPropUsagetype()
      *    Display List for Property Usage Type
-    */
-    
+     */
+
     public function listPropUsagetype(Request $request)
     {
         try {
             $m_propusagetype = RefPropUsageType::where('status', 1)
-            ->get();
-            
-            if(!$m_propusagetype){
-            return responseMsgs(false, "Property Usage Type not find", '');
+                ->get();
+
+            if (!$m_propusagetype) {
+                return responseMsgs(false, "Property Usage Type not find", '');
             }
 
-            return responseMsgs(true, 'Property Usage Type Retrieved Successfully',  $m_propusagetype,  "012120", "");
-
-         } catch(\Exception $e){
-            return responseMsgs(false, $e->getMessage(), "");
+            return responseMsgs(true, 'Property Usage Type Retrieved Successfully',  $m_propusagetype,  "012120", "01", responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (\Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "",                                            "012120", "01", responseTime(), $request->getMethod(), $request->deviceId);
         }
     }
-
-
 }
-
-    
-     
-
-    
-
-
-
-
-  
-  
-
-  
-
-
-
-
-
-  
-
-
-
-
-
-
-
-
-
