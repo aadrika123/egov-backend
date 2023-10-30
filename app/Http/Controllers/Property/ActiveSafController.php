@@ -313,10 +313,10 @@ class ActiveSafController extends Controller
             });
 
             DB::commit();
-            return responseMsgs(true, "Successfully Updated the Data", "", 010124, 1.0, "308ms", "POST", $req->deviceId);
+            return responseMsgs(true, "Successfully Updated the Data", "", 010124, 1.0, responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
-            return responseMsgs(false, $e->getMessage(), "", 010124, 1.0, "308ms", "POST", $req->deviceId);
+            return responseMsgs(false, $e->getMessage(), "", 010124, 1.0, responseTime(), "POST", $req->deviceId);
         }
     }
 
@@ -338,7 +338,8 @@ class ActiveSafController extends Controller
      * | @var safInbox > Final returned Data
      * | @return response #safInbox
      * | Status-Closed
-     * | Query Cost-327ms 
+     * | Query Cost- 520ms 
+     * | Max Record- 2589
      * | Rating-3
      * ---------------------------------------------------------------
      */
@@ -358,6 +359,7 @@ class ActiveSafController extends Controller
             $roleIds = $mWfRoleUser->getRoleIdByUserId($userId)->pluck('wf_role_id');                      // Model to () get Role By User Id
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleIds)->pluck('workflow_id');
 
+            // DB::connection('pgsql::read')->enableQueryLog();
             $safDtl = $this->Repository->getSaf($workflowIds)                                          // Repository function to get SAF Details
                 ->where('parked', false)
                 ->where('prop_active_safs.ulb_id', $ulbId)
@@ -366,6 +368,8 @@ class ActiveSafController extends Controller
                 ->whereIn('ward_mstr_id', $occupiedWards)
                 ->orderByDesc('id')
                 ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name');
+
+            // dd(DB::connection('pgsql::read')->getQueryLog());
 
             $safInbox = app(Pipeline::class)
                 ->send(
@@ -378,6 +382,8 @@ class ActiveSafController extends Controller
                 ])
                 ->thenReturn()
                 ->paginate($perPage);
+
+
 
             return responseMsgs(true, "Data Fetched", remove_null($safInbox), "010103", "1.0", responseTime(), "POST", "");
         } catch (Exception $e) {
@@ -393,6 +399,8 @@ class ActiveSafController extends Controller
      * | @var occupiedWardsId get all the wards id of the user id
      * | @var readRoles get all the roles of the user id
      * | @var roleIds get all the logged in user role ids
+     * | Query Cost- 276ms 
+     * | Max Record- 3
      */
     public function btcInbox(Request $req)
     {
@@ -483,7 +491,8 @@ class ActiveSafController extends Controller
      * | @var workflowRoles get All Roles of the user id
      * | @var roles filteration of roleid from collections
      * | Status-Closed
-     * | Query Cost-369ms 
+     * | Query Cost- 4sec 173ms
+     * | Max Record- 62894
      * | Rating-4
      */
 
@@ -495,7 +504,7 @@ class ActiveSafController extends Controller
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
 
             $userId = authUser($req)->id;
-            $ulbId = authUser($req)->ulb_id;
+            $ulbId  = authUser($req)->ulb_id;
             $perPage = $req->perPage ?? 10;
 
             $roleIds = $mWfRoleUser->getRoleIdByUserId($userId)->pluck('wf_role_id');
@@ -594,7 +603,8 @@ class ActiveSafController extends Controller
      * =======================================
      * helpers : Helpers/utility_helper.php   ->remove_null() -> for remove  null values
      * | Status-Closed
-     * | Query Cost-378ms 
+     * | Query Cost-70ms 
+     * | Max Record- 1
      * | Rating-4 
      */
     #Saf Details
@@ -738,6 +748,8 @@ class ActiveSafController extends Controller
 
     /**
      * | Get Static Saf Details
+     * | Query Cost- 76ms
+     * | Max Record - 1
      */
     public function getStaticSafDetails(Request $req)
     {
@@ -756,6 +768,7 @@ class ActiveSafController extends Controller
             $memoDtls = array();
             $data = array();
 
+
             // Derivative Assignments
             $data = $mPropActiveSaf->getActiveSafDtls()                         // <------- Model function Active SAF Details
                 ->where('prop_active_safs.id', $req->applicationId)
@@ -773,6 +786,7 @@ class ActiveSafController extends Controller
 
             if (collect($data)->isEmpty())
                 throw new Exception("Application Not Found");
+
 
             if ($data->payment_status == 0) {
                 $data->current_role_name = null;
@@ -1704,7 +1718,7 @@ class ActiveSafController extends Controller
             $postRazorPayPenaltyRebate = new PostRazorPayPenaltyRebate;
             $url            = Config::get('razorpay.PAYMENT_GATEWAY_URL');
             $endPoint       = Config::get('razorpay.PAYMENT_GATEWAY_END_POINT');
-            $authUser      = authUser($req);
+            $authUser       = authUser($req);
             $req->merge(['departmentId' => 1]);
             $safDetails = PropActiveSaf::findOrFail($req->id);
             if ($safDetails->payment_status == 1)

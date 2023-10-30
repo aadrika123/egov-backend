@@ -69,7 +69,6 @@ class ConcessionController extends Controller
 
 
     /**
-     * | Query Costing-464ms 
      * | Rating-3
      * | Status-Closed
      */
@@ -166,12 +165,11 @@ class ConcessionController extends Controller
             DB::commit();
             DB::connection('pgsql_master')->commit();
 
-            return responseMsgs(true, 'Successfully Applied The Application', $concessionNo, '010701', '01', '382ms-547ms', 'Post', '');
+            return responseMsgs(true, 'Successfully Applied The Application', $concessionNo, '010701', '01', responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
-
-            return responseMsg(false, $e->getMessage(), "");
+            return responseMsgs(false, $e->getMessage(), "", '010701', '01', responseTime(), $request->getMethod(), $request->deviceId);
         }
     }
 
@@ -296,9 +294,9 @@ class ConcessionController extends Controller
                 ->thenReturn()
                 ->paginate($perPage);
 
-            return responseMsgs(true, "Inbox List", remove_null($inboxList), '010703', '01', responseTime(), 'Post', '');
+            return responseMsgs(true, "Inbox List", remove_null($inboxList), '010703', '01', responseTime(),  $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
+            return responseMsgs(false, $e->getMessage(), "", '010703', '01', responseTime(),  $req->getMethod(), $req->deviceId);
         }
     }
 
@@ -345,7 +343,7 @@ class ConcessionController extends Controller
 
             return responseMsgs(true, "Outbox List", remove_null($inboxList), '010704', '01', '355ms-419ms', 'Post', '');
         } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
+            return responseMsgs(false, $e->getMessage(), "", '010704', '01', responseTime(),  $req->getMethod(), $req->deviceId);
         }
     }
 
@@ -422,16 +420,16 @@ class ConcessionController extends Controller
             $custom = $mCustomDetails->getCustomDetails($req);
             $fullDetailsData['departmentalPost'] = collect($custom)['original']['data'];
 
-            return responseMsgs(true, "Concession Details", remove_null($fullDetailsData), '010705', '01', '', 'POST', '');
+            return responseMsgs(true, "Concession Details", remove_null($fullDetailsData), '010705', '01', responseTime(),  $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", '010705', '01', '', 'POST', '');
+            return responseMsgs(false, $e->getMessage(), "", '010705', '01', responseTime(),  $req->getMethod(), $req->deviceId);
         }
     }
 
     /**
      * | Escalate application
      * | @param req request parameters
-     * | Query Costing-400ms 
+     * | Query Costing-400ms
      * | Rating-2
      * | Status-Closed
      */
@@ -446,9 +444,9 @@ class ConcessionController extends Controller
             $escalate = new PropActiveConcession();
             $msg = $escalate->escalate($req);
 
-            return responseMsgs(true, $msg, "", '010706', '01', '400ms', 'Post', '');
+            return responseMsgs(true, $msg, "", '010706', '01', responseTime(),  $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
+            return responseMsg(false, $e->getMessage(), "", '010706', '01', responseTime(),  $req->getMethod(), $req->deviceId);
         }
     }
 
@@ -490,9 +488,9 @@ class ConcessionController extends Controller
                 ->thenReturn()
                 ->paginate($perPage);
 
-            return responseMsg(true, "Inbox List", remove_null($inboxList), "", '010707', '01', '303ms', 'Post', '');
+            return responseMsg(true, "Inbox List", remove_null($inboxList), "", '010707', '01', responseTime(),  $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
+            return responseMsg(false, $e->getMessage(), "", '010707', '01', responseTime(),  $req->getMethod(), $req->deviceId);
         }
     }
 
@@ -532,9 +530,9 @@ class ConcessionController extends Controller
                 ->thenReturn()
                 ->paginate($perPage);
 
-            return responseMsgs(true, "BTC Inbox List", remove_null($inboxList), 010717, 1.0, "271ms", "POST", "", "");;
+            return responseMsgs(true, "BTC Inbox List", remove_null($inboxList), 010717, 1.0, responseTime(),  $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", 010717, 1.0, "271ms", "POST", "", "");
+            return responseMsgs(false, $e->getMessage(), "", 010717, 1.0, responseTime(),  $req->getMethod(), $req->deviceId);
         }
     }
 
