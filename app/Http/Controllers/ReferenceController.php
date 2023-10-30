@@ -308,7 +308,7 @@ class ReferenceController extends Controller
             $m_propownershiptype = RefPropOwnershipType::where('status', 1)
                 ->get();
 
-            return responseMsgs(true, $m_propownershiptype, 'Property Ownership Type Retrieved Successfully', "012114", "01", responseTime(), $request->getMethod(), $request->deviceId);
+            return responseMsgs(true, 'Property Ownership Type Retrieved Successfully', $m_propownershiptype, "012114", "01", responseTime(), $request->getMethod(), $request->deviceId);
         } catch (\Exception $e) {
             return responseMsgs(false, $e->getMessage(), "",                                                  "012114", "01", responseTime(), $request->getMethod(), $request->deviceId);
         }
@@ -325,7 +325,7 @@ class ReferenceController extends Controller
             $m_proppenaltytype = RefPropPenaltyType::where('status', 1)
                 ->get();
 
-            return responseMsgs(true, $m_proppenaltytype, 'Property Penalty Type Retrieved Successfully', "012115", "01", responseTime(), $request->getMethod(), $request->deviceId);
+            return responseMsgs(true, 'Property Penalty Type Retrieved Successfully', $m_proppenaltytype, "012115", "01", responseTime(), $request->getMethod(), $request->deviceId);
         } catch (\Exception $e) {
             return responseMsgs(false, $e->getMessage(), "",                                              "012115", "01", responseTime(), $request->getMethod(), $request->deviceId);
         }
@@ -342,7 +342,7 @@ class ReferenceController extends Controller
             $m_proprebatetype = RefPropRebateType::where('status', 1)
                 ->get();
 
-            return responseMsgs(true, $m_proprebatetype, 'Property Rebate Type Retrieved Successfully', "012116", "01", responseTime(), $request->getMethod(), $request->deviceId);
+            return responseMsgs(true,  'Property Rebate Type Retrieved Successfully', $m_proprebatetype, "012116", "01", responseTime(), $request->getMethod(), $request->deviceId);
         } catch (\Exception $e) {
             return responseMsgs(false, $e->getMessage(), "",                                             "012116", "01", responseTime(), $request->getMethod(), $request->deviceId);
         }
@@ -360,7 +360,7 @@ class ReferenceController extends Controller
             $m_proproadtype = RefPropRoadType::where('status', 1)
                 ->get();
 
-            return responseMsgs(true, $m_proproadtype, 'Property Road Type Retrieved Successfully', "012117", "01", responseTime(), $request->getMethod(), $request->deviceId);
+            return responseMsgs(true, 'Property Road Type Retrieved Successfully', $m_proproadtype, "012117", "01", responseTime(), $request->getMethod(), $request->deviceId);
         } catch (\Exception $e) {
             return responseMsgs(false, $e->getMessage(), "",                                        "012117", "01", responseTime(), $request->getMethod(), $request->deviceId);
         }
@@ -379,7 +379,7 @@ class ReferenceController extends Controller
             $m_proptransfermode = RefPropTransferMode::where('status', 1)
                 ->get();
 
-            return responseMsgs(true, $m_proptransfermode, 'Property Transfer Mode Retrieved Successfully', "012118", "01", responseTime(), $request->getMethod(), $request->deviceId);
+            return responseMsgs(true, 'Property Transfer Mode Retrieved Successfully', $m_proptransfermode, "012118", "01", responseTime(), $request->getMethod(), $request->deviceId);
         } catch (\Exception $e) {
             return responseMsgs(false, $e->getMessage(), "",                                                "012118", "01", responseTime(), $request->getMethod(), $request->deviceId);
         }
