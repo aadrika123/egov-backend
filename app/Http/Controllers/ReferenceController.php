@@ -197,6 +197,7 @@ class ReferenceController extends Controller
     {
         try {
             $m_propfloor = RefPropFloor::where('status', 1)
+                ->orderby('id')
                 ->get();
 
             return responseMsgs(true, 'Floor Type Retrieved Successfully', $m_propfloor, "012108", "01", responseTime(), $request->getMethod(), $request->deviceId);
