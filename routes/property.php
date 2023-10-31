@@ -27,6 +27,7 @@ use App\Http\Controllers\Property\SafDocController;
 use App\Http\Controllers\Property\WaiverController;
 use App\Http\Controllers\Property\ZoneController;
 use App\Http\Controllers\ReferenceController;
+use App\Http\Controllers\Property\LocationController;
 
 /**
  * | ---------------------------------------------------------------------------
@@ -561,4 +562,13 @@ Route::controller(ReportController::class)->group(function () {
  */
 Route::controller(PropertyController::class)->group(function () {
   Route::post('getpropLatLong', 'getpropLatLong');                             // 01
+});
+
+#Added By Prity Pandey
+#Date 31/10/2023
+#Route for getting location based ward list 
+Route::controller(LocationController::class)->group(function () {
+  Route::post('location', 'location_list');
+
+  Route::post('location_ward_list', 'bindLocationWithWards');
 });
