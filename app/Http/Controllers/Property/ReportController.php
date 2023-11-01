@@ -744,12 +744,12 @@ class ReportController extends Controller
             $data['Compliances']['no_of_property_inspected_this_year'] = $currentYearData->no_of_property_inspected_this_year;
             $data['Compliances']['no_of_defaulter_this_year']          = $currentYearData->no_of_defaulter_this_year;
 
-            $data['Demand']['prev_year']             = 604529369.42;
-            $data['Demand']['current_year']          = 621337104.08;
-            // $data['Collection']['prev_year']             = '604529369.42';
-            // $data['Collection']['current_year']          = '621337104.08';
-            // $data['Balance']['prev_year']             = '604529369.42';
-            // $data['Balance']['current_year']          = '621337104.08';
+            $data['Demand']['prev_year']             = 605067723.85;
+            $data['Demand']['current_year']          = 621641853.44;
+            $data['Collection']['prev_year']         = 509511668.82;
+            $data['Collection']['current_year']      = 275090353;
+            $data['Balance']['prev_year']            = 95556055.03;
+            $data['Balance']['current_year']         = 253658840.16;
             $data['Total Payment From HH']['prev_year']    = 129059;
             $data['Total Payment From HH']['current_year'] = 85413;
 
