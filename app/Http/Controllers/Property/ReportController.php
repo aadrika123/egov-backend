@@ -649,15 +649,15 @@ class ReportController extends Controller
 
             #_Outstanding Demand Last Year
             // 604529369.42  =>total demand
-            $data['Outstanding Demand Last Year']['outstanding']        = round(($prevYearData->outstanding) / 100000, 2);          #_in lacs
-            $data['Outstanding Demand Last Year']['outstanding_count']  = $prevYearData->outstanding_count;
-            $data['Outstanding Demand Last Year']['outstanding_amount'] = round(($prevYearData->outstanding_amount) / 100000, 2);   #_in lacs
-            $data['Outstanding Demand Last Year']['extempted']          = round(($prevYearData->extempted) / 100000, 2);            #_in lacs
-            $data['Outstanding Demand Last Year']['extempted_count']    = $prevYearData->extempted_count;                           #_in lacs
-            $data['Outstanding Demand Last Year']['extempted_amount']   = round(($prevYearData->extempted_amount) / 100000, 2);     #_in lacs
-            $data['Outstanding Demand Last Year']['recoverable_demand'] = round(($prevYearData->recoverable_demand) / 100000, 2);   #_in lacs   #_collection amount
-            $data['Outstanding Demand Last Year']['payment_done']       = round(($prevYearData->payment_done) / 100000, 2);         #_in lacs
-            $data['Outstanding Demand Last Year']['payment_due']        = round(($prevYearData->payment_due) / 100000, 2);          #_in lacs
+            $data['Outstanding Demand Last Year']['outstanding']        = round(($prevYearData->demand_outstanding) / 100000, 2);          #_in lacs
+            $data['Outstanding Demand Last Year']['outstanding_count']  = $prevYearData->demand_outstanding_count;
+            $data['Outstanding Demand Last Year']['outstanding_amount'] = round(($prevYearData->demand_outstanding_amount) / 100000, 2);   #_in lacs
+            $data['Outstanding Demand Last Year']['extempted']          = round(($prevYearData->demand_extempted) / 100000, 2);            #_in lacs
+            $data['Outstanding Demand Last Year']['extempted_count']    = $prevYearData->demand_extempted_count;                           #_in lacs
+            $data['Outstanding Demand Last Year']['extempted_amount']   = round(($prevYearData->demand_extempted_amount) / 100000, 2);     #_in lacs
+            $data['Outstanding Demand Last Year']['recoverable_demand'] = round(($prevYearData->demand_recoverable_demand) / 100000, 2);   #_in lacs   #_collection amount
+            $data['Outstanding Demand Last Year']['payment_done']       = round(($prevYearData->demand_payment_done) / 100000, 2);         #_in lacs
+            $data['Outstanding Demand Last Year']['payment_due']        = round(($prevYearData->demand_payment_due) / 100000, 2);          #_in lacs
 
             #_Outstanding Demand Current Year
             $data['Outstanding Demand Current Year']['outstanding']        = round(($currentYearData->demand_outstanding) / 100000, 2);             #_in lacs
