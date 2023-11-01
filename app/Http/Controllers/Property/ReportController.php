@@ -610,144 +610,6 @@ class ReportController extends Controller
     public function mplReport(Request $request)
     {
         try {
-            // $ulbId = $request->ulbId ?? authUser($request->ulb_id) ?? 2;
-            // $prevYearData =  DB::connection('pgsql_reports')->table('mpl_prev_year')->where('ulb_id', $ulbId)->first();
-            // $currentYearData =  DB::connection('pgsql_reports')->table('mpl_current_year')->where('ulb_id', $ulbId)->first();
-            #_Assessed Properties
-            // $data['Assessed Properties']['expected']                = "500";
-            // $data['Assessed Properties']['achieved_upto_last_year'] = "400";
-            // $data['Assessed Properties']['target_for_last_year']    = "350";
-            // $data['Assessed Properties']['last_year_achievement']   = "300";
-            // $data['Assessed Properties']['target_for_this_year']    = "350";
-            // $data['Assessed Properties']['this_year_achievement']   = "350";
-
-            // #_Saf Achievement
-            // $data['Saf Achievement']['previous_year_target']        = "2000";
-            // $data['Saf Achievement']['previous_year_achievement']   = "1800";
-            // $data['Saf Achievement']['current_year_target']         = "2500";
-            // $data['Saf Achievement']['current_year_achievement']    = "2200";
-
-            // #_Assessment Categories
-            // $data['Assessment Categories']['total_assessment']  = "50000";
-            // $data['Assessment Categories']['residential']       = "30000";
-            // $data['Assessment Categories']['commercial']        = "10000";
-            // $data['Assessment Categories']['industrial']        = "5000";
-            // $data['Assessment Categories']['gbsaf']             = "5000";
-
-            // #_Ownership
-            // $data['Ownership']['total_ownership'] = "250000";
-            // $data['Ownership']['owned_property']  = "150000";
-            // $data['Ownership']['rented_property'] = "50000";
-            // $data['Ownership']['vacant_property'] = "50000";
-
-            // #_Unpaid Properties
-            // $data['Unpaid Properties']['count_not_paid_3yrs']  = "100000";
-            // $data['Unpaid Properties']['amount_not_paid_3yrs'] = "5000000";
-            // $data['Unpaid Properties']['count_not_paid_2yrs']  = "50000";
-            // $data['Unpaid Properties']['amount_not_paid_2yrs'] = "1000000";
-            // $data['Unpaid Properties']['count_not_paid_1yrs']  = "20000";
-            // $data['Unpaid Properties']['amount_not_paid_1yrs']  = "500000";
-
-            // #_Outstanding Demand Last Year
-            // $data['Outstanding Demand Last Year']['outstanding']        = "4000000";
-            // $data['Outstanding Demand Last Year']['outstanding_count']  = "200000";
-            // $data['Outstanding Demand Last Year']['outstanding_amount'] = "500000";
-            // $data['Outstanding Demand Last Year']['extempted']          = "600000";
-            // $data['Outstanding Demand Last Year']['extempted_count']    = "844415";
-            // $data['Outstanding Demand Last Year']['extempted_amount']   = "454544";
-            // $data['Outstanding Demand Last Year']['recoverable_demand'] = "454545";
-            // $data['Outstanding Demand Last Year']['payment_done']       = "50000";
-            // $data['Outstanding Demand Last Year']['payment_due']        = "400000";
-
-            // #_Outstanding Demand Current Year
-            // $data['Outstanding Demand Current Year']['outstanding']        = "5000000";
-            // $data['Outstanding Demand Current Year']['outstanding_count']  = "100000";
-            // $data['Outstanding Demand Current Year']['outstanding_amount'] = "300000";
-            // $data['Outstanding Demand Current Year']['extempted']          = "400000";
-            // $data['Outstanding Demand Current Year']['extempted_count']    = "44415";
-            // $data['Outstanding Demand Current Year']['extempted_amount']   = "554544";
-            // $data['Outstanding Demand Current Year']['recoverable_demand'] = "4554545";
-            // $data['Outstanding Demand Current Year']['payment_done']       = "50000";
-            // $data['Outstanding Demand Current Year']['payment_due']        = "400000";
-
-            // #_Payments
-            // $data['Payments']['previous_to_last_year_payment_count']  = "60000";
-            // $data['Payments']['previous_to_last_year_payment_amount'] = "600000";
-            // $data['Payments']['last_year_payment_count']              = "70000";
-            // $data['Payments']['last_year_payment_amount']             = "700000";
-            // $data['Payments']['this_year_payment_count']              = "80000";
-            // $data['Payments']['this_year_payment_amount']             = "800000";
-
-            // #_Single Payment
-            // $data['Single Payment']['before_previous_year_count'] = "50000";
-            // $data['Single Payment']['previous_year_count']        = "60000";
-
-            // #_Notice
-            // $data['Notice']['last_year_count']     = "5000";
-            // $data['Notice']['last_year_amount']    = "50000";
-            // $data['Notice']['last_year_recovery']  = "40000";
-            // $data['Notice']['this_year_count']     = "4000";
-            // $data['Notice']['this_year_amount']    = "30000";
-            // $data['Notice']['this_year_recovery']  = "20000";
-
-            // #_Mutation
-            // $data['Mutation']['last_year_count']  = "5000";
-            // $data['Mutation']['last_year_amount'] = "50007";
-            // $data['Mutation']['this_year_count']  = "8000";
-            // $data['Mutation']['this_year_amount'] = "90000";
-
-            // #_Top Areas Property Transactions
-            // $data['Top Areas Property Transactions']['ward1_count'] = "500";
-            // $data['Top Areas Property Transactions']['ward2_count'] = "450";
-            // $data['Top Areas Property Transactions']['ward3_count'] = "430";
-            // $data['Top Areas Property Transactions']['ward4_count'] = "390";
-            // $data['Top Areas Property Transactions']['ward5_count'] = "350";
-
-            // #_Top Areas Saf
-            // $data['Top Areas Saf']['ward1_count'] = "600";
-            // $data['Top Areas Saf']['ward2_count'] = "550";
-            // $data['Top Areas Saf']['ward3_count'] = "520";
-            // $data['Top Areas Saf']['ward4_count'] = "440";
-            // $data['Top Areas Saf']['ward5_count'] = "420";
-
-            // #_Payment Modes
-            // $data['Payment Modes']['current_year_cash_collection']   = "6000000";
-            // $data['Payment Modes']['last_year_cash_collection']      = "7000000";
-            // $data['Payment Modes']['current_year_upi_collection']    = "4000000";
-            // $data['Payment Modes']['last_year_upi_collection']       = "3000000";
-            // $data['Payment Modes']['current_year_card_collection']   = "1000000";
-            // $data['Payment Modes']['last_year_card_collection']      = "900000";
-            // $data['Payment Modes']['current_year_cheque_collection'] = "9000000";
-            // $data['Payment Modes']['last_year_cheque_collection']    = "8000000";
-            // $data['Payment Modes']['current_year_dd_collection']     = "8800000";
-            // $data['Payment Modes']['last_year_dd_collection']        = "7000000";
-
-            // #_Citizen Engagement
-            // $data['Citizen Engagement']['online_application_count_prev_year']  = "40000";
-            // $data['Citizen Engagement']['online_application_count_this_year']  = "50000";
-            // $data['Citizen Engagement']['online_application_amount_prev_year'] = "900000";
-            // $data['Citizen Engagement']['online_application_amount_this_year'] = "800000";
-            // $data['Citizen Engagement']['jsk_application_count_prev_year']     = "50000";
-            // $data['Citizen Engagement']['jsk_application_count_this_year']     = "60000";
-            // $data['Citizen Engagement']['jsk_application_amount_prev_year']    = "1000000";
-            // $data['Citizen Engagement']['jsk_application_amount_this_year']    = "900000";
-
-            // #_Compliances
-            // $data['Compliances']['no_of_property_inspected_prev_year'] = "5000";
-            // $data['Compliances']['no_of_defaulter_prev_year']          = "3000";
-            // $data['Compliances']['no_of_property_inspected_this_year'] = "6000";
-            // $data['Compliances']['no_of_defaulter_this_year']          = "3300";
-
-            // $data['Demand']['prev_year']             = "3300";
-            // $data['Demand']['current_year']          = "3300";
-            // $data['Total Payment From HH']['prev_year']    = "3300";
-            // $data['Total Payment From HH']['current_year'] = "3300";
-            // return responseMsgs(true, "Mpl Report", $data, "", 01, responseTime(), $request->getMethod(), $request->deviceId);
-
-            /**
-             * =====================================================================================
-             */
-
             $ulbId = $request->ulbId ?? 2;
             $prevYearData =  DB::connection('pgsql_reports')->table('mpl_prev_year')->where('ulb_id', $ulbId)->first();
             $currentYearData =  DB::connection('pgsql_reports')->table('mpl_current_year')->where('ulb_id', $ulbId)->first();
@@ -791,8 +653,8 @@ class ReportController extends Controller
             $data['Outstanding Demand Last Year']['outstanding_count']  = $prevYearData->outstanding_count;
             $data['Outstanding Demand Last Year']['outstanding_amount'] = round(($prevYearData->outstanding_amount) / 100000, 2);   #_in lacs
             $data['Outstanding Demand Last Year']['extempted']          = round(($prevYearData->extempted) / 100000, 2);            #_in lacs
-            $data['Outstanding Demand Last Year']['extempted_count']    = round(($prevYearData->extempted_count) / 100000, 2);      #_in lacs
-            $data['Outstanding Demand Last Year']['extempted_amount']   = $prevYearData->extempted_amount;
+            $data['Outstanding Demand Last Year']['extempted_count']    = $prevYearData->extempted_count;                           #_in lacs
+            $data['Outstanding Demand Last Year']['extempted_amount']   = round(($prevYearData->extempted_amount) / 100000, 2);     #_in lacs
             $data['Outstanding Demand Last Year']['recoverable_demand'] = round(($prevYearData->recoverable_demand) / 100000, 2);   #_in lacs   #_collection amount
             $data['Outstanding Demand Last Year']['payment_done']       = round(($prevYearData->payment_done) / 100000, 2);         #_in lacs
             $data['Outstanding Demand Last Year']['payment_due']        = round(($prevYearData->payment_due) / 100000, 2);          #_in lacs
@@ -882,14 +744,14 @@ class ReportController extends Controller
             $data['Compliances']['no_of_property_inspected_this_year'] = $currentYearData->no_of_property_inspected_this_year;
             $data['Compliances']['no_of_defaulter_this_year']          = $currentYearData->no_of_defaulter_this_year;
 
-            $data['Demand']['prev_year']             = '604529369.42';
-            $data['Demand']['current_year']          = '621337104.08';
+            $data['Demand']['prev_year']             = 604529369.42;
+            $data['Demand']['current_year']          = 621337104.08;
             // $data['Collection']['prev_year']             = '604529369.42';
             // $data['Collection']['current_year']          = '621337104.08';
             // $data['Balance']['prev_year']             = '604529369.42';
             // $data['Balance']['current_year']          = '621337104.08';
-            $data['Total Payment From HH']['prev_year']    = '129059';
-            $data['Total Payment From HH']['current_year'] = '85413';
+            $data['Total Payment From HH']['prev_year']    = 129059;
+            $data['Total Payment From HH']['current_year'] = 85413;
 
 
             return responseMsgs(true, "Mpl Report", $data, "", 01, responseTime(), $request->getMethod(), $request->deviceId);
