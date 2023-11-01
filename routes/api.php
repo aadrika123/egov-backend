@@ -23,6 +23,7 @@ use App\Http\Controllers\Workflows\UlbWorkflowRolesController;
 use App\Http\Controllers\WorkflowMaster\WorkflowRoleController;
 use App\Http\Controllers\WorkflowMaster\WorkflowRoleUserMapController;
 use App\Http\Controllers\CaretakerController;
+use App\Http\Controllers\Epramaan;
 use App\Http\Controllers\ReferenceController;
 use Illuminate\Http\Request;
 
@@ -52,10 +53,10 @@ use Illuminate\Http\Request;
 /**
  * | Updated By- Sam kerketta
  */
-Route::controller(UserController::class)->group(function () {
-    Route::post('login', 'loginAuth')->middleware('request_logger');
-    Route::post('register', 'store');
-});
+// Route::controller(UserController::class)->group(function () {
+//     Route::post('login', 'loginAuth')->middleware('request_logger');
+//     Route::post('register', 'store');
+// });
 
 /**
  * Routes for API masters, api searchable and api edit
@@ -464,4 +465,10 @@ Route::controller(DemoController::class)->group(function () {
 #-------------------------- document read ------------------------------
 Route::get('/getImageLink', function () {
     return view('getImageLink');
+});
+
+
+#-------------------------- Eprmaan Route ------------------------------
+Route::controller(Epramaan::class)->group(function () {
+    Route::post('property/login', 'login');
 });

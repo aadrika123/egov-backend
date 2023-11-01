@@ -17,7 +17,17 @@
         "predis/predis": "^2.0",
         "rap2hpoutre/laravel-log-viewer": "^2.2",
         "razorpay/razorpay": "2.*",
-        "seshac/otp-generator": "^0.0.7"
+        "seshac/otp-generator": "^0.0.7",
+        "web-token/jwt-checker": "^3.2",
+        "web-token/jwt-core": "^3.2",
+        "web-token/jwt-encryption": "^3.2",
+        "web-token/jwt-encryption-algorithm-aescbc": "^3.2",
+        "web-token/jwt-encryption-algorithm-aesgcm": "^3.2",
+        "web-token/jwt-encryption-algorithm-aeskw": "^3.2",
+        "web-token/jwt-key-mgmt": "^3.2",
+        "web-token/jwt-signature": "^3.2",
+        "web-token/jwt-signature-algorithm-hmac": "^3.2",
+        "web-token/jwt-signature-algorithm-rsa": "^3.2"
     },
     "require-dev": {
         "facade/ignition": "^2.5",
