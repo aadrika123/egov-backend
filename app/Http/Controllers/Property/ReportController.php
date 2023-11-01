@@ -666,7 +666,7 @@ class ReportController extends Controller
             $data['Outstanding Demand Current Year']['extempted']          = round(($currentYearData->demand_extempted) / 100000, 2);               #_in lacs
             $data['Outstanding Demand Current Year']['extempted_count']    = $currentYearData->demand_extempted_count;
             $data['Outstanding Demand Current Year']['extempted_amount']   = round(($currentYearData->demand_extempted_amount) / 100000, 2);        #_in lacs
-            $data['Outstanding Demand Current Year']['recoverable_demand'] = round(($currentYearData->recoverable_demand) / 100000, 2);             #_in lacs
+            $data['Outstanding Demand Current Year']['recoverable_demand'] = round(($currentYearData->demand_recoverable_demand) / 100000, 2);             #_in lacs
             $data['Outstanding Demand Current Year']['payment_done']       = round(($currentYearData->demand_payment_done) / 100000, 2);            #_in lacs
             $data['Outstanding Demand Current Year']['payment_due']        = round(($currentYearData->demand_payment_due) / 100000, 2);             #_in lacs
 
