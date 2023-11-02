@@ -134,6 +134,7 @@ class SafDocController extends Controller
                     $response = [
                         "documentCode" => $item,
                         "uploadedDocId" => $uploadedDoc['id'] ?? "",
+                        "docVal"  => $uploadedDoc['doc_category'] ?? "",
                         "ownerId" => $uploadedDoc['owner_dtl_id'] ?? "",
                         "docPath" =>  $uploadedDoc['doc_path'] ?? "",
                         "verifyStatus" => $refSafs->payment_status == 1 ? ($uploadedDoc['verify_status'] ?? "") : 0,
