@@ -130,15 +130,18 @@ class SafDocController extends Controller
                     ->where('owner_dtl_id', $ownerId)
                     ->first();
 
+
                 if ($uploadedDoc) {
+                    $strLower = strtolower($item);
+                    $strReplace = str_replace('_', ' ', $strLower);
                     $response = [
                         "documentCode" => $item,
-                        "uploadedDocId" => $uploadedDoc['id'] ?? "",
-                        "docVal"  => $uploadedDoc['doc_category'] ?? "",
-                        "ownerId" => $uploadedDoc['owner_dtl_id'] ?? "",
                         "docPath" =>  $uploadedDoc['doc_path'] ?? "",
-                        "verifyStatus" => $refSafs->payment_status == 1 ? ($uploadedDoc['verify_status'] ?? "") : 0,
+                        "docVal"  => ucwords($strReplace) ?? "",
+                        "ownerId" => $uploadedDoc['owner_dtl_id'] ?? "",
                         "remarks" => $uploadedDoc['remarks'] ?? "",
+                        "uploadedDocId" => $uploadedDoc['id'] ?? "",
+                        "verifyStatus" => $refSafs->payment_status == 1 ? ($uploadedDoc['verify_status'] ?? "") : 0,
                     ];
                     $documents->push($response);
                 }
