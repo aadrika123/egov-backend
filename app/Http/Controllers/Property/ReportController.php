@@ -705,6 +705,11 @@ class ReportController extends Controller
             $data['Top Areas Property Transactions']['ward3_count'] = $currentYearData->top_area_property_transaction_ward3_count;
             $data['Top Areas Property Transactions']['ward4_count'] = $currentYearData->top_area_property_transaction_ward4_count;
             $data['Top Areas Property Transactions']['ward5_count'] = $currentYearData->top_area_property_transaction_ward5_count;
+            $data['Top Areas Property Transactions']['ward1_name']  = $currentYearData->top_area_property_transaction_ward1_name;
+            $data['Top Areas Property Transactions']['ward2_name']  = $currentYearData->top_area_property_transaction_ward2_name;
+            $data['Top Areas Property Transactions']['ward3_name']  = $currentYearData->top_area_property_transaction_ward3_name;
+            $data['Top Areas Property Transactions']['ward4_name']  = $currentYearData->top_area_property_transaction_ward4_name;
+            $data['Top Areas Property Transactions']['ward5_name']  = $currentYearData->top_area_property_transaction_ward5_name;
 
             #_Top Areas Saf
             /**
@@ -715,6 +720,40 @@ class ReportController extends Controller
             $data['Top Areas Saf']['ward3_count'] = $currentYearData->top_area_saf_ward3_count;
             $data['Top Areas Saf']['ward4_count'] = $currentYearData->top_area_saf_ward4_count;
             $data['Top Areas Saf']['ward5_count'] = $currentYearData->top_area_saf_ward5_count;
+            $data['Top Areas Saf']['ward1_name']  = $currentYearData->top_area_saf_ward1_name;
+            $data['Top Areas Saf']['ward2_name']  = $currentYearData->top_area_saf_ward2_name;
+            $data['Top Areas Saf']['ward3_name']  = $currentYearData->top_area_saf_ward3_name;
+            $data['Top Areas Saf']['ward4_name']  = $currentYearData->top_area_saf_ward4_name;
+            $data['Top Areas Saf']['ward5_name']  = $currentYearData->top_area_saf_ward5_name;
+
+            /**
+             * | Top Defaulter Ward Name
+             */
+            $data['Top Defaulter']['ward1_name']   = $currentYearData->top_defaulter_ward1_name;
+            $data['Top Defaulter']['ward2_name']   = $currentYearData->top_defaulter_ward2_name;
+            $data['Top Defaulter']['ward3_name']   = $currentYearData->top_defaulter_ward3_name;
+            $data['Top Defaulter']['ward4_name']   = $currentYearData->top_defaulter_ward4_name;
+            $data['Top Defaulter']['ward5_name']   = $currentYearData->top_defaulter_ward5_name;
+            $data['Top Defaulter']['ward6_name']   = $currentYearData->top_defaulter_ward6_name;
+            $data['Top Defaulter']['ward7_name']   = $currentYearData->top_defaulter_ward7_name;
+            $data['Top Defaulter']['ward8_name']   = $currentYearData->top_defaulter_ward8_name;
+            $data['Top Defaulter']['ward9_name']   = $currentYearData->top_defaulter_ward9_name;
+            $data['Top Defaulter']['ward10_name']  = $currentYearData->top_defaulter_ward10_name;
+
+            /**
+             * | Top Defaulter Ward Amount
+             */
+            $data['Top Defaulter']['ward1_amount']   = $currentYearData->top_defaulter_ward1_amount;
+            $data['Top Defaulter']['ward2_amount']   = $currentYearData->top_defaulter_ward2_amount;
+            $data['Top Defaulter']['ward3_amount']   = $currentYearData->top_defaulter_ward3_amount;
+            $data['Top Defaulter']['ward4_amount']   = $currentYearData->top_defaulter_ward4_amount;
+            $data['Top Defaulter']['ward5_amount']   = $currentYearData->top_defaulter_ward5_amount;
+            $data['Top Defaulter']['ward6_amount']   = $currentYearData->top_defaulter_ward6_amount;
+            $data['Top Defaulter']['ward7_amount']   = $currentYearData->top_defaulter_ward7_amount;
+            $data['Top Defaulter']['ward8_amount']   = $currentYearData->top_defaulter_ward8_amount;
+            $data['Top Defaulter']['ward9_amount']   = $currentYearData->top_defaulter_ward9_amount;
+            $data['Top Defaulter']['ward10_amount']  = $currentYearData->top_defaulter_ward10_amount;
+
 
             #_Payment Modes
             $data['Payment Modes']['current_year_cash_collection']   = round(($currentYearData->current_year_cash_collection) / 100000, 2);             #_in lacs
@@ -753,6 +792,41 @@ class ReportController extends Controller
             $data['Total Payment From HH']['prev_year']    = 129059;
             $data['Total Payment From HH']['current_year'] = 85413;
 
+            $data['Property Count']['till_prev_year'] = $prevYearData->property_count;
+            $data['Property Count']['till_current_year'] = $currentYearData->property_count;
+
+            $data['member_count']['tc']  = $currentYearData->tc_count;
+            $data['member_count']['da']  = $currentYearData->da_count;
+            $data['member_count']['si']  = $currentYearData->si_count;
+            $data['member_count']['eo']  = $currentYearData->eo_count;
+            $data['member_count']['jsk'] = $currentYearData->jsk_count;
+            $data['member_count']['utc'] = $currentYearData->utc_count;
+
+            $data['citizen']['jan']  = 0;
+            $data['citizen']['feb']  = 0;
+            $data['citizen']['mar']  = 0;
+            $data['citizen']['apr']  = 0;
+            $data['citizen']['may']  = 0;
+            $data['citizen']['june'] = 0;
+            $data['citizen']['july'] = 0;
+            $data['citizen']['aug']  = 0;
+            $data['citizen']['sept'] = 0;
+            $data['citizen']['oct']  = 0;
+            $data['citizen']['nov']  = 0;
+            $data['citizen']['dec']  = 0;
+
+            // $data['citizen']['jan']  = $currentYearData->jan;
+            // $data['citizen']['feb']  = $currentYearData->feb;
+            // $data['citizen']['mar']  = $currentYearData->mar;
+            // $data['citizen']['apr']  = $currentYearData->apr;
+            // $data['citizen']['may']  = $currentYearData->may;
+            // $data['citizen']['june'] = $currentYearData->june;
+            // $data['citizen']['july'] = $currentYearData->july;
+            // $data['citizen']['aug']  = $currentYearData->aug;
+            // $data['citizen']['sept'] = $currentYearData->sept;
+            // $data['citizen']['oct']  = $currentYearData->oct;
+            // $data['citizen']['nov']  = $currentYearData->nov;
+            // $data['citizen']['dec']  = $currentYearData->dec;
 
             return responseMsgs(true, "Mpl Report", $data, "", 01, responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
