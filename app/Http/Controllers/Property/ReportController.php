@@ -697,9 +697,6 @@ class ReportController extends Controller
             $data['Mutation']['this_year_amount'] = round(($currentYearData->mutation_this_year_amount) / 100000, 2);           #_in lacs
 
             #_Top Areas Property Transactions 
-            /**
-             include ward no
-             */
             $data['Top Areas Property Transactions']['ward1_count'] = $currentYearData->top_area_property_transaction_ward1_count;
             $data['Top Areas Property Transactions']['ward2_count'] = $currentYearData->top_area_property_transaction_ward2_count;
             $data['Top Areas Property Transactions']['ward3_count'] = $currentYearData->top_area_property_transaction_ward3_count;
@@ -712,9 +709,6 @@ class ReportController extends Controller
             $data['Top Areas Property Transactions']['ward5_name']  = $currentYearData->top_area_property_transaction_ward5_name;
 
             #_Top Areas Saf
-            /**
-             include ward no
-             */
             $data['Top Areas Saf']['ward1_count'] = $currentYearData->top_area_saf_ward1_count;
             $data['Top Areas Saf']['ward2_count'] = $currentYearData->top_area_saf_ward2_count;
             $data['Top Areas Saf']['ward3_count'] = $currentYearData->top_area_saf_ward3_count;
@@ -783,50 +777,40 @@ class ReportController extends Controller
             $data['Compliances']['no_of_property_inspected_this_year'] = $currentYearData->no_of_property_inspected_this_year;
             $data['Compliances']['no_of_defaulter_this_year']          = $currentYearData->no_of_defaulter_this_year;
 
-            $data['Demand']['prev_year']             = round((605067723.85) / 100000, 2); #_in lacs
-            $data['Demand']['current_year']          = round((621641853.44) / 100000, 2); #_in lacs
-            $data['Collection']['prev_year']         = round((509511668.82) / 100000, 2); #_in lacs
-            $data['Collection']['current_year']      = round((275090353.00) / 100000, 2); #_in lacs
-            $data['Balance']['prev_year']            = round((95556055.03)  / 100000, 2); #_in lacs
-            $data['Balance']['current_year']         = round((253658840.16) / 100000, 2); #_in lacs
-            $data['Total Payment From HH']['prev_year']    = 129059;
-            $data['Total Payment From HH']['current_year'] = 85413;
+            $data['Demand']['prev_year']             = round(($prevYearData->demand) / 100000, 2);                   #_in lacs
+            $data['Demand']['current_year']          = round(($currentYearData->demand) / 100000, 2);                #_in lacs
+            $data['Collection']['prev_year']         = round(($prevYearData->collection) / 100000, 2);               #_in lacs
+            $data['Collection']['current_year']      = round(($currentYearData->collection) / 100000, 2);            #_in lacs
+            $data['Balance']['prev_year']            = round(($prevYearData->balance)  / 100000, 2);                 #_in lacs
+            $data['Balance']['current_year']         = round(($currentYearData->balance) / 100000, 2);               #_in lacs
+            $data['Total Payment From HH']['prev_year']    = $prevYearData->payment_from_hh_count;
+            $data['Total Payment From HH']['current_year'] = $currentYearData->payment_from_hh_count;
 
-            $data['Property Count']['till_prev_year'] = $prevYearData->property_count;
+            $data['Property Count']['till_prev_year']    = $prevYearData->property_count;
             $data['Property Count']['till_current_year'] = $currentYearData->property_count;
 
+            #member count
             $data['member_count']['tc']  = $currentYearData->tc_count;
             $data['member_count']['da']  = $currentYearData->da_count;
             $data['member_count']['si']  = $currentYearData->si_count;
             $data['member_count']['eo']  = $currentYearData->eo_count;
+            $data['member_count']['bo']  = $currentYearData->bo_count;
             $data['member_count']['jsk'] = $currentYearData->jsk_count;
             $data['member_count']['utc'] = $currentYearData->utc_count;
 
-            $data['citizen']['jan']  = 0;
-            $data['citizen']['feb']  = 0;
-            $data['citizen']['mar']  = 0;
-            $data['citizen']['apr']  = 0;
-            $data['citizen']['may']  = 0;
-            $data['citizen']['june'] = 0;
-            $data['citizen']['july'] = 0;
-            $data['citizen']['aug']  = 0;
-            $data['citizen']['sept'] = 0;
-            $data['citizen']['oct']  = 0;
-            $data['citizen']['nov']  = 0;
-            $data['citizen']['dec']  = 0;
-
-            // $data['citizen']['jan']  = $currentYearData->jan;
-            // $data['citizen']['feb']  = $currentYearData->feb;
-            // $data['citizen']['mar']  = $currentYearData->mar;
-            // $data['citizen']['apr']  = $currentYearData->apr;
-            // $data['citizen']['may']  = $currentYearData->may;
-            // $data['citizen']['june'] = $currentYearData->june;
-            // $data['citizen']['july'] = $currentYearData->july;
-            // $data['citizen']['aug']  = $currentYearData->aug;
-            // $data['citizen']['sept'] = $currentYearData->sept;
-            // $data['citizen']['oct']  = $currentYearData->oct;
-            // $data['citizen']['nov']  = $currentYearData->nov;
-            // $data['citizen']['dec']  = $currentYearData->dec;
+            #_citizen engagement in a year
+            $data['citizen']['jan']  = $currentYearData->citizen_engagement_jan;
+            $data['citizen']['feb']  = $currentYearData->citizen_engagement_feb;
+            $data['citizen']['mar']  = $currentYearData->citizen_engagement_mar;
+            $data['citizen']['apr']  = $currentYearData->citizen_engagement_apr;
+            $data['citizen']['may']  = $currentYearData->citizen_engagement_may;
+            $data['citizen']['june'] = $currentYearData->citizen_engagement_june;
+            $data['citizen']['july'] = $currentYearData->citizen_engagement_july;
+            $data['citizen']['aug']  = $currentYearData->citizen_engagement_aug;
+            $data['citizen']['sept'] = $currentYearData->citizen_engagement_sept;
+            $data['citizen']['oct']  = $currentYearData->citizen_engagement_oct;
+            $data['citizen']['nov']  = $currentYearData->citizen_engagement_nov;
+            $data['citizen']['dec']  = $currentYearData->citizen_engagement_dec;
 
             return responseMsgs(true, "Mpl Report", $data, "", 01, responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
