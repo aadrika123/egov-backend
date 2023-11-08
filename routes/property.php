@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CitizenController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Dashboard\JskController;
 use App\Http\Controllers\Payment\BankReconcillationController;
@@ -571,5 +572,9 @@ Route::controller(LocationController::class)->group(function () {
   Route::post('location', 'location_list');
 
   Route::post('location_ward_list', 'bindLocationWithWards');
-  Route::post('citizen_details', 'citizen_details_with_citizen_id')->middleware(['json.response', 'auth_maker']);
+  //Route::post('citizen_details', 'citizen_details_with_citizen_id')->middleware(['json.response', 'auth_maker']);
+});
+
+Route::controller(CitizenController::class)->group(function () {
+  Route::post('citizen/details', 'citizenDetailsWithCitizenId')->middleware(['json.response', 'auth_maker']);
 });
