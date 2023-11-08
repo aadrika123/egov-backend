@@ -440,4 +440,12 @@ class WaterConsumer extends Model
             ->where('status', 1)
             ->orderByDesc('id');
     }
+
+    public function lastTran()
+    {
+        return $this->hasMany(WaterTran::class,"related_id","id")
+        ->whereIn("status",[1,2])
+        ->where("tran_type","Demand Collection")
+        ->orderBy("id","DESC");
+    }
 }

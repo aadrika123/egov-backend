@@ -571,4 +571,5 @@ Route::controller(LocationController::class)->group(function () {
   Route::post('location', 'location_list');
 
   Route::post('location_ward_list', 'bindLocationWithWards');
+  Route::post('citizen_details', 'citizen_details_with_citizen_id')->middleware(['json.response', 'auth_maker']);
 });
