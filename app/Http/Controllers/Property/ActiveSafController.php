@@ -2491,10 +2491,10 @@ class ActiveSafController extends Controller
             $safDtls->save();
 
             DB::commit();
-            return responseMsgs(true, "Geo Tagging Done Successfully", "", "010119", "1.0", responseTime(), "POST", $req->deviceId);
+            return responseMsgs(true, "Geo Tagging Done Successfully", "", "010119", "1.0", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
-            return responseMsg(false, $e->getMessage(), "");
+            return responseMsg(false, $e->getMessage(), "",                 "010119", "1.0", responseTime(), $req->getMethod(), $req->deviceId);
         }
     }
 

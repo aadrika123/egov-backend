@@ -914,7 +914,7 @@ class ObjectionController extends Controller
         try {
             $mWfActiveDocument = new WfActiveDocument();
             $mPropActiveObjection = new PropActiveObjection();
-            $docUrl = new DocUrl;
+            $docUpload = new DocUpload;
             $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
 
             $objectionDetails = $mPropActiveObjection->getObjectionNo($req->applicationId);
@@ -924,7 +924,7 @@ class ObjectionController extends Controller
             $workflowId = $objectionDetails->workflow_id;
             $documents = $mWfActiveDocument->getDocsByAppId($req->applicationId, $workflowId, $moduleId);
 
-            $data = $docUrl->getDocUrl($documents);           #_Calling BLL for Document Path from DMS
+            $data = $docUpload->getDocUrl($documents);           #_Calling BLL for Document Path from DMS
 
             return responseMsgs(true, "Uploaded Documents", remove_null($data), "010102", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
@@ -1167,12 +1167,12 @@ class ObjectionController extends Controller
     public function filterDocument($documentList, $refApplication)
     {
         $mWfActiveDocument = new WfActiveDocument();
-        $docUrl = new DocUrl;
+        $docUpload = new DocUpload;
         $applicationId = $refApplication->id;
         $workflowId = $refApplication->workflow_id;
         $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
         $documents = $mWfActiveDocument->getDocByRefIds($applicationId, $workflowId, $moduleId);
-        $uploadedDocs = $docUrl->getDocUrl($documents);           #_Calling BLL for Document Path from DMS
+        $uploadedDocs = $docUpload->getDocUrl($documents);           #_Calling BLL for Document Path from DMS
 
         $explodeDocs = collect(explode('#', $documentList));
 

@@ -1,18 +1,7 @@
 <?php
 
-/**
- * | ----------------------------------------------------------------------------------
- * | Water Module | 
- * |-----------------------------------------------------------------------------------
- * | Created On - 08-10-2022 
- * | Created By - Sam kerketta 
- * | Created For-Water related Transaction including water apply,workflow and relative view process 
- */
-
-
 namespace App\Http\Controllers\Water;
 
-use App\BLL\DocUrl;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Water\newApplyRules;
 use App\Http\Requests\Water\reqSiteVerification;
@@ -75,6 +64,16 @@ use Illuminate\Validation\Rules\Unique;
 use Ramsey\Collection\Collection as CollectionCollection;
 use SebastianBergmann\Type\VoidType;
 use Symfony\Contracts\Service\Attribute\Required;
+
+/**
+ * | ----------------------------------------------------------------------------------
+ * | Water Module | 
+ * |-----------------------------------------------------------------------------------
+ * | Created On - 08-10-2022 
+ * | Created By - Sam kerketta 
+ * | Created For-Water related Transaction including water apply,workflow and relative view process 
+ */
+
 
 class NewConnectionController extends Controller
 {
@@ -1285,7 +1284,7 @@ class NewConnectionController extends Controller
         try {
             $mWfActiveDocument = new WfActiveDocument();
             $mWaterApplication = new WaterApplication();
-            $docUrl = new DocUrl;
+            $docUpload = new DocUpload;
             $moduleId = Config::get('module-constants.WATER_MODULE_ID');
 
             $waterDetails = $mWaterApplication->getApplicationById($req->applicationId)->first();
@@ -1294,7 +1293,7 @@ class NewConnectionController extends Controller
 
             $workflowId = $waterDetails->workflow_id;
             $documents = $mWfActiveDocument->getWaterDocsByAppNo($req->applicationId, $workflowId, $moduleId);
-            $data = $docUrl->getDocUrl($documents);           #_Calling BLL for Document Path from DMS
+            $data = $docUpload->getDocUrl($documents);           #_Calling BLL for Document Path from DMS
 
             return responseMsgs(true, "Uploaded Documents", remove_null($data), "010102", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
@@ -1703,12 +1702,12 @@ class NewConnectionController extends Controller
     public function filterDocument($documentList, $refWaterApplication, $ownerId = null)
     {
         $mWfActiveDocument  = new WfActiveDocument();
-        $docUrl             = new DocUrl;
+        $docUpload = new DocUpload;
         $applicationId      = $refWaterApplication->id;
         $workflowId         = $refWaterApplication->workflow_id;
         $moduleId           = Config::get('module-constants.WATER_MODULE_ID');
         $uploadedDocs       = $mWfActiveDocument->getDocByRefIds($applicationId, $workflowId, $moduleId);
-        $uploadedDocs = $docUrl->getDocUrl($uploadedDocs);           #_Calling BLL for Document Path from DMS
+        $uploadedDocs = $docUpload->getDocUrl($uploadedDocs);           #_Calling BLL for Document Path from DMS
 
 
         $explodeDocs = collect(explode('#', $documentList->requirements));

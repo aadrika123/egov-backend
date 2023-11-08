@@ -1038,7 +1038,7 @@ class GbSafController extends Controller
         try {
             $mWfActiveDocument = new WfActiveDocument();
             $mPropActiveSaf = new PropActiveSaf();
-            $docUrl = new DocUrl;
+            $docUpload = new DocUpload;
             $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
 
             $safDetails = $mPropActiveSaf->getSafNo($req->applicationId);
@@ -1047,7 +1047,7 @@ class GbSafController extends Controller
 
             $workflowId = $safDetails->workflow_id;
             $documents = $mWfActiveDocument->getDocsByAppId($req->applicationId, $workflowId, $moduleId);
-            $data = $docUrl->getDocUrl($documents);           #_Calling BLL for Document Path from DMS
+            $data = $docUpload->getDocUrl($documents);           #_Calling BLL for Document Path from DMS
 
             return responseMsgs(true, "Uploaded Documents", remove_null($data), "010102", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
@@ -1135,13 +1135,13 @@ class GbSafController extends Controller
     {
         $mRefReqDocs = new RefRequiredDocument();
         $mWfActiveDocument = new WfActiveDocument();
-        $docUrl = new DocUrl;
+        $docUpload = new DocUpload;
         $applicationId = $refSafs->id;
         $workflowId = $refSafs->workflow_id;
         $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
         $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PROP_GB_SAF")->requirements;
         $uploadedDocs = $mWfActiveDocument->getDocByRefIds($applicationId, $workflowId, $moduleId);
-        $uploadedDocs = $docUrl->getDocUrl($uploadedDocs);           #_Calling BLL for Document Path from DMS
+        $uploadedDocs = $docUpload->getDocUrl($uploadedDocs);           #_Calling BLL for Document Path from DMS
 
         $explodeDocs = collect(explode('#', $documentList));
 

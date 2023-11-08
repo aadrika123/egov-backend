@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Property;
 
-use App\BLL\DocUrl;
 use App\Http\Controllers\Controller;
 use App\MicroServices\DocUpload;
 use App\MicroServices\IdGenerator\PrefixIdGenerator;
@@ -947,7 +946,7 @@ class ConcessionController extends Controller
         try {
             $mWfActiveDocument = new WfActiveDocument();
             $mPropActiveConcession = new PropActiveConcession();
-            $docUrl = new DocUrl;
+            $docUpload = new DocUpload;
             $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
 
             $concessionDetails = $mPropActiveConcession->getConcessionNo($req->applicationId);
@@ -956,7 +955,7 @@ class ConcessionController extends Controller
 
             $workflowId = $concessionDetails->workflow_id;
             $documents = $mWfActiveDocument->getDocsByAppId($req->applicationId, $workflowId, $moduleId);
-            $data = $docUrl->getDocUrl($documents);           #_Calling BLL for Document Path from DMS
+            $data = $docUpload->getDocUrl($documents);           #_Calling BLL for Document Path from DMS
 
             return responseMsgs(true, "Uploaded Documents", remove_null($data), "010102", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
@@ -1152,12 +1151,12 @@ class ConcessionController extends Controller
     public function filterDocument($documentList, $refApplication)
     {
         $mWfActiveDocument = new WfActiveDocument();
-        $docUrl = new DocUrl;
+        $docUpload = new DocUpload;
         $safId = $refApplication->id;
         $workflowId = $refApplication->workflow_id;
         $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
         $documents = $mWfActiveDocument->getDocByRefIds($safId, $workflowId, $moduleId);
-        $uploadedDocs = $docUrl->getDocUrl($documents);           #_Calling BLL for Document Path from DMS
+        $uploadedDocs = $docUpload->getDocUrl($documents);           #_Calling BLL for Document Path from DMS
 
         $explodeDocs = $documentList;
 

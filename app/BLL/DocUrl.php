@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Http;
  * | Created By: Mrinal Kumar
  * | Created On: 12-09-2023
  * | Status : Closed
+    Not In Use
  */
 
 class DocUrl

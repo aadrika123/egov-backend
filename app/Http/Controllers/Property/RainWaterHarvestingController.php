@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Property;
 
-use App\BLL\DocUrl;
 use App\BLL\Property\CalculatePropById;
 use App\BLL\Property\PostSafPropTaxes;
 use App\Http\Controllers\Controller;
@@ -855,7 +854,7 @@ class RainWaterHarvestingController extends Controller
         try {
             $mWfActiveDocument = new WfActiveDocument();
             $mPropActiveHarvesting = new PropActiveHarvesting();
-            $docUrl = new DocUrl;
+            $docUpload = new DocUpload;
             $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
 
             $harvestingDetails = $mPropActiveHarvesting->getHarvestingNo($req->applicationId);
@@ -864,7 +863,7 @@ class RainWaterHarvestingController extends Controller
 
             $workflowId = $harvestingDetails->workflow_id;
             $documents = $mWfActiveDocument->getDocsByAppId($req->applicationId, $workflowId, $moduleId);
-            $data = $docUrl->getDocUrl($documents);           #_Calling BLL for Document Path from DMS
+            $data = $docUpload->getDocUrl($documents);           #_Calling BLL for Document Path from DMS
 
             return responseMsgs(true, "Uploaded Documents", remove_null($data), "010102", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
@@ -1029,14 +1028,14 @@ class RainWaterHarvestingController extends Controller
     {
         $mRefReqDocs = new RefRequiredDocument();
         $mWfActiveDocument = new WfActiveDocument();
-        $docUrl = new DocUrl;
+        $docUpload = new DocUpload;
         $applicationId = $refApplication->id;
         $workflowId = $refApplication->workflow_id;
         $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
         $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PROP_RAIN_WATER_HARVESTING")->requirements;
 
         $uploadedDocs = $mWfActiveDocument->getDocByRefIds($applicationId, $workflowId, $moduleId);
-        $uploadedDocs = $docUrl->getDocUrl($uploadedDocs);           #_Calling BLL for Document Path from DMS
+        $uploadedDocs = $docUpload->getDocUrl($uploadedDocs);           #_Calling BLL for Document Path from DMS
 
         $explodeDocs = collect(explode('#', $documentList));
 
