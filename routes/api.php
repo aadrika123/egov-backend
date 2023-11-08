@@ -471,4 +471,5 @@ Route::get('/getImageLink', function () {
 #-------------------------- Eprmaan Route ------------------------------
 Route::controller(Epramaan::class)->group(function () {
     Route::post('property/login', 'login');
+    
 });
