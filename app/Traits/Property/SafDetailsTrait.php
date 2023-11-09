@@ -2,6 +2,7 @@
 
 namespace App\Traits\Property;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 
 /**
@@ -90,7 +91,7 @@ trait SafDetailsTrait
                 $key + 1,
                 $ownerDetail['owner_name'],
                 $ownerDetail['gender'],
-                $ownerDetail['dob'],
+                Carbon::parse($ownerDetail['dob'])->format('d-m-Y'),
                 $ownerDetail['guardian_name'],
                 $ownerDetail['relation_type'],
                 $ownerDetail['mobile_no'],
@@ -116,8 +117,10 @@ trait SafDetailsTrait
                 $floorDetail->occupancy_type,
                 $floorDetail->construction_type,
                 $floorDetail->builtup_area,
-                $floorDetail->date_from,
-                $floorDetail->date_upto
+                // $floorDetail->date_from,
+                // $floorDetail->date_upto,
+                Carbon::parse($floorDetail->date_from)->format('d-m-Y'),
+                ($floorDetail->date_upto) ? Carbon::parse($floorDetail->date_upto)->format('d-m-Y') : ""
             ];
         });
     }
@@ -135,7 +138,7 @@ trait SafDetailsTrait
             ['displayString' => 'Property Type', 'key' => 'propertyType', 'value' => $req->property_type],
             ['displayString' => 'Assessment Type', 'key' => 'assessmentType', 'value' => $req->assessment_type],
             ['displayString' => 'Ownership Type', 'key' => 'ownershipType', 'value' => $req->ownership_type],
-            ['displayString' => 'Apply-Date', 'key' => 'applyDate', 'value' => $req->application_date],
+            ['displayString' => 'Application-Date', 'key' => 'applyDate', 'value' => Carbon::parse($req->application_date)->format('d-m-Y')],
             ['displayString' => 'Plot-Area(In Decimal)', 'key' => 'plotArea', 'value' => $req->area_of_plot],
             ['displayString' => 'Water-Harvesting', 'key' => 'isWaterHarvesting', 'value' => ($req->is_water_harvesting == true) ? 'Yes' : 'No'],
             ['displayString' => 'Hoarding-Board', 'key' => 'isHoardingBoard', 'value' => ($req->is_hoarding_board == true) ? 'Yes' : 'No']
@@ -234,7 +237,8 @@ trait SafDetailsTrait
                 1,
                 $ownerDetail['owner_name'],
                 $ownerDetail['gender'],
-                $ownerDetail['dob'],
+                // $ownerDetail['dob'],
+                Carbon::parse($ownerDetail['dob'])->format('d-m-Y'),
                 $ownerDetail['guardian_name'],
                 $ownerDetail['relation'],
                 $ownerDetail['owner_mobile'],
@@ -343,7 +347,7 @@ trait SafDetailsTrait
             ['displayString' => 'Assessment Type', 'key' => 'assessmentType', 'value' => $req->assessment_type],
             ['displayString' => 'Building Type', 'key' => 'buildingType', 'value' => $req->building_type, 'canBtc' => 'true', 'canEdit' => 'true'],
             ['displayString' => 'Property Usage Type', 'key' => 'propertyUsageType', 'value' => $req->prop_usage_type, 'canBtc' => 'true', 'canEdit' => 'true'],
-            ['displayString' => 'Apply-Date', 'key' => 'applyDate', 'value' => $req->application_date],
+            ['displayString' => 'Application-Date', 'key' => 'applyDate', 'value' => $req->application_date],
             ['displayString' => 'Plot-Area(sqt)', 'key' => 'plotArea', 'value' => $req->area_of_plot],
             ['displayString' => 'Water-Harvesting', 'key' => 'isWaterHarvesting', 'value' => ($req->is_water_harvesting == true) ? 'Yes' : 'No'],
             ['displayString' => 'Hoarding-Board', 'key' => 'isHoardingBoard', 'value' => ($req->is_hoarding_board == true) ? 'Yes' : 'No']

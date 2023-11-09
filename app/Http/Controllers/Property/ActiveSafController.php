@@ -688,7 +688,8 @@ class ActiveSafController extends Controller
                 'data' => $electDetails
             ];
             $fullDetailsData['application_no'] = $data->saf_no;
-            $fullDetailsData['apply_date'] = $data->application_date;
+            $fullDetailsData['apply_date']     = Carbon::parse($data->application_date)->format('d-m-Y');
+
 
             $fullDetailsData['doc_verify_status'] = $data->doc_verify_status;
             $fullDetailsData['doc_upload_status'] = $data->doc_upload_status;
@@ -715,7 +716,7 @@ class ActiveSafController extends Controller
             // Card Detail Format
             $cardDetails = $this->generateCardDetails($data, $getOwnerDetails);
             $cardElement = [
-                'headerTitle' => "About Property",
+                'headerTitle' => "Property Details",
                 'data' => $cardDetails
             ];
             $fullDetailsData['fullDetailsData']['cardArray'] = new Collection($cardElement);

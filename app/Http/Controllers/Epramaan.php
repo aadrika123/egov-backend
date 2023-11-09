@@ -48,7 +48,7 @@ class Epramaan extends Controller
 
     public function login()
     {
-        $request_uri = 'https://epramaan.meripehchaan.gov.in/openid/jwt/processJwtAuthGrantRequest.do';
+        $request_uri = 'https://epstg.meripehchaan.gov.in';
         $serviceId = '100001323'; //service id shared by epramaan after registration
         $aeskey = 'e0681502-a91b-4868-b8c0-4274b0144e1a';
         //$aeskey = 'e0681502-a91b-4868-b8c0-4274b0144e1a';
@@ -81,7 +81,7 @@ class Epramaan extends Controller
         //$apiHmac = trim(base64_encode($apiHmac), '/');
         $apiHmac = base64_encode($apiHmac);
 
-        echo "<form method='post' name='redirect' action='https://epramaan.meripehchaan.gov.in/openid/jwt/processJwtAuthGrantRequest.do?
+        echo "<form method='post' name='redirect' action='https://epstg.meripehchaan.gov.in?
         		&scope=" . $scope . "
         		&response_type=" . $response_type . "
         		&redirect_uri=" . $redirectionURI . "

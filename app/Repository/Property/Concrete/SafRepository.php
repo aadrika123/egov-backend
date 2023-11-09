@@ -38,6 +38,11 @@ class SafRepository implements iSafRepository
                 'p.property_type',
                 'prop_active_safs.assessment_type as assessment',
                 DB::raw("TO_CHAR(prop_active_safs.application_date, 'DD-MM-YYYY') as apply_date"),
+                DB::raw("CASE when
+                            prop_active_safs.citizen_id  is null then 'TC/JSK'
+                            when prop_active_safs.user_id  is null then 'Citizen'
+                        end as
+                     applied_by"),
                 'prop_active_safs.parked',
                 'prop_active_safs.prop_address',
                 'prop_active_safs.applicant_name',
