@@ -48,6 +48,7 @@ class Epramaan extends Controller
 
     public function login()
     {
+        // $request_uri = 'https://epramaan.meripehchaan.gov.in/openid/jwt/processJwtAuthGrantRequest.do';
         $request_uri = 'https://epstg.meripehchaan.gov.in';
         $serviceId = '100001323'; //service id shared by epramaan after registration
         $aeskey = 'e0681502-a91b-4868-b8c0-4274b0144e1a';
@@ -68,12 +69,14 @@ class Epramaan extends Controller
 
         // Code verifier
         $verifier_bytes = random_bytes(64);
-        $code_verifier = $this->base64url_encode($verifier_bytes);
+        // $code_verifier = $this->base64url_encode($verifier_bytes);
+        $code_verifier = rtrim(strtr(base64_encode($verifier_bytes), "+/", "-_"), "=");;
         setcookie("verifier_c", "$code_verifier", time() + 3600, "/");
 
         //code challenge
         $challenge_bytes = hash("sha256", $code_verifier, true);
-        $code_challenge = $this->base64url_encode($challenge_bytes);
+        // $code_challenge = $this->base64url_encode($challenge_bytes);
+        $code_challenge = rtrim(strtr(base64_encode($challenge_bytes), "+/", "-_"), "=");
 
         $input = $serviceId . $aeskey . $state . $nonce . $redirectionURI . $scope . $code_challenge;
 
@@ -81,24 +84,20 @@ class Epramaan extends Controller
         //$apiHmac = trim(base64_encode($apiHmac), '/');
         $apiHmac = base64_encode($apiHmac);
 
-        echo "<form method='post' name='redirect' action='https://epstg.meripehchaan.gov.in?
-        		&scope=" . $scope . "
-        		&response_type=" . $response_type . "
-        		&redirect_uri=" . $redirectionURI . "
-        		&state=" . $state . "
-        		&code_challenge_method=" . $code_challenge_method . "
-        		&nonce=" . $nonce . "
-        		&client_id=" . $serviceId . "
-        		&code_challenge=" . $code_challenge . "
-        		&request_uri=" . $request_uri . "
-        		&apiHmac=" . $apiHmac . "'>
-                    </form>
+        echo "<form method='POST' name='redirect' action='https://epstg.meripehchaan.gov.in?
+                    &scope=" . $scope . "
+                    &response_type=" . $response_type . "
+                    &redirect_uri=" . $redirectionURI . "
+                    &state=" . $state . "
+                    &code_challenge_method=" . $code_challenge_method . "
+                    &nonce=" . $nonce . "
+                    &client_id=" . $serviceId . "
+                    &code_challenge=" . $code_challenge . "
+                    &request_uri=" . $request_uri . "
+                    &apiHmac=" . $apiHmac . "'>
+              </form>
                     <script language='javascript'>document.redirect.submit();</script>
                 ";
-        //die(); 
-
-
-
     }
 
     public function dashboard()
