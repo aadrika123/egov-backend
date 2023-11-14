@@ -3,13 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\MPropBuildingRentalconst;
-use App\Models\MPropBuildingRentalRate;
-use App\Models\MPropBuildingRentalrate as ModelsMPropBuildingRentalrate;
 use App\Models\MPropForgeryType;
 use App\Models\MPropRentalValue;
 use App\Models\MPropVacanatRentalrate;
 use App\Models\MPropVacantRentalrate;
 use App\Models\PropApartmentdtl;
+use App\Models\Property\MPropBuildingRentalrate;
 use App\Models\Property\RefPropTransferMode;
 use App\Models\RefPropBuildingRenatlRate;
 use App\Models\RefPropConstructionType;
