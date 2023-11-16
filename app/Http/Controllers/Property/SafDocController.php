@@ -118,13 +118,13 @@ class SafDocController extends Controller
 
         $explodeDocs = collect(explode('#', $documentList));
 
-        $filteredDocs = $explodeDocs->map(function ($explodeDoc) use ($uploadedDocs, $ownerId, $refSafs, $docUrl) {
+        $filteredDocs = $explodeDocs->map(function ($explodeDoc) use ($uploadedDocs, $ownerId, $refSafs) {
             $document = explode(',', $explodeDoc);
             $key = array_shift($document);
             $label = array_shift($document);
             $documents = collect();
 
-            collect($document)->map(function ($item) use ($uploadedDocs, $documents, $ownerId, $refSafs, $docUrl) {
+            collect($document)->map(function ($item) use ($uploadedDocs, $documents, $ownerId, $refSafs) {
                 $uploadedDoc = $uploadedDocs->where('doc_code', $item)
                     ->where('owner_dtl_id', $ownerId)
                     ->first();
