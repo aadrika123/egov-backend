@@ -56,8 +56,7 @@ class StateDashboard
             if ($request->wardId) {
                 $wardId = $request->wardId;
             }
-            if(!$ulbId)
-            {
+            if (!$ulbId) {
                 $ulbId = 2; #default rmc
             }
             $from = "
@@ -234,9 +233,9 @@ class StateDashboard
                 return round((($val->current_demand + $val->arrear_demand) - ($val->arrear_collection + $val->current_collection)), 2);
             });
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
-            return responseMsgs(true, "", $monthWise, $apiId, $version, $queryRunTime, $action, $deviceId);
+            return responseMsgs(true, "DCB Report",      $monthWise, $apiId, $version, responseTime(), $action, $deviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
+            return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, responseTime(), $action, $deviceId);
         }
     }
 }
