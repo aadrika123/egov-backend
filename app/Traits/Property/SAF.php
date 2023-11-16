@@ -491,7 +491,7 @@ trait SAF
      */
     public function isPropTrust($floors)
     {
-        $trustId = 42;
+        $trustId = Config::get('PropertyConstaint.TRUST_USAGE_TYPE_ID');
         $floors = collect($floors);
         $floorUsageTypeIds = $floors->pluck('useType');
         $isTrust = $floorUsageTypeIds->contains($trustId) ? true : false;

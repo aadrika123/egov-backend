@@ -425,6 +425,7 @@ class ActiveSafController extends Controller
                           else false end
                           as btc_for_citizen"
                 ))
+                // ->join('workflow_tracks','workflow_tracks')
                 ->where('parked', true)
                 ->where('prop_active_safs.ulb_id', $mUlbId)
                 ->where('prop_active_safs.status', 1)
