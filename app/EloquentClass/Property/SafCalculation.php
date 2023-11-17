@@ -588,7 +588,7 @@ class SafCalculation
                     $carbonDateUpto = $carbonDateUpto->format('Y-m-d');
                     break;
                 case "vacantLand";
-                    $dateFrom = $this->_propertyDetails['landOccupationDate'];
+                    $dateFrom = $this->_propertyDetails['landOccupationDate'] ?? "";
                     break;
             }
 
@@ -691,7 +691,7 @@ class SafCalculation
                     $readFloorDetail = [
                         'propertyType' => "vacantLand",
                         'buildupArea' => $this->_propertyDetails['areaOfPlot'],
-                        'dateFrom' => $this->_propertyDetails['landOccupationDate'],
+                        'dateFrom' => $this->_propertyDetails['landOccupationDate'] ?? "",
                         'mFloorNo' => 'Vacant Land',
                     ];
                     break;

@@ -49,17 +49,18 @@ class Epramaan extends Controller
     public function login()
     {
         // $request_uri = 'https://epramaan.meripehchaan.gov.in/openid/jwt/processJwtAuthGrantRequest.do';
-        $request_uri = 'https://epstg.meripehchaan.gov.in';
-        $serviceId = '100001323'; //service id shared by epramaan after registration
-        $aeskey = 'e0681502-a91b-4868-b8c0-4274b0144e1a';
-        //$aeskey = 'e0681502-a91b-4868-b8c0-4274b0144e1a';
+        $request_uri = 'https://epstg.meripehchaan.gov.in/openid/jwt/processJwtAuthGrantRequest.do';
+        // $serviceId = '100001323'; //service id shared by epramaan after registration live
+        $serviceId = '100001031'; //service id shared by epramaan after registration staging
+        // $aeskey = 'e0681502-a91b-4868-b8c0-4274b0144e1a';    #production
+        $aeskey = 'fddbb838-b6b1-44c4-93b3-dc9ee91f174a';       #staging
         $redirectionURI = 'http://site2.aadrikainfomedia.in/citizen/authResponseConsumer.do'; //sso success Url as given while registration
         $scope = 'openid';
         $response_type = 'code';
         $code_challenge_method = 'S256';
 
-        setcookie("verifier_c", "", time() - 3600, "/");
-        setcookie("nonce_c", "", time() - 3600, "/");
+        // setcookie("verifier_c", "", time() - 3600, "/");
+        // setcookie("nonce_c", "", time() - 3600, "/");
         // Nonce Creation
         $nonce = bin2hex(random_bytes(16));
         setcookie("nonce_c", "$nonce", time() + 3600, "/");
@@ -84,7 +85,7 @@ class Epramaan extends Controller
         //$apiHmac = trim(base64_encode($apiHmac), '/');
         $apiHmac = base64_encode($apiHmac);
 
-        echo "<form method='POST' name='redirect' action='https://epstg.meripehchaan.gov.in?
+        echo "<form method='POST' name='redirect' action='https://epstg.meripehchaan.gov.in/openid/jwt/processJwtAuthGrantRequest.do?
                     &scope=" . $scope . "
                     &response_type=" . $response_type . "
                     &redirect_uri=" . $redirectionURI . "
