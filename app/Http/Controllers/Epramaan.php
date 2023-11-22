@@ -29,7 +29,7 @@ use Jose\Component\Signature\Serializer\JWSSerializerManager;
 use Jose\Component\KeyManagement\JWKFactory;
 use Jose\Component\Signature\Algorithm\HS256;
 use Jose\Component\Signature\JWSLoader;
-
+use RuntimeException;
 
 class Epramaan extends Controller
 {
@@ -161,16 +161,16 @@ class Epramaan extends Controller
         // return $a;
     }
 
-    public function dashboard()
+    public function dashboard(Request $req)
     {
-        $code = htmlspecialchars($_GET["code"]);
-        $epramaanTokenRequestUrl = 'https://epramaan.meripehchaan.gov.in/openid/jwt/processJwtTokenRequest.do';
-        $serviceId = '100001323';
+        $code          = $req->code;
+        $nonce         = $req->nonce;
+        $code_verifier = $req->codeVerifier;
+        $epramaanTokenRequestUrl = 'https://epstg.meripehchaan.gov.in/openid/jwt/processJwtTokenRequest.do';
+        $serviceId = '100001033';
         $grant_type = 'authorization_code';
-        $code_verifier = $_COOKIE["verifier_c"];
-        $nonce = $_COOKIE["nonce_c"];
         $scope = 'openid';
-        $redirectionURI = 'http://site2.aadrikainfomedia.in/citizen/authResponseConsumer.do'; //sso success Url as given while registration
+        $redirectionURI = 'http://site2.aadrikainfomedia.in/citizen'; //sso success Url as given while registration
 
         $curl = curl_init();
         curl_setopt_array(
@@ -198,6 +198,7 @@ class Epramaan extends Controller
 
         $response = curl_exec($curl);
         curl_close($curl);
+        // dd($response);
         //print_r($response); exit();
 
         //---------processing token-decrypt--------------
@@ -231,8 +232,7 @@ class Epramaan extends Controller
         $serializerManager = new JWESerializerManager([
             new CompactSerializer(),
         ]);
-        print_r($response);
-        exit();
+
         // load the token.
         $jwe = $serializerManager->unserialize($response);
         //decrypt the token
@@ -248,17 +248,31 @@ class Epramaan extends Controller
         }
         //Verifying token with the certificate shared by epramaan
         // The algorithm manager with the HS256 algorithm.
-        /* $algorithmManager = new AlgorithmManager([
-			new RS256(),
-		]);
-		// JWS Verifier.
-		$jwsVerifier = new JWSVerifier($algorithmManager);
-		$key = JWKFactory::createFromCertificateFile(
-			'D:\epramaan.crt', // The path where the certificate has been stored
-			[
-				'use' => 'sig', // Additional parameters
-			]
-		); */
-        //$serializerManager = new JWSSerializerManager(
+        $algorithmManager = new AlgorithmManager([
+            new RS256(),
+        ]);
+        // JWS Verifier.
+        $jwsVerifier = new JWSVerifier($algorithmManager);
+        $key = JWKFactory::createFromCertificateFile(
+            'D:\epramaan.crt', // The path where the certificate has been stored
+            [
+                'use' => 'sig', // Additional parameters
+            ]
+        );
+        $serializerManager = new JWSSerializerManager([
+            new CompactSerializer(),
+        ]);
+
+        $jws = $serializerManager->unserialize($decryptedtoken);
+        $isVerified = $jwsVerifier->verifyWithKey($jws, $key, 0);
+
+        $jwsLoader = new JWSLoader(
+            $serializerManager,
+            $jwsVerifier,
+            null
+        );
+
+        $jws = $jwsLoader->loadAndVerifyWithKey($decryptedtoken, $key, $signature);
+        return  $payload = $jws->getPayload();
     }
 }
