@@ -136,7 +136,8 @@ class HoldingTaxController extends Controller
             $penaltyRebateCalc = new PenaltyRebateCalculation;
             $currentQuarter = calculateQtr(Carbon::now()->format('Y-m-d'));
             $currentFYear = getFY();
-            $user = authUser($req);
+            if ($req->auth)
+                $user = authUser($req);
             $loggedInUserType = $user->user_type ?? "Citizen";
             $mPropOwners = new PropOwner();
             $pendingFYears = collect();
