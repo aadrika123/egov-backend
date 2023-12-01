@@ -817,4 +817,39 @@ class ReportController extends Controller
             return responseMsgs(false, $e->getMessage(), "", "", 01, responseTime(), $request->getMethod(), $request->deviceId);
         }
     }
+
+    /**
+     * | Mpl REport 2
+     */
+    public function mplReport2(Request $request)
+    {
+        $todayDate = Carbon::now()->format('Y-m-d');
+        // $sql = "SELECT SUM(amount-adjust_amt) FROM prop_demands WHERE  status=1	AND ulb_id=2";                          #total demand
+        // $sql = "SELECT SUM(amount) FROM prop_transactions where status=1 AND ulb_id=2";                                 #total collection
+        // $sql = "SELECT SUM(amount) FROM prop_transactions where status=1 AND ulb_id=2 AND tran_date = '2023-12-01'";    #today collection
+
+        // $sql = "SELECT SUM(amount-adjust_amt) FROM prop_demands WHERE  status=1	AND ulb_id=2 AND fyear = '2023-2024'";  #current year demand
+        // $sql = "SELECT SUM(amount-adjust_amt) FROM prop_demands WHERE  status=1	AND ulb_id=2 AND fyear != '2023-2024'"; #arrear demand
+
+        // $sql = "SELECT SUM(amount) FROM prop_transactions where status=1 AND ulb_id=2 AND tran_date BETWEEN '2023-04-01' AND '2024-03-31'"; #current year collection
+        // $sql = "SELECT SUM(amount) FROM prop_transactions where status=1 AND ulb_id=2 AND tran_date BETWEEN '2022-04-01' AND '2023-03-31'"; #arrear collection
+
+        // $sql = "SELECT SUM(balance) FROM prop_demands WHERE  status=1	AND ulb_id=2 AND fyear ='2023-2024'"; #current year due
+        // $sql = "SELECT SUM(balance) FROM prop_demands WHERE  status=1	AND ulb_id=2 AND fyear !='2023-2024'"; #arrear year due
+
+
+        $sql = "SELECT
+                    COALESCE((SELECT SUM(amount) FROM prop_transactions WHERE status = 1 AND ulb_id = 2 AND tran_date = '$todayDate'), 0) AS today_collection,
+                    COALESCE((SELECT SUM(amount - adjust_amt) FROM prop_demands WHERE status = 1 AND ulb_id = 2), 0) AS total_demand,
+                    COALESCE((SELECT SUM(amount) FROM prop_transactions WHERE status = 1 AND ulb_id = 2), 0) AS total_collection,
+                    COALESCE((SELECT SUM(amount - adjust_amt) FROM prop_demands WHERE status = 1 AND ulb_id = 2 AND fyear != '2023-2024'), 0) AS arrear_demand,
+                    COALESCE((SELECT SUM(amount - adjust_amt) FROM prop_demands WHERE status = 1 AND ulb_id = 2 AND fyear = '2023-2024'), 0) AS current_year_demand,
+                    COALESCE((SELECT SUM(amount) FROM prop_transactions WHERE status = 1 AND ulb_id = 2 AND tran_date BETWEEN '2022-04-01' AND '2023-03-31'), 0) AS arrear_collection,
+                    COALESCE((SELECT SUM(amount) FROM prop_transactions WHERE status = 1 AND ulb_id = 2 AND tran_date BETWEEN '2023-04-01' AND '2024-03-31'), 0) AS current_year_collection,
+                    COALESCE((SELECT SUM(balance) FROM prop_demands WHERE status = 1 AND ulb_id = 2 AND fyear != '2023-2024'), 0) AS arrear_due,
+                    COALESCE((SELECT SUM(balance) FROM prop_demands WHERE status = 1 AND ulb_id = 2 AND fyear = '2023-2024'), 0) AS current_year_due
+                ";
+        $data = DB::select($sql)[0];
+        return responseMsgs(true, "", $data, "", "01", responseTime(), $request->getMethod(), $request->deviceId);
+    }
 }
