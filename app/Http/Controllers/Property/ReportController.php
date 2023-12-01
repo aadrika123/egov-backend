@@ -850,6 +850,7 @@ class ReportController extends Controller
                     COALESCE((SELECT SUM(balance) FROM prop_demands WHERE status = 1 AND ulb_id = 2 AND fyear = '2023-2024'), 0) AS current_year_due
                 ";
         $data = DB::select($sql)[0];
+        $data->total_due = round($data->arrear_due + $data->current_year_due, 2);
         return responseMsgs(true, "", $data, "", "01", responseTime(), $request->getMethod(), $request->deviceId);
     }
 }
