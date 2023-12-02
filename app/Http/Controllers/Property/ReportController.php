@@ -845,7 +845,7 @@ class ReportController extends Controller
                     -- COALESCE((SELECT SUM(amount) FROM prop_transactions WHERE status = 1 AND ulb_id = 2), 0) AS total_collection,
                     COALESCE((SELECT SUM(amount - adjust_amt) FROM prop_demands WHERE status = 1 AND ulb_id = 2 AND paid_status = 0 AND fyear != '2023-2024'), 0) AS arrear_demand,
                     COALESCE((SELECT SUM(amount - adjust_amt) FROM prop_demands WHERE status = 1 AND ulb_id = 2 AND fyear = '2023-2024'), 0) AS current_year_demand,
-                    COALESCE((SELECT SUM(amount) FROM prop_transactions WHERE status = 1 AND ulb_id = 2 AND tran_date BETWEEN '2022-04-01' AND '2023-03-31'), 0) AS arrear_collection,
+                    COALESCE((SELECT SUM(amount) FROM prop_transactions WHERE status = 1 AND ulb_id = 2 AND tran_date < '2023-04-01'), 0) AS arrear_collection,
                     COALESCE((SELECT SUM(amount) FROM prop_transactions WHERE status = 1 AND ulb_id = 2 AND tran_date BETWEEN '2023-04-01' AND '2024-03-31'), 0) AS current_year_collection,
                     COALESCE((SELECT SUM(balance) FROM prop_demands WHERE status = 1 AND ulb_id = 2 AND fyear != '2023-2024'), 0) AS arrear_due,
                     COALESCE((SELECT SUM(balance) FROM prop_demands WHERE status = 1 AND ulb_id = 2 AND fyear = '2023-2024'), 0) AS current_year_due
