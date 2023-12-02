@@ -19,6 +19,9 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
+use Geocoder\Geocoder;
+use Geocoder\Query\GeocodeQuery;
+use Geocoder\Provider\GoogleMaps\GoogleMaps;
 
 #------------date 13/03/2023 -------------------------------------------------------------------------
 #   Code By Sandeep Bara
@@ -824,7 +827,7 @@ class ReportController extends Controller
     public function mplReport2(Request $request)
     {
         $todayDate = Carbon::now()->format('Y-m-d');
-        // $sql = "SELECT SUM(amount-adjust_amt) FROM prop_demands WHERE  status=1	AND ulb_id=2";                          #total demand
+        // $sql = "SELECT SUM(amount-adjust_amt) FROM prop_demands WHERE  status=1	AND ulb_id=2";                         #total demand
         // $sql = "SELECT SUM(amount) FROM prop_transactions where status=1 AND ulb_id=2";                                 #total collection
         // $sql = "SELECT SUM(amount) FROM prop_transactions where status=1 AND ulb_id=2 AND tran_date = '2023-12-01'";    #today collection
 
@@ -837,12 +840,10 @@ class ReportController extends Controller
         // $sql = "SELECT SUM(balance) FROM prop_demands WHERE  status=1	AND ulb_id=2 AND fyear ='2023-2024'"; #current year due
         // $sql = "SELECT SUM(balance) FROM prop_demands WHERE  status=1	AND ulb_id=2 AND fyear !='2023-2024'"; #arrear year due
 
-
         $sql = "SELECT
                     COALESCE((SELECT SUM(amount) FROM prop_transactions WHERE status = 1 AND ulb_id = 2 AND tran_date = '$todayDate'), 0) AS today_collection,
-                    COALESCE((SELECT SUM(amount - adjust_amt) FROM prop_demands WHERE status = 1 AND ulb_id = 2), 0) AS total_demand,
                     COALESCE((SELECT SUM(amount) FROM prop_transactions WHERE status = 1 AND ulb_id = 2), 0) AS total_collection,
-                    COALESCE((SELECT SUM(amount - adjust_amt) FROM prop_demands WHERE status = 1 AND ulb_id = 2 AND fyear != '2023-2024'), 0) AS arrear_demand,
+                    COALESCE((SELECT SUM(amount - adjust_amt) FROM prop_demands WHERE status = 1 AND ulb_id = 2 AND paid_status = 0 AND fyear != '2023-2024'), 0) AS arrear_demand,
                     COALESCE((SELECT SUM(amount - adjust_amt) FROM prop_demands WHERE status = 1 AND ulb_id = 2 AND fyear = '2023-2024'), 0) AS current_year_demand,
                     COALESCE((SELECT SUM(amount) FROM prop_transactions WHERE status = 1 AND ulb_id = 2 AND tran_date BETWEEN '2022-04-01' AND '2023-03-31'), 0) AS arrear_collection,
                     COALESCE((SELECT SUM(amount) FROM prop_transactions WHERE status = 1 AND ulb_id = 2 AND tran_date BETWEEN '2023-04-01' AND '2024-03-31'), 0) AS current_year_collection,
@@ -851,6 +852,31 @@ class ReportController extends Controller
                 ";
         $data = DB::select($sql)[0];
         $data->total_due = round($data->arrear_due + $data->current_year_due, 2);
+        $data->total_demand = round($data->arrear_demand + $data->current_year_demand, 2);
         return responseMsgs(true, "", $data, "", "01", responseTime(), $request->getMethod(), $request->deviceId);
+    }
+
+    /**
+     * | 
+     */
+    public function getLocality(Request $req)
+    {
+        $latitude  = $req->latitude;
+        $longitude = $req->longitude;
+        $geocoder = new Geocoder();
+        $googleMapsProvider = new GoogleMaps($geocoder);
+        $provider = new Nominatim($geocoder);
+
+        // Geocode the coordinates to get the locality
+        $result = $geocoder->using($provider)->geocodeQuery(GeocodeQuery::create(sprintf('%s,%s', $latitude, $longitude)));
+
+        if (!empty($result)) {
+            $address = $result->first();
+            $locality = $address->getLocality();
+
+            return response()->json(['locality' => $locality]);
+        }
+
+        return response()->json(['error' => 'Locality not found'], 404);
     }
 }

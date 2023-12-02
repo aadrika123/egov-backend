@@ -27,7 +27,8 @@
         "web-token/jwt-key-mgmt": "^3.2",
         "web-token/jwt-signature": "^3.2",
         "web-token/jwt-signature-algorithm-hmac": "^3.2",
-        "web-token/jwt-signature-algorithm-rsa": "^3.2"
+        "web-token/jwt-signature-algorithm-rsa": "^3.2",
+        "willdurand/geocoder": "^4.6"
     },
     "require-dev": {
         "facade/ignition": "^2.5",

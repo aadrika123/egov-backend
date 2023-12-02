@@ -554,6 +554,7 @@ Route::controller(ReportController::class)->group(function () {
 
   Route::post('reports/mpl', 'mplReport');                    //done
   Route::post('reports/mpl2', 'mplReport2');                    //done
+  Route::post('geo', 'getLocality');                    //done
 
 });
 // });
