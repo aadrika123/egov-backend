@@ -842,7 +842,7 @@ class ReportController extends Controller
 
         $sql = "SELECT
                     COALESCE((SELECT SUM(amount) FROM prop_transactions WHERE status = 1 AND ulb_id = 2 AND tran_date = '$todayDate'), 0) AS today_collection,
-                    COALESCE((SELECT SUM(amount) FROM prop_transactions WHERE status = 1 AND ulb_id = 2), 0) AS total_collection,
+                    -- COALESCE((SELECT SUM(amount) FROM prop_transactions WHERE status = 1 AND ulb_id = 2), 0) AS total_collection,
                     COALESCE((SELECT SUM(amount - adjust_amt) FROM prop_demands WHERE status = 1 AND ulb_id = 2 AND paid_status = 0 AND fyear != '2023-2024'), 0) AS arrear_demand,
                     COALESCE((SELECT SUM(amount - adjust_amt) FROM prop_demands WHERE status = 1 AND ulb_id = 2 AND fyear = '2023-2024'), 0) AS current_year_demand,
                     COALESCE((SELECT SUM(amount) FROM prop_transactions WHERE status = 1 AND ulb_id = 2 AND tran_date BETWEEN '2022-04-01' AND '2023-03-31'), 0) AS arrear_collection,
@@ -853,6 +853,7 @@ class ReportController extends Controller
         $data = DB::select($sql)[0];
         $data->total_due = round($data->arrear_due + $data->current_year_due, 2);
         $data->total_demand = round($data->arrear_demand + $data->current_year_demand, 2);
+        $data->total_collection = round($data->arrear_collection + $data->current_year_collection, 2);
         return responseMsgs(true, "", $data, "", "01", responseTime(), $request->getMethod(), $request->deviceId);
     }
 
