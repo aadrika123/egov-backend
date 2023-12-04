@@ -852,11 +852,13 @@ class ReportController extends Controller
                     COALESCE((SELECT SUM(d.amount-d.adjust_amt)as current_demand_current_year_collection FROM prop_demands d
                                 JOIN prop_tran_dtls td ON td.prop_demand_id=d.id 
                                 JOIN prop_transactions t ON t.id=td.tran_id
-                                    WHERE d.paid_status=1 AND d.fyear='2023-2024' AND t.tran_date BETWEEN '2023-04-01' AND '2024-03-31'), 0) AS current_year_collection,
-                    COALESCE((SELECT SUM(balance) FROM prop_demands WHERE status = 1 AND ulb_id = 2 AND fyear < '2023-2024' AND paid_status = 0), 0) AS arrear_due,
-                    COALESCE((SELECT SUM(balance) FROM prop_demands WHERE status = 1 AND ulb_id = 2 AND fyear = '2023-2024' AND paid_status = 0), 0) AS current_year_due
+                                    WHERE d.paid_status=1 AND d.fyear='2023-2024' AND t.tran_date BETWEEN '2023-04-01' AND '2024-03-31'), 0) AS current_year_collection
+                    -- COALESCE((SELECT SUM(balance) FROM prop_demands WHERE status = 1 AND ulb_id = 2 AND fyear < '2023-2024' AND paid_status = 0), 0) AS arrear_due,
+                    -- COALESCE((SELECT SUM(balance) FROM prop_demands WHERE status = 1 AND ulb_id = 2 AND fyear = '2023-2024' AND paid_status = 0), 0) AS current_year_due
                 ";
         $data = DB::select($sql)[0];
+        $data->arrear_due = $data->arrear_demand - $data->arrear_collection;
+        $data->current_year_due = $data->current_year_demand - $data->current_year_collection;
         $data->total_due = round($data->arrear_due + $data->current_year_due, 2);
         $data->total_demand = round($data->arrear_demand + $data->current_year_demand, 2);
         $data->total_collection = round($data->arrear_collection + $data->current_year_collection, 2);
