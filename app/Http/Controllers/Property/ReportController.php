@@ -842,13 +842,19 @@ class ReportController extends Controller
 
         $sql = "SELECT
                     COALESCE((SELECT SUM(amount) FROM prop_transactions WHERE status = 1 AND ulb_id = 2 AND tran_date = '$todayDate'), 0) AS today_collection,
-                    -- COALESCE((SELECT SUM(amount) FROM prop_transactions WHERE status = 1 AND ulb_id = 2), 0) AS total_collection,
-                    COALESCE((SELECT SUM(amount - adjust_amt) FROM prop_demands WHERE status = 1 AND ulb_id = 2 AND paid_status = 0 AND fyear != '2023-2024'), 0) AS arrear_demand,
+                    COALESCE((SELECT SUM(amount - adjust_amt) FROM prop_demands WHERE status = 1 AND ulb_id = 2 AND paid_status = 0 AND fyear < '2023-2024'), 0) AS arrear_demand,
                     COALESCE((SELECT SUM(amount - adjust_amt) FROM prop_demands WHERE status = 1 AND ulb_id = 2 AND fyear = '2023-2024'), 0) AS current_year_demand,
-                    COALESCE((SELECT SUM(amount) FROM prop_transactions WHERE status = 1 AND ulb_id = 2 AND tran_date BETWEEN '2022-04-01' AND '2023-03-31'), 0) AS arrear_collection,
-                    COALESCE((SELECT SUM(amount) FROM prop_transactions WHERE status = 1 AND ulb_id = 2 AND tran_date BETWEEN '2023-04-01' AND '2024-03-31'), 0) AS current_year_collection,
-                    COALESCE((SELECT SUM(balance) FROM prop_demands WHERE status = 1 AND ulb_id = 2 AND fyear != '2023-2024'), 0) AS arrear_due,
-                    COALESCE((SELECT SUM(balance) FROM prop_demands WHERE status = 1 AND ulb_id = 2 AND fyear = '2023-2024'), 0) AS current_year_due
+                    COALESCE((SELECT SUM(d.amount-d.adjust_amt) as arrear_demand_current_year_collection FROM prop_demands d
+                                JOIN prop_tran_dtls td ON td.prop_demand_id=d.id 
+                                JOIN prop_transactions t ON t.id=td.tran_id
+                                    WHERE d.paid_status=1 AND d.fyear<'2023-2024' AND t.tran_date BETWEEN '2023-04-01' AND '2024-03-31'), 0) AS arrear_collection,
+
+                    COALESCE((SELECT SUM(d.amount-d.adjust_amt)as current_demand_current_year_collection FROM prop_demands d
+                                JOIN prop_tran_dtls td ON td.prop_demand_id=d.id 
+                                JOIN prop_transactions t ON t.id=td.tran_id
+                                    WHERE d.paid_status=1 AND d.fyear='2023-2024' AND t.tran_date BETWEEN '2023-04-01' AND '2024-03-31'), 0) AS current_year_collection,
+                    COALESCE((SELECT SUM(balance) FROM prop_demands WHERE status = 1 AND ulb_id = 2 AND fyear < '2023-2024' AND paid_status = 0), 0) AS arrear_due,
+                    COALESCE((SELECT SUM(balance) FROM prop_demands WHERE status = 1 AND ulb_id = 2 AND fyear = '2023-2024' AND paid_status = 0), 0) AS current_year_due
                 ";
         $data = DB::select($sql)[0];
         $data->total_due = round($data->arrear_due + $data->current_year_due, 2);
