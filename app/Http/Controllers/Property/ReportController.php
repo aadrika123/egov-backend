@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\Validator;
 use Geocoder\Geocoder;
 use Geocoder\Query\GeocodeQuery;
 use Geocoder\Provider\GoogleMaps\GoogleMaps;
+use Illuminate\Support\Facades\Http;
 
 #------------date 13/03/2023 -------------------------------------------------------------------------
 #   Code By Sandeep Bara
@@ -874,22 +875,35 @@ class ReportController extends Controller
      */
     public function getLocality(Request $req)
     {
-        $latitude  = $req->latitude;
-        $longitude = $req->longitude;
-        $geocoder = new Geocoder();
-        $googleMapsProvider = new GoogleMaps($geocoder);
-        $provider = new Nominatim($geocoder);
+        // Replace 'YOUR_API_KEY' with your actual Google Maps API key
+        $apiKey = 'AIzaSyCgO44E5p_UtCtJp1890McbBKeawwDIBe8';
 
-        // Geocode the coordinates to get the locality
-        $result = $geocoder->using($provider)->geocodeQuery(GeocodeQuery::create(sprintf('%s,%s', $latitude, $longitude)));
+        // Google Maps Geocoding API endpoint
+        $apiUrl = 'https://maps.googleapis.com/maps/api/geocode/json';
 
-        if (!empty($result)) {
-            $address = $result->first();
-            $locality = $address->getLocality();
+        // Make the API request
+        $response = Http::get($apiUrl, [
+            'latlng' => "{$req->latitude},{$req->longitude}",
+            'key' => $apiKey,
+        ]);
 
-            return response()->json(['locality' => $locality]);
+        // Parse the JSON response
+        return $data = $response->json();
+
+        // Check if the request was successful
+        if ($response->successful()) {
+            // Extract the locality (city) from the results
+            foreach ($data['results'] as $result) {
+                foreach ($result['address_components'] as $component) {
+                    if (in_array('locality', $component['types'])) {
+                        return $component['long_name'];
+                    }
+                }
+            }
         }
 
+        // If no locality is found or there's an error, return null or an appropriate response
+        return null;
         return response()->json(['error' => 'Locality not found'], 404);
     }
 }
