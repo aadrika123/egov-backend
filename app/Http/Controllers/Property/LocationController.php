@@ -9,9 +9,11 @@ use App\Models\Ulb\UlbNewWardmap;
 use App\Repository\Ward\EloquentWardRepository;
 use App\Http\Requests\Ward\UlbWardRequest;
 use App\MicroServices\DocUpload;
+use App\Models\Property\PropDemand;
 use App\Models\Property\PropProperty;
 use App\Models\Trade\ActiveTradeLicence;
 use App\Models\Trade\TradeLicence;
+use App\Models\UlbMaster;
 use App\Models\UlbWardMaster;
 use Exception;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +21,8 @@ use Illuminate\Support\Facades\Validator;
 use Ramsey\Uuid\Converter\Time\UnixTimeConverter;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Config;
+
+use function PHPSTORM_META\map;
 
 class LocationController extends Controller
 {
@@ -101,6 +105,127 @@ class LocationController extends Controller
     }
 
     /**
-     * | 
+     * | Map Level 
      */
+    public function mapLevel1(Request $req)
+    {
+        // $data = UlbMaster::select(
+        //     'ulb_masters.id as ulb_id',
+        //     'ulb_name',
+        //     'latitude',
+        //     'longitude',
+        //     'district_masters.district_code',
+        //     'district_masters.district_name',
+        //     DB::raw("count(prop_properties.id) as total_properties")
+        // )
+        //     ->join('district_masters', 'district_masters.id', 'ulb_masters.district_id')
+        //     ->leftjoin('prop_properties', 'prop_properties.ulb_id', 'ulb_masters.id')
+        //     ->groupBy(
+        //         'ulb_masters.id',
+        //         'ulb_name',
+        //         'latitude',
+        //         'longitude',
+        //         'district_masters.district_code',
+        //         'district_masters.district_name',
+        //     )
+        //     ->orderBy('ulb_name')
+        //     ->get();
+
+        $currentFy = getFY();
+        $data = UlbMaster::select(
+            'ulb_masters.id as ulb_id',
+            'ulb_name',
+            'latitude',
+            'longitude',
+            'district_masters.district_code',
+            'district_masters.district_name',
+            DB::raw("count(prop_properties.id) as total_properties"),
+        )
+            ->join('district_masters', 'district_masters.id', 'ulb_masters.district_id')
+            ->leftjoin('prop_properties', 'prop_properties.ulb_id', 'ulb_masters.id')
+            ->groupBy(
+                'ulb_masters.id',
+                'ulb_name',
+                'latitude',
+                'longitude',
+                'district_masters.district_code',
+                'district_masters.district_name',
+            )
+            ->orderBy('ulb_name')
+            ->get();
+
+        // return PropDemand::select(DB::raw('count(*) over () as paid_property'))
+        //     ->where('fyear', $currentFy)
+        //     ->where('ulb_id', 2)
+        //     ->where('status', 1)
+        //     ->groupBy('property_id')
+        //     ->limit(1)
+        //     ->first();
+
+        return $sql = DB::select("WITH property_counts AS (
+                                SELECT COUNT(id) as total_properties
+                                FROM prop_properties
+                                WHERE ulb_id = 2
+                                AND status = 1
+                            ),
+                            demand_counts AS (
+                                SELECT COUNT(*) OVER () as total_demand
+                                FROM prop_demands
+                                WHERE fyear = '2023-2024'
+                                AND ulb_id = 2
+                                AND status = 1
+                                GROUP BY property_id
+                                LIMIT 1
+                            ),
+                            paid_counts AS (
+                                SELECT COUNT(*) OVER () AS paid_property
+                                FROM prop_demands
+                                WHERE fyear = '2023-2024'
+                                AND ulb_id = 2
+                                AND paid_status = 1
+                                AND status = 1
+                                GROUP BY property_id
+                                LIMIT 1
+                            )
+                            SELECT
+                                (SELECT total_properties FROM property_counts) as total_properties,
+                                (SELECT total_demand FROM demand_counts) as total_demand,
+                                (SELECT paid_property FROM paid_counts) as paid_property;
+                            ");
+
+        $newData = collect($data)->map(function ($data, $currentFy) {
+            return DB::select("WITH property_counts AS (
+                                    SELECT COUNT(id) as total_properties
+                                    FROM prop_properties
+                                    WHERE ulb_id = $data->ulb_id
+                                    AND status = 1
+                                ),
+                                demand_counts AS (
+                                    SELECT COUNT(*) OVER () as total_demand
+                                    FROM prop_demands
+                                    WHERE fyear = '$currentFy'
+                                    AND ulb_id = $data->ulb_id
+                                    AND status = 1
+                                    GROUP BY property_id
+                                    LIMIT 1
+                                ),
+                                paid_counts AS (
+                                    SELECT COUNT(*) OVER () AS paid_property
+                                    FROM prop_demands
+                                    WHERE fyear = '$currentFy'
+                                    AND ulb_id = $data->ulb_id
+                                    AND paid_status = 1
+                                    AND status = 1
+                                    GROUP BY property_id
+                                    LIMIT 1
+                                )
+                                SELECT
+                                    (SELECT total_properties FROM property_counts) as total_properties,
+                                    (SELECT total_demand FROM demand_counts) as total_demand,
+                                    (SELECT paid_property FROM paid_counts) as paid_property;
+                                ");
+        });
+
+        return responseMsgs(true, "Data Fetched", $data, "", "01", responseTime(), $req->getMethod(), $req->deviceId);
+    }
 }

@@ -14,8 +14,8 @@ class UlbMaster extends Model
     use HasFactory;
     // use SoftDeletes;
 
+    // protected $connection = 'pgsql_master';
     protected $dates = ['deleted_at'];
-
     protected $guarded = [];
 
 

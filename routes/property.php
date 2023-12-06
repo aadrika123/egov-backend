@@ -572,9 +572,8 @@ Route::controller(PropertyController::class)->group(function () {
 #Route for getting location based ward list 
 Route::controller(LocationController::class)->group(function () {
   Route::post('location', 'location_list');
-
   Route::post('location_ward_list', 'bindLocationWithWards');
-  //Route::post('citizen_details', 'citizen_details_with_citizen_id')->middleware(['json.response', 'auth_maker']);
+  Route::post('map/level1', 'mapLevel1');
 });
 
 Route::controller(CitizenController::class)->group(function () {
