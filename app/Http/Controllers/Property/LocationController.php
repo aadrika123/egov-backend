@@ -162,69 +162,45 @@ class LocationController extends Controller
         //     ->limit(1)
         //     ->first();
 
-        return $sql = DB::select("WITH property_counts AS (
-                                SELECT COUNT(id) as total_properties
-                                FROM prop_properties
-                                WHERE ulb_id = 2
-                                AND status = 1
-                            ),
-                            demand_counts AS (
-                                SELECT COUNT(*) OVER () as total_demand
-                                FROM prop_demands
-                                WHERE fyear = '2023-2024'
-                                AND ulb_id = 2
-                                AND status = 1
-                                GROUP BY property_id
-                                LIMIT 1
-                            ),
-                            paid_counts AS (
-                                SELECT COUNT(*) OVER () AS paid_property
-                                FROM prop_demands
-                                WHERE fyear = '2023-2024'
-                                AND ulb_id = 2
-                                AND paid_status = 1
-                                AND status = 1
-                                GROUP BY property_id
-                                LIMIT 1
-                            )
-                            SELECT
-                                (SELECT total_properties FROM property_counts) as total_properties,
-                                (SELECT total_demand FROM demand_counts) as total_demand,
-                                (SELECT paid_property FROM paid_counts) as paid_property;
-                            ");
+        // return $sql = DB::select("WITH property_counts AS (
+        //                         SELECT COUNT(id) as total_properties
+        //                         FROM prop_properties
+        //                         WHERE ulb_id = 2
+        //                         AND status = 1
+        //                     ),
+        //                     demand_counts AS (
+        //                         SELECT COUNT(*) OVER () as total_demand
+        //                         FROM prop_demands
+        //                         WHERE fyear = '2023-2024'
+        //                         AND ulb_id = 2
+        //                         AND status = 1
+        //                         GROUP BY property_id
+        //                         LIMIT 1
+        //                     ),
+        //                     paid_counts AS (
+        //                         SELECT COUNT(*) OVER () AS paid_property
+        //                         FROM prop_demands
+        //                         WHERE fyear = '2023-2024'
+        //                         AND ulb_id = 2
+        //                         AND paid_status = 1
+        //                         AND status = 1
+        //                         GROUP BY property_id
+        //                         LIMIT 1
+        //                     )
+        //                     SELECT
+        //                         (SELECT total_properties FROM property_counts) as total_properties,
+        //                         (SELECT total_demand FROM demand_counts) as total_demand,
+        //                         (SELECT paid_property FROM paid_counts) as paid_property;
+        //                     ");
 
-        $newData = collect($data)->map(function ($data, $currentFy) {
-            return DB::select("WITH property_counts AS (
-                                    SELECT COUNT(id) as total_properties
-                                    FROM prop_properties
-                                    WHERE ulb_id = $data->ulb_id
-                                    AND status = 1
-                                ),
-                                demand_counts AS (
-                                    SELECT COUNT(*) OVER () as total_demand
-                                    FROM prop_demands
-                                    WHERE fyear = '$currentFy'
-                                    AND ulb_id = $data->ulb_id
-                                    AND status = 1
-                                    GROUP BY property_id
-                                    LIMIT 1
-                                ),
-                                paid_counts AS (
-                                    SELECT COUNT(*) OVER () AS paid_property
-                                    FROM prop_demands
-                                    WHERE fyear = '$currentFy'
-                                    AND ulb_id = $data->ulb_id
-                                    AND paid_status = 1
-                                    AND status = 1
-                                    GROUP BY property_id
-                                    LIMIT 1
-                                )
-                                SELECT
-                                    (SELECT total_properties FROM property_counts) as total_properties,
-                                    (SELECT total_demand FROM demand_counts) as total_demand,
-                                    (SELECT paid_property FROM paid_counts) as paid_property;
-                                ");
-        });
+        // $newData = collect($data)->map(function ($data) {
+        //     $a = PropProperty::where('ulb_id', $data->ulb_id)
+        //         ->count();
+        //     $response = [
+        //         "count" => $a,
+        //     ];
+        //     $data->push($response);
+        // });
 
         return responseMsgs(true, "Data Fetched", $data, "", "01", responseTime(), $req->getMethod(), $req->deviceId);
     }

@@ -210,7 +210,7 @@ class ApplySafController extends Controller
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
-            return responseMsgs(false, $e->getMessage(), "", "010102", "1.0", "1s", "POST", $request->deviceId);
+            return responseMsgs(false, $e->getMessage(), $e->getFile(), "010102", "1.0", "1s", "POST", $request->deviceId);
         }
     }
 
