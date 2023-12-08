@@ -165,46 +165,6 @@ class LocationController extends Controller
             ->orderBy('ulb_name')
             ->get();
 
-        // return PropDemand::select(DB::raw('count(*) over () as paid_property'))
-        //     ->where('fyear', $currentFy)
-        //     ->where('ulb_id', 2)
-        //     ->where('status', 1)
-        //     ->groupBy('property_id')
-        //     ->limit(1)
-        //     ->first();
-
-        // return $sql = 
-        // DB::select("WITH property_counts AS (
-        //                         SELECT COUNT(id) as total_properties
-        //                         FROM prop_properties
-        //                         WHERE ulb_id = 2
-        //                         AND status = 1
-        //                     ),
-        //                     demand_counts AS (
-        //                         SELECT COUNT(*) OVER () as total_demand
-        //                         FROM prop_demands
-        //                         WHERE fyear = '2023-2024'
-        //                         AND ulb_id = 2
-        //                         AND status = 1
-        //                         GROUP BY property_id
-        //                         LIMIT 1
-        //                     ),
-        //                     paid_counts AS (
-        //                         SELECT COUNT(*) OVER () AS paid_property
-        //                         FROM prop_demands
-        //                         WHERE fyear = '2023-2024'
-        //                         AND ulb_id = 2
-        //                         AND paid_status = 1
-        //                         AND status = 1
-        //                         GROUP BY property_id
-        //                         LIMIT 1
-        //                     )
-        //                     SELECT
-        //                         (SELECT total_properties FROM property_counts) as total_properties,
-        //                         (SELECT total_demand FROM demand_counts) as total_demand,
-        //                         (SELECT paid_property FROM paid_counts) as paid_property;
-        //                     ");
-
         $a = collect($data)->map(function ($data) use ($currentFy) {
             $count =  DB::select("WITH property_counts AS (
                                     SELECT COUNT(id) as total_properties
