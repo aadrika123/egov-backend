@@ -9,6 +9,7 @@ use App\Models\Ulb\UlbNewWardmap;
 use App\Repository\Ward\EloquentWardRepository;
 use App\Http\Requests\Ward\UlbWardRequest;
 use App\MicroServices\DocUpload;
+use App\Models\Property\DataMap;
 use App\Models\Property\PropDemand;
 use App\Models\Property\PropProperty;
 use App\Models\Trade\ActiveTradeLicence;
@@ -109,6 +110,16 @@ class LocationController extends Controller
      */
     public function mapLevel1(Request $req)
     {
+        $todayDate = Carbon::now()->format('Y-m-d');
+        $data = DataMap::select('json')
+            ->where('level', 1)
+            ->where('date', $todayDate)
+            ->first();
+
+        if ($data)
+            return responseMsgs(true, "Data Fetched", json_decode($data->json), "", "01", responseTime(), $req->getMethod(), $req->deviceId);
+
+
         // $data = UlbMaster::select(
         //     'ulb_masters.id as ulb_id',
         //     'ulb_name',
@@ -162,7 +173,8 @@ class LocationController extends Controller
         //     ->limit(1)
         //     ->first();
 
-        // return $sql = DB::select("WITH property_counts AS (
+        // return $sql = 
+        // DB::select("WITH property_counts AS (
         //                         SELECT COUNT(id) as total_properties
         //                         FROM prop_properties
         //                         WHERE ulb_id = 2
@@ -193,14 +205,52 @@ class LocationController extends Controller
         //                         (SELECT paid_property FROM paid_counts) as paid_property;
         //                     ");
 
-        // $newData = collect($data)->map(function ($data) {
-        //     $a = PropProperty::where('ulb_id', $data->ulb_id)
-        //         ->count();
-        //     $response = [
-        //         "count" => $a,
-        //     ];
-        //     $data->push($response);
-        // });
+        $a = collect($data)->map(function ($data) use ($currentFy) {
+            $count =  DB::select("WITH property_counts AS (
+                                    SELECT COUNT(id) as total_properties
+                                    FROM prop_properties
+                                    WHERE ulb_id = $data->ulb_id
+                                    AND status = 1
+                                ),
+                                demand_counts AS (
+                                    SELECT COUNT(*) OVER () as total_demand
+                                    FROM prop_demands
+                                    WHERE fyear = '$currentFy'
+                                    AND ulb_id = $data->ulb_id
+                                    AND status = 1
+                                    GROUP BY property_id
+                                    LIMIT 1
+                                ),
+                                paid_counts AS (
+                                    SELECT COUNT(*) OVER () AS paid_property
+                                    FROM prop_demands
+                                    WHERE fyear = '$currentFy'
+                                    AND ulb_id = $data->ulb_id
+                                    AND paid_status = 1
+                                    AND status = 1
+                                    GROUP BY property_id
+                                    LIMIT 1
+                                )
+                                SELECT
+                                    COALESCE((SELECT total_properties FROM property_counts),0) as total_properties,
+                                    COALESCE((SELECT total_demand FROM demand_counts),0) as total_demand,
+                                    COALESCE((SELECT paid_property FROM paid_counts),0) as paid_property;
+                                ");
+            $count = $count[0];
+            $data['total_properties']   = $count->total_properties;
+            $data['total_demand']       = $count->total_demand;
+            $data['paid_property']      = $count->paid_property;
+            $data['paid_percent']       = round((($count->paid_property > 0 ? ($count->paid_property) : 0) / ($count->total_demand > 0 ? $count->total_demand : 1)) * 100, 2);
+            return $data;
+        });
+
+        $mDataMap = new DataMap();
+        $mReqs = [
+            "level" => 1,
+            "date" => Carbon::now(),
+            "json" => json_encode($data),
+        ];
+        $newData = $mDataMap->store($mReqs);
 
         return responseMsgs(true, "Data Fetched", $data, "", "01", responseTime(), $req->getMethod(), $req->deviceId);
     }
