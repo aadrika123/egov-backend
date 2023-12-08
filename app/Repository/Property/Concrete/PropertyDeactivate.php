@@ -115,9 +115,9 @@ class PropertyDeactivate implements IPropertyDeactivate
                 throw new Exception("Holding Not Found");
             }
             $data['property'] = $property;
-            return responseMsg(true, "", remove_null($data));
+            return responseMsgs(true, "", remove_null($data),"010401","01",responseTime(),$request->getMethod(),$request->deviceId);
         } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), $request->all());
+            return responseMsgs(false, $e->getMessage(), $request->all(),"010401","01",responseTime(),$request->getMethod(),$request->deviceId);
         }
     }
 
@@ -219,10 +219,10 @@ class PropertyDeactivate implements IPropertyDeactivate
                 }
                 DB::commit();
 
-                return  responseMsgs(true, "APN: $PropDeactivationRequest->application_no", [], "00002", "1.0", "", "POST", $request->deviceId);
+                return  responseMsgs(true, "APN: $PropDeactivationRequest->application_no", [], "010403", "1.0", "", "POST", $request->deviceId);
             }
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), $request->all(), "00002", "1.0", "", "POST", $request->deviceId);
+            return responseMsgs(false, $e->getMessage(), $request->all(), "010403", "1.0", "", "POST", $request->deviceId);
         }
     }
 
@@ -313,7 +313,7 @@ class PropertyDeactivate implements IPropertyDeactivate
                 ->get();
             // dd(DB::getQueryLog());
             $data = $mProperty;
-            return responseMsg(true, "", remove_null($data));
+            return responseMsg(true, "", remove_null($data), "010404", "1.0", "", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
@@ -401,7 +401,7 @@ class PropertyDeactivate implements IPropertyDeactivate
                 ->get();
             // dd(DB::getQueryLog());
             $data = $mProperty;
-            return responseMsg(true, "", remove_null($data));
+            return responseMsgs(true, "", remove_null($data),"010405", "1.0", "", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
@@ -505,7 +505,7 @@ class PropertyDeactivate implements IPropertyDeactivate
             //     "roles"      => $mileSton,
             //     "pendingAt"  => $pendingAt,
             // ];
-            return responseMsg(true, "", remove_null($fullDetailsData));
+            return responseMsg(true, "", remove_null($fullDetailsData), "010407", "1.0", "", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
@@ -598,7 +598,7 @@ class PropertyDeactivate implements IPropertyDeactivate
                 ->get();
             // dd(DB::getQueryLog());
             $data = $mProperty;
-            return responseMsgs(true, "Data Fetched", remove_null($data), "00008", "1.0", "251ms", "POST", $request->deviceId);
+            return responseMsgs(true, "Data Fetched", remove_null($data), "010406", "1.0", "251ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }

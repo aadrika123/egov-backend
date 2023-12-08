@@ -209,17 +209,12 @@ class SafDocController extends Controller
             $refImageName = $req->docCode;
             $refImageName = $getSafDtls->id . '-' . $refImageName;
             $document = $req->document;
-            // $imageName = $docUpload->upload($refImageName, $document, $relativePath);
             $docDetail = $docUpload->checkDoc($req);
-            // if ($docDetail->original['status'] == false)
-            //     throw new Exception("Document Uploadation Failed");
-
             $metaReqs['module_id'] = $propModuleId;
             $metaReqs['active_id'] = $getSafDtls->id;
             $metaReqs['workflow_id'] = $getSafDtls->workflow_id;
             $metaReqs['ulb_id'] = $getSafDtls->ulb_id;
             $metaReqs['relative_path'] = $relativePath;
-            // $metaReqs['document'] = $imageName;
             $metaReqs['doc_code'] = $req->docCode;
             $metaReqs['doc_category'] = $req->docCategory;
             $metaReqs['unique_id'] = $docDetail['data']['uniqueId'];
@@ -294,7 +289,7 @@ class SafDocController extends Controller
 
             $data = $docUpload->getDocUrl($documents);           #_Calling BLL for Document Path from DMS
 
-            return responseMsgs(true, ["docVerifyStatus" => $safDetails->doc_verify_status], remove_null($data), "010102", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+            return responseMsgs(true, ["docVerifyStatus" => $safDetails->doc_verify_status], remove_null($data), "010202", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         }
