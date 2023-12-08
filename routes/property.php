@@ -156,21 +156,6 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
     Route::post('getDeactivationDtls', "readDeactivationReq");                 #API_ID = 010412
   });
 
-  /**
-   * | PropertyBifurcation Process
-   * | Crated By - Sandeep Bara
-   * | Created On- 23-11-2022
-     | Serial No : 05
-   */
-  Route::controller(PropertyBifurcationController::class)->group(function () {
-    Route::post('searchByHoldingNoBi', "readHoldigbyNo");                       #API_ID = 010501
-    Route::match(["POST", "GET"], 'applyBifurcation/{id}', "addRecord");        #API_ID = 010502
-    Route::post('bifurcationInbox', "inbox");                                   #API_ID = 010503
-    Route::post('bifurcationOutbox', "outbox");                                 #API_ID = 010504
-    Route::post('bifurcationPostNext', "postNextLevel");                        #API_ID = 010505
-    Route::get('getSafDtls/{id}', "readSafDtls");                               #API_ID = 010506
-    Route::match(["get", "post"], 'documentUpload/{id}', 'documentUpload');     #API_ID = 010507
-  });
 
   /**
    * | Property Concession
@@ -659,5 +644,21 @@ Route::controller(CitizenController::class)->group(function () {
    */
   Route::controller(SafCalculatorController::class)->group(function () {
     // Route::post('saf-calculation', 'calculateSaf');                  #API_ID = 010301
+  });
+
+   /**
+   * | PropertyBifurcation Process
+   * | Crated By - Sandeep Bara
+   * | Created On- 23-11-2022
+     | Serial No : 05
+   */
+  Route::controller(PropertyBifurcationController::class)->group(function () {
+    Route::post('searchByHoldingNoBi', "readHoldigbyNo");                       #API_ID = 010501
+    Route::match(["POST", "GET"], 'applyBifurcation/{id}', "addRecord");        #API_ID = 010502
+    Route::post('bifurcationInbox', "inbox");                                   #API_ID = 010503
+    Route::post('bifurcationOutbox', "outbox");                                 #API_ID = 010504
+    Route::post('bifurcationPostNext', "postNextLevel");                        #API_ID = 010505
+    Route::get('getSafDtls/{id}', "readSafDtls");                               #API_ID = 010506
+    Route::match(["get", "post"], 'documentUpload/{id}', 'documentUpload');     #API_ID = 010507
   });
 
