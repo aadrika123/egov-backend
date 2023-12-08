@@ -238,7 +238,7 @@ class CitizenController extends Controller
     }
 
     /** 
-     * 
+     * Get citizen profile details 
      */
     public function profileDetails()
     {
@@ -268,7 +268,6 @@ class CitizenController extends Controller
             return $message;                                    // Filteration using Collection
         }
         if (!$redis) {
-            // $details = DB::select($this->query($user_id));
             $details = ActiveCitizen::select(
                 'id',
                 'user_name as name',

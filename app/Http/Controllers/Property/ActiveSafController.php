@@ -776,9 +776,6 @@ class ActiveSafController extends Controller
             $data = $mPropActiveSaf->getActiveSafDtls()                         // <------- Model function Active SAF Details
                 ->where('prop_active_safs.id', $req->applicationId)
                 ->first();
-            // if (!$data)
-            // throw new Exception("Application Not Found");
-
             if (collect($data)->isEmpty()) {
                 $data = $mPropSaf->getSafDtls()
                     ->where('prop_safs.id', $req->applicationId)
@@ -1723,7 +1720,9 @@ class ActiveSafController extends Controller
             $endPoint       = Config::get('razorpay.PAYMENT_GATEWAY_END_POINT');
             $authUser       = authUser($req);
             $req->merge(['departmentId' => 1]);
-            $safDetails = PropActiveSaf::findOrFail($req->id);
+            $safDetails = PropActiveSaf::find($req->id);
+            if(!$safDetails)
+            throw new Exception("Saf id not found");
             if ($safDetails->payment_status == 1)
                 throw new Exception("Payment already done");
             $calculateSafById = $this->calculateSafBySafId($req);

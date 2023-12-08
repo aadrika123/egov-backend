@@ -93,7 +93,7 @@ class ApplySafController extends Controller
      * | Query Costing-500 ms
      * | Rating-5
      */
-    public function applySaf(reqApplySaf $request)
+    public function applySaf(reqApplySaf $request)                                            //function(1.1)
     {
         try {
             // Variable Assignments
@@ -109,7 +109,7 @@ class ApplySafController extends Controller
             $calculateSafById = new CalculateSafById;
             $generateSafApplyDemandResponse = new GenerateSafApplyDemandResponse;
             // Derivative Assignments
-            $ulbWorkflowId = $this->readAssessUlbWfId($request, $ulb_id);           // (2.1)
+            $ulbWorkflowId = $this->readAssessUlbWfId($request, $ulb_id);             //function(2.1)
             $roadWidthType = $this->readRoadWidthType($request->roadType);          // Read Road Width Type
 
             $request->request->add(['road_type_mstr_id' => $roadWidthType]);
@@ -215,9 +215,9 @@ class ApplySafController extends Controller
     }
 
     /**
-     * | Read Assessment Type and Ulb Workflow Id(2.1)
+     * | Read Assessment Type and Ulb Workflow Id
      */
-    public function readAssessUlbWfId($request, $ulb_id)
+    public function readAssessUlbWfId($request, $ulb_id)                                        //function(2.1)
     {
         if ($request->assessmentType == 1) {                                                    // New Assessment 
             $workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');
@@ -337,7 +337,7 @@ class ApplySafController extends Controller
     /**
      * | Apply GB Saf
      */
-    public function applyGbSaf(ReqGBSaf $req)
+    public function applyGbSaf(ReqGBSaf $req)                                                   //function(3.1)
     {
         try {
             // Variable Assignments

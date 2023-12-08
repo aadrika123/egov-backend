@@ -400,4 +400,60 @@ class PropertyController extends Controller
         $path = (config('app.url') . "/" . $path);
         return $path;
     }
+
+    /**
+     * | Get citizen details with property_id and activate in case of deactive
+     * written by prity pandey
+     */
+    public function citizenStatusUpdate(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'propertyId' => 'required|numeric',
+                'citizenId'=> ($request->has("deactiveStatus") ? "required" : 'nullable'). '|numeric',
+                'deactiveStatus' =>($request->citizenId ? "required" : 'nullable'). '|boolean'
+            ]
+        );
+        if ($validated->fails()) {
+            return validationError($validated);
+        }
+        try{   
+                 
+        $propertyId = $request->propertyId;
+        $careTaker = ActiveCitizenUndercare::where('property_id', $propertyId)->get();
+        if($careTaker->isEmpty()){
+            throw new Exception("Invalid property id");
+        }
+        $citizenId = $careTaker->unique('citizen_id')->pluck("citizen_id");
+        
+
+        if($citizenId  && (!$request->has("citizenID") && !$request->has("deactiveStatus")))
+        {
+            $citizenData = ActiveCitizen::whereIn('id', $citizenId)->get();
+                            
+            return responseMsgs(true, "Citizen data",$citizenData, "", "01", responseTime(), "POST", $request->deviceId);
+        }
+        elseif($request->citizenId ==null && $request->deactiveStatus ==null)
+        {
+            throw new Exception("Data not found");
+        }
+        elseif($request->propertyId && $request->citizenId && !$request->deactiveStatus){
+            DB::connection("pgsql_master")->beginTransaction();
+            ActiveCitizenUndercare::where('citizen_id', $request->citizenId)
+                                    ->where("property_id",$propertyId)
+                    ->update(['deactive_status' => true]);
+            DB::connection("pgsql_master")->commit();
+            return responseMsgs(true, "citizen updated", "", "01", responseTime(), "POST", $request->deviceId); 
+        }
+    
+    } catch (Exception $e) {
+        DB::connection("pgsql_master")->rollBack();
+        return responseMsgs(false, $e->getMessage(), "", "", "01", responseTime(), "POST", $request->deviceId);
+    }
 }
+
+}
+
+
+

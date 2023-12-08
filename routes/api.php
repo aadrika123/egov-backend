@@ -89,7 +89,7 @@ Route::controller(ApiMasterController::class)->group(function () {
  */
 Route::controller(CitizenController::class)->group(function () {
     Route::post('citizen-register', 'citizenRegister');         // Citizen Registration
-    Route::post('citizen-login', 'citizenLogin')->middleware('request_logger');
+    Route::post('citizen-login', 'citizenLogin')->middleware('request_logger'); #API_Id = ""
     Route::post('citizen-logout', 'citizenLogout')->middleware('auth:sanctum');
 });
 
@@ -245,7 +245,7 @@ Route::controller(CitizenController::class)->group(function () {
     Route::get('citizens/get-transactions', 'getTransactionHistory');                                      // Get User Transaction History
     Route::post('change-citizen-pass', 'changeCitizenPass');                                               // Change the Password of The Citizen Using its Old Password 
     Route::post('otp/change-citizen-pass', 'changeCitizenPassByOtp');                                      // Change Password using OTP for Citizen
-    Route::post('citizen-profile-details', 'profileDetails');
+    Route::post('citizen-profile-details', 'profileDetails');// to get citizen details # API_ID = 4180
 });
 
 /**
@@ -366,7 +366,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
     });
 
     Route::controller(ThirdPartyController::class)->group(function () {
-        Route::post('user/send-otp', 'sendOtp');
+        Route::post('user/send-otp', 'sendOtp');                                           #API_ID = ""
         Route::post('user/verify-otp', "verifyOtp");
     });
 });
