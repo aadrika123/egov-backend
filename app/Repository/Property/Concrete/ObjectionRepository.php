@@ -459,12 +459,12 @@ class ObjectionRepository implements iObjectionRepository
             DB::commit();
             DB::connection('pgsql_master')->commit();
 
-            return responseMsgs(true, "Successfully Applied Application", $objectionNo, '010801', '01', responseTime(), $request->getMethod(), $request->deviceId);
+            return responseMsgs(true, "Successfully Applied Application", $objectionNo, '010701', '01', responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
 
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
-            return responseMsgs(false, $e->getMessage(), "", '010801', '01', responseTime(), $request->getMethod(), $request->deviceId);
+            return responseMsgs(false, $e->getMessage(), "", '010701', '01', responseTime(), $request->getMethod(), $request->deviceId);
         }
     }
 

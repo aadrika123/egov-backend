@@ -161,9 +161,9 @@ class CalculatorRepository implements iCalculatorRepository
                 $response['totalPendingApplication'] = 10;
                 $response['applicationList'] = $applicationList;
 
-                return responseMsg(true, "", $response);
+                return responseMsg(true, "", $response, "010801", "1.0", "", "POST", $request->deviceId ?? "");
             } else {
-                return responseMsg(true, "Undefined parameter supply", "");
+                return responseMsg(true, "Undefined parameter supply", "", "010801", "1.0", "", "POST", $request->deviceId ?? "");
             }
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");

@@ -21,9 +21,9 @@ class ZoneController extends Controller
             $mZoneMaster  = new ZoneMaster();
             $zone = $mZoneMaster->getZone($req->ulbId);
 
-            return responseMsgs(true, "Zone", remove_null($zone), "011701", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true, "Zone", remove_null($zone), "011401", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "011701", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "011401", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 }

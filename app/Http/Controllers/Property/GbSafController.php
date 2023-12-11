@@ -94,7 +94,7 @@ class GbSafController extends Controller
                 ->thenReturn()
                 ->paginate($perPage);
 
-            return responseMsgs(true, "Data Fetched", remove_null($safInbox), "010103", "1.0", responseTime(), "POST", "");
+            return responseMsgs(true, "Data Fetched", remove_null($safInbox), "011801", "1.0", responseTime(), "POST", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -136,7 +136,7 @@ class GbSafController extends Controller
                 ->thenReturn()
                 ->paginate($perPage);
 
-            return responseMsgs(true, "Data Fetched", remove_null($safOutbox), "010104", "1.0", responseTime(), "POST", "");
+            return responseMsgs(true, "Data Fetched", remove_null($safOutbox), "011802", "1.0", responseTime(), "POST", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -171,9 +171,9 @@ class GbSafController extends Controller
                 ->orderByDesc('id')
                 ->perPage($perPage);
 
-            return responseMsgs(true, "field Verified Inbox!", remove_null($safInbox), 010125, 1.0, responseTime(), "POST", $mDeviceId);
+            return responseMsgs(true, "field Verified Inbox!", remove_null($safInbox), "011805", 1.0, responseTime(), "POST", $mDeviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", 010125, 1.0, "", "POST", $mDeviceId);
+            return responseMsgs(false, $e->getMessage(), "", "011805", 1.0, "", "POST", $mDeviceId);
         }
     }
 
@@ -243,11 +243,11 @@ class GbSafController extends Controller
             $track->saveTrack($request);
             DB::commit();
             DB::connection('pgsql_master')->commit();
-            return responseMsgs(true, "Successfully Forwarded The Application!!", $samHoldingDtls, "010109", "1.0", responseTime(), "POST", $request->deviceId);
+            return responseMsgs(true, "Successfully Forwarded The Application!!", $samHoldingDtls, "011803", "1.0", responseTime(), "POST", $request->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
-            return responseMsg(false, $e->getMessage(), "", "010109", "1.0", responseTime(), "POST", $request->deviceId);
+            return responseMsg(false, $e->getMessage(), "", "011803", "1.0", responseTime(), "POST", $request->deviceId);
         }
     }
 
@@ -544,7 +544,7 @@ class GbSafController extends Controller
             }
 
             DB::commit();
-            return responseMsgs(true, $msg, "", "010118", "1.0", responseTime(), "POST", $req->deviceId);
+            return responseMsgs(true, $msg, "", "011806", "1.0", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
@@ -606,7 +606,7 @@ class GbSafController extends Controller
             $safDtls->save();
 
             DB::commit();
-            return responseMsgs(true, "Geo Tagging Done Successfully", "", "010119", "1.0", responseTime(), "POST", $req->deviceId);
+            return responseMsgs(true, "Geo Tagging Done Successfully", "", "011807", "1.0", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
@@ -640,7 +640,7 @@ class GbSafController extends Controller
             $data['existingFloors'] = $existingFloors->values();
             $geoTags = $mSafGeoTag->getGeoTags($req->safId);
             $data['geoTagging'] = $geoTags;
-            return responseMsgs(true, "TC Verification Details", remove_null($data), "010120", "1.0", responseTime(), "POST", $req->deviceId);
+            return responseMsgs(true, "TC Verification Details", remove_null($data), "011808", "1.0", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -681,7 +681,7 @@ class GbSafController extends Controller
 
             DB::commit();
             DB::connection('pgsql_master')->commit();
-            return responseMsgs(true, "Successfully Done", "", "010111", "1.0", responseTime(), "POST", $req->deviceId);
+            return responseMsgs(true, "Successfully Done", "", "011809", "1.0", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
@@ -733,9 +733,9 @@ class GbSafController extends Controller
                 ->thenReturn()
                 ->paginate($perPage);
 
-            return responseMsgs(true, "BTC Inbox List", remove_null($btcList), 010123, 1.0, responseTime(), "POST", $mDeviceId);
+            return responseMsgs(true, "BTC Inbox List", remove_null($btcList), "011810", 1.0, responseTime(), "POST", $mDeviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", 010123, 1.0, responseTime(), "POST", $mDeviceId);
+            return responseMsgs(false, $e->getMessage(), "", "011810", 1.0, responseTime(), "POST", $mDeviceId);
         }
     }
 
@@ -755,7 +755,7 @@ class GbSafController extends Controller
             $data->is_escalate = $request->escalateStatus;
             $data->escalate_by = $userId;
             $data->save();
-            return responseMsgs(true, $request->escalateStatus == 1 ? 'Saf is Escalated' : "Saf is removed from Escalated", '', "010106", "1.0", responseTime(), "POST", $request->deviceId);
+            return responseMsgs(true, $request->escalateStatus == 1 ? 'Saf is Escalated' : "Saf is removed from Escalated", '', "011811", "1.0", responseTime(), "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
@@ -796,7 +796,7 @@ class GbSafController extends Controller
                 ->thenReturn()
                 ->paginate($perPage);
 
-            return responseMsgs(true, "Data Fetched", remove_null($specialList), "010107", "1.0", responseTime(), "POST", "");
+            return responseMsgs(true, "Data Fetched", remove_null($specialList), "011812", "1.0", responseTime(), "POST", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -835,7 +835,7 @@ class GbSafController extends Controller
 
             $memoDtls = $mPropSafMemoDtls->memoLists($data['id']);
             $data['memoDtls'] = $memoDtls;
-            return responseMsgs(true, "Saf Dtls", remove_null($data), "010127", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+            return responseMsgs(true, "Saf Dtls", remove_null($data), "011813", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return $e->getMessage();
         }
@@ -937,7 +937,7 @@ class GbSafController extends Controller
             $propSafVerificationDtl->deactivateVerifications($req->applicationId);              // Deactivate Verification from Saf floor Dtls
             DB::commit();
             DB::connection('pgsql_master')->commit();
-            return responseMsgs(true, $msg, ['holdingNo' => $safDetails->holding_no], "010110", "1.0", responseTime(), "POST", $req->deviceId);
+            return responseMsgs(true, $msg, ['holdingNo' => $safDetails->holding_no], "011804", "1.0", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
@@ -1049,9 +1049,9 @@ class GbSafController extends Controller
             $documents = $mWfActiveDocument->getDocsByAppId($req->applicationId, $workflowId, $moduleId);
             $data = $docUpload->getDocUrl($documents);           #_Calling BLL for Document Path from DMS
 
-            return responseMsgs(true, "Uploaded Documents", remove_null($data), "010102", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+            return responseMsgs(true, "Uploaded Documents", remove_null($data), "011814", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "011814", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         }
     }
 
@@ -1103,9 +1103,9 @@ class GbSafController extends Controller
             $getSafDtls->doc_upload_status = 1;
             $getSafDtls->save();
 
-            return responseMsgs(true, "Document Uploadation Successful", "", "010201", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+            return responseMsgs(true, "Document Uploadation Successful", "", "011815", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "011815", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         }
     }
 
@@ -1122,9 +1122,9 @@ class GbSafController extends Controller
 
             $gbSafDocs['listDocs'] = $this->getGbSafDocLists($refSafs);
 
-            return responseMsgs(true, "Doc List", remove_null($gbSafDocs), 010717, 1.0, responseTime(), "POST", "", "");
+            return responseMsgs(true, "Doc List", remove_null($gbSafDocs), "011816", 1.0, responseTime(), "POST", "", "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", responseTime(), 'POST', "");
+            return responseMsgs(false, $e->getMessage(), "", "011816", "1.0", responseTime(), 'POST', "");
         }
     }
 
@@ -1268,11 +1268,11 @@ class GbSafController extends Controller
 
             DB::commit();
             DB::connection('pgsql_master')->commit();
-            return responseMsgs(true, $req->docStatus . " Successfully", "", "010204", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+            return responseMsgs(true, $req->docStatus . " Successfully", "", "011817", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
-            return responseMsgs(false, $e->getMessage(), "", "010204", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "011817", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         }
     }
 
@@ -1349,7 +1349,7 @@ class GbSafController extends Controller
 
             DB::commit();
             DB::connection('pgsql_master')->commit();
-            return responseMsgs(true, "You Have Commented Successfully!!", ['Comment' => $request->comment], "010108", "1.0", responseTime(), "POST", "");
+            return responseMsgs(true, "You Have Commented Successfully!!", ['Comment' => $request->comment], "011818", "1.0", responseTime(), "POST", "");
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
@@ -1456,7 +1456,7 @@ class GbSafController extends Controller
             $custom = $mCustomDetails->getCustomDetails($req);
             $fullDetailsData['departmentalPost'] = collect($custom)['original']['data'];
 
-            return responseMsgs(true, 'Data Fetched', remove_null($fullDetailsData), "010104", "1.0", responseTime(), "POST", $req->deviceId);
+            return responseMsgs(true, 'Data Fetched', remove_null($fullDetailsData), "011819", "1.0", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }

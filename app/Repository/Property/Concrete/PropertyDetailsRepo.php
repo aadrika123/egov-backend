@@ -473,7 +473,7 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
                     }
                     break;
                 default:
-                    return responseMsg(false, "Not a Valid Entry for Filtration Error Retry!", $request->filterBy);
+                    return responseMsg(false, "Not a Valid Entry for Filtration Error Retry!", $request->filterBy,"011304", "1.0", "", "POST", $request->deviceId ?? "");
             }
         } catch (Exception $error) {
             return responseMsg(false, "ERROR!", $error->getMessage());

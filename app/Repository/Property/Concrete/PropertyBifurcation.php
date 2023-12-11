@@ -125,7 +125,7 @@ class PropertyBifurcation implements IPropertyBifurcation
                 $safNo = $parentSaf;
                 // DB::commit();
                 DB::rollBack();
-                return responseMsg(true, "Application Submitted Successfully. Your New SAF No is $safNo", ["safNo" => $safNo]);
+                return responseMsg(true, "Application Submitted Successfully. Your New SAF No is $safNo", ["safNo" => $safNo],);
             }
         } catch (Exception $e) {
             DB::rollBack();

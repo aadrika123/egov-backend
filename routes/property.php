@@ -286,30 +286,23 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
     Route::post('cluster/basic-details', 'clusterBasicDtls');                   #API_ID = 011006
     # cluster maping                                                                           
     Route::post('cluster/details-by-holding', 'detailsByHolding');              #API_ID = 011007
-    Route::post('cluster/property-by-cluster', 'propertyByCluster');            #API_ID = 011008
     Route::post('cluster/save-holding-in-cluster', 'saveHoldingInCluster');     #API_ID = 011009
     Route::post('cluster/get-saf-by-safno', 'getSafBySafNo');                   #API_ID = 011010
     Route::post('cluster/save-saf-in-cluster', 'saveSafInCluster');             #API_ID = 011011
   });
 
-  /**
-   * | Property Document Operation
-     | Serial No : 11
-   */
-  Route::controller(DocumentOperationController::class)->group(function () {
-    Route::post('get-all-documents', 'getAllDocuments');                        #API_ID = 011101
-  });
+ 
 
   /**
    * | poperty related type details form ref
        | Serial No : 12 
    */
   Route::controller(PropMaster::class)->group(function () {
-    Route::get('prop-usage-type', 'propUsageType');                               #API_ID = 011201
-    Route::get('prop-const-type', 'propConstructionType');                        #API_ID = 011202
-    Route::get('prop-occupancy-type', 'propOccupancyType');                       #API_ID = 011203
-    Route::get('prop-property-type', 'propPropertyType');                         #API_ID = 011204
-    Route::get('prop-road-type', 'propRoadType');                                 #API_ID = 011205
+    Route::get('prop-usage-type', 'propUsageType');                               
+    Route::get('prop-const-type', 'propConstructionType');                        
+    Route::get('prop-occupancy-type', 'propOccupancyType');                       
+    Route::get('prop-property-type', 'propPropertyType');                         
+    Route::get('prop-road-type', 'propRoadType');                                 
   });
 
   /**
@@ -460,7 +453,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
    | Serial No : 8
    */
   Route::controller(CalculatorController::class)->group(function () {
-    Route::post('calculatePropertyTax', 'calculator');                  #API_ID = 010803
+    Route::post('calculatePropertyTax', 'calculator');                  
   });
 
   /**
@@ -480,9 +473,9 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
     Route::post('prop-payment-receipt', 'propPaymentReceipt');                               
     //Generate Property Payment Receipt                                 #API_ID = 011510
     Route::post('independent/get-holding-dues', 'getHoldingDues');                            
-    //Property/ Holding Dues                                           #API_ID = 011511
+    //Property/ Holding Dues                                           #API_ID = 011502
     Route::post('independent/generate-prop-orderid', 'generateOrderId');                      
-    // Generate Property Order ID                                      #API_ID = 011512
+    // Generate Property Order ID                                      #API_ID = 011503
     Route::post('prop-payment-history', 'propPaymentHistory');                               
     //Property Payment    History                                      #API_ID = 011513
     Route::post('prop-ulb-receipt', 'proUlbReceipt');                                        
@@ -653,8 +646,8 @@ Route::controller(CitizenController::class)->group(function () {
      | Serial No : 05
    */
   Route::controller(PropertyBifurcationController::class)->group(function () {
-    Route::post('searchByHoldingNoBi', "readHoldigbyNo");                       #API_ID = 010501
-    Route::match(["POST", "GET"], 'applyBifurcation/{id}', "addRecord");        #API_ID = 010502
+    Route::post('searchByHoldingNoBi', "readHoldigbyNo");                       #API_ID = 010401
+    Route::match(["POST", "GET"], 'applyBifurcation/{id}', "addRecord");        #API_ID = 010501
     Route::post('bifurcationInbox', "inbox");                                   #API_ID = 010503
     Route::post('bifurcationOutbox', "outbox");                                 #API_ID = 010504
     Route::post('bifurcationPostNext', "postNextLevel");                        #API_ID = 010505
@@ -662,3 +655,25 @@ Route::controller(CitizenController::class)->group(function () {
     Route::match(["get", "post"], 'documentUpload/{id}', 'documentUpload');     #API_ID = 010507
   });
 
+
+   /**
+   * | Property Document Operation
+     | Serial No : 11
+   */
+  Route::controller(DocumentOperationController::class)->group(function () {
+    Route::post('get-all-documents', 'getAllDocuments');                        #API_ID = 011101
+  });
+  
+
+   /**
+   * | Property Cluster
+   * | Created By - Sam kerketta
+   * | Created On- 23-11-2022 
+       | Serial No : 10
+   */
+  Route::controller(ClusterController::class)->group(function () {
+
+    
+    Route::post('cluster/property-by-cluster', 'propertyByCluster');            #API_ID = 011008
+    
+  });

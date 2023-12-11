@@ -85,7 +85,7 @@ class WaiverController extends Controller
             $data = $mPropActiveWaiver->addWaiver($request);
             $this->saveDoc($request, $data);
 
-            return responseMsgs(true, "Waiver Application Applied. Your Application No.", $data->application_no);
+            return responseMsgs(true, "Waiver Application Applied. Your Application No.", $data->application_no,"012001", "1.0", "", "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "");
         }
@@ -256,7 +256,7 @@ class WaiverController extends Controller
             // ]);
             // dd();
             DB::commit();
-            return responseMsgs(true, $msg, "", "", '010709', '01', '376ms', 'Post', '');
+            return responseMsgs(true, $msg, "", "", '012002', '01', '376ms', 'Post', '');
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
@@ -275,7 +275,7 @@ class WaiverController extends Controller
                 ->where('is_approved', true)
                 ->paginate($perPage);
 
-            return responseMsgs(true, "Approved Application", $approvedList, "", '010709', '01', '376ms', 'Post', '');
+            return responseMsgs(true, "Approved Application", $approvedList, "", '012003', '01', '376ms', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -486,7 +486,7 @@ class WaiverController extends Controller
             $custom = $mCustomDetails->getCustomDetails($req);
             $fullDetailsData['departmentalPost'] = collect($custom)['original']['data'];
 
-            return responseMsgs(true, "Application Details", $fullDetailsData, "", '010709', '01', responseTime(), $req->getMethod(), $req->deviceId);
+            return responseMsgs(true, "Application Details", $fullDetailsData, "", '012004', '01', responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -520,7 +520,7 @@ class WaiverController extends Controller
                 ->orderByDesc('prop_active_waivers.id')
                 ->paginate($perPage);
 
-            return responseMsgs(true, "Data Fetched", remove_null($waiverDtl), "010103", "1.0", responseTime(), "POST", "");
+            return responseMsgs(true, "Data Fetched", remove_null($waiverDtl), "012005", "1.0", responseTime(), "POST", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -545,9 +545,9 @@ class WaiverController extends Controller
 
             $workflowId = $waiverDetails->workflow_id;
             $documents = $mWfActiveDocument->getDocsByAppId($req->applicationId, $workflowId, $moduleId);
-            return responseMsgs(true, "Uploaded Documents", remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true, "Uploaded Documents", remove_null($documents), "012006", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "012006", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 
@@ -623,10 +623,10 @@ class WaiverController extends Controller
             }
 
             DB::commit();
-            return responseMsgs(true, $req->docStatus . " Successfully", "", "010204", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true, $req->docStatus . " Successfully", "", "012007", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             DB::rollBack();
-            return responseMsgs(false, $e->getMessage(), "", "010204", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "012007", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 
@@ -712,7 +712,7 @@ class WaiverController extends Controller
             $approvedList['applicationNo'] = $waiverDtl->application_no;
 
 
-            return responseMsgs(true, "Approved Application", $approvedList, "", '010709', '01', '376ms', 'Post', '');
+            return responseMsgs(true, "Approved Application", $approvedList, "", '012008', '01', '376ms', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -738,7 +738,7 @@ class WaiverController extends Controller
             $waiverDtls->final_lateassessment_penalty_waived = $req->late_assessment;
             $waiverDtls->save();
 
-            return responseMsgs(true, "", $waiverDtls, "", '010709', '01', '376ms', 'Post', '');
+            return responseMsgs(true, "", $waiverDtls, "", '012009', '01', '376ms', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }

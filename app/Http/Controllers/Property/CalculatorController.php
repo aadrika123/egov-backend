@@ -184,9 +184,9 @@ class CalculatorController extends Controller
                 });
             });
             $finalResponse['details'] = $reviewCalculation;
-            return responseMsgs(true, "", $finalResponse, "", "1.0", responseTime(), "POST", $req->deviceId);
+            return responseMsgs(true, "", $finalResponse, "010802", "1.0", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), [], "", "1.0", responseTime(), "POST", $req->deviceId);
+            return responseMsgs(false, $e->getMessage(), [], "010802", "1.0", responseTime(), "POST", $req->deviceId);
         }
     }
 

@@ -83,9 +83,9 @@ class HoldingTaxController extends Controller
         try {
             $yearlyDemandGeneration = new YearlyDemandGeneration;
             $responseDemand = $yearlyDemandGeneration->generateHoldingDemand($req);
-            return responseMsgs(true, "Property Demand", remove_null($responseDemand), "011601", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true, "Property Demand", remove_null($responseDemand), "011501", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), ['holdingNo' => $yearlyDemandGeneration->_propertyDetails['holding_no']], "011601", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), ['holdingNo' => $yearlyDemandGeneration->_propertyDetails['holding_no']], "011501", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 
@@ -286,9 +286,9 @@ class HoldingTaxController extends Controller
 
             $ulb = $mUlbMasters->getUlbDetails($propDtls->ulb_id);
             $demand['ulbDetails'] = $ulb;
-            return responseMsgs(true, "Demand Details", remove_null($demand), "011602", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true, "Demand Details", remove_null($demand), "011502", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), ['basicDetails' => $basicDtls ?? []], "011602", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), ['basicDetails' => $basicDtls ?? []], "011502", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 
@@ -375,10 +375,10 @@ class HoldingTaxController extends Controller
             $postRazorPayPenaltyRebate->_razorPayRequestId = $storedRazorPayReqs['razorPayReqId'];
             $postRazorPayPenaltyRebate->postRazorPayPenaltyRebates($demands);
             DB::commit();
-            return responseMsgs(true, "Order id Generated", remove_null($orderDetails), "011603", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true, "Order id Generated", remove_null($orderDetails), "011503", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             DB::rollBack();
-            return responseMsgs(false, $e->getMessage(), "", "011603", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "011503", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 
@@ -553,10 +553,10 @@ class HoldingTaxController extends Controller
                 $mPropAdjustment->store($adjustReq);
             }
             DB::commit();
-            return responseMsgs(true, "Payment Successfully Done", ['TransactionNo' => $tranNo], "011604", "1.0", "", "POST", $req->deviceId);
+            return responseMsgs(true, "Payment Successfully Done", ['TransactionNo' => $tranNo], "011509", "1.0", "", "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
-            return responseMsgs(false, $e->getMessage(), "", "011604", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "011509", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 
@@ -654,10 +654,10 @@ class HoldingTaxController extends Controller
                 $mPropAdjustment->store($adjustReq);
             }
             DB::commit();
-            return responseMsgs(true, "Payment Successfully Done", ['TransactionNo' => $tranNo], "011604", "1.0", "", "POST", $req->deviceId);
+            return responseMsgs(true, "Payment Successfully Done", ['TransactionNo' => $tranNo], "011504", "1.0", "", "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
-            return responseMsgs(false, $e->getMessage(), "", "011604", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "011504", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 
@@ -756,10 +756,10 @@ class HoldingTaxController extends Controller
                 $tblDemand->save();
             }
             DB::commit();
-            return responseMsgs(true, "Payment Successfully Done", ['TransactionNo' => ""], "011604", "1.0", "", "POST", $req->deviceId);
+            return responseMsgs(true, "Payment Successfully Done", ['TransactionNo' => ""], "011508", "1.0", "", "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
-            return responseMsgs(false, $e->getMessage(), "", "011604", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "011508", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 
@@ -859,9 +859,9 @@ class HoldingTaxController extends Controller
                 "ulbDetails" => $ulbDetails
             ];
 
-            return responseMsgs(true, "Payment Receipt", remove_null($responseData), "011605", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true, "Payment Receipt", remove_null($responseData), "011510", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "011605", "1.0", "", "POST", $req->deviceId);
+            return responseMsgs(false, $e->getMessage(), "", "011510", "1.0", "", "POST", $req->deviceId);
         }
     }
 
@@ -905,9 +905,9 @@ class HoldingTaxController extends Controller
             $transactions['Holding'] = collect($propTrans)->sortByDesc('id')->values();
             $transactions['Saf'] = collect($safTrans)->sortByDesc('id')->values();
 
-            return responseMsgs(true, "", remove_null($transactions), "011606", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true, "", remove_null($transactions), "011513", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "011606", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "011513", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 
@@ -931,9 +931,9 @@ class HoldingTaxController extends Controller
             $holdingTaxDetails = $this->holdingTaxDetails($propTrans, $totalRebate);                    // (9.2)
             $holdingTaxDetails = collect($holdingTaxDetails)->where('amount', '>', 0)->values();
             $responseData['holdingTaxDetails'] = $holdingTaxDetails;
-            return responseMsgs(true, "Payment Receipt", remove_null($responseData), "011609", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true, "Payment Receipt", remove_null($responseData), "011514", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "011609", "1.0", "", "POST", $req->deviceId);
+            return responseMsgs(false, $e->getMessage(), "", "011514", "1.0", "", "POST", $req->deviceId);
         }
     }
 
@@ -1034,7 +1034,7 @@ class HoldingTaxController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return responseMsgs(false, $validator->errors(), "", "011610", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $validator->errors(), "", "011515", "1.0", "", "POST", $req->deviceId ?? "");
         }
 
         try {
@@ -1122,9 +1122,9 @@ class HoldingTaxController extends Controller
             ]);
             // Ulb Details
             $comparativeDemand['ulbDetails'] = $mUlbMasters->getUlbDetails($ulbId);
-            return responseMsgs(true, "Comparative Demand", remove_null($comparativeDemand), "011610", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true, "Comparative Demand", remove_null($comparativeDemand), "011515", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "011610", "1.0", "", "POST", $req->deviceId);
+            return responseMsgs(false, $e->getMessage(), "", "011515", "1.0", "", "POST", $req->deviceId);
         }
     }
 
@@ -1369,9 +1369,9 @@ class HoldingTaxController extends Controller
 
             $finalClusterDemand['demandList'] = $summedDemand;
             $finalClusterDemand['basicDetails'] = $clusterDtls;
-            return responseMsgs(true, "Generated Demand of the Cluster", remove_null($finalClusterDemand), "011611", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true, "Generated Demand of the Cluster", remove_null($finalClusterDemand), "011505", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), ['basicDetails' => $clusterDtls], "011611", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), ['basicDetails' => $clusterDtls], "011505", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 
@@ -1464,10 +1464,10 @@ class HoldingTaxController extends Controller
                 $mPropAdjustment->store($adjustReq);
             }
             DB::commit();
-            return responseMsgs(true, "Payment Successfully Done", ["tranNo" => $tranNo], "011612", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true, "Payment Successfully Done", ["tranNo" => $tranNo], "011506", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             DB::rollBack();
-            return responseMsgs(false, $e->getMessage(), "", "011612", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "011506", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 
@@ -1487,9 +1487,9 @@ class HoldingTaxController extends Controller
             if ($transactions->isEmpty())
                 throw new Exception("No Transaction Found for this Cluster");
             $transactions = $transactions->groupBy('tran_type');
-            return responseMsgs(true, "Cluster Transactions", remove_null($transactions), "011613", "1.0", "", "", $req->deviceId ?? "");
+            return responseMsgs(true, "Cluster Transactions", remove_null($transactions), "011516", "1.0", "", "", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "011613", "1.0", "", "", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "011516", "1.0", "", "", $req->deviceId ?? "");
         }
     }
 
@@ -1573,9 +1573,9 @@ class HoldingTaxController extends Controller
                 "totalPaidAmount" => $propTrans->amount,
                 "paidAmtInWords" => getIndianCurrency($propTrans->amount),
             ];
-            return responseMsgs(true, "Cluster Payment Receipt", remove_null($responseData), "011613", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true, "Cluster Payment Receipt", remove_null($responseData), "011517", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "011613", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "011517", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 
@@ -1607,6 +1607,6 @@ class HoldingTaxController extends Controller
             'tableHead' => ["#", "Dues From", "Dues To", "Total Dues", "1 % Penalty", "Rebate Amt", "Payable Amount"],
             'tableData' => [$dataRow]
         ];
-        return responseMsgs(true, "Demand Dues", remove_null($data), "", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+        return responseMsgs(true, "Demand Dues", remove_null($data), "011507 ", "1.0", responseTime(), "POST", $req->deviceId ?? "");
     }
 }

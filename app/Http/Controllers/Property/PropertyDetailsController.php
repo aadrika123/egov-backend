@@ -374,9 +374,9 @@ class PropertyDetailsController extends Controller
             }
             $details = $approved->union($active)->paginate($perPage);
 
-            return responseMsgs(true, "Application Details", remove_null($details), "010501", "1.0", "", "POST", $request->deviceId ?? "");
+            return responseMsgs(true, "Application Details", remove_null($details), "011301", "1.0", "", "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "010501", "1.0", "", "POST", $request->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "011301", "1.0", "", "POST", $request->deviceId ?? "");
         }
     }
 
@@ -500,9 +500,9 @@ class PropertyDetailsController extends Controller
                 "total" => $paginator->total(),
             ];
 
-            return responseMsgs(true, "Application Details", remove_null($list), "010501", "1.0", "", "POST", $request->deviceId ?? "");
+            return responseMsgs(true, "Application Details", remove_null($list), "011302", "1.0", "", "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "010502", "1.0", "", "POST", $request->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "011302", "1.0", "", "POST", $request->deviceId ?? "");
         }
     }
 

@@ -83,9 +83,9 @@ class JskController extends Controller
                 // return $mWorkflowTrack->totalForwadedApplication($currentRole->id);
             }
 
-            return responseMsgs(true, "JSK Dashboard", remove_null($data), "010201", "1.0", "", "POST", $request->deviceId ?? "");
+            return responseMsgs(true, "JSK Dashboard", remove_null($data), "011901", "1.0", "", "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $request->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "011901", "1.0", "", "POST", $request->deviceId ?? "");
         }
     }
 
@@ -167,9 +167,9 @@ class JskController extends Controller
                 $data['totalRejectedApplication'] = $mWorkflowTrack->todayRejectedApplication($currentRole->id, $ulbId, $propertyWorflows)->count();
             }
 
-            return responseMsgs(true, "JSK Dashboard", remove_null($data), "010201", "1.0", "", "POST", $request->deviceId ?? "");
+            return responseMsgs(true, "JSK Dashboard", remove_null($data), "011902", "1.0", "", "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $request->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "011902", "1.0", "", "POST", $request->deviceId ?? "");
         }
     }
 }
