@@ -106,11 +106,13 @@ class LocationController extends Controller
     }
 
     /**
-     * | Map Level 
+     * | Map Level 1
      */
     public function mapLevel1(Request $req)
     {
+        $currentFy = getFY();
         $todayDate = Carbon::now()->format('Y-m-d');
+
         $data = DataMap::select('json')
             ->where('level', 1)
             ->where('date', $todayDate)
@@ -119,30 +121,6 @@ class LocationController extends Controller
         if ($data)
             return responseMsgs(true, "Data Fetched", json_decode($data->json), "", "01", responseTime(), $req->getMethod(), $req->deviceId);
 
-
-        // $data = UlbMaster::select(
-        //     'ulb_masters.id as ulb_id',
-        //     'ulb_name',
-        //     'latitude',
-        //     'longitude',
-        //     'district_masters.district_code',
-        //     'district_masters.district_name',
-        //     DB::raw("count(prop_properties.id) as total_properties")
-        // )
-        //     ->join('district_masters', 'district_masters.id', 'ulb_masters.district_id')
-        //     ->leftjoin('prop_properties', 'prop_properties.ulb_id', 'ulb_masters.id')
-        //     ->groupBy(
-        //         'ulb_masters.id',
-        //         'ulb_name',
-        //         'latitude',
-        //         'longitude',
-        //         'district_masters.district_code',
-        //         'district_masters.district_name',
-        //     )
-        //     ->orderBy('ulb_name')
-        //     ->get();
-
-        $currentFy = getFY();
         $data = UlbMaster::select(
             'ulb_masters.id as ulb_id',
             'ulb_name',
@@ -164,6 +142,29 @@ class LocationController extends Controller
             )
             ->orderBy('ulb_name')
             ->get();
+
+        // return $data = DB::select("SELECT u.ulb_name,d.*
+        //                                 from ulb_masters u
+        //                                 left join (
+        //                                     SELECT 
+        //                                     count(a.prop_count),
+        //                                     sum(a.prop_demand_cnt),
+        //                                     a.ulb_id
+
+        //                                     FROM (
+        //                                         select  
+        //                                             p.id as prop_count,
+        //                                             count(d.id) as prop_demand_cnt,
+        //                                             p.ulb_id
+
+        //                                         from prop_properties p
+        //                                         join prop_demands d on d.property_id=p.id and d.status=1 and d.fyear='2023-2024'
+        //                                         where p.status=1
+        //                                         group by p.id
+        //                                     ) as a
+
+        //                                     group by a.ulb_id
+        //                                 ) d on d.ulb_id=u.id");
 
         $a = collect($data)->map(function ($data) use ($currentFy) {
             $count =  DB::select("WITH property_counts AS (
@@ -203,6 +204,96 @@ class LocationController extends Controller
             $data['paid_percent']       = round((($count->paid_property > 0 ? ($count->paid_property) : 0) / ($count->total_demand > 0 ? $count->total_demand : 1)) * 100, 2);
             return $data;
         });
+
+        $mDataMap = new DataMap();
+        $mReqs = [
+            "level" => 1,
+            "date" => Carbon::now(),
+            "json" => json_encode($data),
+        ];
+        $newData = $mDataMap->store($mReqs);
+
+        return responseMsgs(true, "Data Fetched", $data, "", "01", responseTime(), $req->getMethod(), $req->deviceId);
+    }
+
+    /**
+     * | Map Level 2
+     */
+    public function mapLevel2(Request $req)
+    {
+        $currentFy = getFY();
+        $todayDate = Carbon::now()->format('Y-m-d');
+        $mUlbWardMaster = new UlbWardMaster();
+
+        // $data = DataMap::select('json')
+        //     ->where('level', 2)
+        //     ->where('date', $todayDate)
+        //     ->first();
+
+        // if ($data)
+        //     return responseMsgs(true, "Data Fetched", json_decode($data->json), "", "01", responseTime(), $req->getMethod(), $req->deviceId);
+
+        $wards = $mUlbWardMaster->getWardByUlbId($req->ulbId);
+        $wards = collect($wards)->sortBy('id')->values();
+        // $wards = collect($wards)->sortBy('ward_name')->values();
+        // $wardIds = collect($wards)->pluck('id');
+
+        // $latlong = PropProperty::select('prop_properties.id', 'ward_mstr_id', 'latitude', 'longitude')
+        //     ->join('prop_saf_geotag_uploads', 'prop_saf_geotag_uploads.saf_id', 'prop_properties.saf_id')
+        //     ->distinct('ward_mstr_id')
+        //     ->whereIn('ward_mstr_id', $wardIds)
+        //     ->get();
+
+        // collect($latlong)->map(function ($latlong) {
+
+        //     UlbWardMaster::where('id', $latlong->ward_mstr_id)
+        //         ->update([
+        //             'latitude' => $latlong->latitude,
+        //             'longitude' => $latlong->longitude,
+        //         ]);
+        // });
+        // die("ok");
+
+
+        return $data = collect($wards)->map(function ($wards) use ($currentFy) {
+            $count =  DB::select("WITH property_counts AS (
+                                    SELECT COUNT(id) as total_properties
+                                    FROM prop_properties
+                                    WHERE ward_mstr_id = $wards->id
+                                    AND status = 1
+                                ),
+                                demand_counts AS (
+                                    SELECT COUNT(*) OVER () as total_demand
+                                    FROM prop_demands   
+                                    WHERE fyear = '$currentFy'
+                                    AND ward_mstr_id = $wards->id
+                                    AND status = 1
+                                    GROUP BY property_id
+                                    LIMIT 1
+                                ),
+                                paid_counts AS (
+                                    SELECT COUNT(*) OVER () AS paid_property
+                                    FROM prop_demands
+                                    WHERE fyear = '$currentFy'
+                                    AND ward_mstr_id = $wards->id
+                                    AND paid_status = 1
+                                    AND status = 1
+                                    GROUP BY property_id
+                                    LIMIT 1
+                                )
+                                SELECT
+                                    COALESCE((SELECT total_properties FROM property_counts),0) as total_properties,
+                                    COALESCE((SELECT total_demand FROM demand_counts),0) as total_demand,
+                                    COALESCE((SELECT paid_property FROM paid_counts),0) as paid_property;
+                                ");
+            $count = $count[0];
+            $wards['total_properties']   = $count->total_properties;
+            $wards['total_demand']       = $count->total_demand;
+            $wards['paid_property']      = $count->paid_property;
+            $wards['paid_percent']       = round((($count->paid_property > 0 ? ($count->paid_property) : 0) / ($count->total_demand > 0 ? $count->total_demand : 1)) * 100, 2);
+            return $wards;
+        });
+        return $wards;
 
         $mDataMap = new DataMap();
         $mReqs = [
