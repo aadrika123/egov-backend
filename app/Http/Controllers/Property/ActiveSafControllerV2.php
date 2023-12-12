@@ -120,10 +120,10 @@ class ActiveSafControllerV2 extends Controller
                 }
             }
             DB::commit();
-            return responseMsgs(true, "Successfully Updated the Data", "", 010124, 1.0, "308ms", "POST", $req->deviceId);
+            return responseMsgs(true, "Successfully Updated the Data", "", "011602", 1.0, "308ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
-            return responseMsgs(false, $e->getMessage(), "", 010124, 1.0, "308ms", "POST", $req->deviceId);
+            return responseMsgs(false, $e->getMessage(), "", "011602", 1.0, "308ms", "POST", $req->deviceId);
         }
     }
 
@@ -155,10 +155,10 @@ class ActiveSafControllerV2 extends Controller
                     $mPropSafFloors->save();
                 }
             }
-            return responseMsgs(true, "Saf Deleted", "", 010124, 1.0, "308ms", "POST", $req->deviceId);
+            return responseMsgs(true, "Saf Deleted", "", "011601", 1.0, "308ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
-            return responseMsgs(false, $e->getMessage(), "", 010124, 1.0, "308ms", "POST", $req->deviceId);
+            return responseMsgs(false, $e->getMessage(), "", "011601", 1.0, "308ms", "POST", $req->deviceId);
         }
     }
 
@@ -246,9 +246,9 @@ class ActiveSafControllerV2 extends Controller
             }
             // Get Ulb Details
             $details->ulbDetails = $mUlbMaster->getUlbDetails($properties->ulb_id ?? 2);
-            return responseMsgs(true, "", remove_null($details), "011803", 1.0, responseTime(), "POST", $req->deviceId);
+            return responseMsgs(true, "", remove_null($details), "011603", 1.0, responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "011803", 1.0, responseTime(), "POST", $req->deviceId);
+            return responseMsgs(false, $e->getMessage(), "", "011603", 1.0, responseTime(), "POST", $req->deviceId);
         }
     }
 
@@ -315,10 +315,10 @@ class ActiveSafControllerV2 extends Controller
             $data[] = collect($prop)->merge($owner);
 
 
-            return responseMsgs(true, "Holding Details", $data, 010124, 1.0, "308ms", "POST", $req->deviceId);
+            return responseMsgs(true, "Holding Details", $data, "011610", 1.0, "308ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
-            return responseMsgs(false, $e->getMessage(), "", 010124, 1.0, "308ms", "POST", $req->deviceId);
+            return responseMsgs(false, $e->getMessage(), "", "011610", 1.0, "308ms", "POST", $req->deviceId);
         }
     }
 
@@ -358,9 +358,9 @@ class ActiveSafControllerV2 extends Controller
             }
             $datas['id'] = $data->id;
 
-            return responseMsgs(true, "Holding Exist", $datas, 010124, 1.0, responseTime(), "POST", $req->deviceId);
+            return responseMsgs(true, "Holding Exist", $datas, "011604", 1.0, responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", 010124, 1.0, responseTime(), "POST", $req->deviceId);
+            return responseMsgs(false, $e->getMessage(), "", "011604", 1.0, responseTime(), "POST", $req->deviceId);
         }
     }
 
@@ -384,9 +384,9 @@ class ActiveSafControllerV2 extends Controller
                 throw new Exception("Apartment List Not Available");
             }
 
-            return responseMsgs(true, "Apartment List", $data, 010124, 1.0, "308ms", "POST", $req->deviceId);
+            return responseMsgs(true, "Apartment List", $data, "011605", 1.0, "308ms", "POST", $req->deviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), [], 010124, 1.0, "308ms", "POST", $req->deviceId);
+            return responseMsgs(false, $e->getMessage(), [], "011605", 1.0, "308ms", "POST", $req->deviceId);
         }
     }
 
@@ -429,9 +429,9 @@ class ActiveSafControllerV2 extends Controller
                 ->thenReturn()
                 ->paginate($perPage);
 
-            return responseMsgs(true, "Data Fetched", remove_null($safInbox), "011806", "1.0", "", "POST", "");
+            return responseMsgs(true, "Data Fetched", remove_null($safInbox), "011606", "1.0", "", "POST", "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "011806", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "011606", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 
@@ -540,9 +540,9 @@ class ActiveSafControllerV2 extends Controller
 
             $finalClusterDemand['details'] = $summedDemand;
             $finalClusterDemand['basicDetails'] = $clusterDtls;
-            return responseMsgs(true, "Cluster Demands", remove_null($finalClusterDemand), "011807", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true, "Cluster Demands", remove_null($finalClusterDemand), "011607", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), ['basicDetails' => $clusterDtls], "011807", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), ['basicDetails' => $clusterDtls], "011607", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 
@@ -625,11 +625,11 @@ class ActiveSafControllerV2 extends Controller
             $activeSafController->postPenaltyRebates($dues1, null, $propTrans['id'], $clusterId);
             DB::commit();
             DB::connection('pgsql_master')->commit();
-            return responseMsgs(true, "Payment Successfully Done", ["tranNo" => $tranNo], "011612", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true, "Payment Successfully Done", ["tranNo" => $tranNo], " 011608", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
-            return responseMsgs(false, $e->getMessage(), "", "011612", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", " 011608", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 
@@ -647,11 +647,11 @@ class ActiveSafControllerV2 extends Controller
             $editSafBll->_reqs = $req;
             $editSafBll->edit();
             DB::commit();
-            return responseMsgs(true, "Application Edited Successfully", [], "011809", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+            return responseMsgs(true, "Application Edited Successfully", [], "011609", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
 
             DB::rollBack();
-            return responseMsgs(false, $e->getMessage(), [], "011809", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), [], "011609", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         }
     }
 }

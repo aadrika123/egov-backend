@@ -76,7 +76,7 @@ class PropertyController extends Controller
             $data['otp'] = $response['original']['data'];
             $data['mobileNo'] = $ownerMobile;
 
-            return responseMsgs(true, "OTP send successfully", $data, '010801', '01', '623ms', 'Post', '');
+            return responseMsgs(true, "OTP send successfully", $data, '011701', '01', '623ms', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -111,7 +111,7 @@ class PropertyController extends Controller
             $activeCitizen->caretaker = $allPropIds;
             $activeCitizen->save();
 
-            return responseMsgs(true, "Property Tagged!", '', '010801', '01', '623ms', 'Post', '');
+            return responseMsgs(true, "Property Tagged!", '', '011702', '01', '623ms', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -185,7 +185,7 @@ class PropertyController extends Controller
             if ($data->isEmpty())
                 throw new Exception('No Data Found');
 
-            return responseMsgs(true, $msg, remove_null($data), '010801', '01', '623ms', 'Post', '');
+            return responseMsgs(true, $msg, remove_null($data), '011703', '01', '623ms', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -237,7 +237,7 @@ class PropertyController extends Controller
                 }
             });
 
-            return responseMsgs(true, 'Data Updated', '', '010801', '01', '', 'Post', '');
+            return responseMsgs(true, 'Data Updated', '', '011704', '01', '', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -315,9 +315,9 @@ class PropertyController extends Controller
             } else
                 $msg['inWorkflow'] = false;
 
-            return responseMsgs(true, 'Data Updated', $msg, '010801', '01', responseTime(), 'Post', '');
+            return responseMsgs(true, 'Data Updated', $msg, '011705', '01', responseTime(), 'Post', '');
         } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "", '010801', '01', responseTime(), 'Post', '');
+            return responseMsg(false, $e->getMessage(), "", '011705', '01', responseTime(), 'Post', '');
         }
     }
 
@@ -444,12 +444,12 @@ class PropertyController extends Controller
                                     ->where("property_id",$propertyId)
                     ->update(['deactive_status' => true]);
             DB::connection("pgsql_master")->commit();
-            return responseMsgs(true, "citizen updated", "", "01", responseTime(), "POST", $request->deviceId); 
+            return responseMsgs(true, "citizen updated", "011706", "01", responseTime(), "POST", $request->deviceId); 
         }
     
     } catch (Exception $e) {
         DB::connection("pgsql_master")->rollBack();
-        return responseMsgs(false, $e->getMessage(), "", "", "01", responseTime(), "POST", $request->deviceId);
+        return responseMsgs(false, $e->getMessage(), "", "011706", "01", responseTime(), "POST", $request->deviceId);
     }
 }
 

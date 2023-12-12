@@ -91,9 +91,9 @@ class PropertyDeactivateController extends Controller
                 // throw new Exception("Request is already submited. Please check request status...!");
             }
             $mProperty->original['data']['deactivationStatus'] = $deactivationStatus;
-            return responseMsgs(true, $mProperty->original['message'], $mProperty->original['data'], "00001", "1.0", "", "POST", $request->deviceId);
+            return responseMsgs(true, $mProperty->original['message'], $mProperty->original['data'], "010402", "1.0", "", "POST", $request->deviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), $request->all(), "00001", "1.0", "", "POST", $request->deviceId);
+            return responseMsgs(false, $e->getMessage(), $request->all(), "010402", "1.0", "", "POST", $request->deviceId);
         }
     }
     public function deactivatProperty(reqDeactivatProperty $request)
@@ -109,7 +109,7 @@ class PropertyDeactivateController extends Controller
             }
             return $this->_REPOSITORY->deactivatProperty($request);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), $request->all(), "00002", "1.0", "", "POST", $request->deviceId);
+            return responseMsgs(false, $e->getMessage(), $request->all(), "010403", "1.0", "", "POST", $request->deviceId);
         }
     }
     public function inbox(Request $request)
@@ -188,9 +188,9 @@ class PropertyDeactivateController extends Controller
 
             DB::commit();
 
-            return responseMsgs(true, $sms, "", "00003", "1.0", "", "POST", $request->deviceId);
+            return responseMsgs(true, $sms, "", "010412", "1.0", "", "POST", $request->deviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), $request->all(), "00003", "1.0", "", "POST", $request->deviceId);
+            return responseMsgs(false, $e->getMessage(), $request->all(), "010412", "1.0", "", "POST", $request->deviceId);
         }
     }
 
@@ -243,7 +243,7 @@ class PropertyDeactivateController extends Controller
             $verifired->save();
             $refDeactivationReq->forceDelete();
             DB::commit();
-            return responseMsgs(true, $msg, [], "00004", "1.0", "410ms", "POST", $request->deviceId);
+            return responseMsgs(true, $msg, [], "010411", "1.0", "410ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
@@ -303,7 +303,7 @@ class PropertyDeactivateController extends Controller
             $request->request->add($metaReqs);
             $this->_WORKFLOW_TRACK->saveTrack($request);
             DB::commit();
-            return responseMsgs(true, "You Have Commented Successfully!!", ['Comment' => $request->comment], "00006", "1.0", "", "POST", $request->deviceId);
+            return responseMsgs(true, "You Have Commented Successfully!!", ['Comment' => $request->comment], "010408", "1.0", "", "POST", $request->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
@@ -322,7 +322,7 @@ class PropertyDeactivateController extends Controller
             $refDeactivationReq->is_escalate = $request->escalateStatus <= 0 ? true : false;
             $refDeactivationReq->escalate_by = $userId;
             $refDeactivationReq->save();
-            return responseMsgs(true, $request->escalateStatus <= 0 ? "Data is removed from Escalated" : 'Data is Escalated', '', "00007", "1.0", "353ms", "POST", $request->deviceId);
+            return responseMsgs(true, $request->escalateStatus <= 0 ? "Data is removed from Escalated" : 'Data is Escalated', '', "010409", "1.0", "353ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
@@ -340,7 +340,7 @@ class PropertyDeactivateController extends Controller
             }
             $docpath = !empty(trim($refDeactivationReq->documents)) ? $this->_REPOSITORY->readDocumentPath($refDeactivationReq->documents) : "";
 
-            return responseMsgs(true, "Document Fetched", $docpath, "00008", "1.0", "", "POST", $request->deviceId);
+            return responseMsgs(true, "Document Fetched", $docpath, "010410", "1.0", "", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }

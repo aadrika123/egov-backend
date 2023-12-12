@@ -42,7 +42,7 @@ class ClusterController extends Controller
         try {
             $mCluster = new Cluster();
             $clusterList = $mCluster->allClusters();
-            return responseMsgs(true, "Fetched all Cluster!", remove_null($clusterList), "", "02", "320.ms", "GET", "");
+            return responseMsgs(true, "Fetched all Cluster!", remove_null($clusterList), "011001", "02", "320.ms", "GET", "");
         } catch (Exception $error) {
             return responseMsg(false, $error->getMessage(), "");
         }
@@ -101,7 +101,7 @@ class ClusterController extends Controller
                 return $value;
             });
             $returnValues = collect($clusterList)->merge($returnData);
-            return responseMsgs(true, "List Of Data!", $returnValues, "", "", "", "POST", "");
+            return responseMsgs(true, "List Of Data!", $returnValues, "", "011005", "", "POST", "");
         } catch (Exception $error) {
             return responseMsg(false, $error->getMessage(), "");
         }
@@ -119,9 +119,9 @@ class ClusterController extends Controller
             $mCluster = new Cluster();
             $clusterId = $req->clusterId;
             $detail = $mCluster::findOrFail($clusterId);
-            return responseMsgs(true, "Cluster Details", remove_null($detail), "011204", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true, "Cluster Details", remove_null($detail), "011006", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "011204", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "011006", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 
@@ -149,7 +149,7 @@ class ClusterController extends Controller
             }
             $cluster = new Cluster();
             $cluster->editClusterDetails($request);
-            return responseMsgs(true, "Cluster Edited By Id!", "", "", "02", "320.ms", "POST", "");
+            return responseMsgs(true, "Cluster Edited By Id!", "", "011002", "02", "320.ms", "POST", "");
         } catch (Exception $error) {
             return responseMsg(false, $error->getMessage(), "");
         }
@@ -177,7 +177,7 @@ class ClusterController extends Controller
             }
             $obj = new Cluster();
             $obj->saveClusterDetails($request);
-            return responseMsgs(true, "Data Saved!", "", "", "02", "", "POST", "");
+            return responseMsgs(true, "Data Saved!", "", "011003", "02", "", "POST", "");
         } catch (Exception $error) {
             return responseMsg(false, $error->getMessage(), "");
         }
@@ -189,7 +189,7 @@ class ClusterController extends Controller
         try {
             $obj = new Cluster();
             $obj->deleteClusterData($request);
-            return responseMsgs(true, "Cluster Deleted!", "", "", "02", "", "POST", "");
+            return responseMsgs(true, "Cluster Deleted!", "", "011004", "02", "", "POST", "");
         } catch (Exception $error) {
             return responseMsg(false, $error->getMessage(), "");
         }
@@ -219,7 +219,7 @@ class ClusterController extends Controller
             $holdingDetails = $holdingDtls->union($newHoldingDtls)
                 ->paginate($perPage);
 
-            return responseMsgs(true, "List of holding!", $holdingDetails, "", "02", "", "POST", "");
+            return responseMsgs(true, "List of holding!", $holdingDetails, "011007", "02", "", "POST", "");
         } catch (Exception $error) {
             return responseMsg(false, $error->getMessage(), "");
         }
@@ -259,7 +259,7 @@ class ClusterController extends Controller
                 $refPropId = collect($results)->pluck('id');
                 $mPropProperty->saveClusterInProperty($holdingList, $request->clusterId);
                 $mPropDemand->saveClusterInDemand($refPropId, $request->clusterId);
-                return responseMsgs(true, "Holding is Added to the respective Cluster!", $request->clusterId, "", "02", "", "POST", "");
+                return responseMsgs(true, "Holding is Added to the respective Cluster!", $request->clusterId, "011009", "02", "", "POST", "");
             }
             throw new Exception($notActive);
         } catch (Exception $error) {
@@ -283,7 +283,7 @@ class ClusterController extends Controller
                 ->where('s.saf_no', 'LIKE', '%' . $request->safNo)
                 ->paginate($perPage);
 
-            return responseMsgs(true, "Listed Saf!", $application, "", "02", "", "POST", "");
+            return responseMsgs(true, "Listed Saf!", $application, "011010", "02", "", "POST", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -320,7 +320,7 @@ class ClusterController extends Controller
 
                 $mPropActiveSaf->saveClusterInSaf($safNoList, $request->clusterId);
                 $mPropSafsDemand->saveClusterinSafDemand($safIds, $request->clusterId);
-                return responseMsgs(true, "saf is Added to the respective Cluster!", $request->clusterId, "", "02", "", "POST", "");
+                return responseMsgs(true, "saf is Added to the respective Cluster!", $request->clusterId, "011011", "02", "", "POST", "");
             }
             throw new Exception($notActive);
         } catch (Exception $error) {

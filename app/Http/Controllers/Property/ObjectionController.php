@@ -93,7 +93,7 @@ class ObjectionController extends Controller
             $mPropForgeryType = new MPropForgeryType();
             $forgeryType = $mPropForgeryType->forgeryType();
 
-            return responseMsgs(true, "Forgery Types", $forgeryType, "", '01', responseTime(), 'Post', '');
+            return responseMsgs(true, "Forgery Types", $forgeryType, "010704", '01', responseTime(), 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -106,7 +106,7 @@ class ObjectionController extends Controller
             $Details = new PropOwner();
             $ownerDetails = $Details->getOwnerDetail($request);
 
-            return responseMsg(true, "Successfully Retrieved", remove_null($ownerDetails));
+            return responseMsgs(true, "Successfully Retrieved", remove_null($ownerDetails), "010703", '01', responseTime(), 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -144,7 +144,7 @@ class ObjectionController extends Controller
                 ->thenReturn()
                 ->paginate($perPage);
 
-            return responseMsgs(true, "", remove_null($inboxList), '010805', '01', responseTime(), 'Post', '');
+            return responseMsgs(true, "", remove_null($inboxList), '010706', '01', responseTime(), 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -182,7 +182,7 @@ class ObjectionController extends Controller
                 ->thenReturn()
                 ->paginate($perPage);
 
-            return responseMsgs(true, "Outbox List", remove_null($outboxList), '010806', '01', responseTime(), 'Post', '');
+            return responseMsgs(true, "Outbox List", remove_null($outboxList), '010707', '01', responseTime(), 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -383,9 +383,9 @@ class ObjectionController extends Controller
             $custom = $mCustomDetails->getCustomDetails($req);
             $fullDetailsData['departmentalPost'] = collect($custom)['original']['data'];
 
-            return responseMsgs(true, "Objection Details", remove_null($fullDetailsData), '010807', '01', responseTime(), 'Post', '');
+            return responseMsgs(true, "Objection Details", remove_null($fullDetailsData), '010708', '01', responseTime(), 'Post', '');
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", '010807', '01', responseTime(), 'Post', '');
+            return responseMsgs(false, $e->getMessage(), "", '010708', '01', responseTime(), 'Post', '');
         }
     }
 
@@ -406,7 +406,7 @@ class ObjectionController extends Controller
             $data->is_escalated = $req->escalateStatus;
             $data->escalated_by = $userId;
             $data->save();
-            return responseMsgs(true, $req->escalateStatus == 1 ? 'Objection is Escalated' : "Objection is removed from Escalated", '', '010808', '01', responseTime(), 'Post', '');
+            return responseMsgs(true, $req->escalateStatus == 1 ? 'Objection is Escalated' : "Objection is removed from Escalated", '', '010709', '01', responseTime(), 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -442,7 +442,7 @@ class ObjectionController extends Controller
                 ->thenReturn()
                 ->paginate($perPage);
 
-            return responseMsgs(true, "Data Fetched", remove_null($specialList), '010809', '01', responseTime(), 'Post', '');
+            return responseMsgs(true, "Data Fetched", remove_null($specialList), '010710', '01', responseTime(), 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -479,7 +479,7 @@ class ObjectionController extends Controller
                 ->thenReturn()
                 ->paginate($perPage);
 
-            return responseMsgs(true, "Data Fetched", remove_null($btcList), '010809', '01', responseTime(), 'Post', '');
+            return responseMsgs(true, "Data Fetched", remove_null($btcList), '010714', '01', responseTime(), 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -545,7 +545,7 @@ class ObjectionController extends Controller
             DB::commit();
             DB::connection('pgsql_master')->commit();
 
-            return responseMsgs(true, "Successfully Forwarded The Application!!", "", '010810', '01', responseTime(), 'Post', '');
+            return responseMsgs(true, "Successfully Forwarded The Application!!", "", '010711', '01', responseTime(), 'Post', '');
         } catch (Exception $e) {
             DB::rollBack();
             DB::rollBack();
@@ -808,11 +808,11 @@ class ObjectionController extends Controller
             ]);
             DB::commit();
             DB::connection('pgsql_master')->commit();
-            return responseMsgs(true, $msg, "", '010811', '01', responseTime(), 'Post', '');
+            return responseMsgs(true, $msg, "", '010712', '01', responseTime(), 'Post', '');
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
-            return responseMsgs(false,  $e->getMessage(), "", '010811', '01', responseTime(), 'Post', '');
+            return responseMsgs(false,  $e->getMessage(), "", '010712', '01', responseTime(), 'Post', '');
         }
     }
 
@@ -849,11 +849,11 @@ class ObjectionController extends Controller
 
             DB::commit();
             DB::connection('pgsql_master')->commit();
-            return responseMsgs(true, "Successfully Done", "", '010812', '01', responseTime(), 'Post', '');
+            return responseMsgs(true, "Successfully Done", "", '010713', '01', responseTime(), 'Post', '');
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
-            return responseMsg(false, $e->getMessage(), "", "", '010812', '01', responseTime(), 'Post', '');
+            return responseMsg(false, $e->getMessage(), "", "", '010713', '01', responseTime(), 'Post', '');
         }
     }
 
@@ -895,7 +895,7 @@ class ObjectionController extends Controller
 
             DB::commit();
             DB::connection('pgsql_master')->commit();
-            return responseMsgs(true, "You Have Commented Successfully!!", ['Comment' => $req->comment], "010108", "1.0", "", "POST", "");
+            return responseMsgs(true, "You Have Commented Successfully!!", ['Comment' => $req->comment], "010715", "1.0", "", "POST", "");
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
@@ -926,9 +926,9 @@ class ObjectionController extends Controller
 
             $data = $docUpload->getDocUrl($documents);           #_Calling BLL for Document Path from DMS
 
-            return responseMsgs(true, "Uploaded Documents", remove_null($data), "010102", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true, "Uploaded Documents", remove_null($data), "010718", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "010718", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 
@@ -990,11 +990,11 @@ class ObjectionController extends Controller
             }
             DB::commit();
             DB::connection('pgsql_master')->commit();
-            return responseMsgs(true, "Document Uploaded Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true, "Document Uploaded Successful", "", "010717", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
-            return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "010717", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 
@@ -1077,9 +1077,9 @@ class ObjectionController extends Controller
             else
                 $objectionDoc['listDocs'] = [];
 
-            return responseMsgs(true, "", remove_null($objectionDoc), "010203", "", "", 'POST', "");
+            return responseMsgs(true, "", remove_null($objectionDoc), "010716", "", "", 'POST', "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", "", 'POST', "");
+            return responseMsgs(false, $e->getMessage(), "", "010716", "1.0", "", 'POST', "");
         }
     }
 
@@ -1334,12 +1334,12 @@ class ObjectionController extends Controller
             DB::commit();
             DB::connection('pgsql_master')->commit();
 
-            return responseMsgs(true, "member added use this for future use", $objectionNo, "010201", "1.0", responseTime(), "POST", $request->deviceId ?? "");
+            return responseMsgs(true, "member added use this for future use", $objectionNo, "010719", "1.0", responseTime(), "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
 
-            return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", responseTime(), "POST", $request->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "010719", "1.0", responseTime(), "POST", $request->deviceId ?? "");
         }
     }
 
@@ -1377,7 +1377,7 @@ class ObjectionController extends Controller
                 $code = $this->citizenForgeryfilterDoc($data);
                 break;
         }
-        return responseMsgs(true, "Citizen Doc List", remove_null($code), 010717, 1.0, responseTime(), "POST", "", "");
+        return responseMsgs(true, "Citizen Doc List", remove_null($code), "010705", 1.0, responseTime(), "POST", "", "");
     }
 
     /**
@@ -1435,7 +1435,7 @@ class ObjectionController extends Controller
                 $code = $this->filterCitizenDoc($data);
                 break;
         }
-        return responseMsgs(true, "Citizen Doc List", remove_null($code), 010717, 1.0, responseTime(), "POST", "", "");
+        return responseMsgs(true, "Citizen Doc List", remove_null($code), "010720", 1.0, responseTime(), "POST", "", "");
     }
 
     /**
@@ -1538,11 +1538,11 @@ class ObjectionController extends Controller
 
             DB::commit();
             DB::connection('pgsql_master')->commit();
-            return responseMsgs(true, $req->docStatus . " Successfully", "", "010204", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true, $req->docStatus . " Successfully", "", "010721", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
-            return responseMsgs(false, $e->getMessage(), "", "010204", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "010721", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 

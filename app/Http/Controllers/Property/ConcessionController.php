@@ -164,11 +164,11 @@ class ConcessionController extends Controller
             DB::commit();
             DB::connection('pgsql_master')->commit();
 
-            return responseMsgs(true, 'Successfully Applied The Application', $concessionNo, '010701', '01', responseTime(), $request->getMethod(), $request->deviceId);
+            return responseMsgs(true, 'Successfully Applied The Application', $concessionNo, '010601', '01', responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
-            return responseMsgs(false, $e->getMessage(), "", '010701', '01', responseTime(), $request->getMethod(), $request->deviceId);
+            return responseMsgs(false, $e->getMessage(), "", '010601', '01', responseTime(), $request->getMethod(), $request->deviceId);
         }
     }
 
@@ -293,9 +293,9 @@ class ConcessionController extends Controller
                 ->thenReturn()
                 ->paginate($perPage);
 
-            return responseMsgs(true, "Inbox List", remove_null($inboxList), '010703', '01', responseTime(),  $req->getMethod(), $req->deviceId);
+            return responseMsgs(true, "Inbox List", remove_null($inboxList), '010602', '01', responseTime(),  $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", '010703', '01', responseTime(),  $req->getMethod(), $req->deviceId);
+            return responseMsgs(false, $e->getMessage(), "", '010602', '01', responseTime(),  $req->getMethod(), $req->deviceId);
         }
     }
 
@@ -340,9 +340,9 @@ class ConcessionController extends Controller
                 ->thenReturn()
                 ->paginate($perPage);
 
-            return responseMsgs(true, "Outbox List", remove_null($inboxList), '010704', '01', '355ms-419ms', 'Post', '');
+            return responseMsgs(true, "Outbox List", remove_null($inboxList), '010603', '01', '355ms-419ms', 'Post', '');
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", '010704', '01', responseTime(),  $req->getMethod(), $req->deviceId);
+            return responseMsgs(false, $e->getMessage(), "", '010603', '01', responseTime(),  $req->getMethod(), $req->deviceId);
         }
     }
 
@@ -419,9 +419,9 @@ class ConcessionController extends Controller
             $custom = $mCustomDetails->getCustomDetails($req);
             $fullDetailsData['departmentalPost'] = collect($custom)['original']['data'];
 
-            return responseMsgs(true, "Concession Details", remove_null($fullDetailsData), '010705', '01', responseTime(),  $req->getMethod(), $req->deviceId);
+            return responseMsgs(true, "Concession Details", remove_null($fullDetailsData), '010604', '01', responseTime(),  $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", '010705', '01', responseTime(),  $req->getMethod(), $req->deviceId);
+            return responseMsgs(false, $e->getMessage(), "", '010604', '01', responseTime(),  $req->getMethod(), $req->deviceId);
         }
     }
 
@@ -443,9 +443,9 @@ class ConcessionController extends Controller
             $escalate = new PropActiveConcession();
             $msg = $escalate->escalate($req);
 
-            return responseMsgs(true, $msg, "", '010706', '01', responseTime(),  $req->getMethod(), $req->deviceId);
+            return responseMsgs(true, $msg, "", '010605', '01', responseTime(),  $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "", '010706', '01', responseTime(),  $req->getMethod(), $req->deviceId);
+            return responseMsg(false, $e->getMessage(), "", '010605', '01', responseTime(),  $req->getMethod(), $req->deviceId);
         }
     }
 
@@ -487,9 +487,9 @@ class ConcessionController extends Controller
                 ->thenReturn()
                 ->paginate($perPage);
 
-            return responseMsg(true, "Inbox List", remove_null($inboxList), "", '010707', '01', responseTime(),  $req->getMethod(), $req->deviceId);
+            return responseMsg(true, "Inbox List", remove_null($inboxList), "", '010606', '01', responseTime(),  $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "", '010707', '01', responseTime(),  $req->getMethod(), $req->deviceId);
+            return responseMsg(false, $e->getMessage(), "", '010606', '01', responseTime(),  $req->getMethod(), $req->deviceId);
         }
     }
 
@@ -529,9 +529,9 @@ class ConcessionController extends Controller
                 ->thenReturn()
                 ->paginate($perPage);
 
-            return responseMsgs(true, "BTC Inbox List", remove_null($inboxList), 010717, 1.0, responseTime(),  $req->getMethod(), $req->deviceId);
+            return responseMsgs(true, "BTC Inbox List", remove_null($inboxList), "010607", 1.0, responseTime(),  $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", 010717, 1.0, responseTime(),  $req->getMethod(), $req->deviceId);
+            return responseMsgs(false, $e->getMessage(), "", "010607", 1.0, responseTime(),  $req->getMethod(), $req->deviceId);
         }
     }
 
@@ -605,7 +605,7 @@ class ConcessionController extends Controller
 
             DB::commit();
             DB::connection('pgsql_master')->commit();
-            return responseMsgs(true, "Successfully Forwarded The Application!!", "", "", '010708', '01', '', 'Post', '');
+            return responseMsgs(true, "Successfully Forwarded The Application!!", "", "", '010608', '01', '', 'Post', '');
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
@@ -715,7 +715,7 @@ class ConcessionController extends Controller
             ]);
             DB::commit();
             DB::connection('pgsql_master')->commit();
-            return responseMsgs(true, $msg, "", "", '010709', '01', '376ms', 'Post', '');
+            return responseMsgs(true, $msg, "", "", '010609', '01', '376ms', 'Post', '');
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
@@ -787,7 +787,7 @@ class ConcessionController extends Controller
 
             DB::commit();
             DB::connection('pgsql_master')->commit();
-            return responseMsgs(true, "Successfully Done", "", "", '010710', '01', '358ms', 'Post', '');
+            return responseMsgs(true, "Successfully Done", "", "", '010610', '01', '358ms', 'Post', '');
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
@@ -812,9 +812,9 @@ class ConcessionController extends Controller
                 ->orderBy('prop_owners.id')
                 ->first();
 
-            return responseMsgs(true, "Property 1st Owner Detail", remove_null($ownerDetails), "", '010711', '01', responseTime(), $request->getMethod(), $request->deviceId);
+            return responseMsgs(true, "Property 1st Owner Detail", remove_null($ownerDetails), "", '010611', '01', responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), [], "", '010711', '01', responseTime(), $request->getMethod(), $request->deviceId);
+            return responseMsgs(false, $e->getMessage(), [], "", '010611', '01', responseTime(), $request->getMethod(), $request->deviceId);
         }
     }
 
@@ -857,7 +857,7 @@ class ConcessionController extends Controller
 
             DB::commit();
             DB::connection('pgsql_master')->commit();
-            return responseMsgs(true, "You Have Commented Successfully!!", ['Comment' => $req->comment], "010108", "1.0", "", "POST", "");
+            return responseMsgs(true, "You Have Commented Successfully!!", ['Comment' => $req->comment], "010612", "1.0", "", "POST", "");
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
@@ -904,7 +904,7 @@ class ConcessionController extends Controller
                 break;
         }
 
-        return responseMsgs(true, "Citizen Doc List", remove_null($code), 010717, 1.0, "413ms", "POST", "", "");
+        return responseMsgs(true, "Citizen Doc List", remove_null($code), "010613", 1.0, "413ms", "POST", "", "");
     }
 
     /**
@@ -957,9 +957,9 @@ class ConcessionController extends Controller
             $documents = $mWfActiveDocument->getDocsByAppId($req->applicationId, $workflowId, $moduleId);
             $data = $docUpload->getDocUrl($documents);           #_Calling BLL for Document Path from DMS
 
-            return responseMsgs(true, "Uploaded Documents", remove_null($data), "010102", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true, "Uploaded Documents", remove_null($data), "010616", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "010616", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 
@@ -1021,11 +1021,11 @@ class ConcessionController extends Controller
             }
             DB::commit();
             DB::connection('pgsql_master')->commit();
-            return responseMsgs(true, "Document Uploadation Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true, "Document Uploadation Successful", "", "010615", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
-            return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "010615", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 
@@ -1104,9 +1104,9 @@ class ConcessionController extends Controller
             else
                 $concessionDoc['listDocs'] = [];
 
-            return responseMsgs(true, "Successfully Done", remove_null($concessionDoc), "", '010714', '01', responseTime(), $req->getMethod(), '');
+            return responseMsgs(true, "Successfully Done", remove_null($concessionDoc), "", '010614', '01', responseTime(), $req->getMethod(), '');
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), '', "", '010714', '01', responseTime(), $req->getMethod(), '');
+            return responseMsgs(false, $e->getMessage(), '', "", '010614', '01', responseTime(), $req->getMethod(), '');
         }
     }
 
@@ -1279,11 +1279,11 @@ class ConcessionController extends Controller
 
             DB::commit();
             DB::connection('pgsql_master')->commit();
-            return responseMsgs(true, $req->docStatus . " Successfully", "", "010204", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true, $req->docStatus . " Successfully", "", "010617", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
-            return responseMsgs(false, $e->getMessage(), "", "010204", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "010617", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 

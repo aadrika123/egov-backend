@@ -80,7 +80,7 @@ class RainWaterHarvestingController extends Controller
         try {
             $ulbId = authUser($request)->ulb_id;
             $wardList = $this->getAllWard($ulbId);
-            return responseMsg(true, "List of wards", $wardList);
+            return responseMsg(true, "List of wards", $wardList,"010901", "1.0", "", "GET", $request->deviceId ?? "");
         } catch (Exception $error) {
             return responseMsg(false, "Error!", $error->getMessage());
         }
@@ -194,7 +194,7 @@ class RainWaterHarvestingController extends Controller
             $track->saveTrack($request);
             DB::commit();
             DB::connection('pgsql_master')->commit();
-            return responseMsgs(true, "Application applied!", $harvestingNo);
+            return responseMsgs(true, "Application applied!", $harvestingNo,"010902", "1.0", "", "POST", $request->deviceId ?? "");
         } catch (Exception $error) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
@@ -243,7 +243,7 @@ class RainWaterHarvestingController extends Controller
                 ->thenReturn()
                 ->paginate($perPage);
 
-            return responseMsgs(true, "Inbox List", remove_null($inboxList), '011108', 01, '364ms', 'Post', '');
+            return responseMsgs(true, "Inbox List", remove_null($inboxList), '010903', 01, '364ms', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -285,7 +285,7 @@ class RainWaterHarvestingController extends Controller
                 ->thenReturn()
                 ->paginate($perPage);
 
-            return responseMsg(true, "Inbox List", remove_null($specialList));
+            return responseMsg(true, "Inbox List", remove_null($specialList),"010911", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -316,9 +316,9 @@ class RainWaterHarvestingController extends Controller
                 ->orderByDesc('prop_active_harvestings.id')
                 ->paginate($perPage);
 
-            return responseMsgs(true, "field Verified Inbox!", remove_null($harvesting), 010125, 1.0, "", "POST", $req->deviceId);
+            return responseMsgs(true, "field Verified Inbox!", remove_null($harvesting), "010918", 1.0, "", "POST", $req->deviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", 010125, 1.0, "", "POST", $req->deviceId);
+            return responseMsgs(false, $e->getMessage(), "", "010918", 1.0, "", "POST", $req->deviceId);
         }
     }
 
@@ -364,7 +364,7 @@ class RainWaterHarvestingController extends Controller
                 ->thenReturn()
                 ->paginate($perPage);
 
-            return responseMsg(true, "Outbox List", remove_null($outboxList), '011109', 01, '446ms', 'Post', '');
+            return responseMsg(true, "Outbox List", remove_null($outboxList), '010904', 01, '446ms', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -398,7 +398,7 @@ class RainWaterHarvestingController extends Controller
                 $harvesting->is_escalated = 0;
                 $harvesting->escalated_by = null;
                 $harvesting->save();
-                return responseMsg(true, "Successfully De-Escalated the application", "");
+                return responseMsg(true, "Successfully De-Escalated the application", "","010910", "1.0", "", "POST", $req->deviceId ?? "");
             }
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
@@ -441,9 +441,9 @@ class RainWaterHarvestingController extends Controller
                 'longitude' => $geotagDtl->longitude ?? null,
             ];
 
-            return responseMsgs(true, "Static Details!", remove_null($data), 010125, 1.0, "", "POST", $req->deviceId);
+            return responseMsgs(true, "Static Details!", remove_null($data), "010909", 1.0, "", "POST", $req->deviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", 010125, 1.0, "", "POST", $req->deviceId);
+            return responseMsgs(false, $e->getMessage(), "", "010909", 1.0, "", "POST", $req->deviceId);
         }
     }
 
@@ -523,7 +523,7 @@ class RainWaterHarvestingController extends Controller
             $custom = $mCustomDetails->getCustomDetails($req);
             $fullDetailsData['departmentalPost'] = collect($custom)['original']['data'];
 
-            return responseMsg(true, "", remove_null($fullDetailsData));
+            return responseMsg(true, "", remove_null($fullDetailsData),"010908", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -593,7 +593,7 @@ class RainWaterHarvestingController extends Controller
 
             DB::commit();
             DB::connection('pgsql_master')->commit();
-            return responseMsgs(true, "Successfully Forwarded The Application!!", "", '011110', 01, '446ms', 'Post', $req->deviceId);
+            return responseMsgs(true, "Successfully Forwarded The Application!!", "", '010905', 01, '446ms', 'Post', $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
@@ -740,7 +740,7 @@ class RainWaterHarvestingController extends Controller
             ]);
             DB::commit();
             DB::connection('pgsql_master')->commit();
-            return responseMsgs(true, $msg, "", '011111', 01, '391ms', 'Post', $req->deviceId);
+            return responseMsgs(true, $msg, "", '010906', 01, '391ms', 'Post', $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
@@ -778,7 +778,7 @@ class RainWaterHarvestingController extends Controller
             $rejectedHarvesting->save();
             $activeHarvesting->delete();
 
-            return responseMsgs(true, "Application Rejected !!", "", '011112', 01, '348ms', 'Post', $req->deviceId);
+            return responseMsgs(true, "Application Rejected !!", "", '010907', 01, '348ms', 'Post', $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
@@ -835,7 +835,7 @@ class RainWaterHarvestingController extends Controller
 
             DB::commit();
             DB::connection('pgsql_master')->commit();
-            return responseMsgs(true, "You Have Commented Successfully!!", ['Comment' => $request->comment], "010108", "1.0", "", "POST", "");
+            return responseMsgs(true, "You Have Commented Successfully!!", ['Comment' => $request->comment], "010912", "1.0", "", "POST", "");
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
@@ -865,9 +865,9 @@ class RainWaterHarvestingController extends Controller
             $documents = $mWfActiveDocument->getDocsByAppId($req->applicationId, $workflowId, $moduleId);
             $data = $docUpload->getDocUrl($documents);           #_Calling BLL for Document Path from DMS
 
-            return responseMsgs(true, "Uploaded Documents", remove_null($data), "010102", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true, "Uploaded Documents", remove_null($data), "010915", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "010915", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 
@@ -918,9 +918,9 @@ class RainWaterHarvestingController extends Controller
             $getHarvestingDtls->doc_upload_status = 1;
             $getHarvestingDtls->save();
 
-            return responseMsgs(true, "Document Uploadation Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true, "Document Uploadation Successful", "", "010914", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "010914", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 
@@ -964,7 +964,7 @@ class RainWaterHarvestingController extends Controller
             $track->saveTrack($req);
             DB::commit();
             DB::connection('pgsql_master')->commit();
-            return responseMsgs(true, "Successfully Done", "", "", '010710', '01', '358ms', 'Post', '');
+            return responseMsgs(true, "Successfully Done", "", "", '010919', '01', '358ms', 'Post', '');
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
@@ -997,9 +997,9 @@ class RainWaterHarvestingController extends Controller
                 ->orderByDesc('prop_active_harvestings.id')
                 ->paginate($perPage);
 
-            return responseMsgs(true, "BTC Inbox List", remove_null($harvesting), 010717, 1.0, "271ms", "POST", "", "");
+            return responseMsgs(true, "BTC Inbox List", remove_null($harvesting), "010920", 1.0, "271ms", "POST", "", "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", 010717, 1.0, "271ms", "POST", "", "");
+            return responseMsgs(false, $e->getMessage(), "", "010920", 1.0, "271ms", "POST", "", "");
         }
     }
 
@@ -1017,9 +1017,9 @@ class RainWaterHarvestingController extends Controller
 
             $harvestingDoc['listDocs'] = $this->getHarvestingDoc($refApplication);
 
-            return responseMsgs(true, "Doc List", remove_null($harvestingDoc), 010717, 1.0, "271ms", "POST", "", "");
+            return responseMsgs(true, "Doc List", remove_null($harvestingDoc), "010913", 1.0, "271ms", "POST", "", "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", "", 'POST', "");
+            return responseMsgs(false, $e->getMessage(), "", "010913", "1.0", "", 'POST', "");
         }
     }
 
@@ -1089,7 +1089,7 @@ class RainWaterHarvestingController extends Controller
 
         $reqDoc = $this->getReqDoc($data);
 
-        return responseMsgs(true, "Citizen Doc List", remove_null($reqDoc), 010717, 1.0, "413ms", "POST", "", "");
+        return responseMsgs(true, "Citizen Doc List", remove_null($reqDoc), "010916", 1.0, "413ms", "POST", "", "");
     }
 
     /**
@@ -1165,11 +1165,11 @@ class RainWaterHarvestingController extends Controller
 
             DB::commit();
             DB::connection('pgsql_master')->commit();
-            return responseMsgs(true, $req->docStatus . " Successfully", "", "010204", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true, $req->docStatus . " Successfully", "", "010917", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
-            return responseMsgs(false, $e->getMessage(), "", "010204", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "010917", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 
@@ -1308,7 +1308,7 @@ class RainWaterHarvestingController extends Controller
 
             DB::commit();
             DB::connection('pgsql_master')->commit();
-            return responseMsgs(true, $msg, "", "010118", "1.0", "310ms", "POST", $req->deviceId);
+            return responseMsgs(true, $msg, "", "010921", "1.0", "310ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
@@ -1340,7 +1340,7 @@ class RainWaterHarvestingController extends Controller
             $data->latitude = $geotagDtl->latitude;
             $data->longitude = $geotagDtl->longitude;
 
-            return responseMsgs(true, "TC Verification Details", remove_null($data), "010120", "1.0", "258ms", "POST", $req->deviceId);
+            return responseMsgs(true, "TC Verification Details", remove_null($data), "010922", "1.0", "258ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }

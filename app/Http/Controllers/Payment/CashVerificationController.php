@@ -76,9 +76,9 @@ class CashVerificationController extends Controller
 
             $data = (array_values(objtoarray($data)));
 
-            return responseMsgs(true, "List cash Verification", $data, "010201", "1.0", "", "POST", $request->deviceId ?? "");
+            return responseMsgs(true, "List cash Verification", $data, "012201", "1.0", "", "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $request->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "012201", "1.0", "", "POST", $request->deviceId ?? "");
         }
     }
 
@@ -125,9 +125,9 @@ class CashVerificationController extends Controller
 
             $data = (array_values(objtoarray($data)));
 
-            return responseMsgs(true, "TC Collection", remove_null($data), "010201", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true, "TC Collection", remove_null($data), "012202", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "012202", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 
@@ -166,9 +166,9 @@ class CashVerificationController extends Controller
             $data['date'] = Carbon::parse($date)->format('d-m-Y');
             $data['verifyStatus'] = false;
 
-            return responseMsgs(true, "TC Collection", remove_null($data), "010201", "1.0", "", "POST", $request->deviceId ?? "");
+            return responseMsgs(true, "TC Collection", remove_null($data), "012203", "1.0", "", "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $request->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "012203", "1.0", "", "POST", $request->deviceId ?? "");
         }
     }
 
@@ -217,9 +217,9 @@ class CashVerificationController extends Controller
             $data['verifyStatus']    =  true;
             $data['date'] = Carbon::parse($date)->format('d-m-Y');
 
-            return responseMsgs(true, "TC Collection", remove_null($data), "010201", "1.0", "", "POST", $request->deviceId ?? "");
+            return responseMsgs(true, "TC Collection", remove_null($data), "012204", "1.0", "", "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $request->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "012204", "1.0", "", "POST", $request->deviceId ?? "");
         }
     }
 
@@ -333,13 +333,13 @@ class CashVerificationController extends Controller
             DB::connection('pgsql_master')->commit();
             DB::connection('pgsql_water')->commit();
             DB::connection('pgsql_trade')->commit();
-            return responseMsgs(true, "Cash Verified", '', "010201", "1.0", "", "POST", $request->deviceId ?? "");
+            return responseMsgs(true, "Cash Verified", '', "012205", "1.0", "", "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
             DB::connection('pgsql_water')->rollBack();
             DB::connection('pgsql_trade')->rollBack();
-            return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $request->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "012205", "1.0", "", "POST", $request->deviceId ?? "");
         }
     }
 
@@ -406,10 +406,10 @@ class CashVerificationController extends Controller
             $data['ulb']                 =  collect($details)[0]->ulb_name;
             $data['ulbDetails']          = $mUlbMasters->getUlbDetails($ulbId);
 
-            return responseMsgs(true, "Cash Receipt", $data, "010201", "1.0", responseTime(), "POST", $request->deviceId ?? "");
+            return responseMsgs(true, "Cash Receipt", $data, "012206", "1.0", responseTime(), "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
             DB::rollBack();
-            return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", responseTime(), "POST", $request->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "012206", "1.0", responseTime(), "POST", $request->deviceId ?? "");
         }
     }
 
@@ -470,11 +470,11 @@ class CashVerificationController extends Controller
 
             DB::commit();
             DB::connection('pgsql_master')->commit();
-            return responseMsgs(true, "Edit Successful", "", "010201", "1.0", responseTime(), "POST", $request->deviceId ?? "");
+            return responseMsgs(true, "Edit Successful", "", "012207", "1.0", responseTime(), "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
-            return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", responseTime(), "POST", $request->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "012207", "1.0", responseTime(), "POST", $request->deviceId ?? "");
         }
     }
 }
