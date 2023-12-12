@@ -595,7 +595,7 @@ Route::controller(ReportController::class)->group(function () {
                                                                   #API_ID = 012427                 
   Route::post('reports/mpl', 'mplReport');                                #API_ID = 012428
   Route::post('reports/mpl2', 'mplReport2');                              #API_ID = 012429
-  Route::post('geo', 'getLocality');                                      #API_ID = 012430
+  Route::post('geo', 'getLocality');                                 
 });
 // });
 
@@ -619,15 +619,6 @@ Route::controller(LocationController::class)->group(function () {
   Route::post('location_ward_list', 'bindLocationWithWards');             #API_ID = 012502
   Route::post('map/level1', 'mapLevel1');                                 #API_ID = 012503
 });
-
-#Route for getting citizen details based on citizen Id
-/**
-| Serial No :26
- */
-Route::controller(CitizenController::class)->group(function () {
-  Route::post('citizen/details', 'citizenDetailsWithCitizenId')->middleware(['json.response', 'auth_maker']);                                                         #API_ID = 012601
-});
-
 
 
 //====================================NOT IN USE===============================================//
@@ -677,3 +668,13 @@ Route::controller(CitizenController::class)->group(function () {
     Route::post('cluster/property-by-cluster', 'propertyByCluster');            #API_ID = 011008
     
   });
+
+
+  #Route for getting citizen details based on citizen Id
+/**
+| Serial No :26
+ */
+Route::controller(CitizenController::class)->group(function () {
+  Route::post('citizen/details', 'citizenDetailsWithCitizenId')->middleware(['json.response', 'auth_maker']);                                                         #API_ID = 012601
+});
+

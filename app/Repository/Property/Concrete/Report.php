@@ -2930,7 +2930,7 @@ class Report implements IReport
             collect($prePreviousYearDcb)->first()
         ];
 
-        return responseMsgs(true, "", remove_null($data), "010203", 01, responseTime(), 'POST', $request->deviceId);
+        return responseMsgs(true, "", remove_null($data), "012418", 01, responseTime(), 'POST', $request->deviceId);
     }
 
     /**
@@ -3277,6 +3277,6 @@ class Report implements IReport
         $data['reportTypes'] = $reportTypes;
         $data['data'] = $details;
 
-        return responseMsgs(true, "", $data, "", "", "", "post", $request->deviceId);
+        return responseMsgs(true, "", $data, "", "012420", "", "post", $request->deviceId);
     }
 }

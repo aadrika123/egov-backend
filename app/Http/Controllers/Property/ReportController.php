@@ -72,7 +72,7 @@ class ReportController extends Controller
                 "perPage" => "nullable|digits_between:1,9223372036854775807",
             ]
         );
-        $request->request->add(["metaData" => ["pr2.1", 1.1, null, $request->getMethod(), null,]]);
+        $request->request->add(["metaData" => ["012402", 1.1, null, $request->getMethod(), null,]]);
         return $this->Repository->safCollection($request);
     }
 
@@ -87,13 +87,13 @@ class ReportController extends Controller
                 "perPage" => "nullable|digits_between:1,9223372036854775807",
             ]
         );
-        $request->request->add(["metaData" => ["pr3.1", 1.1, null, $request->getMethod(), null,]]);
+        $request->request->add(["metaData" => ["012403", 1.1, null, $request->getMethod(), null,]]);
         return $this->Repository->safPropIndividualDemandAndCollection($request);
     }
 
     public function levelwisependingform(Request $request)
     {
-        $request->request->add(["metaData" => ["pr4.1", 1.1, null, $request->getMethod(), null,]]);
+        $request->request->add(["metaData" => ["012404", 1.1, null, $request->getMethod(), null,]]);
         return $this->Repository->levelwisependingform($request);
     }
 
@@ -108,7 +108,7 @@ class ReportController extends Controller
                 "perPage" => "nullable|digits_between:1,9223372036854775807",
             ]
         );
-        $request->request->add(["metaData" => ["pr4.2", 1.1, null, $request->getMethod(), null,]]);
+        $request->request->add(["metaData" => ["012405", 1.1, null, $request->getMethod(), null,]]);
         return $this->Repository->levelformdetail($request);
     }
 
@@ -122,7 +122,7 @@ class ReportController extends Controller
                 "perPage" => "nullable|digits_between:1,9223372036854775807",
             ]
         );
-        $request->request->add(["metaData" => ["pr4.2.1", 1.1, null, $request->getMethod(), null,]]);
+        $request->request->add(["metaData" => ["012406", 1.1, null, $request->getMethod(), null,]]);
         return $this->Repository->levelUserPending($request);
     }
 
@@ -136,7 +136,7 @@ class ReportController extends Controller
                 "perPage" => "nullable|digits_between:1,9223372036854775807",
             ]
         );
-        $request->request->add(["metaData" => ["pr4.2.2", 1.1, null, $request->getMethod(), null,]]);
+        $request->request->add(["metaData" => ["012407", 1.1, null, $request->getMethod(), null,]]);
 
         $refUser        = Auth()->user();
         $refUserId      = $refUser->id;
@@ -172,7 +172,7 @@ class ReportController extends Controller
                 "perPage" => "nullable|digits_between:1,9223372036854775807",
             ]
         );
-        $request->request->add(["metaData" => ["pr4.2.1.1", 1.1, null, $request->getMethod(), null,]]);
+        $request->request->add(["metaData" => ["012408", 1.1, null, $request->getMethod(), null,]]);
         return $this->Repository->userWiseWardWireLevelPending($request);
     }
 
@@ -186,7 +186,7 @@ class ReportController extends Controller
                 "wardId" => "nullable|digits_between:1,9223372036854775807",
             ]
         );
-        $request->request->add(["metaData" => ["pr5.1", 1.1, null, $request->getMethod(), null,]]);
+        $request->request->add(["metaData" => ["012409", 1.1, null, $request->getMethod(), null,]]);
         return $this->Repository->safSamFamGeotagging($request);
     }
 
@@ -202,13 +202,13 @@ class ReportController extends Controller
                 "userId" => "nullable|digits_between:1,9223372036854775807",
             ]
         );
-        $request->request->add(["metaData" => ["pr1.2", 1.1, null, $request->getMethod(), null,]]);
+        $request->request->add(["metaData" => ["012421", 1.1, null, $request->getMethod(), null,]]);
         return $this->Repository->PropPaymentModeWiseSummery($request);
     }
 
     public function PaymentModeWiseSummery(Request $request)
     {
-        $request->merge(["metaData" => ["pr1.2", 1.1, null, $request->getMethod(), null,]]);
+        $request->merge(["metaData" => ["012422", 1.1, null, $request->getMethod(), null,]]);
         $validation = Validator::make($request->all(), [
             "fromDate" => "required|date|date_format:Y-m-d",
             "uptoDate" => "required|date|date_format:Y-m-d",
@@ -237,7 +237,7 @@ class ReportController extends Controller
                 "userId" => "nullable|digits_between:1,9223372036854775807",
             ]
         );
-        $request->request->add(["metaData" => ["pr2.2", 1.1, null, $request->getMethod(), null,]]);
+        $request->request->add(["metaData" => ["012423", 1.1, null, $request->getMethod(), null,]]);
         return $this->Repository->SafPaymentModeWiseSummery($request);
     }
 
@@ -252,7 +252,7 @@ class ReportController extends Controller
                 "perPage" => "nullable|digits_between:1,9223372036854775807",
             ]
         );
-        $request->request->add(["metaData" => ["pr7.1", 1.1, null, $request->getMethod(), null,]]);
+        $request->request->add(["metaData" => ["012424", 1.1, null, $request->getMethod(), null,]]);
         return $this->Repository->PropDCB($request);
     }
 
@@ -267,7 +267,7 @@ class ReportController extends Controller
                 // "perPage" => "nullable|digits_between:1,9223372036854775807",
             ]
         );
-        $request->request->add(["metaData" => ["pr8.1", 1.1, null, $request->getMethod(), null,]]);
+        $request->request->add(["metaData" => ["012425", 1.1, null, $request->getMethod(), null,]]);
         return $this->Repository->PropWardWiseDCB($request);
     }
 
@@ -282,7 +282,7 @@ class ReportController extends Controller
                 "perPage" => "nullable|digits_between:1,9223372036854775807",
             ]
         );
-        $request->request->add(["metaData" => ["pr9.1", 1.1, null, $request->getMethod(), null,]]);
+        $request->request->add(["metaData" => ["012426", 1.1, null, $request->getMethod(), null,]]);
         return $this->Repository->PropFineRebate($request);
     }
 
@@ -298,7 +298,7 @@ class ReportController extends Controller
                 "perPage" => "nullable|digits_between:1,9223372036854775807",
             ]
         );
-        $request->request->add(["metaData" => ["pr10.1", 1.1, null, $request->getMethod(), null,]]);
+        $request->request->add(["metaData" => ["012427", 1.1, null, $request->getMethod(), null,]]);
         return $this->Repository->PropDeactedList($request);
     }
 
@@ -337,7 +337,7 @@ class ReportController extends Controller
         $data = $mPropDemand->wardWiseHolding($mreq);
 
         $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
-        return responseMsgs(true, "Ward Wise Holding Data!", $data, 'pr6.1', '1.1', $queryRunTime, 'Post', '');
+        return responseMsgs(true, "Ward Wise Holding Data!", $data, '012410', '1.1', $queryRunTime, 'Post', '');
     }
 
     /**
@@ -355,7 +355,7 @@ class ReportController extends Controller
             $financialYear = getFinancialYear($startOfYear, 2015); // Calculate financial year and add a label
             $financialYears[] = $financialYear;
         }
-        return responseMsgs(true, "Financial Year List", array_reverse($financialYears), 'pr11.1', '01', '382ms-547ms', 'Post', '');
+        return responseMsgs(true, "Financial Year List", array_reverse($financialYears), '012411', '01', '382ms-547ms', 'Post', '');
     }
 
     /**
@@ -411,7 +411,7 @@ class ReportController extends Controller
                 $receipts->push($receipt);
             }
 
-            return responseMsgs(true, 'Bulk Receipt', remove_null($receipts), '010801', '01', responseTime(), 'Post', '');
+            return responseMsgs(true, 'Bulk Receipt', remove_null($receipts), '012412', '01', responseTime(), 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -462,7 +462,7 @@ class ReportController extends Controller
             //     "numberOfPages" => $numberOfPages
             // ];
 
-            return responseMsgs(true, "GB Saf Collection!", $list, 'pr12.1', '01', '623ms', 'Post', '');
+            return responseMsgs(true, "GB Saf Collection!", $list, '012413', '01', '623ms', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -479,7 +479,7 @@ class ReportController extends Controller
                 "wardMstrId" => "nullable|digits_between:1,9223372036854775807",
             ]
         );
-        $request->request->add(["metaData" => ["pr13.1", 1.1, null, $request->getMethod(), null,]]);
+        $request->request->add(["metaData" => ["012414", 1.1, null, $request->getMethod(), null,]]);
         return $this->Repository->propIndividualDemandCollection($request);
     }
 
@@ -495,7 +495,7 @@ class ReportController extends Controller
                 "wardMstrId" => "nullable|digits_between:1,9223372036854775807",
             ]
         );
-        $request->request->add(["metaData" => ["pr14.1", 1.1, null, $request->getMethod(), null,]]);
+        $request->request->add(["metaData" => ["012415", 1.1, null, $request->getMethod(), null,]]);
         return $this->Repository->gbsafIndividualDemandCollection($request);
     }
 
@@ -510,7 +510,7 @@ class ReportController extends Controller
                 "wardMstrId" => "nullable|digits_between:1,9223372036854775807",
             ]
         );
-        $request->request->add(["metaData" => ["pr15.1", 1.1, null, $request->getMethod(), null,]]);
+        $request->request->add(["metaData" => ["012416", 1.1, null, $request->getMethod(), null,]]);
         return $this->Repository->notPaidFrom2016($request);
     }
 
@@ -525,7 +525,7 @@ class ReportController extends Controller
                 "wardMstrId" => "nullable|digits_between:1,9223372036854775807",
             ]
         );
-        $request->request->add(["metaData" => ["pr16.1", 1.1, null, $request->getMethod(), null,]]);
+        $request->request->add(["metaData" => ["012417", 1.1, null, $request->getMethod(), null,]]);
         return $this->Repository->previousYearPaidButnotCurrentYear($request);
     }
 
@@ -597,7 +597,7 @@ class ReportController extends Controller
         $data['last_page'] = max($a, $b, $c);
         $data['data'] = $details;
 
-        return responseMsgs(true, "", $data, "", "", "", "post", $request->deviceId);
+        return responseMsgs(true, "", $data, "", "012419", "", "post", $request->deviceId);
     }
 
     /**
@@ -816,9 +816,9 @@ class ReportController extends Controller
             $data['citizen']['nov']  = $currentYearData->citizen_engagement_nov;
             $data['citizen']['dec']  = $currentYearData->citizen_engagement_dec;
 
-            return responseMsgs(true, "Mpl Report", $data, "", 01, responseTime(), $request->getMethod(), $request->deviceId);
+            return responseMsgs(true, "Mpl Report", $data, "012428", 01, responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "", 01, responseTime(), $request->getMethod(), $request->deviceId);
+            return responseMsgs(false, $e->getMessage(), "", "012428", 01, responseTime(), $request->getMethod(), $request->deviceId);
         }
     }
 
@@ -867,7 +867,7 @@ class ReportController extends Controller
         $data->total_due = round($data->arrear_due + $data->current_year_due, 2);
         $data->total_demand = round($data->arrear_demand + $data->current_year_demand, 2);
         $data->total_collection = round($data->arrear_collection + $data->current_year_collection, 2);
-        return responseMsgs(true, "", $data, "", "01", responseTime(), $request->getMethod(), $request->deviceId);
+        return responseMsgs(true, "", $data, "012429", "01", responseTime(), $request->getMethod(), $request->deviceId);
     }
 
     /**

@@ -142,11 +142,11 @@ class BankReconcillationController extends Controller
             }
 
             if (collect($data)->isNotEmpty()) {
-                return responseMsgs(true, "Data Acording to request!", $data, '010801', '01', responseTime() ?? '382ms-547ms', 'Post', $request->deviceId);
+                return responseMsgs(true, "Data Acording to request!", $data, '012301', '01', responseTime() ?? '382ms-547ms', 'Post', $request->deviceId);
             }
             return responseMsg(false, "data not found!", "");
         } catch (Exception $error) {
-            return responseMsg(false,  $error->getMessage(), [], '010801', '01', responseTime(), 'Post', $request->deviceId);
+            return responseMsg(false,  $error->getMessage(), [], '012301', '01', responseTime(), 'Post', $request->deviceId);
         }
     }
 
@@ -193,9 +193,9 @@ class BankReconcillationController extends Controller
             }
 
             if ($data)
-                return responseMsg(true, "data found", $data);
+                return responseMsg(true, "data found", $data,"012302", "1.0", "", "POST", $request->deviceId ?? "");
             else
-                return responseMsg(false, "data not found!", "");
+                return responseMsg(false, "data not found!", "","012302", "1.0", "", "POST", $request->deviceId ?? "");
         } catch (Exception $error) {
             return responseMsg(false, "ERROR!", $error->getMessage());
         }
@@ -481,7 +481,7 @@ class BankReconcillationController extends Controller
             DB::connection('pgsql_master')->commit();
             DB::connection('pgsql_water')->commit();
             DB::connection('pgsql_trade')->commit();
-            return responseMsg(true, "Data Updated!", '');
+            return responseMsg(true, "Data Updated!", '',"012303", "1.0", "", "POST", $request->deviceId ?? "");
         } catch (Exception $error) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();

@@ -385,9 +385,9 @@ class PropertyController extends Controller
                 return $value;
             })->filter();
 
-            return responseMsgs(true, "latLong Details", remove_null($propDetails), "", "01", responseTime(), "POST", $req->deviceId);
+            return responseMsgs(true, "latLong Details", remove_null($propDetails), "011707", "01", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", responseTime(), "POST", $req->deviceId);
+            return responseMsgs(false, $e->getMessage(), $e->getFile(), "011707", "01", responseTime(), "POST", $req->deviceId);
         }
     }
     public function readRefDocumentPath($path)

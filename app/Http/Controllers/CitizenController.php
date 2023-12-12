@@ -433,12 +433,12 @@ class CitizenController extends Controller
             return $val;
            });
     
-           return responseMsgs(true, "property details", $data, 010124, 1.0, "308ms", "POST", $request->deviceId);
+           return responseMsgs(true, "property details", $data, "012601", 1.0, "308ms", "POST", $request->deviceId);
         }
 
 
         catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", 010124, 1.0, "308ms", "POST", $request->deviceId);
+            return responseMsgs(false, $e->getMessage(), "", "012601", 1.0, "308ms", "POST", $request->deviceId);
         }
     }
 }
