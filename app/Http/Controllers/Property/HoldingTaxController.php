@@ -346,10 +346,6 @@ class HoldingTaxController extends Controller
             ]);
             DB::beginTransaction();
             $orderDetails = $this->saveGenerateOrderid($req);                                      //<---------- Generate Order ID Trait
-            // $orderDetails = Http::withHeaders([])
-            //     ->post($url . $endPoint, $req->toArray());
-
-            // $orderDetails = collect(json_decode($orderDetails));
 
             $demands = array_merge($demands->toArray(), [
                 'orderId' => $orderDetails['orderId']

@@ -263,8 +263,6 @@ class ReportController extends Controller
                 "fiYear" => "nullable|regex:/^\d{4}-\d{4}$/",
                 "ulbId" => "nullable|digits_between:1,9223372036854775807",
                 "wardId" => "nullable|digits_between:1,9223372036854775807",
-                // "page" => "nullable|digits_between:1,9223372036854775807",
-                // "perPage" => "nullable|digits_between:1,9223372036854775807",
             ]
         );
         $request->request->add(["metaData" => ["012425", 1.1, null, $request->getMethod(), null,]]);
@@ -388,9 +386,6 @@ class ReportController extends Controller
             if ($tranType == 'Saf')
                 $data = $transaction->whereNotNull('saf_id')->get();
 
-            // if ($data->isEmpty())
-            //     throw new Exception('No Data Found');
-
             $tranNos = collect($data)->pluck('tran_no');
 
             foreach ($tranNos as $tranNo) {
@@ -449,19 +444,6 @@ class ReportController extends Controller
 
             $list = $gbsafCollection->paginate($perPage);
             return $list;
-            // $page = $req->page && $req->page > 0 ? $req->page : 1;
-            // $paginator = $gbsafCollection->paginate($perPage);
-            // $items = $paginator->items();
-            // $total = $paginator->total();
-            // $numberOfPages = ceil($total / $perPage);
-            // $list = [
-            //     "perPage" => $perPage,
-            //     "page" => $page,
-            //     "items" => $items,
-            //     "total" => $total,
-            //     "numberOfPages" => $numberOfPages
-            // ];
-
             return responseMsgs(true, "GB Saf Collection!", $list, '012413', '01', '623ms', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
@@ -858,8 +840,6 @@ class ReportController extends Controller
                                     WHERE d.paid_status=1 AND d.fyear='2023-2024' AND t.tran_date BETWEEN '2023-04-01' AND '2024-03-31'
                                     AND t.status = 1 AND d.status = 1
                             ), 0) AS current_year_collection
-                    -- COALESCE((SELECT SUM(balance) FROM prop_demands WHERE status = 1 AND ulb_id = 2 AND fyear < '2023-2024' AND paid_status = 0), 0) AS arrear_due,
-                    -- COALESCE((SELECT SUM(balance) FROM prop_demands WHERE status = 1 AND ulb_id = 2 AND fyear = '2023-2024' AND paid_status = 0), 0) AS current_year_due
                 ";
         $data = DB::select($sql)[0];
         $data->arrear_due = round($data->arrear_demand - $data->arrear_collection, 2);

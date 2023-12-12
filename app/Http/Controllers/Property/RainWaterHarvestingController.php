@@ -161,7 +161,6 @@ class RainWaterHarvestingController extends Controller
                 $mWfActiveDocument = new WfActiveDocument();
                 $mPropActiveHarvesting = new PropActiveHarvesting();
                 $relativePath = Config::get('PropertyConstaint.HARVESTING_RELATIVE_PATH');
-                // $getHarvestingDtls = $mPropActiveHarvesting->getHarvestingNo($request->applicationId);
                 $refImageName = $request->docCode;
                 $refImageName = $waterHaravesting->id . '-' . $refImageName;
                 $document = $request->document;
@@ -684,16 +683,6 @@ class RainWaterHarvestingController extends Controller
                 $newDemand = $calculatePropById->calculatePropTax($req);
                 $propDemandDetail = $mPropDemand->getDemandByFyear($currentFY, $propertyId);
 
-                // if (collect($propDemandDetail)->isNotEmpty()) {
-                //     // if demand paid
-                //     $propDemandDetail->where('paid_status', 1);
-
-                //     // if demand is not paid
-                //     $propDemandDetail->where('paid_status', 0);
-                // } else {
-                //     // demand is not generated for next quater
-                // }
-
                 $finalDemand = collect($newDemand)->where('fyear', $currentFY)->where('qtr', '>=', $nextQuarter)->values();
                 $finalDemand = $finalDemand->toArray();
 
@@ -897,11 +886,7 @@ class RainWaterHarvestingController extends Controller
             $refImageName = $req->docCode;
             $refImageName = $getHarvestingDtls->id . '-' . $refImageName;
             $document = $req->document;
-            // $imageName = $docUpload->upload($refImageName, $document, $relativePath);
             $docDetail = $docUpload->checkDoc($req);
-            // if ($docDetail->original['status'] == false)
-            //     throw new Exception("Document Uploadation Failed");
-
             $metaReqs['uniqueId'] = $docDetail['data']['uniqueId'];
             $metaReqs['referenceNo'] = $docDetail['data']['ReferenceNo'];
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
@@ -909,7 +894,6 @@ class RainWaterHarvestingController extends Controller
             $metaReqs['workflowId'] = $getHarvestingDtls->workflow_id;
             $metaReqs['ulbId'] = $getHarvestingDtls->ulb_id;
             $metaReqs['relativePath'] = $relativePath;
-            // $metaReqs['document'] = $imageName;
             $metaReqs['docCode'] = $req->docCode;
 
             $metaReqs = new Request($metaReqs);
@@ -1206,7 +1190,6 @@ class RainWaterHarvestingController extends Controller
         $req->validate([
             "applicationId" => "required|numeric",
             "verificationStatus" => "required|In:1,0",
-            // "harvestingImage.*" => "required|image|mimes:jpeg,jpg,png",
         ]);
         try {
             $taxCollectorRole = Config::get('PropertyConstaint.SAF-LABEL.TC');
@@ -1356,10 +1339,6 @@ class RainWaterHarvestingController extends Controller
                 if ($harvesting->doc_upload_status == 0)
                     throw new Exception("Document Not Fully Uploaded");
                 break;
-                // case $wfLevels['DA']:                       // DA Condition
-                //     if ($harvesting->doc_verify_status == 0)
-                //         throw new Exception("Document Not Fully Verified");
-                //     break;
         }
     }
 

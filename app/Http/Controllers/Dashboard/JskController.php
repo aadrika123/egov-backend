@@ -47,8 +47,6 @@ class JskController extends Controller
 
             $currentRole =  $this->getRoleByUserUlbId($ulbId, $userId);
 
-            // if (in_array($userType, $rUserType)) {
-
             $data['recentApplications'] = $propActiveSaf->recentApplication($userId);
 
             switch ($applicationType) {
@@ -75,12 +73,8 @@ class JskController extends Controller
 
             if ($userType == 'JSK')
                 $data['recentPayments']  = $propTransaction->recentPayment($userId);
-            // }
 
             if ($userType == 'BO') {
-
-                // $data['Total Received'] =  $propActiveSaf->totalReceivedApplication($currentRole->id);
-                // return $mWorkflowTrack->totalForwadedApplication($currentRole->id);
             }
 
             return responseMsgs(true, "JSK Dashboard", remove_null($data), "011901", "1.0", "", "POST", $request->deviceId ?? "");

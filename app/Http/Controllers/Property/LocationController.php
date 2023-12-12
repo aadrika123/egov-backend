@@ -142,30 +142,6 @@ class LocationController extends Controller
             )
             ->orderBy('ulb_name')
             ->get();
-
-        // return $data = DB::select("SELECT u.ulb_name,d.*
-        //                                 from ulb_masters u
-        //                                 left join (
-        //                                     SELECT 
-        //                                     count(a.prop_count),
-        //                                     sum(a.prop_demand_cnt),
-        //                                     a.ulb_id
-
-        //                                     FROM (
-        //                                         select  
-        //                                             p.id as prop_count,
-        //                                             count(d.id) as prop_demand_cnt,
-        //                                             p.ulb_id
-
-        //                                         from prop_properties p
-        //                                         join prop_demands d on d.property_id=p.id and d.status=1 and d.fyear='2023-2024'
-        //                                         where p.status=1
-        //                                         group by p.id
-        //                                     ) as a
-
-        //                                     group by a.ulb_id
-        //                                 ) d on d.ulb_id=u.id");
-
         $a = collect($data)->map(function ($data) use ($currentFy) {
             $count =  DB::select("WITH property_counts AS (
                                     SELECT COUNT(id) as total_properties
@@ -224,37 +200,8 @@ class LocationController extends Controller
         $currentFy = getFY();
         $todayDate = Carbon::now()->format('Y-m-d');
         $mUlbWardMaster = new UlbWardMaster();
-
-        // $data = DataMap::select('json')
-        //     ->where('level', 2)
-        //     ->where('date', $todayDate)
-        //     ->first();
-
-        // if ($data)
-        //     return responseMsgs(true, "Data Fetched", json_decode($data->json), "", "01", responseTime(), $req->getMethod(), $req->deviceId);
-
         $wards = $mUlbWardMaster->getWardByUlbId($req->ulbId);
         $wards = collect($wards)->sortBy('id')->values();
-        // $wards = collect($wards)->sortBy('ward_name')->values();
-        // $wardIds = collect($wards)->pluck('id');
-
-        // $latlong = PropProperty::select('prop_properties.id', 'ward_mstr_id', 'latitude', 'longitude')
-        //     ->join('prop_saf_geotag_uploads', 'prop_saf_geotag_uploads.saf_id', 'prop_properties.saf_id')
-        //     ->distinct('ward_mstr_id')
-        //     ->whereIn('ward_mstr_id', $wardIds)
-        //     ->get();
-
-        // collect($latlong)->map(function ($latlong) {
-
-        //     UlbWardMaster::where('id', $latlong->ward_mstr_id)
-        //         ->update([
-        //             'latitude' => $latlong->latitude,
-        //             'longitude' => $latlong->longitude,
-        //         ]);
-        // });
-        // die("ok");
-
-
         return $data = collect($wards)->map(function ($wards) use ($currentFy) {
             $count =  DB::select("WITH property_counts AS (
                                     SELECT COUNT(id) as total_properties

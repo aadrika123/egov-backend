@@ -388,8 +388,6 @@ class SafDocController extends Controller
                 $ifFullDocVerifiedV1 = $this->ifFullDocVerified($applicationId, $req->docStatus);
             else
                 $ifFullDocVerifiedV1 = 0;                                       // In Case of Rejection the Document Verification Status will always remain false
-
-            // dd($ifFullDocVerifiedV1);
             if ($ifFullDocVerifiedV1 == 1) {                                     // If The Document Fully Verified Update Verify Status
                 $safDtls->doc_verify_status = 1;
                 $safDtls->save();

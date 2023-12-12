@@ -358,8 +358,6 @@ class ActiveSafController extends Controller
             $occupiedWards = $mWfWardUser->getWardsByUserId($userId)->pluck('ward_id');                       // Model () to get Occupied Wards of Current User
             $roleIds = $mWfRoleUser->getRoleIdByUserId($userId)->pluck('wf_role_id');                      // Model to () get Role By User Id
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleIds)->pluck('workflow_id');
-
-            // DB::connection('pgsql::read')->enableQueryLog();
             $safDtl = $this->Repository->getSaf($workflowIds)                                          // Repository function to get SAF Details
                 ->where('parked', false)
                 ->where('prop_active_safs.ulb_id', $ulbId)
@@ -368,8 +366,6 @@ class ActiveSafController extends Controller
                 ->whereIn('ward_mstr_id', $occupiedWards)
                 ->orderByDesc('id')
                 ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name');
-
-            // dd(DB::connection('pgsql::read')->getQueryLog());
 
             $safInbox = app(Pipeline::class)
                 ->send(
@@ -425,7 +421,6 @@ class ActiveSafController extends Controller
                           else false end
                           as btc_for_citizen"
                 ))
-                // ->join('workflow_tracks','workflow_tracks')
                 ->where('parked', true)
                 ->where('prop_active_safs.ulb_id', $mUlbId)
                 ->where('prop_active_safs.status', 1)
@@ -1440,7 +1435,6 @@ class ActiveSafController extends Controller
 
                 $previousHoldingDeactivation->deactivatePreviousHoldings($safDetails);  // Previous holding deactivation in case of Mutation, Amalgamation, Bifurcation
             }
-            // dd('ok');
             // Rejection
             if ($req->status == 0) {
                 $this->finalRejectionSafReplica($activeSaf, $ownerDetails, $floorDetails);
@@ -2877,11 +2871,8 @@ class ActiveSafController extends Controller
 
                 $safDetails2['owners'] = $owners;
                 $array2 = $this->generateSafRequest($safDetails2);
-                // dd($array);
                 $request2 = new Request($array2);
                 $safTaxes2 = $safCalculation->calculateTax($request2);
-                // $safTaxes2 = json_decode(json_encode($safTaxes2), true);
-                // dd($safTaxes,$array);
                 if (!$safTaxes->original["status"]) {
                     throw new Exception($safTaxes->original["message"]);
                 }
@@ -2890,7 +2881,6 @@ class ActiveSafController extends Controller
                 }
                 $safTaxes3 = $this->reviewTaxCalculation($safTaxes);
                 $safTaxes4 = $this->reviewTaxCalculation($safTaxes2);
-                // dd(json_decode(json_encode($safTaxes), true));
                 $compairTax = $this->reviewTaxCalculationCom($safTaxes, $safTaxes2);
 
                 $safTaxes2 = json_decode(json_encode($safTaxes4), true);

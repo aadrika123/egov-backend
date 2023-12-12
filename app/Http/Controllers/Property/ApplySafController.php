@@ -93,7 +93,7 @@ class ApplySafController extends Controller
      * | Query Costing-500 ms
      * | Rating-5
      */
-    public function applySaf(reqApplySaf $request)                                            //function(1.1)
+    public function applySaf(reqApplySaf $request)                                          
     {
         try {
             // Variable Assignments
@@ -109,7 +109,7 @@ class ApplySafController extends Controller
             $calculateSafById = new CalculateSafById;
             $generateSafApplyDemandResponse = new GenerateSafApplyDemandResponse;
             // Derivative Assignments
-            $ulbWorkflowId = $this->readAssessUlbWfId($request, $ulb_id);             //function(2.1)
+            $ulbWorkflowId = $this->readAssessUlbWfId($request, $ulb_id);        
             $roadWidthType = $this->readRoadWidthType($request->roadType);          // Read Road Width Type
 
             $request->request->add(['road_type_mstr_id' => $roadWidthType]);
@@ -206,7 +206,7 @@ class ApplySafController extends Controller
                 "applyDate" => ymdToDmyDate($mApplyDate),
                 "safId" => $safId,
                 "demand" => $demandResponse
-            ], "010102", "1.0", "1s", "POST", $request->deviceId);
+            ], "010101", "1.0", "1s", "POST", $request->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
@@ -217,7 +217,7 @@ class ApplySafController extends Controller
     /**
      * | Read Assessment Type and Ulb Workflow Id
      */
-    public function readAssessUlbWfId($request, $ulb_id)                                        //function(2.1)
+    public function readAssessUlbWfId($request, $ulb_id)                                        
     {
         if ($request->assessmentType == 1) {                                                    // New Assessment 
             $workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');
@@ -337,7 +337,7 @@ class ApplySafController extends Controller
     /**
      * | Apply GB Saf
      */
-    public function applyGbSaf(ReqGBSaf $req)                                                   //function(3.1)
+    public function applyGbSaf(ReqGBSaf $req)                                                
     {
         try {
             // Variable Assignments
@@ -477,7 +477,7 @@ class ApplySafController extends Controller
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
 
-            return responseMsgs(false, $e->getMessage(), "", "010103", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "010102", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 

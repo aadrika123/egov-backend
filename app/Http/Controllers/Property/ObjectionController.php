@@ -280,10 +280,6 @@ class ObjectionController extends Controller
                         where objection_id = $details->objection_id";
                 $objectionList =  DB::select($sql);
 
-
-                // //Assessment Details
-                //  $objectionList = $mPropActiveObjectionDtl->getDtlbyObjectionId($details->objection_id);
-
                 $objectionList = json_decode(json_encode($objectionList), true);       // Convert Std class to array
                 $objectionDetails = $this->objectionDetails($objectionList);
                 $objectionElement = [
@@ -724,16 +720,6 @@ class ObjectionController extends Controller
                     $newDemand = $calculatePropById->calculatePropTax($req);
                     $propDemandDetail = $mPropDemand->getDemandByFyear($currentFY, $propertyId);
 
-                    // if (collect($propDemandDetail)->isNotEmpty()) {
-                    //     // if demand paid
-                    //     $propDemandDetail->where('paid_status', 1);
-
-                    //     // if demand is not paid
-                    //     $propDemandDetail->where('paid_status', 0);
-                    // } else {
-                    //     // demand is not generated for next quater
-                    // }
-
                     $finalDemand = collect($newDemand)->where('fyear', $currentFY)->where('qtr', '>=', $nextQuarter)->values();
                     $finalDemand = $finalDemand->toArray();
 
@@ -769,7 +755,6 @@ class ObjectionController extends Controller
                 $msg =  "Application Successfully Approved !!";
                 $metaReqs['verificationStatus'] = 1;
             }
-            // dd('Test');
             // Rejection
             if ($req->status == 0) {
                 // Objection Application replication
@@ -957,17 +942,13 @@ class ObjectionController extends Controller
             $refImageName = $req->docCode;
             $refImageName = $getObjectionDtls->id . '-' . $refImageName;
             $document = $req->document;
-            // $imageName = $docUpload->upload($refImageName, $document, $relativePath);
             $docDetail = $docUpload->checkDoc($req);
-            // if ($docDetail->original['status'] == false)
-            //     throw new Exception("Document Uploadation Failed");
 
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs['activeId'] = $getObjectionDtls->id;
             $metaReqs['workflowId'] = $getObjectionDtls->workflow_id;
             $metaReqs['ulbId'] = $getObjectionDtls->ulb_id;
             $metaReqs['relativePath'] = $relativePath;
-            // $metaReqs['document'] = $imageName;
             $metaReqs['docCode'] = $req->docCode;
             $metaReqs['uniqueId'] = $docDetail['data']['uniqueId'];
             $metaReqs['referenceNo'] = $docDetail['data']['ReferenceNo'];
@@ -1033,7 +1014,6 @@ class ObjectionController extends Controller
             return $collectUploadDocList->push($item['doc_code']);
         });
 
-        // $mPropDocs = $objectionDocs;
         // Property List Documents
         $flag = 1;
         foreach ($docList['objectionDocs'] as $item) {
@@ -1123,13 +1103,6 @@ class ObjectionController extends Controller
         }
 
         return $documentList;
-
-
-        // if (!empty($documentList))
-        //     $filteredDocs = $this->filterDocument($documentList, $refApplication);                                     // function(1.2)
-        // else
-        //     $filteredDocs = [];
-        // return $filteredDocs;
     }
 
     /**
@@ -1184,7 +1157,6 @@ class ObjectionController extends Controller
 
             collect($document)->map(function ($item) use ($uploadedDocs, $documents) {
                 $uploadedDoc = $uploadedDocs->where('doc_code', $item)
-                    // ->where('owner_dtl_id', $ownerId)
                     ->first();
 
                 if ($uploadedDoc) {
@@ -1228,13 +1200,6 @@ class ObjectionController extends Controller
      */
     public function addMembers(Request $request)
     {
-        // $request->validate([
-        //     // "objectionFor" => "required",
-        //     // "document" => "required|mimes:pdf,jpeg,png,jpg,gif",
-        //     // "docRefName" => "required"
-        // ]);
-
-        // return $request->owners[0]['gender'];
         try {
             $mPropProperty = new PropProperty();
             $user = authUser($request);
@@ -1391,11 +1356,9 @@ class ObjectionController extends Controller
             $document = explode(',', $explodeDoc);
             $key = array_shift($document);
             $label = array_shift($document);
-            // $documents = collect();
 
             $reqDoc['docType'] = $key;
             $reqDoc['docName'] = substr($label, 1, -1);
-            // $reqDoc['uploadedDoc'] = $documents->first();
 
             $reqDoc['masters'] = collect($document)->map(function ($doc) {
                 $strLower = strtolower($doc);
@@ -1497,10 +1460,6 @@ class ObjectionController extends Controller
                 throw new Exception("Role Not Available");
 
             $senderRoleId = $senderRoleDtls->wf_role_id;
-
-            // if ($senderRoleId != $wfLevel['SI'])                                // Authorization for Dealing Assistant Only
-            //     throw new Exception("You are not Authorized");
-
             if (!$objectionDtl || collect($objectionDtl)->isEmpty())
                 throw new Exception("Application Details Not Found");
 

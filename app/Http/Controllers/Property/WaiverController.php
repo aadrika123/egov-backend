@@ -115,74 +115,6 @@ class WaiverController extends Controller
     }
 
     /**
-     * | Post Next Level Application
-     */
-    // public function postNextLevel(Request $req)
-    // {
-    //     $wfLevels = Config::get('PropertyConstaint.CONCESSION-LABEL');
-    //     $req->validate([
-    //         'applicationId' => 'required|integer',
-    //         'receiverRoleId' => 'nullable|integer',
-    //         'action' => 'required|In:forward,backward',
-    //     ]);
-    //     try {
-    //         $userId = authUser($req)->id;
-    //         $track = new WorkflowTrack();
-    //         $mWfWorkflows = new WfWorkflow();
-    //         $mWfRoleMaps = new WfWorkflowrolemap();
-    //         $mPropActiveWaiver = PropActiveWaiver::find($req->applicationId);
-    //         $senderRoleId = $mPropActiveWaiver->current_role;
-    //         $ulbWorkflowId = $mPropActiveWaiver->workflow_id;
-    //         $ulbWorkflowMaps = $mWfWorkflows->getWfDetails($ulbWorkflowId);
-    //         $roleMapsReqs = new Request([
-    //             'workflowId' => $ulbWorkflowMaps->id,
-    //             'roleId' => $senderRoleId
-    //         ]);
-    //         $forwardBackwardIds = $mWfRoleMaps->getWfBackForwardIds($roleMapsReqs);
-
-    //         DB::beginTransaction();
-    //         if ($req->action == 'forward') {
-    //             $this->checkPostCondition($senderRoleId, $wfLevels, $mPropActiveWaiver);          // Check Post Next level condition
-    //             $mPropActiveWaiver->current_role = $forwardBackwardIds->forward_role_id;
-    //             // $mPropActiveWaiver->last_role_id =  $forwardBackwardIds->forward_role_id;         // Update Last Role Id
-    //             $metaReqs['verificationStatus'] = 1;
-    //             $metaReqs['receiverRoleId'] = $forwardBackwardIds->forward_role_id;
-    //         }
-
-    //         $mPropActiveWaiver->save();
-
-    //         $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
-    //         $metaReqs['workflowId'] = $mPropActiveWaiver->workflow_id;
-    //         $metaReqs['refTableDotId'] = 'prop_active_waivers.id';
-    //         $metaReqs['refTableIdValue'] = $req->applicationId;
-    //         $metaReqs['senderRoleId'] = $senderRoleId;
-    //         $metaReqs['user_id'] = $userId;
-
-    //         $req->request->add($metaReqs);
-    //         $track->saveTrack($req);
-
-    //         // Updation of Received Date
-    //         $preWorkflowReq = [
-    //             'workflowId' => $mPropActiveWaiver->workflow_id,
-    //             'refTableDotId' => 'prop_active_mPropActiveWaivers.id',
-    //             'refTableIdValue' => $req->applicationId,
-    //             'receiverRoleId' => $senderRoleId
-    //         ];
-    //         $previousWorkflowTrack = $track->getWfTrackByRefId($preWorkflowReq);
-    //         $previousWorkflowTrack->update([
-    //             'forward_date' => Carbon::now()->format('Y-m-d'),
-    //             'forward_time' => Carbon::now()->format('H:i:s')
-    //         ]);
-
-    //         DB::commit();
-    //         return responseMsgs(true, "Successfully Forwarded The Application!!", "", "", '010708', '01', '', 'Post', '');
-    //     } catch (Exception $e) {
-    //         DB::rollBack();
-    //         return responseMsg(false, $e->getMessage(), "");
-    //     }
-    // }
-
-    /**
      * | Final Approval
      */
     public function approvalRejection(Request $req)
@@ -199,21 +131,12 @@ class WaiverController extends Controller
 
             $activeWaiver = PropActiveWaiver::findorFail($req->applicationId);
             $userId = authUser($req)->id;
-            // $getFinisherQuery = $this->getFinisherId($req->workflowId);                                 // Get Finisher using Trait
-            // $refGetFinisher = collect(DB::select($getFinisherQuery))->first();
-
             $workflowId = $activeWaiver->workflow_id;
             $senderRoleId = $activeWaiver->current_role;
             $getRoleReq = new Request([                                                 // make request to get role id of the user
                 'userId' => $userId,
                 'workflowId' => $workflowId
             ]);
-            // $readRoleDtls = $mWfRoleUsermap->getRoleByUserWfId($getRoleReq);
-            // $roleId = $readRoleDtls->wf_role_id;
-
-            // if ($refGetFinisher->role_id != $roleId) {
-            //     return responseMsg(false, "Forbidden Access", "");
-            // }
             DB::beginTransaction();
 
             // Approval
@@ -249,12 +172,6 @@ class WaiverController extends Controller
                 'refTableIdValue' => $req->applicationId,
                 'receiverRoleId' => $senderRoleId
             ];
-            // $previousWorkflowTrack = $track->getWfTrackByRefId($preWorkflowReq);
-            // $previousWorkflowTrack->update([
-            //     'forward_date' => Carbon::now()->format('Y-m-d'),
-            //     'forward_time' => Carbon::now()->format('H:i:s')
-            // ]);
-            // dd();
             DB::commit();
             return responseMsgs(true, $msg, "", "", '012002', '01', '376ms', 'Post', '');
         } catch (Exception $e) {
@@ -513,9 +430,7 @@ class WaiverController extends Controller
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleIds)->pluck('workflow_id');
 
             $waiverDtl = $mPropActiveWaiver->waiverList()                                         // Repository function to get SAF Details
-                // ->where('prop_active_waivers.ulb_id', $ulbId)
                 ->where('prop_active_waivers.is_approved', false)
-                // ->where('prop_active_waivers.status', 1)
                 ->whereIn('current_role', $roleIds)
                 ->orderByDesc('prop_active_waivers.id')
                 ->paginate($perPage);
@@ -571,8 +486,6 @@ class WaiverController extends Controller
             $wfDocId = $req->id;
             $userId = authUser($req)->id;
             $applicationId = $req->applicationId;
-            // $wfLevel = Config::get('PropertyConstaint.SAF-LABEL');
-            // Derivative Assigments
             $waiverDtl = $mPropActiveWaiver::find($applicationId);
             $safReq = new Request([
                 'userId' => $userId,

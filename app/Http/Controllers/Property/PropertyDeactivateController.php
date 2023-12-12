@@ -88,7 +88,6 @@ class PropertyDeactivateController extends Controller
                 ->first();
             if ($PropDeactivationRequest) {
                 $deactivationStatus = 1;
-                // throw new Exception("Request is already submited. Please check request status...!");
             }
             $mProperty->original['data']['deactivationStatus'] = $deactivationStatus;
             return responseMsgs(true, $mProperty->original['message'], $mProperty->original['data'], "010402", "1.0", "", "POST", $request->deviceId);
@@ -211,7 +210,6 @@ class PropertyDeactivateController extends Controller
             if (!$refDeactivationReq) {
                 throw new Exception("Data NOt Found!......");
             }
-            // dd($refDeactivationReq);
             if ($refDeactivationReq->finisher_role != $request->roleId) {
                 throw new Exception("Forbidden Access");
             }

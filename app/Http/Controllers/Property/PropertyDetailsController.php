@@ -81,8 +81,6 @@ class PropertyDetailsController extends Controller
                         $active = $mPropActiveSaf->searchSafs()
                             ->where('prop_active_safs.saf_no', strtoupper($applicationNo))
                             ->groupby('prop_active_safs.id', 'u.ward_name', 'uu.ward_name', 'wf_roles.role_name');
-
-                        // $details = $approved->union($active)->get();
                         break;
 
                     case ("gbsaf"):
@@ -91,8 +89,6 @@ class PropertyDetailsController extends Controller
 
                         $active =  $mPropActiveSaf->searchGbSafs()
                             ->where('prop_active_safs.saf_no', strtoupper($applicationNo));
-
-                        // $details = $approved->union($active)->get();
                         break;
 
                     case ("concession"):
@@ -101,8 +97,6 @@ class PropertyDetailsController extends Controller
 
                         $active = $mPropActiveConcessions->searchConcessions()
                             ->where('prop_active_concessions.application_no', strtoupper($applicationNo));
-
-                        // $details = $approved->union($active)->get();
                         break;
 
                     case ("objection"):
@@ -111,8 +105,6 @@ class PropertyDetailsController extends Controller
 
                         $active = $mPropActiveObjection->searchObjections()
                             ->where('prop_active_objections.objection_no', strtoupper($applicationNo));
-
-                        // $details = $approved->union($active)->get();
                         break;
 
                     case ("harvesting"):
@@ -121,8 +113,6 @@ class PropertyDetailsController extends Controller
 
                         $active = $mPropActiveHarvesting->searchHarvesting()
                             ->where('application_no', strtoupper($applicationNo));
-
-                        // $details = $approved->union($active)->get();
                         break;
 
                     case ('holdingDeactivation'):
@@ -131,8 +121,6 @@ class PropertyDetailsController extends Controller
 
                         $active = $mPropActiveDeactivationRequest->getDeactivationApplication()
                             ->where('prop_active_deactivation_requests.application_no', strtoupper($applicationNo));
-
-                        // $details = $approved->union($active)->get();
                         break;
                 }
             }
@@ -149,8 +137,6 @@ class PropertyDetailsController extends Controller
                         $active = $mPropActiveSaf->searchSafs()
                             ->where('so.owner_name', 'LIKE', '%' . strtoupper($ownerName) . '%')
                             ->groupby('prop_active_safs.id', 'u.ward_name', 'uu.ward_name', 'wf_roles.role_name');
-
-                        // $details = $approved->union($active)->get();
                         break;
 
                     case ("gbsaf"):
@@ -159,8 +145,6 @@ class PropertyDetailsController extends Controller
 
                         $active =  $mPropActiveSaf->searchGbSafs()
                             ->where('gbo.officer_name', 'LIKE', '%' . strtoupper($ownerName) . '%');
-
-                        // $details = $approved->union($active)->get();
                         break;
                     case ("concession"):
                         $approved = $mPropConcessions->searchConcessions()
@@ -168,8 +152,6 @@ class PropertyDetailsController extends Controller
 
                         $active = $mPropActiveConcessions->searchConcessions()
                             ->where('prop_owners.owner_name', 'LIKE', '%' . strtoupper($ownerName) . '%');
-
-                        // $details = $approved->union($active)->get();
                         break;
                     case ("objection"):
                         $approved = $mPropObjection->searchObjections()
@@ -177,8 +159,6 @@ class PropertyDetailsController extends Controller
 
                         $active = $mPropActiveObjection->searchObjections()
                             ->where('prop_owners.owner_name', 'LIKE', '%' . strtoupper($ownerName) . '%');
-
-                        // $details = $approved->union($active)->get();
                         break;
                     case ("harvesting"):
                         $approved = $mPropHarvesting->searchHarvesting()
@@ -186,8 +166,6 @@ class PropertyDetailsController extends Controller
 
                         $active = $mPropActiveHarvesting->searchHarvesting()
                             ->where('prop_owners.owner_name', 'LIKE', '%' . strtoupper($ownerName) . '%');
-
-                        // $details = $approved->union($active)->get();
                         break;
                     case ('holdingDeactivation'):
                         $details = 'No Data Found';
@@ -207,9 +185,6 @@ class PropertyDetailsController extends Controller
                         $active = $mPropActiveSaf->searchSafs()
                             ->where('so.mobile_no', 'LIKE', '%' . $mobileNo . '%')
                             ->groupby('prop_active_safs.id', 'u.ward_name', 'uu.ward_name', 'wf_roles.role_name');
-
-                        // $details = $approved->union($active)->get();
-                        // $details = (object)$details;
                         break;
                     case ("gbsaf"):
                         $approved =  $mPropSafs->searchGbSafs()
@@ -217,8 +192,6 @@ class PropertyDetailsController extends Controller
 
                         $active = $mPropActiveSaf->searchGbSafs()
                             ->where('gbo.mobile_no', 'LIKE', '%' . $mobileNo . '%');
-
-                        // $details = $approved->union($active)->get();
                         break;
                     case ("concession"):
                         $approved = $mPropConcessions->searchConcessions()
@@ -226,8 +199,6 @@ class PropertyDetailsController extends Controller
 
                         $active = $mPropActiveConcessions->searchConcessions()
                             ->where('prop_owners.mobile_no', 'LIKE', '%' . $mobileNo . '%');
-
-                        // $details = $approved->union($active)->get();
                         break;
                     case ("objection"):
                         $approved = $mPropObjection->searchObjections()
@@ -235,8 +206,6 @@ class PropertyDetailsController extends Controller
 
                         $active = $mPropActiveObjection->searchObjections()
                             ->where('prop_owners.mobile_no', 'LIKE', '%' . $mobileNo . '%');
-
-                        // $details = $approved->union($active)->get();
                         break;
                     case ("harvesting"):
                         $approved = $mPropHarvesting->searchHarvesting()
@@ -244,8 +213,6 @@ class PropertyDetailsController extends Controller
 
                         $active = $mPropActiveHarvesting->searchHarvesting()
                             ->where('prop_owners.mobile_no', 'LIKE', '%' . $mobileNo . '%');
-
-                        // $details = $approved->union($active)->get();
                         break;
                     case ('holdingDeactivation'):
                         $details = 'No Data Found';
@@ -265,8 +232,6 @@ class PropertyDetailsController extends Controller
                         $active = $mPropActiveSaf->searchSafs()
                             ->where('prop_active_safs.pt_no', $ptn)
                             ->groupby('prop_active_safs.id', 'u.ward_name', 'uu.ward_name', 'wf_roles.role_name');
-
-                        // $details = $approved->union($active)->get();
                         break;
                     case ("gbsaf"):
                         $approved = $mPropSafs->searchGbSafs()
@@ -274,8 +239,6 @@ class PropertyDetailsController extends Controller
 
                         $active = $mPropActiveSaf->searchGbSafs()
                             ->where('prop_active_safs.pt_no',  $ptn);
-
-                        // $details = $approved->union($active)->get();
                         break;
                     case ("concession"):
                         $approved =  $mPropConcessions->searchConcessions()
@@ -283,8 +246,6 @@ class PropertyDetailsController extends Controller
 
                         $active =  $mPropActiveConcessions->searchConcessions()
                             ->where('pp.pt_no', $ptn);
-
-                        // $details = $approved->union($active)->get();
                         break;
                     case ("objection"):
                         $approved = $mPropObjection->searchObjections()
@@ -292,8 +253,6 @@ class PropertyDetailsController extends Controller
 
                         $active = $mPropActiveObjection->searchObjections()
                             ->where('pp.pt_no', $ptn);
-
-                        // $details = $approved->union($active)->get();
                         break;
                     case ("harvesting"):
                         $approved = $mPropHarvesting->searchHarvesting()
@@ -301,8 +260,6 @@ class PropertyDetailsController extends Controller
 
                         $active = $mPropActiveHarvesting->searchHarvesting()
                             ->where('pp.pt_no', $ptn);
-
-                        // $details = $approved->union($active)->get();
                         break;
                     case ('holdingDeactivation'):
                         $details = 'No Data Found';
@@ -322,8 +279,6 @@ class PropertyDetailsController extends Controller
                         $active = $mPropActiveSaf->searchSafs()
                             ->where('prop_active_safs.holding_no', $holding)
                             ->groupby('prop_active_safs.id', 'u.ward_name', 'uu.ward_name', 'wf_roles.role_name');
-
-                        // $details = $approved->union($active)->get();
                         break;
                     case ("gbsaf"):
                         $approved = $mPropSafs->searchGbSafs()
@@ -331,8 +286,6 @@ class PropertyDetailsController extends Controller
 
                         $active = $mPropActiveSaf->searchGbSafs()
                             ->where('prop_active_safs.holding_no', $holding);
-
-                        // $details = $approved->union($active)->get();
                         break;
                     case ("concession"):
                         $approved = $mPropConcessions->searchConcessions()
@@ -342,8 +295,6 @@ class PropertyDetailsController extends Controller
                         $active = $mPropActiveConcessions->searchConcessions()
                             ->where('pp.holding_no',  $holding)
                             ->orWhere('pp.new_holding_no',  $holding);
-
-                        // $details = $approved->union($active)->get();
                         break;
                     case ("objection"):
                         $approved =  $mPropObjection->searchObjections()
@@ -353,8 +304,6 @@ class PropertyDetailsController extends Controller
                         $active =  $mPropActiveObjection->searchObjections()
                             ->where('pp.holding_no',  $holding)
                             ->orWhere('pp.new_holding_no',  $holding);
-
-                        // $details = $approved->union($active)->get();
                         break;
                     case ("harvesting"):
                         $approved = $mPropHarvesting->searchHarvesting()
@@ -364,8 +313,6 @@ class PropertyDetailsController extends Controller
                         $active = $mPropActiveHarvesting->searchHarvesting()
                             ->where('pp.holding_no',  $holding)
                             ->orWhere('pp.new_holding_no',  $holding);
-
-                        // $details = $approved->union($active)->get();
                         break;
                     case ('holdingDeactivation'):
                         $details = 'No Data Found';
@@ -387,9 +334,6 @@ class PropertyDetailsController extends Controller
         $request->validate([
             'filteredBy' => "required",
             'parameter' => "nullable",
-            // 'khataNo' => 'sometimes|required_if:filteredBy=khataNo',
-            // 'plotNo' => 'sometimes|required_if:filteredBy=khataNo'
-            // 'maujaName' => 'sometimes|required_if:filteredBy=khataNo'
         ]);
 
         try {
@@ -478,7 +422,6 @@ class PropertyDetailsController extends Controller
                     ->where('longitude', null)
                     ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'latitude', 'longitude')
                     ->paginate($perPage);
-                // $data = (array_values(objtoarray($data)));
             }
             if ($isLegacy == false) {
                 if ($key == 'ptn') {

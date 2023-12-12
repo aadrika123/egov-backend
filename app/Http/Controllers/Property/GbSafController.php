@@ -1082,11 +1082,7 @@ class GbSafController extends Controller
             $refImageName = $req->docCode;
             $refImageName = $getSafDtls->id . '-' . $refImageName;
             $document = $req->document;
-            // $imageName = $docUpload->upload($refImageName, $document, $relativePath);
             $docDetail = $docUpload->checkDoc($req);
-            // if ($docDetail->original['status'] == false)
-            //     throw new Exception("Document Uploadation Failed");
-
             $metaReqs['moduleId'] = $propModuleId;
             $metaReqs['activeId'] = $getSafDtls->id;
             $metaReqs['workflowId'] = $getSafDtls->workflow_id;
@@ -1095,7 +1091,6 @@ class GbSafController extends Controller
             $metaReqs['docCode'] = $req->docCode;
             $metaReqs['uniqueId'] = $docDetail['data']['uniqueId'];
             $metaReqs['referenceNo'] = $docDetail['data']['ReferenceNo'];
-            // $metaReqs['document'] = $imageName;
 
             $metaReqs = new Request($metaReqs);
             $mWfActiveDocument->postDocuments($metaReqs);

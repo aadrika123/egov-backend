@@ -235,16 +235,11 @@ class ConcessionController extends Controller
         $document = $request['doc'];
 
         $newDocRequest = new Request(["document" => $request['doc']]);
-
-        // $imageName = $docUpload->upload($refImageName, $document, $relativePath);
         $docDetail = $docUpload->checkDoc($newDocRequest);
-        // if ($docDetail->original['status'] == false)
-        //     throw new Exception("Document Uploadation Failed");
         $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
         $metaReqs['activeId'] = $concession->id;
         $metaReqs['workflowId'] = $concession->workflow_id;
         $metaReqs['ulbId'] = $concession->ulb_id;
-        // $metaReqs['document'] = $imageName;
         $metaReqs['relativePath'] = $relativePath;
         $metaReqs['docCode'] = $request['code'];
         $metaReqs['uniqueId'] = $docDetail['data']['uniqueId'];
@@ -989,17 +984,13 @@ class ConcessionController extends Controller
             $refImageName = $req->docCode;
             $refImageName = $getConcessionDtls->id . '-' . $refImageName;
             $document = $req->document;
-            // $imageName = $docUpload->upload($refImageName, $document, $relativePath);
             $docDetail = $docUpload->checkDoc($req);
-            // if ($docDetail->original['status'] == false)
-            //     throw new Exception("Document Uploadation Failed");
 
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs['activeId'] = $getConcessionDtls->id;
             $metaReqs['workflowId'] = $getConcessionDtls->workflow_id;
             $metaReqs['ulbId'] = $getConcessionDtls->ulb_id;
             $metaReqs['relativePath'] = $relativePath;
-            // $metaReqs['document'] = $imageName;
             $metaReqs['docCode'] = $req->docCode;
             $metaReqs['ownerDtlId'] = $getConcessionDtls->prop_owner_id;
             $metaReqs['uniqueId'] = $docDetail['data']['uniqueId'];
@@ -1051,8 +1042,6 @@ class ConcessionController extends Controller
     {
         $docList = array();
         $verifiedDocList = array();
-        // $mSafsOwners = new PropActiveSafsOwner();
-        // $refSafOwners = $mSafsOwners->getOwnersBySafId($applicationId);
         $concessionDocs = $this->getDocList($getConcessionDtls);
         $docList['concessionDocs'] = explode('#', $concessionDocs);
 
@@ -1061,9 +1050,6 @@ class ConcessionController extends Controller
         collect($verifiedDocList['concessionDocs'])->map(function ($item) use ($collectUploadDocList) {
             return $collectUploadDocList->push($item['doc_code']);
         });
-
-        // $mPropDocs = $concessionDocs;
-        // Property List Documents
         $flag = 1;
         foreach ($concessionDocs as $item) {
             $explodeDocs = explode(',', $item);
@@ -1168,7 +1154,6 @@ class ConcessionController extends Controller
 
             collect($document)->map(function ($item) use ($uploadedDocs, $documents) {
                 $uploadedDoc = $uploadedDocs->where('doc_code', $item)
-                    // ->where('owner_dtl_id', $ownerId)
                     ->first();
 
                 if ($uploadedDoc) {
