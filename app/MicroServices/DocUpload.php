@@ -4,6 +4,7 @@ namespace App\MicroServices;
 
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 use Intervention\Image\Facades\Image;
 use Illuminate\Support\Str;
@@ -39,11 +40,12 @@ class DocUpload
     {
         try {
             // $contentType = (collect(($request->headers->all())['content-type'] ?? "")->first());
+            $dmsUrl = Config::get('module-constants.DMS_URL');
             $file = $request->document;
             $filePath = $file->getPathname();
             $hashedFile = hash_file('sha256', $filePath);
             $filename = ($request->document)->getClientOriginalName();
-            $api = "http://203.129.217.246:888/backend/document/upload";
+            $api = "$dmsUrl/backend/document/upload";
             $transfer = [
                 "file" => $request->document,
                 "tags" => $filename,
@@ -87,6 +89,7 @@ class DocUpload
 
     public function MultipartHandle(Request $request)
     {
+        $dmsUrl = Config::get('module-constants.DMS_URL');
         $data = [];
         $header = apache_request_headers();
         $header = collect($header)->merge(
@@ -96,7 +99,7 @@ class DocUpload
             ]
         );
         $dotIndexes = $this->generateDotIndexes($_FILES);
-        $url = "http://203.129.217.246:888/backend/document/upload";
+        $url = "$dmsUrl/backend/document/upload";
         foreach ($dotIndexes as $val) {
 
             $patern = "/\.name/i";
@@ -192,7 +195,8 @@ class DocUpload
      */
     public function getDocUrl($documents)
     {
-        $apiUrl = 'http://203.129.217.246:888/backend/document/view-by-reference';
+        $dmsUrl = Config::get('module-constants.DMS_URL');
+        $apiUrl = "$dmsUrl/backend/document/view-by-reference";
         $data = collect();
 
         foreach ($documents as $document) {
@@ -226,7 +230,9 @@ class DocUpload
      */
     public function getSingleDocUrl($document)
     {
-        $apiUrl = 'http://203.129.217.246:888/backend/document/view-by-reference';
+        $dmsUrl = Config::get('module-constants.DMS_URL');
+        
+        $apiUrl = "$dmsUrl/backend/document/view-by-reference";
         $key = collect();
 
         if ($document) {

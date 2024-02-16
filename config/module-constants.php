@@ -15,4 +15,5 @@ return [
     "ADVERTISEMENT_MODULE_ID" => "5",
     "API_KEY"                 => env('API_KEY'),
     "DOC_URL"                 => env('DOC_URL'),
+    "DMS_URL"                 => env('DMS_URL'),
 ];

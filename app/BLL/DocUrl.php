@@ -2,6 +2,7 @@
 
 namespace App\BLL;
 
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 
 /**
@@ -18,7 +19,9 @@ class DocUrl
      */
     public function getDocUrl($documents)
     {
-        $apiUrl = 'http://203.129.217.246:888/backend/document/view-by-reference';
+        $dmsUrl = Config::get('module-constants.DMS_URL');
+
+        $apiUrl = "$dmsUrl/backend/document/view-by-reference";
         $data = collect();
 
         foreach ($documents as $document) {
@@ -51,7 +54,8 @@ class DocUrl
      */
     public function getSingleDocUrl($document)
     {
-        $apiUrl = 'http://203.129.217.246:888/backend/document/view-by-reference';
+        $dmsUrl = Config::get('module-constants.DMS_URL');
+        $apiUrl = "$dmsUrl/backend/document/view-by-reference";
         $key = collect();
 
         if ($document) {
