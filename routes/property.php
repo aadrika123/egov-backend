@@ -68,11 +68,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
     Route::post('saf/gb-apply', 'applyGbSaf');                            // Applying GB Saf                                                     #API_ID = 010102
   });
 
-  //written by prity pandey
-  Route::controller(PropertyMutationController::class)->group(function () {
-    Route::post('mutation/apply', 'applyMutation');            
-    
-  });
+  
 
   Route::controller(ActiveSafController::class)->group(function () {
     Route::get('saf/master-saf', 'masterSaf');                               // Get all master data in Saf                                       #API_ID = 010103
@@ -539,7 +535,7 @@ Route::controller(ReportController::class)->group(function () {
   Route::post('report/ulb-list', 'ulbList');#API_ID = 012430
   Route::post('live-dashboard-update', 'liveDashboardUpdate');
 
-  Route::post('abcd', 'index1');
+ 
 
 
 
