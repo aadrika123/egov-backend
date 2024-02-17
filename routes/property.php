@@ -29,6 +29,7 @@ use App\Http\Controllers\Property\WaiverController;
 use App\Http\Controllers\Property\ZoneController;
 use App\Http\Controllers\ReferenceController;
 use App\Http\Controllers\Property\LocationController;
+use App\Http\Controllers\Property\PropertyMutationController;
 
 /**
  * | ---------------------------------------------------------------------------
@@ -65,6 +66,12 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
   Route::controller(ApplySafController::class)->group(function () {
     Route::post('saf/apply', 'applySaf');                                 // Applying Saf Route                                                   #API_ID = 010101
     Route::post('saf/gb-apply', 'applyGbSaf');                            // Applying GB Saf                                                     #API_ID = 010102
+  });
+
+  //written by prity pandey
+  Route::controller(PropertyMutationController::class)->group(function () {
+    Route::post('mutation/apply', 'applyMutation');            
+    
   });
 
   Route::controller(ActiveSafController::class)->group(function () {
@@ -525,7 +532,18 @@ Route::controller(ReportController::class)->group(function () {
   Route::post('reports/property/deactivated-list', 'PropDeactedList');  #API_ID = 012427                 
   Route::post('reports/mpl', 'mplReport');                                #API_ID = 012428
   Route::post('reports/mpl2', 'mplReport2');                              #API_ID = 012429
-  Route::post('geo', 'getLocality');
+  Route::post('geo', 'getLocality');      
+  
+  //written by prity pandey
+  Route::post('report/mpl-todayCollection-new', 'mplReportCollectionNew');#API_ID = 012430
+  Route::post('report/ulb-list', 'ulbList');#API_ID = 012430
+  Route::post('live-dashboard-update', 'liveDashboardUpdate');
+
+  Route::post('abcd', 'index1');
+
+
+
+  
 });
 // });
 

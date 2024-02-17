@@ -68,6 +68,9 @@ class PropDemand extends Model
      */
     public function getDueDemandByPropIdV2($propIds)
     {
+        if ($propIds->isEmpty()) {
+            return []; // or handle the empty case as needed
+        }
         $details = implode(',', $propIds->toArray());
         return DB::select(DB::raw("SELECT DISTINCT ON (property_id) *
                                     FROM (
