@@ -1050,7 +1050,8 @@ class ReportController extends Controller
         try {
            $sql= "
                 select id , ulb_name
-                from ulb_masters;
+                from ulb_masters
+                order by ulb_name;
            ";
            $data = DB::select($sql);
 
