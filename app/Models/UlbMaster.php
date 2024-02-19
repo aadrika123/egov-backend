@@ -53,7 +53,7 @@ class UlbMaster extends Model
      */
     public function getUlbDetails($ulbId): array
     {
-        $docBaseUrl = Config::get('app.url');
+        $docBaseUrl = Config::get('module-constants.DOC_URL');
         $ulb = DB::table('ulb_masters as u')
             ->select('u.*', 'd.district_name', 's.name as state_name')
             ->join('district_masters as d', 'd.district_code', '=', 'u.district_code')
