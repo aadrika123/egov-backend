@@ -84,7 +84,7 @@ if(!function_exists('Whatsapp_Send'))
 {
     function Whatsapp_Send($mobileno,$templateid,array $message=[])
     {
-        $res=WHATSAPPJHGOVT("9708846652", $templateid,$message);
+        $res=WHATSAPPJHGOVT("9153975142", $templateid,$message);
         return $res;
     }
 }

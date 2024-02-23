@@ -434,12 +434,14 @@ class HoldingTaxController extends Controller
             $mPropTrans = new PropTransaction();
             $propId = $req['id'];
             $mPropAdjustment = new PropAdjustment();
+            $mPropOwner = new PropOwner();
             $mPropRazorPayRequest = new PropRazorpayRequest();
             $mPropRazorpayPenalRebates = new PropRazorpayPenalrebate();
             $mPropPenaltyRebates = new PropPenaltyrebate();
             $mPropRazorpayResponse = new PropRazorpayResponse();
 
             $propDetails = PropProperty::findOrFail($propId);
+            $ownerDetails = $mPropOwner->getfirstOwner($propId);
             $orderId = $req['orderId'];
             $paymentId = $req['paymentId'];
             $razorPayReqs = new Request([
@@ -549,6 +551,31 @@ class HoldingTaxController extends Controller
                 $mPropAdjustment->store($adjustReq);
             }
             DB::commit();
+
+            $ownerName   = $ownerDetails->applicant_name;
+            $ownerMobile = $ownerDetails->mobile_no;
+            $amount      = $req->amount;
+            $holdingNo   = $propDetails->new_holding_no ?? $propDetails->holding_no;
+            $url         = "https://jharkhandegovernance.com/citizen/paymentReceipt/direct/".$tranNo."/holding";
+
+            #_Whatsaap Message
+            if (strlen($ownerMobile) == 10) {
+
+                $whatsapp2 = (Whatsapp_Send(
+                    $ownerMobile,
+                    "holding_payment_receipt",
+                    [
+                        "content_type" => "text",
+                        [
+                            $ownerName,
+                            $amount,
+                            $holdingNo,
+                            $url
+                        ]
+                    ]
+                ));
+            }
+
             return responseMsgs(true, "Payment Successfully Done", ['TransactionNo' => $tranNo], "011509", "1.0", "", "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
@@ -568,10 +595,12 @@ class HoldingTaxController extends Controller
             $propDemand = new PropDemand();
             $idGeneration = new IdGeneration;
             $mPropTrans = new PropTransaction();
+            $mPropOwner = new PropOwner();
             $propId = $req['id'];
             $verifyPaymentModes = Config::get('payment-constants.VERIFICATION_PAYMENT_MODES');
             $mPropAdjustment = new PropAdjustment();
             $propDetails = PropProperty::findOrFail($propId);
+            $ownerDetails = $mPropOwner->getfirstOwner($propId);
 
             $tranNo = $idGeneration->generateTransactionNo($propDetails->ulb_id);
 
@@ -650,6 +679,30 @@ class HoldingTaxController extends Controller
                 $mPropAdjustment->store($adjustReq);
             }
             DB::commit();
+            $ownerName   = $ownerDetails->applicant_name;
+            $ownerMobile = $ownerDetails->mobile_no;
+            $amount      = $req->amount;
+            $holdingNo   = $propDetails->new_holding_no ?? $propDetails->holding_no;
+            $url         = "https://jharkhandegovernance.com/citizen/paymentReceipt/direct/".$tranNo."/holding";
+
+            #_Whatsaap Message
+            if (strlen($ownerMobile) == 10) {
+
+                $whatsapp2 = (Whatsapp_Send(
+                    $ownerMobile,
+                    "holding_payment_receipt",
+                    [
+                        "content_type" => "text",
+                        [
+                            $ownerName,
+                            $amount,
+                            $holdingNo,
+                            $url
+                        ]
+                    ]
+                ));
+            }
+
             return responseMsgs(true, "Payment Successfully Done", ['TransactionNo' => $tranNo], "011504", "1.0", "", "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
