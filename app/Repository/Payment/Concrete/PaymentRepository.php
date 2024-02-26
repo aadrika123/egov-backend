@@ -376,8 +376,9 @@ class PaymentRepository implements iPayment
                         $objTrade->razorPayResponse($transfer);
                         break;
                     case ('5'):                                             //<------------------ (Advertisment) 
+                        $adv = 76;                                                          // Static
                         $mApiMaster = new ApiMaster();
-                        $api = $mApiMaster->getAdvApi();
+                        $api = $mApiMaster->getApiEndpoint($adv);
                         Http::withHeaders([])
                             ->post("$api->end_point", $transfer);
                         break;
