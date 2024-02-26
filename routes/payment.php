@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\Route;
  * | Payment Master for Testing Payment Gateways
     | FLAG : removal of some function / use for testing
  */
-Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger']], function () {
+Route::group(['middleware' => ['json.response', 'request_logger']], function () {
     Route::controller(RazorpayPaymentController::class)->group(function () {
         Route::post('store-payment', 'storePayment');                                               // 01 Store Payment in payment Masters
         Route::get('get-payment-by-id/{id}', 'getPaymentByID');                                     // 02 Get Payment by Id
