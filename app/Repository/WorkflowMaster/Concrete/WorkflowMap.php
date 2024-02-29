@@ -31,10 +31,10 @@ class WorkflowMap implements iWorkflowMapRepository
     public function getRoleDetails(Request $request)
     {
         // $ulbId = authUser($request)->ulb_id;
-        $request->validate([
-            'workflowId' => 'required|int'
+        // $request->validate([
+        //     'workflowId' => 'required|int'
 
-        ]);
+        // ]);
         $roleDetails = DB::table('wf_workflowrolemaps')
             ->select(
                 'wf_workflowrolemaps.id',
