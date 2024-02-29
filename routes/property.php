@@ -552,17 +552,7 @@ Route::controller(PropertyController::class)->group(function () {
   Route::post('getpropLatLong', 'getpropLatLong');                       #API_ID = 011707
 });
 
-#Added By Prity Pandey
-#Date 31/10/2023
-#Route for getting location based ward list 
-/**
-| Serial No :25
- */
-Route::controller(LocationController::class)->group(function () {
-  Route::post('location', 'location_list');                               #API_ID = 012501
-  Route::post('location_ward_list', 'bindLocationWithWards');             #API_ID = 012502
-  Route::post('map/level1', 'mapLevel1');                                 #API_ID = 012503
-});
+
 
 
 //====================================NOT IN USE===============================================//
@@ -620,4 +610,16 @@ Route::controller(ClusterController::class)->group(function () {
  */
 Route::controller(CitizenController::class)->group(function () {
   Route::post('citizen/details', 'citizenDetailsWithCitizenId')->middleware(['json.response', 'auth_maker']);                                                         #API_ID = 012601
+
+#Added By Prity Pandey
+#Date 31/10/2023
+#Route for getting location based ward list 
+/**
+| Serial No :25
+ */
+Route::controller(LocationController::class)->group(function () {
+  Route::post('location', 'location_list');                               #API_ID = 012501
+  Route::post('location_ward_list', 'bindLocationWithWards');             #API_ID = 012502
+  Route::post('map/level1', 'mapLevel1');                                 #API_ID = 012503
+});
 });
