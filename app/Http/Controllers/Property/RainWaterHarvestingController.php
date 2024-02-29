@@ -80,7 +80,7 @@ class RainWaterHarvestingController extends Controller
         try {
             $ulbId = authUser($request)->ulb_id;
             $wardList = $this->getAllWard($ulbId);
-            return responseMsg(true, "List of wards", $wardList,"010901", "1.0", "", "GET", $request->deviceId ?? "");
+            return responseMsg(true, "List of wards", $wardList, "010901", "1.0", "", "GET", $request->deviceId ?? "");
         } catch (Exception $error) {
             return responseMsg(false, "Error!", $error->getMessage());
         }
@@ -163,16 +163,16 @@ class RainWaterHarvestingController extends Controller
                 $relativePath = Config::get('PropertyConstaint.HARVESTING_RELATIVE_PATH');
                 $refImageName = $request->docCode;
                 $refImageName = $waterHaravesting->id . '-' . $refImageName;
-                $document = $request->document;
-                $imageName = $docUpload->upload($refImageName, $document, $relativePath);
+                $docDetail = $docUpload->checkDoc($request);
 
                 $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
                 $metaReqs['activeId'] = $waterHaravesting->id;
                 $metaReqs['workflowId'] = $waterHaravesting->workflow_id;
                 $metaReqs['ulbId'] = $waterHaravesting->ulb_id;
                 $metaReqs['relativePath'] = $relativePath;
-                $metaReqs['document'] = $imageName;
                 $metaReqs['docCode'] = $request->docCode;
+                $metaReqs['uniqueId'] = $docDetail['data']['uniqueId'];
+                $metaReqs['referenceNo'] = $docDetail['data']['ReferenceNo'];
 
                 $metaReqs = new Request($metaReqs);
                 $mWfActiveDocument->postDocuments($metaReqs);
@@ -193,7 +193,7 @@ class RainWaterHarvestingController extends Controller
             $track->saveTrack($request);
             DB::commit();
             DB::connection('pgsql_master')->commit();
-            return responseMsgs(true, "Application applied!", $harvestingNo,"010902", "1.0", "", "POST", $request->deviceId ?? "");
+            return responseMsgs(true, "Application applied!", $harvestingNo, "010902", "1.0", "", "POST", $request->deviceId ?? "");
         } catch (Exception $error) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
@@ -284,7 +284,7 @@ class RainWaterHarvestingController extends Controller
                 ->thenReturn()
                 ->paginate($perPage);
 
-            return responseMsg(true, "Inbox List", remove_null($specialList),"010911", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsg(true, "Inbox List", remove_null($specialList), "010911", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -397,7 +397,7 @@ class RainWaterHarvestingController extends Controller
                 $harvesting->is_escalated = 0;
                 $harvesting->escalated_by = null;
                 $harvesting->save();
-                return responseMsg(true, "Successfully De-Escalated the application", "","010910", "1.0", "", "POST", $req->deviceId ?? "");
+                return responseMsg(true, "Successfully De-Escalated the application", "", "010910", "1.0", "", "POST", $req->deviceId ?? "");
             }
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
@@ -522,7 +522,7 @@ class RainWaterHarvestingController extends Controller
             $custom = $mCustomDetails->getCustomDetails($req);
             $fullDetailsData['departmentalPost'] = collect($custom)['original']['data'];
 
-            return responseMsg(true, "", remove_null($fullDetailsData),"010908", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsg(true, "", remove_null($fullDetailsData), "010908", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -1223,6 +1223,9 @@ class RainWaterHarvestingController extends Controller
             $readRoleDtls = $mWfRoleUsermap->getRoleByUserWfId($getRoleReq);
             $roleId = $readRoleDtls->wf_role_id;
 
+            DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
+
             switch ($roleId) {
                 case $taxCollectorRole;
                     if ($verificationStatus == 1) {
@@ -1234,29 +1237,31 @@ class RainWaterHarvestingController extends Controller
                         $msg = "Site Successfully rebuted";
                     }
 
+                    // $imageName = $docUpload->upload($refImageName, $images, $relativePath);         // <------- Get uploaded image name and move the image in folder
+                    $newDocRequest = new Request(["document" => $req->harvestingImage]);
+                    $docDetail = $docUpload->checkDoc($newDocRequest);         // <------- Get uploaded image name and move the image in folder
+
                     //GEO TAGGING
                     $docReqs = [
                         'application_id' => $req->applicationId,
                         'property_id' => $applicationDtls->property_id,
-                        'image_path' => $refImageName,
+                        // 'image_path' => $imageName,
                         'longitude' => $req->longitude,
                         'latitude' => $req->latitude,
                         'relative_path' => $relativePath,
                         'user_id' => authUser($req)->id
                     ];
 
-                    $imageName = $docUpload->upload($refImageName, $images, $relativePath);         // <------- Get uploaded image name and move the image in folder
                     $geoTagging->add($docReqs);
-                    // $geoTagging->add($req, $imageName, $relativePath, $geoTagging);
-                    DB::beginTransaction();
-                    DB::connection('pgsql_master')->beginTransaction();
                     $metaReqs['moduleId'] = $moduleId;
                     $metaReqs['activeId'] = $req->applicationId;
                     $metaReqs['workflowId'] = $applicationDtls->workflow_id;
                     $metaReqs['ulbId'] = $applicationDtls->ulb_id;
                     $metaReqs['relativePath'] = $relativePath;
-                    $metaReqs['document'] = $imageName;
+                    // $metaReqs['document'] = $imageName;
                     $metaReqs['docCode'] = $docCode['documentCode'];
+                    $metaReqs['uniqueId'] = $docDetail['data']['uniqueId'];
+                    $metaReqs['referenceNo'] = $docDetail['data']['ReferenceNo'];
                     $metaReqs['verifyStatus'] = 1;
 
                     $metaReqs = new Request($metaReqs);

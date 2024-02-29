@@ -43,6 +43,7 @@ class EloquentAuthRepository implements AuthRepository
      * -----------------------------------------------
      * @param App\Http\Requests\AuthUserRequest
      * @param App\Http\Requests\AuthUserRequest $request
+        Not For Use Because Code is Shifted to Authorization Service
      */
 
     public function store($request)
@@ -68,6 +69,7 @@ class EloquentAuthRepository implements AuthRepository
      * validate
      * Checking if the request email is already existing of not
      * update using AuthTrait
+        Not For Use Because Code is Shifted to Authorization Service
      */
 
     public function update(Request $request)

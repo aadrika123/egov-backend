@@ -1671,7 +1671,7 @@ class ActiveSafController extends Controller
                 $req = $req->merge(['holdingNo' => $safDtls->holding_no]);
             $calculateSafById = new CalculateSafById;
             $demand = $calculateSafById->calculateTax($req);
-            return responseMsgs(true, "Demand Details", remove_null($demand),"010129","01",responseTime(),$req->getMethod(),$req->deviceId);
+            return responseMsgs(true, "Demand Details", remove_null($demand), "010129", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "");
         }
@@ -1715,8 +1715,8 @@ class ActiveSafController extends Controller
             $authUser       = authUser($req);
             $req->merge(['departmentId' => 1]);
             $safDetails = PropActiveSaf::find($req->id);
-            if(!$safDetails)
-            throw new Exception("Saf id not found");
+            if (!$safDetails)
+                throw new Exception("Saf id not found");
             if ($safDetails->payment_status == 1)
                 throw new Exception("Payment already done");
             $calculateSafById = $this->calculateSafBySafId($req);
@@ -2285,7 +2285,7 @@ class ActiveSafController extends Controller
             if ($req->propertyId)                                           // Get by Property Id
                 $propTrans = $propTransaction->getPropTransByPropId($req->propertyId);
 
-            return responseMsgs(true, "Property Transactions", remove_null($propTrans),"010122","01",responseTime(),$req->getMethod(),$req->deviceId);
+            return responseMsgs(true, "Property Transactions", remove_null($propTrans), "010122", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -2456,17 +2456,21 @@ class ActiveSafController extends Controller
                     'safId' => $req->safId,
                     'directionType' => $directionTypes[$key]
                 ]);
-                $imageName = $docUpload->upload($refImageName, $image, $relativePath);         // <------- Get uploaded image name and move the image in folder
+                // $imageName = $docUpload->upload($refImageName, $image, $relativePath);         // <------- Get uploaded image name and move the image in folder
+                $newDocRequest = new Request(["document" => $image]);
+                $docDetail = $docUpload->checkDoc($newDocRequest);
                 $isDocExist = $geoTagging->getGeoTagBySafIdDirectionType($docExistReqs);
 
                 $docReqs = [
                     'saf_id' => $req->safId,
-                    'image_path' => $imageName,
+                    // 'image_path' => $imageName,
                     'direction_type' => $directionTypes[$key],
                     'longitude' => $longitude[$key],
                     'latitude' => $latitude[$key],
-                    'relative_path' => $relativePath,
-                    'user_id' => authUser($req)->id ?? 1
+                    // 'relative_path' => $relativePath,
+                    'user_id' => authUser($req)->id ?? 1,
+                    'unique_id' => $docDetail['data']['uniqueId'],
+                    'reference_no' => $docDetail['data']['ReferenceNo'],
                 ];
                 if ($isDocExist)
                     $geoTagging->edit($isDocExist, $docReqs);
@@ -2804,8 +2808,15 @@ class ActiveSafController extends Controller
             if ($verifications->agency_verification) {
                 $PropertyDeactivate = new \App\Repository\Property\Concrete\PropertyDeactivate();
                 $geoTagging = PropSafGeotagUpload::where("saf_id", $saf->id)->get()->map(function ($val) use ($PropertyDeactivate) {
-                    $val->paths = $PropertyDeactivate->readDocumentPath($val->relative_path . "/" . $val->image_path);
-                    return $val;
+                    $docUpload = new DocUpload;
+                    if ($val->reference_no) {
+                        $data =  $docUpload->getSingleDocUrl($val);
+                        $val->paths =  $data['doc_path'];
+                        return $val;
+                    } else {
+                        $val->paths = $PropertyDeactivate->readDocumentPath($val->relative_path . "/" . $val->image_path);
+                        return $val;
+                    }
                 });
                 $message = "TC Verification Details";
                 $data["geoTagging"] = $geoTagging;

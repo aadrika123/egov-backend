@@ -145,15 +145,19 @@ class ObjectionRepository implements iObjectionRepository
                     $refImageName = $request->nameCode;
                     $refImageName = $objection->id . '-' . str_replace(' ', '_', $refImageName);
                     $document = $request->nameDoc;
-                    $imageName = $docUpload->upload($refImageName, $document, $relativePath);
+                    // $imageName = $docUpload->upload($refImageName, $document, $relativePath);
+                    $newDocRequest = new Request(["document" => $request->nameDoc]);
+                    $docDetail = $docUpload->checkDoc($newDocRequest);
 
                     $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
                     $metaReqs['activeId'] = $objection->id;
                     $metaReqs['workflowId'] = $objection->workflow_id;
                     $metaReqs['ulbId'] = $objection->ulb_id;
-                    $metaReqs['document'] = $imageName;
+                    // $metaReqs['document'] = $imageName;
                     $metaReqs['relativePath'] = $relativePath;
                     $metaReqs['docCode'] = $request->nameCode;
+                    $metaReqs['uniqueId'] = $docDetail['data']['uniqueId'];
+                    $metaReqs['referenceNo'] = $docDetail['data']['ReferenceNo'];
 
                     $metaReqs = new Request($metaReqs);
                     $mWfActiveDocument->postDocuments($metaReqs);
@@ -168,15 +172,19 @@ class ObjectionRepository implements iObjectionRepository
                     $refImageName = $request->addressCode;
                     $refImageName = $objection->id . '-' . str_replace(' ', '_', $refImageName);
                     $document = $request->addressDoc;
-                    $imageName = $docUpload->upload($refImageName, $document, $relativePath);
+                    // $imageName = $docUpload->upload($refImageName, $document, $relativePath);
+                    $newDocRequest = new Request(["document" => $request->addressDoc]);
+                    $docDetail = $docUpload->checkDoc($newDocRequest);
 
                     $addressReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
                     $addressReqs['activeId'] = $objection->id;
                     $addressReqs['workflowId'] = $objection->workflow_id;
                     $addressReqs['ulbId'] = $objection->ulb_id;
                     $addressReqs['relativePath'] = $relativePath;
-                    $addressReqs['document'] = $imageName;
+                    // $addressReqs['document'] = $imageName;
                     $addressReqs['docCode'] = $request->addressCode;
+                    $metaReqs['uniqueId'] = $docDetail['data']['uniqueId'];
+                    $metaReqs['referenceNo'] = $docDetail['data']['ReferenceNo'];
 
                     $addressReqs = new Request($addressReqs);
                     $mWfActiveDocument->postDocuments($addressReqs);
@@ -254,15 +262,19 @@ class ObjectionRepository implements iObjectionRepository
                         $refImageName = 'FORGERY_OWNER_DOC';
                         $refImageName = $objection->id . '-' . str_replace(' ', '_', $refImageName);
                         $document = $owners['ownerDoc'];
-                        $imageName = $docUpload->upload($refImageName, $document, $relativePath);
+                        // $imageName = $docUpload->upload($refImageName, $document, $relativePath);
+                        $newDocRequest = new Request(["document" => $owners['ownerDoc']]);
+                        $docDetail = $docUpload->checkDoc($newDocRequest);
 
                         $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
                         $metaReqs['activeId'] = $objection->id;
                         $metaReqs['workflowId'] = $objection->workflow_id;
                         $metaReqs['ulbId'] = $objection->ulb_id;
-                        $metaReqs['document'] = $imageName;
+                        // $metaReqs['document'] = $imageName;
                         $metaReqs['relativePath'] = $relativePath;
                         $metaReqs['docCode'] = 'FORGERY_OWNER_DOC';
+                        $metaReqs['uniqueId'] = $docDetail['data']['uniqueId'];
+                        $metaReqs['referenceNo'] = $docDetail['data']['ReferenceNo'];
 
                         $metaReqs = new Request($metaReqs);
                         $mWfActiveDocument->postDocuments($metaReqs);
@@ -278,15 +290,19 @@ class ObjectionRepository implements iObjectionRepository
                         $refImageName = $document['docCode'];
                         $refImageName = $objection->id . '-' . str_replace(' ', '_', $refImageName);
                         $documents = $document['doc'];
-                        $imageName = $docUpload->upload($refImageName, $documents, $relativePath);
+                        // $imageName = $docUpload->upload($refImageName, $documents, $relativePath);
+                        $newDocRequest = new Request(["document" => $document['doc']]);
+                        $docDetail = $docUpload->checkDoc($newDocRequest);
 
                         $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
                         $metaReqs['activeId'] = $objection->id;
                         $metaReqs['workflowId'] = $objection->workflow_id;
                         $metaReqs['ulbId'] = $objection->ulb_id;
-                        $metaReqs['document'] = $imageName;
+                        // $metaReqs['document'] = $imageName;
                         $metaReqs['relativePath'] = $relativePath;
                         $metaReqs['docCode'] = $document['docCode'];
+                        $metaReqs['uniqueId'] = $docDetail['data']['uniqueId'];
+                        $metaReqs['referenceNo'] = $docDetail['data']['ReferenceNo'];
 
                         $reqs = new Request($metaReqs);
                         $mWfActiveDocument->postDocuments($reqs);
@@ -427,14 +443,18 @@ class ObjectionRepository implements iObjectionRepository
                 $refImageName = $objection->id . '-' . str_replace(' ', '_', $refImageName);
                 $document = $request->document;
 
-                $imageName = $docUpload->upload($refImageName, $document, $relativePath);
+                // $imageName = $docUpload->upload($refImageName, $document, $relativePath);
+                $docDetail = $docUpload->checkDoc($request);
+
                 $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
                 $metaReqs['activeId'] = $objection->id;
                 $metaReqs['workflowId'] = $objection->workflow_id;
                 $metaReqs['ulbId'] = $objection->ulb_id;
-                $metaReqs['document'] = $imageName;
+                // $metaReqs['document'] = $imageName;
                 $metaReqs['relativePath'] = $relativePath;
                 $metaReqs['docCode'] = $request->docCode;
+                $metaReqs['uniqueId'] = $docDetail['data']['uniqueId'];
+                $metaReqs['referenceNo'] = $docDetail['data']['ReferenceNo'];
 
                 $metaReqs = new Request($metaReqs);
                 $mWfActiveDocument->postDocuments($metaReqs);

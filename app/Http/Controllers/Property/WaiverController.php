@@ -85,7 +85,7 @@ class WaiverController extends Controller
             $data = $mPropActiveWaiver->addWaiver($request);
             $this->saveDoc($request, $data);
 
-            return responseMsgs(true, "Waiver Application Applied. Your Application No.", $data->application_no,"012001", "1.0", "", "POST", $request->deviceId ?? "");
+            return responseMsgs(true, "Waiver Application Applied. Your Application No.", $data->application_no, "012001", "1.0", "", "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "");
         }
@@ -101,14 +101,19 @@ class WaiverController extends Controller
         $refImageName = $data->id . '-' . str_replace(' ', '_', $refImageName);
         $document = $request->waiverDocument;
 
-        $imageName = $docUpload->upload($refImageName, $document, $relativePath);
+        // $imageName = $docUpload->upload($refImageName, $document, $relativePath);
+        $newDocRequest = new Request(["document" => $request->waiverDocument]);
+        $docDetail = $docUpload->checkDoc($newDocRequest);
+
         $metaReqs['moduleId']     = Config::get('module-constants.PROPERTY_MODULE_ID');
         $metaReqs['activeId']     = $data->id;
         $metaReqs['workflowId']   = $data->workflow_id;
         $metaReqs['ulbId']        = $data->ulb_id;
-        $metaReqs['document']     = $imageName;
+        // $metaReqs['document']     = $imageName;
         $metaReqs['relativePath'] = $relativePath;
         $metaReqs['docCode']      = $request->docCode;
+        $metaReqs['uniqueId'] = $docDetail['data']['uniqueId'];
+        $metaReqs['referenceNo'] = $docDetail['data']['ReferenceNo'];
 
         $metaReqs = new Request($metaReqs);
         $mWfActiveDocument->postDocuments($metaReqs, $user);

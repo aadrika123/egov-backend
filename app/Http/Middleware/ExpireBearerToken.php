@@ -59,7 +59,7 @@ class ExpireBearerToken
     public function validateToken()
     {
         $timeDiff = $this->_currentTime->diffInMinutes($this->_lastActivity);
-        if ($this->_lastActivity && ($timeDiff > 120)) {            // for 120 Minutes
+        if ($this->_lastActivity && ($timeDiff > 10)) {            // for 10 Minutes
             Redis::del($this->_key);
             $this->_user->currentAccessToken()->delete();
             abort(response()->json(

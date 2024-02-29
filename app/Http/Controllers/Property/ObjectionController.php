@@ -941,7 +941,6 @@ class ObjectionController extends Controller
             $getObjectionDtls = $mPropActiveObjection->getObjectionNo($req->applicationId);
             $refImageName = $req->docCode;
             $refImageName = $getObjectionDtls->id . '-' . $refImageName;
-            $document = $req->document;
             $docDetail = $docUpload->checkDoc($req);
 
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
@@ -1261,15 +1260,18 @@ class ObjectionController extends Controller
                 $refImageName = $request->docCode;
                 $refImageName = $objection->id . '-' . str_replace(' ', '_', $refImageName);
                 $document = $request->document;
-                $imageName = $docUpload->upload($refImageName, $document, $relativePath);
+                // $imageName = $docUpload->upload($refImageName, $document, $relativePath);
+                $docDetail = $docUpload->checkDoc($request);
 
                 $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
                 $metaReqs['activeId'] = $objection->id;
                 $metaReqs['workflowId'] = $objection->workflow_id;
                 $metaReqs['ulbId'] = $objection->ulb_id;
-                $metaReqs['document'] = $imageName;
+                // $metaReqs['document'] = $imageName;
                 $metaReqs['relativePath'] = $relativePath;
                 $metaReqs['docCode'] = $request->docCode;
+                $metaReqs['uniqueId'] = $docDetail['data']['uniqueId'];
+                $metaReqs['referenceNo'] = $docDetail['data']['ReferenceNo'];
 
                 $metaReqs = new Request($metaReqs);
                 $mWfActiveDocument->postDocuments($metaReqs);

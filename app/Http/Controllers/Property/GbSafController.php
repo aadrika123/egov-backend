@@ -584,17 +584,21 @@ class GbSafController extends Controller
                     'safId' => $req->safId,
                     'directionType' => $directionTypes[$key]
                 ]);
-                $imageName = $docUpload->upload($refImageName, $image, $relativePath);         // <------- Get uploaded image name and move the image in folder
+                // $imageName = $docUpload->upload($refImageName, $image, $relativePath);         // <------- Get uploaded image name and move the image in folder
+                $newDocRequest = new Request(["document" => $image]);
+                $docDetail = $docUpload->checkDoc($newDocRequest);
                 $isDocExist = $geoTagging->getGeoTagBySafIdDirectionType($docExistReqs);
 
                 $docReqs = [
                     'saf_id' => $req->safId,
-                    'image_path' => $imageName,
+                    // 'image_path' => $imageName,
                     'direction_type' => $directionTypes[$key],
                     'longitude' => $longitude[$key],
                     'latitude' => $latitude[$key],
-                    'relative_path' => $relativePath,
-                    'user_id' => authUser($req)->id
+                    // 'relative_path' => $relativePath,
+                    'user_id' => authUser($req)->id,
+                    'unique_id' => $docDetail['data']['uniqueId'],
+                    'reference_no' => $docDetail['data']['ReferenceNo'],
                 ];
                 if ($isDocExist)
                     $geoTagging->edit($isDocExist, $docReqs);
