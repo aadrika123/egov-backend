@@ -134,7 +134,6 @@ Route::group(['middleware' => ['json.response', "auth_maker"]], function () {
         Route::post("application/collection-summary", "CollectionSummary");
         Route::post("application/track-status", "ApplicantionTrackStatus");
         Route::post("application/application-agent-notice", "applicationAgentNotice");
-        Route::post("application/notice-summary", "noticeSummary");
         Route::post("application/levelwisependingform", "levelwisependingform");
         Route::post("application/leveluserpending", "levelUserPending");
         Route::post('application/userWiseWardWiseLevelPending', 'userWiseWardWiseLevelPending');
@@ -185,4 +184,13 @@ Route::controller(TradeApplication::class)->group(function () {
     Route::get('payment-receipt/{id}/{transectionId}', 'paymentReceipt');
     Route::get('provisional-certificate/{id}', 'provisionalCertificate');
     Route::get('license-certificate/{id}', 'licenceCertificate');
+});
+
+
+
+//not in use
+Route::controller(ReportController::class)->group(function () {
+    
+    Route::post("application/notice-summary", "noticeSummary");
+    
 });
