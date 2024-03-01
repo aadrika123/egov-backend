@@ -143,8 +143,6 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
         Route::post('consumer/req/outbox', 'consumerOutbox');                                       // Workflow
         Route::post('consumer/req/post-next-level', 'consumerPostNextLevel');                       // Here
         Route::post('consumer/req/list-req-docs', 'listDocToUpload');                               // Here
-        Route::post('consumer/req/doc-verify-reject', 'consumerDocVerifyReject');                   // Here
-        Route::post('consumer/req/get-upload-documents', 'getConsumerDocs'); 
         Route::post('consumer/req/get-worklfow-by-id','getWorkflow');                       // Here
         Route::post('consumer/req/approval-rejection', 'consumerApprovalRejection');                // Here
 
@@ -177,7 +175,6 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
         Route::post('citizenApplications', 'getCitizenApplication');                                    //10
         Route::post('Razorpay-Orderid', 'handeRazorPay');                                               //11
         Route::post('getTranNo', 'readTransectionAndApl');                                              //12
-        Route::post('update-applications', 'updateWaterApplication');       // Here 
 
         # Dashbording Api
         Route::post('admin/application/dashboard-data', 'getJskAppliedApplication');                    //13
@@ -186,8 +183,31 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
 });
 Route::controller(WaterApplication::class)->group(function () {
     Route::post('cargeCal', 'calWaterConCharge');                                                       //16
-    Route::post('consumerChargeCal', 'calConsumerDemand');                                              //17
+    
 });
 Route::controller(WaterConsumer::class)->group(function () {
     Route::post('consumerChargeCal', 'calConsumerDemand');                                              //18        
 });
+
+
+//Not in use
+
+Route::controller(WaterConsumerWfController::class)->group(function () {
+    # Workflow 
+    Route::post('consumer/req/list-req-docs', 'listDocToUpload');      
+    
+    Route::post('consumer/req/doc-verify-reject', 'consumerDocVerifyReject');                   // Here   
+
+    Route::post('consumer/req/get-upload-documents', 'getConsumerDocs'); 
+});
+
+
+
+Route::controller(WaterApplication::class)->group(function () {
+    
+    Route::post('update-applications', 'updateWaterApplication');       // Here 
+
+    Route::post('consumerChargeCal', 'calConsumerDemand');                                              //17
+
+});
+
