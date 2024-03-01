@@ -619,7 +619,7 @@ Route::controller(CitizenController::class)->group(function () {
  */
 Route::controller(LocationController::class)->group(function () {
   Route::post('location', 'location_list');                               #API_ID = 012501
-  Route::post('location_ward_list', 'bindLocationWithWards');             #API_ID = 012502
+  Route::post('location/ward-list', 'bindLocationWithWards');             #API_ID = 012502
   Route::post('map/level1', 'mapLevel1');                                 #API_ID = 012503
 });
 });
