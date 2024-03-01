@@ -74,6 +74,7 @@ class CareTakerTrade
      */
     public function isTradeAlreadyTagged()
     {
+        $req = request();
         $taggedTradeList = $this->_mActiveCitizenUnderCares->getTaggedTrades($this->_licenseNo);
         $totalTrades = $taggedTradeList->count('license_no');
         if ($totalTrades > 3)                                               // Check if the Property is already tagged 3 times of not
@@ -81,7 +82,7 @@ class CareTakerTrade
 
         $citizens = $taggedTradeList->pluck('citizen_id');
 
-        if ($citizens->contains(authUser()->id))                                // Check Is the Property already tagged by the citizen 
+        if ($citizens->contains(authUser($req)->id))                                // Check Is the Property already tagged by the citizen 
             throw new Exception("License Already Tagged");
     }
 }
