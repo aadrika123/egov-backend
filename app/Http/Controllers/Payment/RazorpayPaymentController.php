@@ -142,7 +142,8 @@ class RazorpayPaymentController extends Controller
     {
         // return $req;
         try {
-            return  $this->saveGenerateOrderid($req);
+            $Returndata =  $this->saveGenerateOrderid($req);
+            return responseMsgs(true, "OrderId Generated!", $Returndata, "", "04", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }

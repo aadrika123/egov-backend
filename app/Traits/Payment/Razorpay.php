@@ -104,8 +104,8 @@ trait Razorpay
             $saveRequestObj = new PaymentRequest();
             $saveRequestObj->saveRazorpayRequest($userId, $ulbId, $Returndata['orderId'], $request);
 
-            return responseMsgs(true, "OrderId Generated!", $Returndata, "", "04", responseTime(), "POST", $request->deviceId);
-            // return (array)$Returndata;
+            // return responseMsgs(true, "OrderId Generated!", $Returndata, "", "04", responseTime(), "POST", $request->deviceId);
+            return (array)$Returndata;
         } catch (Exception $error) {
             return responseMsg(false, "Error Listed Below!", $error->getMessage());
         }
