@@ -44,18 +44,18 @@ class CaretakerController extends Controller
                 throw new Exception('Water Connection Not Found!');
 
             if (!$waterDtl->apply_connection_id)
-                throw new Exception("application details not found!");
+                throw new Exception("Application details not found!");
 
             if ($waterDtl->user_id == $user->id && $waterDtl->user_type == 1)
-                throw new Exception("cannote undertake your own connection!");
+                throw new Exception("Cannot undertake your own connection!");
 
             $existingData = $mActiveCitizenUndercare->getDetailsForUnderCare($userId, $waterDtl->id);
             if (!is_null($existingData))
-                throw new Exception("ConsumerNo caretaker already exist!");
+                throw new Exception("Consumer No. caretaker already exist!");
 
             $approveApplicant = $mWaterApprovalApplicant->getOwnerDtlById($waterDtl->apply_connection_id);
             if (is_null($approveApplicant->mobile_no) || is_null($approveApplicant))
-                throw new Exception("Mobile no for respective consumer not found! or application details not found!");
+                throw new Exception("Mobile No. for respective consumer not found! or application details not found!");
 
             $applicantMobile = $approveApplicant->mobile_no;
             $myRequest = new \Illuminate\Http\Request();
