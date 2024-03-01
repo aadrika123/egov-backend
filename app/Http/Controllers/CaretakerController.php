@@ -143,7 +143,7 @@ class CaretakerController extends Controller
             );
             if ($validated->fails())
                 return validationError($validated);
-            
+
             $data = array();
             $response = app(Pipeline::class)
                 ->send($data)
@@ -152,6 +152,7 @@ class CaretakerController extends Controller
                     TagTrade::class
                 ])
                 ->thenReturn();
+            return responseMsgs(true, $response, [], '01', '1.0', "", 'POST', $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], '1001', '1.0', "", 'POST', $req->deviceId);
         }

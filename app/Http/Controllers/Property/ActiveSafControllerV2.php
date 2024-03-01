@@ -376,7 +376,7 @@ class ActiveSafControllerV2 extends Controller
             ]);
             $mPropApartmentDtl = new PropApartmentDtl();
             $ulbId = $req->ulbId ?? authUser($req)->ulb_id;
-            $req->request->add(['ulbId' => $ulbId,]);
+            $req->request->add(['ulbId' => $ulbId]);
 
             $data = $mPropApartmentDtl->apartmentList($req);
 

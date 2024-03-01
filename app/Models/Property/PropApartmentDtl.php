@@ -18,6 +18,7 @@ class PropApartmentDtl extends Model
             ->select('id', 'apt_code', 'apartment_name')
             ->where('ward_mstr_id', $req->wardMstrId)
             ->where('ulb_id', $req->ulbId)
+            ->orderBy('apartment_name')
             ->get();
     }
 
