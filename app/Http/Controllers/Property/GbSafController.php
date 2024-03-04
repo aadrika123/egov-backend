@@ -630,6 +630,7 @@ class GbSafController extends Controller
             $safVerifications = new PropSafVerification();
             $safVerificationDtls = new PropSafVerificationDtl();
             $mSafGeoTag = new PropSafGeotagUpload();
+            $docUpload = new DocUpload;
 
             $data = $safVerifications->getVerificationsData($req->safId);                       // <--------- Prop Saf Verification Model Function to Get Prop Saf Verifications Data 
             if (collect($data)->isEmpty())
@@ -643,6 +644,7 @@ class GbSafController extends Controller
             $data['newFloors'] = $newFloors->values();
             $data['existingFloors'] = $existingFloors->values();
             $geoTags = $mSafGeoTag->getGeoTags($req->safId);
+            $geoTags = $docUpload->getDocUrl($geoTags);           #_Calling BLL for Document Path from DMS
             $data['geoTagging'] = $geoTags;
             return responseMsgs(true, "TC Verification Details", remove_null($data), "011808", "1.0", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {

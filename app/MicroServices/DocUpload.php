@@ -211,10 +211,10 @@ class DocUpload
                 if ($response->successful()) {
                     $responseData = $response->json();
                     $key['id'] =  $document->id;
-                    $key['doc_code'] =  $document->doc_code;
-                    $key['verify_status'] =  $document->verify_status;
-                    $key['owner_name'] =  $document->owner_name;
-                    $key['remarks'] =  $document->remarks;
+                    $key['doc_code'] =  $document->doc_code??"";
+                    $key['verify_status'] =  $document->verify_status??"";
+                    $key['owner_name'] =  $document->owner_name??"";
+                    $key['remarks'] =  $document->remarks??"";
                     $key['owner_dtl_id'] =  $document->owner_dtl_id ?? null;
                     $key['doc_path'] = $responseData['data']['fullPath'] ?? null;
                     $key['responseData'] = $responseData;
