@@ -804,6 +804,7 @@ class  PropActiveSaf extends Model
                 DB::raw("string_agg(so.mobile_no::VARCHAR,',') as mobile_no"),
                 DB::raw("string_agg(so.owner_name,',') as owner_name"),
             )
+            ->where('prop_active_safs.status',1)
             ->leftjoin('wf_roles', 'wf_roles.id', 'prop_active_safs.current_role')
             ->join('ulb_ward_masters as u', 'u.id', 'prop_active_safs.ward_mstr_id')
             ->leftjoin('ulb_ward_masters as uu', 'uu.id', 'prop_active_safs.new_ward_mstr_id')
