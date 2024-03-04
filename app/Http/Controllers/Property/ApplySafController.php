@@ -93,7 +93,7 @@ class ApplySafController extends Controller
      * | Query Costing-500 ms
      * | Rating-5
      */
-    public function applySaf(reqApplySaf $request)                                          
+    public function applySaf(reqApplySaf $request)
     {
         try {
             // Variable Assignments
@@ -109,7 +109,7 @@ class ApplySafController extends Controller
             $calculateSafById = new CalculateSafById;
             $generateSafApplyDemandResponse = new GenerateSafApplyDemandResponse;
             // Derivative Assignments
-            $ulbWorkflowId = $this->readAssessUlbWfId($request, $ulb_id);        
+            $ulbWorkflowId = $this->readAssessUlbWfId($request, $ulb_id);
             $roadWidthType = $this->readRoadWidthType($request->roadType);          // Read Road Width Type
 
             $request->request->add(['road_type_mstr_id' => $roadWidthType]);
@@ -135,6 +135,8 @@ class ApplySafController extends Controller
             }
             $metaReqs['finisherRoleId'] = collect($finisherRoleId)['role_id'];
             $safTaxes = $safCalculation->calculateTax($request);
+            if ($safTaxes->original['status'] == false)
+                throw new Exception($safTaxes->original['message']);
 
             $metaReqs['isTrust'] = $this->isPropTrust($request['floor']);
             $metaReqs['holdingType'] = $this->holdingType($request['floor']);
@@ -217,7 +219,7 @@ class ApplySafController extends Controller
     /**
      * | Read Assessment Type and Ulb Workflow Id
      */
-    public function readAssessUlbWfId($request, $ulb_id)                                        
+    public function readAssessUlbWfId($request, $ulb_id)
     {
         if ($request->assessmentType == 1) {                                                    // New Assessment 
             $workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');
@@ -337,7 +339,7 @@ class ApplySafController extends Controller
     /**
      * | Apply GB Saf
      */
-    public function applyGbSaf(ReqGBSaf $req)                                                
+    public function applyGbSaf(ReqGBSaf $req)
     {
         try {
             // Variable Assignments

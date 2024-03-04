@@ -120,7 +120,7 @@ class CaretakerController extends Controller
 
             $mActiveCitizenUndercare->saveCaretakeDetails($waterDtl->id, $approveApplicant->mobile_no, $userId);
             DB::commit();
-            return responseMsgs(true, "Cosumer Succesfully Attached!", '', '', '01', '623ms', 'Post', '');
+            return responseMsgs(true, "Consumer Succesfully Attached!", '', '', '01', responseTime(), 'Post', '');
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
