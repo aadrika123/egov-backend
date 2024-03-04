@@ -49,14 +49,14 @@ class LocationController extends Controller
             $ulbExists = PropLocation::where('ulb_id', $ulbId)->exists();
 
             if (!$ulbExists) {
-                return responseMsgs(false, "ULB ID does not exist", "", "012501", 1.0, "308ms", "POST", $request->deviceId);
+                return responseMsgs(false, "ULB ID does not exist", "", "012501", 1.0, responseTime(), "POST", $request->deviceId);
             }
 
             $locations = PropLocation::where('ulb_id', $ulbId)->where("status", 1)->select('id', 'location')->get();
 
-            return responseMsgs(true, "Location Details", $locations, "012501", 1.0, "308ms", "POST", $request->deviceId);
+            return responseMsgs(true, "Location Details", $locations, "012501", 1.0, responseTime(), "POST", $request->deviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "012501", 1.0, "308ms", "POST", $request->deviceId);
+            return responseMsgs(false, $e->getMessage(), "", "012501", 1.0, responseTime(), "POST", $request->deviceId);
         }
     }
 
@@ -99,6 +99,7 @@ class LocationController extends Controller
                 ->where('ulb_ward_masters.status', 1)
                 ->orderBy('ward_name')
                 ->get();
+                
             return responseMsgs(true, "Wards Bound to Location", $wards, "012502", 1.0, "308ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "012502", 1.0, "308ms", "POST", $request->deviceId);
