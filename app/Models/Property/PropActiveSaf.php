@@ -170,6 +170,7 @@ class  PropActiveSaf extends Model
         return PropActiveSaf::on('pgsql::read')
             ->select(
                 'prop_active_safs.*',
+                'ulb_masters.ulb_name',
                 'prop_active_safs.assessment_type as assessment',
                 DB::raw("REPLACE(prop_active_safs.holding_type, '_', ' ') AS holding_type"),
                 'w.ward_name as old_ward_no',
@@ -186,8 +187,10 @@ class  PropActiveSaf extends Model
                 'building_type',
                 'prop_usage_type',
                 'zone',
-                'users.user_type as applied_by'
+                'users.user_type as applied_by',
+                
             )
+            ->leftjoin('ulb_masters','ulb_masters.id','=','prop_active_safs.ulb_id')
             ->leftJoin('ulb_ward_masters as w', 'w.id', '=', 'prop_active_safs.ward_mstr_id')
             ->leftJoin('wf_roles as wr', 'wr.id', '=', 'prop_active_safs.current_role')
             ->leftJoin('ulb_ward_masters as nw', 'nw.id', '=', 'prop_active_safs.new_ward_mstr_id')
