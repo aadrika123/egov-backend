@@ -35,19 +35,19 @@ class TradeCitizenController extends Controller
     use Auth;               // Trait Used added by sandeep bara date 17-09-2022    
     use Razorpay;
     #====================[🅾️OWNER DETAILS🅾️]==========================
-        /**
-         * | Created On-22-12-2022 
-         * | Created By-Sandeep Bara
-         * --------------------------------------------------------------------------------------
-         * | Controller regarding with Trade Module
-         */
+    /**
+     * | Created On-22-12-2022 
+     * | Created By-Sandeep Bara
+     * --------------------------------------------------------------------------------------
+     * | Controller regarding with Trade Module
+     */
 
     #======================[❎VARIABLES❎]============================
 
     protected $_DB;
     protected $_DB_READ;
-    protected $_DB_MASTER; 
-    protected $_DB_NAME;    
+    protected $_DB_MASTER;
+    protected $_DB_NAME;
     protected $_NOTICE_DB;
     protected $_NOTICE_DB_NAME;
     protected $_MODEL_WARD;
@@ -69,9 +69,9 @@ class TradeCitizenController extends Controller
     {
         $this->_DB_NAME = "pgsql_trade";
         $this->_NOTICE_DB = "pgsql_notice";
-        $this->_DB = DB::connection( $this->_DB_NAME );
+        $this->_DB = DB::connection($this->_DB_NAME);
         $this->_DB_MASTER = DB::connection("pgsql_master");
-        $this->_DB_READ = DB::connection( $this->_DB_NAME."::read" );
+        $this->_DB_READ = DB::connection($this->_DB_NAME . "::read");
         $this->_NOTICE_DB = DB::connection($this->_NOTICE_DB);
         // DB::enableQueryLog();
         // $this->_DB->enableQueryLog();
@@ -98,12 +98,12 @@ class TradeCitizenController extends Controller
     }
 
     #=======================[❤️TRANSACTION BEGIN❤️]==============================
-        /** 
-         * @var $db1 default database name
-         * @var $db2 trade database name
-         * @var $db3 notice database name
-         * @return void
-         */
+    /** 
+     * @var $db1 default database name
+     * @var $db2 trade database name
+     * @var $db3 notice database name
+     * @return void
+     */
     public function begin()
     {
         $db1 = DB::connection()->getDatabaseName();
@@ -111,21 +111,21 @@ class TradeCitizenController extends Controller
         $db3 = $this->_NOTICE_DB->getDatabaseName();
         $db4 = $this->_DB_MASTER->getDatabaseName();
         DB::beginTransaction();
-        if($db1!=$db2 )
+        if ($db1 != $db2)
             $this->_DB->beginTransaction();
-        if($db1!=$db3 && $db2!=$db3)
+        if ($db1 != $db3 && $db2 != $db3)
             $this->_NOTICE_DB->beginTransaction();
-        if($db1!=$db4 && $db2!=$db4 && $db3!=$db4) 
+        if ($db1 != $db4 && $db2 != $db4 && $db3 != $db4)
             $this->_DB_MASTER->beginTransaction();
     }
 
     #=======================[❤️TRANSACTION ROLLBACK❤️]==============================
-        /** 
-         * @var $db1 default database name
-         * @var $db2 trade database name
-         * @var $db3 notice database name
-         * @return void
-         */
+    /** 
+     * @var $db1 default database name
+     * @var $db2 trade database name
+     * @var $db3 notice database name
+     * @return void
+     */
     public function rollback()
     {
         $db1 = DB::connection()->getDatabaseName();
@@ -133,21 +133,21 @@ class TradeCitizenController extends Controller
         $db3 = $this->_NOTICE_DB->getDatabaseName();
         $db4 = $this->_DB_MASTER->getDatabaseName();
         DB::rollBack();
-        if($db1!=$db2 )
+        if ($db1 != $db2)
             $this->_DB->rollBack();
-        if($db1!=$db3 && $db2!=$db3)
+        if ($db1 != $db3 && $db2 != $db3)
             $this->_NOTICE_DB->rollBack();
-        if($db1!=$db4 && $db2!=$db4 && $db3!=$db4) 
+        if ($db1 != $db4 && $db2 != $db4 && $db3 != $db4)
             $this->_DB_MASTER->rollBack();
     }
-     
+
     #=======================[❤️TRANSACTION COMMIT❤️]==============================
-        /** 
-         * @var $db1 default database name
-         * @var $db2 trade database name
-         * @var $db3 notice database name
-         * @return void
-         */
+    /** 
+     * @var $db1 default database name
+     * @var $db2 trade database name
+     * @var $db3 notice database name
+     * @return void
+     */
     public function commit()
     {
         $db1 = DB::connection()->getDatabaseName();
@@ -155,11 +155,11 @@ class TradeCitizenController extends Controller
         $db3 = $this->_NOTICE_DB->getDatabaseName();
         $db4 = $this->_DB_MASTER->getDatabaseName();
         DB::commit();
-        if($db1!=$db2 )        
+        if ($db1 != $db2)
             $this->_DB->commit();
-        if($db1!=$db3 && $db2!=$db3)
+        if ($db1 != $db3 && $db2 != $db3)
             $this->_NOTICE_DB->commit();
-        if($db1!=$db4 && $db2!=$db4 && $db3!=$db4) 
+        if ($db1 != $db4 && $db2 != $db4 && $db3 != $db4)
             $this->_DB_MASTER->commit();
     }
 
@@ -216,20 +216,19 @@ class TradeCitizenController extends Controller
 
     #=======================[📝📖 APPLY APPLICATION | S.L (2.0) 📖📝]==============================
     public function applyApplication(ReqCitizenAddRecorde $request)
-    {        
+    {
         $this->_META_DATA["apiId"] = "c2";
         $this->_META_DATA["queryRunTime"] = 2.48;
         $this->_META_DATA["action"]    = $request->getMethod();
         $this->_META_DATA["deviceId"] = $request->ip();
         try {
-            if(!$this->_COMMON_FUNCTION->checkUsersWithtocken("active_citizens"))
-            {
-                throw New Exception("Counter User Not Allowed");
+            if (!$this->_COMMON_FUNCTION->checkUsersWithtocken("active_citizens")) {
+                throw new Exception("Counter User Not Allowed");
             }
             $refUser            = Auth()->user();
             $refUserId          = $refUser->id;
             $refUlbId           = $request->ulbId;
-            
+
             $wardId = $request->firmDetails["wardNo"];
             $wardId = $this->_MODEL_WARD->getAllWard($request->ulbId)->filter(function ($item) use ($wardId) {
                 if ($item->id == $wardId) {
@@ -262,7 +261,7 @@ class TradeCitizenController extends Controller
                 throw new Exception("Old licence Id Requird");
             }
             return $this->_REPOSITORY->addRecord($request);
-        } catch (Exception $e) {            
+        } catch (Exception $e) {
             return responseMsgs(
                 false,
                 $e->getMessage(),
@@ -281,7 +280,7 @@ class TradeCitizenController extends Controller
      */
     public function getDenialDetails(Request $request)
     {
-        return($this->_REPOSITORY_TRADE->readDenialdtlbyNoticno($request));        
+        return ($this->_REPOSITORY_TRADE->readDenialdtlbyNoticno($request));
     }
 
     #=======================[📝📖 INITIALIZE RAZORPAY MENTENT | S.L (4.0) 📖📝]==============================
@@ -293,13 +292,12 @@ class TradeCitizenController extends Controller
         $this->_META_DATA["deviceId"] = $request->ip();
         try {
             $request->validate(
-                [                  
+                [
                     "licenceId" => "required|digits_between:1,9223372036854775807",
                 ]
             );
-            if(!$this->_COMMON_FUNCTION->checkUsersWithtocken("active_citizens"))
-            {
-                throw New Exception("Counter User Not Allowed");
+            if (!$this->_COMMON_FUNCTION->checkUsersWithtocken("active_citizens")) {
+                throw new Exception("Counter User Not Allowed");
             }
             #------------------------ Declaration-----------------------
             $refUser            = Auth()->user();
@@ -315,21 +313,18 @@ class TradeCitizenController extends Controller
             } elseif (in_array($refLecenceData->payment_status, [1, 2])) {
                 throw new Exception("Payment Already Done Of This Application");
             }
-            if ($refLecenceData->tobacco_status == 1 && $request->licenseFor > 1) 
-            {
+            if ($refLecenceData->tobacco_status == 1 && $request->licenseFor > 1) {
                 throw new Exception("Tobaco Application Not Take Licence More Than One Year");
             }
-            $request->request->add(['applicationId'=>$request->licenceId]);
+            $request->request->add(['applicationId' => $request->licenceId]);
             $doc = $this->_REPOSITORY_TRADE->getLicenseDocLists($request);
-            if($doc->original['status'] && !$doc->original['data']['docUploadStatus'])
-            {
+            if ($doc->original['status'] && !$doc->original['data']['docUploadStatus']) {
                 throw new Exception("Upload Document First");
-            }            
-            if ($refNoticeDetails = $this->_NOTICE->getNoticDtlById($refLecenceData->denial_id)) 
-            {
+            }
+            if ($refNoticeDetails = $this->_NOTICE->getNoticDtlById($refLecenceData->denial_id)) {
                 $mNoticeDate = date('Y-m-d', strtotime($refNoticeDetails['notice_date'])); //notice date 
             }
-            
+
 
             #-----------End validation-------------------
             #-------------Calculation-----------------------------                
@@ -361,9 +356,8 @@ class TradeCitizenController extends Controller
             $myRequest->request->add(['departmentId' => 3]);
             $myRequest->request->add(['ulbId' => $refLecenceData->ulb_id]);
             $temp = $this->saveGenerateOrderid($myRequest);
-            if(isset($temp->original) && !$temp->original["status"])
-            {
-                throw new Exception($temp->original["message"].(" :".$temp->original["data"]??""));
+            if (isset($temp->original) && !$temp->original["status"]) {
+                throw new Exception($temp->original["message"] . (" :" . $temp->original["data"] ?? ""));
             }
             $this->begin();
             $TradeRazorPayRequest = new TradeRazorPayRequest();
@@ -399,9 +393,7 @@ class TradeCitizenController extends Controller
                 $this->_META_DATA["action"],
                 $this->_META_DATA["deviceId"]
             );
-        } 
-        catch (Exception $e) 
-        {
+        } catch (Exception $e) {
             $this->rollBack();
             return responseMsgs(
                 false,
@@ -485,7 +477,7 @@ class TradeCitizenController extends Controller
                 throw new Exception("Payble Amount Missmatch!!!");
             }
 
-            $transactionType =  $this->_TRADE_CONSTAINT["APPLICATION-TYPE-BY-ID"] [$refLecenceData->application_type_id];
+            $transactionType =  $this->_TRADE_CONSTAINT["APPLICATION-TYPE-BY-ID"][$refLecenceData->application_type_id];
 
             $rate_id = $chargeData["rate_id"];
             $totalCharge = $chargeData['total_charge'];
@@ -508,7 +500,7 @@ class TradeCitizenController extends Controller
 
             $Tradetransaction = new TradeTransaction;
             $Tradetransaction->temp_id          = $licenceId;
-            $Tradetransaction->payment_gateway_type = "razor_pay";            
+            $Tradetransaction->payment_gateway_type = "razor_pay";
             $Tradetransaction->response_id      = $RazorPayResponse->id;
             $Tradetransaction->ward_id          = $refLecenceData->ward_id;
             $Tradetransaction->tran_type        = $transactionType;
@@ -542,8 +534,8 @@ class TradeCitizenController extends Controller
                 $TradeFineRebet2->created_on     = $mTimstamp;
                 $TradeFineRebet2->save();
             }
-            $request = new Request(["applicationId"=>$licenceId]);
-            if ($mPaymentStatus == 1 && $this->_REPOSITORY_TRADE->checkWorckFlowForwardBackord($request) && $refLecenceData->pending_status == 0 ) {
+            $request = new Request(["applicationId" => $licenceId]);
+            if ($mPaymentStatus == 1 && $this->_REPOSITORY_TRADE->checkWorckFlowForwardBackord($request) && $refLecenceData->pending_status == 0) {
                 $refLecenceData->current_role = $refWorkflows['initiator']['forward_id'];
                 $refLecenceData->document_upload_status = 1;
                 $refLecenceData->pending_status  = 1;
@@ -557,8 +549,7 @@ class TradeCitizenController extends Controller
 
                 $tem =  $this->_REPOSITORY_TRADE->insertWorkflowTrack($args);
             }
-            if(!$refLecenceData->provisional_license_no)
-            {
+            if (!$refLecenceData->provisional_license_no) {
                 $provNo = $this->_REPOSITORY_TRADE->createProvisinalNo($mShortUlbName, $mWardNo, $licenceId);
                 $refLecenceData->provisional_license_no = $provNo;
             }
@@ -570,7 +561,7 @@ class TradeCitizenController extends Controller
                 // $this->_REPOSITORY_TRADE->updateStatusFine($refDenialId, $chargeData['notice_amount'], $licenceId, 1); //update status and fineAmount                     
             }
             $counter = new Trade;
-            $counter->postTempTransection($Tradetransaction,$refLecenceData,$mWardNo);
+            $counter->postTempTransection($Tradetransaction, $refLecenceData, $mWardNo);
             $this->commit();
             #----------End transaction------------------------
             #----------Response------------------------------
@@ -585,9 +576,8 @@ class TradeCitizenController extends Controller
     public function conformRazorPayTran(Request $request)
     {
         try {
-            if(!$this->_COMMON_FUNCTION->checkUsersWithtocken("active_citizens"))
-            {
-                throw New Exception("Counter User Not Allowed");
+            if (!$this->_COMMON_FUNCTION->checkUsersWithtocken("active_citizens")) {
+                throw new Exception("Counter User Not Allowed");
             }
             $refUser     = Auth()->user();
             $application = null;
@@ -650,11 +640,11 @@ class TradeCitizenController extends Controller
     }
     # Serial No : 28
     public function readCitizenLicenceDtl(Request $request)
-    {       
+    {
         $request->validate([
-        'id' => 'required|digits_between:1,9223372036854775807'
+            'id' => 'required|digits_between:1,9223372036854775807'
         ]);
-        
+
         return $this->_REPOSITORY->readCitizenLicenceDtl($request);
     }
 
@@ -732,7 +722,7 @@ class TradeCitizenController extends Controller
 
     # Serial No
     public function surrenderList()
-    { 
+    {
         try {
             $citizenId = Auth()->user()->id;
             $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
@@ -756,20 +746,19 @@ class TradeCitizenController extends Controller
     #
     public function readAtachedLicenseDtl(Request $request)
     {
-        try{
+        try {
             $refUser        = Auth()->user();
             $refUserId      = $refUser->id;
-            $refWorkflowId      = $this->_WF_MASTER_Id;  
+            $refWorkflowId  = $this->_WF_MASTER_Id;
             $data = (array)null;
             $licenseNo = (new ActiveCitizenUndercare())->getDetailsByCitizenId()
-                        ->WHERENOTNULL("license_id"); 
+                ->WHERENOTNULL("license_id");
 
-            $licenseNo = $licenseNo->implode("license_id",',');
-            if($licenseNo)
-            { 
-                $licenseNo = explode(",",$licenseNo);
-                $rowLicenseNo = collect($licenseNo)->map(function($val){
-                    return "'".$val."'";
+            $licenseNo = $licenseNo->implode("license_id", ',');
+            if ($licenseNo) {
+                $licenseNo = explode(",", $licenseNo);
+                $rowLicenseNo = collect($licenseNo)->map(function ($val) {
+                    return "'" . $val . "'";
                 });
                 $rowLicenseNo = ($rowLicenseNo->implode(","));
                 $select = [
@@ -800,13 +789,13 @@ class TradeCitizenController extends Controller
                             TO_CHAR( CAST(licences.application_date AS DATE), 'DD-MM-YYYY') as application_date
                     "),
                 ];
-    
+
                 $ActiveSelect = $select;
                 $ActiveSelect[] = DB::raw("'active' as license_type");
                 $ActiveLicence = $this->_DB_READ->TABLE("active_trade_licences AS licences")
                     ->select($ActiveSelect)
-                    ->join("ulb_masters","ulb_masters.id","licences.ulb_id")
-                    ->join("trade_param_application_types","trade_param_application_types.id","licences.application_type_id")
+                    ->join("ulb_masters", "ulb_masters.id", "licences.ulb_id")
+                    ->join("trade_param_application_types", "trade_param_application_types.id", "licences.application_type_id")
                     ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
                                         STRING_AGG(guardian_name,',') AS guardian_name,
                                         STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
@@ -824,18 +813,18 @@ class TradeCitizenController extends Controller
                         $join->on("owner.temp_id", "licences.id");
                     })
                     ->where("licences.is_active", true)
-                    ->where("licences.citizen_id","<>",$refUserId)
-                    ->WHERE(FUNCTION($where) use( $licenseNo){
+                    // ->where("licences.citizen_id", "<>", $refUserId)
+                    ->WHERE(function ($where) use ($licenseNo) {
                         $where->WHEREIN("licences.application_no", $licenseNo)
-                        ->ORWHEREIN("licences.license_no", $licenseNo);
+                            ->ORWHEREIN("licences.license_no", $licenseNo);
                     });
 
-                $RejectedSelect = $select;        
+                $RejectedSelect = $select;
                 $RejectedSelect[] = DB::raw("'rejected' as license_type");
                 $RejectedLicence = $this->_DB_READ->TABLE("rejected_trade_licences AS licences")
                     ->select($RejectedSelect)
-                    ->join("ulb_masters","ulb_masters.id","licences.ulb_id")
-                    ->join("trade_param_application_types","trade_param_application_types.id","licences.application_type_id")
+                    ->join("ulb_masters", "ulb_masters.id", "licences.ulb_id")
+                    ->join("trade_param_application_types", "trade_param_application_types.id", "licences.application_type_id")
                     ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
                                         STRING_AGG(guardian_name,',') AS guardian_name,
                                         STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
@@ -853,20 +842,20 @@ class TradeCitizenController extends Controller
                         $join->on("owner.temp_id", "licences.id");
                     })
                     ->where("licences.is_active", true)
-                    ->where("licences.citizen_id","<>",$refUserId)
-                    ->WHERE(FUNCTION($where) use( $licenseNo){
+                    // ->where("licences.citizen_id", "<>", $refUserId)
+                    ->WHERE(function ($where) use ($licenseNo) {
                         $where->WHEREIN("licences.application_no", $licenseNo)
-                        ->ORWHEREIN("licences.license_no", $licenseNo);
+                            ->ORWHEREIN("licences.license_no", $licenseNo);
                     });
-                    
-                    // ->get();
 
-                $ApprovedSelect = $select;        
+                // ->get();
+
+                $ApprovedSelect = $select;
                 $ApprovedSelect[] = DB::raw("'approved' as license_type");
                 $ApprovedLicence = $this->_DB_READ->TABLE("trade_licences AS licences")
                     ->select($ApprovedSelect)
-                    ->join("ulb_masters","ulb_masters.id","licences.ulb_id")
-                    ->join("trade_param_application_types","trade_param_application_types.id","licences.application_type_id")
+                    ->join("ulb_masters", "ulb_masters.id", "licences.ulb_id")
+                    ->join("trade_param_application_types", "trade_param_application_types.id", "licences.application_type_id")
                     ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
                                             STRING_AGG(guardian_name,',') AS guardian_name,
                                             STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
@@ -883,19 +872,19 @@ class TradeCitizenController extends Controller
                                             )owner"), function ($join) {
                         $join->on("owner.temp_id", "licences.id");
                     })
-                    ->where("licences.is_active", true)    
-                    ->where("licences.citizen_id","<>",$refUserId)                
-                    ->WHERE(FUNCTION($where) use( $licenseNo){
+                    ->where("licences.is_active", true)
+                    // ->where("licences.citizen_id", "!=", $refUserId)
+                    ->WHERE(function ($where) use ($licenseNo) {
                         $where->WHEREIN("licences.application_no", $licenseNo)
-                        ->ORWHEREIN("licences.license_no", $licenseNo);
+                            ->ORWHEREIN("licences.license_no", $licenseNo);
                     });
 
-                $OldSelect = $select;        
+                $OldSelect = $select;
                 $OldSelect[] = DB::raw("'old' as license_type");
                 $OldLicence = $this->_DB_READ->TABLE("trade_renewals AS licences")
                     ->select($OldSelect)
-                    ->join("ulb_masters","ulb_masters.id","licences.ulb_id")
-                    ->join("trade_param_application_types","trade_param_application_types.id","licences.application_type_id")
+                    ->join("ulb_masters", "ulb_masters.id", "licences.ulb_id")
+                    ->join("trade_param_application_types", "trade_param_application_types.id", "licences.application_type_id")
                     ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
                                             STRING_AGG(guardian_name,',') AS guardian_name,
                                             STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
@@ -913,45 +902,44 @@ class TradeCitizenController extends Controller
                         $join->on("owner.temp_id", "licences.id");
                     })
                     ->where("licences.is_active", true)
-                    ->where("licences.citizen_id","<>",$refUserId)
-                    ->WHERE(FUNCTION($where) use( $licenseNo){
+                    // ->where("licences.citizen_id", "<>", $refUserId)
+                    ->WHERE(function ($where) use ($licenseNo) {
                         $where->WHEREIN("licences.application_no", $licenseNo)
-                        ->ORWHEREIN("licences.license_no", $licenseNo);
+                            ->ORWHEREIN("licences.license_no", $licenseNo);
                     });
-            
-                $data = $ActiveLicence->union($RejectedLicence)
-                        ->union($ApprovedLicence)->union($OldLicence)
-                        ->get();
-                $data->map(function($val){
+
+                $data =
+                    $ActiveLicence
+                    ->union($RejectedLicence)
+                    ->union($ApprovedLicence)
+                    ->union($OldLicence)
+                    ->get();
+                    // $ApprovedLicence->get();
+
+                $data->map(function ($val) {
                     $option = [];
                     $nextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
-                    $validUpto="";
-                    if($val->valid_upto)
-                    {
-                        $validUpto = Carbon::createFromFormat("d-m-Y",$val->valid_upto)->format('Y-m-d');
+                    $validUpto = "";
+                    if ($val->valid_upto) {
+                        $validUpto = Carbon::createFromFormat("d-m-Y", $val->valid_upto)->format('Y-m-d');
                     }
-                    if(trim($val->license_type)=="approved" && $val->pending_status == 5 && $validUpto < $nextMonth)
-                    {
-                        $option[]="RENEWAL";
+                    if (trim($val->license_type) == "approved" && $val->pending_status == 5 && $validUpto < $nextMonth) {
+                        $option[] = "RENEWAL";
                     }
-                    if(trim($val->license_type)=="approved" && $val->pending_status == 5 && $validUpto >= Carbon::now()->format('Y-m-d'))
-                    {
-                        $option[]="AMENDMENT";
-                        $option[]="SURRENDER";
+                    if (trim($val->license_type) == "approved" && $val->pending_status == 5 && $validUpto >= Carbon::now()->format('Y-m-d')) {
+                        $option[] = "AMENDMENT";
+                        $option[] = "SURRENDER";
                     }
-                    if(trim($val->license_type)=="approved" && $val->pending_status == 5 && $val->application_type_id == 4 && $validUpto >= Carbon::now()->format('Y-m-d'))
-                    {                    
-                        $option=[];
+                    if (trim($val->license_type) == "approved" && $val->pending_status == 5 && $val->application_type_id == 4 && $validUpto >= Carbon::now()->format('Y-m-d')) {
+                        $option = [];
                     }
                     $val->option = $option;
                     return $val;
                 });
             }
-            
+
             return responseMsg(true, "", remove_null($data));
-        }
-        catch (Exception $e) 
-        {
+        } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
     }
@@ -961,200 +949,192 @@ class TradeCitizenController extends Controller
      */
     public function citizenApplicationByCitizenId(CitizenApplication $request)
     {
-        try{
+        try {
             return $this->_REPOSITORY->citizenApplicationByCitizenId($request);
-        }
-        catch (Exception $e) 
-        {
+        } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
     }
 
     public function citizenHistory(CitizenApplication $request)
     {
-        try{
+        try {
             $refUserId = $request->citizenId;
             $ulbId     = $request->ulbId;
             $cotegory = $request->cotegory;
             $status  = $request->status;
             $applicationTypeId = null;
-            if($request->applicationType)
-            {
+            if ($request->applicationType) {
                 $applicationTypeId = $this->_TRADE_CONSTAINT["APPLICATION-TYPE"][$request->applicationType];
             }
-            $activeTrade = ActiveTradeLicence::readConnection()->where("citizen_id",$refUserId)->get();
-            $activeTran = $activeTrade->map(function($val){
+            $activeTrade = ActiveTradeLicence::readConnection()->where("citizen_id", $refUserId)->get();
+            $activeTran = $activeTrade->map(function ($val) {
                 $tran =  $val->transactionDtl()->get();
-                $tran->map(function($t){
+                $tran->map(function ($t) {
                     $t->chequDtl = $t->chequeDtl()->first();
                     return $t;
                 });
-                return([
-                    "total_amount"=>$tran->sum("paid_amount"),
-                    "total_penalty"=>$tran->sum("penalty"),
-                    "count"=>$tran->count("id"),
-                    "new_count"=>$tran->where("tran_type","NEW LICENSE")->count("id"),
-                    "renewal_count"=>$tran->where("tran_type","RENEWAL")->count("id"),
-                    "amendment_count"=>$tran->where("tran_type","AMENDMENT")->count("id"),
-                    "surender_count"=>$tran->where("tran_type","SURRENDER")->count("id"),
+                return ([
+                    "total_amount" => $tran->sum("paid_amount"),
+                    "total_penalty" => $tran->sum("penalty"),
+                    "count" => $tran->count("id"),
+                    "new_count" => $tran->where("tran_type", "NEW LICENSE")->count("id"),
+                    "renewal_count" => $tran->where("tran_type", "RENEWAL")->count("id"),
+                    "amendment_count" => $tran->where("tran_type", "AMENDMENT")->count("id"),
+                    "surender_count" => $tran->where("tran_type", "SURRENDER")->count("id"),
 
-                    "new_amount"=>$tran->where("tran_type","NEW LICENSE")->sum("paid_amount"),
-                    "renewal_amount"=>$tran->where("tran_type","RENEWAL")->sum("paid_amount"),
-                    "amendment_amount"=>$tran->where("tran_type","AMENDMENT")->sum("paid_amount"),
-                    "surender_amount"=>$tran->where("tran_type","SURRENDER")->sum("paid_amount"),
+                    "new_amount" => $tran->where("tran_type", "NEW LICENSE")->sum("paid_amount"),
+                    "renewal_amount" => $tran->where("tran_type", "RENEWAL")->sum("paid_amount"),
+                    "amendment_amount" => $tran->where("tran_type", "AMENDMENT")->sum("paid_amount"),
+                    "surender_amount" => $tran->where("tran_type", "SURRENDER")->sum("paid_amount"),
 
-                    "new_penalty"=>$tran->where("tran_type","NEW LICENSE")->sum("penalty"),
-                    "renewal_penalty"=>$tran->where("tran_type","RENEWAL")->sum("penalty"),
-                    "amendment_penalty"=>$tran->where("tran_type","AMENDMENT")->sum("penalty"),
-                    "surender_penalty"=>$tran->where("tran_type","SURRENDER")->sum("penalty"),
+                    "new_penalty" => $tran->where("tran_type", "NEW LICENSE")->sum("penalty"),
+                    "renewal_penalty" => $tran->where("tran_type", "RENEWAL")->sum("penalty"),
+                    "amendment_penalty" => $tran->where("tran_type", "AMENDMENT")->sum("penalty"),
+                    "surender_penalty" => $tran->where("tran_type", "SURRENDER")->sum("penalty"),
 
-                    "dtl"=>$tran
+                    "dtl" => $tran
                 ]);
             });
-            $rejecTrade = RejectedTradeLicence::readConnection()->where("citizen_id",$refUserId)->get();
-            $rejectTran = $rejecTrade->map(function($val){
+            $rejecTrade = RejectedTradeLicence::readConnection()->where("citizen_id", $refUserId)->get();
+            $rejectTran = $rejecTrade->map(function ($val) {
                 $tran =  $val->transactionDtl()->get();
-                $tran->map(function($t){
+                $tran->map(function ($t) {
                     $t->chequDtl = $t->chequeDtl()->first();
                     return $t;
                 });
-                return([
-                    "total_amount"=>$tran->sum("paid_amount"),
-                    "total_penalty"=>$tran->sum("penalty"),
-                    "count"=>$tran->count("id"),
-                    "new_count"=>$tran->where("tran_type","NEW LICENSE")->count("id"),
-                    "renewal_count"=>$tran->where("tran_type","RENEWAL")->count("id"),
-                    "amendment_count"=>$tran->where("tran_type","AMENDMENT")->count("id"),
-                    "surender_count"=>$tran->where("tran_type","SURRENDER")->count("id"),
+                return ([
+                    "total_amount" => $tran->sum("paid_amount"),
+                    "total_penalty" => $tran->sum("penalty"),
+                    "count" => $tran->count("id"),
+                    "new_count" => $tran->where("tran_type", "NEW LICENSE")->count("id"),
+                    "renewal_count" => $tran->where("tran_type", "RENEWAL")->count("id"),
+                    "amendment_count" => $tran->where("tran_type", "AMENDMENT")->count("id"),
+                    "surender_count" => $tran->where("tran_type", "SURRENDER")->count("id"),
 
-                    "new_amount"=>$tran->where("tran_type","NEW LICENSE")->sum("paid_amount"),
-                    "renewal_amount"=>$tran->where("tran_type","RENEWAL")->sum("paid_amount"),
-                    "amendment_amount"=>$tran->where("tran_type","AMENDMENT")->sum("paid_amount"),
-                    "surender_amount"=>$tran->where("tran_type","SURRENDER")->sum("paid_amount"),
+                    "new_amount" => $tran->where("tran_type", "NEW LICENSE")->sum("paid_amount"),
+                    "renewal_amount" => $tran->where("tran_type", "RENEWAL")->sum("paid_amount"),
+                    "amendment_amount" => $tran->where("tran_type", "AMENDMENT")->sum("paid_amount"),
+                    "surender_amount" => $tran->where("tran_type", "SURRENDER")->sum("paid_amount"),
 
-                    "new_penalty"=>$tran->where("tran_type","NEW LICENSE")->sum("penalty"),
-                    "renewal_penalty"=>$tran->where("tran_type","RENEWAL")->sum("penalty"),
-                    "amendment_penalty"=>$tran->where("tran_type","AMENDMENT")->sum("penalty"),
-                    "surender_penalty"=>$tran->where("tran_type","SURRENDER")->sum("penalty"),
+                    "new_penalty" => $tran->where("tran_type", "NEW LICENSE")->sum("penalty"),
+                    "renewal_penalty" => $tran->where("tran_type", "RENEWAL")->sum("penalty"),
+                    "amendment_penalty" => $tran->where("tran_type", "AMENDMENT")->sum("penalty"),
+                    "surender_penalty" => $tran->where("tran_type", "SURRENDER")->sum("penalty"),
 
-                    "dtl"=>$tran
+                    "dtl" => $tran
                 ]);
             });
 
-            $trade = TradeLicence::readConnection()->where("citizen_id",$refUserId)->get();
-            $tradeTran = $trade->map(function($val){
+            $trade = TradeLicence::readConnection()->where("citizen_id", $refUserId)->get();
+            $tradeTran = $trade->map(function ($val) {
                 $tran =  $val->transactionDtl()->get();
-                $tran->map(function($t){
+                $tran->map(function ($t) {
                     $t->chequDtl = $t->chequeDtl()->first();
                     return $t;
                 });
-                return([
-                    "total_amount"=>$tran->sum("paid_amount"),
-                    "total_penalty"=>$tran->sum("penalty"),
-                    "count"=>$tran->count("id"),
-                    "new_count"=>$tran->where("tran_type","NEW LICENSE")->count("id"),
-                    "renewal_count"=>$tran->where("tran_type","RENEWAL")->count("id"),
-                    "amendment_count"=>$tran->where("tran_type","AMENDMENT")->count("id"),
-                    "surender_count"=>$tran->where("tran_type","SURRENDER")->count("id"),
+                return ([
+                    "total_amount" => $tran->sum("paid_amount"),
+                    "total_penalty" => $tran->sum("penalty"),
+                    "count" => $tran->count("id"),
+                    "new_count" => $tran->where("tran_type", "NEW LICENSE")->count("id"),
+                    "renewal_count" => $tran->where("tran_type", "RENEWAL")->count("id"),
+                    "amendment_count" => $tran->where("tran_type", "AMENDMENT")->count("id"),
+                    "surender_count" => $tran->where("tran_type", "SURRENDER")->count("id"),
 
-                    "new_amount"=>$tran->where("tran_type","NEW LICENSE")->sum("paid_amount"),
-                    "renewal_amount"=>$tran->where("tran_type","RENEWAL")->sum("paid_amount"),
-                    "amendment_amount"=>$tran->where("tran_type","AMENDMENT")->sum("paid_amount"),
-                    "surender_amount"=>$tran->where("tran_type","SURRENDER")->sum("paid_amount"),
+                    "new_amount" => $tran->where("tran_type", "NEW LICENSE")->sum("paid_amount"),
+                    "renewal_amount" => $tran->where("tran_type", "RENEWAL")->sum("paid_amount"),
+                    "amendment_amount" => $tran->where("tran_type", "AMENDMENT")->sum("paid_amount"),
+                    "surender_amount" => $tran->where("tran_type", "SURRENDER")->sum("paid_amount"),
 
-                    "new_penalty"=>$tran->where("tran_type","NEW LICENSE")->sum("penalty"),
-                    "renewal_penalty"=>$tran->where("tran_type","RENEWAL")->sum("penalty"),
-                    "amendment_penalty"=>$tran->where("tran_type","AMENDMENT")->sum("penalty"),
-                    "surender_penalty"=>$tran->where("tran_type","SURRENDER")->sum("penalty"),
+                    "new_penalty" => $tran->where("tran_type", "NEW LICENSE")->sum("penalty"),
+                    "renewal_penalty" => $tran->where("tran_type", "RENEWAL")->sum("penalty"),
+                    "amendment_penalty" => $tran->where("tran_type", "AMENDMENT")->sum("penalty"),
+                    "surender_penalty" => $tran->where("tran_type", "SURRENDER")->sum("penalty"),
 
-                    "dtl"=>$tran
+                    "dtl" => $tran
                 ]);
             });
-            $old = TradeRenewal::readConnection()->where("citizen_id",$refUserId)->get();
-            $oldTran = $old->map(function($val){
+            $old = TradeRenewal::readConnection()->where("citizen_id", $refUserId)->get();
+            $oldTran = $old->map(function ($val) {
                 $tran =  $val->transactionDtl()->get();
-                $tran->map(function($t){
+                $tran->map(function ($t) {
                     $t->chequDtl = $t->chequeDtl()->first();
                     return $t;
                 });
-                return([
-                    "total_amount"=>$tran->sum("paid_amount"),
-                    "total_penalty"=>$tran->sum("penalty"),
-                    "count"=>$tran->count("id"),
-                    "new_count"=>$tran->where("tran_type","NEW LICENSE")->count("id"),
-                    "renewal_count"=>$tran->where("tran_type","RENEWAL")->count("id"),
-                    "amendment_count"=>$tran->where("tran_type","AMENDMENT")->count("id"),
-                    "surender_count"=>$tran->where("tran_type","SURRENDER")->count("id"),
+                return ([
+                    "total_amount" => $tran->sum("paid_amount"),
+                    "total_penalty" => $tran->sum("penalty"),
+                    "count" => $tran->count("id"),
+                    "new_count" => $tran->where("tran_type", "NEW LICENSE")->count("id"),
+                    "renewal_count" => $tran->where("tran_type", "RENEWAL")->count("id"),
+                    "amendment_count" => $tran->where("tran_type", "AMENDMENT")->count("id"),
+                    "surender_count" => $tran->where("tran_type", "SURRENDER")->count("id"),
 
-                    "new_amount"=>$tran->where("tran_type","NEW LICENSE")->sum("paid_amount"),
-                    "renewal_amount"=>$tran->where("tran_type","RENEWAL")->sum("paid_amount"),
-                    "amendment_amount"=>$tran->where("tran_type","AMENDMENT")->sum("paid_amount"),
-                    "surender_amount"=>$tran->where("tran_type","SURRENDER")->sum("paid_amount"),
+                    "new_amount" => $tran->where("tran_type", "NEW LICENSE")->sum("paid_amount"),
+                    "renewal_amount" => $tran->where("tran_type", "RENEWAL")->sum("paid_amount"),
+                    "amendment_amount" => $tran->where("tran_type", "AMENDMENT")->sum("paid_amount"),
+                    "surender_amount" => $tran->where("tran_type", "SURRENDER")->sum("paid_amount"),
 
-                    "new_penalty"=>$tran->where("tran_type","NEW LICENSE")->sum("penalty"),
-                    "renewal_penalty"=>$tran->where("tran_type","RENEWAL")->sum("penalty"),
-                    "amendment_penalty"=>$tran->where("tran_type","AMENDMENT")->sum("penalty"),
-                    "surender_penalty"=>$tran->where("tran_type","SURRENDER")->sum("penalty"),
+                    "new_penalty" => $tran->where("tran_type", "NEW LICENSE")->sum("penalty"),
+                    "renewal_penalty" => $tran->where("tran_type", "RENEWAL")->sum("penalty"),
+                    "amendment_penalty" => $tran->where("tran_type", "AMENDMENT")->sum("penalty"),
+                    "surender_penalty" => $tran->where("tran_type", "SURRENDER")->sum("penalty"),
 
-                    "dtl"=>$tran
+                    "dtl" => $tran
                 ]);
             });
             $finalTran = $activeTran->union($rejectTran)->union($tradeTran)->union($oldTran);
             $finalTrade = $activeTrade->union($rejecTrade)->union($trade)->union($old);
             $data = [
-                "totalApp"=>$finalTrade->count("id"),
-                "newApp"=>$finalTrade->where("application_type_id",$this->_TRADE_CONSTAINT["APPLICATION-TYPE"]["NEWLICENSE"])->count("id"),
-                "renewalApp"=>$finalTrade->where("application_type_id",$this->_TRADE_CONSTAINT["APPLICATION-TYPE"]["RENEWAL"])->count("id"),
-                "amendmentApp"=>$finalTrade->where("application_type_id",$this->_TRADE_CONSTAINT["APPLICATION-TYPE"]["AMENDMENT"])->count("id"),
-                "surenderApp"=>$finalTrade->where("application_type_id",$this->_TRADE_CONSTAINT["APPLICATION-TYPE"]["SURRENDER"])->count("id"),
-                "pendingApp"=>$activeTrade->count("id"),
-                "rejectApp"=>$rejecTrade->count("id"),
-                "aprovedApp"=>$trade->union($old)->count("id"),
+                "totalApp" => $finalTrade->count("id"),
+                "newApp" => $finalTrade->where("application_type_id", $this->_TRADE_CONSTAINT["APPLICATION-TYPE"]["NEWLICENSE"])->count("id"),
+                "renewalApp" => $finalTrade->where("application_type_id", $this->_TRADE_CONSTAINT["APPLICATION-TYPE"]["RENEWAL"])->count("id"),
+                "amendmentApp" => $finalTrade->where("application_type_id", $this->_TRADE_CONSTAINT["APPLICATION-TYPE"]["AMENDMENT"])->count("id"),
+                "surenderApp" => $finalTrade->where("application_type_id", $this->_TRADE_CONSTAINT["APPLICATION-TYPE"]["SURRENDER"])->count("id"),
+                "pendingApp" => $activeTrade->count("id"),
+                "rejectApp" => $rejecTrade->count("id"),
+                "aprovedApp" => $trade->union($old)->count("id"),
 
-                "trandCount"=>$activeTran->sum("count")+$rejectTran->sum("count")+$tradeTran->sum("count")+$oldTran->sum("count"),
-                "totalAmount"=>$activeTran->sum("total_amount")+$rejectTran->sum("total_amount")+$tradeTran->sum("total_amount")+$oldTran->sum("total_amount"),
-                "totalPenalty"=>$activeTran->sum("total_penalty")+$rejectTran->sum("total_penalty")+$tradeTran->sum("total_penalty")+$oldTran->sum("total_penalty"),
-                "newAppTranCount"=>$activeTran->sum("new_count")+$rejectTran->sum("new_count")+$tradeTran->sum("new_count")+$oldTran->sum("new_count"),
-                "renewalTranCount"=>$activeTran->sum("renewal_count")+$rejectTran->sum("renewal_count")+$tradeTran->sum("renewal_count")+$oldTran->sum("renewal_count"),
-                "amendmentTranCount"=>$activeTran->sum("amendment_count")+$rejectTran->sum("amendment_count")+$tradeTran->sum("amendment_count")+$oldTran->sum("amendment_count"),
-                "surenderTranCount"=>$activeTran->sum("surender_count")+$rejectTran->sum("surender_count")+$tradeTran->sum("surender_count")+$oldTran->sum("surender_count"),
+                "trandCount" => $activeTran->sum("count") + $rejectTran->sum("count") + $tradeTran->sum("count") + $oldTran->sum("count"),
+                "totalAmount" => $activeTran->sum("total_amount") + $rejectTran->sum("total_amount") + $tradeTran->sum("total_amount") + $oldTran->sum("total_amount"),
+                "totalPenalty" => $activeTran->sum("total_penalty") + $rejectTran->sum("total_penalty") + $tradeTran->sum("total_penalty") + $oldTran->sum("total_penalty"),
+                "newAppTranCount" => $activeTran->sum("new_count") + $rejectTran->sum("new_count") + $tradeTran->sum("new_count") + $oldTran->sum("new_count"),
+                "renewalTranCount" => $activeTran->sum("renewal_count") + $rejectTran->sum("renewal_count") + $tradeTran->sum("renewal_count") + $oldTran->sum("renewal_count"),
+                "amendmentTranCount" => $activeTran->sum("amendment_count") + $rejectTran->sum("amendment_count") + $tradeTran->sum("amendment_count") + $oldTran->sum("amendment_count"),
+                "surenderTranCount" => $activeTran->sum("surender_count") + $rejectTran->sum("surender_count") + $tradeTran->sum("surender_count") + $oldTran->sum("surender_count"),
 
-                "newAppTranAmount"=>$activeTran->sum("new_amount")+$rejectTran->sum("new_amount")+$tradeTran->sum("new_amount")+$oldTran->sum("new_amount"),
-                "renewalTranAmount"=>$activeTran->sum("renewal_amount")+$rejectTran->sum("renewal_amount")+$tradeTran->sum("renewal_amount")+$oldTran->sum("renewal_amount"),
-                "amendmentTranAmount"=>$activeTran->sum("amendment_amount")+$rejectTran->sum("amendment_amount")+$tradeTran->sum("amendment_amount")+$oldTran->sum("amendment_amount"),
-                "surenderTranAmount"=>$activeTran->sum("surender_amount")+$rejectTran->sum("surender_amount")+$tradeTran->sum("surender_amount")+$oldTran->sum("surender_amount"),
+                "newAppTranAmount" => $activeTran->sum("new_amount") + $rejectTran->sum("new_amount") + $tradeTran->sum("new_amount") + $oldTran->sum("new_amount"),
+                "renewalTranAmount" => $activeTran->sum("renewal_amount") + $rejectTran->sum("renewal_amount") + $tradeTran->sum("renewal_amount") + $oldTran->sum("renewal_amount"),
+                "amendmentTranAmount" => $activeTran->sum("amendment_amount") + $rejectTran->sum("amendment_amount") + $tradeTran->sum("amendment_amount") + $oldTran->sum("amendment_amount"),
+                "surenderTranAmount" => $activeTran->sum("surender_amount") + $rejectTran->sum("surender_amount") + $tradeTran->sum("surender_amount") + $oldTran->sum("surender_amount"),
 
-                "newAppTranPenalty"=>$activeTran->sum("new_penalty")+$rejectTran->sum("new_penalty")+$tradeTran->sum("new_penalty")+$oldTran->sum("new_penalty"),
-                "renewalTranPenalty"=>$activeTran->sum("renewal_penalty")+$rejectTran->sum("renewal_penalty")+$tradeTran->sum("renewal_penalty")+$oldTran->sum("renewal_penalty"),
-                "amendmentTranPenalty"=>$activeTran->sum("amendment_penalty")+$rejectTran->sum("amendment_penalty")+$tradeTran->sum("amendment_penalty")+$oldTran->sum("amendment_penalty"),
-                "surenderTranPenalty"=>$activeTran->sum("surender_penalty")+$rejectTran->sum("surender_penalty")+$tradeTran->sum("surender_penalty")+$oldTran->sum("surender_penalty"),
-                "appDtl"=>$finalTrade,
-                "tranDtl"=>$finalTran,
+                "newAppTranPenalty" => $activeTran->sum("new_penalty") + $rejectTran->sum("new_penalty") + $tradeTran->sum("new_penalty") + $oldTran->sum("new_penalty"),
+                "renewalTranPenalty" => $activeTran->sum("renewal_penalty") + $rejectTran->sum("renewal_penalty") + $tradeTran->sum("renewal_penalty") + $oldTran->sum("renewal_penalty"),
+                "amendmentTranPenalty" => $activeTran->sum("amendment_penalty") + $rejectTran->sum("amendment_penalty") + $tradeTran->sum("amendment_penalty") + $oldTran->sum("amendment_penalty"),
+                "surenderTranPenalty" => $activeTran->sum("surender_penalty") + $rejectTran->sum("surender_penalty") + $tradeTran->sum("surender_penalty") + $oldTran->sum("surender_penalty"),
+                "appDtl" => $finalTrade,
+                "tranDtl" => $finalTran,
             ];
-            return responseMsg(true, "",remove_null($data));
-        }
-        catch (Exception $e) 
-        {
+            return responseMsg(true, "", remove_null($data));
+        } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
     }
 
     public function citizenApplicationStatus(Request $request)
     {
-        try{
+        try {
             $request->validate([
                 'id' => 'required|digits_between:1,9223372036854775807'
-                ]);
+            ]);
             $refApplication = $this->_REPOSITORY_TRADE->getAllLicenceById($request->id);
-            if(!$refApplication)
-            {
+            if (!$refApplication) {
                 throw new Exception("Application Not Found");
             }
-            $pending_at = $this->_REPOSITORY_TRADE->applicationStatus($request->id,false);
+            $pending_at = $this->_REPOSITORY_TRADE->applicationStatus($request->id, false);
             return responseMsg(true, "application status", remove_null($pending_at));
-        }
-        catch (Exception $e) 
-        {
+        } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
     }
