@@ -81,7 +81,7 @@ class ThirdPartyController extends Controller
             $request->all(),
             [
                 'otp' => "required|digits:6",
-                'mobileNo' => "required|digits:10|regex:/[0-9]{10}/|exists:otp_requests,mobile_no"
+                'mobileNo' => "required|digits:10|regex:/[0-9]{10}/"
             ]
         );
         if ($validated->fails())
