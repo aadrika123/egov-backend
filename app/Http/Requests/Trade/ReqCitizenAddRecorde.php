@@ -89,8 +89,10 @@ class ReqCitizenAddRecorde extends TradeRequest
             }
 
             $rules["ownerDetails"] = "required|array";
-            $rules["ownerDetails.*.businessOwnerName"] = "required|regex:$mOwnerName";
-            $rules["ownerDetails.*.guardianName"] = "nullable|regex:$mOwnerName";
+            // $rules["ownerDetails.*.businessOwnerName"] = "required|regex:$mOwnerName";
+            // $rules["ownerDetails.*.guardianName"] = "nullable|regex:$mOwnerName";
+            $rules["ownerDetails.*.businessOwnerName"] = "required|regex:/^[A-Za-z.\s]+$/";
+            $rules["ownerDetails.*.guardianName"] = "nullable|regex:/^[A-Za-z.\s]+$/";
             $rules["ownerDetails.*.mobileNo"] = "required|digits:10|regex:$mMobileNo";
             $rules["ownerDetails.*.email"] = "email|nullable";
         } 
@@ -144,8 +146,11 @@ class ReqCitizenAddRecorde extends TradeRequest
             }
             $rules["ownerDetails"] = "array";
             if ($this->ownerDetails) {
-                $rules["ownerDetails.*.businessOwnerName"] = "required|regex:/^([a-zA-Z0-9]+)(\s[a-zA-Z0-9\.\,\']+)*$/";
-                $rules["ownerDetails.*.guardianName"] = "regex:/^([a-zA-Z0-9]+)(\s[a-zA-Z0-9\.\,\']+)*$/|nullable";
+                // $rules["ownerDetails.*.businessOwnerName"] = "required|regex:/^([a-zA-Z0-9]+)(\s[a-zA-Z0-9\.\,\']+)*$/";
+                // $rules["ownerDetails.*.guardianName"] = "regex:/^([a-zA-Z0-9]+)(\s[a-zA-Z0-9\.\,\']+)*$/|nullable";
+
+                $rules["ownerDetails.*.businessOwnerName"] = "required|regex:/^[A-Za-z.\s]+$/";
+                $rules["ownerDetails.*.guardianName"] = "regex:/^[A-Za-z.\s]+$/|nullable";
                 $rules["ownerDetails.*.mobileNo"] = "required|digits:10|regex:/[0-9]{10}/";
                 $rules["ownerDetails.*.email"] = "email|nullable";
             }
