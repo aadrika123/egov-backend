@@ -217,6 +217,8 @@ class DocUpload
                     $key['remarks'] =  $document->remarks??"";
                     $key['owner_dtl_id'] =  $document->owner_dtl_id ?? null;
                     $key['doc_path'] = $responseData['data']['fullPath'] ?? null;
+                    $key['latitude'] = $document->latitude ?? null;
+                    $key['longitude'] = $document->longitude ?? null;
                     $key['responseData'] = $responseData;
                     $data->push($key);
                 }
