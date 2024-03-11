@@ -139,7 +139,7 @@ trait SafDetailsTrait
             ['displayString' => 'Assessment Type', 'key' => 'assessmentType', 'value' => $req->assessment_type],
             ['displayString' => 'Ownership Type', 'key' => 'ownershipType', 'value' => $req->ownership_type],
             ['displayString' => 'Application-Date', 'key' => 'applyDate', 'value' => Carbon::parse($req->application_date)->format('d-m-Y')],
-            ['displayString' => 'Plot-Area(In Decimal)', 'key' => 'plotArea', 'value' => $req->area_of_plot],
+            ['displayString' => 'Plot-Area(In Dismil)', 'key' => 'plotArea', 'value' => $req->area_of_plot],
             ['displayString' => 'Water-Harvesting', 'key' => 'isWaterHarvesting', 'value' => ($req->is_water_harvesting == true) ? 'Yes' : 'No'],
             ['displayString' => 'Hoarding-Board', 'key' => 'isHoardingBoard', 'value' => ($req->is_hoarding_board == true) ? 'Yes' : 'No']
         ]);

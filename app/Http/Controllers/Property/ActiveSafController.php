@@ -2643,7 +2643,7 @@ class ActiveSafController extends Controller
                 ->leftjoin('ref_prop_types as p', 'p.id', '=', 'prop_active_safs.prop_type_mstr_id')
                 ->leftjoin('ref_prop_road_types as r', 'r.id', '=', 'prop_active_safs.road_type_mstr_id')
                 ->leftjoin('ulb_ward_masters as u', 'u.id', '=', 'prop_active_safs.ward_mstr_id')
-                ->leftjoin('ulb_ward_masters as u1', 'u.id', '=', 'prop_active_safs.new_ward_mstr_id')
+                ->leftjoin('ulb_ward_masters as u1', 'u1.id', '=', 'prop_active_safs.new_ward_mstr_id')
                 ->leftjoin('ref_prop_ownership_types as ownership_types', 'ownership_types.id', '=', 'prop_active_safs.ownership_type_mstr_id')
                 ->where("prop_active_safs.id", $verifications->saf_id)
                 ->first();

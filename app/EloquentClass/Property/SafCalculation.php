@@ -150,7 +150,7 @@ class SafCalculation
         }
 
         // Rain Water Harvesting Penalty If The Plot Area is Greater than 3228 sqft. and Rain Water Harvesting is none
-        $readAreaOfPlot =  decimalToSqFt($this->_propertyDetails['areaOfPlot']);                              // (In Decimal To SqFt)
+        $readAreaOfPlot =  decimalToSqFt($this->_propertyDetails['areaOfPlot']);                              // (In Dismil To SqFt)
         $this->_areaOfPlotInSqft = $readAreaOfPlot;
         // Check Rain Water Harvesting Status
         if ($propertyDetails['propertyType'] != $this->_vacantPropertyTypeId && $propertyDetails['isWaterHarvesting'] == 0 && $readAreaOfPlot > $this->_rwhAreaOfPlot) {
