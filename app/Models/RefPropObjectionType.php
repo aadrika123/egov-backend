@@ -15,4 +15,57 @@ class RefPropObjectionType extends Model
        RefPropObjectionType::view($req);
 }
 
+//written by prity pandey
+public function addObjectionType($req)
+{
+    $data = new RefPropObjectionType();
+    $data->type = $req->Type;
+    $data->save();
+}
+
+ 
+ public function updateObjectionType($req)
+ {
+     $data = RefPropObjectionType::where('id', $req->id)
+                                    ->where('status', 1)
+                                    ->first();
+     $data->type = $req->Type ?? $data->type;
+     $data->save();
+ }
+
+ public function getById($req)
+ {
+     $list = RefPropObjectionType::where('id', $req->id)
+         ->where("status",1)
+         ->first();
+     return $list;
+ }
+
+ 
+ public function listObjectionType()
+ {
+     $list = RefPropObjectionType::select(
+         'id',
+         'type')
+         ->where("status",1)
+         ->get();
+     return $list;
+ }
+
+
+ public function deleteObjectionType($req)
+ {
+     $Type = RefPropObjectionType::find($req->id);
+     $oldStatus = $Type->status;
+     $Type->status = $req->status;
+     $Type->save();
+     if ($oldStatus == 1 && $Type->status ==0) {
+        $message = "Data Disabled";
+    } else {
+        $message = "Data Enabled";
+    }
+    return $message;
+ }
+
+
 }

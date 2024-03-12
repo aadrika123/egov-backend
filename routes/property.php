@@ -27,6 +27,7 @@ use App\Http\Controllers\Property\ReportController;
 use App\Http\Controllers\Property\SafDocController;
 use App\Http\Controllers\Property\WaiverController;
 use App\Http\Controllers\Property\ZoneController;
+use App\Http\Controllers\Property\MasterReferenceController;
 use App\Http\Controllers\ReferenceController;
 use App\Http\Controllers\Property\LocationController;
 use App\Http\Controllers\Property\PropertyMutationController;
@@ -543,13 +544,58 @@ Route::controller(ReportController::class)->group(function () {
 });
 // });
 
+//Written by Prity Pandey
+Route::controller(ReportController::class)->group(function () {
+  Route::post('reports/property/collection', 'collectionReport');   
+});
 /**
     | Test Purpose
     | map locating 
 | Serial No :17
  */
-Route::controller(PropertyController::class)->group(function () {
-  Route::post('getpropLatLong', 'getpropLatLong');                       #API_ID = 011707
+Route::controller(MasterReferenceController::class)->group(function () {
+  //construction type
+    Route::post('ref-prop-construction-type-create', 'createConstructionType');    
+    Route::post('ref-prop-construction-type-update', 'updateConstructionType');    
+    Route::post('ref-prop-construction-type-get', 'constructiontypebyId');       
+    Route::post('ref-prop-construction-type-list', 'allConstructiontypelist');    
+    Route::post('ref-prop-construction-type-delete', 'deleteConstructionType');         
+    
+    //floor type
+    Route::post('ref-prop-floor-type-create', 'createFloorType');    
+    Route::post('ref-prop-floor-type-update', 'updateFloorType');    
+    Route::post('ref-prop-floor-type-get', 'floortypebyId');       
+    Route::post('ref-prop-floor-type-list', 'allFloortypelist');    
+    Route::post('ref-prop-floor-type-delete', 'deleteFloorType'); 
+
+    //gbbuildingusagetype
+    Route::post('ref-prop-gbbuilding-type-create', 'createGbBuildingType');    
+    Route::post('ref-prop-gbbuilding-type-update', 'updateGbBuildingType');    
+    Route::post('ref-prop-gbbuilding-type-get', 'GbBuildingtypebyId');       
+    Route::post('ref-prop-gbbuilding-type-list', 'allGbBuildingtypelist');    
+    Route::post('ref-prop-gbbuilding-type-delete', 'deleteGbBuildingType'); 
+
+    //gbpropusagestype
+    Route::post('ref-prop-gbpropusage-type-create', 'createGbPropUsageType');    
+    Route::post('ref-prop-gbpropusage-type-update', 'updateGbPropUsageType');    
+    Route::post('ref-prop-gbpropusage-type-get', 'GbPropUsagetypebyId');       
+    Route::post('ref-prop-gbpropusage-type-list', 'allGbPropUsagetypelist');    
+    Route::post('ref-prop-gbpropusage-type-delete', 'deleteGbPropUsageType'); 
+
+    //objection type
+  
+    Route::post('ref-prop-objection-type-create', 'createObjectionType');    
+    Route::post('ref-prop-objection-type-update', 'updateObjectionType');    
+    Route::post('ref-prop-objection-type-get', 'ObjectiontypebyId');       
+    Route::post('ref-prop-objection-type-list', 'allObjectiontypelist');    
+    Route::post('ref-prop-objection-type-delete', 'deleteObjectionType'); 
+
+    //occupancy factor
+    Route::post('ref-prop-occupancy-factor-create', 'createOccupancyFactor');    
+    Route::post('ref-prop-occupancy-factor-update', 'updateOccupancyFactor');    
+    Route::post('ref-prop-occupancy-factor-get', 'OccupancyFactorbyId');       
+    Route::post('ref-prop-occupancy-factor-list', 'allOccupancyFactorlist');    
+    Route::post('ref-prop-occupancy-factor-delete', 'deleteOccupancyFactor'); 
 });
 
 
