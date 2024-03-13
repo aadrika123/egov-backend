@@ -31,8 +31,11 @@ class RefPropTransferMode extends Model
 
     public function getById($req)
     {
-        $list = RefPropTransferMode::where('id', $req->id)
-            //->where("status",1)
+        $list = RefPropTransferMode::select(
+            'id',
+            'transfer_mode',
+            'status as is_suspended')
+            ->where('id', $req->id)
             ->first();
         return $list;
     }
@@ -44,7 +47,6 @@ class RefPropTransferMode extends Model
             'id',
             'transfer_mode',
             'status as is_suspended')
-            //->where("status",1)
             ->get();
         return $list;
     }

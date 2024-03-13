@@ -17,32 +17,36 @@ class RefPropRoadType extends Model
         $data->save();
     }
 
-    
+
     public function updateroadtype($req)
     {
         $data = RefPropRoadType::where('id', $req->id)
-                                        ->where('status', 1)
-                                        ->first();
+            ->where('status', 1)
+            ->first();
         $data->road_type = $req->roadType ?? $data->road_type;
         $data->save();
     }
 
     public function getById($req)
     {
-        $list = RefPropRoadType::where('id', $req->id)
-            //->where("status",1)
+        $list = RefPropRoadType::select(
+            'id',
+            'road_type',
+            'status as is_suspended'
+        )
+            ->where('id', $req->id)
             ->first();
         return $list;
     }
 
-    
+
     public function listroadtype()
     {
         $list = RefPropRoadType::select(
             'id',
             'road_type',
-            'status as is_suspended')
-            //->where("status",1)
+            'status as is_suspended'
+        )
             ->get();
         return $list;
     }
@@ -54,14 +58,11 @@ class RefPropRoadType extends Model
         $oldStatus = $Type->status;
         $Type->status = $req->status;
         $Type->save();
-        if ($oldStatus == 1 && $Type->status ==0) {
+        if ($oldStatus == 1 && $Type->status == 0) {
             $message = "Data Disabled";
         } else {
             $message = "Data Enabled";
         }
         return $message;
     }
-
-
-    
 }

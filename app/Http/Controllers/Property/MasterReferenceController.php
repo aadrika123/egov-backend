@@ -71,7 +71,7 @@ class MasterReferenceController extends Controller
             $listById = new RefPropConstructionType();
             $list  = $listById->getById($req);
 
-            return responseMsgs(true, "ConstructionType List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            return responseMsgs(true, "ConstructionType List By Id", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
         }
@@ -221,7 +221,7 @@ class MasterReferenceController extends Controller
             $listById = new RefPropGbbuildingusagetype();
             $list  = $listById->getById($req);
 
-            return responseMsgs(true, "ConstructionType List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            return responseMsgs(true, "Gb Building Type List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
         }
@@ -233,7 +233,7 @@ class MasterReferenceController extends Controller
             $list = new RefPropGbbuildingusagetype();
             $masters = $list->listGbBuildingType();
 
-            return responseMsgs(true, "All ConstructionType List", $masters, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            return responseMsgs(true, "All Gb Building Type List List", $masters, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
         }
@@ -590,7 +590,7 @@ class MasterReferenceController extends Controller
             $listById = new RefPropOwnershipType();
             $list  = $listById->getById($req);
 
-            return responseMsgs(true, "OccupancyType List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            return responseMsgs(true, "OwnershipType List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
         }
@@ -602,7 +602,7 @@ class MasterReferenceController extends Controller
             $list = new RefPropOwnershipType();
             $masters = $list->listOwnershiptype();
 
-            return responseMsgs(true, "All Occupancy type List", $masters, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            return responseMsgs(true, "All Ownership type List", $masters, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
         }
@@ -812,7 +812,7 @@ class MasterReferenceController extends Controller
             $listById = new RefPropTransferMode();
             $list  = $listById->getById($req);
 
-            return responseMsgs(true, "PropertyType List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            return responseMsgs(true, "PropertyTransfer List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
         }
@@ -824,7 +824,7 @@ class MasterReferenceController extends Controller
             $list = new RefPropTransferMode();
             $masters = $list->listproptransfermode();
 
-            return responseMsgs(true, "All Property type List", $masters, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            return responseMsgs(true, "All Property transfer List", $masters, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
         }
@@ -889,7 +889,7 @@ class MasterReferenceController extends Controller
             $listById = new RefPropUsageType();
             $list  = $listById->getById($req);
 
-            return responseMsgs(true, "PropertyType List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            return responseMsgs(true, "PropertyUsage Type List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
         }
@@ -901,7 +901,7 @@ class MasterReferenceController extends Controller
             $list = new RefPropUsageType();
             $masters = $list->listpropusagetype();
 
-            return responseMsgs(true, "All Property type List", $masters, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            return responseMsgs(true, "All Property Usage Type List", $masters, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
         }
@@ -1070,101 +1070,101 @@ class MasterReferenceController extends Controller
     }
 
     #============================penalty type crud===========================
-    public function addPenaltyType(Request $req)
-    {
-        $req->validate([
-            'penaltyType' => 'required',
+    // public function addPenaltyType(Request $req)
+    // {
+    //     $req->validate([
+    //         'penaltyType' => 'required',
 
-        ]);
-        try {
-            $user = Auth()->user();
-            $req->merge(["userId" => $user ? $user->id : null]);
-            DB::beginTransaction();
-            $newPenaltyType = new RefPropPenaltyType();
-            $id = $newPenaltyType->store($req->all());
-            if (!$id) {
-                throw new Exception("somethig went wrong on storing the  data");
-            }
-            DB::commit();
-            return responseMsg(true, "new penalty type added successfuly", "");
-        } catch (Exception $e) {
-            DB::rollBack();
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
+    //     ]);
+    //     try {
+    //         $user = Auth()->user();
+    //         $req->merge(["userId" => $user ? $user->id : null]);
+    //         DB::beginTransaction();
+    //         $newPenaltyType = new RefPropPenaltyType();
+    //         $id = $newPenaltyType->store($req->all());
+    //         if (!$id) {
+    //             throw new Exception("somethig went wrong on storing the  data");
+    //         }
+    //         DB::commit();
+    //         return responseMsg(true, "new penalty type added successfuly", "");
+    //     } catch (Exception $e) {
+    //         DB::rollBack();
+    //         return responseMsg(false, $e->getMessage(), "");
+    //     }
+    // }
 
-    public function editPenaltyType(Request $req)
-    {
-        $newPenaltyType = new RefPropPenaltyType();
-        $db_conn = $newPenaltyType->getConnectionName();
-        $tbl_name = $newPenaltyType->getTable();
-        $req->validate([
-            "id" => "required|degit_between:1,1000|exist:$db_conn.$tbl_name,id",
-            'penaltyType' => 'required',
-            "status" => "nullable|in:1,0"
+    // public function editPenaltyType(Request $req)
+    // {
+    //     $newPenaltyType = new RefPropPenaltyType();
+    //     $db_conn = $newPenaltyType->getConnectionName();
+    //     $tbl_name = $newPenaltyType->getTable();
+    //     $req->validate([
+    //         "id" => "required|degit_between:1,1000|exist:$db_conn.$tbl_name,id",
+    //         'penaltyType' => 'required',
+    //         "status" => "nullable|in:1,0"
 
-        ]);
-        try {
-            DB::beginTransaction();
-            if (!$newPenaltyType->edit($req->id, $req->all())) {
-                throw new Exception("Data not Edited");
-            }
-            DB::commit();
-            return responseMsg(true, "data update successfully", "");
-        } catch (Exception $e) {
-            DB::rollBack();
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
+    //     ]);
+    //     try {
+    //         DB::beginTransaction();
+    //         if (!$newPenaltyType->edit($req->id, $req->all())) {
+    //             throw new Exception("Data not Edited");
+    //         }
+    //         DB::commit();
+    //         return responseMsg(true, "data update successfully", "");
+    //     } catch (Exception $e) {
+    //         DB::rollBack();
+    //         return responseMsg(false, $e->getMessage(), "");
+    //     }
+    // }
 
-    #=======this is without pagination=================================
-    public function penaltyTypeList(Request $req)
-    {
-        try {
-            $objPenlatyType = new RefPropPenaltyType();
-            $data = $objPenlatyType->orderBy("id", "ASC");
-            if ($req->penaltyType) {
-                $data->where("penalty_type", $req->penaltyType);
-            }
-            if (isset($req->status)) {
-                $data->where("status", $req->status);
-            }
-            $data = $data->get();
-            return responseMsg(true, "penalty List", remove_null($data));
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
+    // #=======this is without pagination=================================
+    // public function penaltyTypeList(Request $req)
+    // {
+    //     try {
+    //         $objPenlatyType = new RefPropPenaltyType();
+    //         $data = $objPenlatyType->orderBy("id", "ASC");
+    //         if ($req->penaltyType) {
+    //             $data->where("penalty_type", $req->penaltyType);
+    //         }
+    //         if (isset($req->status)) {
+    //             $data->where("status", $req->status);
+    //         }
+    //         $data = $data->get();
+    //         return responseMsg(true, "penalty List", remove_null($data));
+    //     } catch (Exception $e) {
+    //         return responseMsg(false, $e->getMessage(), "");
+    //     }
+    // }
 
-    public function penltyDtl(Request $req)
-    {
-        $newPenaltyType = new RefPropPenaltyType();
-        $db_conn = $newPenaltyType->getConnectionName();
-        $tbl_name = $newPenaltyType->getTable();
-        $req->validate([
-            "id" => "required|degit_between:1,1000|exist:$db_conn.$tbl_name,id",
-        ]);
-        try {
-            $data = RefPropPenaltyType::find($req->id);
-            return responseMsg(true, "penalty type Dtl", remove_null($data));
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-    #==========================end penalty type crud=================================
+    // public function penltyDtl(Request $req)
+    // {
+    //     $newPenaltyType = new RefPropPenaltyType();
+    //     $db_conn = $newPenaltyType->getConnectionName();
+    //     $tbl_name = $newPenaltyType->getTable();
+    //     $req->validate([
+    //         "id" => "required|degit_between:1,1000|exist:$db_conn.$tbl_name,id",
+    //     ]);
+    //     try {
+    //         $data = RefPropPenaltyType::find($req->id);
+    //         return responseMsg(true, "penalty type Dtl", remove_null($data));
+    //     } catch (Exception $e) {
+    //         return responseMsg(false, $e->getMessage(), "");
+    //     }
+    // }
+    // #==========================end penalty type crud=================================
 
-    public function addRodeType(Request $req)
-    {
-        try {
-            $objRoadeType = new MPropRoadType();
-            if (!$objRoadeType->stor($req->all())) {
-                throw new Exception("somthing went wrong on storing road tyep data");
-            }
-            DB::commit();
-            return responseMsg(true, "roadtype store successfully", "");
-        } catch (Exception $e) {
-            DB::rollBack();
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
+    // public function addRodeType(Request $req)
+    // {
+    //     try {
+    //         $objRoadeType = new MPropRoadType();
+    //         if (!$objRoadeType->stor($req->all())) {
+    //             throw new Exception("somthing went wrong on storing road tyep data");
+    //         }
+    //         DB::commit();
+    //         return responseMsg(true, "roadtype store successfully", "");
+    //     } catch (Exception $e) {
+    //         DB::rollBack();
+    //         return responseMsg(false, $e->getMessage(), "");
+    //     }
+    // }
 }

@@ -39,8 +39,11 @@ class RefPropConstructionType extends Model
  
      public function getById($req)
      {
-         $list = RefPropConstructionType::where('id', $req->id)
-             //->where("status",1)
+         $list = RefPropConstructionType::select(
+            'id',
+            'construction_type',
+            'status as is_suspended')
+            ->where('id', $req->id)
              ->first();
          return $list;
      }

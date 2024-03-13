@@ -13,28 +13,27 @@ class RefPropPenaltyType extends Model
 
     public function metaData(array $data)
     {
-        $metaData=[
+        $metaData = [
             "penalty_type" => $data["penaltyType"],
             "user_id" => $data["userId"],
-            
+
         ];
-        isset($data["status"]) ? $metaData["status"] = $data["status"]:"";
+        isset($data["status"]) ? $metaData["status"] = $data["status"] : "";
         return $metaData;
     }
 
     public function store(array $data)
     {
-        if($test = self::where("penalty_type",$data["penaltyType"])->fist())
-        {
-            $data["status"]=1;
-            return $this->edit($test->id,$data);
+        if ($test = self::where("penalty_type", $data["penaltyType"])->fist()) {
+            $data["status"] = 1;
+            return $this->edit($test->id, $data);
         }
         return self::create($this->metaData($data))->id;
     }
 
-    public function edit($id,array $data)
+    public function edit($id, array $data)
     {
-        return self::where("id",$id)->update($this->metaData($data));
+        return self::where("id", $id)->update($this->metaData($data));
     }
 
     //written by prity pandey
@@ -47,32 +46,36 @@ class RefPropPenaltyType extends Model
         $data->save();
     }
 
-    
+
     public function updatepenaltytype($req)
     {
         $data = RefPropPenaltyType::where('id', $req->id)
-                                        ->where('status', 1)
-                                        ->first();
+            ->where('status', 1)
+            ->first();
         $data->penalty_type = $req->penaltyType ?? $data->penalty_type;
         $data->save();
     }
 
     public function getById($req)
     {
-        $list = RefPropPenaltyType::where('id', $req->id)
-           // ->where("status",1)
+        $list = RefPropPenaltyType::select(
+            'id',
+            'penalty_type',
+            'status as is_suspended'
+        )
+            ->where('id', $req->id)
             ->first();
         return $list;
     }
 
-    
+
     public function listpenaltytype()
     {
         $list = RefPropPenaltyType::select(
             'id',
             'penalty_type',
-            'status as is_suspended')
-           // ->where("status",1)
+            'status as is_suspended'
+        )
             ->get();
         return $list;
     }
@@ -84,12 +87,11 @@ class RefPropPenaltyType extends Model
         $oldStatus = $Type->status;
         $Type->status = $req->status;
         $Type->save();
-        if ($oldStatus == 1 && $Type->status ==0) {
+        if ($oldStatus == 1 && $Type->status == 0) {
             $message = "Data Disabled";
         } else {
             $message = "Data Enabled";
         }
         return $message;
     }
-    
 }

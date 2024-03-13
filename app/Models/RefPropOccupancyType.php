@@ -17,32 +17,35 @@ class RefPropOccupancyType extends Model
         $data->save();
     }
 
-    
+
     public function updateOccupancytype($req)
     {
         $data = RefPropOccupancyType::where('id', $req->id)
-                                        ->where('status', 1)
-                                        ->first();
+            ->where('status', 1)
+            ->first();
         $data->occupancy_type = $req->occupancyType ?? $data->occupancy_type;
         $data->save();
     }
 
     public function getById($req)
     {
-        $list = RefPropOccupancyType::where('id', $req->id)
-           // ->where("status",1)
+        $list = RefPropOccupancyType::select(
+            'id',
+            'occupancy_type',
+            'status as is_suspended'
+        )->where('id', $req->id)
             ->first();
         return $list;
     }
 
-    
+
     public function listOccupancytype()
     {
         $list = RefPropOccupancyType::select(
             'id',
             'occupancy_type',
-            'status as is_suspended')
-            //->where("status",1)
+            'status as is_suspended'
+        )
             ->get();
         return $list;
     }
@@ -54,12 +57,11 @@ class RefPropOccupancyType extends Model
         $oldStatus = $Type->status;
         $Type->status = $req->status;
         $Type->save();
-        if ($oldStatus == 1 && $Type->status ==0) {
+        if ($oldStatus == 1 && $Type->status == 0) {
             $message = "Data Disabled";
         } else {
             $message = "Data Enabled";
         }
         return $message;
     }
-
 }

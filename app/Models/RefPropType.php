@@ -21,32 +21,36 @@ class RefPropType extends Model
         $data->save();
     }
 
-    
+
     public function updatepropertytype($req)
     {
         $data = RefPropType::where('id', $req->id)
-                                        ->where('status', 1)
-                                        ->first();
+            ->where('status', 1)
+            ->first();
         $data->property_type = $req->propertyType ?? $data->property_type;
         $data->save();
     }
 
     public function getById($req)
     {
-        $list = RefPropType::where('id', $req->id)
-           // ->where("status",1)
+        $list = RefPropType::select(
+            'id',
+            'property_type',
+            'status as is_suspended'
+        )
+            ->where('id', $req->id)
             ->first();
         return $list;
     }
 
-    
+
     public function listpropertytype()
     {
         $list = RefPropType::select(
             'id',
             'property_type',
-            'status as is_suspended')
-           // ->where("status",1)
+            'status as is_suspended'
+        )
             ->get();
         return $list;
     }
@@ -58,12 +62,11 @@ class RefPropType extends Model
         $oldStatus = $Type->status;
         $Type->status = $req->status;
         $Type->save();
-        if ($oldStatus == 1 && $Type->status ==0) {
+        if ($oldStatus == 1 && $Type->status == 0) {
             $message = "Data Disabled";
         } else {
             $message = "Data Enabled";
         }
         return $message;
     }
-
 }
