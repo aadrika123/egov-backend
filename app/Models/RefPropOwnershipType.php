@@ -47,7 +47,7 @@ class RefPropOwnershipType extends Model
         $list = RefPropOwnershipType::select(
             'id',
             'ownership_type',
-            'status')
+            'status as is_suspended')
             //->where("status",1)
             ->get();
         return $list;

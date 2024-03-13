@@ -51,7 +51,7 @@ class RefPropOccupancyFactor extends Model
               'id',
               'occupancy_name',
               'mult_factor',
-              'status')
+              'status as is_suspended')
               //->where("status",1)
               ->get();
           return $list;

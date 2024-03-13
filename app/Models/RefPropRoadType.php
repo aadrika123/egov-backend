@@ -41,7 +41,7 @@ class RefPropRoadType extends Model
         $list = RefPropRoadType::select(
             'id',
             'road_type',
-            'status')
+            'status as is_suspended')
             //->where("status",1)
             ->get();
         return $list;

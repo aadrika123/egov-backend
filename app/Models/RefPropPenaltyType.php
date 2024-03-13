@@ -40,10 +40,10 @@ class RefPropPenaltyType extends Model
     //written by prity pandey
     public function addpenaltytype($req)
     {
-    //    return $user = authUser($req)->id;
+        $user = authUser($req)->id;
         $data = new RefPropPenaltyType();
         $data->penalty_type = $req->penaltyType;
-        // $data->user_id = $user;
+        $data->user_id = $user;
         $data->save();
     }
 
@@ -60,7 +60,7 @@ class RefPropPenaltyType extends Model
     public function getById($req)
     {
         $list = RefPropPenaltyType::where('id', $req->id)
-            ->where("status",1)
+           // ->where("status",1)
             ->first();
         return $list;
     }
@@ -71,8 +71,8 @@ class RefPropPenaltyType extends Model
         $list = RefPropPenaltyType::select(
             'id',
             'penalty_type',
-            'status')
-            ->where("status",1)
+            'status as is_suspended')
+           // ->where("status",1)
             ->get();
         return $list;
     }

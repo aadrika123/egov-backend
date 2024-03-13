@@ -45,7 +45,7 @@ class RefPropType extends Model
         $list = RefPropType::select(
             'id',
             'property_type',
-            'status')
+            'status as is_suspended')
            // ->where("status",1)
             ->get();
         return $list;

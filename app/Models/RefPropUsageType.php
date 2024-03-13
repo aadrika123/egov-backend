@@ -48,7 +48,7 @@ class RefPropUsageType extends Model
              'id',
              'usage_type',
              'usage_code',
-             'status')
+             'status as is_suspended')
              //->where("status",1)
              ->get();
          return $list;

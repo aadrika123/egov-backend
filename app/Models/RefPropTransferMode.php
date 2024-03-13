@@ -43,7 +43,7 @@ class RefPropTransferMode extends Model
         $list = RefPropTransferMode::select(
             'id',
             'transfer_mode',
-            'status')
+            'status as is_suspended')
             //->where("status",1)
             ->get();
         return $list;

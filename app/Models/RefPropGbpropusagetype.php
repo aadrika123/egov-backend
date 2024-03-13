@@ -47,7 +47,7 @@ class RefPropGbpropusagetype extends Model
          $list = RefPropGbpropusagetype::select(
              'id',
              'prop_usage_type',
-             'status')
+             'status as is_suspended')
             // ->where("status",1)
              ->get();
          return $list;

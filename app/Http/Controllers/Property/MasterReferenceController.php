@@ -1004,9 +1004,7 @@ class MasterReferenceController extends Controller
 
             ]);
             $create = new RefPropPenaltyType();
-            $create =$req->penaltyType;
-            $create->save();
-            // $create->addpenaltytype($req);
+            $create->addpenaltytype($req);
             return responseMsgs(true, "Successfully Saved", "", "120101", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "120101", "01", responseTime(), $req->getMethod(), $req->deviceId);
@@ -1018,7 +1016,7 @@ class MasterReferenceController extends Controller
         try {
             $req->validate([
                 'id' => 'required',
-                'rebateType' => 'required'
+                'penaltyType' => 'required'
             ]);
             $update = new RefPropPenaltyType();
             $list  = $update->updatepenaltytype($req);

@@ -18,8 +18,10 @@ class RefPropFloor extends Model
     //written by prity pandey
     public function addFloorType($req)
     {
+        $user = authUser($req)->id;
         $data = new RefPropFloor();
         $data->floor_name = $req->floorName;
+        $data->user_id = $user;
         $data->save();
     }
 
@@ -45,10 +47,9 @@ class RefPropFloor extends Model
      public function listFloorType()
      {
          $list = RefPropFloor::select(
-             'id',
-             'floor_name',
-             'status')
-             //->where("status",1)
+            'id',
+        'floor_name',
+        'status as is_suspended')
              ->get();
          return $list;
      }

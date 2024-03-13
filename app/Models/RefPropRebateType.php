@@ -45,7 +45,7 @@ class RefPropRebateType extends Model
          $list = RefPropRebateType::select(
              'id',
              'rebate_type',
-             'status')
+             'status as is_suspended')
              //->where("status",1)
              ->get();
          return $list;

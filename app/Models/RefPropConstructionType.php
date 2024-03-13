@@ -51,7 +51,7 @@ class RefPropConstructionType extends Model
          $list = RefPropConstructionType::select(
              'id',
              'construction_type',
-             'status')
+             'status as is_suspended')
             // ->where("status",1)
              ->get();
          return $list;

@@ -47,7 +47,7 @@ class RefPropGbbuildingusagetype extends Model
          $list = RefPropGbbuildingusagetype::select(
              'id',
              'building_type',
-             'status')
+             'status as is_suspended')
              //->where("status",1)
              ->get();
          return $list;

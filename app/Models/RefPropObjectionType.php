@@ -47,7 +47,7 @@ public function addObjectionType($req)
      $list = RefPropObjectionType::select(
          'id',
          'type',
-         'status')
+         'status as is_suspended')
          //->where("status",1)
          ->get();
      return $list;

@@ -41,7 +41,7 @@ class RefPropOccupancyType extends Model
         $list = RefPropOccupancyType::select(
             'id',
             'occupancy_type',
-            'status')
+            'status as is_suspended')
             //->where("status",1)
             ->get();
         return $list;
