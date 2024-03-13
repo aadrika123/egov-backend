@@ -30,6 +30,9 @@ use Illuminate\Support\Facades\DB;
 
 class MasterReferenceController extends Controller
 {
+    /**
+     * |Construction Type Crud
+     */
     public function createConstructionType(Request $req)
     {
         try {
@@ -104,7 +107,9 @@ class MasterReferenceController extends Controller
         }
     }
 
-
+    /**
+     * |Floor Type Crud
+     */
 
     public function createFloorType(Request $req)
     {
@@ -180,6 +185,10 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /**
+     * |Gb Building Usage Type Crud
+     */
+
     public function createGbBuildingType(Request $req)
     {
         try {
@@ -253,6 +262,10 @@ class MasterReferenceController extends Controller
             return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
         }
     }
+
+    /**
+     * |Gb Prop Usage Type Crud
+     */
 
     public function createGbPropUsageType(Request $req)
     {
@@ -342,6 +355,10 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /**
+     * |Gb Prop Objection Type Crud
+     */
+
     public function updateObjectionType(Request $req)
     {
         try {
@@ -399,6 +416,10 @@ class MasterReferenceController extends Controller
             return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
         }
     }
+
+    /**
+     * |Occupancy Factor Crud
+     */
 
     public function createOccupancyFactor(Request $req)
     {
@@ -475,6 +496,10 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /**
+     * |Occupancy Type Crud
+     */
+
     public function createOccupancyType(Request $req)
     {
         try {
@@ -548,6 +573,10 @@ class MasterReferenceController extends Controller
             return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
         }
     }
+
+    /**
+     * |Prop Ownership Type Crud
+     */
 
     public function createOwnershipType(Request $req)
     {
@@ -623,6 +652,10 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /**
+     * |Prop Road Type Crud
+     */
+
     public function createRoadType(Request $req)
     {
         try {
@@ -696,6 +729,10 @@ class MasterReferenceController extends Controller
             return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
         }
     }
+
+    /**
+     * |Prop Type Crud
+     */
 
     public function createPropertyType(Request $req)
     {
@@ -771,6 +808,10 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /**
+     * |Prop Transfer Mode Crud
+     */
+
     public function createPropTransferMode(Request $req)
     {
         try {
@@ -844,6 +885,10 @@ class MasterReferenceController extends Controller
             return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
         }
     }
+
+    /**
+     * |Prop Usage Type Crud
+     */
 
     public function createPropUsageType(Request $req)
     {
@@ -922,6 +967,10 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /**
+     * |Prop Rebate Type Crud
+     */
+
     public function createRebateType(Request $req)
     {
         try {
@@ -995,6 +1044,10 @@ class MasterReferenceController extends Controller
             return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
         }
     }
+
+    /**
+     * |Prop Penalty Type Crud
+     */
 
     public function createPenaltyType(Request $req)
     {
