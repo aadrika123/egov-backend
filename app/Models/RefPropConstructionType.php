@@ -10,12 +10,13 @@ class RefPropConstructionType extends Model
 {
     use HasFactory;
 
-    
+
     protected  $guarded = [];
 
     protected $hidden = ['created_at', 'updated_at'];
-    
-    public function show(array $req){
+
+    public function show(array $req)
+    {
         RefPropConstructionType::view($req);
     }
 
@@ -27,51 +28,53 @@ class RefPropConstructionType extends Model
         $data->save();
     }
 
-     
-     public function updateConstructionType($req)
-     {
-         $data = RefPropConstructionType::where('id', $req->id)
-                                        ->where('status', 1)
-                                        ->first();
-         $data->construction_type = $req->constructionType ?? $data->construction_type;
-         $data->save();
-     }
- 
-     public function getById($req)
-     {
-         $list = RefPropConstructionType::select(
+
+    public function updateConstructionType($req)
+    {
+        $data = RefPropConstructionType::where('id', $req->id)
+            ->where('status', 1)
+            ->first();
+        $data->construction_type = $req->constructionType ?? $data->construction_type;
+        $data->save();
+    }
+
+    public function getById($req)
+    {
+        $list = RefPropConstructionType::select(
             'id',
             'construction_type',
-            'status as is_suspended')
+            'status as is_suspended'
+        )
             ->where('id', $req->id)
-             ->first();
-         return $list;
-     }
- 
-     
-     public function listConstructionType()
-     {
-         $list = RefPropConstructionType::select(
-             'id',
-             'construction_type',
-             'status as is_suspended')
-            // ->where("status",1)
-             ->get();
-         return $list;
-     }
- 
+            ->first();
+        return $list;
+    }
 
-     public function deleteConstructionType($req)
-     {
-         $constructionType = RefPropConstructionType::find($req->id);
-         $oldStatus = $constructionType->status;
-         $constructionType->status = $req->status;
-         $constructionType->save();
-         if ($oldStatus == 1 && $constructionType->status ==0) {
+
+    public function listConstructionType()
+    {
+        $list = RefPropConstructionType::select(
+            'id',
+            'construction_type',
+            'status as is_suspended'
+        )
+            ->orderBy('id', 'asc')
+            ->get();
+        return $list;
+    }
+
+
+    public function deleteConstructionType($req)
+    {
+        $constructionType = RefPropConstructionType::find($req->id);
+        $oldStatus = $constructionType->status;
+        $constructionType->status = $req->status;
+        $constructionType->save();
+        if ($oldStatus == 1 && $constructionType->status == 0) {
             $message = "Data Disabled";
         } else {
             $message = "Data Enabled";
         }
         return $message;
-     }
+    }
 }

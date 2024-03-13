@@ -57,6 +57,7 @@ class RefPropFloor extends Model
             'floor_name',
             'status as is_suspended'
         )
+            ->orderBy('id', 'asc')
             ->get();
         return $list;
     }

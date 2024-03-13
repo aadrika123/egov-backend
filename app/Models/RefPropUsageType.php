@@ -53,8 +53,10 @@ class RefPropUsageType extends Model
             'id',
             'usage_type',
             'usage_code',
-            'status as is_suspended'
+            '
+            status as is_suspended'
         )
+            ->orderBy('id', 'asc')
             ->get();
         return $list;
     }

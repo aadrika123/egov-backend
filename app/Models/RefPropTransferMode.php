@@ -19,12 +19,12 @@ class RefPropTransferMode extends Model
         $data->save();
     }
 
-    
+
     public function updateproptransfermode($req)
     {
         $data = RefPropTransferMode::where('id', $req->id)
-                                        ->where('status', 1)
-                                        ->first();
+            ->where('status', 1)
+            ->first();
         $data->transfer_mode = $req->transferMode ?? $data->transfer_mode;
         $data->save();
     }
@@ -34,19 +34,22 @@ class RefPropTransferMode extends Model
         $list = RefPropTransferMode::select(
             'id',
             'transfer_mode',
-            'status as is_suspended')
+            'status as is_suspended'
+        )
             ->where('id', $req->id)
             ->first();
         return $list;
     }
 
-    
+
     public function listproptransfermode()
     {
         $list = RefPropTransferMode::select(
             'id',
             'transfer_mode',
-            'status as is_suspended')
+            'status as is_suspended'
+        )
+            ->orderBy('id', 'asc')
             ->get();
         return $list;
     }
@@ -58,12 +61,11 @@ class RefPropTransferMode extends Model
         $oldStatus = $Type->status;
         $Type->status = $req->status;
         $Type->save();
-        if ($oldStatus == 1 && $Type->status ==0) {
+        if ($oldStatus == 1 && $Type->status == 0) {
             $message = "Data Disabled";
         } else {
             $message = "Data Enabled";
         }
         return $message;
     }
-
 }

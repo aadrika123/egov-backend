@@ -54,6 +54,7 @@ class RefPropOwnershipType extends Model
             'ownership_type',
             'status as is_suspended'
         )
+            ->orderBy('id', 'asc')
             ->get();
         return $list;
     }

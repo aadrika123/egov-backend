@@ -55,6 +55,7 @@ class RefPropGbbuildingusagetype extends Model
             'building_type',
             'status as is_suspended'
         )
+            ->orderBy('id', 'asc')
             ->get();
         return $list;
     }

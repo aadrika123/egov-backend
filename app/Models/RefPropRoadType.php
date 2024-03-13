@@ -47,6 +47,7 @@ class RefPropRoadType extends Model
             'road_type',
             'status as is_suspended'
         )
+            ->orderBy('id', 'asc')
             ->get();
         return $list;
     }

@@ -41,6 +41,7 @@ class RefPropObjectionType extends Model
             'type',
             'status as is_suspended'
         )
+            ->orderBy('id', 'asc')
             ->where('id', $req->id)
             ->first();
         return $list;

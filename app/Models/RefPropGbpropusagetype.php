@@ -37,10 +37,10 @@ class RefPropGbpropusagetype extends Model
     public function getById($req)
     {
         $list = RefPropGbpropusagetype::select(
-                'id',
-                'prop_usage_type',
-                'status as is_suspended'
-            )
+            'id',
+            'prop_usage_type',
+            'status as is_suspended'
+        )
             ->where('id', $req->id)
             ->first();
         return $list;
@@ -54,6 +54,7 @@ class RefPropGbpropusagetype extends Model
             'prop_usage_type',
             'status as is_suspended'
         )
+            ->orderBy('id', 'asc')
             ->get();
         return $list;
     }

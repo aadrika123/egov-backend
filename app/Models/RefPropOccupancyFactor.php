@@ -58,6 +58,7 @@ class RefPropOccupancyFactor extends Model
             'mult_factor',
             'status as is_suspended'
         )
+            ->orderBy('id', 'asc')
             ->get();
         return $list;
     }

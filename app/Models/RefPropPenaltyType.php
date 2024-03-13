@@ -76,6 +76,7 @@ class RefPropPenaltyType extends Model
             'penalty_type',
             'status as is_suspended'
         )
+            ->orderBy('id', 'asc')
             ->get();
         return $list;
     }
