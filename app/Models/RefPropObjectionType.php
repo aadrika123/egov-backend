@@ -36,7 +36,7 @@ public function addObjectionType($req)
  public function getById($req)
  {
      $list = RefPropObjectionType::where('id', $req->id)
-         ->where("status",1)
+         //->where("status",1)
          ->first();
      return $list;
  }
@@ -46,8 +46,9 @@ public function addObjectionType($req)
  {
      $list = RefPropObjectionType::select(
          'id',
-         'type')
-         ->where("status",1)
+         'type',
+         'status')
+         //->where("status",1)
          ->get();
      return $list;
  }

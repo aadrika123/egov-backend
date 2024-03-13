@@ -39,7 +39,7 @@ class RefPropOccupancyFactor extends Model
       public function getById($req)
       {
           $list = RefPropOccupancyFactor::where('id', $req->id)
-              ->where("status",1)
+             // ->where("status",1)
               ->first();
           return $list;
       }
@@ -50,8 +50,9 @@ class RefPropOccupancyFactor extends Model
           $list = RefPropOccupancyFactor::select(
               'id',
               'occupancy_name',
-              'mult_factor')
-              ->where("status",1)
+              'mult_factor',
+              'status')
+              //->where("status",1)
               ->get();
           return $list;
       }

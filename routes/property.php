@@ -596,6 +596,63 @@ Route::controller(MasterReferenceController::class)->group(function () {
     Route::post('ref-prop-occupancy-factor-get', 'OccupancyFactorbyId');       
     Route::post('ref-prop-occupancy-factor-list', 'allOccupancyFactorlist');    
     Route::post('ref-prop-occupancy-factor-delete', 'deleteOccupancyFactor'); 
+
+    //occupancy type
+       Route::post('ref-prop-occupancy-type-create', 'createOccupancyType');    
+       Route::post('ref-prop-occupancy-type-update', 'updateOccupancyType');    
+       Route::post('ref-prop-occupancy-type-get', 'OccupancyTypebyId');       
+       Route::post('ref-prop-occupancy-type-list', 'allOccupancyTypelist');    
+       Route::post('ref-prop-occupancy-type-delete', 'deleteOccupancyType'); 
+
+       //ownership type
+       Route::post('ref-prop-ownership-type-create', 'createOwnershipType');    
+       Route::post('ref-prop-ownership-type-update', 'updateOwnershipType');    
+       Route::post('ref-prop-ownership-type-get', 'OwnershipTypebyId');       
+       Route::post('ref-prop-ownership-type-list', 'allOwnershipTypelist');    
+       Route::post('ref-prop-ownership-type-delete', 'deleteOwnershipType'); 
+
+         //road type
+         Route::post('ref-prop-road-type-create', 'createRoadType');    
+         Route::post('ref-prop-road-type-update', 'updateroadType');    
+         Route::post('ref-prop-road-type-get', 'roadTypebyId');       
+         Route::post('ref-prop-road-type-list', 'allroadTypelist');    
+         Route::post('ref-prop-road-type-delete', 'deleteroadType'); 
+
+       //property type
+       Route::post('ref-prop-property-type-create', 'createPropertyType');    
+       Route::post('ref-prop-property-type-update', 'updatePropertyType');    
+       Route::post('ref-prop-property-type-get', 'propertyTypebyId');       
+       Route::post('ref-prop-property-type-list', 'allpropertyTypelist');    
+       Route::post('ref-prop-property-type-delete', 'deletepropertyType');
+
+        //transfer mode  type
+        Route::post('ref-prop-transfer-mode-create', 'createPropTransferMode');    
+        Route::post('ref-prop-transfer-mode-update', 'updateTransferMode');    
+        Route::post('ref-prop-transfer-mode-get', 'TransferModebyId');       
+        Route::post('ref-prop-transfer-mode-list', 'allTransferModelist');    
+        Route::post('ref-prop-transfer-mode-delete', 'deleteTransferMode');
+
+        //prop usage type
+        Route::post('ref-prop-usage-type-create', 'createPropUsageType');    
+        Route::post('ref-prop-usage-type-update', 'updateUsageType');    
+        Route::post('ref-prop-usage-type-get', 'PropUsageTypebyId');       
+        Route::post('ref-prop-usage-type-list', 'allPropUsageTypelist');    
+        Route::post('ref-prop-usage-type-delete', 'deletePropUsageType');
+
+        //rebate type
+        Route::post('ref-prop-rebate-type-create', 'createRebateType');    
+        Route::post('ref-prop-rebate-type-update', 'updateRebateType');    
+        Route::post('ref-prop-rebate-type-get', 'RebateTypebyId');       
+        Route::post('ref-prop-rebate-type-list', 'allRebateTypelist');    
+        Route::post('ref-prop-rebate-type-delete', 'deleteRebateType');
+
+       
+       //penalty type
+       Route::post('ref-prop-penalty-type-create', 'createPenaltyType');    
+       Route::post('ref-prop-penalty-type-update', 'updatePenaltyType');    
+       Route::post('ref-prop-penalty-type-get', 'PenaltyTypebyId');       
+       Route::post('ref-prop-penalty-type-list', 'allPenaltyTypelist');    
+       Route::post('ref-prop-penalty-type-delete', 'deletePenaltyType'); 
 });
 
 

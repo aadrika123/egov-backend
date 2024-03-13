@@ -40,7 +40,7 @@ class RefPropConstructionType extends Model
      public function getById($req)
      {
          $list = RefPropConstructionType::where('id', $req->id)
-             ->where("status",1)
+             //->where("status",1)
              ->first();
          return $list;
      }
@@ -50,8 +50,9 @@ class RefPropConstructionType extends Model
      {
          $list = RefPropConstructionType::select(
              'id',
-             'construction_type')
-             ->where("status",1)
+             'construction_type',
+             'status')
+            // ->where("status",1)
              ->get();
          return $list;
      }

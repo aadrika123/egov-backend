@@ -36,7 +36,7 @@ class RefPropGbpropusagetype extends Model
      public function getById($req)
      {
          $list = RefPropGbpropusagetype::where('id', $req->id)
-             ->where("status",1)
+             //->where("status",1)
              ->first();
          return $list;
      }
@@ -46,8 +46,9 @@ class RefPropGbpropusagetype extends Model
      {
          $list = RefPropGbpropusagetype::select(
              'id',
-             'prop_usage_type')
-             ->where("status",1)
+             'prop_usage_type',
+             'status')
+            // ->where("status",1)
              ->get();
          return $list;
      }

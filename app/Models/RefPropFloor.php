@@ -36,7 +36,7 @@ class RefPropFloor extends Model
      public function getById($req)
      {
          $list = RefPropFloor::where('id', $req->id)
-             ->where("status",1)
+            // ->where("status",1)
              ->first();
          return $list;
      }
@@ -46,8 +46,9 @@ class RefPropFloor extends Model
      {
          $list = RefPropFloor::select(
              'id',
-             'floor_name')
-             ->where("status",1)
+             'floor_name',
+             'status')
+             //->where("status",1)
              ->get();
          return $list;
      }
