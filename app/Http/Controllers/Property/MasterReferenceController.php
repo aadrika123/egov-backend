@@ -74,7 +74,9 @@ class MasterReferenceController extends Controller
             ]);
             $listById = new RefPropConstructionType();
             $list  = $listById->getById($req);
-
+            if (!$list)
+                return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            else
             return responseMsgs(true, "ConstructionType List By Id", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
@@ -152,7 +154,9 @@ class MasterReferenceController extends Controller
             ]);
             $listById = new RefPropFloor();
             $list  = $listById->getById($req);
-
+            if (!$list)
+                return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            else
             return responseMsgs(true, "FloorType List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
@@ -230,7 +234,9 @@ class MasterReferenceController extends Controller
             ]);
             $listById = new RefPropGbbuildingusagetype();
             $list  = $listById->getById($req);
-
+            if (!$list)
+                return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            else
             return responseMsgs(true, "Gb Building Type List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
@@ -307,7 +313,9 @@ class MasterReferenceController extends Controller
             ]);
             $listById = new RefPropGbpropusagetype();
             $list  = $listById->getById($req);
-
+            if (!$list)
+                return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            else
             return responseMsgs(true, "GbPropUsageType List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
@@ -384,7 +392,9 @@ class MasterReferenceController extends Controller
             ]);
             $listById = new RefPropObjectionType();
             $list  = $listById->getById($req);
-
+            if (!$list)
+                return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            else
             return responseMsgs(true, "ObjectionType List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
@@ -463,7 +473,9 @@ class MasterReferenceController extends Controller
             ]);
             $listById = new RefPropOccupancyFactor();
             $list  = $listById->getById($req);
-
+            if (!$list)
+                return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            else
             return responseMsgs(true, "OccupancyFactor List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
@@ -541,7 +553,9 @@ class MasterReferenceController extends Controller
             ]);
             $listById = new RefPropOccupancyType();
             $list  = $listById->getById($req);
-
+            if (!$list)
+                return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            else
             return responseMsgs(true, "OccupancyType List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
@@ -619,7 +633,9 @@ class MasterReferenceController extends Controller
             ]);
             $listById = new RefPropOwnershipType();
             $list  = $listById->getById($req);
-
+            if (!$list)
+                return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            else
             return responseMsgs(true, "OwnershipType List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
@@ -697,7 +713,9 @@ class MasterReferenceController extends Controller
             ]);
             $listById = new RefPropRoadType();
             $list  = $listById->getById($req);
-
+            if (!$list)
+                return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            else
             return responseMsgs(true, "RoadType List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
@@ -775,7 +793,9 @@ class MasterReferenceController extends Controller
             ]);
             $listById = new RefPropType();
             $list  = $listById->getById($req);
-
+            if (!$list)
+                return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            else
             return responseMsgs(true, "PropertyType List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
@@ -853,8 +873,10 @@ class MasterReferenceController extends Controller
             ]);
             $listById = new RefPropTransferMode();
             $list  = $listById->getById($req);
-
-            return responseMsgs(true, "PropertyTransfer List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            if (!$list)
+                return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            else
+                return responseMsgs(true, "PropertyTransfer List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
         }
@@ -934,8 +956,10 @@ class MasterReferenceController extends Controller
             ]);
             $listById = new RefPropUsageType();
             $list  = $listById->getById($req);
-
-            return responseMsgs(true, "PropertyUsage Type List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            if (!$list)
+                return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            else
+                return responseMsgs(true, "PropertyUsage Type List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
         }
@@ -1012,8 +1036,11 @@ class MasterReferenceController extends Controller
             ]);
             $listById = new RefPropRebateType();
             $list  = $listById->getById($req);
+            if (!$list)
+                return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            else
 
-            return responseMsgs(true, "RebateType List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+                return responseMsgs(true, "RebateType List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
         }
@@ -1089,8 +1116,11 @@ class MasterReferenceController extends Controller
             ]);
             $listById = new RefPropPenaltyType();
             $list  = $listById->getById($req);
+            if (!$list)
+                return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            else
 
-            return responseMsgs(true, "PenaltyType List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+                return responseMsgs(true, "PenaltyType List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
         }
@@ -1127,80 +1157,82 @@ class MasterReferenceController extends Controller
      * |Forgery Type Crud
      */
 
-     public function createForgeryType(Request $req)
-     {
-         try {
-             $req->validate([
-                 'Forgerytype' => 'required',
- 
-             ]);
-             $create = new MPropForgeryType();
-             $create->addForgeryType($req);
- 
-             return responseMsgs(true, "Successfully Saved", "", "120101", "01", responseTime(), $req->getMethod(), $req->deviceId);
-         } catch (Exception $e) {
-             return responseMsgs(false, $e->getMessage(), "", "120101", "01", responseTime(), $req->getMethod(), $req->deviceId);
-         }
-     }
- 
-     public function updateForgeryType(Request $req)
-     {
-         try {
-             $req->validate([
-                 'id' => 'required',
-                 'Forgerytype' => 'required'
-             ]);
-             $update = new MPropForgeryType();
-             $list  = $update->updateForgeryType($req);
- 
-             return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
-         } catch (Exception $e) {
-             return responseMsgs(false, $e->getMessage(), "", "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
-         }
-     }
- 
-     public function ForgeryTypebyId(Request $req)
-     {
-         try {
-             $req->validate([
-                 'id' => 'required'
-             ]);
-             $listById = new MPropForgeryType();
-             $list  = $listById->getById($req);
- 
-             return responseMsgs(true, "Forgery Type List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
-         } catch (Exception $e) {
-             return responseMsgs(false, $e->getMessage(), "", "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
-         }
-     }
- 
-     public function allForgeryTypelist(Request $req)
-     {
-         try {
-             $list = new MPropForgeryType();
-             $masters = $list->listForgeryType();
- 
-             return responseMsgs(true, "All Forgery type List", $masters, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
-         } catch (Exception $e) {
-             return responseMsgs(false, $e->getMessage(), "", "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
-         }
-     }
- 
-     public function deleteForgeryType(Request $req)
-     {
-         try {
-             $req->validate([
-                 'id' => 'required',
-                 'status' => 'required|boolean'
-             ]);
-             $delete = new MPropForgeryType();
-             $message = $delete->deleteForgeryType($req);
-             return responseMsgs(true, "", $message, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
-         } catch (Exception $e) {
-             return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
-         }
-     }
- 
+    public function createForgeryType(Request $req)
+    {
+        try {
+            $req->validate([
+                'Forgerytype' => 'required',
+
+            ]);
+            $create = new MPropForgeryType();
+            $create->addForgeryType($req);
+
+            return responseMsgs(true, "Successfully Saved", "", "120101", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120101", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function updateForgeryType(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required',
+                'Forgerytype' => 'required'
+            ]);
+            $update = new MPropForgeryType();
+            $list  = $update->updateForgeryType($req);
+
+            return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function ForgeryTypebyId(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required'
+            ]);
+            $listById = new MPropForgeryType();
+            $list  = $listById->getById($req);
+            if (!$list)
+                return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            else
+                return responseMsgs(true, "Forgery Type List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function allForgeryTypelist(Request $req)
+    {
+        try {
+            $list = new MPropForgeryType();
+            $masters = $list->listForgeryType();
+
+            return responseMsgs(true, "All Forgery type List", $masters, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function deleteForgeryType(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required',
+                'status' => 'required|boolean'
+            ]);
+            $delete = new MPropForgeryType();
+            $message = $delete->deleteForgeryType($req);
+            return responseMsgs(true, "", $message, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
 
     #============================penalty type crud===========================
     // public function addPenaltyType(Request $req)
