@@ -655,11 +655,11 @@ Route::controller(MasterReferenceController::class)->group(function () {
        Route::post('ref-prop-penalty-type-delete', 'deletePenaltyType'); 
 
        //forgery type
-       Route::post('ref-prop-forgery-type-create', 'createForgeryType');    
-       Route::post('ref-prop-forgery-type-update', 'updateForgeryType');    
-       Route::post('ref-prop-forgery-type-get', 'ForgeryTypebyId');       
-       Route::post('ref-prop-forgery-type-list', 'allForgeryTypelist');    
-       Route::post('ref-prop-forgery-type-delete', 'deleteForgeryType'); 
+       Route::post('m-prop-forgery-type-create', 'createForgeryType');    
+       Route::post('m-prop-forgery-type-update', 'updateForgeryType');    
+       Route::post('m-prop-forgery-type-get', 'ForgeryTypebyId');       
+       Route::post('m-prop-forgery-type-list', 'allForgeryTypelist');    
+       Route::post('m-prop-forgery-type-delete', 'deleteForgeryType'); 
 });
 
 
