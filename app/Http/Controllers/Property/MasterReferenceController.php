@@ -18,6 +18,7 @@ use App\Models\RefPropType;
 use App\Models\RefPropRebateType;
 use App\Models\RefPropTransferMode;
 use App\Models\RefPropUsageType;
+use App\Models\MPropForgeryType;
 
 
 
@@ -1121,6 +1122,85 @@ class MasterReferenceController extends Controller
             return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
         }
     }
+
+    /**
+     * |Forgery Type Crud
+     */
+
+     public function createForgeryType(Request $req)
+     {
+         try {
+             $req->validate([
+                 'Forgerytype' => 'required',
+ 
+             ]);
+             $create = new MPropForgeryType();
+             $create->addForgeryType($req);
+ 
+             return responseMsgs(true, "Successfully Saved", "", "120101", "01", responseTime(), $req->getMethod(), $req->deviceId);
+         } catch (Exception $e) {
+             return responseMsgs(false, $e->getMessage(), "", "120101", "01", responseTime(), $req->getMethod(), $req->deviceId);
+         }
+     }
+ 
+     public function updateForgeryType(Request $req)
+     {
+         try {
+             $req->validate([
+                 'id' => 'required',
+                 'Forgerytype' => 'required'
+             ]);
+             $update = new MPropForgeryType();
+             $list  = $update->updateForgeryType($req);
+ 
+             return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
+         } catch (Exception $e) {
+             return responseMsgs(false, $e->getMessage(), "", "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
+         }
+     }
+ 
+     public function ForgeryTypebyId(Request $req)
+     {
+         try {
+             $req->validate([
+                 'id' => 'required'
+             ]);
+             $listById = new MPropForgeryType();
+             $list  = $listById->getById($req);
+ 
+             return responseMsgs(true, "Forgery Type List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+         } catch (Exception $e) {
+             return responseMsgs(false, $e->getMessage(), "", "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+         }
+     }
+ 
+     public function allForgeryTypelist(Request $req)
+     {
+         try {
+             $list = new MPropForgeryType();
+             $masters = $list->listForgeryType();
+ 
+             return responseMsgs(true, "All Forgery type List", $masters, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+         } catch (Exception $e) {
+             return responseMsgs(false, $e->getMessage(), "", "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+         }
+     }
+ 
+     public function deleteForgeryType(Request $req)
+     {
+         try {
+             $req->validate([
+                 'id' => 'required',
+                 'status' => 'required|boolean'
+             ]);
+             $delete = new MPropForgeryType();
+             $message = $delete->deleteForgeryType($req);
+             return responseMsgs(true, "", $message, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+         } catch (Exception $e) {
+             return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+         }
+     }
+ 
 
     #============================penalty type crud===========================
     // public function addPenaltyType(Request $req)
