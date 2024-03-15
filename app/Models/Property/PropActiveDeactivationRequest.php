@@ -36,9 +36,9 @@ class PropActiveDeactivationRequest extends Model
     }
 
     /**
-     * | REcent Applications
+     * | REcent Applications for jsk
      */
-    public function recentApplication($userId)
+    public function recentApplicationJsk($userId)
     {
         $data = PropActiveDeactivationRequest::select(
             'prop_active_deactivation_requests.id',
@@ -49,6 +49,32 @@ class PropActiveDeactivationRequest extends Model
         )
             ->join('prop_properties', 'prop_properties.id', 'prop_active_deactivation_requests.property_id')
             ->where('prop_active_deactivation_requests.emp_detail_id', $userId)
+            ->orderBydesc('prop_active_deactivation_requests.id')
+            ->take(10)
+            ->get();
+
+        $application = collect($data)->map(function ($value) {
+            $value['applyDate'] = (Carbon::parse($value['applydate']))->format('d-m-Y');
+            return $value;
+        });
+        return $application;
+    }
+
+
+    public function recentApplication($workflowIds,$roleIds,$ulbId)
+    {
+        $data = PropActiveDeactivationRequest::select(
+            'prop_active_deactivation_requests.id',
+            'holding_no as holdingNo',
+            'apply_date as applydate',
+            // DB::raw("TO_CHAR(apply_date, 'DD-MM-YYYY') as applyDate"),
+            DB::raw(" 'Deactivation' as assessmentType"),
+        )
+            ->join('prop_properties', 'prop_properties.id', 'prop_active_deactivation_requests.property_id')
+            //->where('prop_active_deactivation_requests.emp_detail_id', $userId)
+            ->whereIn('workflow_id', $workflowIds)
+            ->where('prop_active_deactivation_requests.ulb_id', $ulbId)
+            ->whereIn('prop_active_deactivation_requests.current_role', $roleIds)
             ->orderBydesc('prop_active_deactivation_requests.id')
             ->take(10)
             ->get();

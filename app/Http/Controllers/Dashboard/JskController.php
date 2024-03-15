@@ -16,18 +16,26 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Traits\Workflow\Workflow;
+use App\Models\Workflows\WfRoleusermap;
+use App\Models\Workflows\WfWardUser;
+use App\Models\Workflows\WfWorkflow;
+use App\Models\Workflows\WfWorkflowrolemap;
 
 /**
  * Creation Date: 21-03-2023
  * Created By  :- Mrinal Kumar
  */
 
+ 
 class JskController extends Controller
 {
     use Workflow;
     /**
      * | Property Dashboard Details
+     * /Written by prity pandey
+     * 15-05-2024
      */
+
     public function propDashboardDtl(Request $request)
     {
         try {
@@ -35,7 +43,6 @@ class JskController extends Controller
             $userId = $user->id;
             $userType = $user->user_type;
             $ulbId = $user->ulb_id;
-            $rUserType = array('TC', 'TL', 'JSK');
             $applicationType = $request->applicationType;
             $propActiveSaf =  new PropActiveSaf();
             $propTransaction =  new PropTransaction();
@@ -43,45 +50,70 @@ class JskController extends Controller
             $propHarvesting = new PropActiveHarvesting();
             $propObjection = new PropActiveObjection();
             $propDeactivation = new PropActiveDeactivationRequest();
-            $mWorkflowTrack = new WorkflowTrack();
+            $mWfRoleUser = new WfRoleusermap();
+            $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
+            $mWfWardUser = new WfWardUser();
+            $occupiedWards = $mWfWardUser->getWardsByUserId($userId)->pluck('ward_id');
 
-            $currentRole =  $this->getRoleByUserUlbId($ulbId, $userId);
+            $roleIds = $mWfRoleUser->getRoleIdByUserId($userId)->pluck('wf_role_id');
+            $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleIds)->pluck('workflow_id');
 
-            $data['recentApplications'] = $propActiveSaf->recentApplication($userId);
-
+            $data['recentApplications'] = $propActiveSaf->recentApplication($workflowIds, $roleIds, $ulbId);
             switch ($applicationType) {
                     //Concession
                 case ('Concession'):
-                    $data['recentApplications']  = $propConcession->recentApplication($userId);
+                    $data['recentApplications']  = $propConcession->recentApplication($workflowIds, $roleIds, $ulbId);
                     break;
 
                     //Harvesting
                 case ('Harvesting'):
-                    $data['recentApplications']  = $propHarvesting->recentApplication($userId);
+                    $data['recentApplications']  = $propHarvesting->recentApplication($workflowIds, $roleIds, $ulbId);
                     break;
 
                     //Objection
                 case ('Objection'):
-                    $data['recentApplications']  = $propObjection->recentApplication($userId);
+                    $data['recentApplications']  = $propObjection->recentApplication($workflowIds, $roleIds, $ulbId);
                     break;
 
                     //Deactivation
                 case ('Deactivation'):
-                    $data['recentApplications']  = $propDeactivation->recentApplication($userId);
+                    $data['recentApplications']  = $propDeactivation->recentApplication($workflowIds, $roleIds, $ulbId);
                     break;
             }
 
-            if ($userType == 'JSK')
+            if ($userType == 'JSK') {
+                $data['recentApplications'] = $propActiveSaf->recentApplicationJsk($userId);
+
+                switch ($applicationType) {
+                        //Concession
+                    case ('Concession'):
+                        $data['recentApplications']  = $propConcession->recentApplicationJsk($userId);
+                        break;
+
+                        //Harvesting
+                    case ('Harvesting'):
+                        $data['recentApplications']  = $propHarvesting->recentApplicationJsk($userId);
+                        break;
+
+                        //Objection
+                    case ('Objection'):
+                        $data['recentApplications']  = $propObjection->recentApplicationJsk($userId);
+                        break;
+
+                        //Deactivation
+                    case ('Deactivation'):
+                        $data['recentApplications']  = $propDeactivation->recentApplicationJsk($userId);
+                        break;
+                }
                 $data['recentPayments']  = $propTransaction->recentPayment($userId);
-
-            if ($userType == 'BO') {
+                return responseMsgs(true, "Recent Application", remove_null($data), "011901", "1.0", "", "POST", $request->deviceId ?? "");
             }
-
-            return responseMsgs(true, "JSK Dashboard", remove_null($data), "011901", "1.0", "", "POST", $request->deviceId ?? "");
+            return responseMsgs(true, "Recent Application", remove_null($data), "011901", "1.0", "", "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011901", "1.0", "", "POST", $request->deviceId ?? "");
         }
     }
+
 
     public function propDashboard(Request $request)
     {

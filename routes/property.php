@@ -553,6 +553,7 @@ Route::controller(ReportController::class)->group(function () {
     | map locating 
 | Serial No :17
  */
+//written by prity pandey
 Route::controller(MasterReferenceController::class)->group(function () {
   //construction type
     Route::post('ref-prop-construction-type-create', 'createConstructionType');    

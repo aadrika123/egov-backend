@@ -188,9 +188,9 @@ class  PropActiveSaf extends Model
                 'prop_usage_type',
                 'zone',
                 'users.user_type as applied_by',
-                
+
             )
-            ->leftjoin('ulb_masters','ulb_masters.id','=','prop_active_safs.ulb_id')
+            ->leftjoin('ulb_masters', 'ulb_masters.id', '=', 'prop_active_safs.ulb_id')
             ->leftJoin('ulb_ward_masters as w', 'w.id', '=', 'prop_active_safs.ward_mstr_id')
             ->leftJoin('wf_roles as wr', 'wr.id', '=', 'prop_active_safs.current_role')
             ->leftJoin('ulb_ward_masters as nw', 'nw.id', '=', 'prop_active_safs.new_ward_mstr_id')
@@ -216,7 +216,7 @@ class  PropActiveSaf extends Model
                 'id AS SafId'
             )
                 ->get();
-            return responseMsg(true, "Saf List!", $allSafList,"011303", "1.0", "", "POST","");
+            return responseMsg(true, "Saf List!", $allSafList, "011303", "1.0", "", "POST", "");
         } catch (Exception $error) {
             return responseMsg(false, "ERROR!", $error->getMessage());
         }
@@ -579,9 +579,10 @@ class  PropActiveSaf extends Model
     }
 
     /**
-     * | Recent Applications
+     * | Recent Applications for jsk 
      */
-    public function recentApplication($userId)
+
+     public function recentApplicationJsk($userId)
     {
         $data = PropActiveSaf::on('pgsql::read')
             ->select(
@@ -605,6 +606,34 @@ class  PropActiveSaf extends Model
         return $application;
     }
 
+    public function recentApplication($workflowIds,$roleIds,$ulbId)
+    {
+        $data = PropActiveSaf::on('pgsql::read')
+            ->select(
+                'prop_active_safs.id',
+                'saf_no as applicationNo',
+                'application_date as applyDate',
+                'assessment_type as assessmentType',
+                DB::raw("string_agg(owner_name,',') as applicantName"),
+                'prop_active_safs.workflow_id'
+            )
+            ->leftJoin('prop_active_safs_owners as o', 'o.saf_id', '=', 'prop_active_safs.id')
+            ->orderBydesc('prop_active_safs.id')
+            ->groupBy('saf_no', 'application_date', 'assessment_type', 'prop_active_safs.id')
+            ->whereIn('workflow_id', $workflowIds)
+            ->where('is_gb_saf', false)
+            ->where('prop_active_safs.ulb_id', $ulbId)
+            ->where('payment_status', 1)
+            ->whereIn('current_role', $roleIds)
+            ->take(10)
+            ->get();
+
+        $application = collect($data)->map(function ($value) {
+            $value['applyDate'] = (Carbon::parse($value['applyDate']))->format('d-m-Y');
+            return $value;
+        });
+        return $application;
+    }
 
     public function todayAppliedApplications($userId)
     {
@@ -807,7 +836,7 @@ class  PropActiveSaf extends Model
                 DB::raw("string_agg(so.mobile_no::VARCHAR,',') as mobile_no"),
                 DB::raw("string_agg(so.owner_name,',') as owner_name"),
             )
-            ->where('prop_active_safs.status',1)
+            ->where('prop_active_safs.status', 1)
             ->leftjoin('wf_roles', 'wf_roles.id', 'prop_active_safs.current_role')
             ->join('ulb_ward_masters as u', 'u.id', 'prop_active_safs.ward_mstr_id')
             ->leftjoin('ulb_ward_masters as uu', 'uu.id', 'prop_active_safs.new_ward_mstr_id')
