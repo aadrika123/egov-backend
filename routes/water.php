@@ -6,6 +6,7 @@ use App\Http\Controllers\Water\WaterConsumer;
 use App\Http\Controllers\Water\WaterConsumerWfController;
 use App\Http\Controllers\Water\WaterPaymentController;
 use App\Http\Controllers\Water\WaterReportController;
+use App\Http\Controllers\Water\WaterMasterController;
 use Illuminate\Support\Facades\Route;
 
 /**
@@ -143,7 +144,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
         Route::post('consumer/req/outbox', 'consumerOutbox');                                       // Workflow
         Route::post('consumer/req/post-next-level', 'consumerPostNextLevel');                       // Here
         Route::post('consumer/req/list-req-docs', 'listDocToUpload');                               // Here
-        Route::post('consumer/req/get-worklfow-by-id','getWorkflow');                       // Here
+        Route::post('consumer/req/get-worklfow-by-id', 'getWorkflow');                       // Here
         Route::post('consumer/req/approval-rejection', 'consumerApprovalRejection');                // Here
 
         # Consuemr Request View Api // Arshad
@@ -180,10 +181,28 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
         Route::post('admin/application/dashboard-data', 'getJskAppliedApplication');                    //13
         Route::post('admin/workflow/dashboard-data', 'workflowDashordDetails');                         //14
     });
+    /**
+     * |created by - Arshad Hussain
+     * |created on - 15/03/2024
+     * |for master crud operation 
+     */
+    Route::controller(WaterMasterController::class)->group(function () {
+        Route::post('create-water-prop-type', 'createWaterPropTypeMstr');
+        Route::post('get-water-prop-type', 'getAllData');
+        Route::post('getby-id-water-prop-type', 'getDataById');
+        Route::post('delete-water-prop-type', 'activeDeactiveById');
+        Route::post('update-water-prop-type', 'updateById');
+        #===crud operation for water pipeline type===#
+        Route::post('create-water-pipeline-type', 'createWaterPipelineType');
+        Route::post('get-water-pipeline-type', 'getAllPipeline');
+        Route::post('getby-id-water-pipeline-type', 'getDataId');
+        Route::post('delete-water-pipeline-type', 'dataActiveDeactive');
+        Route::post('update-water-pipeline-type', 'updateDataById');
+    });
 });
 Route::controller(WaterApplication::class)->group(function () {
     Route::post('cargeCal', 'calWaterConCharge');                                                       //16
-    
+
 });
 Route::controller(WaterConsumer::class)->group(function () {
     Route::post('consumerChargeCal', 'calConsumerDemand');                                              //18        
@@ -194,20 +213,19 @@ Route::controller(WaterConsumer::class)->group(function () {
 
 Route::controller(WaterConsumerWfController::class)->group(function () {
     # Workflow 
-    Route::post('consumer/req/list-req-docs', 'listDocToUpload');      
-    
+    Route::post('consumer/req/list-req-docs', 'listDocToUpload');
+
     Route::post('consumer/req/doc-verify-reject', 'consumerDocVerifyReject');                   // Here   
 
-    Route::post('consumer/req/get-upload-documents', 'getConsumerDocs'); 
+    Route::post('consumer/req/get-upload-documents', 'getConsumerDocs');
 });
 
 
 
 Route::controller(WaterApplication::class)->group(function () {
-    
+
     Route::post('update-applications', 'updateWaterApplication');       // Here 
 
     Route::post('consumerChargeCal', 'calConsumerDemand');                                              //17
 
 });
-
