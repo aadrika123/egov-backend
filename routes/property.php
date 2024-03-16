@@ -673,6 +673,23 @@ Route::controller(MasterReferenceController::class)->group(function () {
   //m-prop-cv-rate
   Route::post('m-prop-cv-rate-get', 'MPropCvRatesById');
   Route::post('m-prop-cv-rate-list', 'allMPropCvRatesList');
+
+  //m-prop-multi-factor
+  Route::post('m-prop-multi-factor-get', 'MPropMultiFactorById');
+  Route::post('m-prop-multi-factor-list', 'allMPropMultiFactorList');
+
+  
+  //m-prop-rental-value
+  Route::post('m-prop-rental-value-get', 'MPropRentalValueById');
+  Route::post('m-prop-rental-value-list', 'allMPropRentalValueList');
+
+  //m-prop-road-types
+  Route::post('m-prop-road-types-get', 'MPropRoadTypeById');
+  Route::post('m-prop-road-types-list', 'allMPropRoadTypeList');
+
+  //m-prop-vacant-rentalrates
+  Route::post('m-prop-vacant-rentalrates-get', 'MPropVacantRentalrateById');
+  Route::post('m-prop-vacant-rentalrates-list', 'allMPropVacantRentalrateList');
 });
 
 

@@ -24,6 +24,10 @@ use App\Models\property\MCapitalValueRate;
 use App\Models\property\MPropBuildingRentalconst;
 use App\Models\property\MPropBuildingRentalrate;
 use App\Models\property\MPropMultiFactor;
+use App\Models\property\MPropRentalValue;
+use App\Models\property\MPropVacantRentalrate;
+
+
 
 
 
@@ -1388,14 +1392,112 @@ class MasterReferenceController extends Controller
     public function allMPropMultiFactorList(Request $req)
     {
         try {
-            $list = new MPropMultiFactor();
-            $masters = $list->listMPropCvRate();
+            $list = new MPropRentalValue();
+            $masters = $list->listMPropMultiFactor();
 
             return responseMsgs(true, "All Prop Multi Factor List", $masters, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
         }
     }
+
+    /**
+     * |M-Prop-Rental-Value
+     */
+    public function MPropRentalValueById(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required'
+            ]);
+            $listById = new MPropRentalValue();
+            $list  = $listById->getById($req);
+            if (!$list)
+                return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            else
+                return responseMsgs(true, "Prop Rental Value List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function allMPropRentalValueList(Request $req)
+    {
+        try {
+            $list = new MPropRentalValue();
+            $masters = $list->listMPropRentalValue();
+
+            return responseMsgs(true, "All Prop Rental value List", $masters, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+
+    /**
+     * |M-Prop-Road-type
+     */
+    public function MPropRoadTypeById(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required'
+            ]);
+            $listById = new MPropRoadType();
+            $list  = $listById->getById($req);
+            if (!$list)
+                return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            else
+                return responseMsgs(true, "Prop Road Type List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function allMPropRoadTypeList(Request $req)
+    {
+        try {
+            $list = new MPropRoadType();
+            $masters = $list->listMPropRoadType();
+
+            return responseMsgs(true, "All Prop Road Type List", $masters, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    /**
+     * |M-Prop-vacant-rentalrate
+     */
+    public function MPropVacantRentalrateById(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required'
+            ]);
+            $listById = new MPropVacantRentalrate();
+            $list  = $listById->getById($req);
+            if (!$list)
+                return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            else
+                return responseMsgs(true, "Prop Vacant Rental Rate List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function allMPropVacantRentalrateList(Request $req)
+    {
+        try {
+            $list = new MPropVacantRentalrate();
+            $masters = $list->listMPropVacantRetlRate();
+
+            return responseMsgs(true, "All Vacant Rental Rate List", $masters, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
 
 
 

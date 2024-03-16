@@ -20,4 +20,36 @@ class MPropRoadType extends Model
                 ORDER BY range_from_sqft DESC LIMIT 1";
         return DB::select($query);
     }
+
+    //written by prity pandey
+
+    public function getById($req)
+    {
+        $list = MPropRoadType::select(
+            'id',
+            'prop_road_typ_id',
+            'range_from_sqft',
+            'range_upto_sqft',
+            'effective_date',
+            'status as is_suspended'
+        )
+            ->where('id', $req->id)
+            ->first();
+        return $list;
+    }
+
+    public function listMPropRoadType()
+    {
+        $list = MPropRoadType::select(
+            'id',
+            'prop_road_typ_id',
+            'range_from_sqft',
+            'range_upto_sqft',
+            'effective_date',
+            'status as is_suspended'
+        )
+            ->orderBy('id', 'asc')
+            ->get();
+        return $list;
+    }
 }
