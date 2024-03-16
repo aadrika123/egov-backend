@@ -18,7 +18,16 @@ use App\Models\RefPropType;
 use App\Models\RefPropRebateType;
 use App\Models\RefPropTransferMode;
 use App\Models\RefPropUsageType;
-use App\Models\MPropForgeryType;
+use App\Models\property\MPropForgeryType;
+use App\Models\property\MPropCvRate;
+use App\Models\property\MCapitalValueRate;
+use App\Models\property\MPropBuildingRentalconst;
+use App\Models\property\MPropBuildingRentalrate;
+use App\Models\property\MPropMultiFactor;
+
+
+
+
 
 use Illuminate\Http\Request;
 use Exception;
@@ -1227,6 +1236,168 @@ class MasterReferenceController extends Controller
             return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
         }
     }
+
+    /**
+     * |M-Capital-Value-Rate
+     */
+    public function MCapitalValurRateById(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required'
+            ]);
+            $listById = new MCapitalValueRate();
+            $list  = $listById->getById($req);
+            if (!$list)
+                return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            else
+                return responseMsgs(true, "Capital Value Rate List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function allMCapitalValurRateList(Request $req)
+    {
+        try {
+            $list = new MCapitalValueRate();
+            $masters = $list->listCapitalValueRate();
+
+            return responseMsgs(true, "All Capital Value Rate List", $masters, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    /**
+     * |M-Prop-Building-rentalconsts
+     */
+    public function MPropBuildingRentalconstsById(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required'
+            ]);
+            $listById = new MPropBuildingRentalconst();
+            $list  = $listById->getById($req);
+            if (!$list)
+                return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            else
+                return responseMsgs(true, "Building Rental Const List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function allMPropBuildingRentalconstsList(Request $req)
+    {
+        try {
+            $list = new MPropBuildingRentalconst();
+            $masters = $list->listMPropBuildingRenConst();
+
+            return responseMsgs(true, "All Building Rental Const List", $masters, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    /**
+     * |M-Prop-Building-rentalrates
+     */
+    public function MPropBuildingRentalRatesById(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required'
+            ]);
+            $listById = new MPropBuildingRentalrate();
+            $list  = $listById->getById($req);
+            if (!$list)
+                return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            else
+                return responseMsgs(true, "Building Rental Rate List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function allMPropBuildingRentalRatesList(Request $req)
+    {
+        try {
+            $list = new MPropBuildingRentalrate();
+            $masters = $list->listMPropBuildingRentRate();
+
+            return responseMsgs(true, "All Building Rental Rate List", $masters, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    /**
+     * |M-Prop-Cv-Rates
+     */
+    public function MPropCvRatesById(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required'
+            ]);
+            $listById = new MPropCvRate();
+            $list  = $listById->getById($req);
+            if (!$list)
+                return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            else
+                return responseMsgs(true, "Prop Cv Rate List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function allMPropCvRatesList(Request $req)
+    {
+        try {
+            $list = new MPropCvRate();
+            $masters = $list->listMPropCvRate();
+
+            return responseMsgs(true, "All Prop Cv Rate List", $masters, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    /**
+     * |M-Prop-Multi-Factors
+     */
+    public function MPropMultiFactorById(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required'
+            ]);
+            $listById = new MPropMultiFactor();
+            $list  = $listById->getById($req);
+            if (!$list)
+                return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            else
+                return responseMsgs(true, "Prop Multi Factor List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function allMPropMultiFactorList(Request $req)
+    {
+        try {
+            $list = new MPropMultiFactor();
+            $masters = $list->listMPropCvRate();
+
+            return responseMsgs(true, "All Prop Multi Factor List", $masters, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+
 
 
     #============================penalty type crud===========================
