@@ -743,13 +743,16 @@ Route::controller(ClusterController::class)->group(function () {
 
 });
 
-
+//written by prity pandey
 #Route for getting citizen details based on citizen Id
 /**
 | Serial No :26
  */
 Route::controller(CitizenController::class)->group(function () {
   Route::post('citizen/details', 'citizenDetailsWithCitizenId')->middleware(['json.response', 'auth_maker']);                                                         #API_ID = 012601
+
+  Route::post('citizen/property/count', 'propertyCount');
+});
 
   #Added By Prity Pandey
   #Date 31/10/2023
@@ -762,4 +765,3 @@ Route::controller(CitizenController::class)->group(function () {
     Route::post('location/ward-list', 'bindLocationWithWards');             #API_ID = 012502
     Route::post('map/level1', 'mapLevel1');                                 #API_ID = 012503
   });
-});

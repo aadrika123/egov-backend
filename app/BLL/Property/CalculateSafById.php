@@ -336,6 +336,8 @@ class CalculateSafById
         $previousHoldingId = $this->_safDetails->previous_holding_id ?? $this->_safDetails['previous_holding_id'];
 
         $propDtls = $propProperty->getPropById($previousHoldingId);
+        if (is_null($propDtls))
+            throw new Exception("Property detail Not Available");
         $propertyId = $propDtls->id;
         $safId = $propDtls->saf_id;
 
