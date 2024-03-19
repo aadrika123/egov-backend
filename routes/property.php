@@ -751,7 +751,7 @@ Route::controller(ClusterController::class)->group(function () {
 Route::controller(CitizenController::class)->group(function () {
   Route::post('citizen/details', 'citizenDetailsWithCitizenId')->middleware(['json.response', 'auth_maker']);                                                         #API_ID = 012601
 
-  Route::post('citizen/property/count', 'propertyCount');
+  Route::post('citizen/property-count', 'propertyCount');
 });
 
   #Added By Prity Pandey
