@@ -465,7 +465,7 @@ class CitizenController extends Controller
             // Water Count
             $waterCount = WaterConsumer::select(DB::raw("count(id) as total_water_consumer"))
                 ->where('user_id', $userDtl->id)
-                ->where('user_type','Citizen')
+                ->where('user_type', 'Citizen')
                 ->where("status", 1)
                 ->get();
 
@@ -488,10 +488,23 @@ class CitizenController extends Controller
                 ->whereNotNull('consumer_id')
                 ->get();
 
+            $pet_registration_count = DB::connection("pgsql_advertisements")->table("pet_approved_registrations")
+                ->where('citizen_id', $userDtl->id)
+                ->where("status", 1)
+                ->count();
+
+            $marriage_registration_count = DB::connection("pgsql_advertisements")->table("marriage_approved_registrations")
+                ->where('citizen_id', $userDtl->id)
+                ->where("status", 1)
+                ->count();
+
+
             $data = [
                 "propDetails" => $propCount + $active_citizen_prop_count->first()->count,
                 "tradeDetails" => $tradeCount->first()->total_trade + $active_citizen_trade_count->first()->count,
                 "waterDetails" => $waterCount->first()->total_water_consumer + $active_citizen_water_count->first()->count,
+                "petDetails" => $pet_registration_count,
+                "marriageDetails" => $marriage_registration_count
             ];
             return responseMsgs(true, "Total Count", $data, "", 01, responseTime(), $request->getMethod(), $request->deviceId);
         } catch (\Exception $e) {
