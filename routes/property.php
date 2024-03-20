@@ -314,7 +314,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
     Route::post('saf/pending-geotagging-list', 'pendingGeoTaggingList');    #API_ID = 011606   
     Route::post('saf/get-cluster-saf-due', 'getClusterSafDues');            #API_ID = 011607     
     Route::post('saf/cluster-saf-payment', 'clusterSafPayment');            #API_ID = 011608       
-    Route::post('saf/edit-active-saf', 'editActiveSaf');                    #API_ID = 011609              
+    // Route::post('saf/edit-active-saf', 'editActiveSaf');                    #API_ID = 011609              
   });
 
   /**
