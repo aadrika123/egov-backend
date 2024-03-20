@@ -45,4 +45,46 @@ class MCapitalValueRate extends Model
         }
         return $capitalValueRates;
     }
+
+    //written by prity pandey
+
+    public function getById($req)
+    {
+        $list = MCapitalValueRate::select(
+            'id',
+            'property_type',
+            'ward_no',
+            'road_type_mstr_id',
+            'usage_type',
+            'rate',
+            'effect_from',
+            'max_rate',
+            'ulb_id',
+            'status as is_suspended'
+        )
+            ->where('id', $req->id)
+            ->first();
+        return $list;
+    }
+
+
+    public function listCapitalValueRate()
+    {
+        $list = MCapitalValueRate::select(
+            'id',
+           'property_type',
+            'ward_no',
+            'road_type_mstr_id',
+            'usage_type',
+            'rate',
+            'effect_from',
+            'max_rate',
+            'ulb_id',
+            'status as is_suspended'
+        )
+            ->orderBy('id', 'asc')
+            ->get();
+        return $list;
+    }
+
 }

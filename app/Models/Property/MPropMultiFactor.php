@@ -27,4 +27,35 @@ class MPropMultiFactor extends Model
         return MPropMultiFactor::where('status', 1)
             ->get();
     }
+
+    //written by prity pandey
+
+    public function getById($req)
+    {
+        $list = MPropMultiFactor::select(
+            'id',
+            'usage_type_id',
+            'multi_factor',
+            'effective_date',
+            'status as is_suspended'
+        )
+            ->where('id', $req->id)
+            ->first();
+        return $list;
+    }
+
+
+    public function listMPropMultiFactor()
+    {
+        $list = MPropMultiFactor::select(
+            'id',
+            'usage_type_id',
+            'multi_factor',
+            'effective_date',
+            'status as is_suspended'
+        )
+            ->orderBy('id', 'asc')
+            ->get();
+        return $list;
+    }
 }

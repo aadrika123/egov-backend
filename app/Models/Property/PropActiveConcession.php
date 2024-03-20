@@ -129,9 +129,10 @@ class PropActiveConcession extends Model
     }
 
     /**
-     * | REcent Applications
+     * | REcent Applications for jsk
      */
-    public function recentApplication($userId)
+
+       public function recentApplicationJsk($userId)
     {
         $data = PropActiveConcession::on('pgsql::read')
             ->select(
@@ -153,6 +154,30 @@ class PropActiveConcession extends Model
         return $application;
     }
 
+    public function recentApplication($workflowIds,$roleIds,$ulbId)
+    {
+        $data = PropActiveConcession::on('pgsql::read')
+            ->select(
+                'id',
+                'application_no as applicationNo',
+                DB::raw("TO_CHAR(date, 'DD-MM-YYYY') as applydate"),
+                'applied_for as assessmentType',
+                "applicant_name as applicantname",
+            )
+            //->where('prop_active_concessions.user_id', $userId)
+            ->orderBydesc('prop_active_concessions.id')
+            ->whereIn('workflow_id', $workflowIds)
+            ->where('prop_active_concessions.ulb_id', $ulbId)
+            ->whereIn('prop_active_concessions.current_role', $roleIds)
+            ->take(10)
+            ->get();
+
+        $application = collect($data)->map(function ($value) {
+            $value['applyDate'] = (Carbon::parse($value['applydate']))->format('d-m-Y');
+            return $value;
+        });
+        return $application;
+    }
     /**
      * | Today Received Appklication
      */

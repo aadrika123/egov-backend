@@ -142,9 +142,10 @@ class PropActiveObjection extends Model
     }
 
     /**
-     * | REcent Applications
+     * | REcent Applications for jsk
      */
-    public function recentApplication($userId)
+   
+    public function recentApplicationJsk($userId)
     {
         $data = PropActiveObjection::on('pgsql::read')
             ->select(
@@ -167,6 +168,34 @@ class PropActiveObjection extends Model
         });
         return $application;
     }
+
+    public function recentApplication($workflowIds, $roleIds, $ulbId)
+    {
+        $data = PropActiveObjection::on('pgsql::read')
+            ->select(
+                'prop_active_objections.id',
+                'objection_no as applicationNo',
+                'date as applydate',
+                'objection_for as assessmentType',
+                DB::raw("string_agg(owner_name,',') as applicantName"),
+            )
+            ->join('prop_owners', 'prop_owners.property_id', 'prop_active_objections.property_id')
+            // ->where('prop_active_objections.user_id', $userId)
+            ->whereIn('workflow_id', $workflowIds)
+            ->where('prop_active_objections.ulb_id', $ulbId)
+            ->whereIn('prop_active_objections.current_role', $roleIds)
+            ->orderBydesc('prop_active_objections.id')
+            ->groupBy('objection_no', 'date', 'prop_active_objections.id', 'prop_active_objections.objection_for')
+            ->take(10)
+            ->get();
+
+        $application = collect($data)->map(function ($value) {
+            $value['applyDate'] = (Carbon::parse($value['applydate']))->format('d-m-Y');
+            return $value;
+        });
+        return $application;
+    }
+
 
     /**
      * | Today Received Appklication

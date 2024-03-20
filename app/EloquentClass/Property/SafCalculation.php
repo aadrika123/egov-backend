@@ -566,7 +566,6 @@ class SafCalculation
      * | Query Run Time - 4
      * 
      */
-
     public function calculateQuaterlyRulesets($key)
     {
         if (is_string($key)) {                                                          // For Mobile Tower, hoarding board or petrol pump
@@ -574,18 +573,31 @@ class SafCalculation
             switch ($key) {
                 case "mobileTower";
                     $dateFrom = $this->_mobileTowerInstallDate;
-                    $carbonDateUpto = Carbon::now()->endOfYear()->addMonths(3);           // Get The Full Financial Year
-                    $carbonDateUpto = $carbonDateUpto->format('Y-m-d');
+                    // $carbonDateUpto = Carbon::now()->endOfYear()->addMonths(3);           // Get The Full Financial Year
+                    // $carbonDateUpto = $carbonDateUpto->format('Y-m-d');
+
+                    //changes by prity pandey
+                    $currentfyear = getFY();
+                    $carbonDateUpto = explode("-", $currentfyear)[1] . "-03-31";
+
                     break;
                 case "hoardingBoard";
                     $dateFrom = $this->_hoardingBoard['installDate'];
-                    $carbonDateUpto = Carbon::now()->endOfYear()->addMonths(3);           // Get The Full Financial Year
-                    $carbonDateUpto = $carbonDateUpto->format('Y-m-d');
+                    // $carbonDateUpto = Carbon::now()->endOfYear()->addMonths(3);           // Get The Full Financial Year
+                    // $carbonDateUpto = $carbonDateUpto->format('Y-m-d');
+
+                     //changes by prity pandey
+                    $currentfyear = getFY();
+                    $carbonDateUpto = explode("-", $currentfyear)[1] . "-03-31";
                     break;
                 case "petrolPump";
                     $dateFrom = $this->_petrolPump['installDate'];
-                    $carbonDateUpto = Carbon::now()->endOfYear()->addMonths(3);           // Get The Full Financial Year
-                    $carbonDateUpto = $carbonDateUpto->format('Y-m-d');
+                    // $carbonDateUpto = Carbon::now()->endOfYear()->addMonths(3);           // Get The Full Financial Year
+                    // $carbonDateUpto = $carbonDateUpto->format('Y-m-d');
+
+                     //changes by prity pandey
+                    $currentfyear = getFY();
+                    $carbonDateUpto = explode("-", $currentfyear)[1] . "-03-31";
                     break;
                 case "vacantLand";
                     $dateFrom = $this->_propertyDetails['landOccupationDate'] ?? "";
@@ -607,8 +619,12 @@ class SafCalculation
 
             if ($this->_propertyDetails['propertyType'] == $this->_vacantPropertyTypeId) {   // Vacant Land
                 $dateTo = Carbon::now();
-                $carbonDateUpto = $dateTo->endOfYear()->addMonths(3);           // Get The Full Financial Year
-                $carbonDateUpto = $carbonDateUpto->format('Y-m-d');
+                // $carbonDateUpto = $dateTo->endOfYear()->addMonths(3);           // Get The Full Financial Year
+                // $carbonDateUpto = $carbonDateUpto->format('Y-m-d');
+
+                 //changes by prity pandey
+                $currentfyear = getFY();
+                $carbonDateUpto = explode("-", $currentfyear)[1] . "-03-31";
             }
 
             $readRuleSet = $this->readRuleSet($dateFrom, $key);
@@ -623,8 +639,12 @@ class SafCalculation
             $carbonDateFrom = Carbon::parse($readDateFrom)->format('Y-m-d');
 
             if ($readDateUpto == null) {
-                $readDateUpto = Carbon::now()->endOfYear()->addMonths(3);           // Get The Full Financial Year
-                $readDateUpto = $readDateUpto->format('Y-m-d');
+                // $readDateUpto = Carbon::now()->endOfYear()->addMonths(3);           // Get The Full Financial Year
+                // $readDateUpto = $readDateUpto->format('Y-m-d');
+
+                 //changes by prity pandey
+                $currentfyear = getFY();
+                $readDateUpto = explode("-", $currentfyear)[1] . "-03-31";
             }
 
             $carbonDateUpto = Carbon::parse($readDateUpto)->format('Y-m-d');

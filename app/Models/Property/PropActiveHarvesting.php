@@ -175,9 +175,9 @@ class PropActiveHarvesting extends Model
     }
 
     /**
-     * | REcent Applications
+     * | REcent Applications for jsk
      */
-    public function recentApplication($userId)
+       public function recentApplicationJsk($userId)
     {
         $data = PropActiveHarvesting::on('pgsql::read')
             ->select(
@@ -192,6 +192,35 @@ class PropActiveHarvesting extends Model
             ->join('prop_owners', 'prop_owners.property_id', 'prop_active_harvestings.property_id')
             ->where('prop_active_harvestings.user_id', $userId)
             ->orderBydesc('prop_active_harvestings.id')
+            ->groupBy('application_no', 'date', 'prop_active_harvestings.id')
+            ->take(10)
+            ->get();
+
+        $application = collect($data)->map(function ($value) {
+            $value['applyDate'] = (Carbon::parse($value['applydate']))->format('d-m-Y');
+            return $value;
+        });
+        return $application;
+    }
+
+    public function recentApplication($workflowIds,$roleId,$ulbId)
+    {
+        $data = PropActiveHarvesting::on('pgsql::read')
+            ->select(
+                'prop_active_harvestings.id',
+                'application_no as applicationNo',
+                'date as applydate',
+                // "'Rain Water Harvesting' as 'assessmentType'",
+                // 'applied_for as assessmentType',
+                DB::raw("('Rain Water Harvesting') as assessmentType"),
+                DB::raw("string_agg(owner_name,',') as applicantName"),
+            )
+            ->join('prop_owners', 'prop_owners.property_id', 'prop_active_harvestings.property_id')
+            //->where('prop_active_harvestings.user_id', $userId)
+            ->whereIn('workflow_id', $workflowIds)
+            ->orderBydesc('prop_active_harvestings.id')
+            ->where('ulb_id', $ulbId)
+            ->whereIn('current_role', $roleId)
             ->groupBy('application_no', 'date', 'prop_active_harvestings.id')
             ->take(10)
             ->get();

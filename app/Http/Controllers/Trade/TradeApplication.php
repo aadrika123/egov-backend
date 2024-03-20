@@ -941,7 +941,7 @@ class TradeApplication extends Controller
                     throw new Exception("No Every Madetry Documents are Uploaded");
                 }
                 if ($role->can_verify_document ?? false) {
-                    throw new Exception("No Every Documents are Veryfied Or Madetory Document is Rejected");
+                    throw new Exception("Not able to forward application because documents not fully verified");
                 }
                 throw new Exception("Not Every Actoin Are Performed");
             }

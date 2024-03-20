@@ -27,6 +27,7 @@ use App\Http\Controllers\Property\ReportController;
 use App\Http\Controllers\Property\SafDocController;
 use App\Http\Controllers\Property\WaiverController;
 use App\Http\Controllers\Property\ZoneController;
+use App\Http\Controllers\Property\MasterReferenceController;
 use App\Http\Controllers\ReferenceController;
 use App\Http\Controllers\Property\LocationController;
 use App\Http\Controllers\Property\PropertyMutationController;
@@ -68,7 +69,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
     Route::post('saf/gb-apply', 'applyGbSaf');                            // Applying GB Saf                                                     #API_ID = 010102
   });
 
-  
+
 
   Route::controller(ActiveSafController::class)->group(function () {
     Route::get('saf/master-saf', 'masterSaf');                               // Get all master data in Saf                                       #API_ID = 010103
@@ -528,28 +529,167 @@ Route::controller(ReportController::class)->group(function () {
   Route::post('reports/property/deactivated-list', 'PropDeactedList');  #API_ID = 012427                 
   Route::post('reports/mpl', 'mplReport');                                #API_ID = 012428
   Route::post('reports/mpl2', 'mplReport2');                              #API_ID = 012429
-  Route::post('geo', 'getLocality');      
-  
+  Route::post('geo', 'getLocality');
+
   //written by prity pandey
-  Route::post('report/mpl-todayCollection-new', 'mplReportCollectionNew');#API_ID = 012430
-  Route::post('report/ulb-list', 'ulbList');#API_ID = 012430
+  Route::post('report/mpl-todayCollection-new', 'mplReportCollectionNew'); #API_ID = 012430
+  Route::post('report/ulb-list', 'ulbList'); #API_ID = 012430
   Route::post('live-dashboard-update', 'liveDashboardUpdate');
-
- 
-
-
-
-  
 });
 // });
 
+//Written by Prity Pandey
+Route::controller(ReportController::class)->group(function () {
+  Route::post('reports/property/collection', 'collectionReport');
+});
 /**
     | Test Purpose
     | map locating 
 | Serial No :17
  */
-Route::controller(PropertyController::class)->group(function () {
-  Route::post('getpropLatLong', 'getpropLatLong');                       #API_ID = 011707
+//written by prity pandey
+Route::controller(MasterReferenceController::class)->group(function () {
+  //construction type
+  Route::post('ref-prop-construction-type-create', 'createConstructionType');
+  Route::post('ref-prop-construction-type-update', 'updateConstructionType');
+  Route::post('ref-prop-construction-type-get', 'constructiontypebyId');
+  Route::post('ref-prop-construction-type-list', 'allConstructiontypelist');
+  Route::post('ref-prop-construction-type-delete', 'deleteConstructionType');
+
+  //floor type
+  Route::post('ref-prop-floor-type-create', 'createFloorType');
+  Route::post('ref-prop-floor-type-update', 'updateFloorType');
+  Route::post('ref-prop-floor-type-get', 'floortypebyId');
+  Route::post('ref-prop-floor-type-list', 'allFloortypelist');
+  Route::post('ref-prop-floor-type-delete', 'deleteFloorType');
+
+  //gbbuildingusagetype
+  Route::post('ref-prop-gbbuilding-type-create', 'createGbBuildingType');
+  Route::post('ref-prop-gbbuilding-type-update', 'updateGbBuildingType');
+  Route::post('ref-prop-gbbuilding-type-get', 'GbBuildingtypebyId');
+  Route::post('ref-prop-gbbuilding-type-list', 'allGbBuildingtypelist');
+  Route::post('ref-prop-gbbuilding-type-delete', 'deleteGbBuildingType');
+
+  //gbpropusagestype
+  Route::post('ref-prop-gbpropusage-type-create', 'createGbPropUsageType');
+  Route::post('ref-prop-gbpropusage-type-update', 'updateGbPropUsageType');
+  Route::post('ref-prop-gbpropusage-type-get', 'GbPropUsagetypebyId');
+  Route::post('ref-prop-gbpropusage-type-list', 'allGbPropUsagetypelist');
+  Route::post('ref-prop-gbpropusage-type-delete', 'deleteGbPropUsageType');
+
+  //objection type
+
+  Route::post('ref-prop-objection-type-create', 'createObjectionType');
+  Route::post('ref-prop-objection-type-update', 'updateObjectionType');
+  Route::post('ref-prop-objection-type-get', 'ObjectiontypebyId');
+  Route::post('ref-prop-objection-type-list', 'allObjectiontypelist');
+  Route::post('ref-prop-objection-type-delete', 'deleteObjectionType');
+
+  //occupancy factor
+  Route::post('ref-prop-occupancy-factor-create', 'createOccupancyFactor');
+  Route::post('ref-prop-occupancy-factor-update', 'updateOccupancyFactor');
+  Route::post('ref-prop-occupancy-factor-get', 'OccupancyFactorbyId');
+  Route::post('ref-prop-occupancy-factor-list', 'allOccupancyFactorlist');
+  Route::post('ref-prop-occupancy-factor-delete', 'deleteOccupancyFactor');
+
+  //occupancy type
+  Route::post('ref-prop-occupancy-type-create', 'createOccupancyType');
+  Route::post('ref-prop-occupancy-type-update', 'updateOccupancyType');
+  Route::post('ref-prop-occupancy-type-get', 'OccupancyTypebyId');
+  Route::post('ref-prop-occupancy-type-list', 'allOccupancyTypelist');
+  Route::post('ref-prop-occupancy-type-delete', 'deleteOccupancyType');
+
+  //ownership type
+  Route::post('ref-prop-ownership-type-create', 'createOwnershipType');
+  Route::post('ref-prop-ownership-type-update', 'updateOwnershipType');
+  Route::post('ref-prop-ownership-type-get', 'OwnershipTypebyId');
+  Route::post('ref-prop-ownership-type-list', 'allOwnershipTypelist');
+  Route::post('ref-prop-ownership-type-delete', 'deleteOwnershipType');
+
+  //road type
+  Route::post('ref-prop-road-type-create', 'createRoadType');
+  Route::post('ref-prop-road-type-update', 'updateroadType');
+  Route::post('ref-prop-road-type-get', 'roadTypebyId');
+  Route::post('ref-prop-road-type-list', 'allroadTypelist');
+  Route::post('ref-prop-road-type-delete', 'deleteroadType');
+
+  //property type
+  Route::post('ref-prop-property-type-create', 'createPropertyType');
+  Route::post('ref-prop-property-type-update', 'updatePropertyType');
+  Route::post('ref-prop-property-type-get', 'propertyTypebyId');
+  Route::post('ref-prop-property-type-list', 'allpropertyTypelist');
+  Route::post('ref-prop-property-type-delete', 'deletepropertyType');
+
+  //transfer mode  type
+  Route::post('ref-prop-transfer-mode-create', 'createPropTransferMode');
+  Route::post('ref-prop-transfer-mode-update', 'updateTransferMode');
+  Route::post('ref-prop-transfer-mode-get', 'TransferModebyId');
+  Route::post('ref-prop-transfer-mode-list', 'allTransferModelist');
+  Route::post('ref-prop-transfer-mode-delete', 'deleteTransferMode');
+
+  //prop usage type
+  Route::post('ref-prop-usage-type-create', 'createPropUsageType');
+  Route::post('ref-prop-usage-type-update', 'updateUsageType');
+  Route::post('ref-prop-usage-type-get', 'PropUsageTypebyId');
+  Route::post('ref-prop-usage-type-list', 'allPropUsageTypelist');
+  Route::post('ref-prop-usage-type-delete', 'deletePropUsageType');
+
+  //rebate type
+  Route::post('ref-prop-rebate-type-create', 'createRebateType');
+  Route::post('ref-prop-rebate-type-update', 'updateRebateType');
+  Route::post('ref-prop-rebate-type-get', 'RebateTypebyId');
+  Route::post('ref-prop-rebate-type-list', 'allRebateTypelist');
+  Route::post('ref-prop-rebate-type-delete', 'deleteRebateType');
+
+
+  //penalty type
+  Route::post('ref-prop-penalty-type-create', 'createPenaltyType');
+  Route::post('ref-prop-penalty-type-update', 'updatePenaltyType');
+  Route::post('ref-prop-penalty-type-get', 'PenaltyTypebyId');
+  Route::post('ref-prop-penalty-type-list', 'allPenaltyTypelist');
+  Route::post('ref-prop-penalty-type-delete', 'deletePenaltyType');
+
+  //m-forgery type
+  Route::post('m-prop-forgery-type-create', 'createForgeryType');
+  Route::post('m-prop-forgery-type-update', 'updateForgeryType');
+  Route::post('m-prop-forgery-type-get', 'ForgeryTypebyId');
+  Route::post('m-prop-forgery-type-list', 'allForgeryTypelist');
+  Route::post('m-prop-forgery-type-delete', 'deleteForgeryType');
+
+
+  //m-capital-value-rate  
+  Route::post('m-capital-value-rate-get', 'MCapitalValurRateById');
+  Route::post('m-capital-value-rate-list', 'allMCapitalValurRateList');
+
+
+  //m-prop-building-reantal-const
+  Route::post('m-prop-building-reantal-const-get', 'MPropBuildingRentalconstsById');
+  Route::post('m-prop-building-reantal-const-list', 'allMPropBuildingRentalconstsList');
+
+  //m-prop-building-reantal-const
+  Route::post('m-prop-building-reantal-rate-get', 'MPropBuildingRentalRatesById');
+  Route::post('m-prop-building-reantal-rate-list', 'allMPropBuildingRentalRatesList');
+
+  //m-prop-cv-rate
+  Route::post('m-prop-cv-rate-get', 'MPropCvRatesById');
+  Route::post('m-prop-cv-rate-list', 'allMPropCvRatesList');
+
+  //m-prop-multi-factor
+  Route::post('m-prop-multi-factor-get', 'MPropMultiFactorById');
+  Route::post('m-prop-multi-factor-list', 'allMPropMultiFactorList');
+
+  
+  //m-prop-rental-value
+  Route::post('m-prop-rental-value-get', 'MPropRentalValueById');
+  Route::post('m-prop-rental-value-list', 'allMPropRentalValueList');
+
+  //m-prop-road-types
+  Route::post('m-prop-road-types-get', 'MPropRoadTypeById');
+  Route::post('m-prop-road-types-list', 'allMPropRoadTypeList');
+
+  //m-prop-vacant-rentalrates
+  Route::post('m-prop-vacant-rentalrates-get', 'MPropVacantRentalrateById');
+  Route::post('m-prop-vacant-rentalrates-list', 'allMPropVacantRentalrateList');
 });
 
 
@@ -603,7 +743,7 @@ Route::controller(ClusterController::class)->group(function () {
 
 });
 
-
+//written by prity pandey
 #Route for getting citizen details based on citizen Id
 /**
 | Serial No :26
@@ -611,15 +751,17 @@ Route::controller(ClusterController::class)->group(function () {
 Route::controller(CitizenController::class)->group(function () {
   Route::post('citizen/details', 'citizenDetailsWithCitizenId')->middleware(['json.response', 'auth_maker']);                                                         #API_ID = 012601
 
-#Added By Prity Pandey
-#Date 31/10/2023
-#Route for getting location based ward list 
-/**
+  Route::post('citizen/property-count', 'propertyCount');
+});
+
+  #Added By Prity Pandey
+  #Date 31/10/2023
+  #Route for getting location based ward list 
+  /**
 | Serial No :25
- */
-Route::controller(LocationController::class)->group(function () {
-  Route::post('location', 'location_list');                               #API_ID = 012501
-  Route::post('location/ward-list', 'bindLocationWithWards');             #API_ID = 012502
-  Route::post('map/level1', 'mapLevel1');                                 #API_ID = 012503
-});
-});
+   */
+  Route::controller(LocationController::class)->group(function () {
+    Route::post('location', 'location_list');                               #API_ID = 012501
+    Route::post('location/ward-list', 'bindLocationWithWards');             #API_ID = 012502
+    Route::post('map/level1', 'mapLevel1');                                 #API_ID = 012503
+  });

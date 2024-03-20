@@ -1802,21 +1802,32 @@ class Trade implements ITrade
                     }
                 });
             }
+            // $licence = $licence->union($aropved)->union($old)
+            //     ->orderBy("id", "DESC")
+            //     ->limit(10)
+            //     ->get();
+            // if ($licence->isEmpty()) {
+            //     throw new Exception("Application Not Found");
+            // }
+            // $data = [
+            //     "licence" => $licence->map(function($val){                    
+            //         $val->application_date = $val->application_date?Carbon::parse($val->application_date)->format("d-m-Y"):null;
+            //         $val->valid_upto = $val->valid_upto?Carbon::parse($val->valid_upto)->format("d-m-Y"):null;                    
+            //         return $val;
+            //     }),
+            // ];
             $licence = $licence->union($aropved)->union($old)
-                ->orderBy("id", "DESC")
-                ->limit(10)
-                ->get();
-            if ($licence->isEmpty()) {
-                throw new Exception("Application Not Found");
-            }
-            $data = [
-                "licence" => $licence->map(function($val){                    
-                    $val->application_date = $val->application_date?Carbon::parse($val->application_date)->format("d-m-Y"):null;
-                    $val->valid_upto = $val->valid_upto?Carbon::parse($val->valid_upto)->format("d-m-Y"):null;                    
-                    return $val;
-                }),
+                ->orderBy("id", "DESC");
+            $perPage = $request->perPage ? $request->perPage : 10;
+            $page = $request->page && $request->page > 0 ? $request->page : 1;
+            $paginator = $licence->paginate($perPage);
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
             ];
-            return responseMsg(true, "", remove_null($data));
+            return responseMsg(true, "", remove_null($list));
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
