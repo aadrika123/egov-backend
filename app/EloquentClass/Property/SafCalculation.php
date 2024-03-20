@@ -578,7 +578,6 @@ class SafCalculation
 
                     //changes by prity pandey
                     $currentfyear = getFY();
-                    $carbonDateUpto = explode("-", $currentfyear)[0] . "-04-01";
                     $carbonDateUpto = explode("-", $currentfyear)[1] . "-03-31";
 
                     break;
@@ -589,7 +588,6 @@ class SafCalculation
 
                      //changes by prity pandey
                     $currentfyear = getFY();
-                    $carbonDateUpto = explode("-", $currentfyear)[0] . "-04-01";
                     $carbonDateUpto = explode("-", $currentfyear)[1] . "-03-31";
                     break;
                 case "petrolPump";
@@ -599,7 +597,6 @@ class SafCalculation
 
                      //changes by prity pandey
                     $currentfyear = getFY();
-                    $carbonDateUpto = explode("-", $currentfyear)[0] . "-04-01";
                     $carbonDateUpto = explode("-", $currentfyear)[1] . "-03-31";
                     break;
                 case "vacantLand";
@@ -627,7 +624,6 @@ class SafCalculation
 
                  //changes by prity pandey
                 $currentfyear = getFY();
-                $carbonDateUpto = explode("-", $currentfyear)[0] . "-04-01";
                 $carbonDateUpto = explode("-", $currentfyear)[1] . "-03-31";
             }
 
@@ -648,8 +644,7 @@ class SafCalculation
 
                  //changes by prity pandey
                 $currentfyear = getFY();
-                $carbonDateUpto = explode("-", $currentfyear)[0] . "-04-01";
-                $carbonDateUpto = explode("-", $currentfyear)[1] . "-03-31";
+                $readDateUpto = explode("-", $currentfyear)[1] . "-03-31";
             }
 
             $carbonDateUpto = Carbon::parse($readDateUpto)->format('Y-m-d');
