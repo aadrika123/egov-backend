@@ -1459,11 +1459,20 @@ class ActiveSafController extends Controller
                 'refTableIdValue' => $req->applicationId,
                 'receiverRoleId' => $senderRoleId
             ];
+            // $previousWorkflowTrack = $track->getWfTrackByRefId($preWorkflowReq);
+            // $previousWorkflowTrack->update([
+            //     'forward_date' => $this->_todayDate->format('Y-m-d'),
+            //     'forward_time' => $this->_todayDate->format('H:i:s')
+            // ]);
+
+            //update by prity pandey
             $previousWorkflowTrack = $track->getWfTrackByRefId($preWorkflowReq);
-            $previousWorkflowTrack->update([
-                'forward_date' => $this->_todayDate->format('Y-m-d'),
-                'forward_time' => $this->_todayDate->format('H:i:s')
-            ]);
+            if ($previousWorkflowTrack) {
+                $previousWorkflowTrack->update([
+                    'forward_date' => $this->_todayDate->format('Y-m-d'),
+                    'forward_time' => $this->_todayDate->format('H:i:s')
+                ]);
+            }
 
             $propSafVerification->deactivateVerifications($req->applicationId);                 // Deactivate Verification From Table
             $propSafVerificationDtl->deactivateVerifications($req->applicationId);              // Deactivate Verification from Saf floor Dtls
