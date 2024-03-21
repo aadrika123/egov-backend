@@ -177,12 +177,20 @@ class WorkflowTrack extends Model
      */
     public function getWfTrackByRefId(array $req)
     {
-        return WorkflowTrack::on('pgsql::read')
-            ->where('workflow_id', $req['workflowId'])
+        // return WorkflowTrack::on('pgsql::read')
+        //     ->where('workflow_id', $req['workflowId'])
+        //     ->where('ref_table_dot_id', $req['refTableDotId'])
+        //     ->where('ref_table_id_value', $req['refTableIdValue'])
+        //     ->where('receiver_role_id', $req['receiverRoleId'])
+        //     ->where('status', true)
+        //     ->firstOrFail();
+
+        //modified by prity pandey
+        return WorkflowTrack::where('workflow_id', $req['workflowId'])
             ->where('ref_table_dot_id', $req['refTableDotId'])
             ->where('ref_table_id_value', $req['refTableIdValue'])
             ->where('receiver_role_id', $req['receiverRoleId'])
             ->where('status', true)
-            ->firstOrFail();
+            ->first();
     }
 }
