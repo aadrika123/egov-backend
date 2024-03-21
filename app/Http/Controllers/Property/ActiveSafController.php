@@ -1357,10 +1357,7 @@ class ActiveSafController extends Controller
             $userId = authUser($req)->id;
             $safId = $req->applicationId;
             // Derivative Assignments
-           // $safDetails = PropActiveSaf::findOrFail($req->applicationId);
-
-           //modified by prity pandey
-           $safDetails = PropActiveSaf::find($req->applicationId);
+           $safDetails = PropActiveSaf::findOrFail($req->applicationId);
             $senderRoleId = $safDetails->current_role;
             $workflowId = $safDetails->workflow_id;
             $getRoleReq = new Request([                                                 // make request to get role id of the user
