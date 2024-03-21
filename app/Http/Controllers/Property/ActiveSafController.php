@@ -1383,7 +1383,11 @@ class ActiveSafController extends Controller
                 ->get();
 
             $propDtls = $mPropProperties->getPropIdBySafId($req->applicationId);
+            if (!$propDtls) {
+                throw new Exception("Property Not Found For the Saf");
+            }
             $propId = $propDtls->id;
+            
             if ($safDetails->prop_type_mstr_id != 4)
                 $fieldVerifiedSaf = $propSafVerification->getVerificationsBySafId($safId);          // Get fields Verified Saf with all Floor Details
             else

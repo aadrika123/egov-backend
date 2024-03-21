@@ -282,7 +282,7 @@ class PropProperty extends Model
         return PropProperty::on('pgsql::read')
             ->select('id')
             ->where('saf_id', $safId)
-            ->firstOrFail();
+            ->first();
     }
 
     /**
