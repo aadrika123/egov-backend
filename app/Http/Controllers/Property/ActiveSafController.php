@@ -2184,7 +2184,7 @@ class ActiveSafController extends Controller
             $propPenalties = new PropPenaltyrebate();
             $paymentReceiptHelper = new PaymentReceiptHelper;
             $mUlbMasters = new UlbMaster();
-
+            $cheque_status = "";
             $mTowards = Config::get('PropertyConstaint.SAF_TOWARDS');
             $mAccDescription = Config::get('PropertyConstaint.ACCOUNT_DESCRIPTION');
             $mDepartmentSection = Config::get('PropertyConstaint.DEPARTMENT_SECTION');
