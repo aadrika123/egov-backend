@@ -320,9 +320,9 @@ class HoldingTaxController extends Controller
             $ipAddress = getClientIpAddress();
             $mPropRazorPayRequest = new PropRazorpayRequest();
             $postRazorPayPenaltyRebate = new PostRazorPayPenaltyRebate;
-            $url            = Config::get('razorpay.PAYMENT_GATEWAY_URL');
-            $endPoint       = Config::get('razorpay.PAYMENT_GATEWAY_END_POINT');
-            $authUser      = authUser($req);
+            $url      = Config::get('razorpay.PAYMENT_GATEWAY_URL');
+            $endPoint = Config::get('razorpay.PAYMENT_GATEWAY_END_POINT');
+            $authUser = Auth()->user();
             $demand = $this->getHoldingDues($req);
             if ($demand->original['status'] == false)
                 throw new Exception($demand->original['message']);
@@ -331,7 +331,7 @@ class HoldingTaxController extends Controller
             if ($demandData)
                 if (!$demandData)
                     throw new Exception("Demand Not Available");
-            $amount = $demandData['duesList']['payableAmount'];
+            $amount  = $demandData['duesList']['payableAmount'];
             $demands = $demandData['duesList'];
             $demandDetails = $demandData['demandList'];
             $propDtls = $propProperties->getPropById($req->propId);
