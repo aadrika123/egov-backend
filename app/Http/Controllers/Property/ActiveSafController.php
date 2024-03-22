@@ -1005,12 +1005,20 @@ class ActiveSafController extends Controller
                 'refTableIdValue' => $request->applicationId,
                 'receiverRoleId' => $senderRoleId
             ];
-            $previousWorkflowTrack = $track->getWfTrackByRefId($preWorkflowReq);
-            $previousWorkflowTrack->update([
-                'forward_date' => $this->_todayDate->format('Y-m-d'),
-                'forward_time' => $this->_todayDate->format('H:i:s')
-            ]);
+            // $previousWorkflowTrack = $track->getWfTrackByRefId($preWorkflowReq);
+            // $previousWorkflowTrack->update([
+            //     'forward_date' => $this->_todayDate->format('Y-m-d'),
+            //     'forward_time' => $this->_todayDate->format('H:i:s')
+            // ]);
 
+            //update by prity pandey
+            $previousWorkflowTrack = $track->getWfTrackByRefId($preWorkflowReq);
+            if ($previousWorkflowTrack) {
+                $previousWorkflowTrack->update([
+                    'forward_date' => $this->_todayDate->format('Y-m-d'),
+                    'forward_time' => $this->_todayDate->format('H:i:s')
+                ]);
+            }
             DB::commit();
             DB::connection('pgsql_master')->commit();
             return responseMsgs(true, "Successfully Forwarded The Application!!", $samHoldingDtls, "010113", "1.0", "", "POST", $request->deviceId);
