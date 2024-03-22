@@ -1005,12 +1005,20 @@ class ActiveSafController extends Controller
                 'refTableIdValue' => $request->applicationId,
                 'receiverRoleId' => $senderRoleId
             ];
-            $previousWorkflowTrack = $track->getWfTrackByRefId($preWorkflowReq);
-            $previousWorkflowTrack->update([
-                'forward_date' => $this->_todayDate->format('Y-m-d'),
-                'forward_time' => $this->_todayDate->format('H:i:s')
-            ]);
+            // $previousWorkflowTrack = $track->getWfTrackByRefId($preWorkflowReq);
+            // $previousWorkflowTrack->update([
+            //     'forward_date' => $this->_todayDate->format('Y-m-d'),
+            //     'forward_time' => $this->_todayDate->format('H:i:s')
+            // ]);
 
+            //update by prity pandey
+            $previousWorkflowTrack = $track->getWfTrackByRefId($preWorkflowReq);
+            if ($previousWorkflowTrack) {
+                $previousWorkflowTrack->update([
+                    'forward_date' => $this->_todayDate->format('Y-m-d'),
+                    'forward_time' => $this->_todayDate->format('H:i:s')
+                ]);
+            }
             DB::commit();
             DB::connection('pgsql_master')->commit();
             return responseMsgs(true, "Successfully Forwarded The Application!!", $samHoldingDtls, "010113", "1.0", "", "POST", $request->deviceId);
@@ -1357,7 +1365,7 @@ class ActiveSafController extends Controller
             $userId = authUser($req)->id;
             $safId = $req->applicationId;
             // Derivative Assignments
-            $safDetails = PropActiveSaf::findOrFail($req->applicationId);
+           $safDetails = PropActiveSaf::findOrFail($req->applicationId);
             $senderRoleId = $safDetails->current_role;
             $workflowId = $safDetails->workflow_id;
             $getRoleReq = new Request([                                                 // make request to get role id of the user
@@ -1383,7 +1391,11 @@ class ActiveSafController extends Controller
                 ->get();
 
             $propDtls = $mPropProperties->getPropIdBySafId($req->applicationId);
+            if (!$propDtls) {
+                throw new Exception("Property Not Found For the Saf");
+            }
             $propId = $propDtls->id;
+            
             if ($safDetails->prop_type_mstr_id != 4)
                 $fieldVerifiedSaf = $propSafVerification->getVerificationsBySafId($safId);          // Get fields Verified Saf with all Floor Details
             else
@@ -1459,11 +1471,20 @@ class ActiveSafController extends Controller
                 'refTableIdValue' => $req->applicationId,
                 'receiverRoleId' => $senderRoleId
             ];
+            // $previousWorkflowTrack = $track->getWfTrackByRefId($preWorkflowReq);
+            // $previousWorkflowTrack->update([
+            //     'forward_date' => $this->_todayDate->format('Y-m-d'),
+            //     'forward_time' => $this->_todayDate->format('H:i:s')
+            // ]);
+
+            //update by prity pandey
             $previousWorkflowTrack = $track->getWfTrackByRefId($preWorkflowReq);
-            $previousWorkflowTrack->update([
-                'forward_date' => $this->_todayDate->format('Y-m-d'),
-                'forward_time' => $this->_todayDate->format('H:i:s')
-            ]);
+            if ($previousWorkflowTrack) {
+                $previousWorkflowTrack->update([
+                    'forward_date' => $this->_todayDate->format('Y-m-d'),
+                    'forward_time' => $this->_todayDate->format('H:i:s')
+                ]);
+            }
 
             $propSafVerification->deactivateVerifications($req->applicationId);                 // Deactivate Verification From Table
             $propSafVerificationDtl->deactivateVerifications($req->applicationId);              // Deactivate Verification from Saf floor Dtls
