@@ -18,6 +18,7 @@ use App\Models\RefPropType;
 use App\Models\RefPropRebateType;
 use App\Models\RefPropTransferMode;
 use App\Models\RefPropUsageType;
+use App\Models\MSlider;
 use App\Models\property\MPropForgeryType;
 use App\Models\property\MPropCvRate;
 use App\Models\property\MCapitalValueRate;
@@ -1497,6 +1498,71 @@ class MasterReferenceController extends Controller
             return responseMsgs(false, $e->getMessage(), "", "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
         }
     }
+
+     /**
+     * |M-Slider
+     */
+    
+     public function createSlider(Request $req)
+     {
+         try {
+             $req->validate([
+                 'sliderName' => 'required',
+                 'sliderImage' => 'required'
+             ]);
+             $create = new MSlider();
+             $create->addSlider($req);
+ 
+             return responseMsgs(true, "Successfully Saved", "", "120101", "01", responseTime(), $req->getMethod(), $req->deviceId);
+         } catch (Exception $e) {
+             return responseMsgs(false, $e->getMessage(), "", "120101", "01", responseTime(), $req->getMethod(), $req->deviceId);
+         }
+     }
+
+     public function updateSlider(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required',
+                'sliderName' => 'required',
+                'sliderImage'=>'required'
+            ]);
+            $update = new MSlider();
+            $list  = $update->updateSlider($req);
+
+            return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function allSliderList(Request $req)
+    {
+        try {
+            $list = new MSlider();
+            $masters = $list->listSlider();
+
+            return responseMsgs(true, "All Slider List", $masters, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function deleteSlider(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required',
+                'status' => 'required'
+            ]);
+            $delete = new MSlider();
+            $message = $delete->deleteSlider($req);
+            return responseMsgs(true, "", $message, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
 
 
 
