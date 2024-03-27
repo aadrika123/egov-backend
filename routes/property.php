@@ -697,6 +697,12 @@ Route::controller(MasterReferenceController::class)->group(function () {
   Route::post('m-slider-update', 'updateSlider');
   Route::post('m-slider-get', 'allSliderList');
   Route::post('m-slider-delete', 'deleteSlider');
+
+  //m-assets
+  Route::post('m-assets-create', 'addAssetesv2');
+  Route::post('m-assets-update', 'editAssetes');
+  Route::post('m-assets-get', 'allListAssetesv2');
+  Route::post('m-assets-delete', 'deleteSlider');
 });
 
 
