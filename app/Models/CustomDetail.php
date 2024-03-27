@@ -9,11 +9,13 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Carbon;
 use Exception;
 use Illuminate\Support\Facades\Config;
+use App\MicroServices\DocUpload;
 
 class CustomDetail extends Model
 {
     use HasFactory;
     private $_bifuraction;
+    protected $connection = "pgsql_master";
 
     public function __construct()
     {
@@ -22,32 +24,29 @@ class CustomDetail extends Model
 
     public function getCustomDetails($request)
     {
-        try {
-            $customDetails = CustomDetail::select(
-                'id',
-                'ref_id',
-                'ref_type',
-                'relative_path',
-                'doc_name as docUrl',
-                'remarks',
-                'type',
-                'created_at as date',
-                'ref_type as customFor'
-            )
-                ->orderBy("id", 'desc')
-                ->where('ref_id', $request->applicationId)
-                ->where('ref_type', trim(strtoupper($request->customFor)))
-                ->get();
-            $customDetails = $customDetails->map(function ($val) {
-                // $path = $this->_bifuraction->readDocumentPath($val->relative_path . '/' . $val->docUrl);
-                $path = config('app.url') . '/' . $val->relative_path . '/' . $val->docUrl;
-                $val->docUrl = $path;
-                return $val;
-            });
-            return responseMsg(true, "Successfully Retrieved", $customDetails);
-        } catch (Exception $e) {
-            return response()->json($e, 400);
-        }
+        $docUpload = new DocUpload;
+        $customDetails = CustomDetail::select(
+            'id',
+            'ref_id',
+            'ref_type',
+            'doc_ref_no as reference_no',
+            'doc_unique_id',
+            'remarks',
+            'type',
+            'created_at as date',
+            'ref_type as customFor'
+        )
+            ->where('ref_id', $request->applicationId)
+            ->where('ref_type', trim(strtoupper($request->customFor)))
+            ->orderByDesc('id')
+            ->get();
+
+        $customDetails = $customDetails->map(function ($val) use ($docUpload) {
+            $docResponse =  $docUpload->getSingleDocUrl($val);
+            $val->docUrl =  $docResponse['doc_path'] ?? null;
+            return $val;
+        });
+        return responseMsg(true, "Data Retrieved", $customDetails);
     }
 
     //post custom details
