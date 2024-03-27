@@ -43,4 +43,18 @@ class MAsset extends Model
     {
         return self::orderBy("id","ASC")->get();
     }
+
+    public function deleteAssets($req)
+    {
+        $assetType = self::find($req->id);
+        $oldStatus = $assetType->status;
+        $assetType->status = $req->status;
+        $assetType->save();
+        if ($oldStatus == 1 && $assetType->status == 0) {
+            $message = "Data Disabled";
+        } else {
+            $message = "Data Enabled";
+        }
+        return $message;
+    }
 }

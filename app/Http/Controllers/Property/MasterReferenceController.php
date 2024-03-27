@@ -1594,7 +1594,7 @@ class MasterReferenceController extends Controller
      /**
      * |M-Assets
      */
-
+    //Assets crud with DMS
     public function addAssetes(Request $req)
     {
         $req->validate([
@@ -1776,10 +1776,25 @@ class MasterReferenceController extends Controller
                 return $val;
             });
 
-            return responseMsgs(true, "All Slider List", $data, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            return responseMsgs(true, "All Assets List", $data, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
 
         }
         catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function deleteAssetesv2(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required',
+                'status' => 'required'
+            ]);
+            $delete = new MAsset();
+            $message = $delete->deleteAssets($req);
+            return responseMsgs(true, "", $message, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
         }
     }
