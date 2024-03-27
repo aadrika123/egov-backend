@@ -23,10 +23,10 @@ class DocUpload
      * | @param relativePath Image Relative Path (pass your relative path of the image to be save here)
      * | @return imageName imagename to save (Final Image Name with time and extension)
      */
-    public function upload($refImageName, $image, $relativePath)
+    public function upload($refImageName, $image, $relativePath,$isTimeAttached = true)
     {
         $extention = $image->getClientOriginalExtension();
-        $imageName = time() . '-' . $refImageName . '.' . $extention;
+        $imageName = ($isTimeAttached ? time() . '-' :""). $refImageName . '.' . $extention;
         $image->move($relativePath, $imageName);
 
         return $imageName;

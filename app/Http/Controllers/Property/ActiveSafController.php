@@ -2184,7 +2184,7 @@ class ActiveSafController extends Controller
             $propPenalties = new PropPenaltyrebate();
             $paymentReceiptHelper = new PaymentReceiptHelper;
             $mUlbMasters = new UlbMaster();
-
+            $cheque_status = "";
             $mTowards = Config::get('PropertyConstaint.SAF_TOWARDS');
             $mAccDescription = Config::get('PropertyConstaint.ACCOUNT_DESCRIPTION');
             $mDepartmentSection = Config::get('PropertyConstaint.DEPARTMENT_SECTION');
@@ -2199,6 +2199,8 @@ class ActiveSafController extends Controller
             $safTrans = $transaction->getPropByTranPropIdV2($req->tranNo);
             if (!$safTrans)
                 throw new Exception("Transaction Not Found");
+            if($safTrans->payment_mode =="CHEQUE" && $safTrans->verify_status ==3)
+            $cheque_status = "Bounce";
             // Saf Payment
             $safId = $safTrans->saf_id;
             $reqSafId = new Request(['id' => $safId]);
@@ -2229,6 +2231,7 @@ class ActiveSafController extends Controller
             // Response Return Data
             $responseData = [
                 "departmentSection" => $mDepartmentSection,
+                "cheque_status" => $cheque_status,
                 "accountDescription" => $mAccDescription,
                 "transactionDate" => Carbon::parse($safTrans->tran_date)->format('d-m-Y'),
                 "transactionNo" => $safTrans->tran_no,

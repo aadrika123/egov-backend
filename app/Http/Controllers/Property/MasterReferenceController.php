@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Property;
 
 use App\Http\Controllers\Controller;
+use App\MicroServices\DocUpload;
+use App\Models\MAsset;
 use App\Models\Property\MPropRoadType;
 use App\Models\RefPropFloor;
 use App\Models\RefPropConstructionType;
@@ -18,6 +20,7 @@ use App\Models\RefPropType;
 use App\Models\RefPropRebateType;
 use App\Models\RefPropTransferMode;
 use App\Models\RefPropUsageType;
+use App\Models\MSlider;
 use App\Models\property\MPropForgeryType;
 use App\Models\property\MPropCvRate;
 use App\Models\property\MCapitalValueRate;
@@ -26,6 +29,7 @@ use App\Models\property\MPropBuildingRentalrate;
 use App\Models\property\MPropMultiFactor;
 use App\Models\property\MPropRentalValue;
 use App\Models\property\MPropVacantRentalrate;
+use Illuminate\Support\Facades\Config;
 
 
 
@@ -1498,7 +1502,302 @@ class MasterReferenceController extends Controller
         }
     }
 
+     /**
+     * |M-Slider
+     */
+    
+     public function createSlider(Request $req)
+     {
+         try {
+             $req->validate([
+                 'sliderName' => 'nullable',
+                 'sliderImage' => 'required|mimes:pdf,jpeg,png,jpg'
+             ]);
+             $req->merge(["document"=>$req->sliderImage]);
+             $docUpload = new DocUpload;
+             $data = $docUpload->checkDoc($req);   
+             if(!$data["status"])    
+             {
+                throw new Exception("Document Not uploaded");
+             }
+             $req->merge($data["data"]);             
+             $create = new MSlider();
+             if(!$create->addSlider($req))
+             {
+                throw new Exception("data not stored");
+             }
+ 
+             return responseMsgs(true, "Successfully Saved", "", "120101", "01", responseTime(), $req->getMethod(), $req->deviceId);
+         } catch (Exception $e) {
+             return responseMsgs(false, $e->getMessage(), "", "120101", "01", responseTime(), $req->getMethod(), $req->deviceId);
+         }
+     }
 
+     public function updateSlider(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required',
+                'sliderName' => 'required',
+                'sliderImage'=>'required'
+            ]);
+            $req->merge(["document"=>$req->sliderImage]);
+             $docUpload = new DocUpload;
+             $data = $docUpload->checkDoc($req);   
+             if(!$data["status"])    
+             {
+                throw new Exception("Document Not uploaded");
+             }
+             $req->merge($data["data"]);  
+            $update = new MSlider();
+            $list  = $update->updateSlider($req);
+
+            return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function allSliderList(Request $req)
+    {
+        try {
+            $list = new MSlider();
+            $docUpload = new DocUpload;
+            $masters = $list->listSlider()->map(function($val) use($docUpload){
+                $url = $docUpload->getSingleDocUrl($val);
+                $val->is_suspended = $val->status; 
+                $val->slider_image_url = $url["doc_path"]??null;
+                return $val;
+            });
+
+            return responseMsgs(true, "All Slider List", $masters, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function deleteSlider(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required',
+                'status' => 'required'
+            ]);
+            $delete = new MSlider();
+            $message = $delete->deleteSlider($req);
+            return responseMsgs(true, "", $message, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+     /**
+     * |M-Assets
+     */
+    //Assets crud with DMS
+    public function addAssetes(Request $req)
+    {
+        $req->validate([
+            'key' => 'required',
+            "assetName"=>"required",
+            'assetFile' => 'required|mimes:pdf,jpeg,png,jpg',
+            "ulbId"=>"nullable"
+        ]);
+        try{
+
+            $req->merge(["document"=>$req->assetFile]);
+            $docUpload = new DocUpload;
+            $data = $docUpload->checkDoc($req);   
+            if(!$data["status"])    
+            {
+               throw new Exception("Document Not uploaded");
+            }
+            $req->merge($data["data"]);             
+            $create = new MAsset();
+            if(!$create->store($req))
+            {
+                throw new Exception("Data not stored");
+            }
+            return responseMsgs(true, "data save", "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+
+        }catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+    
+
+    public function editAssetes(Request $req)
+    {
+        $req->validate([
+            "id" =>"required",
+            'key' => 'required',
+            "assetName"=>"required",
+            'assetFile' => 'required|mimes:pdf,jpeg,png,jpg',
+            "ulbId"=>"nullable"
+        ]);
+        try{
+            $req->merge(["document"=>$req->assetFile]);
+            $docUpload = new DocUpload;
+            $data = $docUpload->checkDoc($req);   
+            if(!$data["status"])    
+            {
+               throw new Exception("Document Not uploaded");
+            }
+            $req->merge($data["data"]);             
+            $create = new MAsset();
+            if(!$create->edit($req))
+            {
+                throw new Exception("Data not updated");
+            }
+            return responseMsgs(true, "data update", "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+        catch(Exception $e)
+        {
+            return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function allListAssetes(Request $req)
+    {
+        try{
+            $create = new MAsset();
+            $docUpload = new DocUpload();
+            $data = $create->allList()->map(function($val) use($docUpload){
+                $url = $docUpload->getSingleDocUrl($val);
+                $val->is_suspended = $val->status; 
+                $val->asset_file = $url["doc_path"]??null;
+                return $val;
+            });
+
+            return responseMsgs(true, "All Slider List", $data, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+
+        }
+        catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    #==========================v2================================
+
+    public function addAssetesv2(Request $req)
+    {
+        $req->validate([
+            'key' => 'required',
+            "assetName"=>"required",
+            'assetFile' => 'required|mimes:pdf,jpeg,png,jpg',
+            "ulbId"=>"nullable"
+        ]);
+        try{
+            $req->merge(["document"=>$req->assetFile]);
+            $fileName = $req->key;
+            $docPath = Config::get("assetsConstaint.ASSETS_PATH");
+            $file = $req->assetFile;
+            $docUpload = new DocUpload;
+            $data = $docUpload->upload($req->key,$file,$docPath,false);
+            $oldFile = public_path($docPath."/".$data);
+            $newFile = public_path($docPath."/AssetD/".$fileName);  
+            if(!is_dir(public_path($docPath."/AssetD")))
+            {
+                mkdir(public_path($docPath."/AssetD"));
+            }
+            if(!copy($oldFile,$newFile))    
+            {
+               throw new Exception("Document Not uploaded");
+            }
+            @unlink($oldFile);
+            $req->only(["key","document","assetName","ulbId","uniqueId","ReferenceNo"]); 
+            $newReq = new Request(["assetFile"=>trim(explode(public_path(),$newFile)[1]??"","/\//")]) ;
+            $req = $newReq->merge($req->only(["key","document","assetName","ulbId","uniqueId","ReferenceNo"]));                  
+            $create = new MAsset();
+            if(!$create->store($req))
+            {
+                throw new Exception("Data not stored");
+            }
+            return responseMsgs(true, "data save", "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+
+        }catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+
+    public function editAssetesv2(Request $req)
+    {
+        $req->validate([
+            "id" =>"required",
+            'key' => 'required',
+            "assetName"=>"required",
+            'assetFile' => 'required|mimes:pdf,jpeg,png,jpg',
+            "ulbId"=>"nullable"
+        ]);
+        try{
+            $req->merge(["document"=>$req->assetFile]);
+            $fileName = $req->key;
+            $docPath = Config::get("assetsConstaint.ASSETS_PATH");
+            $file = $req->assetFile;
+            $docUpload = new DocUpload;
+            $data = $docUpload->upload($req->key,$file,$docPath,false);
+            $oldFile = public_path($docPath."/".$data);
+            $newFile = public_path($docPath."/AssetD/".$fileName);  
+            if(!is_dir(public_path($docPath."/AssetD")))
+            {
+                mkdir(public_path($docPath."/AssetD"));
+            }
+            if(!copy($oldFile,$newFile))    
+            {
+               throw new Exception("Document Not uploaded");
+            }
+            @unlink($oldFile);
+            $req->only(["key","document","assetName","ulbId","uniqueId","ReferenceNo"]); 
+            $newReq = new Request(["assetFile"=>trim(explode(public_path(),$newFile)[1]??"","/\//")]) ;
+            $req = $newReq->merge($req->only(["id","key","document","assetName","ulbId","uniqueId","ReferenceNo"]));             
+            $create = new MAsset();
+            if(!$create->edit($req))
+            {
+                throw new Exception("Data not updated");
+            }
+            return responseMsgs(true, "data update", "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+        catch(Exception $e)
+        {
+            return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function allListAssetesv2(Request $req)
+    {
+        try{
+            $create = new MAsset();
+            $docUpload = new DocUpload();
+            $data = $create->allList()->map(function($val) use($docUpload){
+                $url = $val->asset_file ? ["doc_path"=>trim(Config::get('module-constants.DOC_URL')."/".$val->asset_file)] : $docUpload->getSingleDocUrl($val);
+                $val->is_suspended = $val->status; 
+                $val->asset_file = $url["doc_path"]??null;
+                return $val;
+            });
+
+            return responseMsgs(true, "All Assets List", $data, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+
+        }
+        catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function deleteAssetesv2(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required',
+                'status' => 'required'
+            ]);
+            $delete = new MAsset();
+            $message = $delete->deleteAssets($req);
+            return responseMsgs(true, "", $message, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
 
 
 

@@ -690,6 +690,19 @@ Route::controller(MasterReferenceController::class)->group(function () {
   //m-prop-vacant-rentalrates
   Route::post('m-prop-vacant-rentalrates-get', 'MPropVacantRentalrateById');
   Route::post('m-prop-vacant-rentalrates-list', 'allMPropVacantRentalrateList');
+
+  
+  //m-slider
+  Route::post('m-slider-create', 'createSlider');
+  Route::post('m-slider-update', 'updateSlider');
+  Route::post('m-slider-get', 'allSliderList');
+  Route::post('m-slider-delete', 'deleteSlider');
+
+  //m-assets
+  Route::post('m-assets-create', 'addAssetesv2');
+  Route::post('m-assets-update', 'editAssetesv2');
+  Route::post('m-assets-get', 'allListAssetesv2');
+  Route::post('m-assets-delete', 'deleteAssetesv2');
 });
 
 
