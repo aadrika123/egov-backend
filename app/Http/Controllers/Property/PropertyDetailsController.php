@@ -414,14 +414,12 @@ class PropertyDetailsController extends Controller
                             ->where('prop_properties.village_mauja_name',  $request->maujaName);
                     break;
             }
-             //modified by prity pandey
-            //  $data = $mPropProperty->searchProperty($ulbId);
-            //  if ($request->zoneId) {
-            //     $data = $data->where("prop_properties.zone_mstr_id", $request->zoneId);
-            // }
-            // if ($request->wardId) {
-            //     $data = $data->where("prop_properties.ward_mstr_id", $request->wardId);
-            // }
+            //modified by prity pandey
+            if ($request->zoneId)
+                $data = $data->where("prop_properties.zone_mstr_id", $request->zoneId);
+
+            if ($request->wardId)
+                $data = $data->where("prop_properties.ward_mstr_id", $request->wardId);
 
             if ($userType != 'Citizen')
                 $data = $data->where('prop_properties.ulb_id', $ulbId);
