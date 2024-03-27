@@ -1323,6 +1323,7 @@ class NewConnectionController extends Controller
             $requiedDocs            = (array)null;
             $testOwnersDoc          = (array)null;
             $data                   = (array)null;
+            $docUpload = new DocUpload;
             $refWaterNewConnection  = new WaterNewConnection();
             $refWfActiveDocument    = new WfActiveDocument();
             $mWaterConnectionCharge = new WaterConnectionCharge();
@@ -1368,11 +1369,12 @@ class NewConnectionController extends Controller
 
                 $doc['uploadDoc'] = [];
                 $uploadDoc = $refWfActiveDocument->getDocByRefIdsDocCode($refApplication->id, $refApplication->workflow_id, $moduleId, $docFor); # Check Document is Uploaded Of That Type
-                if (isset($uploadDoc->first()->doc_path)) {
-                    $path = $refWaterNewConnection->readDocumentPath($uploadDoc->first()->doc_path);
-                    $doc["uploadDoc"]["doc_path"] = !empty(trim($uploadDoc->first()->doc_path)) ? $path : null;
-                    $doc["uploadDoc"]["doc_code"] = $uploadDoc->first()->doc_code;
-                    $doc["uploadDoc"]["verify_status"] = $uploadDoc->first()->verify_status;
+                $uploadDoc = $docUpload->getDocUrl($uploadDoc);           #_Calling BLL for Document Path from DMS
+                if (isset($uploadDoc->first()['doc_path'])) {
+                    // $path = $refWaterNewConnection->readDocumentPath($uploadDoc->first()['doc_path']);
+                    $doc["uploadDoc"]["doc_path"] = $uploadDoc->first()['doc_path'] ?? null;
+                    $doc["uploadDoc"]["doc_code"] = $uploadDoc->first()['doc_code'];
+                    $doc["uploadDoc"]["verify_status"] = $uploadDoc->first()['verify_status'];
                 }
                 array_push($requiedDocs, $doc);
             }
@@ -1399,11 +1401,12 @@ class NewConnectionController extends Controller
                     });
                     $doc['uploadDoc'] = [];
                     $uploadDoc = $refWfActiveDocument->getOwnerDocByRefIdsDocCode($refApplication->id, $refApplication->workflow_id, $moduleId, $refdocForId, $doc["ownerId"]); # Check Document is Uploaded Of That Type
-                    if (isset($uploadDoc->first()->doc_path)) {
-                        $path = $refWaterNewConnection->readDocumentPath($uploadDoc->first()->doc_path);
-                        $doc["uploadDoc"]["doc_path"] = !empty(trim($uploadDoc->first()->doc_path)) ? $path : null;
-                        $doc["uploadDoc"]["doc_code"] = $uploadDoc->first()->doc_code;
-                        $doc["uploadDoc"]["verify_status"] = $uploadDoc->first()->verify_status;
+                    $uploadDoc = $docUpload->getDocUrl($uploadDoc);           #_Calling BLL for Document Path from DMS
+                    if (isset($uploadDoc->first()['doc_path'])) {
+                        // $path = $refWaterNewConnection->readDocumentPath($uploadDoc->first()['doc_path']);
+                        $doc["uploadDoc"]["doc_path"] = $uploadDoc->first()['doc_path'] ?? null;
+                        $doc["uploadDoc"]["doc_code"] = $uploadDoc->first()['doc_code'];
+                        $doc["uploadDoc"]["verify_status"] = $uploadDoc->first()['verify_status'];
                     }
                     array_push($testOwnersDoc, $doc);
                 }
