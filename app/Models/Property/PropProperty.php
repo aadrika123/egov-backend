@@ -565,6 +565,8 @@ class PropProperty extends Model
             'prop_properties.id',
             'prop_properties.ulb_id',
             'prop_properties.holding_no',
+            'prop_properties.ward_mstr_id',
+            'prop_properties.zone_mstr_id',
             'latitude',
             'longitude',
             'prop_properties.new_holding_no',

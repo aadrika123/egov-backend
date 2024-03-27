@@ -334,6 +334,8 @@ class PropertyDetailsController extends Controller
         $request->validate([
             'filteredBy' => "required",
             'parameter' => "nullable",
+            'zoneId' => "nullable|digits_between:1,9223372036854775807",
+            'wardId' => "nullable|digits_between:1,9223372036854775807",
         ]);
 
         try {
@@ -411,6 +413,14 @@ class PropertyDetailsController extends Controller
                             ->where('prop_properties.plot_no',  $request->plotNo)
                             ->where('prop_properties.village_mauja_name',  $request->maujaName);
                     break;
+            }
+             //modified by prity pandey
+             $data = $mPropProperty->searchProperty($ulbId);
+             if ($request->zoneId) {
+                $data = $data->where("prop_properties.zone_mstr_id", $request->zoneId);
+            }
+            if ($request->wardId) {
+                $data = $data->where("prop_properties.ward_mstr_id", $request->wardId);
             }
 
             if ($userType != 'Citizen')

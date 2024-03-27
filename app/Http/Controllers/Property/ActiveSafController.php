@@ -23,6 +23,8 @@ use App\Models\Payment\TempTransaction;
 use App\Models\Property\Logs\LogPropFloor;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsFloor;
+use App\Models\Trade\ActiveTradeLicence;
+use App\Models\Trade\TradeLicence;
 use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Property\PropChequeDtl;
 use App\Models\Property\PropDemand;
@@ -56,6 +58,7 @@ use App\Models\Property\RefPropTransferMode;
 use App\Models\Property\RefPropType;
 use App\Models\Property\RefPropUsageType;
 use App\Models\Property\ZoneMaster;
+use App\Models\Water\WaterConsumer;
 use App\Models\UlbMaster;
 use App\Models\UlbWardMaster;
 use App\Models\Workflows\WfActiveDocument;
@@ -1365,7 +1368,7 @@ class ActiveSafController extends Controller
             $userId = authUser($req)->id;
             $safId = $req->applicationId;
             // Derivative Assignments
-           $safDetails = PropActiveSaf::findOrFail($req->applicationId);
+            $safDetails = PropActiveSaf::findOrFail($req->applicationId);
             $senderRoleId = $safDetails->current_role;
             $workflowId = $safDetails->workflow_id;
             $getRoleReq = new Request([                                                 // make request to get role id of the user
@@ -1395,7 +1398,7 @@ class ActiveSafController extends Controller
                 throw new Exception("Property Not Found For the Saf");
             }
             $propId = $propDtls->id;
-            
+
             if ($safDetails->prop_type_mstr_id != 4)
                 $fieldVerifiedSaf = $propSafVerification->getVerificationsBySafId($safId);          // Get fields Verified Saf with all Floor Details
             else
@@ -2199,8 +2202,8 @@ class ActiveSafController extends Controller
             $safTrans = $transaction->getPropByTranPropIdV2($req->tranNo);
             if (!$safTrans)
                 throw new Exception("Transaction Not Found");
-            if($safTrans->payment_mode =="CHEQUE" && $safTrans->verify_status ==3)
-            $cheque_status = "Bounce";
+            if ($safTrans->payment_mode == "CHEQUE" && $safTrans->verify_status == 3)
+                $cheque_status = "Bounce";
             // Saf Payment
             $safId = $safTrans->saf_id;
             $reqSafId = new Request(['id' => $safId]);
@@ -2320,7 +2323,7 @@ class ActiveSafController extends Controller
      * | Rating - 2
      * | Run Time Complexity-500 ms
      */
-    public function getPropByHoldingNo(Request $req)
+    public function getPropByHoldingNo1(Request $req)
     {
         $req->validate(
             isset($req->holdingNo) ? ['holdingNo' => 'required'] : ['propertyId' => 'required|numeric']
@@ -2356,6 +2359,132 @@ class ActiveSafController extends Controller
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+
+    public function getPropByHoldingNo(Request $req)
+    {
+        $req->validate(
+            isset($req->holdingNo) ? ['holdingNo' => 'required'] : ['propertyId' => 'required|numeric']
+        );
+
+        try {
+            $mProperties = new PropProperty();
+            $mPropFloors = new PropFloor();
+            $mPropOwners = new PropOwner();
+            $propertyDtl = [];
+
+            if ($req->holdingNo) {
+                $properties = $mProperties->getPropDtls()
+                    ->where('prop_properties.holding_no', $req->holdingNo)
+                    ->first();
+            }
+
+            if ($req->propertyId) {
+                $properties = $mProperties->getPropDtls()
+                    ->where('prop_properties.id', $req->propertyId)
+                    ->first();
+            }
+
+            if (!$properties) {
+                throw new Exception("Property Not Found");
+            }
+
+            $floors = $mPropFloors->getPropFloors($properties->id);
+            $owners = $mPropOwners->getOwnersByPropId($properties->id);
+
+            if ($req->holdingNo) {
+                $mWater = new WaterConsumer();
+                $waterDetails = $mWater->select(
+                    'water_consumers.id',
+                    'water_consumers.consumer_no',
+                    'water_consumers.ward_mstr_id',
+                    'water_consumers.address',
+                    'water_consumers.holding_no',
+                    'water_consumers.saf_no',
+                    'water_consumers.ulb_id',
+                    'ulb_ward_masters.ward_name',
+                    DB::raw("string_agg(water_consumer_owners.applicant_name,',') as applicant_name"),
+                    DB::raw("string_agg(water_consumer_owners.mobile_no::VARCHAR,',') as mobile_no"),
+                    DB::raw("string_agg(water_consumer_owners.guardian_name,',') as guardian_name")
+                )
+                    ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_consumers.id')
+                    ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_consumers.ward_mstr_id')
+                    ->where('water_consumers.status', 1)
+                    ->where('water_consumers.holding_no', $req->holdingNo)
+                    ->groupBy(
+                        'water_consumers.saf_no',
+                        'water_consumers.holding_no',
+                        'water_consumers.address',
+                        'water_consumers.id',
+                        'water_consumers.ulb_id',
+                        'water_consumer_owners.consumer_id',
+                        'water_consumers.consumer_no',
+                        'water_consumers.ward_mstr_id',
+                        'ulb_ward_masters.ward_name'
+                    )
+                    ->first();
+            }
+
+            if ($req->holdingNo) {
+                $approveTrade = TradeLicence::select(
+                    "trade_licences.*",
+                    "owner.*",
+                    DB::raw("ulb_ward_masters.ward_name as ward_no,'trade_licences' AS tbl")
+                )
+                    ->leftjoin("ulb_ward_masters", "ulb_ward_masters.id", "=", "trade_licences.ward_id")
+                    ->leftjoin(
+                        DB::raw("(SELECT temp_id,
+                                    string_agg(owner_name,',') as owner_name,
+                                    string_agg(guardian_name,',') as guardian_name,
+                                    string_agg(mobile_no,',') as mobile
+                                    FROM trade_owners
+                                    WHERE is_active =true
+                                    GROUP BY temp_id
+                                    ) owner
+                                    "),
+                        function ($join) {
+                            $join->on("owner.temp_id", "=",  "trade_licences.id");
+                        }
+                    )
+                    ->where('trade_licences.is_active', TRUE)
+                    ->where('trade_licences.holding_no', $req->holdingNo);
+
+                $activetrade = ActiveTradeLicence::select(
+                    "active_trade_licences.*",
+                    "owner.*",
+                    DB::raw("ulb_ward_masters.ward_name as ward_no,'active_trade_licences' AS tbl")
+                )
+                    ->leftjoin("ulb_ward_masters", "ulb_ward_masters.id", "=", "active_trade_licences.ward_id")
+                    ->leftjoin(
+                        DB::raw("(SELECT temp_id,
+                            string_agg(owner_name,',') as owner_name,
+                            string_agg(guardian_name,',') as guardian_name,
+                            string_agg(mobile_no,',') as mobile
+                            FROM active_trade_owners
+                            WHERE is_active =true
+                            GROUP BY temp_id
+                            ) owner
+                            "),
+                        function ($join) {
+                            $join->on("owner.temp_id", "=",  "active_trade_licences.id");
+                        }
+                    )
+                    ->where('active_trade_licences.is_active', TRUE)
+                    ->where('active_trade_licences.holding_no', $req->holdingNo);
+
+                $tradeLicense = $approveTrade->union($activetrade)->get();
+            }
+            $propertyDtl = collect($properties);
+            $propertyDtl['floors'] = $floors;
+            $propertyDtl['owners'] = $owners;
+            $propertyDtl['water'] = $waterDetails;
+            $propertyDtl['trade'] = $tradeLicense;
+
+            return responseMsgs(true, "Property Details", remove_null($propertyDtl), "010116", "1.0", "", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
 
     /**
      * | Site Verification
