@@ -415,13 +415,13 @@ class PropertyDetailsController extends Controller
                     break;
             }
              //modified by prity pandey
-             $data = $mPropProperty->searchProperty($ulbId);
-             if ($request->zoneId) {
-                $data = $data->where("prop_properties.zone_mstr_id", $request->zoneId);
-            }
-            if ($request->wardId) {
-                $data = $data->where("prop_properties.ward_mstr_id", $request->wardId);
-            }
+            //  $data = $mPropProperty->searchProperty($ulbId);
+            //  if ($request->zoneId) {
+            //     $data = $data->where("prop_properties.zone_mstr_id", $request->zoneId);
+            // }
+            // if ($request->wardId) {
+            //     $data = $data->where("prop_properties.ward_mstr_id", $request->wardId);
+            // }
 
             if ($userType != 'Citizen')
                 $data = $data->where('prop_properties.ulb_id', $ulbId);
