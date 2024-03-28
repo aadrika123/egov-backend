@@ -63,13 +63,7 @@ class MSlider extends Model
 
     public function getById($req)
     {
-        $list = MSlider::select(
-            'id',
-            'slider_name',
-            'slider_image_url',
-            'status as is_suspended'
-        )
-            ->where('id', $req->id)
+        $list = MSlider::where('id', $req->id)
             ->first();
         return $list;
     }
