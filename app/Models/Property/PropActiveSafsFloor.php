@@ -136,6 +136,7 @@ class PropActiveSafsFloor extends Model
         $floor->date_upto = $req['dateUpto'] ?? null;
         $floor->prop_floor_details_id = $req['propFloorDetailId'] ?? null;
         $floor->user_id = $userId;
+        $floor->bifurcated_from_buildup_area = isset($req['biBuildupArea']) ? $req['buildupArea'] : null;
         $floor->save();
     }
 
