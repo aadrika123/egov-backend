@@ -186,10 +186,11 @@ class ApplySafController extends Controller
                     $floorDetail = $request['floor'];
                     foreach ($floorDetail as $floorDetails) {
                         $floor = new PropActiveSafsFloor();
-                        $floor->addfloor($floorDetails, $safId, $user_id);
+                        $floor->addfloor($floorDetails, $safId, $user_id, $request->assessmentType, $request['biDateOfPurchase']);
                     }
                 }
             }
+
             // Citizen Notification
             if ($userType == 'Citizen') {
                 $mreq['userType']  = 'Citizen';
@@ -214,7 +215,7 @@ class ApplySafController extends Controller
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
-            return responseMsgs(false, $e->getMessage(), $e->getFile(), "010101", "1.0", "1s", "POST", $request->deviceId);
+            return responseMsgs(false, $e->getMessage(), $e->getFile(), "010101", "1.0", responseTime(), "POST", $request->deviceId);
         }
     }
 
