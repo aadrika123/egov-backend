@@ -166,7 +166,7 @@ class TcVerificationDemandAdjust
 
                     $differenceAmt = $tax['totalTax'] - $safQtrDemand->amount;
                     $differencePercent = ($differenceAmt * 100) / $safQtrDemand->amount;
-
+                    $penalty100 = 0;
                     #_If Difference Amt is more than 10% then impose 100% Penalty
                     if ($differencePercent > 10) {
                         $penalty100 = $balance;
