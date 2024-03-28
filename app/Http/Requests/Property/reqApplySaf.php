@@ -141,7 +141,6 @@ class reqApplySaf extends FormRequest
                 $rules["owner.*.isSpeciallyAbled"]    =   "required|bool";
             }
         }
-        dd($rules);
         return $rules;
     }
 
