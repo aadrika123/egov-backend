@@ -126,6 +126,26 @@ trait SafDetailsTrait
     }
 
     /**
+     * | Generate Bi Floor Details
+     */
+    public function generateBiFloorDetails($floorDetails)
+    {
+        return collect($floorDetails)->map(function ($floorDetail, $key) {
+            return [
+                $key + 1,
+                $floorDetail->floor_name,
+                $floorDetail->usage_type,
+                $floorDetail->occupancy_type,
+                $floorDetail->construction_type,
+                $floorDetail->builtup_area,
+                $floorDetail->bifurcated_from_buildup_area,
+                $floorDetail->date_from,
+                $floorDetail->date_upto
+            ];
+        });
+    }
+
+    /**
      * | Generate Card Details
      */
     public function generateCardDetails($req, $ownerDetails)
