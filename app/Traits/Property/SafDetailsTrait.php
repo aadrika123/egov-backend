@@ -171,7 +171,7 @@ trait SafDetailsTrait
     public function generateBiCardDetails($req, $ownerDetails)
     {
         $owners = collect($ownerDetails)->implode('owner_name', ',');
-        $data = new Collection([
+       return new Collection([
             ['displayString' => 'Ward No', 'key' => 'wardNo', 'value' => $req->old_ward_no],
             ['displayString' => 'SAF No.', 'key' => 'safNo', 'value' => $req->saf_no],
             ['displayString' => 'Owners', 'key' => 'ownerName', 'value' => $owners],
