@@ -45,6 +45,11 @@ class reqApplySaf extends FormRequest
             $rules['dateOfPurchase'] = "required|date|date_format:Y-m-d|before_or_equal:$mNowDate";
             $rules["isOwnerChanged"] = "required|bool";
         }
+        if (isset($this->assessmentType) && $this->assessmentType == 4) {
+            $rules['bifurcatedPlot']   = "required|numeric|max:" . $this->areaOfPlot;
+            $rules['biDateOfPurchase'] = "required|date|date_format:Y-m-d|before_or_equal:$mNowDate";
+            $rules['transferModeId']   = "required";
+        }
         if (isset($this->assessmentType) && $this->assessmentType == 5) {
             $rules['holdingNoLists'] = "required|array";
             $rules['holdingNoLists.*'] = "required";
@@ -136,6 +141,7 @@ class reqApplySaf extends FormRequest
                 $rules["owner.*.isSpeciallyAbled"]    =   "required|bool";
             }
         }
+        dd($rules);
         return $rules;
     }
 

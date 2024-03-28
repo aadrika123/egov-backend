@@ -276,6 +276,11 @@ class ApplySafController extends Controller
                         'propDtl' => $propId
                     ]);
                     break;
+
+                case "Bifurcation":                                 // Bifurcation
+                    $req->dateOfPurchase = $req->biDateOfPurchase;
+                    $req->areaOfPlot     = $this->checkBifurcationCondition($property, $req);
+                    break;
             }
         }
 
@@ -299,6 +304,25 @@ class ApplySafController extends Controller
                 'holdingNo' => implode(",", $req->holdingNoLists)
             ]);
         }
+    }
+
+    /**
+     * | Check Bifurcation Condition
+     */
+    public function checkBifurcationCondition($propDtls, $activeSafReqs)
+    {
+        $mPropActiveSaf = new PropActiveSaf();
+        $propertyId = $propDtls->id;
+        $propertyPlotArea = $propDtls->area_of_plot;
+        $currentSafPlotArea = $activeSafReqs->bifurcatedPlot;
+        $activeSafDetail = $mPropActiveSaf->where('previous_holding_id', $propertyId)->where('assessment_type', 'Bifurcation')->where('status', 1)->get();
+        $activeSafPlotArea = collect($activeSafDetail)->sum('area_of_plot');
+        $newAreaOfPlot = $propertyPlotArea - $activeSafPlotArea;
+        if (($activeSafPlotArea + $currentSafPlotArea) > $propertyPlotArea)
+            throw new Exception("You have excedeed the plot area. Please insert plot area below " . $newAreaOfPlot);
+        if (($activeSafPlotArea + $currentSafPlotArea) == $propertyPlotArea)
+            throw new Exception("You Can't apply for Bifurcation. Please Apply Mutation.");
+        return $newAreaOfPlot;
     }
 
     /**
