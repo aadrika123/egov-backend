@@ -586,7 +586,7 @@ class SafCalculation
                     // $carbonDateUpto = Carbon::now()->endOfYear()->addMonths(3);           // Get The Full Financial Year
                     // $carbonDateUpto = $carbonDateUpto->format('Y-m-d');
 
-                     //changes by prity pandey
+                    //changes by prity pandey
                     $currentfyear = getFY();
                     $carbonDateUpto = explode("-", $currentfyear)[1] . "-03-31";
                     break;
@@ -595,7 +595,7 @@ class SafCalculation
                     // $carbonDateUpto = Carbon::now()->endOfYear()->addMonths(3);           // Get The Full Financial Year
                     // $carbonDateUpto = $carbonDateUpto->format('Y-m-d');
 
-                     //changes by prity pandey
+                    //changes by prity pandey
                     $currentfyear = getFY();
                     $carbonDateUpto = explode("-", $currentfyear)[1] . "-03-31";
                     break;
@@ -622,7 +622,7 @@ class SafCalculation
                 // $carbonDateUpto = $dateTo->endOfYear()->addMonths(3);           // Get The Full Financial Year
                 // $carbonDateUpto = $carbonDateUpto->format('Y-m-d');
 
-                 //changes by prity pandey
+                //changes by prity pandey
                 $currentfyear = getFY();
                 $carbonDateUpto = explode("-", $currentfyear)[1] . "-03-31";
             }
@@ -632,7 +632,7 @@ class SafCalculation
         }
 
         if (is_numeric($key)) {                                                 // i.e. Floors
-            $readDateFrom = $this->_propertyDetails['floor'][$key]['dateFrom'];
+            $readDateFrom = isset($this->_floors[$key]['biBuildupArea']) ? $this->_propertyDetails['biDateOfPurchase'] : $this->_floors[$key]['dateFrom'];
             $readDateUpto = $this->_propertyDetails['floor'][$key]['dateUpto'];
             $arrayRuleSet = [];
 
@@ -642,7 +642,7 @@ class SafCalculation
                 // $readDateUpto = Carbon::now()->endOfYear()->addMonths(3);           // Get The Full Financial Year
                 // $readDateUpto = $readDateUpto->format('Y-m-d');
 
-                 //changes by prity pandey
+                //changes by prity pandey
                 $currentfyear = getFY();
                 $readDateUpto = explode("-", $currentfyear)[1] . "-03-31";
             }
@@ -726,8 +726,8 @@ class SafCalculation
                     'floorNo' => $floorNo,
                     'useType' => $useType,
                     'constructionType' => $this->_floors[$key]['constructionType'],
-                    'buildupArea' => $this->_floors[$key]['buildupArea'],
-                    'dateFrom' => $this->_floors[$key]['dateFrom'],
+                    'buildupArea' => isset($this->_floors[$key]['biBuildupArea']) ?? $this->_floors[$key]['buildupArea'],
+                    'dateFrom' => isset($this->_floors[$key]['biBuildupArea']) ? $this->_propertyDetails['biDateOfPurchase'] : $this->_floors[$key]['dateFrom'],
                     'dateTo' => $this->_floors[$key]['dateUpto'],
                     'mFloorNo' => Config::get("PropertyConstaint.FLOOR-TYPE.$floorNo"),
                     'mUsageType' => Config::get("PropertyConstaint.USAGE-TYPE.$useType.TYPE"),

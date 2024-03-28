@@ -201,6 +201,8 @@ class ApplySafController extends Controller
                 $rEloquentAuthRepository = new EloquentAuthRepository();
                 $rEloquentAuthRepository->addNotification($mreq);
             }
+            // return $demandResponse;
+            // dd();
             DB::commit();
             DB::connection('pgsql_master')->commit();
             return responseMsgs(true, "Successfully Submitted Your Application Your SAF No. $safNo", [

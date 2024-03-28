@@ -44,7 +44,7 @@ class  PropActiveSaf extends Model
             'plot_no' => $req->plotNo,
             'village_mauja_name' => $req->villageMaujaName,
             'road_type_mstr_id' => $req->roadWidthType,
-            'area_of_plot' => $req->areaOfPlot,
+            'area_of_plot' => isset($req->bifurcatedPlot) ? $req->bifurcatedPlot : $req->areaOfPlot,
             'prop_address' => $req->propAddress,
             'prop_city' => $req->propCity,
             'prop_dist' => $req->propDist,
@@ -99,7 +99,8 @@ class  PropActiveSaf extends Model
             'landmark' => $req->landmark,
             'is_gb_saf' => isset($req->isGBSaf) ? $req->isGBSaf : false,
             'is_trust' => $req->isTrust ?? false,
-            'trust_type' => $req->trustType ?? null
+            'trust_type' => $req->trustType ?? null,
+            "bifurcated_from_plot_area" => isset($req->bifurcatedPlot) ? $req->areaOfPlot : null,
         ];
         $propActiveSafs = PropActiveSaf::create($reqs);                 // SAF No is Created Using Observer
         return response()->json([
@@ -188,7 +189,7 @@ class  PropActiveSaf extends Model
                 'prop_usage_type',
                 'zone',
                 'users.user_type as applied_by',
-
+                'bifurcated_from_plot_area',
             )
             ->leftjoin('ulb_masters', 'ulb_masters.id', '=', 'prop_active_safs.ulb_id')
             ->leftJoin('ulb_ward_masters as w', 'w.id', '=', 'prop_active_safs.ward_mstr_id')

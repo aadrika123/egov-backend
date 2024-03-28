@@ -202,7 +202,8 @@ class PropSaf extends Model
                 'a.apartment_name',
                 'building_type',
                 'prop_usage_type',
-                'zone'
+                'zone',
+                'bifurcated_from_plot_area'
             )
             ->leftJoin('ulb_ward_masters as w', 'w.id', '=', 'prop_safs.ward_mstr_id')
             ->leftJoin('wf_roles as wr', 'wr.id', '=', 'prop_safs.current_role')
