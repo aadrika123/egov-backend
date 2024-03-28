@@ -1747,10 +1747,10 @@ class WaterConsumer extends Controller
     {
         $request->validate([
             "consumerId"    => 'required',
-            "remarks"       => 'required',
-            "reason"        => 'required',
-            "mobileNo"      => 'required|numeric',
-            "address"       => 'required',
+            "remarks"       => 'required|string|max:255',
+            "reason"        => 'required|string|max:255',
+            "mobileNo"      => "required|digits:10|regex:/[0-9]{10}/",
+            "address"       => 'required|string|max:255',
 
         ]);
         try {
