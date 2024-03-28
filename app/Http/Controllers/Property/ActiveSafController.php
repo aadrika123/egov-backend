@@ -727,6 +727,14 @@ class ActiveSafController extends Controller
                 'headerTitle' => "Property Details",
                 'data' => $cardDetails
             ];
+            if ($data->assessment_type == 'Bifurcation') {
+                // Card Detail Format
+                $cardDetails = $this->generateBiCardDetails($data, $getOwnerDetails);
+                $cardElement = [
+                    'headerTitle' => "About Property",
+                    'data' => $cardDetails
+                ];
+            }
             $fullDetailsData['fullDetailsData']['cardArray'] = new Collection($cardElement);
             $data = json_decode(json_encode($data), true);
             $metaReqs['customFor'] = 'SAF';

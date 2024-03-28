@@ -160,8 +160,28 @@ trait SafDetailsTrait
             ['displayString' => 'Ownership Type', 'key' => 'ownershipType', 'value' => $req->ownership_type],
             ['displayString' => 'Application-Date', 'key' => 'applyDate', 'value' => Carbon::parse($req->application_date)->format('d-m-Y')],
             ['displayString' => 'Plot-Area(In Dismil)', 'key' => 'plotArea', 'value' => $req->area_of_plot],
-            ['displayString' => 'Water-Harvesting', 'key' => 'isWaterHarvesting', 'value' => ($req->is_water_harvesting == true) ? 'Yes' : 'No'],
-            ['displayString' => 'Hoarding-Board', 'key' => 'isHoardingBoard', 'value' => ($req->is_hoarding_board == true) ? 'Yes' : 'No']
+            ['displayString' => 'Is-Water-Harvesting', 'key' => 'isWaterHarvesting', 'value' => ($req->is_water_harvesting == true) ? 'Yes' : 'No'],
+            ['displayString' => 'Is-Hoarding-Board', 'key' => 'isHoardingBoard', 'value' => ($req->is_hoarding_board == true) ? 'Yes' : 'No']
+        ]);
+    }
+
+    /**
+     * | Generate Bifurcated Card Details
+     */
+    public function generateBiCardDetails($req, $ownerDetails)
+    {
+        $owners = collect($ownerDetails)->implode('owner_name', ',');
+        $data = new Collection([
+            ['displayString' => 'Ward No', 'key' => 'wardNo', 'value' => $req->old_ward_no],
+            ['displayString' => 'SAF No.', 'key' => 'safNo', 'value' => $req->saf_no],
+            ['displayString' => 'Owners', 'key' => 'ownerName', 'value' => $owners],
+            ['displayString' => 'Property Type', 'key' => 'propertyType', 'value' => $req->property_type],
+            ['displayString' => 'Assessment Type', 'key' => 'assessmentType', 'value' => $req->assessment_type],
+            ['displayString' => 'Ownership Type', 'key' => 'ownershipType', 'value' => $req->ownership_type],
+            ['displayString' => 'Plot-Area(In Dismil)', 'key' => 'plotArea', 'value' => $req->area_of_plot],
+            ['displayString' => 'Bifurcated From Plot Area(In Dismil)', 'key' => 'biPlotArea', 'value' => $req->bifurcated_from_plot_area],
+            ['displayString' => 'Is-Water-Harvesting', 'key' => 'isWaterHarvesting', 'value' => ($req->is_water_harvesting == true) ? 'Yes' : 'No'],
+            ['displayString' => 'Is-Hoarding-Board', 'key' => 'isHoardingBoard', 'value' => ($req->is_hoarding_board == true) ? 'Yes' : 'No'],
         ]);
     }
 
