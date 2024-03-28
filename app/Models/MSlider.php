@@ -60,4 +60,11 @@ class MSlider extends Model
         }
         return $message;
     }
+
+    public function getById($req)
+    {
+        $list = MSlider::where('id', $req->id)
+            ->first();
+        return $list;
+    }
 }
