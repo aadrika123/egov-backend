@@ -471,7 +471,7 @@ class ApplySafController extends Controller
 
             // Store Floors
             foreach ($reqFloors as $floor) {
-                $mPropFloors->addfloor($floor, $safId, $userId);
+                $mPropFloors->addfloor($floor, $safId, $userId, $req->assessmentType,);
             }
 
 

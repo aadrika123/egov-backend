@@ -117,9 +117,9 @@ class PropActiveSafsFloor extends Model
         //     $carpetArea =  $req['buildupArea'] * 0.80;
 
         if ($req['useType'] == 1)
-            $carpetArea =  (in_array($assessmentType, ['Bifurcation']) && isset($req['propFloorDetailId'])) ? ($req['biBuildupArea']* 0.70 ?? $req['buildupArea']* 0.70) : $req['buildupArea']* 0.70;
+            $carpetArea =  (in_array($assessmentType, ['Bifurcation']) && isset($req['propFloorDetailId'])) ? ($req['biBuildupArea'] * 0.70 ?? $req['buildupArea'] * 0.70) : $req['buildupArea'] * 0.70;
         else
-            $carpetArea =  (in_array($assessmentType, ['Bifurcation']) && isset($req['propFloorDetailId'])) ? ($req['biBuildupArea']* 0.70 ?? $req['buildupArea']* 0.70) : $req['buildupArea']* 0.80;
+            $carpetArea =  (in_array($assessmentType, ['Bifurcation']) && isset($req['propFloorDetailId'])) ? ($req['biBuildupArea'] * 0.70 ?? $req['buildupArea'] * 0.70) : $req['buildupArea'] * 0.80;
 
         $floor = new  PropActiveSafsFloor();
         $floor->saf_id = $safId;
@@ -130,9 +130,7 @@ class PropActiveSafsFloor extends Model
         // $floor->builtup_area = $req['buildupArea'] ?? null;
         $floor->builtup_area = (in_array($assessmentType, ['Bifurcation']) && isset($req['propFloorDetailId'])) ? ($req['biBuildupArea'] ?? $req['buildupArea']) : $req['buildupArea'];
         $floor->carpet_area = $carpetArea;
-        $floor->date_from = $req['dateFrom'] ?? null;
-        if ($assessmentType == "Bifurcation")
-            $floor->date_from = $biDateOfPurchase;
+        $floor->date_from = (in_array($assessmentType, ['Bifurcation']) && isset($req['propFloorDetailId'])) ? $biDateOfPurchase : $req['dateFrom'];
         $floor->date_upto = $req['dateUpto'] ?? null;
         $floor->prop_floor_details_id = $req['propFloorDetailId'] ?? null;
         $floor->user_id = $userId;
