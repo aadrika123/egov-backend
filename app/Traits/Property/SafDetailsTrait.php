@@ -139,8 +139,8 @@ trait SafDetailsTrait
                 $floorDetail->construction_type,
                 $floorDetail->builtup_area,
                 $floorDetail->bifurcated_from_buildup_area,
-                $floorDetail->date_from,
-                $floorDetail->date_upto
+                Carbon::parse($floorDetail->date_from)->format('d-m-Y'),
+                ($floorDetail->date_upto) ? Carbon::parse($floorDetail->date_upto)->format('d-m-Y') : ""
             ];
         });
     }
