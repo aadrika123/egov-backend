@@ -50,7 +50,7 @@ class ReqCitizenAddRecorde extends TradeRequest
             $rules["firmDetails.newWardNo"] = "required|digits_between:1,9223372036854775807";
             $rules["firmDetails.wardNo"] = "required|digits_between:1,9223372036854775807";
             $rules["firmDetails.tocStatus"] = "required|bool";
-            $rules["firmDetails.landmark"] = "regex:regex:/^[a-zA-Z0-9\s\.,\/-]+$/";
+            $rules["firmDetails.landmark"] = "required|regex:/^[a-zA-Z0-9\s\.,\/-]+$/";
             $rules["firmDetails.k_no"] = "digits|regex:/[0-9]{10}/";
             $rules["firmDetails.bind_book_no"] = "regex:$mRegex";
             $rules["firmDetails.account_no"] = "regex:$mRegex";
