@@ -2479,7 +2479,7 @@ class ActiveSafController extends Controller
                 $approveTrade = TradeLicence::select(
                     "trade_licences.*",
                     "owner.*",
-                    DB::raw("ulb_ward_masters.ward_name as ward_no")
+                    DB::raw("ulb_ward_masters.ward_name as ward_no,'trade_licences' AS approved_license")
                 )
                     ->leftjoin("ulb_ward_masters", "ulb_ward_masters.id", "=", "trade_licences.ward_id")
                     ->leftjoin(
@@ -2502,7 +2502,7 @@ class ActiveSafController extends Controller
                 $activetrade = ActiveTradeLicence::select(
                     "active_trade_licences.*",
                     "owner.*",
-                    DB::raw("ulb_ward_masters.ward_name as ward_no")
+                    DB::raw("ulb_ward_masters.ward_name as ward_no,'active_trade_licences' AS active_license")
                 )
                     ->leftjoin("ulb_ward_masters", "ulb_ward_masters.id", "=", "active_trade_licences.ward_id")
                     ->leftjoin(
@@ -2528,7 +2528,7 @@ class ActiveSafController extends Controller
                 $approveTrade = TradeLicence::select(
                     "trade_licences.*",
                     "owner.*",
-                    DB::raw("ulb_ward_masters.ward_name as ward_no")
+                    DB::raw("ulb_ward_masters.ward_name as ward_no,'trade_licences' AS approved_license")
                 )
                     ->leftjoin("ulb_ward_masters", "ulb_ward_masters.id", "=", "trade_licences.ward_id")
                     ->leftjoin(
@@ -2551,7 +2551,7 @@ class ActiveSafController extends Controller
                 $activetrade = ActiveTradeLicence::select(
                     "active_trade_licences.*",
                     "owner.*",
-                    DB::raw("ulb_ward_masters.ward_name as ward_no")
+                    DB::raw("ulb_ward_masters.ward_name as ward_no,'active_trade_licences' AS active_license")
                 )
                     ->leftjoin("ulb_ward_masters", "ulb_ward_masters.id", "=", "active_trade_licences.ward_id")
                     ->leftjoin(
