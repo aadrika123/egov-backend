@@ -1794,6 +1794,26 @@ class MasterReferenceController extends Controller
         }
     }
 
+    public function Assetesv2ById(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required'
+            ]);
+            $create = new MAsset();
+            $message = $create->getById($req);
+            $docUpload = new DocUpload();
+            $url = $message->asset_file ? ["doc_path" => trim(Config::get('module-constants.DOC_URL') . "/" . $message->asset_file)] : $docUpload->getSingleDocUrl($message);
+            $message->is_suspended = $message->status;
+            $message->asset_file = $url["doc_path"] ?? null;
+            //return $message;
+
+            return responseMsgs(true, "Assets List", $message, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
 
 
     #============================penalty type crud===========================
