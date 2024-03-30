@@ -334,9 +334,13 @@ class PropertyController extends Controller
                 $sms = "";
                 $req->merge(["propId" => $propertyId]);
                 $demand = $holdingTaxController->getHoldingDues($req);
-                if ($demand->original['status'] == true)
-                    $sms = "Please Clear The Previous Amount Of ₹" . $demand->original['data']['duesList']['payableAmount'] . " Before Applying The Application.";
-
+                if ($demand->original['status'] == true) {
+                    $demandDetails = $demand->original['data']['duesList'];
+                    // if (in_array($type, ['Bifurcation', 'Mutation']))
+                    //     $sms = "Please Clear The Due Amount Of ₹" . $demandDetails['payableAmount'] . " Before Applying The Application.";
+                    if ($demandDetails['dueFromFyear'] < getFY())
+                        $sms = "Please Clear The Arrear Amount Of ₹" . $demandDetails['payableAmount'] . " Before Applying The Application.";
+                }
                 if ($sms) {
                     $msg['inWorkflow'] = true;
                     $msg['message'] = $sms;

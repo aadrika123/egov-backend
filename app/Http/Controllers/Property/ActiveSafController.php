@@ -1641,6 +1641,38 @@ class ActiveSafController extends Controller
                 $floorDetail->delete();
             }
         }
+
+        if (in_array($activeSaf->assessment_type, ['Bifurcation'])) {
+            $propProperties = PropProperty::find($activeSaf->previous_holding_id);
+            if (!$propProperties)
+                throw new Exception("Old Property Not Found");
+
+            // Update Old Property Area of Plot
+            $newPropProperties = PropProperty::where('saf_id', $activeSaf->id)->where('status', 1)->first();
+            $propProperties->update(["area_of_plot" => $propProperties->area_of_plot + $newPropProperties->area_of_plot]);
+
+            // Update Floors
+            if ($activeSaf->prop_type_mstr_id != 4) {              // Not Applicable for Vacant Land
+                $mPropFloors = new PropFloor();
+
+                $propFloors = $mPropFloors
+                    ->where("property_id", $propProperties->id)
+                    ->where('status', 1)
+                    ->orderby('id')
+                    ->get();
+
+                foreach ($floorDetails as $floorDetail) {
+
+                    $propFloor =  collect($propFloors)->where('id', $floorDetail->prop_floor_details_id);
+                    $propFloor =  collect($propFloor)->first();
+                    if ($propFloor) {
+                        $propFloor->builtup_area = $propFloor->builtup_area + $floorDetail->builtup_area;
+                        $propFloor->carpet_area = $propFloor->carpet_area + $floorDetail->carpet_area;
+                        $propFloor->save();
+                    }
+                }
+            }
+        }
     }
 
     /**
