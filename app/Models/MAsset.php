@@ -57,4 +57,11 @@ class MAsset extends Model
         }
         return $message;
     }
+
+    public function getById($req)
+    {
+        $list = self::where('id', $req->id)
+            ->first();
+        return $list;
+    }
 }
