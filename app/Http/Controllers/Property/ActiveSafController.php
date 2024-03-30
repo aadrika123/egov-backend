@@ -1113,7 +1113,7 @@ class ActiveSafController extends Controller
                     $mPropMemoDtl->postSafMemoDtls($memoReqs);
 
                     $ifPropTaxExists = $mPropTax->getPropTaxesByPropId($propId);
-                    if ($ifPropTaxExists)
+                    if ($ifPropTaxExists->isNotEmpty())
                         $mPropTax->deactivatePropTax($propId);
                     $safTaxes = $mPropSafTax->getSafTaxesBySafId($saf->id)->toArray();
                     $mPropTax->replicateSafTaxes($propId, $safTaxes);
@@ -1336,6 +1336,45 @@ class ActiveSafController extends Controller
                     else
                         $mPropFloors->postFloor($floorReqs);
                 }
+            }
+        }
+
+        // Update in Case of Bifurcation
+        if (in_array($assessmentType, ['Bifurcation'])) {         // Update old Property In case of Bifurcation
+            $propProperties = PropProperty::find($activeSaf->previous_holding_id);
+            if (!$propProperties)
+                throw new Exception("Old Property Not Found");
+
+            // Update Old Property Area of Plot
+            $newPropProperties = PropProperty::find($this->_replicatedPropId);
+            $propProperties->update(["area_of_plot" => $propProperties->area_of_plot - $newPropProperties->area_of_plot]);
+
+            // Update Floors
+            if ($activeSaf->prop_type_mstr_id != 4) {              // Not Applicable for Vacant Land
+                $mPropFloors = new PropFloor();
+
+                $propFloors = $mPropFloors
+                    ->where("property_id", $propProperties->id)
+                    ->where('status', 1)
+                    ->orderby('id')
+                    ->get();
+
+                foreach ($floorDetails as $floorDetail) {
+
+                    $propFloor =  collect($propFloors)->where('id', $floorDetail->prop_floor_details_id);
+                    $propFloor =  collect($propFloor)->first();
+                    if ($propFloor) {
+                        $propFloor->builtup_area = $propFloor->builtup_area - $floorDetail->builtup_area;
+                        $propFloor->carpet_area = $propFloor->carpet_area - $floorDetail->carpet_area;
+                        if ($propFloor->builtup_area == 0)
+                            $propFloor->status = 0;
+                        $propFloor->save();
+                    }
+                }
+                $isNewFloorExist = collect($floorDetails)->whereNull('prop_floor_details_id');
+                $newPropFloors = $mPropFloors->getFloorsByPropId($propProperties->id);
+                if (collect($newPropFloors)->isEmpty())
+                    $propProperties->update(["prop_type_mstr_id" => 4]);
             }
         }
     }
