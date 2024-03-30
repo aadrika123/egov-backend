@@ -28,6 +28,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
+use App\Repository\Property\Interfaces\iSafRepository;
 
 /**
  * | Created On - 11-03-2023
@@ -37,6 +38,12 @@ use Illuminate\Support\Facades\Validator;
 
 class PropertyController extends Controller
 {
+    protected $_safRepo;
+    public function __construct(iSafRepository $safRepo)
+    {
+        $this->_safRepo = $safRepo;
+    }
+
     /**
      * | Send otp for caretaker property
      */
@@ -260,6 +267,7 @@ class PropertyController extends Controller
         }
 
         try {
+            $holdingTaxController = new HoldingTaxController($this->_safRepo);
             $type = $req->type;
             $propertyId = $req->propertyId;
 
@@ -307,15 +315,37 @@ class PropertyController extends Controller
                         ->first();
                     break;
             }
+
+            // if ($data) {
+            //     $msg['id'] = $data->id;
+            //     $msg['inWorkflow'] = true;
+            //     $msg['currentRole'] = $data->role_name;
+            //     $msg['message'] = "The application is still in workflow and pending at " . $data->role_name . ". Please Track your application with " . $data->application_no;
+            // } else
+            //     $msg['inWorkflow'] = false;
+
             if ($data) {
                 $msg['id'] = $data->id;
                 $msg['inWorkflow'] = true;
                 $msg['currentRole'] = $data->role_name;
-                $msg['message'] = "The application is still in workflow and pending at " . $data->role_name . ". Please Track your application with " . $data->application_no;
-            } else
-                $msg['inWorkflow'] = false;
+                $msg['message'] = "Your " . $data->assessment_type . " application is still in workflow and pending at " . $data->role_name . ". Please Track your application with " . $data->application_no;
+            } else {
 
-            return responseMsgs(true, 'Data Updated', $msg, '011705', '01', responseTime(), 'Post', '');
+                $sms = "";
+                $req->merge(["propId" => $propertyId]);
+                $demand = $holdingTaxController->getHoldingDues($req);
+                if ($demand->original['status'] == true)
+                    $sms = "Please Clear The Previous Amount Of ₹" . $demand->original['data']['duesList']['payableAmount'] . " Before Applying The Application.";
+
+                if ($sms) {
+                    $msg['inWorkflow'] = true;
+                    $msg['message'] = $sms;
+                } else {
+                    $msg['inWorkflow'] = false;
+                }
+            }
+
+            return responseMsgs(true, 'Data Checked', $msg, '011705', '01', responseTime(), 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "", '011705', '01', responseTime(), 'Post', '');
         }
@@ -411,49 +441,40 @@ class PropertyController extends Controller
             $request->all(),
             [
                 'propertyId' => 'required|numeric',
-                'citizenId'=> ($request->has("deactiveStatus") ? "required" : 'nullable'). '|numeric',
-                'deactiveStatus' =>($request->citizenId ? "required" : 'nullable'). '|boolean'
+                'citizenId' => ($request->has("deactiveStatus") ? "required" : 'nullable') . '|numeric',
+                'deactiveStatus' => ($request->citizenId ? "required" : 'nullable') . '|boolean'
             ]
         );
         if ($validated->fails()) {
             return validationError($validated);
         }
-        try{   
-                 
-        $propertyId = $request->propertyId;
-        $careTaker = ActiveCitizenUndercare::where('property_id', $propertyId)->get();
-        if($careTaker->isEmpty()){
-            throw new Exception("Invalid property id");
-        }
-        $citizenId = $careTaker->unique('citizen_id')->pluck("citizen_id");
-        
+        try {
 
-        if($citizenId  && (!$request->has("citizenID") && !$request->has("deactiveStatus")))
-        {
-            $citizenData = ActiveCitizen::whereIn('id', $citizenId)->get();
-                            
-            return responseMsgs(true, "Citizen data",$citizenData, "", "01", responseTime(), "POST", $request->deviceId);
-        }
-        elseif($request->citizenId ==null && $request->deactiveStatus ==null)
-        {
-            throw new Exception("Data not found");
-        }
-        elseif($request->propertyId && $request->citizenId && !$request->deactiveStatus){
-            DB::connection("pgsql_master")->beginTransaction();
-            ActiveCitizenUndercare::where('citizen_id', $request->citizenId)
-                                    ->where("property_id",$propertyId)
+            $propertyId = $request->propertyId;
+            $careTaker = ActiveCitizenUndercare::where('property_id', $propertyId)->get();
+            if ($careTaker->isEmpty()) {
+                throw new Exception("Invalid property id");
+            }
+            $citizenId = $careTaker->unique('citizen_id')->pluck("citizen_id");
+
+
+            if ($citizenId  && (!$request->has("citizenID") && !$request->has("deactiveStatus"))) {
+                $citizenData = ActiveCitizen::whereIn('id', $citizenId)->get();
+
+                return responseMsgs(true, "Citizen data", $citizenData, "", "01", responseTime(), "POST", $request->deviceId);
+            } elseif ($request->citizenId == null && $request->deactiveStatus == null) {
+                throw new Exception("Data not found");
+            } elseif ($request->propertyId && $request->citizenId && !$request->deactiveStatus) {
+                DB::connection("pgsql_master")->beginTransaction();
+                ActiveCitizenUndercare::where('citizen_id', $request->citizenId)
+                    ->where("property_id", $propertyId)
                     ->update(['deactive_status' => true]);
-            DB::connection("pgsql_master")->commit();
-            return responseMsgs(true, "citizen updated", "011706", "01", responseTime(), "POST", $request->deviceId); 
+                DB::connection("pgsql_master")->commit();
+                return responseMsgs(true, "citizen updated", "011706", "01", responseTime(), "POST", $request->deviceId);
+            }
+        } catch (Exception $e) {
+            DB::connection("pgsql_master")->rollBack();
+            return responseMsgs(false, $e->getMessage(), "", "011706", "01", responseTime(), "POST", $request->deviceId);
         }
-    
-    } catch (Exception $e) {
-        DB::connection("pgsql_master")->rollBack();
-        return responseMsgs(false, $e->getMessage(), "", "011706", "01", responseTime(), "POST", $request->deviceId);
     }
 }
-
-}
-
-
-
