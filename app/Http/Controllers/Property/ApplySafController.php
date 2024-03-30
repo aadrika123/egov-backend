@@ -281,8 +281,8 @@ class ApplySafController extends Controller
                     break;
 
                 case "Bifurcation":                                 // Bifurcation
-                    $req->dateOfPurchase = $req->biDateOfPurchase;
-                    $req->areaOfPlot     = $this->checkBifurcationCondition($property, $req);
+                    $req->landOccupationDate = $req->biDateOfPurchase;
+                    $req->areaOfPlot         = $this->checkBifurcationCondition($property, $req);
                     break;
             }
         }
