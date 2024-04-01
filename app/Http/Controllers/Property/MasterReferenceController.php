@@ -21,14 +21,14 @@ use App\Models\RefPropRebateType;
 use App\Models\RefPropTransferMode;
 use App\Models\RefPropUsageType;
 use App\Models\MSlider;
-use App\Models\property\MPropForgeryType;
-use App\Models\property\MPropCvRate;
-use App\Models\property\MCapitalValueRate;
-use App\Models\property\MPropBuildingRentalconst;
-use App\Models\property\MPropBuildingRentalrate;
-use App\Models\property\MPropMultiFactor;
-use App\Models\property\MPropRentalValue;
-use App\Models\property\MPropVacantRentalrate;
+use App\Models\Property\MPropForgeryType;
+use App\Models\Property\MPropCvRate;
+use App\Models\Property\MCapitalValueRate;
+use App\Models\Property\MPropBuildingRentalconst;
+use App\Models\Property\MPropBuildingRentalrate;
+use App\Models\Property\MPropMultiFactor;
+use App\Models\Property\MPropRentalValue;
+use App\Models\Property\MPropVacantRentalrate;
 use Illuminate\Support\Facades\Config;
 
 
