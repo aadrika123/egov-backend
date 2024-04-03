@@ -1778,7 +1778,7 @@ class ActiveSafController extends Controller
             if (collect($safDtls)->isEmpty())
                 throw new Exception("Saf Not Available");
 
-            if (in_array($safDtls->assessment_type, ['New Assessment', 'Reassessment', 'Re Assessment', 'Mutation']))
+            if (in_array($safDtls->assessment_type, ['New Assessment', 'Reassessment', 'Re Assessment', 'Mutation', 'Bifurcation']))
                 $req = $req->merge(['holdingNo' => $safDtls->holding_no]);
             $calculateSafById = new CalculateSafById;
             $demand = $calculateSafById->calculateTax($req);
