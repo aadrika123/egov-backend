@@ -20,7 +20,6 @@ class WaterPropertyTypeMstr extends Model
             'property_type',
             'status as is_suspended'
         )
-            ->where('status', 1)
             ->get();
     }
     #create 
@@ -41,7 +40,7 @@ class WaterPropertyTypeMstr extends Model
         )
             ->where('status', 1)
             ->where('id', $request->id)
-            ->get();
+            ->first();
     }
     #active or inactive
     public function activeDeactiveData($req)

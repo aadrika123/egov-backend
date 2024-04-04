@@ -40,7 +40,7 @@ class WaterParamPipelineType extends Model
         )
             ->where('status', 1)
             ->where('id', $request->id)
-            ->get();
+            ->first();
     }
     #active or inactive
     public function activeDeactiveData($req)
