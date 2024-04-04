@@ -21,10 +21,12 @@ use App\Models\Property\PropProperty;
 use App\Models\Property\PropSaf;
 use App\Models\Property\PropSafsOwner;
 use App\Models\Workflows\WfRoleusermap;
+use App\Pipelines\SearchApplication;
 use App\Repository\Property\Interfaces\iPropertyDetailsRepo;
 use Exception;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
+use Illuminate\Pipeline\Pipeline;
 use Illuminate\Support\Facades\DB;
 
 class PropertyDetailsController extends Controller
@@ -319,6 +321,25 @@ class PropertyDetailsController extends Controller
                         break;
                 }
             }
+
+            app()->bind('pipeline.key', function() use ($key) {
+                return $key;
+            });
+
+            // $approved = app(Pipeline::class)
+            //     ->send($approved)
+            //     ->through([
+            //         SearchApplication::class,
+            //     ])
+            //     ->thenReturn();
+
+            // $active = app(Pipeline::class)
+            //     ->send($active)
+            //     ->through([
+            //         SearchApplication::class,
+            //     ])
+            //     ->thenReturn();
+
             $details = $approved->union($active)->paginate($perPage);
 
             return responseMsgs(true, "Application Details", remove_null($details), "011301", "1.0", "", "POST", $request->deviceId ?? "");
@@ -419,7 +440,7 @@ class PropertyDetailsController extends Controller
                 $data = $data->where("prop_properties.zone_mstr_id", $request->zoneId);
 
             if ($request->wardId)
-                $data = $data->where("prop_properties.ward_mstr_id", $request->wardId);
+                $data = $data->where("prop_properties.new_ward_mstr_id", $request->wardId);
 
             if ($userType != 'Citizen')
                 $data = $data->where('prop_properties.ulb_id', $ulbId);
