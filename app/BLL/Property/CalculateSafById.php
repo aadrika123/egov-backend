@@ -155,6 +155,10 @@ class CalculateSafById
         // Building Case
         if ($this->_safDetails['prop_type_mstr_id'] != 4) {
             $floors = $this->_mPropActiveSafFloors->getSafFloorsBySafId($this->_safId);
+
+            if ($this->_safDetails['assessment_type'] == 'Bifurcation') 
+                $floors = collect($floors)->whereNull('prop_floor_details_id');
+            
             foreach ($floors as $floor) {
                 $floorReq = [
                     "floorNo" => $floor['floor_mstr_id'],
@@ -276,7 +280,7 @@ class CalculateSafById
             $this->_generatedDemand['demand']['isPayable'] = false;
         else
             $this->_generatedDemand['demand']['isPayable'] = true;
-        
+
         if (in_array($this->_safDetails['assessment_type'], ['Reassessment', 'Re Assessment', 'Mutation', 'Bifurcation']))
             $this->_generatedDemand['demand']['isPayable'] = true;
     }
