@@ -1396,7 +1396,7 @@ class MasterReferenceController extends Controller
     public function allMPropMultiFactorList(Request $req)
     {
         try {
-            $list = new MPropRentalValue();
+            $list = new MPropMultiFactor();
             $masters = $list->listMPropMultiFactor();
 
             return responseMsgs(true, "All Prop Multi Factor List", $masters, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
