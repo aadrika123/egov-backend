@@ -2157,7 +2157,7 @@ class WaterPaymentController extends Controller
 
             $offlinePaymentModes = Config::get('payment-constants.VERIFICATION_PAYMENT_MODES');
             $activeConRequest = $mWaterConsumerActiveRequest->getActiveReqById($applicatinId)
-                ->where('payment_status', 0)
+                ->where('payment_status', null)
                 ->first();
             if (!$activeConRequest) {
                 throw new Exception("Application details not found!");
@@ -2176,14 +2176,14 @@ class WaterPaymentController extends Controller
             $chargeCatagory = $this->checkConReqPayment($activeConRequest);
 
             $this->begin();
-            $tranNo = $idGeneration->generateTransactionNo($user->ulb_id);
+            $tranNo = $idGeneration->generateTransactionNo($activeConRequest->ulb_id);
             $request->merge([
                 'userId'            => $user->id,
                 'userType'          => $user->user_type,
                 'todayDate'         => $todayDate->format('Y-m-d'),
                 'tranNo'            => $tranNo,
                 'id'                => $applicatinId,
-                'ulbId'             => $user->ulb_id,
+                'ulbId'             => $activeConRequest->ulb_id,
                 'chargeCategory'    => $chargeCatagory['chargeCatagory'],                                 // Static
                 'isJsk'             => true,
                 'amount'            => $activeConsumercharges->amount,
@@ -2272,7 +2272,7 @@ class WaterPaymentController extends Controller
                 'bank_name'         => $req['bankName'],
                 'tran_date'         => $req['todayDate'],
                 'user_id'           => $req['userId'],
-                'ulb_id'            => $req['ulbId'],
+               // 'ulb_id'            => $req['ulbId'],
                 'ward_no'           => $req['ward_no']
             ];
             $mTempTransaction->tempTransaction($tranReqs);

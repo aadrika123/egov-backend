@@ -125,11 +125,17 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
 
         # Deactivation // Arshad
         Route::post('apply-water-disconnection', 'applyWaterDisconnection');                //<----remove
-        Route::post('admin/consumer/apply-deactivation', 'applyDeactivation');                              // Admin / Not Used
         Route::post('admin/consumer/demand-deactivation', 'consumerDemandDeactivation');    // Here         // Admin / Not used
 
         # Ferrul Cleaning and Pipe shifting // Arshad
         Route::post('applywater-ferule-cleaning', 'applyConsumerRequest');                  //<---- cheange the route name Admin / Citizen
+
+        //written by Prity Pandey
+        Route::post('admin/consumer/apply-deactivation', 'applyDeactivation');  
+        Route::post('get_consumer_details_by_id', 'getByApplicationId');
+        Route::post('consumer_doc_upload', 'uploadWaterDocForDeactivation');  
+        Route::post('get/consumer_doc', 'getDocList'); 
+        Route::post('applicant/search', 'searchApplication'); 
     });
 
 
@@ -140,16 +146,20 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
      */
     Route::controller(WaterConsumerWfController::class)->group(function () {
         # Workflow 
+        //modified by prity pandey
         Route::post('consumer/req/inbox', 'consumerInbox');                                         // Workflow
         Route::post('consumer/req/outbox', 'consumerOutbox');                                       // Workflow
-        Route::post('consumer/req/post-next-level', 'consumerPostNextLevel');                       // Here
         Route::post('consumer/req/list-req-docs', 'listDocToUpload');                               // Here
         Route::post('consumer/req/get-worklfow-by-id', 'getWorkflow');                       // Here
-        Route::post('consumer/req/approval-rejection', 'consumerApprovalRejection');                // Here
 
         # Consuemr Request View Api // Arshad
         Route::post('get-details-applications', 'getConApplicationDetails');                        // Admin / Changes             
         Route::post('get-details-disconnections', 'getRequestedApplication');                       // Citizen / Changes the route name
+        Route::post('consumer/req/approval-rejection', 'consumerApprovalRejection');
+        //written by prity pandey 
+        Route::post('doc-verify-reject', 'docVerifyRejects');
+        Route::post('consumer/req/post-next-level', 'consumerPostNextLevel');
+        Route::post('consumer/req/approval-rejection', 'consumerDeactivationApprovalRejection');
     });
 
     /**

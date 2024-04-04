@@ -8,6 +8,7 @@ use App\Models\UlbWardMaster;
 use App\Models\Water\WaterConsumerActiveRequest;
 use App\Models\Water\WaterConsumerOwner;
 use App\Models\Water\WaterSiteInspection;
+use App\Models\Workflows\WfActiveDocument;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\Workflows\WfWorkflowrolemap;
@@ -115,16 +116,16 @@ class WaterConsumerWfController extends Controller
 
             $inboxDetails = $this->getConsumerWfBaseQuerry($workflowIds, $ulbId)
                 ->whereIn('water_consumer_active_requests.current_role', $roleId)
-                ->whereIn('water_consumer_active_requests.ward_mstr_id', $occupiedWards)
+               // ->whereIn('water_consumer_active_requests.ward_mstr_id', $occupiedWards)
                 ->where('water_consumer_active_requests.is_escalate', false)
                 ->where('water_consumer_active_requests.parked', false)
                 ->orderByDesc('water_consumer_active_requests.id')
                 ->paginate($pages);
 
-            $isDataExist = collect($inboxDetails)->last();
-            if (!$isDataExist || $isDataExist == 0) {
-                throw new Exception('Data not Found!');
-            }
+            // $isDataExist = collect($inboxDetails)->last();
+            // if (!$isDataExist || $isDataExist == 0) {
+            //     throw new Exception('Data not Found!');
+            // }
             return responseMsgs(true, "Successfully listed consumer req inbox details!", $inboxDetails, "", "01", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], '', '01', responseTime(), "POST", $req->deviceId);
@@ -275,7 +276,7 @@ class WaterConsumerWfController extends Controller
 
         DB::beginTransaction();
         if ($req->action == 'forward') {
-            // $this->checkPostCondition($req->senderRoleId, $wfLevels, $waterConsumerActive);            // Check Post Next level condition
+            $this->checkRequestPostCondition($req->senderRoleId, $wfLevels, $waterConsumerActive);            // Check Post Next level condition
             if ($waterConsumerActive->current_role == $wfLevels['JE']) {
                 $waterConsumerActive->is_field_verified = true;
             }
@@ -317,6 +318,46 @@ class WaterConsumerWfController extends Controller
     }
 
     public function checkPostCondition($senderRoleId, $wfLevels, $application)
+    {
+        $mWaterSiteInspection = new WaterSiteInspection();
+
+        $refRole = Config::get("waterConstaint.ROLE-LABEL");
+        switch ($senderRoleId) {
+            case $wfLevels['DA']:                                                                       // DA Condition
+                if ($application->payment_status != 1)
+                    throw new Exception("payment Not Fully paid");
+                break;
+            case $wfLevels['JE']:                                                                       // JE Coditon in case of site adjustment
+                if ($application->doc_status == false || $application->payment_status != 1)
+                    throw new Exception("Document Not Fully Verified or Payment in not Done!");
+                if ($application->doc_upload_status == false) {
+                    throw new Exception("Document Not Fully Uploaded");
+                }
+                $siteDetails = $mWaterSiteInspection->getSiteDetails($application->id)
+                    ->where('order_officer', $refRole['JE'])
+                    ->where('payment_status', 1)
+                    ->first();
+                if (!$siteDetails) {
+                    throw new Exception("Site Not Verified!");
+                }
+                break;
+            case $wfLevels['SH']:                                                                       // SH conditional checking
+                if ($application->doc_status == false || $application->payment_status != 1)
+                    throw new Exception("Document Not Fully Verified or Payment in not Done!");
+                if ($application->doc_upload_status == false || $application->is_field_verified == false) {
+                    throw new Exception("Document Not Fully Uploaded or site inspection not done!");
+                }
+                break;
+            case $wfLevels['AE']:                                                                       // AE conditional checking
+                if ($application->payment_status != 1)
+                    throw new Exception(" Payment in not Done!");
+
+                break;
+        }
+    }
+
+
+    public function checkRequestPostCondition($senderRoleId, $wfLevels, $application)
     {
         $mWaterSiteInspection = new WaterSiteInspection();
 
@@ -406,32 +447,12 @@ class WaterConsumerWfController extends Controller
             $mWaterConsumerActive->finalRejectionOfAppication($request);
             $msg = "Application Successfully Rejected !!";
         }
+
+
         return responseMsgs(true, $msg, $request ?? "Empty", '', 01, '.ms', 'Post', $request->deviceId);
     }
-    /**
-     * function for check pre condition for 
-     * approval and reject 
-     */
 
-    public function preApprovalConditionCheck($request, $roleId)
-    {
-        $waterDetails = WaterConsumerActiveRequest::find($request->applicationId);
-        if ($waterDetails->finisher != $roleId) {
-            throw new Exception("You're Not the finisher ie. AE!");
-        }
-        if ($waterDetails->current_role != $roleId) {
-            throw new Exception("Application has not Reached to the finisher ie. AE!");
-        }
-
-        // if ($waterDetails->payment_status != 1) {
-        //     throw new Exception("Payment Not Done or not verefied!");
-        // }
-        // if ($waterDetails->is_field_verified == 0) {
-        //     throw new Exception("Field Verification Not Done!!");
-        // }
-        // $this->checkDataApprovalCondition($request, $roleId, $waterDetails);   // Reminder
-        return $waterDetails;
-    }
+    
     /**
      * get all applications details by id from workflow
      |working ,not completed
@@ -581,5 +602,178 @@ class WaterConsumerWfController extends Controller
                 $value['district']
             ];
         });
+    }
+    
+    //written by prity pandey
+    public function docVerifyRejects(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'id'            => 'required|digits_between:1,9223372036854775807',
+                'applicationId' => 'required|digits_between:1,9223372036854775807',
+                'docRemarks'    =>  $req->docStatus == "Rejected" ? 'required|regex:/^[a-zA-Z1-9][a-zA-Z1-9\. \s]+$/' : "nullable",
+                'docStatus'     => 'required|in:Verified,Rejected'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+        try {
+            # Variable Assignments
+            $mWfDocument        = new WfActiveDocument();
+            $mWaterApplication  = new WaterConsumerActiveRequest();
+            $mWfRoleusermap     = new WfRoleusermap();
+            $wfDocId            = $req->id;
+            $applicationId      = $req->applicationId;
+            $userId             = authUser($req)->id;
+            $wfLevel            = Config::get('waterConstaint.ROLE-LABEL');
+
+            # validating application
+            $waterApplicationDtl = $mWaterApplication->getApplicationById($applicationId)
+                ->firstOrFail();
+            if (!$waterApplicationDtl || collect($waterApplicationDtl)->isEmpty())
+                throw new Exception("Application Details Not Found");
+
+            # validating roles
+            $waterReq = new Request([
+                'userId'        => $userId,
+                'workflowId'    => $waterApplicationDtl['workflow_id']
+            ]);
+            $senderRoleDtls = $mWfRoleusermap->getRoleByUserWfId($waterReq);
+            if (!$senderRoleDtls || collect($senderRoleDtls)->isEmpty())
+                throw new Exception("Role Not Available");
+
+            # validating role for DA
+            $senderRoleId = $senderRoleDtls->wf_role_id;
+            if ($senderRoleId != $wfLevel['DA'])                                    // Authorization for Dealing Assistant Only
+                throw new Exception("You are not Authorized");
+
+            # validating if full documet is uploaded
+            $ifFullDocVerified = $this->ifFullDocVerified($applicationId);          // (Current Object Derivative Function 0.1)
+            if ($ifFullDocVerified == 1)
+                throw new Exception("Document Fully Verified");
+
+            $this->begin();
+            if ($req->docStatus == "Verified") {
+                $status = 1;
+            }
+            if ($req->docStatus == "Rejected") {
+                # For Rejection Doc Upload Status and Verify Status will disabled 
+                $status = 2;
+                // $waterApplicationDtl->doc_upload_status = 0;
+                $waterApplicationDtl->doc_status = 0;
+                $waterApplicationDtl->save();
+            }
+            $reqs = [
+                'remarks'           => $req->docRemarks,
+                'verify_status'     => $status,
+                'action_taken_by'   => $userId
+            ];
+            $mWfDocument->docVerifyReject($wfDocId, $reqs);
+            if ($req->docStatus == 'Verified')
+                $ifFullDocVerifiedV1 = $this->ifFullDocVerified($applicationId);
+            else
+                $ifFullDocVerifiedV1 = 0;
+
+            if ($ifFullDocVerifiedV1 == 1) {                                        // If The Document Fully Verified Update Verify Status
+                $mWaterApplication->updateAppliVerifyStatus($applicationId);
+            }
+            $this->commit();
+            return responseMsgs(true, $req->docStatus . " Successfully", "", "010204", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            $this->rollback();
+            return responseMsgs(false, $e->getMessage(), "", "010204", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
+    public function ifFullDocVerified($applicationId)
+    {
+        $mWaterApplication = new WaterConsumerActiveRequest();
+        $mWfActiveDocument = new WfActiveDocument();
+        $refapplication = $mWaterApplication->getApplicationById($applicationId)
+            ->firstOrFail();
+
+        $refReq = [
+            'activeId'      => $applicationId,
+            'workflowId'    => $refapplication['workflow_id'],
+            'moduleId'      => Config::get('module-constants.WATER_MODULE_ID')
+        ];
+
+        $req = new Request($refReq);
+        $refDocList = $mWfActiveDocument->getDocsByActiveId($req);
+        $ifPropDocUnverified = $refDocList->contains('verify_status', 0);
+        if ($ifPropDocUnverified == true)
+            return 0;
+        else
+            return 1;
+    }
+
+    //written by prity pandey
+    public function consumerDeactivationApprovalRejection(Request $request)
+    {
+        $request->validate([
+            "applicationId" => "required",
+            "status"        => "required",
+            "comment"       => "required"
+        ]);
+        try {
+            $mWfRoleUsermap = new WfRoleusermap();
+            $waterDetails = WaterConsumerActiveRequest::find($request->applicationId);
+
+            # check the login user is AE or not
+            $userId = authUser($request)->id;
+            $workflowId = $waterDetails->workflow_id;
+            $getRoleReq = new Request([                                                 // make request to get role id of the user
+                'userId' => $userId,
+                'workflowId' => $workflowId
+            ]);
+            $readRoleDtls = $mWfRoleUsermap->getRoleByUserWfId($getRoleReq);
+            $roleId = $readRoleDtls->wf_role_id;
+            if ($roleId != $waterDetails->finisher) {
+                throw new Exception("You are not the Finisher!");
+            }
+            DB::beginTransaction();
+            $this->approvalRejectionDeactivation($request, $roleId);
+            DB::commit();
+            return responseMsg(true, "Request approved/rejected successfully", "");;
+        } catch (Exception $e) {
+            // DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    public function approvalRejectionDeactivation($request, $roleId)
+    {
+
+        $mWaterConsumerActive  =  new WaterConsumerActiveRequest();
+        $this->preApprovalConditionCheck($request, $roleId);
+
+        # Approval of water application 
+        if ($request->status == 1) {
+
+            $mWaterConsumerActive->status = 2;
+            $mWaterConsumerActive->save();
+            $msg = "Application Successfully Approved !!";
+        }
+        # Rejection of water application
+        if ($request->status == 0) {
+            $mWaterConsumerActive->status = 0;
+            $mWaterConsumerActive->save();
+            $msg = "Application Successfully Rejected !!";
+        }
+        return responseMsgs(true, $msg, $request ?? "Empty", '', 01, '.ms', 'Post', $request->deviceId);
+    }
+   
+
+    public function preApprovalConditionCheck($request, $roleId)
+    {
+        $waterDetails = WaterConsumerActiveRequest::find($request->applicationId);
+        if ($waterDetails->finisher != $roleId) {
+            throw new Exception("You're Not the finisher ie. AE!");
+        }
+        if ($waterDetails->current_role != $roleId) {
+            throw new Exception("Application has not Reached to the finisher ie. AE!");
+        }
+        return $waterDetails;
     }
 }

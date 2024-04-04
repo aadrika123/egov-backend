@@ -191,7 +191,7 @@ class WfActiveDocument extends Model
                 'd.doc_code',
                 'd.doc_category',
                 'd.status',
-                'o.applicant_name as owner_name',
+               'o.applicant_name as owner_name',
                 'unique_id',
                 'reference_no',
             )
@@ -202,6 +202,32 @@ class WfActiveDocument extends Model
             ->where('d.status', '!=', 0)
             ->get();
     }
+
+    //prity pandey
+    public function getConsumerDocsByAppNo($applicationId, $workflowId, $moduleId)
+    {
+        $secondConnection = 'pgsql_water';
+        return DB::connection($secondConnection)
+            ->table('wf_active_documents as d')
+            ->select(
+                'd.id',
+                'd.document',
+                DB::raw("concat(relative_path,'/',document) as ref_doc_path"),
+                'd.remarks',
+                'd.verify_status',
+                'd.doc_code',
+                'd.doc_category',
+                'd.status',
+                'unique_id',
+                'reference_no',
+            )
+            ->where('d.active_id', $applicationId)
+            ->where('d.workflow_id', $workflowId)
+            ->where('d.module_id', $moduleId)
+            ->where('d.status', '!=', 0)
+            ->get();
+    }
+
 
     public function getTradeDocByAppNo($applicationId, $workflowId, $moduleId)
     {
@@ -312,7 +338,7 @@ class WfActiveDocument extends Model
      */
     public function getDocByRefIds($activeId, $workflowId, $moduleId)
     {
-        $docUrl = Config::get('module-constants.DOC_URL');
+        $docUrl = Config::get('module-constants.DMS_URL');
         return WfActiveDocument::select(
             DB::raw("concat('$docUrl/',relative_path,'/',document) as doc_path"),
             // DB::raw("concat(relative_path,'/',document) as doc_path"),
