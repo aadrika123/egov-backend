@@ -363,9 +363,13 @@ class WaterConsumerWfController extends Controller
 
         $refRole = Config::get("waterConstaint.ROLE-LABEL");
         switch ($senderRoleId) {
+            case $wfLevels['BO']:                                                                       // DA Condition
+                if ($application->doc_upload_status != true)
+                    throw new Exception("document not fully uploaded");
+                break;
             case $wfLevels['DA']:                                                                       // DA Condition
-                if ($application->payment_status != 1)
-                    throw new Exception("payment Not Fully paid");
+                if ($application->doc_verify_status != true)
+                    throw new Exception("document not fully verified");
                 break;
             case $wfLevels['JE']:                                                                       // JE Coditon in case of site adjustment
                 if ($application->doc_status == false || $application->payment_status != 1)
@@ -661,7 +665,7 @@ class WaterConsumerWfController extends Controller
                 # For Rejection Doc Upload Status and Verify Status will disabled 
                 $status = 2;
                 // $waterApplicationDtl->doc_upload_status = 0;
-                $waterApplicationDtl->doc_status = 0;
+                $waterApplicationDtl->doc_verify_status = 0;
                 $waterApplicationDtl->save();
             }
             $reqs = [

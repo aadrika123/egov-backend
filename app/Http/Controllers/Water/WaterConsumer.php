@@ -1849,7 +1849,7 @@ class WaterConsumer extends Controller
             return validationError($validated);
 
         try {
-            $user                           = authUser($request);
+            $user                           = authUser($request);return ($request->all());
             $refRequest                     = array();
             $ulbWorkflowObj                 = new WfWorkflow();
             $mWorkflowTrack                 = new WorkflowTrack();
@@ -2043,7 +2043,7 @@ class WaterConsumer extends Controller
             //     'consumerData' => $response['data']
             // ];
 
-            $data = WaterConsumerActiveRequest::select('water_consumer_active_requests.*','water_consumers.*','water_consumer_owners.*')
+            $data = WaterConsumerActiveRequest::select('water_consumer_active_requests.*', 'water_consumers.*', 'water_consumer_owners.*')
                 ->leftjoin('water_consumers', 'water_consumers.id', 'water_consumer_active_requests.consumer_id')
                 ->leftjoin('water_consumer_owners', 'water_consumer_owners.consumer_id', 'water_consumers.id')
                 ->join('ulb_ward_masters AS uwm', 'uwm.id', 'water_consumer_active_requests.ward_mstr_id')
@@ -2091,60 +2091,27 @@ class WaterConsumer extends Controller
     {
         $mWfActiveDocument  = new WfActiveDocument();
         $docUpload = new DocUpload;
-        $applicationId      = $refWaterApplication->id;
+        $applicationId = $refWaterApplication->id;
+        // Check if $refWaterApplication is an array
+        // if (is_array($refWaterApplication)) {
+        //     // Iterate through the array elements
+        //     foreach ($refWaterApplication as $item) {
+        //         // Check if the current element has the property 'id' or 'active_id'
+        //         if (isset($item['id']) || isset($item['active_id'])) {
+        //             // Use the first available ID and break the loop
+        //             $applicationId = $item['id'] ?? $item['active_id'];
+        //             break;
+        //         }
+        //     }
+        // } else {
+        //     // If $refWaterApplication is not an array, directly access its properties
+        //     $applicationId = $refWaterApplication->id ?? $refWaterApplication->active_id;
+        // }
+
         $workflowId         = $refWaterApplication->workflow_id;
         $moduleId           = Config::get('module-constants.WATER_MODULE_ID');
         $uploadedDocs       = $mWfActiveDocument->getDocByRefIds($applicationId, $workflowId, $moduleId);
         $uploadedDocs = $docUpload->getDocUrl($uploadedDocs);           #_Calling BLL for Document Path from DMS
-        // $explodeDocs = collect(explode('#', $documentList))->filter();
-        // $filteredDocs = $explodeDocs->map(function ($explodeDoc) use ($uploadedDocs, $ownerId) {
-        //     $document = explode(',', $explodeDoc);
-        //     $key = array_shift($document);
-        //     $docName =  array_shift($document);
-        //     $docName = str_replace("{", "", str_replace("}", "", $docName));
-        //     $documents = collect();
-        //     collect($document)->map(function ($item) use ($uploadedDocs, $documents, $ownerId, $docName) {
-        //         //$docUpload = new DocUpload();
-        //         $uploadedDoc = $uploadedDocs->where('doc_code', $docName)
-        //             ->where('owner_dtl_id', $ownerId)
-        //             ->first();
-        //         if ($uploadedDoc) {
-        //             // $uploadedDoc->reference_no = "REF1694609691049";
-        //             //$api = $docUpload->getSingleDocUrl($uploadedDoc);
-        //             $response = [
-        //                 //"api" => $api ?? "",
-        //                 "uploadedDocId" => $uploadedDoc->id ?? "",
-        //                 "documentCode" => $item,
-        //                 "ownerId" => $uploadedDoc->owner_dtl_id ?? "",
-        //                  "docPath" => $uploadedDoc->doc_path ?? "",
-        //                 //"docPath" => $api["doc_path"] ?? "",
-        //                 "verifyStatus" => $uploadedDoc->verify_status ?? "",
-        //                 "remarks" => $uploadedDoc->remarks ?? "",
-        //             ];
-        //             $documents->push($response);
-        //         }
-        //     });
-        //     $reqDoc['docType'] = $key;
-        //     $reqDoc['docName'] = $docName;
-        //     $reqDoc['uploadedDoc'] = $documents->first();
-
-        //     $reqDoc['masters'] = collect($document)->map(function ($doc) use ($uploadedDocs) {
-        //         $uploadedDoc = $uploadedDocs->where('doc_code', $doc)->first();
-        //         $strLower = strtolower($doc);
-        //         $strReplace = str_replace('_', ' ', $strLower);
-        //         $arr = [
-        //             "documentCode" => $doc,
-        //             "docVal" => ucwords($strReplace),
-        //             "uploadedDoc" => $uploadedDoc->doc_path ?? "",
-        //             "uploadedDocId" => $uploadedDoc->id ?? "",
-        //             "verifyStatus'" => $uploadedDoc->verify_status ?? "",
-        //             "remarks" => $uploadedDoc->remarks ?? "",
-        //         ];
-        //         return $arr;
-        //     });
-        //     return $reqDoc;
-        // });
-        // return collect($filteredDocs)->values() ?? [];    
         $explodeDocs = collect(explode('#', $documentList));
         $filteredDocs = $explodeDocs->map(function ($explodeDoc) use ($uploadedDocs, $ownerId, $documentList) {
 
@@ -2304,10 +2271,12 @@ class WaterConsumer extends Controller
     public function getRequestDocLists($application)
     {
         $mRefReqDocs    = new RefRequiredDocument();
+        $mWaterApplication  = new WaterConsumerActiveRequest();
+        $refWaterApplication = $mWaterApplication->getApplicationById($application)->first();
         $moduleId       = Config::get('module-constants.WATER_MODULE_ID');
         $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "LAST_PAYMENT_RECEIPT")->requirements;
 
-        if (!$application->citizen_id)         // Holding No, SAF No // Static
+        if (!$refWaterApplication->citizen_id)         // Holding No, SAF No // Static
         {
             $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "DISCONNECTION_APPLICATION_FORM")->requirements;
         }
@@ -2400,14 +2369,17 @@ class WaterConsumer extends Controller
                 }
             }
             // #check full doc upload
-            // $refCheckDocument = $this->checkFullDocUpload($req);
+            $refCheckDocument = $this->checkFullDocUpload($applicationId);
 
-            // # Update the Doc Upload Satus in Application Table
-            // if ($refCheckDocument->contains(false)) {
-            //     $mWaterApplication->deactivateUploadStatus($applicationId);
-            // } else {
-            //     $mWaterApplication->activateUploadStatus($req, $getWaterDetails);
-            // }
+            # Update the Doc Upload Satus in Application Table
+
+            if ($refCheckDocument == 1) {                                        // Doc Upload Status Update
+                $getWaterDetails->doc_upload_status = 1;
+                if ($getWaterDetails->parked == true)                                // Case of Back to Citizen
+                    $getWaterDetails->parked = false;
+
+                $getWaterDetails->save();
+            }
 
             $this->commit();
             return responseMsgs(true, "Document Uploadation Successful", "", "", "1.0", "", "POST", $req->deviceId ?? "");
@@ -2531,23 +2503,23 @@ class WaterConsumer extends Controller
     }
 
 
-    public function checkFullDocUpload($req)
-    {
-        # Check the Document upload Status
-        $documentList = $this->getDocList($req);
-        $refDoc = collect($documentList)['original']['data'];
-        $checkDocument = collect($refDoc)->map(function ($value, $key) {
-            if ($value['isMadatory'] == 1) {
-                $doc = collect($value['uploadDoc'])->first();
-                if (is_null($doc) || $value['uploadDoc']['verify_status'] == 2) {
-                    return false;
-                }
-                return true;
-            }
-            return true;
-        });
-        return $checkDocument;
-    }
+    // public function checkFullDocUpload($req)
+    // {
+    //     # Check the Document upload Status
+    //     $documentList = $this->getDocList($req);
+    //     $refDoc = collect($documentList)['original']['data'];
+    //     $checkDocument = collect($refDoc)->map(function ($value, $key) {
+    //         if ($value['isMadatory'] == 1) {
+    //             $doc = collect($value['uploadDoc'])->first();
+    //             if (is_null($doc) || $value['uploadDoc']['verify_status'] == 2) {
+    //                 return false;
+    //             }
+    //             return true;
+    //         }
+    //         return true;
+    //     });
+    //     return $checkDocument;
+    // }
     // public function deactivationPayment(Request $request)
     // {
     //     try {
@@ -2600,6 +2572,52 @@ class WaterConsumer extends Controller
     //     }
     // }
 
+    public function checkFullDocUpload($applicationId)
+    {
+        $mWaterApplication  = new WaterConsumerActiveRequest();
+        $mWfActiveDocument = new WfActiveDocument();
+        $waterDetails = $mWaterApplication->getApplicationById($applicationId)->first();
+        $waterDetails = [
+            'activeId' => $applicationId,
+            'workflowId' => $waterDetails->workflow_id,
+            'moduleId' => 2
+        ];
+        $req = new Request($waterDetails);
+        $refDocList = $mWfActiveDocument->getDocsByActiveId($req);
+        return $this->isAllDocs($applicationId, $refDocList, $waterDetails);
+    }
 
-    
+    public function isAllDocs($applicationId, $refDocList, $refSafs)
+    {
+        $docList = array();
+        $verifiedDocList = array();
+        $waterListDocs = $this->getRequestDocLists($refSafs);
+        $docList['waterDocs'] = explode('#', $waterListDocs);
+        $verifiedDocList['waterDocs'] = $refDocList->values();
+        $collectUploadDocList = collect();
+        collect($verifiedDocList['waterDocs'])->map(function ($item) use ($collectUploadDocList) {
+            return $collectUploadDocList->push($item['doc_code']);
+        });
+        $mwaterDocs = collect($docList['waterDocs']);
+        // water List Documents
+        $flag = 1;
+        foreach ($mwaterDocs as $item) {
+            $explodeDocs = explode(',', $item);
+            array_shift($explodeDocs);
+            foreach ($explodeDocs as $explodeDoc) {
+                $changeStatus = 0;
+                if (in_array($explodeDoc, $collectUploadDocList->toArray())) {
+                    $changeStatus = 1;
+                    break;
+                }
+            }
+            if ($changeStatus == 0) {
+                $flag = 0;
+                break;
+            }
+        }
+
+        if ($flag == 0)
+            return 0;
+    }
 }
