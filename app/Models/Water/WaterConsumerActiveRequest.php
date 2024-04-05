@@ -197,7 +197,7 @@ class WaterConsumerActiveRequest extends Model
     {
         WaterConsumerActiveRequest::where('id', $applicationId)
             ->update([
-                'doc_status' => true
+                'doc_verify_status' => true
             ]);
     }
 
