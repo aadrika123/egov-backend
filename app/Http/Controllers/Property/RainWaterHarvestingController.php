@@ -418,11 +418,13 @@ class RainWaterHarvestingController extends Controller
             $mPropHarvestingGeotagUpload = new PropHarvestingGeotagUpload();
             $mWfActiveDocument =  new WfActiveDocument();
             $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $docUpload = new DocUpload;
 
             $details = $mPropActiveHarvesting->getDetailsById($req->applicationId);
             $geotagDtl = $mPropHarvestingGeotagUpload->getLatLong($req->applicationId);
 
             $docs =  $mWfActiveDocument->getDocByRefIdsDocCode($req->applicationId, $details->workflow_id, $moduleId, ['WATER_HARVESTING'])->last();
+            $docs = $docUpload->getSingleDocUrl($docs);           #_Calling BLL for Document Path from DMS
             $data = [
                 'id' => $details->id,
                 'applicationNo' => $details->application_no,
@@ -435,7 +437,7 @@ class RainWaterHarvestingController extends Controller
                 'propertyAddress' => $details->prop_address,
                 'mobileNo' => $details->mobile_no,
                 'dateOfCompletion' => $details->date_of_completion,
-                'harvestingImage' => $docs->doc_path,
+                'harvestingImage' => $docs['doc_path'],
                 'latitude' => $geotagDtl->latitude ?? null,
                 'longitude' => $geotagDtl->longitude ?? null,
             ];
