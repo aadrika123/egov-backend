@@ -2194,10 +2194,11 @@ class Trade implements ITrade
             $mWardPermission = $this->_COMMON_FUNCTION->WardPermission($refUserId);
             $mRole = $this->_COMMON_FUNCTION->getUserRoll($refUserId, $refUlbId, $refWorkflowId);
 
-            if (!$mRole->is_initiator) {
-                throw new Exception("You Are Not Authorized For This Action");
-            }
-            if ($mRole->is_initiator) {
+            // if (!$mRole->is_initiator) {
+            //     throw new Exception("You Are Not Authorized For This Action");
+            // }
+            if ($mRole->is_initiator)
+             {
                 $mWardPermission = $this->_MODEL_WARD->getAllWard($refUlbId)->map(function ($val) {
                     $val->ward_no = $val->ward_name;
                     return $val;
