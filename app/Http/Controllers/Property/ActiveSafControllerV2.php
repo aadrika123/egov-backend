@@ -375,7 +375,7 @@ class ActiveSafControllerV2 extends Controller
                 'ulbId' => 'nullable',
             ]);
             $mPropApartmentDtl = new PropApartmentDtl();
-            $ulbId = $req->ulbId ?? authUser($req)->ulb_id;
+            $ulbId = $req->ulbId ?? authUser($req);
             $req->request->add(['ulbId' => $ulbId]);
 
             $data = $mPropApartmentDtl->apartmentList($req);
@@ -384,9 +384,9 @@ class ActiveSafControllerV2 extends Controller
                 throw new Exception("Apartment List Not Available");
             }
 
-            return responseMsgs(true, "Apartment List", $data, "011605", 1.0, "308ms", "POST", $req->deviceId);
+            return responseMsgs(true, "Apartment List", $data, "011605", 1.0, responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), [], "011605", 1.0, "308ms", "POST", $req->deviceId);
+            return responseMsgs(false, $e->getMessage(), [], "011605", 1.0, responseTime(), "POST", $req->deviceId);
         }
     }
 

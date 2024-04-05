@@ -312,6 +312,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
     Route::post('saf/memo-receipt', 'memoReceipt');                         #API_ID = 011603
     Route::post('saf/verify-holding', 'verifyHoldingNo');                   #API_ID = 011604
     Route::post('saf/list-apartment', 'getAptList');                        #API_ID = 011605                        
+    Route::post('v2/saf/list-apartment', 'getAptList');                        #API_ID = 011605                        
     Route::post('saf/pending-geotagging-list', 'pendingGeoTaggingList');    #API_ID = 011606   
     Route::post('saf/get-cluster-saf-due', 'getClusterSafDues');            #API_ID = 011607     
     Route::post('saf/cluster-saf-payment', 'clusterSafPayment');            #API_ID = 011608       
