@@ -150,7 +150,7 @@ class SafCalculation
         }
 
         // Rain Water Harvesting Penalty If The Plot Area is Greater than 3228 sqft. and Rain Water Harvesting is none
-        $readAreaOfPlot =  decimalToSqFt($this->_propertyDetails['areaOfPlot']);                              // (In Dismil To SqFt)
+        $readAreaOfPlot =  decimalToSqFt(isset($this->_propertyDetails['bifurcatedPlot']) ? $this->_propertyDetails['bifurcatedPlot'] : $this->_propertyDetails['areaOfPlot']);                              // (In Dismil To SqFt)
         $this->_areaOfPlotInSqft = $readAreaOfPlot;
         // Check Rain Water Harvesting Status
         if ($propertyDetails['propertyType'] != $this->_vacantPropertyTypeId && $propertyDetails['isWaterHarvesting'] == 0 && $readAreaOfPlot > $this->_rwhAreaOfPlot) {
@@ -726,7 +726,7 @@ class SafCalculation
                     'floorNo' => $floorNo,
                     'useType' => $useType,
                     'constructionType' => $this->_floors[$key]['constructionType'],
-                    'buildupArea' => isset($this->_floors[$key]['biBuildupArea']) ?? $this->_floors[$key]['buildupArea'],
+                    'buildupArea' => isset($this->_floors[$key]['biBuildupArea']) ? $this->_floors[$key]['biBuildupArea'] : $this->_floors[$key]['buildupArea'],
                     'dateFrom' => isset($this->_floors[$key]['biBuildupArea']) ? $this->_propertyDetails['biDateOfPurchase'] : $this->_floors[$key]['dateFrom'],
                     'dateTo' => $this->_floors[$key]['dateUpto'],
                     'mFloorNo' => Config::get("PropertyConstaint.FLOOR-TYPE.$floorNo"),
@@ -736,7 +736,7 @@ class SafCalculation
         }
 
         // is implimented rule set 1 (before 2016-2017), (2016-2017 TO 2021-2022), (2021-2022 TO TILL NOW)
-         if ($dateFrom < $this->_effectiveDateRule2) {
+        if ($dateFrom < $this->_effectiveDateRule2) {
             $quarterDueDate = calculateQuaterDueDate($dateFrom);
             $onePercPenalty = $this->onePercPenalty($quarterDueDate);                    // One Percent Penalty
             $ruleSets[] = [
@@ -818,7 +818,8 @@ class SafCalculation
      */
     public function calculateRuleSet1($key, $onePercPenalty)
     {
-        $readBuildupArea =  $this->_floors[$key]['buildupArea'];
+        // $readBuildupArea =  $this->_floors[$key]['buildupArea'];
+        $readBuildupArea =  isset($this->_floors[$key]['biBuildupArea']) ? $this->_floors[$key]['biBuildupArea'] : $this->_floors[$key]['buildupArea'];
         $readFloorInstallationDate =  $this->_floors[$key]['dateFrom'];
         $readUsageType = $this->_floors[$key]['useType'];
         $readOccupancyType = $this->_floors[$key]['occupancyType'];
@@ -981,7 +982,9 @@ class SafCalculation
 
         if (is_numeric($key)) {                                                             // Applicable For Floors
             $readFloorUsageType = $this->_floors[$key]['useType'];
-            $readFloorBuildupArea = $this->_floors[$key]['buildupArea'];
+            // $readFloorBuildupArea = $this->_floors[$key]['buildupArea'];
+            $readFloorBuildupArea = isset($this->_floors[$key]['biBuildupArea']) ? $this->_floors[$key]['biBuildupArea'] : $this->_floors[$key]['buildupArea'];
+            
             $readFloorOccupancyType = $this->_floors[$key]['occupancyType'];
             $paramCarpetAreaPerc = ($readFloorUsageType == 1) ? 70 : 80;
             $paramOccupancyFactor = ($readFloorOccupancyType == 1) ? 1 : 1.5;
@@ -1114,7 +1117,8 @@ class SafCalculation
                 throw new Exception("Circle Rate Not Available");
 
             $readFloorUsageType = $this->_floors[$key]['useType'];
-            $readBuildupArea = $this->_floors[$key]['buildupArea'];
+            // $readBuildupArea = $this->_floors[$key]['buildupArea'];
+            $readBuildupArea = isset($this->_floors[$key]['biBuildupArea']) ? $this->_floors[$key]['biBuildupArea'] : $this->_floors[$key]['buildupArea'];
 
             $readFloorOccupancyType = $this->_floors[$key]['occupancyType'];
             $paramOccupancyFactor = ($readFloorOccupancyType == 1) ? 1 : 1.5;
