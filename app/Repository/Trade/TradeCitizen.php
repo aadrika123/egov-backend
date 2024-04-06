@@ -10,6 +10,7 @@
 namespace App\Repository\Trade;
 
 use App\EloquentModels\Common\ModelWard;
+use App\MicroServices\DocUpload;
 use App\Models\Trade\ActiveLicence;
 use App\Models\Trade\ExpireLicence;
 use App\Models\Trade\TradeFineRebetDetail;
@@ -68,9 +69,9 @@ class TradeCitizen implements ITradeCitizen
     {
         $this->_DB_NAME = "pgsql_trade";
         $this->_NOTICE_DB = "pgsql_notice";
-        $this->_DB = DB::connection( $this->_DB_NAME );
+        $this->_DB = DB::connection($this->_DB_NAME);
         $this->_DB_MASTER = DB::connection("pgsql_master");
-        $this->_DB_READ = DB::connection( $this->_DB_NAME."::read" );
+        $this->_DB_READ = DB::connection($this->_DB_NAME . "::read");
         $this->_NOTICE_DB = DB::connection($this->_NOTICE_DB);
         // DB::enableQueryLog();
         // $this->_DB->enableQueryLog();
@@ -86,22 +87,21 @@ class TradeCitizen implements ITradeCitizen
         $this->_MODULE_ID = Config::get('module-constants.TRADE_MODULE_ID');
         $this->_TRADE_CONSTAINT = Config::get("TradeConstant");
         $this->_REF_TABLE = $this->_TRADE_CONSTAINT["TRADE_REF_TABLE"];
-        
+
         $this->_META_DATA = [
             "apiId" => $this->_API_ID,
             "version" => 1.1,
             'queryRunTime' => $this->_QUERY_RUN_TIME,
         ];
-        
     }
 
     #=======================[❤️TRANSACTION BEGIN❤️]==============================
-        /** 
-         * @var $db1 default database name
-         * @var $db2 trade database name
-         * @var $db3 notice database name
-         * @return void
-         */
+    /** 
+     * @var $db1 default database name
+     * @var $db2 trade database name
+     * @var $db3 notice database name
+     * @return void
+     */
     public function begin()
     {
         $db1 = DB::connection()->getDatabaseName();
@@ -109,21 +109,21 @@ class TradeCitizen implements ITradeCitizen
         $db3 = $this->_NOTICE_DB->getDatabaseName();
         $db4 = $this->_DB_MASTER->getDatabaseName();
         DB::beginTransaction();
-        if($db1!=$db2 )
+        if ($db1 != $db2)
             $this->_DB->beginTransaction();
-        if($db1!=$db3 && $db2!=$db3)
+        if ($db1 != $db3 && $db2 != $db3)
             $this->_NOTICE_DB->beginTransaction();
-        if($db1!=$db4 && $db2!=$db4 && $db3!=$db4) 
+        if ($db1 != $db4 && $db2 != $db4 && $db3 != $db4)
             $this->_DB_MASTER->beginTransaction();
     }
 
     #=======================[❤️TRANSACTION ROLLBACK❤️]==============================
-        /** 
-         * @var $db1 default database name
-         * @var $db2 trade database name
-         * @var $db3 notice database name
-         * @return void
-         */
+    /** 
+     * @var $db1 default database name
+     * @var $db2 trade database name
+     * @var $db3 notice database name
+     * @return void
+     */
     public function rollback()
     {
         $db1 = DB::connection()->getDatabaseName();
@@ -131,21 +131,21 @@ class TradeCitizen implements ITradeCitizen
         $db3 = $this->_NOTICE_DB->getDatabaseName();
         $db4 = $this->_DB_MASTER->getDatabaseName();
         DB::rollBack();
-        if($db1!=$db2 )
+        if ($db1 != $db2)
             $this->_DB->rollBack();
-        if($db1!=$db3 && $db2!=$db3)
+        if ($db1 != $db3 && $db2 != $db3)
             $this->_NOTICE_DB->rollBack();
-        if($db1!=$db4 && $db2!=$db4 && $db3!=$db4) 
+        if ($db1 != $db4 && $db2 != $db4 && $db3 != $db4)
             $this->_DB_MASTER->rollBack();
     }
-        
+
     #=======================[❤️TRANSACTION COMMIT❤️]==============================
-        /** 
-         * @var $db1 default database name
-         * @var $db2 trade database name
-         * @var $db3 notice database name
-         * @return void
-         */
+    /** 
+     * @var $db1 default database name
+     * @var $db2 trade database name
+     * @var $db3 notice database name
+     * @return void
+     */
     public function commit()
     {
         $db1 = DB::connection()->getDatabaseName();
@@ -153,11 +153,11 @@ class TradeCitizen implements ITradeCitizen
         $db3 = $this->_NOTICE_DB->getDatabaseName();
         $db4 = $this->_DB_MASTER->getDatabaseName();
         DB::commit();
-        if($db1!=$db2 )        
+        if ($db1 != $db2)
             $this->_DB->commit();
-        if($db1!=$db3 && $db2!=$db3)
+        if ($db1 != $db3 && $db2 != $db3)
             $this->_NOTICE_DB->commit();
-        if($db1!=$db4 && $db2!=$db4 && $db3!=$db4) 
+        if ($db1 != $db4 && $db2 != $db4 && $db3 != $db4)
             $this->_DB_MASTER->commit();
     }
 
@@ -166,7 +166,7 @@ class TradeCitizen implements ITradeCitizen
         $this->_META_DATA["apiId"] = "c2";
         $this->_META_DATA["queryRunTime"] = 2.48;
         $this->_META_DATA["action"]    = $request->getMethod();
-        $this->_META_DATA["deviceId"] = $request->ip();        
+        $this->_META_DATA["deviceId"] = $request->ip();
         try {
             $refUser            = Auth()->user();
             $refUserId          = $refUser->id;
@@ -184,19 +184,17 @@ class TradeCitizen implements ITradeCitizen
                 if (!$refOldLicece) {
                     throw new Exception("Old Licence Not Found");
                 }
-                if ($refOldLicece->valid_upto > $nextMonth && !in_array($mApplicationTypeId,[3,4])) {
+                if ($refOldLicece->valid_upto > $nextMonth && !in_array($mApplicationTypeId, [3, 4])) {
                     throw new Exception("Licence Valice Upto " . $refOldLicece->valid_upto);
                 }
-                if($refOldLicece->valid_upto < (Carbon::now()->format('Y-m-d')) && in_array($mApplicationTypeId,[3,4]))
-                {
-                    throw new Exception("Licence Was Expired Please Renewal First" );
+                if ($refOldLicece->valid_upto < (Carbon::now()->format('Y-m-d')) && in_array($mApplicationTypeId, [3, 4])) {
+                    throw new Exception("Licence Was Expired Please Renewal First");
                 }
                 if ($refOldLicece->pending_status != 5) {
                     throw new Exception("Application Aready Apply Please Track  " . $refOldLicece->application_no);
                 }
-                if(in_array($mApplicationTypeId,[3,4]) && $refOldLicece->valid_upto<Carbon::now()->format('Y-m-d'))
-                {
-                    throw new Exception("Application was Expired.You Can't Apply ".$request->applicationType.". Please Renew First.");
+                if (in_array($mApplicationTypeId, [3, 4]) && $refOldLicece->valid_upto < Carbon::now()->format('Y-m-d')) {
+                    throw new Exception("Application was Expired.You Can't Apply " . $request->applicationType . ". Please Renew First.");
                 }
                 if ($refUlbId != $refOldLicece->ulb_id) {
                     throw new Exception("Application ulb Deffrence " . $refOldLicece->application_no);
@@ -345,7 +343,7 @@ class TradeCitizen implements ITradeCitizen
             $TradeFineRebet->type      = 'Delay Apply License';
             $TradeFineRebet->amount         = $chargeData['penalty'];
             $TradeFineRebet->created_at     = $mTimstamp;
-            $i =$TradeFineRebet->save();
+            $i = $TradeFineRebet->save();
 
             $mDenialAmount = $mDenialAmount + $chargeData['arear_amount'];
             if ($mDenialAmount > 0) {
@@ -356,8 +354,8 @@ class TradeCitizen implements ITradeCitizen
                 $TradeFineRebet2->created_at     = $mTimstamp;
                 $TradeFineRebet2->save();
             }
-            $request = new Request(["applicationId"=>$licenceId,"ulb_id"=>$refUlbId,"user_id"=>$refUserId]);
-            if ($mPaymentStatus == 1 && $this->_REPOSITORY_TRADE->checkWorckFlowForwardBackord($request) && $refLecenceData->pending_status == 0 ) {
+            $request = new Request(["applicationId" => $licenceId, "ulb_id" => $refUlbId, "user_id" => $refUserId]);
+            if ($mPaymentStatus == 1 && $this->_REPOSITORY_TRADE->checkWorckFlowForwardBackord($request) && $refLecenceData->pending_status == 0) {
                 $refLecenceData->current_role = $refWorkflows['initiator']['forward_role_id'];
                 $refLecenceData->document_upload_status = 1;
                 $refLecenceData->pending_status  = 1;
@@ -381,7 +379,7 @@ class TradeCitizen implements ITradeCitizen
             $refLecenceData->provisional_license_no = $provNo;
             $refLecenceData->payment_status         = $mPaymentStatus;
             if ($refNoticeDetails) {
-                $this->_NOTICE->noticeClose($refLecenceData->denial_id);                  
+                $this->_NOTICE->noticeClose($refLecenceData->denial_id);
             }
             ($refLecenceData->id);
             $refLecenceData->update();
@@ -438,7 +436,7 @@ class TradeCitizen implements ITradeCitizen
             $ActiveSelect[] = DB::raw("'active' as license_type");
             $ActiveLicence = $this->_DB_READ->TABLE("active_trade_licences AS licences")
                 ->select($ActiveSelect)
-                ->join("ulb_masters","ulb_masters.id","licences.ulb_id")
+                ->join("ulb_masters", "ulb_masters.id", "licences.ulb_id")
                 ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
                                     STRING_AGG(guardian_name,',') AS guardian_name,
                                     STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
@@ -454,13 +452,13 @@ class TradeCitizen implements ITradeCitizen
                 })
                 ->where("licences.is_active", true)
                 ->where("licences.citizen_id", $refUserId);
-                // ->get();
+            // ->get();
 
-            $RejectedSelect = $select;        
+            $RejectedSelect = $select;
             $RejectedSelect[] = DB::raw("'rejected' as license_type");
             $RejectedLicence = $this->_DB_READ->TABLE("rejected_trade_licences AS licences")
                 ->select($RejectedSelect)
-                ->join("ulb_masters","ulb_masters.id","licences.ulb_id")
+                ->join("ulb_masters", "ulb_masters.id", "licences.ulb_id")
                 ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
                                     STRING_AGG(guardian_name,',') AS guardian_name,
                                     STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
@@ -476,13 +474,13 @@ class TradeCitizen implements ITradeCitizen
                 })
                 ->where("licences.is_active", true)
                 ->where("licences.citizen_id", $refUserId);
-                // ->get();
+            // ->get();
 
-            $ApprovedSelect = $select;        
+            $ApprovedSelect = $select;
             $ApprovedSelect[] = DB::raw("'approved' as license_type");
             $ApprovedLicence = $this->_DB_READ->TABLE("trade_licences AS licences")
                 ->select($ApprovedSelect)
-                ->join("ulb_masters","ulb_masters.id","licences.ulb_id")
+                ->join("ulb_masters", "ulb_masters.id", "licences.ulb_id")
                 ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
                                         STRING_AGG(guardian_name,',') AS guardian_name,
                                         STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
@@ -498,14 +496,14 @@ class TradeCitizen implements ITradeCitizen
                 })
                 ->where("licences.is_active", true)
                 ->where("licences.citizen_id", $refUserId);
-                // ->get();
+            // ->get();
 
-            
-            $OldSelect = $select;        
+
+            $OldSelect = $select;
             $OldSelect[] = DB::raw("'old' as license_type");
             $OldLicence = $this->_DB_READ->TABLE("trade_renewals AS licences")
                 ->select($OldSelect)
-                ->join("ulb_masters","ulb_masters.id","licences.ulb_id")
+                ->join("ulb_masters", "ulb_masters.id", "licences.ulb_id")
                 ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
                                         STRING_AGG(guardian_name,',') AS guardian_name,
                                         STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
@@ -521,57 +519,49 @@ class TradeCitizen implements ITradeCitizen
                 })
                 ->where("licences.is_active", true)
                 ->where("licences.citizen_id", $refUserId);
-        
+
             $final = $ActiveLicence->union($RejectedLicence)
-                    ->union($ApprovedLicence)->union($OldLicence)
-                    ->get();
-            $final->map(function($val) use($refUserId){
+                ->union($ApprovedLicence)->union($OldLicence)
+                ->get();
+            $final->map(function ($val) use ($refUserId) {
                 $option = [];
                 $nextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
-                $validUpto="";
-                if($val->valid_upto)
-                {
-                    $validUpto = Carbon::createFromFormat("d-m-Y",$val->valid_upto)->format('Y-m-d');
+                $validUpto = "";
+                if ($val->valid_upto) {
+                    $validUpto = Carbon::createFromFormat("d-m-Y", $val->valid_upto)->format('Y-m-d');
                 }
-                if(trim($val->license_type)=="approved" && $val->pending_status == 5 && $validUpto < $nextMonth)
-                {
-                    $option[]="RENEWAL";
+                if (trim($val->license_type) == "approved" && $val->pending_status == 5 && $validUpto < $nextMonth) {
+                    $option[] = "RENEWAL";
                 }
-                if(trim($val->license_type)=="approved" && $val->pending_status == 5 && $validUpto >= Carbon::now()->format('Y-m-d'))
-                {
-                    $option[]="AMENDMENT";
-                    $option[]="SURRENDER";
+                if (trim($val->license_type) == "approved" && $val->pending_status == 5 && $validUpto >= Carbon::now()->format('Y-m-d')) {
+                    $option[] = "AMENDMENT";
+                    $option[] = "SURRENDER";
                 }
-                if(trim($val->license_type)=="approved" && $val->pending_status == 5 && $val->application_type_id == 4 && $validUpto >= Carbon::now()->format('Y-m-d'))
-                {                    
-                    $option=[];
+                if (trim($val->license_type) == "approved" && $val->pending_status == 5 && $val->application_type_id == 4 && $validUpto >= Carbon::now()->format('Y-m-d')) {
+                    $option = [];
                 }
                 $val->option = $option;
-                $val->pending_at = $this->_REPOSITORY_TRADE->applicationStatus($val->id,false);                
-                if(str_contains(strtoupper($val->pending_at),strtoupper("All Required Documents Are Uploaded")))
-                {
-                    $val->document_upload_status =1; 
+                $val->pending_at = $this->_REPOSITORY_TRADE->applicationStatus($val->id, false);
+                if (str_contains(strtoupper($val->pending_at), strtoupper("All Required Documents Are Uploaded"))) {
+                    $val->document_upload_status = 1;
                 }
                 return $val;
             });
             return responseMsg(true, "", remove_null($final));
-        } 
-        catch (Exception $e) 
-        {
+        } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
     }
 
     public function citizenApplicationByCitizenId(Request $request)
     {
-        try{
+        try {
             $refUserId = $request->citizenId;
             $ulbId     = $request->ulbId;
             $cotegory = $request->cotegory;
             $status  = $request->status;
             $applicationTypeId = null;
-            if($request->applicationType)
-            {
+            if ($request->applicationType) {
                 $applicationTypeId = $this->_TRADE_CONSTAINT["APPLICATION-TYPE"][$request->applicationType];
             }
             $select = [
@@ -607,8 +597,8 @@ class TradeCitizen implements ITradeCitizen
             $ActiveSelect[] = DB::raw("'active' as license_type");
             $ActiveLicence = $this->_DB_READ->TABLE("active_trade_licences AS licences")
                 ->select($ActiveSelect)
-                ->join("ulb_masters","ulb_masters.id","licences.ulb_id")
-                ->join("trade_param_application_types","trade_param_application_types.id","licences.application_type_id")
+                ->join("ulb_masters", "ulb_masters.id", "licences.ulb_id")
+                ->join("trade_param_application_types", "trade_param_application_types.id", "licences.application_type_id")
                 ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
                                     STRING_AGG(guardian_name,',') AS guardian_name,
                                     STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
@@ -623,14 +613,14 @@ class TradeCitizen implements ITradeCitizen
                     $join->on("owner.temp_id", "licences.id");
                 })
                 ->where("licences.citizen_id", $refUserId);
-                // ->get();
+            // ->get();
 
-            $RejectedSelect = $select;        
+            $RejectedSelect = $select;
             $RejectedSelect[] = DB::raw("'rejected' as license_type");
             $RejectedLicence = $this->_DB_READ->TABLE("rejected_trade_licences AS licences")
                 ->select($RejectedSelect)
-                ->join("ulb_masters","ulb_masters.id","licences.ulb_id")
-                ->join("trade_param_application_types","trade_param_application_types.id","licences.application_type_id")
+                ->join("ulb_masters", "ulb_masters.id", "licences.ulb_id")
+                ->join("trade_param_application_types", "trade_param_application_types.id", "licences.application_type_id")
                 ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
                                     STRING_AGG(guardian_name,',') AS guardian_name,
                                     STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
@@ -645,14 +635,14 @@ class TradeCitizen implements ITradeCitizen
                     $join->on("owner.temp_id", "licences.id");
                 })
                 ->where("licences.citizen_id", $refUserId);
-                // ->get();
+            // ->get();
 
-            $ApprovedSelect = $select;        
+            $ApprovedSelect = $select;
             $ApprovedSelect[] = DB::raw("'approved' as license_type");
             $ApprovedLicence = $this->_DB_READ->TABLE("trade_licences AS licences")
                 ->select($ApprovedSelect)
-                ->join("ulb_masters","ulb_masters.id","licences.ulb_id")
-                ->join("trade_param_application_types","trade_param_application_types.id","licences.application_type_id")
+                ->join("ulb_masters", "ulb_masters.id", "licences.ulb_id")
+                ->join("trade_param_application_types", "trade_param_application_types.id", "licences.application_type_id")
                 ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
                                         STRING_AGG(guardian_name,',') AS guardian_name,
                                         STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
@@ -668,15 +658,15 @@ class TradeCitizen implements ITradeCitizen
                 })
                 ->where("licences.is_active", true)
                 ->where("licences.citizen_id", $refUserId);
-                // ->get();
+            // ->get();
 
-            
-            $OldSelect = $select;        
+
+            $OldSelect = $select;
             $OldSelect[] = DB::raw("'old' as license_type");
             $OldLicence = $this->_DB_READ->TABLE("trade_renewals AS licences")
                 ->select($OldSelect)
-                ->join("ulb_masters","ulb_masters.id","licences.ulb_id")
-                ->join("trade_param_application_types","trade_param_application_types.id","licences.application_type_id")
+                ->join("ulb_masters", "ulb_masters.id", "licences.ulb_id")
+                ->join("trade_param_application_types", "trade_param_application_types.id", "licences.application_type_id")
                 ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
                                         STRING_AGG(guardian_name,',') AS guardian_name,
                                         STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
@@ -691,94 +681,86 @@ class TradeCitizen implements ITradeCitizen
                     $join->on("owner.temp_id", "licences.id");
                 })
                 ->where("licences.citizen_id", $refUserId);
-            if($applicationTypeId)
-            {
-                $ActiveLicence = $ActiveLicence->where("licences.application_type_id",$applicationTypeId);
-                $RejectedLicence = $RejectedLicence->where("licences.application_type_id",$applicationTypeId);
-                $ApprovedLicence = $ApprovedLicence->where("licences.application_type_id",$applicationTypeId);
-                $OldLicence      = $OldLicence->where("licences.application_type_id",$applicationTypeId);
+            if ($applicationTypeId) {
+                $ActiveLicence = $ActiveLicence->where("licences.application_type_id", $applicationTypeId);
+                $RejectedLicence = $RejectedLicence->where("licences.application_type_id", $applicationTypeId);
+                $ApprovedLicence = $ApprovedLicence->where("licences.application_type_id", $applicationTypeId);
+                $OldLicence      = $OldLicence->where("licences.application_type_id", $applicationTypeId);
             }
-            if($ulbId)
-            {
-                $ActiveLicence = $ActiveLicence->where("licences.ulb_id",$ulbId);
-                $RejectedLicence = $RejectedLicence->where("licences.ulb_id",$ulbId);
-                $ApprovedLicence = $ApprovedLicence->where("licences.ulb_id",$ulbId);
-                $OldLicence      = $OldLicence->where("licences.ulb_id",$ulbId);
+            if ($ulbId) {
+                $ActiveLicence = $ActiveLicence->where("licences.ulb_id", $ulbId);
+                $RejectedLicence = $RejectedLicence->where("licences.ulb_id", $ulbId);
+                $ApprovedLicence = $ApprovedLicence->where("licences.ulb_id", $ulbId);
+                $OldLicence      = $OldLicence->where("licences.ulb_id", $ulbId);
             }
-            if($status)
-            {
-                $ActiveLicence = $ActiveLicence->where("licences.is_active",$status);
-                $RejectedLicence = $RejectedLicence->where("licences.is_active",$status);
-                $ApprovedLicence = $ApprovedLicence->where("licences.is_active",$status);
-                $OldLicence      = $OldLicence->where("licences.is_active",$status);
+            if ($status) {
+                $ActiveLicence = $ActiveLicence->where("licences.is_active", $status);
+                $RejectedLicence = $RejectedLicence->where("licences.is_active", $status);
+                $ApprovedLicence = $ApprovedLicence->where("licences.is_active", $status);
+                $OldLicence      = $OldLicence->where("licences.is_active", $status);
+            } else {
+                $ActiveLicence = $ActiveLicence->where("licences.is_active", true);
+                $RejectedLicence = $RejectedLicence->where("licences.is_active", true);
+                $ApprovedLicence = $ApprovedLicence->where("licences.is_active", true);
+                $OldLicence      = $OldLicence->where("licences.is_active", true);
             }
-            else{
-                $ActiveLicence = $ActiveLicence->where("licences.is_active",true);
-                $RejectedLicence = $RejectedLicence->where("licences.is_active",true);
-                $ApprovedLicence = $ApprovedLicence->where("licences.is_active",true);
-                $OldLicence      = $OldLicence->where("licences.is_active",true);
+            switch ($cotegory) {
+                case "PENDIG":
+                    $final = $ActiveLicence->get();
+                    break;
+                case "REJECT":
+                    $final = $RejectedLicence->get();
+                    break;
+                case "APROVE":
+                    $final = $ApprovedLicence->union($OldLicence)->get();
+                    break;
+                case "OLD":
+                    $final = $OldLicence->get();
+                    break;
+                default:
+                    $final = $ActiveLicence->union($RejectedLicence)->union($ApprovedLicence)->union($OldLicence)->get();
+                    break;
             }
-            switch($cotegory){
-                case "PENDIG"   : $final = $ActiveLicence->get();
-                                  break;
-                case "REJECT"   : $final = $RejectedLicence->get();
-                                  break;
-                case "APROVE"   : $final = $ApprovedLicence->union($OldLicence)->get();
-                                  break;
-                case "OLD"      : $final = $OldLicence->get();
-                                  break;
-                default         : $final = $ActiveLicence->union($RejectedLicence)->union($ApprovedLicence)->union($OldLicence)->get();
-                                  break;
-            }
-            
-            $final->map(function($val) use($refUserId){
+
+            $final->map(function ($val) use ($refUserId) {
                 $option = [];
                 $nextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
-                $validUpto="";
-                if($val->valid_upto)
-                {
-                    $validUpto = Carbon::createFromFormat("d-m-Y",$val->valid_upto)->format('Y-m-d');
+                $validUpto = "";
+                if ($val->valid_upto) {
+                    $validUpto = Carbon::createFromFormat("d-m-Y", $val->valid_upto)->format('Y-m-d');
                 }
-                if(trim($val->license_type)=="approved" && $val->pending_status == 5 && $validUpto < $nextMonth)
-                {
-                    $option[]="RENEWAL";
+                if (trim($val->license_type) == "approved" && $val->pending_status == 5 && $validUpto < $nextMonth) {
+                    $option[] = "RENEWAL";
                 }
-                if(trim($val->license_type)=="approved" && $val->pending_status == 5 && $validUpto >= Carbon::now()->format('Y-m-d'))
-                {
-                    $option[]="AMENDMENT";
-                    $option[]="SURRENDER";
+                if (trim($val->license_type) == "approved" && $val->pending_status == 5 && $validUpto >= Carbon::now()->format('Y-m-d')) {
+                    $option[] = "AMENDMENT";
+                    $option[] = "SURRENDER";
                 }
-                if(trim($val->license_type)=="approved" && $val->pending_status == 5 && $val->application_type_id == 4 && $validUpto >= Carbon::now()->format('Y-m-d'))
-                {                    
-                    $option=[];
+                if (trim($val->license_type) == "approved" && $val->pending_status == 5 && $val->application_type_id == 4 && $validUpto >= Carbon::now()->format('Y-m-d')) {
+                    $option = [];
                 }
                 $val->option = $option;
-                $val->pending_at = $this->_REPOSITORY_TRADE->applicationStatus($val->id,false);                
-                if(str_contains(strtoupper($val->pending_at),strtoupper("All Required Documents Are Uploaded")))
-                {
-                    $val->document_upload_status =1; 
+                $val->pending_at = $this->_REPOSITORY_TRADE->applicationStatus($val->id, false);
+                if (str_contains(strtoupper($val->pending_at), strtoupper("All Required Documents Are Uploaded"))) {
+                    $val->document_upload_status = 1;
                 }
                 return $val;
             });
             return responseMsg(true, "", remove_null($final));
-        }
-        catch (Exception $e) 
-        {
+        } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
     }
 
     public function citizenApplication(Request $request)
     {
-        try {            
+        try {
             $refUser        = Auth()->user();
             $refUserId      = $refUser->id;
             $refWorkflowId      = $this->_WF_MASTER_Id;
-            $request->merge(["citizenId"=>$refUserId]);
-            return $this->citizenApplicationByCitizenId($request);            
-        } 
-        catch (Exception $e) 
-        {
+            $request->merge(["citizenId" => $refUserId]);
+            return $this->citizenApplicationByCitizenId($request);
+        } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
     }
@@ -786,37 +768,34 @@ class TradeCitizen implements ITradeCitizen
     # Serial No : 28
     public function readCitizenLicenceDtl(Request $request)
     {
-       
+
         try {
-           
+
             $id = $request->id;
-            $refUser        = Auth()->user(); 
+            $refUser        = Auth()->user();
             $refUserId      = $refUser->id;
             $refUlbId       = $refUser->ulb_id ?? 0;
             $refWorkflowId  = $this->_WF_MASTER_Id;
             $modul_id = $this->_MODULE_ID;
-           
-            
+
+
             $mUserType      = $this->_COMMON_FUNCTION->userType($refWorkflowId);
             $refApplication = $this->_REPOSITORY_TRADE->getAllLicenceById($id);
             $mStatus = $this->_REPOSITORY_TRADE->applicationStatus($id);
             $mItemName      = "";
             $mCods          = "";
-            if(!$refApplication)
-            {
+            if (!$refApplication) {
                 throw new Exception("Data Not Found");
             }
-            if(!$refUlbId)
-            {
+            if (!$refUlbId) {
                 $refUlbId = $refApplication->ulb_id;
             }
-            
-            $init_finish = $this->_COMMON_FUNCTION->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);            
+
+            $init_finish = $this->_COMMON_FUNCTION->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
             $finisher = $init_finish['finisher'];
             $finisher['short_user_name'] = $this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][strtoupper($init_finish['finisher']['role_name'])];
 
-            if ($refApplication->nature_of_bussiness) 
-            {
+            if ($refApplication->nature_of_bussiness) {
                 $items = TradeParamItemType::readConnection()->itemsById($refApplication->nature_of_bussiness);
                 foreach ($items as $val) {
                     $mItemName  .= $val->trade_item . ",";
@@ -828,9 +807,17 @@ class TradeCitizen implements ITradeCitizen
             $refApplication->items      = $mItemName;
             $refApplication->items_code = $mCods;
             $refOwnerDtl                = $this->_REPOSITORY_TRADE->getAllOwnereDtlByLId($id);
-            $refTransactionDtl          = (new TradeTransaction)->readConnection()->listByLicId($id);           
-            $refUploadDocuments         = $this->_MODEL_WfActiveDocument->getTradeDocByAppNo($refApplication->id,$refApplication->workflow_id,$modul_id);
-            
+            $refTransactionDtl          = (new TradeTransaction)->readConnection()->listByLicId($id);
+            $refUploadDocuments         = $this->_MODEL_WfActiveDocument->getTradeDocByAppNo($refApplication->id, $refApplication->workflow_id, $modul_id)->map(function ($val) {
+                $docUpload = new DocUpload();
+                // $val->reference_no = "REF16946096910491";
+                $api = $docUpload->getSingleDocUrl($val);
+                $val->doc_path = $api["doc_path"] ?? "";
+                $val->api = $api ?? "";
+                return $val;
+            });;
+
+
             $pendingAt  = $init_finish['initiator']['id'];
             $mlevelData = $this->_REPOSITORY_TRADE->getWorkflowTrack($id);
             if ($mlevelData) {
@@ -846,10 +833,8 @@ class TradeCitizen implements ITradeCitizen
             $data = remove_null($data);
 
             return responseMsg(true, "", $data);
-        } catch (Exception $e) { 
+        } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), '');
         }
     }
-
-    
 }

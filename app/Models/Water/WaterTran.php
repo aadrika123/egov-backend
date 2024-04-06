@@ -123,7 +123,7 @@ class WaterTran extends Model
     }
 
     public function chequeTranDtl($ulbId)
-    {
+    { 
         return WaterTran::select(
             'water_trans.*',
             DB::raw("TO_CHAR(water_trans.tran_date, 'DD-MM-YYYY') as tran_date"),
