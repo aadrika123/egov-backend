@@ -157,7 +157,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
         Route::post('get-details-disconnections', 'getRequestedApplication');                       // Citizen / Changes the route name
         Route::post('consumer/req/approval-rejection', 'consumerApprovalRejection');
         //written by prity pandey 
-        Route::post('doc-verify-reject', 'docVerifyRejects');
+        Route::post('consumer_doc-verify-reject', 'docVerifyRejects');
         Route::post('consumer/req/post-next-level', 'consumerPostNextLevel');
         Route::post('consumer/req/approval-rejection', 'consumerDeactivationApprovalRejection');
     });

@@ -45,7 +45,7 @@ class TradeTransaction extends TradeParamModel
             ->leftjoin('trade_cheque_dtls', 'trade_cheque_dtls.tran_id', 'trade_transactions.id')
             ->join('users', 'users.id', 'trade_cheque_dtls.emp_dtl_id')
             ->whereIn('payment_mode', ['CHEQUE', 'DD'])
-            ->where('trade_transactions.status', 1)
+            //->where('trade_transactions.status', [1.2])
             ->where('trade_transactions.ulb_id', $ulbId);
     }
 
