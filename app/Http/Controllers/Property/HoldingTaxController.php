@@ -1646,7 +1646,7 @@ class HoldingTaxController extends Controller
         }
         $demandDues = $this->getHoldingDues($req);
         if ($demandDues->original['status'] == false)
-            return responseMsgs(false, "No Dues Available for this Property", "");
+            return responseMsgs(true, "No Dues Available for this Property", "");
         $demandDues = $demandDues->original['data']['duesList'];
         $demandDetails = $this->generateDemandDues($demandDues);
         $dataRow['dataRow'] = $demandDetails;
