@@ -1313,6 +1313,7 @@ class RainWaterHarvestingController extends Controller
         try {
             $data = array();
             $mPropRwhVerification = new PropRwhVerification();
+            $docUpload = new DocUpload;
             $mWfActiveDocument = new WfActiveDocument();
             $mPropHarvestingGeotagUpload = new PropHarvestingGeotagUpload();
             $mPropActiveHarvesting = new PropActiveHarvesting();
@@ -1326,7 +1327,8 @@ class RainWaterHarvestingController extends Controller
                 throw new Exception("Tc Verification Not Done");
 
             $document = $mWfActiveDocument->getDocByRefIdsDocCode($req->applicationId, $applicationDtls->workflow_id, $moduleId, ['WATER_HARVESTING_FIELD_IMAGE'])->first();
-            $data->doc_path = $document->doc_path;
+            $document = $docUpload->getSingleDocUrl($document);           #_Calling BLL for Document Path from DMS
+            $data->doc_path = $document['doc_path'];
             $data->latitude = $geotagDtl->latitude;
             $data->longitude = $geotagDtl->longitude;
 
