@@ -255,6 +255,10 @@ class HoldingTaxController extends Controller
 
             $demand['basicDetails'] = $basicDtls;
             $demand['can_pay'] = true;
+            if($user->name ="Executive Officer")
+            {
+                $demand['can_pay'] = false;
+            }
             // Calculations for showing demand receipt without any rebate
             $total = roundFigure($dues - $advanceAmt);
             if ($total < 0)
