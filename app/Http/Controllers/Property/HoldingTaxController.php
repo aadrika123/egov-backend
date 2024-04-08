@@ -1100,9 +1100,9 @@ class HoldingTaxController extends Controller
             $mUlbMasters = new UlbMaster();
             // Derivative Assignments
             $fullDetails = $mPropProperty->getComparativeBasicDtls($propId);             // Full Details of the Floor
-            $ulbId = $fullDetails[0]->ulb_id;
             if (collect($fullDetails)->isEmpty())
                 throw new Exception("No Property Found");
+            $ulbId = $fullDetails[0]->ulb_id;
             $basicDetails = collect($fullDetails)->first();
             $safCalculation->_redis = Redis::connection();
             $safCalculation->_rentalRates = $safCalculation->calculateRentalRates();

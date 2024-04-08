@@ -10,6 +10,7 @@ return [
     "PARAM_RENTAL_RATE" => 144,
     "EFFECTIVE_DATE_RULE2" => "2016-04-01",
     "EFFECTIVE_DATE_RULE3" => "2022-04-01",
+    "EFFECTIVE_DATE_RULE3_V2" => "2024-04-01",
     "VACANT_PROPERTY_TYPE" => "4",
     "SAF_TOWARDS" => "Holding Tax and Others",
     "ACCOUNT_DESCRIPTION" => "Holding Tax and Others",

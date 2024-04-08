@@ -40,6 +40,7 @@ class SafCalculation
     private $_virtualDate;
     public $_effectiveDateRule2;
     public $_effectiveDateRule3;
+    public $_effectiveDateRule3v2;
     public array $_readRoadType;
     private bool $_rwhPenaltyStatus = false;
     public $_mobileTowerArea;
@@ -130,6 +131,7 @@ class SafCalculation
 
         $this->_effectiveDateRule2 = Config::get("PropertyConstaint.EFFECTIVE_DATE_RULE2");
         $this->_effectiveDateRule3 = Config::get("PropertyConstaint.EFFECTIVE_DATE_RULE3");
+        $this->_effectiveDateRule3v2 = Config::get("PropertyConstaint.EFFECTIVE_DATE_RULE3_V2");
         $this->_rwhAreaOfPlot = Config::get('PropertyConstaint.RWH_AREA_OF_PLOT');
 
         $todayDate = Carbon::now();
@@ -388,8 +390,8 @@ class SafCalculation
                     json_encode($capitalValueRate)
                 );
             }
-            $capitalValueRate->rate = $capitalValueRate->max_rate;
-            array_push($capitalValue, $capitalValueRate->rate);
+            // $capitalValueRate->rate = $capitalValueRate->max_rate;
+            array_push($capitalValue, $capitalValueRate);
         }
 
         return $capitalValue;
@@ -423,7 +425,8 @@ class SafCalculation
                 json_encode($capitalValueRate)
             );
         }
-        return $capitalValueRate->rate = $capitalValueRate->max_rate;
+        // return $capitalValueRate->rate = $capitalValueRate->max_rate;
+        return $capitalValueRate;
     }
 
     /**
@@ -542,7 +545,7 @@ class SafCalculation
     {
         $readPropertyType = $this->_propertyDetails['propertyType'];
         if (in_array($readPropertyType, [$this->_vacantPropertyTypeId, $this->_individualPropTypeId])) {                                             // Vacant Land condition with independent building
-            if (in_array($this->_propertyDetails['assessmentType'], [1, 'New Assessment']) || $readPropertyType == $this->_vacantPropertyTypeId) {      // checking assessment type for individual property and property type for vacant land
+            if (in_array(isset($this->_propertyDetails['assessmentType']), [1, 'New Assessment']) || $readPropertyType == $this->_vacantPropertyTypeId) {      // checking assessment type for individual property and property type for vacant land
                 $calculateQuaterlyRuleSets = $this->calculateQuaterlyRulesets("vacantLand");
                 $ruleSetsWithMobileTower = collect($this->_mobileQuaterlyRuleSets)->merge($calculateQuaterlyRuleSets);        // Collapse with mobile tower
                 $ruleSetsWithHoardingBoard = collect($this->_hoardingQuaterlyRuleSets)->merge($ruleSetsWithMobileTower);      // Collapse with hoarding board
@@ -764,8 +767,8 @@ class SafCalculation
             return $ruleSetsWithTaxes;
         }
 
-        // is implimented rule set 3 (2021-2022 TO TILL NOW)
-        if ($dateFrom >= $this->_effectiveDateRule3) {
+        // is implimented rule set 3 (2021-2022 TO 2023-2024)
+        if ($dateFrom < $this->_effectiveDateRule3v2) {
             $quarterDueDate = calculateQuaterDueDate($dateFrom);                        // One Percent Penalty
             $onePercPenalty = $this->onePercPenalty($quarterDueDate);
             $ruleSets[] = [
@@ -775,6 +778,21 @@ class SafCalculation
                 "dueDate" => calculateQuaterDueDate($dateFrom)
             ];
             $tax = $this->calculateRuleSet3($key, $onePercPenalty, $dateFrom);
+            $ruleSetsWithTaxes = array_merge($readFloorDetail, $ruleSets[0], $tax);
+            return $ruleSetsWithTaxes;
+        }
+
+        // it's the version 2 of rule set 3.2 (2024-2025 TO TILL NOW)
+        if ($dateFrom >= $this->_effectiveDateRule3v2) {
+            $quarterDueDate = calculateQuaterDueDate($dateFrom);                        // One Percent Penalty
+            $onePercPenalty = $this->onePercPenalty($quarterDueDate);
+            $ruleSets[] = [
+                "quarterYear" => calculateFyear($dateFrom),
+                "ruleSet" => "RuleSet3V2",
+                "qtr" => calculateQtr($dateFrom),
+                "dueDate" => calculateQuaterDueDate($dateFrom)
+            ];
+            $tax = $this->calculateRuleSet3V2($key, $onePercPenalty, $dateFrom);
             $ruleSetsWithTaxes = array_merge($readFloorDetail, $ruleSets[0], $tax);
             return $ruleSetsWithTaxes;
         }
@@ -984,7 +1002,7 @@ class SafCalculation
             $readFloorUsageType = $this->_floors[$key]['useType'];
             // $readFloorBuildupArea = $this->_floors[$key]['buildupArea'];
             $readFloorBuildupArea = isset($this->_floors[$key]['biBuildupArea']) ? $this->_floors[$key]['biBuildupArea'] : $this->_floors[$key]['buildupArea'];
-            
+
             $readFloorOccupancyType = $this->_floors[$key]['occupancyType'];
             $paramCarpetAreaPerc = ($readFloorUsageType == 1) ? 70 : 80;
             $paramOccupancyFactor = ($readFloorOccupancyType == 1) ? 1 : 1.5;
@@ -1088,7 +1106,9 @@ class SafCalculation
 
         // For Mobile Tower, Hoarding Board, Petrol Pump
         if ($key == "mobileTower" || $key == "hoardingBoard" || $key == "petrolPump") {
-            $readCircleRate = $this->_capitalValueRateMPH;
+            // $readCircleRate = $this->_capitalValueRateMPH;
+            $readCircleRate = collect($this->_capitalValueRateMPH)->where('effect_from', $this->_effectiveDateRule3)->first();
+            $readCircleRate = $readCircleRate->max_rate;
             switch ($key) {
                 case "mobileTower";
                     $readBuildupArea = $this->_mobileTowerArea;
@@ -1111,11 +1131,163 @@ class SafCalculation
         }
 
         // For Floors
-        if (is_numeric($key)) {                                                                             // Applicable for floors
-            $readCircleRate = $this->_capitalValueRate[$key] ?? "";
-            if (empty($readCircleRate))
+        if (is_numeric($key)) {
+            // Applicable for floors
+            // $readCircleRate = $this->_capitalValueRate[$key] ?? "";
+            $readCircleRate = collect($this->_capitalValueRate[$key])->where('effect_from', $this->_effectiveDateRule3)->first();
+            $readCircleRate =  $readCircleRate->max_rate;
+            if (collect($readCircleRate)->isEmpty())
                 throw new Exception("Circle Rate Not Available");
+            
+            $readFloorUsageType = $this->_floors[$key]['useType'];
+            // $readBuildupArea = $this->_floors[$key]['buildupArea'];
+            $readBuildupArea = isset($this->_floors[$key]['biBuildupArea']) ? $this->_floors[$key]['biBuildupArea'] : $this->_floors[$key]['buildupArea'];
 
+            $readFloorOccupancyType = $this->_floors[$key]['occupancyType'];
+            $paramOccupancyFactor = ($readFloorOccupancyType == 1) ? 1 : 1.5;
+
+            $readUsageType = $this->_floors[$key]['useType'];
+            $taxPerc = ($readUsageType == 1) ? 0.075 : 0.15;                                                // 0.075 for Residential and 0.15 for Commercial
+
+            if ($this->_isPropPoint20Taxed == true)
+                $taxPerc = 0.20;                                                                            // Tax Perc for the type of Property whose Sqft is > 250000
+
+            $readMultiFactor = collect($this->_multiFactors)->where('usage_type_id', $readFloorUsageType)
+                ->where('effective_date', $this->_effectiveDateRule3)
+                ->first();
+
+            $readCalculationFactor = $readMultiFactor->multi_factor;                                        // (Calculation Factor as Multi Factor)
+            if ($readUsageType == 1) {
+                $rentalRates = collect($this->_rentalRates)
+                    ->where('prop_road_type_id', $this->_readRoadType[$this->_effectiveDateRule3])
+                    ->where('construction_types_id', $this->_floors[$key]['constructionType'])
+                    ->where('effective_date', $this->_effectiveDateRule3)
+                    ->first();
+                $readMatrixFactor = $rentalRates->rate;                                                     // (Matrix Factor as Rental Rate)
+            } else
+                $readMatrixFactor = 1;                      // (Matrix Factor for the Type of Floors which is not Residential)
+
+            // Condition for the Institutional or Educational Trust 
+            if (isset($this->_isTrust) && $this->_isTrust == true && $this->_isTrustVerified == true && $readUsageType != $this->_religiousPlaceUsageType) {
+                $paramOccupancyFactor = 1;
+                $taxPerc = 0.15;
+                $readCalculationFactor = ($this->_trustType == 1) ? 0.25 : 0.50;
+                $readMatrixFactor = 1;
+            }
+        }
+
+        $calculatePropertyTax = ($readCircleRate * $readBuildupArea * $paramOccupancyFactor * $taxPerc * (float)$readCalculationFactor) / 100;
+        $calculatePropertyTax = $calculatePropertyTax * $readMatrixFactor;                                  // As Holding Tax
+        $rwhPenalty = 0;
+
+        // Rain Water Harvesting Penalty
+        if ($this->_rwhPenaltyStatus == true)                                                               // RWH Applicable from 2017-2018
+            $rwhPenalty = $calculatePropertyTax / 2;
+
+        if ($this->_rwhPenaltyStatus == false && $dateFrom > '2017-03-31' && $this->_areaOfPlotInSqft > $this->_rwhAreaOfPlot && $dateFrom < $this->_propertyDetails['rwhDateFrom'])
+            $rwhPenalty = $calculatePropertyTax / 2;
+
+        $totalTax = $calculatePropertyTax + $rwhPenalty;
+        $onePercPenaltyTax = ($totalTax * $onePercPenalty) / 100;                                           // One Percent Penalty
+
+        // Quaterly Taxes
+        $qHoldingTax = roundFigure($calculatePropertyTax / 4);
+        $qRwhPenalty = roundFigure($rwhPenalty / 4);
+        $quaterTax = roundFigure($qHoldingTax + $qRwhPenalty);
+
+        // Tax Calculation Quaterly
+        $tax = [
+            "arv" => roundFigure($calculatePropertyTax),
+            "circleRate" => $readCircleRate,
+            "buildupArea" => $readBuildupArea,
+            "occupancyFactor" => $paramOccupancyFactor,
+            "taxPerc" => $taxPerc,
+            "calculationFactor" => $readCalculationFactor,
+            "matrixFactor" => $readMatrixFactor,
+
+            "holdingTax" => $qHoldingTax,
+            "latrineTax" => 0,
+            "waterTax" => 0,
+            "healthTax" => 0,
+            "educationTax" => 0,
+
+            "rwhPenalty" => $qRwhPenalty,
+            "yearlyTax" => roundFigure($quaterTax * 4),
+            "totalTax" => $quaterTax,
+            "onePercPenalty" => $onePercPenalty,
+            "onePercPenaltyTax" => roundFigure($onePercPenaltyTax / 4)
+        ];
+        return $tax;
+    }
+    
+    public function calculateRuleSet3V2($key, $onePercPenalty, $dateFrom)
+    {
+        // Vacant Land RuleSet3
+        if ($key == "vacantLand") {
+            $plotArea = $this->_propertyDetails['areaOfPlot'];
+            $roadTypeId = $this->_readRoadType[$this->_effectiveDateRule3];
+            if ($roadTypeId == 4)                                                // i.e. No Road
+                $area = decimalToAcre($plotArea);
+            else
+                $area = decimalToSqMt($plotArea);
+            $rentalRate = collect($this->_vacantRentalRates)->where('prop_road_type_id', $this->_readRoadType[$this->_effectiveDateRule3])
+                ->where('ulb_type_id', $this->_ulbType)
+                ->where('effective_date', $this->_effectiveDateRule3)
+                ->first();
+
+            $rentalRate = $rentalRate->rate;
+            $occupancyFactor = 1;
+            $tax = (float)$area * $rentalRate * $occupancyFactor;
+            $onePercPenaltyTax = ($tax * $onePercPenalty) / 100;
+            $quaterlyTax = roundFigure($tax / 4);
+            $taxQuaterly = [
+                "area" => roundFigure($area),
+                "rentalRate" => $rentalRate,
+                "occupancyFactor" => $occupancyFactor,
+                "onePercPenalty"   => $onePercPenalty,
+                "totalTax" => $quaterlyTax,
+                "holdingTax" => $quaterlyTax,
+                "yearlyTax" => roundFigure($tax),
+                "onePercPenaltyTax" => roundFigure($onePercPenaltyTax / 4)
+            ];
+            return $taxQuaterly;
+        }
+
+        // For Mobile Tower, Hoarding Board, Petrol Pump
+        if ($key == "mobileTower" || $key == "hoardingBoard" || $key == "petrolPump") {
+            // $readCircleRate = $this->_capitalValueRateMPH;
+            $readCircleRate = collect($this->_capitalValueRateMPH)->where('effect_from', $this->_effectiveDateRule3)->first();
+            $readCircleRate = $readCircleRate->max_rate;
+            switch ($key) {
+                case "mobileTower";
+                    $readBuildupArea = $this->_mobileTowerArea;
+                    break;
+                case "hoardingBoard":
+                    $readBuildupArea = $this->_hoardingBoard['area'];
+                    break;
+                case "petrolPump":
+                    $readBuildupArea = $this->_petrolPump['area'];
+                    break;
+            }
+
+            $paramOccupancyFactor = 1.5;
+            $taxPerc = 0.15;
+            $readMultiFactor = collect($this->_multiFactors)->where('usage_type_id', 45)
+                ->where('effective_date', $this->_effectiveDateRule3)
+                ->first();
+            $readCalculationFactor = $readMultiFactor->multi_factor;
+            $readMatrixFactor = 1;              // Rental Rate 1 fixed for usage type not residential
+        }
+
+        // For Floors
+        if (is_numeric($key)) {
+            // Applicable for floors
+            // $readCircleRate = $this->_capitalValueRate[$key] ?? "";
+            $readCircleRate = collect($this->_capitalValueRate[$key])->where('effect_from', $this->_effectiveDateRule3v2)->first();
+            $readCircleRate =  $readCircleRate->max_rate;
+            if (collect($readCircleRate)->isEmpty())
+                throw new Exception("Circle Rate Not Available");
+            
             $readFloorUsageType = $this->_floors[$key]['useType'];
             // $readBuildupArea = $this->_floors[$key]['buildupArea'];
             $readBuildupArea = isset($this->_floors[$key]['biBuildupArea']) ? $this->_floors[$key]['biBuildupArea'] : $this->_floors[$key]['buildupArea'];

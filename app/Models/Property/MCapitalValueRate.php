@@ -18,13 +18,13 @@ class MCapitalValueRate extends Model
     public function getCVRate($req)
     {
         return MCapitalValueRate::where('ward_no', $req->wardNo)
-            ->select('rate', 'max_rate')
+            ->select('rate', 'max_rate', 'effect_from')
             ->where('property_type', $req->propertyType)
             ->where('road_type_mstr_id', $req->roadTypeMstrId)
             ->where('usage_type', $req->usageType)
             ->where('ulb_id', $req->ulbId)
             ->where('status', 1)
-            ->first();
+            ->get();
     }
 
     /**
@@ -72,7 +72,7 @@ class MCapitalValueRate extends Model
     {
         $list = MCapitalValueRate::select(
             'id',
-           'property_type',
+            'property_type',
             'ward_no',
             'road_type_mstr_id',
             'usage_type',
@@ -86,5 +86,4 @@ class MCapitalValueRate extends Model
             ->get();
         return $list;
     }
-
 }
