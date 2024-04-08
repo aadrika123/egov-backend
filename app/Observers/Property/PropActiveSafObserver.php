@@ -26,6 +26,8 @@ class PropActiveSafObserver
         //     $propActiveSaf->saf_no = $safNo;
         //     $propActiveSaf->save();
         // }
+
+        //modified by prity pandey
         $propIdGenerator = new PropIdGenerator;
         if (is_null($propActiveSaf->saf_no)) {
             $safNo = $propIdGenerator->generateSafNo($propActiveSaf);
