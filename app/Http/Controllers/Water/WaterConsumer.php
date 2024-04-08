@@ -642,6 +642,10 @@ class WaterConsumer extends Controller
         $document       = $request->document;
         $docUpload      = new DocUpload;
         $relativePath   = Config::get('waterConstaint.WATER_RELATIVE_PATH');
+        $folder = public_path("/$relativePath");
+        if (!file_exists($folder)) {
+            mkdir($folder,0777);
+        }
 
         $imageName = $docUpload->upload($refImageName, $document, $relativePath);
         $doc = [
@@ -1849,7 +1853,8 @@ class WaterConsumer extends Controller
             return validationError($validated);
 
         try {
-            $user                           = authUser($request);return ($request->all());
+            $user                           = authUser($request);
+            return ($request->all());
             $refRequest                     = array();
             $ulbWorkflowObj                 = new WfWorkflow();
             $mWorkflowTrack                 = new WorkflowTrack();
