@@ -134,10 +134,22 @@ class HoldingTaxController extends Controller
             $mPropDemand = new PropDemand();
             $mPropProperty = new PropProperty();
             $penaltyRebateCalc = new PenaltyRebateCalculation;
+            $mWfRoleUser = new WfRoleusermap();
             $currentQuarter = calculateQtr(Carbon::now()->format('Y-m-d'));
             $currentFYear = getFY();
-            if ($req->auth)
+            $canTakePayment = false; // Initializing $canTakePayment to false by default
+            if ($req->auth) {
+                $canTakePaymentRole = [4, 5, 8];
                 $user = authUser($req);
+                $roleIds = $mWfRoleUser->getRoleIdByUserId($user->id)->pluck('wf_role_id')->toArray();
+
+                foreach ($roleIds as $roleId) {
+                    if (in_array($roleId, $canTakePaymentRole)) {
+                        $canTakePayment = true;
+                        break; // No need to continue checking once we find a match
+                    }
+                }
+            }
             $loggedInUserType = $user->user_type ?? "Citizen";
             $mPropOwners = new PropOwner();
             $pendingFYears = collect();
@@ -254,7 +266,13 @@ class HoldingTaxController extends Controller
             $demand['demandList'] = $demandList;
 
             $demand['basicDetails'] = $basicDtls;
-            $demand['can_pay'] = true;
+            if ($canTakePayment == false) {
+               $canTakePayment = in_array($loggedInUserType, ['Citizen']) ? true : false;
+            }
+
+
+            $demand['can_pay'] = $canTakePayment;
+            // $demand['can_pay'] = true;
 
             // Calculations for showing demand receipt without any rebate
             $total = roundFigure($dues - $advanceAmt);
@@ -557,7 +575,7 @@ class HoldingTaxController extends Controller
             $ownerMobile = $ownerDetails->mobile_no;
             $amount      = $req->amount;
             $holdingNo   = $propDetails->new_holding_no ?? $propDetails->holding_no;
-            $url         = "https://jharkhandegovernance.com/citizen/paymentReceipt/direct/".$tranNo."/holding";
+            $url         = "https://jharkhandegovernance.com/citizen/paymentReceipt/direct/" . $tranNo . "/holding";
 
             #_Whatsaap Message
             if (strlen($ownerMobile) == 10) {
@@ -684,7 +702,7 @@ class HoldingTaxController extends Controller
             $ownerMobile = $ownerDetails->mobile_no;
             $amount      = $req->amount;
             $holdingNo   = $propDetails->new_holding_no ?? $propDetails->holding_no;
-            $url         = "https://jharkhandegovernance.com/citizen/paymentReceipt/direct/".$tranNo."/holding";
+            $url         = "https://jharkhandegovernance.com/citizen/paymentReceipt/direct/" . $tranNo . "/holding";
 
             #_Whatsaap Message
             if (strlen($ownerMobile) == 10) {
