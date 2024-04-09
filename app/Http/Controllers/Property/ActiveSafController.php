@@ -775,6 +775,7 @@ class ActiveSafController extends Controller
         ]);
         try {
             // Variable Assignments
+            $mPropOwner = new PropOwner();
             $mPropActiveSaf = new PropActiveSaf();
             $mPropSafOwner = new PropSafsOwner();
             $mPropSaf = new PropSaf();
@@ -782,6 +783,7 @@ class ActiveSafController extends Controller
             $mPropActiveSafOwner = new PropActiveSafsOwner();
             $mActiveSafsFloors = new PropActiveSafsFloor();
             $mPropSafMemoDtls = new PropSafMemoDtl();
+            $prevOwnerDtls = array();
             $memoDtls = array();
             $data = array();
 
@@ -811,12 +813,18 @@ class ActiveSafController extends Controller
             } else
                 $data->current_role_name2 = $data->current_role_name;
 
-            $data = json_decode(json_encode($data), true);
 
+            if ($data->previous_holding_id) {
+                $prevHoldingIds = explode(",", $data->previous_holding_id);
+                $prevOwnerDtls = $mPropOwner->getOwnerByPropIds($prevHoldingIds);
+            }
+
+            $data = json_decode(json_encode($data), true);
             $ownerDtls = $mPropActiveSafOwner->getOwnersBySafId($data['id']);
             if (collect($ownerDtls)->isEmpty())
                 $ownerDtls = $mPropSafOwner->getOwnersBySafId($data['id']);
 
+            $data['previous_owners'] = $prevOwnerDtls;
             $data['owners'] = $ownerDtls;
             $getFloorDtls = $mActiveSafsFloors->getFloorsBySafId($data['id']);      // Model Function to Get Floor Details
             if (collect($getFloorDtls)->isEmpty())
@@ -959,6 +967,13 @@ class ActiveSafController extends Controller
                 'comment' => $senderRoleId == $wfLevels['BO'] ? 'nullable' : 'required',
 
             ]);
+
+            $mWfRoleUser = new WfRoleusermap();
+            $mWfRoleusermap = new WfRoleusermap();
+            $roleIds = $mWfRoleUser->getRoleIdByUserId($userId)->pluck('wf_role_id')->toArray();                      // Model to () get Role By User Id
+            if (!in_array($senderRoleId, $roleIds))
+                throw new Exception("You r not authorised");
+
             $ulbWorkflowId = $saf->workflow_id;
             $ulbWorkflowMaps = $mWfWorkflows->getWfDetails($ulbWorkflowId);
             $roleMapsReqs = new Request([

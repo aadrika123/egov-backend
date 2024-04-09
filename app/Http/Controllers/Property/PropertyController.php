@@ -270,6 +270,7 @@ class PropertyController extends Controller
             $holdingTaxController = new HoldingTaxController($this->_safRepo);
             $type = $req->type;
             $propertyId = $req->propertyId;
+            $sms = "";
 
             switch ($type) {
                 case 'Reassesment':
@@ -280,6 +281,7 @@ class PropertyController extends Controller
                         ->first();
                     break;
                 case 'Mutation':
+                    $sms  = $this->checkOccupiedProperty($req);
                     $data = PropActiveSaf::select('prop_active_safs.id', 'role_name', 'saf_no as application_no')
                         ->join('wf_roles', 'wf_roles.id', 'prop_active_safs.current_role')
                         ->where('previous_holding_id', $propertyId)
@@ -287,12 +289,21 @@ class PropertyController extends Controller
                         ->first();
                     break;
                 case 'Bifurcation':
+                    $sms  = $this->checkOccupiedProperty($req);
                     $data = PropActiveSaf::select('prop_active_safs.id', 'role_name', 'saf_no as application_no')
                         ->join('wf_roles', 'wf_roles.id', 'prop_active_safs.current_role')
                         ->where('assessment_type', 'Mutation')
                         ->where('previous_holding_id', $propertyId)
                         ->where('prop_active_safs.status', 1)
                         ->first();
+
+                    if (!$data)
+                        $data = PropActiveSaf::select('prop_active_safs.id', 'role_name', 'saf_no as application_no')
+                            ->join('wf_roles', 'wf_roles.id', 'prop_active_safs.current_role')
+                            ->where('assessment_type', 'Reassessment')
+                            ->where('previous_holding_id', $propertyId)
+                            ->where('prop_active_safs.status', 1)
+                            ->first();
                     break;
                 case 'Concession':
                     $data = PropActiveConcession::select('prop_active_concessions.id', 'role_name', 'application_no')
@@ -324,6 +335,11 @@ class PropertyController extends Controller
             //     $msg['message'] = "The application is still in workflow and pending at " . $data->role_name . ". Please Track your application with " . $data->application_no;
             // } else
             //     $msg['inWorkflow'] = false;
+            if ($sms) {
+                $msg['inWorkflow'] = true;
+                $msg['message'] = $sms;
+                return responseMsgs(true, 'Data Checked', $msg, '011705', '01', responseTime(), 'Post', '');
+            }
 
             if ($data) {
                 $msg['id'] = $data->id;
@@ -353,6 +369,21 @@ class PropertyController extends Controller
             return responseMsgs(true, 'Data Checked', $msg, '011705', '01', responseTime(), 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "", '011705', '01', responseTime(), 'Post', '');
+        }
+    }
+
+    /**
+     * | Check if th property is occupied 
+     */
+    public function checkOccupiedProperty($req)
+    {
+        $propTypes = Config::get("PropertyConstaint.PROPERTY-TYPE");
+        $propTypes = collect($propTypes)->flip();
+        $propDtls = PropProperty::find($req->propertyId);
+        $propDtls->prop_type_mstr_id;
+        if (in_array($propDtls->prop_type_mstr_id, [$propTypes['SUPER STRUCTURE'], $propTypes['OCCUPIED PROPERTY']])) {
+            $msg = "SUPER STRUCTURE & OCCUPIED PROPERTY Cannot Apply For " . $req->type;
+            return $msg;
         }
     }
 
