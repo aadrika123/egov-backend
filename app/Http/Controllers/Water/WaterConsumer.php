@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Water;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\UlbMaster;
 use App\Http\Requests\Notice\Add;
+use App\Http\Requests\Water\ReqApplicationId;
 use App\Http\Requests\Water\reqDeactivate;
 use App\Http\Requests\Water\reqMeterEntry;
 use App\MicroServices\DocUpload;
@@ -12,6 +14,7 @@ use App\MicroServices\IdGenerator\PrefixIdGenerator;
 use App\Models\Citizen\ActiveCitizenUndercare;
 use App\Models\Masters\RefRequiredDocument;
 use App\Models\Payment\TempTransaction;
+use App\Models\UlbWardMaster;
 use App\Models\Water\WaterAdvance;
 use App\Models\Water\WaterApplication;
 use App\Models\Water\WaterApprovalApplicationDetail;
@@ -20,6 +23,7 @@ use App\Models\Water\WaterConnectionCharge;
 use App\Models\Water\WaterConnectionTypeMstr;
 use App\Models\Water\WaterConsumer as WaterWaterConsumer;
 use App\Models\Water\WaterConsumerActiveRequest;
+use App\Models\Water\WaterConsumerApprovalRequest;
 use App\Models\Water\WaterConsumerApprovedRequest;
 use App\Models\Water\WaterConsumerCharge;
 use App\Models\Water\WaterConsumerChargeCategory;
@@ -1761,34 +1765,6 @@ class WaterConsumer extends Controller
         }
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     ####################################################################################################
 
     /**
@@ -1846,7 +1822,9 @@ class WaterConsumer extends Controller
                 'consumerId'    => "required|digits_between:1,9223372036854775807",
                 'ulbId'         => "nullable",
                 'reason'        => "required",
-                'remarks'       => "required"
+                'remarks'       => "required",
+                'address'        => "required",
+                'mobileNo'       => "required|digits:10|regex:/[0-9]{10}/"
             ]
         );
         if ($validated->fails())
@@ -1854,7 +1832,6 @@ class WaterConsumer extends Controller
 
         try {
             $user                           = authUser($request);
-            return ($request->all());
             $refRequest                     = array();
             $ulbWorkflowObj                 = new WfWorkflow();
             $mWorkflowTrack                 = new WorkflowTrack();
@@ -1869,7 +1846,7 @@ class WaterConsumer extends Controller
             $refConParamId                  = Config::get('waterConstaint.PARAM_IDS');
             $confModuleId                   = Config::get('module-constants.WATER_MODULE_ID');
             $consumerId                   = $request->consumerId;
-            $waterConsumer                = WaterWaterConsumer::where('id', $consumerId)->first(); // Get the consumer ID from the database based on the given consumer Id
+            $waterConsumer                = $mWaterWaterConsumer->where('id', $consumerId)->first(); // Get the consumer ID from the database based on the given consumer Id
             if (!$waterConsumer) {
                 throw new Exception("Water Consumer not found on the given consumer Id");
             }
@@ -1984,78 +1961,104 @@ class WaterConsumer extends Controller
             $parameter          = $request->parameter;
             $pages              = $request->pages ?? 10;
             $mWaterApplicant    = new WaterConsumerActiveRequest();
+            $returnData = $mWaterApplicant->searchApplication();
             switch ($key) {
                 case ("name"):                                                                              // Static
-                    $returnData = $mWaterApplicant->searchApplication($request)
-                        ->where("water_consumer_owners.applicant_name", 'ILIKE', '%' . $parameter . '%')
-                        ->paginate($pages);
-                    $checkVal = collect($returnData)->last();
-                    if (!$checkVal || $checkVal == 0)
-                        throw new Exception("Data according to " . $key . " not Found!");
+                    $returnData->where("water_consumer_owners.applicant_name", 'ILIKE', '%' . $parameter . '%');
                     break;
                 case ("mobileNo"):                                                                          // Static
-                    $returnData = $mWaterApplicant->searchApplication($request)
-                        ->where("water_consumer_owners.mobile_no", $parameter)
-                        ->paginate($pages);
-                    $checkVal = collect($returnData)->last();
-                    if (!$checkVal || $checkVal == 0)
-                        throw new Exception("Data according to " . $key . " not Found!");
+                    $returnData ->where("water_consumer_owners.mobile_no", $parameter);
                     break;
                 case ("applicationNo"):                                                                             // Static
-                    $returnData = $mWaterApplicant->searchApplication($request)
-                        ->where("water_consumer_active_requests.application_no", 'LIKE', '%' . $parameter . '%')
-                        ->paginate($pages);
-                    $checkVal = collect($returnData)->last();
-                    if (!$checkVal || $checkVal == 0)
-                        throw new Exception("Data according to " . $key . " not Found!");
+                    $returnData ->where("water_consumer_active_requests.application_no", 'LIKE', '%' . $parameter . '%');
                     break;
             }
-            return responseMsgs(true, "List of Appication!", $returnData, "", "01", "723 ms", "POST", "");
+
+            // 
+            $returnData = $returnData->paginate($pages);
+            $checkVal = collect($returnData)->last();
+            if (!$checkVal || $checkVal == 0)
+                throw new Exception("Data according to " . $key . " not Found!");
+            $list = [
+                    "current_page" => $returnData->currentPage(),
+                    "last_page" => $returnData->lastPage(),
+                    "data" => collect($returnData->items())->map(function($val){
+                            return $val->only("id","reason","remarks","application_no","apply_date","workflow_id","consumer_no","address","applicant_name","mobile_no");
+                        }),
+                    "total" => $returnData->total(),
+                ]; 
+            return responseMsgs(true, "List of Appication!", $list, "", "01", "723 ms", "POST", "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $request->deviceId);
         }
     }
 
-    public function getByApplicationId(Request $request)
+    // public function getByApplicationId(Request $request)
+    // {
+    //     try {
+    //         $validated = Validator::make(
+    //             $request->all(),
+    //             [
+    //                 'applicationId'    => "required|digits_between:1,9223372036854775807"
+    //             ]
+    //         );
+    //         if ($validated->fails())
+    //             return validationError($validated);
+    //         $data = WaterConsumerActiveRequest::find($request->applicationId);
+    //         if (!$data) {
+    //             $data = WaterConsumerApprovedRequest::find($request->applicationId);
+    //         }
+    //         if (!$data) {
+    //             throw new Exception("Data not found");
+    //         }
+    //         // $newRequest = new Request(['id' => $data->consumer_id]);
+    //         // //$consumerDetails = WaterWaterConsumer::find($data->consumer_id);
+    //         // $newConnectionController = App::makeWith(NewConnectionController::class, ["iNewConnection" => iNewConnection::class]);
+
+    //         // $response = $newConnectionController->approvedWaterApplications($newRequest);
+    //         // $response = $response->original;
+    //         // if (!$response["status"]) {
+    //         //     throw new Exception("consumer data not found");
+    //         // }
+    //         // $returnData = [
+    //         //     'requestData' => $data,
+    //         //     'consumerData' => $response['data']
+    //         // ];
+
+    //         $data = WaterConsumerActiveRequest::select('water_consumer_active_requests.*', 'water_consumers.*', 'water_consumer_owners.*')
+    //             ->leftjoin('water_consumers', 'water_consumers.id', 'water_consumer_active_requests.consumer_id')
+    //             ->leftjoin('water_consumer_owners', 'water_consumer_owners.consumer_id', 'water_consumers.id')
+    //             ->join('ulb_ward_masters AS uwm', 'uwm.id', 'water_consumer_active_requests.ward_mstr_id')
+    //             ->join('ulb_masters AS um', 'um.id', 'water_consumer_active_requests.ulb_id')
+    //             ->where('water_consumer_active_requests.status', 1)
+    //             ->where('water_consumer_active_requests.id', $request->applicationId)
+    //             ->get();
+
+    //         return responseMsgs(true, "Respective Consumer Deactivated!", remove_null($data), "", "02", ".ms", "POST", $request->deviceId);
+    //     } catch (Exception $e) {
+    //         $this->rollback();
+    //         return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", "");
+    //     }
+    // }
+
+    public function getByApplicationId(ReqApplicationId $request)
     {
-        try {
-            $validated = Validator::make(
-                $request->all(),
-                [
-                    'applicationId'    => "required|digits_between:1,9223372036854775807"
-                ]
-            );
-            if ($validated->fails())
-                return validationError($validated);
+        try {       
+               
             $data = WaterConsumerActiveRequest::find($request->applicationId);
+            // dd($data,$request->all(),DB::connection("pgsql_water")->getQueryLog());
             if (!$data) {
-                $data = WaterConsumerApprovedRequest::find($request->applicationId);
+                $data = WaterConsumerApprovalRequest::find($request->applicationId);
             }
             if (!$data) {
                 throw new Exception("Data not found");
             }
-            // $newRequest = new Request(['id' => $data->consumer_id]);
-            // //$consumerDetails = WaterWaterConsumer::find($data->consumer_id);
-            // $newConnectionController = App::makeWith(NewConnectionController::class, ["iNewConnection" => iNewConnection::class]);
-
-            // $response = $newConnectionController->approvedWaterApplications($newRequest);
-            // $response = $response->original;
-            // if (!$response["status"]) {
-            //     throw new Exception("consumer data not found");
-            // }
-            // $returnData = [
-            //     'requestData' => $data,
-            //     'consumerData' => $response['data']
-            // ];
-
-            $data = WaterConsumerActiveRequest::select('water_consumer_active_requests.*', 'water_consumers.*', 'water_consumer_owners.*')
-                ->leftjoin('water_consumers', 'water_consumers.id', 'water_consumer_active_requests.consumer_id')
-                ->leftjoin('water_consumer_owners', 'water_consumer_owners.consumer_id', 'water_consumers.id')
-                ->join('ulb_ward_masters AS uwm', 'uwm.id', 'water_consumer_active_requests.ward_mstr_id')
-                ->join('ulb_masters AS um', 'um.id', 'water_consumer_active_requests.ulb_id')
-                ->where('water_consumer_active_requests.status', 1)
-                ->where('water_consumer_active_requests.id', $request->applicationId)
-                ->get();
+            $data->consumerDetails = $data->getConserDtls();
+            $data->consumerDetails->owners = $data->consumerDetails->getOwners();
+            $wards = UlbWardMaster::where("id",$data->ward_mstr_id)->first();
+            $ulb = UlbMaster::where("id",$data->ulb_id)->first();
+            $data->ward_no = $wards->ward_name??null;
+            $data->ulb_name = $ulb->ulb_name??null;
 
             return responseMsgs(true, "Respective Consumer Deactivated!", remove_null($data), "", "02", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
@@ -2170,108 +2173,6 @@ class WaterConsumer extends Controller
         });
         return $filteredDocs;
     }
-
-
-    // public function check($documentsList)
-    // {
-    //     $applicationDoc = $documentsList["listDocs"];
-    //     $ownerDoc = $documentsList["ownerDocs"] ?? [];
-    //     $appMandetoryDoc = $applicationDoc->whereIn("docType", ["R", "OR"]);
-    //     $appUploadedDoc = $applicationDoc->whereNotNull("uploadedDoc");
-    //     $appUploadedDocVerified = collect();
-    //     $appUploadedDoc->map(function ($val) use ($appUploadedDocVerified) {
-    //         $appUploadedDocVerified->push(["is_docVerify" => (!empty($val["uploadedDoc"]) ?  (((collect($val["uploadedDoc"])->all())["verifyStatus"] != 0) ? true : false) : true)]);
-    //     });
-    //     $is_appUploadedDocVerified = $appUploadedDocVerified->where("is_docVerify", false);
-    //     $is_appMandUploadedDoc  = $appMandetoryDoc->whereNull("uploadedDoc");
-    //     $Wdocuments = collect();
-    //     $ownerDoc->map(function ($val) use ($Wdocuments) {
-    //         $ownerId = $val["ownerDetails"]["ownerId"] ?? "";
-    //         $val["documents"]->map(function ($val1) use ($Wdocuments, $ownerId) {
-    //             $val1["ownerId"] = $ownerId;
-    //             $val1["is_uploded"] = (in_array($val1["docType"], ["R", "OR"]))  ? ((!empty($val1["uploadedDoc"])) ? true : false) : true;
-    //             $val1["is_docVerify"] = !empty($val1["uploadedDoc"]) ?  (((collect($val1["uploadedDoc"])->all())["verifyStatus"] != 0) ? true : false) : true;
-    //             $Wdocuments->push($val1);
-    //         });
-    //     });
-    //     $ownerMandetoryDoc = $Wdocuments->whereIn("docType", ["R", "OR"]);
-    //     $is_ownerUploadedDoc = $Wdocuments->where("is_uploded", false);
-    //     $is_ownerDocVerify = $Wdocuments->where("is_docVerify", false);
-    //     $data = [
-    //         "docUploadStatus" => 0,
-    //         "docVerifyStatus" => 0,
-    //     ];
-    //     $data["docUploadStatus"] = (empty($is_ownerUploadedDoc->all()) && empty($is_appMandUploadedDoc->all()));
-    //     $data["docVerifyStatus"] =  (empty($is_ownerDocVerify->all()) && empty($is_appUploadedDocVerified->all()));
-    //     return ($data);
-    // }
-
-    // public function checkWorckFlowForwardBackord(Request $request)
-    // {
-    //     $user = Auth()->user();
-    //     $user_id = $user->id ?? $request->user_id;
-    //     $ulb_id = $user->ulb_id ?? $request->ulb_id;
-    //     $refWorkflowId = $this->_WF_MASTER_Id;
-    //     $allRolse = collect($this->_COMMON_FUNCTION->getAllRoles($user_id, $ulb_id, $refWorkflowId, 0, true));
-    //     $mUserType      = $this->_COMMON_FUNCTION->userType($refWorkflowId, $ulb_id);
-    //     $fromRole = [];
-    //     if (!empty($allRolse)) {
-    //         $fromRole = array_values(objToArray($allRolse->where("id", $request->senderRoleId)))[0] ?? [];
-    //     }
-    //     if (strtoupper($mUserType) == $this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][""] || ($fromRole["can_upload_document"] ?? false) ||  ($fromRole["can_verify_document"] ?? false)) {
-    //         $documents = $this->getLicenseDocLists($request);
-    //         if (!$documents->original["status"]) {
-    //             return false;
-    //         }
-    //         $applicationDoc = $documents->original["data"]["listDocs"];
-    //         $ownerDoc = $documents->original["data"]["ownerDocs"];
-    //         $appMandetoryDoc = $applicationDoc->whereIn("docType", ["R", "OR"]);
-    //         $appUploadedDoc = $applicationDoc->whereNotNull("uploadedDoc");
-    //         $appUploadedDocVerified = collect();
-    //         $appUploadedDocRejected = collect();
-    //         $appMadetoryDocRejected  = collect();
-    //         $appUploadedDoc->map(function ($val) use ($appUploadedDocVerified, $appUploadedDocRejected, $appMadetoryDocRejected) {
-
-    //             $appUploadedDocVerified->push(["is_docVerify" => (!empty($val["uploadedDoc"]) ?  (((collect($val["uploadedDoc"])->all())["verifyStatus"]) ? true : false) : true)]);
-    //             $appUploadedDocRejected->push(["is_docRejected" => (!empty($val["uploadedDoc"]) ?  (((collect($val["uploadedDoc"])->all())["verifyStatus"] == 2) ? true : false) : false)]);
-    //             if (in_array($val["docType"], ["R", "OR"])) {
-    //                 $appMadetoryDocRejected->push(["is_docRejected" => (!empty($val["uploadedDoc"]) ?  (((collect($val["uploadedDoc"])->all())["verifyStatus"] == 2) ? true : false) : false)]);
-    //             }
-    //         });
-    //         $is_appUploadedDocVerified          = $appUploadedDocVerified->where("is_docVerify", false);
-    //         $is_appUploadedDocRejected          = $appUploadedDocRejected->where("is_docRejected", true);
-    //         $is_appUploadedMadetoryDocRejected  = $appMadetoryDocRejected->where("is_docRejected", true);
-    //         // $is_appMandUploadedDoc              = $appMandetoryDoc->whereNull("uploadedDoc");
-    //         $is_appMandUploadedDoc = $appMandetoryDoc->filter(function ($val) {
-    //             return ($val["uploadedDoc"] == "" || $val["uploadedDoc"] == null);
-    //         });
-    //         $Wdocuments = collect();
-    //         $ownerDoc->map(function ($val) use ($Wdocuments) {
-    //             $ownerId = $val["ownerDetails"]["ownerId"] ?? "";
-    //             $val["documents"]->map(function ($val1) use ($Wdocuments, $ownerId) {
-    //                 $val1["ownerId"] = $ownerId;
-    //                 $val1["is_uploded"] = (in_array($val1["docType"], ["R", "OR"]))  ? ((!empty($val1["uploadedDoc"])) ? true : false) : true;
-    //                 $val1["is_docVerify"] = !empty($val1["uploadedDoc"]) ?  (((collect($val1["uploadedDoc"])->all())["verifyStatus"]) ? true : false) : true;
-    //                 $val1["is_docRejected"] = !empty($val1["uploadedDoc"]) ?  (((collect($val1["uploadedDoc"])->all())["verifyStatus"] == 2) ? true : false) : false;
-    //                 $val1["is_madetory_docRejected"] = (!empty($val1["uploadedDoc"]) && in_array($val1["docType"], ["R", "OR"])) ?  (((collect($val1["uploadedDoc"])->all())["verifyStatus"] == 2) ? true : false) : false;
-    //                 $Wdocuments->push($val1);
-    //             });
-    //         });
-
-    //         $ownerMandetoryDoc              = $Wdocuments->whereIn("docType", ["R", "OR"]);
-    //         $is_ownerUploadedDoc            = $Wdocuments->where("is_uploded", false);
-    //         $is_ownerDocVerify              = $Wdocuments->where("is_docVerify", false);
-    //         $is_ownerDocRejected            = $Wdocuments->where("is_docRejected", true);
-    //         $is_ownerMadetoryDocRejected    = $Wdocuments->where("is_madetory_docRejected", true);
-    //         if (($fromRole["can_upload_document"] ?? false) || strtoupper($mUserType) == $this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][""]) {
-    //             return (empty($is_ownerUploadedDoc->all()) && empty($is_ownerDocRejected->all()) && empty($is_appMandUploadedDoc->all()) && empty($is_appUploadedDocRejected->all()));
-    //         }
-    //         if ($fromRole["can_verify_document"] ?? false) {
-    //             return (empty($is_ownerDocVerify->all()) && empty($is_appUploadedDocVerified->all()) && empty($is_ownerMadetoryDocRejected->all()) && empty($is_appUploadedMadetoryDocRejected->all()));
-    //         }
-    //     }
-    //     return true;
-    // }
 
     public function getRequestDocLists($application)
     {
@@ -2506,76 +2407,6 @@ class WaterConsumer extends Controller
             return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
-
-
-    // public function checkFullDocUpload($req)
-    // {
-    //     # Check the Document upload Status
-    //     $documentList = $this->getDocList($req);
-    //     $refDoc = collect($documentList)['original']['data'];
-    //     $checkDocument = collect($refDoc)->map(function ($value, $key) {
-    //         if ($value['isMadatory'] == 1) {
-    //             $doc = collect($value['uploadDoc'])->first();
-    //             if (is_null($doc) || $value['uploadDoc']['verify_status'] == 2) {
-    //                 return false;
-    //             }
-    //             return true;
-    //         }
-    //         return true;
-    //     });
-    //     return $checkDocument;
-    // }
-    // public function deactivationPayment(Request $request)
-    // {
-    //     try {
-    //         $refUser = Auth()->user();
-    //         $refUserId = $refUser->id;
-    //         $refUlbId = $refUser->ulb_id;
-    //         $mActiveConsumer = new WaterConsumerActiveRequest();
-
-    //         $validated = Validator::make(
-    //             $request->all(),
-    //             [
-    //                 'applicationId' => 'required|numeric',
-    //                 'payableAmount' => 'required|numeric',
-    //                 'paymentMode' => 'required|in:Cheque,Cash,Online,DD,RTGS,Neft'
-    //             ]
-    //         );
-
-    //         if ($validated->fails())
-    //             return validationError($validated);
-
-    //         $data = WaterConsumerActiveRequest::find($request->applicationId);
-
-    //         if (!$data) {
-    //             throw new Exception("Data not found");
-    //         }
-
-    //         $refConsumer = $mActiveConsumer->getConsumerByApplication($request->applicationId);
-    //         $actual_amount = $refConsumer->amount;
-
-    //         if ($actual_amount != $request->payableAmount) {
-    //             throw new Exception("Payable Amount Mismatch!!!");
-    //         }
-
-    //         $this->begin();
-    //         $watertransaction = new WaterTran();
-
-    //         // Create and save water transaction
-    //         $watertransaction->related_id = $refConsumer->id;
-    //         $watertransaction->ward_id = $refConsumer->ward_id;
-    //         $watertransaction->ulb_id = $refConsumer->ulb_id;
-    //         $watertransaction->payment_mode = $request->paymentMode;
-    //         $watertransaction->amount = $request->payableAmount;
-    //         $watertransaction->save();
-
-    //         $this->commit();
-    //         return responseMsgs(true, "Payment Done ", "", "010102", "1.0", "", "POST", $request->deviceId ?? "");
-    //     } catch (Exception $e) {
-    //         $this->rollback();
-    //         return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $request->deviceId ?? "");
-    //     }
-    // }
 
     public function checkFullDocUpload($applicationId)
     {

@@ -184,8 +184,11 @@ class WaterConsumerActiveRequest extends Model
             'water_consumer_active_requests.application_no',
             "water_consumer_active_requests.apply_date",
             "water_consumer_active_requests.workflow_id",
-            "water_consumers.*",
-            "water_consumer_owners.*"
+            "water_consumers.id as consumer_id",
+            "water_consumers.consumer_no",
+            "water_consumers.address",
+            "water_consumer_owners.applicant_name",
+            "water_consumer_owners.mobile_no",
         )
             ->leftjoin('water_consumers', 'water_consumers.id', 'water_consumer_active_requests.consumer_id')
             ->leftjoin('water_consumer_owners','water_consumer_owners.consumer_id','water_consumers.id')

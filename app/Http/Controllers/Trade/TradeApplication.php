@@ -1012,7 +1012,8 @@ class TradeApplication extends Controller
             $req->validate([
                 "applicationId" => "required",
                 "status" => "required",
-                "comment" => $req->status == 0 ? "required" : "nullable",
+               // "comment" => $req->status == 0 ? "required" : "nullable",
+               "comment" =>"nullable"
             ]);
             if (!$this->_COMMON_FUNCTION->checkUsersWithtocken("users")) {
                 throw new Exception("Citizen Not Allowed");
