@@ -1765,34 +1765,6 @@ class WaterConsumer extends Controller
         }
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     ####################################################################################################
 
     /**
@@ -1925,7 +1897,7 @@ class WaterConsumer extends Controller
             $refRequest["ulbWorkflowId"]     = $ulbWorkflowId->id;
             $refRequest["chargeCategoryId"]  = $refConsumerCharges['WATER_DISCONNECTION'];
             $refRequest["amount"]            = $chargeAmount->amount;
-            $refRequest['userType']          = $user->user_type;dd($refRequest);
+            $refRequest['userType']          = $user->user_type;
 
             $this->begin();
             $idGeneration       = new PrefixIdGenerator($refConParamId['WCD'], $ulbId);
@@ -2202,108 +2174,6 @@ class WaterConsumer extends Controller
         return $filteredDocs;
     }
 
-
-    // public function check($documentsList)
-    // {
-    //     $applicationDoc = $documentsList["listDocs"];
-    //     $ownerDoc = $documentsList["ownerDocs"] ?? [];
-    //     $appMandetoryDoc = $applicationDoc->whereIn("docType", ["R", "OR"]);
-    //     $appUploadedDoc = $applicationDoc->whereNotNull("uploadedDoc");
-    //     $appUploadedDocVerified = collect();
-    //     $appUploadedDoc->map(function ($val) use ($appUploadedDocVerified) {
-    //         $appUploadedDocVerified->push(["is_docVerify" => (!empty($val["uploadedDoc"]) ?  (((collect($val["uploadedDoc"])->all())["verifyStatus"] != 0) ? true : false) : true)]);
-    //     });
-    //     $is_appUploadedDocVerified = $appUploadedDocVerified->where("is_docVerify", false);
-    //     $is_appMandUploadedDoc  = $appMandetoryDoc->whereNull("uploadedDoc");
-    //     $Wdocuments = collect();
-    //     $ownerDoc->map(function ($val) use ($Wdocuments) {
-    //         $ownerId = $val["ownerDetails"]["ownerId"] ?? "";
-    //         $val["documents"]->map(function ($val1) use ($Wdocuments, $ownerId) {
-    //             $val1["ownerId"] = $ownerId;
-    //             $val1["is_uploded"] = (in_array($val1["docType"], ["R", "OR"]))  ? ((!empty($val1["uploadedDoc"])) ? true : false) : true;
-    //             $val1["is_docVerify"] = !empty($val1["uploadedDoc"]) ?  (((collect($val1["uploadedDoc"])->all())["verifyStatus"] != 0) ? true : false) : true;
-    //             $Wdocuments->push($val1);
-    //         });
-    //     });
-    //     $ownerMandetoryDoc = $Wdocuments->whereIn("docType", ["R", "OR"]);
-    //     $is_ownerUploadedDoc = $Wdocuments->where("is_uploded", false);
-    //     $is_ownerDocVerify = $Wdocuments->where("is_docVerify", false);
-    //     $data = [
-    //         "docUploadStatus" => 0,
-    //         "docVerifyStatus" => 0,
-    //     ];
-    //     $data["docUploadStatus"] = (empty($is_ownerUploadedDoc->all()) && empty($is_appMandUploadedDoc->all()));
-    //     $data["docVerifyStatus"] =  (empty($is_ownerDocVerify->all()) && empty($is_appUploadedDocVerified->all()));
-    //     return ($data);
-    // }
-
-    // public function checkWorckFlowForwardBackord(Request $request)
-    // {
-    //     $user = Auth()->user();
-    //     $user_id = $user->id ?? $request->user_id;
-    //     $ulb_id = $user->ulb_id ?? $request->ulb_id;
-    //     $refWorkflowId = $this->_WF_MASTER_Id;
-    //     $allRolse = collect($this->_COMMON_FUNCTION->getAllRoles($user_id, $ulb_id, $refWorkflowId, 0, true));
-    //     $mUserType      = $this->_COMMON_FUNCTION->userType($refWorkflowId, $ulb_id);
-    //     $fromRole = [];
-    //     if (!empty($allRolse)) {
-    //         $fromRole = array_values(objToArray($allRolse->where("id", $request->senderRoleId)))[0] ?? [];
-    //     }
-    //     if (strtoupper($mUserType) == $this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][""] || ($fromRole["can_upload_document"] ?? false) ||  ($fromRole["can_verify_document"] ?? false)) {
-    //         $documents = $this->getLicenseDocLists($request);
-    //         if (!$documents->original["status"]) {
-    //             return false;
-    //         }
-    //         $applicationDoc = $documents->original["data"]["listDocs"];
-    //         $ownerDoc = $documents->original["data"]["ownerDocs"];
-    //         $appMandetoryDoc = $applicationDoc->whereIn("docType", ["R", "OR"]);
-    //         $appUploadedDoc = $applicationDoc->whereNotNull("uploadedDoc");
-    //         $appUploadedDocVerified = collect();
-    //         $appUploadedDocRejected = collect();
-    //         $appMadetoryDocRejected  = collect();
-    //         $appUploadedDoc->map(function ($val) use ($appUploadedDocVerified, $appUploadedDocRejected, $appMadetoryDocRejected) {
-
-    //             $appUploadedDocVerified->push(["is_docVerify" => (!empty($val["uploadedDoc"]) ?  (((collect($val["uploadedDoc"])->all())["verifyStatus"]) ? true : false) : true)]);
-    //             $appUploadedDocRejected->push(["is_docRejected" => (!empty($val["uploadedDoc"]) ?  (((collect($val["uploadedDoc"])->all())["verifyStatus"] == 2) ? true : false) : false)]);
-    //             if (in_array($val["docType"], ["R", "OR"])) {
-    //                 $appMadetoryDocRejected->push(["is_docRejected" => (!empty($val["uploadedDoc"]) ?  (((collect($val["uploadedDoc"])->all())["verifyStatus"] == 2) ? true : false) : false)]);
-    //             }
-    //         });
-    //         $is_appUploadedDocVerified          = $appUploadedDocVerified->where("is_docVerify", false);
-    //         $is_appUploadedDocRejected          = $appUploadedDocRejected->where("is_docRejected", true);
-    //         $is_appUploadedMadetoryDocRejected  = $appMadetoryDocRejected->where("is_docRejected", true);
-    //         // $is_appMandUploadedDoc              = $appMandetoryDoc->whereNull("uploadedDoc");
-    //         $is_appMandUploadedDoc = $appMandetoryDoc->filter(function ($val) {
-    //             return ($val["uploadedDoc"] == "" || $val["uploadedDoc"] == null);
-    //         });
-    //         $Wdocuments = collect();
-    //         $ownerDoc->map(function ($val) use ($Wdocuments) {
-    //             $ownerId = $val["ownerDetails"]["ownerId"] ?? "";
-    //             $val["documents"]->map(function ($val1) use ($Wdocuments, $ownerId) {
-    //                 $val1["ownerId"] = $ownerId;
-    //                 $val1["is_uploded"] = (in_array($val1["docType"], ["R", "OR"]))  ? ((!empty($val1["uploadedDoc"])) ? true : false) : true;
-    //                 $val1["is_docVerify"] = !empty($val1["uploadedDoc"]) ?  (((collect($val1["uploadedDoc"])->all())["verifyStatus"]) ? true : false) : true;
-    //                 $val1["is_docRejected"] = !empty($val1["uploadedDoc"]) ?  (((collect($val1["uploadedDoc"])->all())["verifyStatus"] == 2) ? true : false) : false;
-    //                 $val1["is_madetory_docRejected"] = (!empty($val1["uploadedDoc"]) && in_array($val1["docType"], ["R", "OR"])) ?  (((collect($val1["uploadedDoc"])->all())["verifyStatus"] == 2) ? true : false) : false;
-    //                 $Wdocuments->push($val1);
-    //             });
-    //         });
-
-    //         $ownerMandetoryDoc              = $Wdocuments->whereIn("docType", ["R", "OR"]);
-    //         $is_ownerUploadedDoc            = $Wdocuments->where("is_uploded", false);
-    //         $is_ownerDocVerify              = $Wdocuments->where("is_docVerify", false);
-    //         $is_ownerDocRejected            = $Wdocuments->where("is_docRejected", true);
-    //         $is_ownerMadetoryDocRejected    = $Wdocuments->where("is_madetory_docRejected", true);
-    //         if (($fromRole["can_upload_document"] ?? false) || strtoupper($mUserType) == $this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][""]) {
-    //             return (empty($is_ownerUploadedDoc->all()) && empty($is_ownerDocRejected->all()) && empty($is_appMandUploadedDoc->all()) && empty($is_appUploadedDocRejected->all()));
-    //         }
-    //         if ($fromRole["can_verify_document"] ?? false) {
-    //             return (empty($is_ownerDocVerify->all()) && empty($is_appUploadedDocVerified->all()) && empty($is_ownerMadetoryDocRejected->all()) && empty($is_appUploadedMadetoryDocRejected->all()));
-    //         }
-    //     }
-    //     return true;
-    // }
-
     public function getRequestDocLists($application)
     {
         $mRefReqDocs    = new RefRequiredDocument();
@@ -2537,76 +2407,6 @@ class WaterConsumer extends Controller
             return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
-
-
-    // public function checkFullDocUpload($req)
-    // {
-    //     # Check the Document upload Status
-    //     $documentList = $this->getDocList($req);
-    //     $refDoc = collect($documentList)['original']['data'];
-    //     $checkDocument = collect($refDoc)->map(function ($value, $key) {
-    //         if ($value['isMadatory'] == 1) {
-    //             $doc = collect($value['uploadDoc'])->first();
-    //             if (is_null($doc) || $value['uploadDoc']['verify_status'] == 2) {
-    //                 return false;
-    //             }
-    //             return true;
-    //         }
-    //         return true;
-    //     });
-    //     return $checkDocument;
-    // }
-    // public function deactivationPayment(Request $request)
-    // {
-    //     try {
-    //         $refUser = Auth()->user();
-    //         $refUserId = $refUser->id;
-    //         $refUlbId = $refUser->ulb_id;
-    //         $mActiveConsumer = new WaterConsumerActiveRequest();
-
-    //         $validated = Validator::make(
-    //             $request->all(),
-    //             [
-    //                 'applicationId' => 'required|numeric',
-    //                 'payableAmount' => 'required|numeric',
-    //                 'paymentMode' => 'required|in:Cheque,Cash,Online,DD,RTGS,Neft'
-    //             ]
-    //         );
-
-    //         if ($validated->fails())
-    //             return validationError($validated);
-
-    //         $data = WaterConsumerActiveRequest::find($request->applicationId);
-
-    //         if (!$data) {
-    //             throw new Exception("Data not found");
-    //         }
-
-    //         $refConsumer = $mActiveConsumer->getConsumerByApplication($request->applicationId);
-    //         $actual_amount = $refConsumer->amount;
-
-    //         if ($actual_amount != $request->payableAmount) {
-    //             throw new Exception("Payable Amount Mismatch!!!");
-    //         }
-
-    //         $this->begin();
-    //         $watertransaction = new WaterTran();
-
-    //         // Create and save water transaction
-    //         $watertransaction->related_id = $refConsumer->id;
-    //         $watertransaction->ward_id = $refConsumer->ward_id;
-    //         $watertransaction->ulb_id = $refConsumer->ulb_id;
-    //         $watertransaction->payment_mode = $request->paymentMode;
-    //         $watertransaction->amount = $request->payableAmount;
-    //         $watertransaction->save();
-
-    //         $this->commit();
-    //         return responseMsgs(true, "Payment Done ", "", "010102", "1.0", "", "POST", $request->deviceId ?? "");
-    //     } catch (Exception $e) {
-    //         $this->rollback();
-    //         return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $request->deviceId ?? "");
-    //     }
-    // }
 
     public function checkFullDocUpload($applicationId)
     {
