@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Water;
 
 use App\Http\Controllers\Controller;
-use App\Http\Controllers\UlbMaster;
 use App\Http\Requests\Notice\Add;
 use App\Http\Requests\Water\ReqApplicationId;
 use App\Http\Requests\Water\reqDeactivate;
@@ -14,6 +13,7 @@ use App\MicroServices\IdGenerator\PrefixIdGenerator;
 use App\Models\Citizen\ActiveCitizenUndercare;
 use App\Models\Masters\RefRequiredDocument;
 use App\Models\Payment\TempTransaction;
+use App\Models\UlbMaster;
 use App\Models\UlbWardMaster;
 use App\Models\Water\WaterAdvance;
 use App\Models\Water\WaterApplication;

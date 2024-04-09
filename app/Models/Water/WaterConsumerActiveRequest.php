@@ -204,6 +204,11 @@ class WaterConsumerActiveRequest extends Model
             ]);
     }
 
+    public function getConserDtls()
+    {
+        return $this->belongsTo(WaterConsumer::class,"consumer_id","id","id")->first();
+    }
+
     //eoc
 
 

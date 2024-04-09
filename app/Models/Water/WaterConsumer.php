@@ -448,4 +448,9 @@ class WaterConsumer extends Model
         ->where("tran_type","Demand Collection")
         ->orderBy("id","DESC");
     }
+
+    public function getOwners()
+    {
+        return $this->hasMany(WaterConsumerOwner::class,"consumer_id","id")->where("status",1)->get();
+    }
 }
