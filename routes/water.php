@@ -146,9 +146,6 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
      */
     Route::controller(WaterConsumerWfController::class)->group(function () {
         # Workflow 
-        //modified by prity pandey
-        Route::post('consumer/req/inbox', 'consumerInbox');                                         // Workflow
-        Route::post('consumer/req/outbox', 'consumerOutbox');                                       // Workflow
         Route::post('consumer/req/list-req-docs', 'listDocToUpload');                               // Here
         Route::post('consumer/req/get-worklfow-by-id', 'getWorkflow');                       // Here
 
@@ -157,6 +154,10 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
         Route::post('get-details-disconnections', 'getRequestedApplication');                       // Citizen / Changes the route name
         Route::post('consumer/req/approval-rejection', 'consumerApprovalRejection');
         //written by prity pandey 
+        Route::post('consumer/req/inbox', 'consumerInbox');                                         // Workflow
+        Route::post('consumer/req/outbox', 'consumerOutbox');
+        Route::post('consumer/deactivation-escalate-inbox', 'specialInbox');
+        Route::post('consumer/deactivation-btc-inbox', 'btcInbox');
         Route::post('consumer_doc-verify-reject', 'docVerifyRejects');
         Route::post('consumer/req/post-next-level', 'consumerPostNextLevel');
         Route::post('consumer/req/approval-rejection', 'consumerDeactivationApprovalRejection');

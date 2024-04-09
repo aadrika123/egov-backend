@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Water;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\UlbMaster;
 use App\Http\Requests\Notice\Add;
+use App\Http\Requests\Water\ReqApplicationId;
 use App\Http\Requests\Water\reqDeactivate;
 use App\Http\Requests\Water\reqMeterEntry;
 use App\MicroServices\DocUpload;
@@ -12,6 +14,7 @@ use App\MicroServices\IdGenerator\PrefixIdGenerator;
 use App\Models\Citizen\ActiveCitizenUndercare;
 use App\Models\Masters\RefRequiredDocument;
 use App\Models\Payment\TempTransaction;
+use App\Models\UlbWardMaster;
 use App\Models\Water\WaterAdvance;
 use App\Models\Water\WaterApplication;
 use App\Models\Water\WaterApprovalApplicationDetail;
@@ -20,6 +23,7 @@ use App\Models\Water\WaterConnectionCharge;
 use App\Models\Water\WaterConnectionTypeMstr;
 use App\Models\Water\WaterConsumer as WaterWaterConsumer;
 use App\Models\Water\WaterConsumerActiveRequest;
+use App\Models\Water\WaterConsumerApprovalRequest;
 use App\Models\Water\WaterConsumerApprovedRequest;
 use App\Models\Water\WaterConsumerCharge;
 use App\Models\Water\WaterConsumerChargeCategory;
@@ -1846,7 +1850,9 @@ class WaterConsumer extends Controller
                 'consumerId'    => "required|digits_between:1,9223372036854775807",
                 'ulbId'         => "nullable",
                 'reason'        => "required",
-                'remarks'       => "required"
+                'remarks'       => "required",
+                'address'        => "required",
+                'mobileNo'       => "required|digits:10|regex:/[0-9]{10}/"
             ]
         );
         if ($validated->fails())
@@ -1854,7 +1860,6 @@ class WaterConsumer extends Controller
 
         try {
             $user                           = authUser($request);
-            return ($request->all());
             $refRequest                     = array();
             $ulbWorkflowObj                 = new WfWorkflow();
             $mWorkflowTrack                 = new WorkflowTrack();
@@ -1869,7 +1874,7 @@ class WaterConsumer extends Controller
             $refConParamId                  = Config::get('waterConstaint.PARAM_IDS');
             $confModuleId                   = Config::get('module-constants.WATER_MODULE_ID');
             $consumerId                   = $request->consumerId;
-            $waterConsumer                = WaterWaterConsumer::where('id', $consumerId)->first(); // Get the consumer ID from the database based on the given consumer Id
+            $waterConsumer                = $mWaterWaterConsumer->where('id', $consumerId)->first(); // Get the consumer ID from the database based on the given consumer Id
             if (!$waterConsumer) {
                 throw new Exception("Water Consumer not found on the given consumer Id");
             }
@@ -1920,7 +1925,7 @@ class WaterConsumer extends Controller
             $refRequest["ulbWorkflowId"]     = $ulbWorkflowId->id;
             $refRequest["chargeCategoryId"]  = $refConsumerCharges['WATER_DISCONNECTION'];
             $refRequest["amount"]            = $chargeAmount->amount;
-            $refRequest['userType']          = $user->user_type;
+            $refRequest['userType']          = $user->user_type;dd($refRequest);
 
             $this->begin();
             $idGeneration       = new PrefixIdGenerator($refConParamId['WCD'], $ulbId);
@@ -1984,78 +1989,104 @@ class WaterConsumer extends Controller
             $parameter          = $request->parameter;
             $pages              = $request->pages ?? 10;
             $mWaterApplicant    = new WaterConsumerActiveRequest();
+            $returnData = $mWaterApplicant->searchApplication();
             switch ($key) {
                 case ("name"):                                                                              // Static
-                    $returnData = $mWaterApplicant->searchApplication($request)
-                        ->where("water_consumer_owners.applicant_name", 'ILIKE', '%' . $parameter . '%')
-                        ->paginate($pages);
-                    $checkVal = collect($returnData)->last();
-                    if (!$checkVal || $checkVal == 0)
-                        throw new Exception("Data according to " . $key . " not Found!");
+                    $returnData->where("water_consumer_owners.applicant_name", 'ILIKE', '%' . $parameter . '%');
                     break;
                 case ("mobileNo"):                                                                          // Static
-                    $returnData = $mWaterApplicant->searchApplication($request)
-                        ->where("water_consumer_owners.mobile_no", $parameter)
-                        ->paginate($pages);
-                    $checkVal = collect($returnData)->last();
-                    if (!$checkVal || $checkVal == 0)
-                        throw new Exception("Data according to " . $key . " not Found!");
+                    $returnData ->where("water_consumer_owners.mobile_no", $parameter);
                     break;
                 case ("applicationNo"):                                                                             // Static
-                    $returnData = $mWaterApplicant->searchApplication($request)
-                        ->where("water_consumer_active_requests.application_no", 'LIKE', '%' . $parameter . '%')
-                        ->paginate($pages);
-                    $checkVal = collect($returnData)->last();
-                    if (!$checkVal || $checkVal == 0)
-                        throw new Exception("Data according to " . $key . " not Found!");
+                    $returnData ->where("water_consumer_active_requests.application_no", 'LIKE', '%' . $parameter . '%');
                     break;
             }
-            return responseMsgs(true, "List of Appication!", $returnData, "", "01", "723 ms", "POST", "");
+
+            // 
+            $returnData = $returnData->paginate($pages);
+            $checkVal = collect($returnData)->last();
+            if (!$checkVal || $checkVal == 0)
+                throw new Exception("Data according to " . $key . " not Found!");
+            $list = [
+                    "current_page" => $returnData->currentPage(),
+                    "last_page" => $returnData->lastPage(),
+                    "data" => collect($returnData->items())->map(function($val){
+                            return $val->only("id","reason","remarks","application_no","apply_date","workflow_id","consumer_no","address","applicant_name","mobile_no");
+                        }),
+                    "total" => $returnData->total(),
+                ]; 
+            return responseMsgs(true, "List of Appication!", $list, "", "01", "723 ms", "POST", "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $request->deviceId);
         }
     }
 
-    public function getByApplicationId(Request $request)
+    // public function getByApplicationId(Request $request)
+    // {
+    //     try {
+    //         $validated = Validator::make(
+    //             $request->all(),
+    //             [
+    //                 'applicationId'    => "required|digits_between:1,9223372036854775807"
+    //             ]
+    //         );
+    //         if ($validated->fails())
+    //             return validationError($validated);
+    //         $data = WaterConsumerActiveRequest::find($request->applicationId);
+    //         if (!$data) {
+    //             $data = WaterConsumerApprovedRequest::find($request->applicationId);
+    //         }
+    //         if (!$data) {
+    //             throw new Exception("Data not found");
+    //         }
+    //         // $newRequest = new Request(['id' => $data->consumer_id]);
+    //         // //$consumerDetails = WaterWaterConsumer::find($data->consumer_id);
+    //         // $newConnectionController = App::makeWith(NewConnectionController::class, ["iNewConnection" => iNewConnection::class]);
+
+    //         // $response = $newConnectionController->approvedWaterApplications($newRequest);
+    //         // $response = $response->original;
+    //         // if (!$response["status"]) {
+    //         //     throw new Exception("consumer data not found");
+    //         // }
+    //         // $returnData = [
+    //         //     'requestData' => $data,
+    //         //     'consumerData' => $response['data']
+    //         // ];
+
+    //         $data = WaterConsumerActiveRequest::select('water_consumer_active_requests.*', 'water_consumers.*', 'water_consumer_owners.*')
+    //             ->leftjoin('water_consumers', 'water_consumers.id', 'water_consumer_active_requests.consumer_id')
+    //             ->leftjoin('water_consumer_owners', 'water_consumer_owners.consumer_id', 'water_consumers.id')
+    //             ->join('ulb_ward_masters AS uwm', 'uwm.id', 'water_consumer_active_requests.ward_mstr_id')
+    //             ->join('ulb_masters AS um', 'um.id', 'water_consumer_active_requests.ulb_id')
+    //             ->where('water_consumer_active_requests.status', 1)
+    //             ->where('water_consumer_active_requests.id', $request->applicationId)
+    //             ->get();
+
+    //         return responseMsgs(true, "Respective Consumer Deactivated!", remove_null($data), "", "02", ".ms", "POST", $request->deviceId);
+    //     } catch (Exception $e) {
+    //         $this->rollback();
+    //         return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", "");
+    //     }
+    // }
+
+    public function getByApplicationId(ReqApplicationId $request)
     {
-        try {
-            $validated = Validator::make(
-                $request->all(),
-                [
-                    'applicationId'    => "required|digits_between:1,9223372036854775807"
-                ]
-            );
-            if ($validated->fails())
-                return validationError($validated);
+        try {       
+               
             $data = WaterConsumerActiveRequest::find($request->applicationId);
+            // dd($data,$request->all(),DB::connection("pgsql_water")->getQueryLog());
             if (!$data) {
-                $data = WaterConsumerApprovedRequest::find($request->applicationId);
+                $data = WaterConsumerApprovalRequest::find($request->applicationId);
             }
             if (!$data) {
                 throw new Exception("Data not found");
             }
-            // $newRequest = new Request(['id' => $data->consumer_id]);
-            // //$consumerDetails = WaterWaterConsumer::find($data->consumer_id);
-            // $newConnectionController = App::makeWith(NewConnectionController::class, ["iNewConnection" => iNewConnection::class]);
-
-            // $response = $newConnectionController->approvedWaterApplications($newRequest);
-            // $response = $response->original;
-            // if (!$response["status"]) {
-            //     throw new Exception("consumer data not found");
-            // }
-            // $returnData = [
-            //     'requestData' => $data,
-            //     'consumerData' => $response['data']
-            // ];
-
-            $data = WaterConsumerActiveRequest::select('water_consumer_active_requests.*', 'water_consumers.*', 'water_consumer_owners.*')
-                ->leftjoin('water_consumers', 'water_consumers.id', 'water_consumer_active_requests.consumer_id')
-                ->leftjoin('water_consumer_owners', 'water_consumer_owners.consumer_id', 'water_consumers.id')
-                ->join('ulb_ward_masters AS uwm', 'uwm.id', 'water_consumer_active_requests.ward_mstr_id')
-                ->join('ulb_masters AS um', 'um.id', 'water_consumer_active_requests.ulb_id')
-                ->where('water_consumer_active_requests.status', 1)
-                ->where('water_consumer_active_requests.id', $request->applicationId)
-                ->get();
+            $data->consumerDetails = $data->getConserDtls();
+            $data->consumerDetails->owners = $data->consumerDetails->getOwners();
+            $wards = UlbWardMaster::where("id",$data->ward_mstr_id)->first();
+            $ulb = UlbMaster::where("id",$data->ulb_id)->first();
+            $data->ward_no = $wards->ward_name??null;
+            $data->ulb_name = $ulb->ulb_name??null;
 
             return responseMsgs(true, "Respective Consumer Deactivated!", remove_null($data), "", "02", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {

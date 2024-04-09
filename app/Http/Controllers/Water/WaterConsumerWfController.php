@@ -13,6 +13,7 @@ use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\Workflows\WfWorkflowrolemap;
 use App\Models\WorkflowTrack;
+use App\Repository\Common\CommonFunction;
 use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
 use App\Traits\Ward;
 use App\Traits\Water\WaterTrait;
@@ -87,94 +88,7 @@ class WaterConsumerWfController extends Controller
             $this->_DB->commit();
     }
 
-    /**
-     * | List the consumer request inbox details 
-        | Serial No : 01
-        | Working
-     */
-    public function consumerInbox(Request $req)
-    {
-        $validated = Validator::make(
-            $req->all(),
-            [
-                'perPage' => 'nullable|integer',
-            ]
-        );
-        if ($validated->fails())
-            return validationError($validated);
-
-        try {
-            $user                   = authUser($req);
-            $pages                  = $req->perPage ?? 10;
-            $userId                 = $user->id;
-            $ulbId                  = $user->ulb_id;
-            $mWfWorkflowRoleMaps    = new WfWorkflowrolemap();
-
-            $occupiedWards  = $this->getWardByUserId($userId)->pluck('ward_id');
-            $roleId         = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
-            $workflowIds    = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
-
-            $inboxDetails = $this->getConsumerWfBaseQuerry($workflowIds, $ulbId)
-                ->whereIn('water_consumer_active_requests.current_role', $roleId)
-               // ->whereIn('water_consumer_active_requests.ward_mstr_id', $occupiedWards)
-                ->where('water_consumer_active_requests.is_escalate', false)
-                ->where('water_consumer_active_requests.parked', false)
-                ->orderByDesc('water_consumer_active_requests.id')
-                ->paginate($pages);
-
-            // $isDataExist = collect($inboxDetails)->last();
-            // if (!$isDataExist || $isDataExist == 0) {
-            //     throw new Exception('Data not Found!');
-            // }
-            return responseMsgs(true, "Successfully listed consumer req inbox details!", $inboxDetails, "", "01", responseTime(), "POST", $req->deviceId);
-        } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), [], '', '01', responseTime(), "POST", $req->deviceId);
-        }
-    }
-
-    /**
-     * | Consumer Outbox 
-     * | Get Consumer Active outbox details 
-        | Serial No :
-        | Working 
-     */
-    public function consumerOutbox(Request $req)
-    {
-        $validated = Validator::make(
-            $req->all(),
-            [
-                'perPage' => 'nullable|integer',
-            ]
-        );
-        if ($validated->fails())
-            return validationError($validated);
-        try {
-            $user                   = authUser($req);
-            $pages                  = $req->perPage ?? 10;
-            $userId                 = $user->id;
-            $ulbId                  = $user->ulb_id;
-            $mWfWorkflowRoleMaps    = new WfWorkflowrolemap();
-
-            $occupiedWards  = $this->getWardByUserId($userId)->pluck('ward_id');
-            $roleId         = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
-            $workflowIds    = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
-
-            $inboxDetails = $this->getConsumerWfBaseQuerry($workflowIds, $ulbId)
-                ->whereNotIn('water_consumer_active_requests.current_role', $roleId)
-                ->whereIn('water_consumer_active_requests.ward_mstr_id', $occupiedWards)
-                ->orderByDesc('water_consumer_active_requests.id')
-                ->paginate($pages);
-
-            $isDataExist = collect($inboxDetails)->last();
-            if (!$isDataExist || $isDataExist == 0) {
-                throw new Exception('Data not Found!');
-            }
-            return responseMsgs(true, "Successfully listed consumer req inbox details!", $inboxDetails, "", "01", responseTime(), "POST", $req->deviceId);
-        } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), [], '', '01', responseTime(), "POST", $req->deviceId);
-        }
-    }
-
+    
     /**
      * | Get details of application for displaying 
         | Serial No :
@@ -609,6 +523,196 @@ class WaterConsumerWfController extends Controller
     }
     
     //written by prity pandey
+
+    public function consumerInbox(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'perPage' => 'nullable|integer',
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+            $user                   = authUser($req);
+            $pages                  = $req->perPage ?? 10;
+            $userId                 = $user->id;
+            $ulbId                  = $user->ulb_id;
+            $mWfWorkflowRoleMaps    = new WfWorkflowrolemap();
+            $commonFunction = new CommonFunction();
+
+            $occupiedWards  = $this->getWardByUserId($userId)->pluck('ward_id');
+            $roleId         = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
+            $workflowIds    = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
+            $refWorkflow                    = Config::get('workflow-constants.WATER_DISCONNECTION');
+            $roleId[] = $commonFunction->getUserRoll($userId,$ulbId,$refWorkflow)->role_id;
+            
+            $inboxDetails = $this->getConsumerWfBaseQuerry($workflowIds, $ulbId)
+                ->whereIn('water_consumer_active_requests.current_role', $roleId)
+               ->whereIn('water_consumer_active_requests.ward_mstr_id', $occupiedWards)
+                ->where('water_consumer_active_requests.is_escalate', false)
+                ->where('water_consumer_active_requests.parked', false)
+                ->orderByDesc('water_consumer_active_requests.id')
+                ->paginate($pages);
+
+            $list = [
+                "current_page" => $inboxDetails->currentPage(),
+                "last_page" => $inboxDetails->lastPage(),
+                "data" => $inboxDetails->items(),
+                "total" => $inboxDetails->total(),
+            ]; 
+            return responseMsgs(true, "List of Appication!", $list, "", "01", "723 ms", "POST", "");
+
+            return responseMsgs(true, "Successfully listed consumer req inbox details!", $inboxDetails, "", "01", responseTime(), "POST", $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], '', '01', responseTime(), "POST", $req->deviceId);
+        }
+    }
+
+    
+    public function consumerOutbox(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'perPage' => 'nullable|integer',
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+            $user                   = authUser($req);
+            $pages                  = $req->perPage ?? 10;
+            $userId                 = $user->id;
+            $ulbId                  = $user->ulb_id;
+            $mWfWorkflowRoleMaps    = new WfWorkflowrolemap();
+            $commonFunction = new CommonFunction();
+
+            $occupiedWards  = $this->getWardByUserId($userId)->pluck('ward_id');
+            $roleId         = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
+            $workflowIds    = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
+            $refWorkflow                    = Config::get('workflow-constants.WATER_DISCONNECTION');
+            $roleId[] = $commonFunction->getUserRoll($userId,$ulbId,$refWorkflow)->role_id;
+            
+            $inboxDetails = $this->getConsumerWfBaseQuerry($workflowIds, $ulbId)
+                ->whereNotIn('water_consumer_active_requests.current_role', $roleId)
+               ->whereIn('water_consumer_active_requests.ward_mstr_id', $occupiedWards)
+                ->where('water_consumer_active_requests.is_escalate', false)
+                // ->where('water_consumer_active_requests.parked', false)
+                ->orderByDesc('water_consumer_active_requests.id')
+                ->paginate($pages);
+
+            $list = [
+                "current_page" => $inboxDetails->currentPage(),
+                "last_page" => $inboxDetails->lastPage(),
+                "data" => $inboxDetails->items(),
+                "total" => $inboxDetails->total(),
+            ]; 
+            return responseMsgs(true, "List of Appication!", $list, "", "01", "723 ms", "POST", "");
+
+            return responseMsgs(true, "Successfully listed consumer req inbox details!", $inboxDetails, "", "01", responseTime(), "POST", $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], '', '01', responseTime(), "POST", $req->deviceId);
+        }
+    }
+
+    public function specialInbox(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'perPage' => 'nullable|integer',
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+            $user                   = authUser($req);
+            $pages                  = $req->perPage ?? 10;
+            $userId                 = $user->id;
+            $ulbId                  = $user->ulb_id;
+            $mWfWorkflowRoleMaps    = new WfWorkflowrolemap();
+            $commonFunction = new CommonFunction();
+
+            $occupiedWards  = $this->getWardByUserId($userId)->pluck('ward_id');
+            $roleId         = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
+            $workflowIds    = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
+            $refWorkflow                    = Config::get('workflow-constants.WATER_DISCONNECTION');
+            $roleId[] = $commonFunction->getUserRoll($userId,$ulbId,$refWorkflow)->role_id;
+            
+            $inboxDetails = $this->getConsumerWfBaseQuerry($workflowIds, $ulbId)
+                ->whereIn('water_consumer_active_requests.current_role', $roleId)
+               ->whereIn('water_consumer_active_requests.ward_mstr_id', $occupiedWards)
+                ->where('water_consumer_active_requests.is_escalate', true)
+                ->where('water_consumer_active_requests.parked', false)
+                ->orderByDesc('water_consumer_active_requests.id')
+                ->paginate($pages);
+
+            $list = [
+                "current_page" => $inboxDetails->currentPage(),
+                "last_page" => $inboxDetails->lastPage(),
+                "data" => $inboxDetails->items(),
+                "total" => $inboxDetails->total(),
+            ]; 
+            return responseMsgs(true, "List of Appication!", $list, "", "01", "723 ms", "POST", "");
+
+            return responseMsgs(true, "Successfully listed consumer req inbox details!", $inboxDetails, "", "01", responseTime(), "POST", $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], '', '01', responseTime(), "POST", $req->deviceId);
+        }
+    }
+
+    public function btcInbox(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'perPage' => 'nullable|integer',
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+            $user                   = authUser($req);
+            $pages                  = $req->perPage ?? 10;
+            $userId                 = $user->id;
+            $ulbId                  = $user->ulb_id;
+            $mWfWorkflowRoleMaps    = new WfWorkflowrolemap();
+            $commonFunction = new CommonFunction();
+
+            $occupiedWards  = $this->getWardByUserId($userId)->pluck('ward_id');
+            $roleId         = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
+            $workflowIds    = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
+            $refWorkflow                    = Config::get('workflow-constants.WATER_DISCONNECTION');
+            $roleId[] = $commonFunction->getUserRoll($userId,$ulbId,$refWorkflow)->role_id;
+            
+            $inboxDetails = $this->getConsumerWfBaseQuerry($workflowIds, $ulbId)
+                ->whereIn('water_consumer_active_requests.current_role', $roleId)
+               ->whereIn('water_consumer_active_requests.ward_mstr_id', $occupiedWards)
+                ->where('water_consumer_active_requests.is_escalate', false)
+                ->where('water_consumer_active_requests.parked', TRUE)
+                ->orderByDesc('water_consumer_active_requests.id')
+                ->paginate($pages);
+
+            $list = [
+                "current_page" => $inboxDetails->currentPage(),
+                "last_page" => $inboxDetails->lastPage(),
+                "data" => $inboxDetails->items(),
+                "total" => $inboxDetails->total(),
+            ]; 
+            return responseMsgs(true, "List of Appication!", $list, "", "01", "723 ms", "POST", "");
+
+            return responseMsgs(true, "Successfully listed consumer req inbox details!", $inboxDetails, "", "01", responseTime(), "POST", $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], '', '01', responseTime(), "POST", $req->deviceId);
+        }
+    }
+
     public function docVerifyRejects(Request $req)
     {
         $validated = Validator::make(
