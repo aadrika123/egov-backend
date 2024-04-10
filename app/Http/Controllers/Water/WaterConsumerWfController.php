@@ -757,6 +757,7 @@ class WaterConsumerWfController extends Controller
             $role = $_COMMON_FUNCTION->getUserRoll($refUserId, $refUlbId, $refWorkflowId);
             $data->application_type = $refConsumerCharges[$data->charge_catagory_id] ?? "";
             $consumerDetails = $data->getConserDtls();
+            $applicantDetals = $consumerDetails->getWaterApplication();
             $wards = UlbWardMaster::where("id", $consumerDetails->ward_mstr_id)->first();
             $consumerDetails->wrad_no = $wards->ward_name ?? null;
             $consumerDetails->property_type = $consumerDetails->getPropType()->property_type ?? null;
@@ -791,7 +792,7 @@ class WaterConsumerWfController extends Controller
                 'tableHead' => ["#", "Owner Name",  "Guardian Name",  "Mobile No",  "Email",],
                 'tableData' => $ownerDetailsTable
             ];
-
+            $fullDetailsData["water_application_id"] = $applicantDetals->id??0;
             $fullDetailsData["propId"]         = $consumerDetails->property_id;
             $fullDetailsData["workflowId"]     = $data->workflow_id;
             $fullDetailsData['application_no'] = $data->application_no;

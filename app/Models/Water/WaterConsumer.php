@@ -463,4 +463,9 @@ class WaterConsumer extends Model
     {
         return $this->hasMany(WaterParamPipelineType::class,"id","pipeline_type_id")->first();
     }
+
+    public function getWaterApplication()
+    {
+        return $this->hasOne(WaterApprovalApplicationDetail::class,"id","apply_connection_id")->first();
+    }
 }
