@@ -19,6 +19,7 @@ use App\Models\Property\PropProperty;
 use App\Models\UlbWardMaster;
 use App\Models\Water\WaterApplicant;
 use App\Models\Water\WaterApplication;
+use App\Models\Water\WaterApprovalApplicant;
 use App\Models\Water\WaterApprovalApplicationDetail;
 use App\Models\Water\waterAudit;
 use App\Models\Water\WaterConnectionCharge;
@@ -2810,18 +2811,27 @@ class NewConnectionController extends Controller
     public function jeSiteInspectDetails($request, $refRole)
     {
         $mWaterApplication      = new WaterApplication();
+        $approve      = new WaterApprovalApplicant();
         $mWaterSiteInspection   = new WaterSiteInspection();
         $applicationId          = $request->applicationId;
 
         $applicationDetails = $mWaterApplication->getApplicationById($applicationId)
             ->where('is_field_verified', true)
             ->first();
+        if(!$applicationDetails)
+        {
+            $applicationDetails = $approve->find($applicationId);
+        }
         if (!$applicationDetails) {
             throw new Exception("Application not found!");
         }
         $jeData = $mWaterSiteInspection->getSiteDetails($applicationId)
             ->where('order_officer', $refRole['JE'])
             ->first();
+        if (!$jeData) {
+            $jeData = $mWaterSiteInspection->getSiteDetails($applicationId)
+            ->first();
+        }
         if (!$jeData) {
             throw new Exception("JE site inspection data not found!");
         }
