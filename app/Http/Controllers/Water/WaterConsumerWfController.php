@@ -866,7 +866,7 @@ class WaterConsumerWfController extends Controller
             $documents = collect();
             collect($document)->map(function ($item) use ($uploadedDocs, $documents, $ownerId, $docName) {
                 $docUpload = new DocUpload();
-                $uploadedDoc = $uploadedDocs->where('doc_code', $docName)
+                $uploadedDoc = $uploadedDocs->where('doc_category', $docName)
                     ->where('owner_dtl_id', $ownerId)
                     ->first();
                 if ($uploadedDoc) {
