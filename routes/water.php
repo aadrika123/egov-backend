@@ -162,6 +162,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
         Route::post('consumer/deactivation-worklfow-by-id', 'getConsumerDetails');
         Route::post('consumer/deactivation-get-doc-list', 'getDocList'); 
         Route::post('consumer/deactivation-upload-documents', 'uploadDocuments'); 
+        Route::post('consumer/deactivation-upload-documents_view', 'getUploadDocuments');
         Route::post('consumer/deactivation-documents-verify', 'documentVerify'); 
         Route::post('consumer/deactivation-post-next-level', 'postNextLevelRequestV1'); 
         Route::post('consumer/deactivation-approve-rejet', 'approveReject'); 

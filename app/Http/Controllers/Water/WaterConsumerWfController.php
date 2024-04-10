@@ -14,6 +14,7 @@ use App\Models\Water\WaterConsumerActiveRequest;
 use App\Models\Water\WaterConsumerOwner;
 use App\Models\Water\WaterSiteInspection;
 use App\Models\Workflows\WfActiveDocument;
+use App\Models\Workflows\WfRole;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\Workflows\WfWorkflowrolemap;
@@ -95,7 +96,7 @@ class WaterConsumerWfController extends Controller
             $this->_DB->commit();
     }
 
-    
+
     /**
      * | Get details of application for displaying 
         | Serial No :
@@ -377,7 +378,7 @@ class WaterConsumerWfController extends Controller
         return responseMsgs(true, $msg, $request ?? "Empty", '', 01, '.ms', 'Post', $request->deviceId);
     }
 
-    
+
     /**
      * get all applications details by id from workflow
      |working ,not completed
@@ -528,7 +529,7 @@ class WaterConsumerWfController extends Controller
             ];
         });
     }
-    
+
     //written by prity pandey
 
     public function consumerInbox(Request $req)
@@ -555,15 +556,15 @@ class WaterConsumerWfController extends Controller
             $workflowIds    = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
             $refWorkflow                    = Config::get('workflow-constants.WATER_DISCONNECTION');
             //$roleId[] = $commonFunction->getUserRoll($userId,$ulbId,$refWorkflow)->role_id;
-            
+
             $inboxDetails = $this->getConsumerWfBaseQuerry($workflowIds, $ulbId)
                 ->whereIn('water_consumer_active_requests.current_role', $roleId)
-               ->whereIn('water_consumer_active_requests.ward_mstr_id', $occupiedWards)
+                ->whereIn('water_consumer_active_requests.ward_mstr_id', $occupiedWards)
                 ->where('water_consumer_active_requests.is_escalate', false)
                 ->where('water_consumer_active_requests.parked', false)
                 ->orderByDesc('water_consumer_active_requests.id')
                 ->get();
-                //->paginate($pages);
+            //->paginate($pages);
 
             // $list = [
             //     "current_page" => $inboxDetails->currentPage(),
@@ -579,7 +580,7 @@ class WaterConsumerWfController extends Controller
         }
     }
 
-    
+
     public function consumerOutbox(Request $req)
     {
         $validated = Validator::make(
@@ -603,11 +604,11 @@ class WaterConsumerWfController extends Controller
             $roleId         = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
             $workflowIds    = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
             $refWorkflow                    = Config::get('workflow-constants.WATER_DISCONNECTION');
-            $roleId[] = $commonFunction->getUserRoll($userId,$ulbId,$refWorkflow)->role_id;
-            
+            $roleId[] = $commonFunction->getUserRoll($userId, $ulbId, $refWorkflow)->role_id;
+
             $inboxDetails = $this->getConsumerWfBaseQuerry($workflowIds, $ulbId)
                 ->whereNotIn('water_consumer_active_requests.current_role', $roleId)
-               ->whereIn('water_consumer_active_requests.ward_mstr_id', $occupiedWards)
+                ->whereIn('water_consumer_active_requests.ward_mstr_id', $occupiedWards)
                 ->where('water_consumer_active_requests.is_escalate', false)
                 // ->where('water_consumer_active_requests.parked', false)
                 ->orderByDesc('water_consumer_active_requests.id')
@@ -618,7 +619,7 @@ class WaterConsumerWfController extends Controller
                 "last_page" => $inboxDetails->lastPage(),
                 "data" => $inboxDetails->items(),
                 "total" => $inboxDetails->total(),
-            ]; 
+            ];
             return responseMsgs(true, "List of Appication!", $list, "", "01", "723 ms", "POST", "");
 
             return responseMsgs(true, "Successfully listed consumer req inbox details!", $inboxDetails, "", "01", responseTime(), "POST", $req->deviceId);
@@ -650,11 +651,11 @@ class WaterConsumerWfController extends Controller
             $roleId         = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
             $workflowIds    = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
             $refWorkflow                    = Config::get('workflow-constants.WATER_DISCONNECTION');
-            $roleId[] = $commonFunction->getUserRoll($userId,$ulbId,$refWorkflow)->role_id;
-            
+            $roleId[] = $commonFunction->getUserRoll($userId, $ulbId, $refWorkflow)->role_id;
+
             $inboxDetails = $this->getConsumerWfBaseQuerry($workflowIds, $ulbId)
                 ->whereIn('water_consumer_active_requests.current_role', $roleId)
-               ->whereIn('water_consumer_active_requests.ward_mstr_id', $occupiedWards)
+                ->whereIn('water_consumer_active_requests.ward_mstr_id', $occupiedWards)
                 ->where('water_consumer_active_requests.is_escalate', true)
                 ->where('water_consumer_active_requests.parked', false)
                 ->orderByDesc('water_consumer_active_requests.id')
@@ -665,7 +666,7 @@ class WaterConsumerWfController extends Controller
                 "last_page" => $inboxDetails->lastPage(),
                 "data" => $inboxDetails->items(),
                 "total" => $inboxDetails->total(),
-            ]; 
+            ];
             return responseMsgs(true, "List of Appication!", $list, "", "01", "723 ms", "POST", "");
 
             return responseMsgs(true, "Successfully listed consumer req inbox details!", $inboxDetails, "", "01", responseTime(), "POST", $req->deviceId);
@@ -697,11 +698,11 @@ class WaterConsumerWfController extends Controller
             $roleId         = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
             $workflowIds    = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
             $refWorkflow                    = Config::get('workflow-constants.WATER_DISCONNECTION');
-            $roleId[] = $commonFunction->getUserRoll($userId,$ulbId,$refWorkflow)->role_id;
-            
+            $roleId[] = $commonFunction->getUserRoll($userId, $ulbId, $refWorkflow)->role_id;
+
             $inboxDetails = $this->getConsumerWfBaseQuerry($workflowIds, $ulbId)
                 ->whereIn('water_consumer_active_requests.current_role', $roleId)
-               ->whereIn('water_consumer_active_requests.ward_mstr_id', $occupiedWards)
+                ->whereIn('water_consumer_active_requests.ward_mstr_id', $occupiedWards)
                 ->where('water_consumer_active_requests.is_escalate', false)
                 ->where('water_consumer_active_requests.parked', TRUE)
                 ->orderByDesc('water_consumer_active_requests.id')
@@ -712,7 +713,7 @@ class WaterConsumerWfController extends Controller
                 "last_page" => $inboxDetails->lastPage(),
                 "data" => $inboxDetails->items(),
                 "total" => $inboxDetails->total(),
-            ]; 
+            ];
             return responseMsgs(true, "List of Appication!", $list, "", "01", "723 ms", "POST", "");
 
             return responseMsgs(true, "Successfully listed consumer req inbox details!", $inboxDetails, "", "01", responseTime(), "POST", $req->deviceId);
@@ -752,24 +753,24 @@ class WaterConsumerWfController extends Controller
             if (!$data) {
                 throw new Exception("Data not found");
             }
-            
+
             $role = $_COMMON_FUNCTION->getUserRoll($refUserId, $refUlbId, $refWorkflowId);
-            $data->application_type = $refConsumerCharges[$data->charge_catagory_id]??"";
+            $data->application_type = $refConsumerCharges[$data->charge_catagory_id] ?? "";
             $consumerDetails = $data->getConserDtls();
-            $wards = UlbWardMaster::where("id",$consumerDetails->ward_mstr_id)->first();
-            $consumerDetails->wrad_no = $wards->ward_name??null;
-            $consumerDetails->property_type = $consumerDetails->getPropType()->property_type??null;
-            $consumerDetails->pipelien_type = $consumerDetails->getPipelineType()->pipelien_type??null;
+            $wards = UlbWardMaster::where("id", $consumerDetails->ward_mstr_id)->first();
+            $consumerDetails->wrad_no = $wards->ward_name ?? null;
+            $consumerDetails->property_type = $consumerDetails->getPropType()->property_type ?? null;
+            $consumerDetails->pipelien_type = $consumerDetails->getPipelineType()->pipelien_type ?? null;
 
-            $consumerDetails = $consumerDetails;            
-            $owners = $consumerDetails->getOwners()??new Collection();
+            $consumerDetails = $consumerDetails;
+            $owners = $consumerDetails->getOwners() ?? new Collection();
 
-            $wards = UlbWardMaster::where("id",$data->ward_mstr_id)->first();
-            $ulb = ModelsUlbMaster::where("id",$data->ulb_id)->first();
-            $data->ward_no = $wards->ward_name??null;
-            $data->ulb_name = $ulb->ulb_name??null;
+            $wards = UlbWardMaster::where("id", $data->ward_mstr_id)->first();
+            $ulb = ModelsUlbMaster::where("id", $data->ulb_id)->first();
+            $data->ward_no = $wards->ward_name ?? null;
+            $data->ulb_name = $ulb->ulb_name ?? null;
             $data->apply_date = Carbon::parse($data->apply_date)->format("d-m-Y H:i:s");
-            
+
             $cardDetails = $this->generateCardDetails($data, $owners);
             $cardElement = [
                 'headerTitle' => "About Request",
@@ -787,10 +788,10 @@ class WaterConsumerWfController extends Controller
             $ownerDetailsTable = $this->generateOwnerDetails($owners);
             $ownerElement = [
                 'headerTitle' => 'Owner Details',
-                'tableHead' => ["#", "Owner Name",  "Guardian Name",  "Mobile No",  "Email", ],
+                'tableHead' => ["#", "Owner Name",  "Guardian Name",  "Mobile No",  "Email",],
                 'tableData' => $ownerDetailsTable
             ];
-            
+
             $fullDetailsData["propId"]         = $consumerDetails->property_id;
             $fullDetailsData["workflowId"]     = $data->workflow_id;
             $fullDetailsData['application_no'] = $data->application_no;
@@ -803,9 +804,9 @@ class WaterConsumerWfController extends Controller
             $metaReqs['wfRoleId'] = ($role && $role->is_initiator && $data->is_parked) ? $role->role_id : $data->current_role;
             $metaReqs['workflowId'] = $data->workflow_id;
             $metaReqs['lastRoleId'] = $data->last_role_id;
-            $levelComment = $_MODEL_WorkflowTrack->getTracksByRefId($mRefTable, $data->id)->map(function($val){  
-                $val->forward_date = $val->forward_date?Carbon::parse($val->forward_date)->format("d-m-Y"):"";
-                $val->track_date = $val->track_date?Carbon::parse($val->track_date)->format("d-m-Y"):"";
+            $levelComment = $_MODEL_WorkflowTrack->getTracksByRefId($mRefTable, $data->id)->map(function ($val) {
+                $val->forward_date = $val->forward_date ? Carbon::parse($val->forward_date)->format("d-m-Y") : "";
+                $val->track_date = $val->track_date ? Carbon::parse($val->track_date)->format("d-m-Y") : "";
                 $val->duration = (Carbon::parse($val->forward_date)->diffInDays(Carbon::parse($val->track_date))) . " Days";
                 return $val;
             });
@@ -824,9 +825,7 @@ class WaterConsumerWfController extends Controller
             $fullDetailsData['departmentalPost'] = collect($custom)['original']['data'];
 
             return responseMsgs(true, 'Data Fetched', remove_null($fullDetailsData), "010104", "1.0", "303ms", "POST", $request->deviceId);
-
-        }
-        catch (Exception $e) {
+        } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
     }
@@ -835,8 +834,8 @@ class WaterConsumerWfController extends Controller
     {
         $mRefReqDocs    = new RefRequiredDocument();
         $mWaterApplication  = new WaterConsumerActiveRequest();
-        $refWaterApplication = $application;#$mWaterApplication->getApplicationById($application)->first();
-        
+        $refWaterApplication = $application; #$mWaterApplication->getApplicationById($application)->first();
+
         $moduleId       = Config::get('module-constants.WATER_MODULE_ID');
         $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "DISCONNECTION_APPLICATION_FORM")->requirements;
 
@@ -853,7 +852,8 @@ class WaterConsumerWfController extends Controller
         $mWfActiveDocument = new WfActiveDocument();
         $applicationId = $refApplication->id;
         $workflowId = $refApplication->workflow_id;
-        $moduleId = Config::get('module-constants.WATER_MODULE_ID');DB::connection("pgsql_master");
+        $moduleId = Config::get('module-constants.WATER_MODULE_ID');
+        DB::connection("pgsql_master");
         $uploadedDocs = $mWfActiveDocument->getDocByRefIds($applicationId, $workflowId, $moduleId);
         // dd($applicationId,$workflowId,$moduleId,DB::connection("pgsql_master")->getQueryLog());
         $explodeDocs = collect(explode('#', $documentList))->filter();
@@ -862,9 +862,9 @@ class WaterConsumerWfController extends Controller
             $document = explode(',', $explodeDoc);
             $key = array_shift($document);
             $docName =  array_shift($document);
-            $docName = str_replace("{","",str_replace("}","",$docName));
+            $docName = str_replace("{", "", str_replace("}", "", $docName));
             $documents = collect();
-            collect($document)->map(function ($item) use ($uploadedDocs, $documents, $ownerId,$docName) {                
+            collect($document)->map(function ($item) use ($uploadedDocs, $documents, $ownerId, $docName) {
                 $docUpload = new DocUpload();
                 $uploadedDoc = $uploadedDocs->where('doc_code', $docName)
                     ->where('owner_dtl_id', $ownerId)
@@ -873,12 +873,12 @@ class WaterConsumerWfController extends Controller
                     // $uploadedDoc->reference_no = "REF1694609691049";
                     $api = $docUpload->getSingleDocUrl($uploadedDoc);
                     $response = [
-                        "api"=>$api??"",
+                        "api" => $api ?? "",
                         "uploadedDocId" => $uploadedDoc->id ?? "",
                         "documentCode" => $item,
                         "ownerId" => $uploadedDoc->owner_dtl_id ?? "",
                         // "docPath" => $uploadedDoc->doc_path ?? "",
-                        "docPath" => $api["doc_path"]??"",
+                        "docPath" => $api["doc_path"] ?? "",
                         "verifyStatus" => $uploadedDoc->verify_status ?? "",
                         "remarks" => $uploadedDoc->remarks ?? "",
                     ];
@@ -905,7 +905,7 @@ class WaterConsumerWfController extends Controller
             });
             return $reqDoc;
         });
-        return collect($filteredDocs)->values()??[];
+        return collect($filteredDocs)->values() ?? [];
     }
 
     public function getDocList(Request $req)
@@ -933,7 +933,35 @@ class WaterConsumerWfController extends Controller
             $totalDocLists['docVerifyStatus'] = $refWaterApplication->doc_status;
             return responseMsgs(true, "", remove_null($totalDocLists), "010203", "", "", 'POST', "");
         } catch (Exception $e) {
-            return responseMsgs(false, [$e->getMessage(),$e->getFile(),$e->getLine()], "", "010203", "1.0", "", 'POST', "");
+            return responseMsgs(false, [$e->getMessage(), $e->getFile(), $e->getLine()], "", "010203", "1.0", "", 'POST', "");
+        }
+    }
+    public function checkParamForDocUpload($isCitizen, $applicantDetals, $user)
+
+    {
+        $refWorkFlowMaster = Config::get('workflow-constants.WATER_MASTER_ID');
+        switch ($isCitizen) {
+                # For citizen 
+            case (true):
+                if (!is_null($applicantDetals->current_role) && $applicantDetals->parked == true) {
+                    return true;
+                }
+                if (!is_null($applicantDetals->current_role)) {
+                    throw new Exception("You aren't allowed to upload document!");
+                }
+                break;
+                # For user
+            case (false):
+                $userId = $user->id;
+                $ulbId = $applicantDetals->ulb_id;
+                $role = $this->getUserRoll($userId, $ulbId, $refWorkFlowMaster);
+                if (is_null($role)) {
+                    throw new Exception("You dont have any role!");
+                }
+                if ($role->can_upload_document != true) {
+                    throw new Exception("You dont have permission to upload Document!");
+                }
+                break;
         }
     }
 
@@ -1040,6 +1068,90 @@ class WaterConsumerWfController extends Controller
         }
     }
 
+    public function getUserRoll($user_id, $ulb_id, $workflow_id)
+    {
+        try {
+            DB::enableQueryLog();
+            $data = WfRole::select(
+                DB::raw(
+                    "wf_roles.id as role_id,wf_roles.role_name,
+                    wf_workflowrolemaps.is_initiator, wf_workflowrolemaps.is_finisher,
+                    wf_workflowrolemaps.forward_role_id,forword.role_name as forword_name,
+                    wf_workflowrolemaps.backward_role_id,backword.role_name as backword_name,
+                    wf_workflowrolemaps.allow_full_list,wf_workflowrolemaps.can_escalate,
+                    wf_workflowrolemaps.serial_no,wf_workflowrolemaps.is_btc,
+                    wf_workflowrolemaps.can_upload_document,
+                    wf_workflowrolemaps.can_verify_document,
+                    wf_workflowrolemaps.can_backward,
+                    wf_workflowrolemaps.can_edit,
+                    wf_workflows.id as workflow_id,wf_masters.workflow_name,
+                    ulb_masters.id as ulb_id, ulb_masters.ulb_name,
+                    ulb_masters.ulb_type"
+                )
+            )
+                ->join("wf_roleusermaps", function ($join) {
+                    $join->on("wf_roleusermaps.wf_role_id", "=", "wf_roles.id")
+                        ->where("wf_roleusermaps.is_suspended", "=", FALSE);
+                })
+                ->join("users", "users.id", "=", "wf_roleusermaps.user_id")
+                ->join("wf_workflowrolemaps", function ($join) {
+                    $join->on("wf_workflowrolemaps.wf_role_id", "=", "wf_roleusermaps.wf_role_id")
+                        ->where("wf_workflowrolemaps.is_suspended", "=", FALSE);
+                })
+                ->leftjoin("wf_roles AS forword", "forword.id", "=", "wf_workflowrolemaps.forward_role_id")
+                ->leftjoin("wf_roles AS backword", "backword.id", "=", "wf_workflowrolemaps.backward_role_id")
+                ->join("wf_workflows", function ($join) {
+                    $join->on("wf_workflows.id", "=", "wf_workflowrolemaps.workflow_id")
+                        ->where("wf_workflows.is_suspended", "=", FALSE);
+                })
+                ->join("wf_masters", function ($join) {
+                    $join->on("wf_masters.id", "=", "wf_workflows.wf_master_id")
+                        ->where("wf_masters.is_suspended", "=", FALSE);
+                })
+                ->join("ulb_masters", "ulb_masters.id", "=", "wf_workflows.ulb_id")
+                ->where("wf_roles.is_suspended", false)
+                ->where("wf_roleusermaps.user_id", $user_id)
+                ->where("wf_workflows.ulb_id", $ulb_id)
+                ->where("wf_workflows.wf_master_id", $workflow_id)
+                ->orderBy("wf_roleusermaps.id", "desc")
+                ->first();
+            return $data;
+        } catch (Exception $e) {
+            echo $e->getMessage();
+        }
+    }
+
+    public function getUploadDocuments(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'applicationId' => 'required|numeric'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+            $mWfActiveDocument = new WfActiveDocument();
+            $mWaterApplication  = new WaterConsumerActiveRequest();
+            $docUpload = new DocUpload;
+            $moduleId = Config::get('module-constants.WATER_MODULE_ID');
+
+            $waterDetails = $mWaterApplication->getApplicationById($req->applicationId)->first();
+            if (!$waterDetails)
+                throw new Exception("Application Not Found for this application Id");
+
+            $workflowId = $waterDetails->workflow_id;
+            $documents = $mWfActiveDocument->getConsumerDocsByAppNo($req->applicationId, $workflowId, $moduleId);
+            $data = $docUpload->getDocUrl($documents);           #_Calling BLL for Document Path from DMS
+
+            return responseMsgs(true, "Uploaded Documents", remove_null($data), "010102", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
     public function documentVerify(Request $request)
     {
         $request->validate([
@@ -1058,9 +1170,9 @@ class WaterConsumerWfController extends Controller
             $_WF_MASTER_Id  = Config::get('workflow-constants.WATER_DISCONNECTION');
             $_MODULE_ID                   = Config::get('module-constants.WATER_MODULE_ID');
 
-            $workflow_id= $refWorkflowId = $_WF_MASTER_Id;
-            $_COMMON_FUNCTION = new CommonFunction();        
-            $_TRADE_CONSTAINT  =Config::get("TradeConstant");
+            $workflow_id = $refWorkflowId = $_WF_MASTER_Id;
+            $_COMMON_FUNCTION = new CommonFunction();
+            $_TRADE_CONSTAINT  = Config::get("TradeConstant");
             $mWfDocument = new WfActiveDocument();
             $role = $_COMMON_FUNCTION->getUserRoll($user_id, $ulb_id, $refWorkflowId);
             if ((!$_COMMON_FUNCTION->checkUsersWithtocken("users"))) {
@@ -1087,7 +1199,7 @@ class WaterConsumerWfController extends Controller
             ];
             $mWfDocument->docVerifyReject($wfDocId, $myRequest);
             $this->commit();
-            $doc = $this->getDocList($request);dd($doc);
+            $doc = $this->getDocList($request); //dd($doc);
             $docVerifyStatus = $doc->original["data"]["docVerifyStatus"] ?? 0;
 
             return responseMsgs(true, ["docVerifyStatus" => $docVerifyStatus], "", "tc7.1", "1.0", "", "POST", $request->deviceId ?? "");
@@ -1158,8 +1270,8 @@ class WaterConsumerWfController extends Controller
         $_MODULE_ID                   = Config::get('module-constants.WATER_MODULE_ID');
 
         $refWorkflowId = $_WF_MASTER_Id;
-        $_COMMON_FUNCTION = new CommonFunction();        
-        $_TRADE_CONSTAINT  =Config::get("TradeConstant");
+        $_COMMON_FUNCTION = new CommonFunction();
+        $_TRADE_CONSTAINT  = Config::get("TradeConstant");
         $role = $_COMMON_FUNCTION->getUserRoll($user_id, $ulb_id, $refWorkflowId);
         $rules = [
             "action"        => 'required|in:forward,backward',
@@ -1168,8 +1280,8 @@ class WaterConsumerWfController extends Controller
             'receiverRoleId' => 'nullable|integer',
             'comment' => ($role->is_initiator ?? false) ? "nullable" : 'required',
         ];
-        
-        
+
+
         try {
             $request->validate($rules);
             if (!$request->senderRoleId) {
@@ -1217,11 +1329,11 @@ class WaterConsumerWfController extends Controller
             $initFinish   = $_COMMON_FUNCTION->iniatorFinisher($user_id, $ulb_id, $refWorkflowId);
             $receiverRole = array_values(objToArray($allRolse->where("id", $request->receiverRoleId)))[0] ?? [];
             $senderRole   = array_values(objToArray($allRolse->where("id", $request->senderRoleId)))[0] ?? [];
-            
+
             if ($waterConsumerActive->payment_status != 1 && ($role->serial_no  < $receiverRole["serial_no"] ?? 0)) {
                 throw new Exception("Payment Not Clear");
             }
-            
+
             if ((!$role->is_finisher ?? 0) && $request->action == 'backward' && $receiverRole["id"] == $initFinish['initiator']['id']) {
                 $request->merge(["currentRoleId" => $request->senderRoleId]);
                 return $this->backToCitizen($request);
@@ -1273,8 +1385,8 @@ class WaterConsumerWfController extends Controller
                     $waterConsumerActive->is_doc_verified = false;
                 }
             }
-            $lastRole = collect($allRolse)->where("id",$waterConsumerActive->last_role_id)->first();
-            $max_level_attained = $lastRole->serial_no??0;
+            $lastRole = collect($allRolse)->where("id", $waterConsumerActive->last_role_id)->first();
+            $max_level_attained = $lastRole->serial_no ?? 0;
             $this->begin();
             $waterConsumerActive->last_role_id = ($max_level_attained < ($receiverRole["serial_no"] ?? 0)) ? ($receiverRole["serial_no"] ?? 0) : $waterConsumerActive->last_role_id;
             $waterConsumerActive->current_role = $request->receiverRoleId;
@@ -1307,13 +1419,10 @@ class WaterConsumerWfController extends Controller
             $track->saveTrack($request);
             $this->commit();
             return responseMsgs(true, $sms, "", "010109", "1.0", "286ms", "POST", $request->deviceId);
-        }
-        catch(Exception $error)
-        {
+        } catch (Exception $error) {
             $this->rollBack();
             return responseMsg(false, $error->getMessage(), "");
         }
-
     }
 
     #====================[📝📖 BTC THE APPLICATION | S.L (16.0) 📖📝]========================================================
@@ -1328,10 +1437,10 @@ class WaterConsumerWfController extends Controller
         $_MODULE_ID                   = Config::get('module-constants.WATER_MODULE_ID');
 
         $refWorkflowId = $_WF_MASTER_Id;
-        $_COMMON_FUNCTION = new CommonFunction();        
-        $_TRADE_CONSTAINT  =Config::get("TradeConstant");
+        $_COMMON_FUNCTION = new CommonFunction();
+        $_TRADE_CONSTAINT  = Config::get("TradeConstant");
         $role = $_COMMON_FUNCTION->getUserRoll($user_id, $ulb_id, $refWorkflowId);
-        
+
         try {
             $req->validate([
                 'applicationId' => 'required|digits_between:1,9223372036854775807',
@@ -1343,26 +1452,22 @@ class WaterConsumerWfController extends Controller
             if (!$waterConsumerActive) {
                 throw new Exception("Data Not Found");
             }
-            
+
             $req->merge(["workflowId" => $waterConsumerActive->workflow_id]);
-            if($waterConsumerActive->parked)
-            {
+            if ($waterConsumerActive->parked) {
                 throw new Exception("Application Already BTC");
-            }            
+            }
 
             if (!$_COMMON_FUNCTION->checkUsersWithtocken("users")) {
                 throw new Exception("Citizen Not Allowed");
             }
-            if (!$req->senderRoleId) 
-            {
+            if (!$req->senderRoleId) {
                 $req->merge(["senderRoleId" => $role->role_id ?? 0]);
             }
-            if (!$req->receiverRoleId) 
-            {
-                $req->merge(["receiverRoleId" => $role->backward_role_id ?? 0]);               
+            if (!$req->receiverRoleId) {
+                $req->merge(["receiverRoleId" => $role->backward_role_id ?? 0]);
             }
-            if($waterConsumerActive->current_role!= $req->senderRoleId )
-            {
+            if ($waterConsumerActive->current_role != $req->senderRoleId) {
                 throw new Exception("Application Access Forbiden");
             }
             $track = new WorkflowTrack();
@@ -1386,7 +1491,7 @@ class WaterConsumerWfController extends Controller
             $metaReqs['trackDate'] = $lastworkflowtrack && $lastworkflowtrack->forward_date ? ($lastworkflowtrack->forward_date . " " . $lastworkflowtrack->forward_time) : Carbon::now()->format('Y-m-d H:i:s');
             $metaReqs['forwardDate'] = Carbon::now()->format('Y-m-d');
             $metaReqs['forwardTime'] = Carbon::now()->format('H:i:s');
-            $metaReqs['verificationStatus'] = $_TRADE_CONSTAINT["VERIFICATION-STATUS"]["BTC"];#2
+            $metaReqs['verificationStatus'] = $_TRADE_CONSTAINT["VERIFICATION-STATUS"]["BTC"]; #2
             $metaReqs['user_id'] = $user_id;
             $metaReqs['ulb_id'] = $ulb_id;
             $req->merge($metaReqs);
@@ -1403,7 +1508,7 @@ class WaterConsumerWfController extends Controller
     public function checkWorckFlowForwardBackord(Request $request)
     {
         $_COMMON_FUNCTION = new CommonFunction();
-        $_TRADE_CONSTAINT  =Config::get("TradeConstant");
+        $_TRADE_CONSTAINT  = Config::get("TradeConstant");
         $user = Auth()->user();
         $user_id = $user->id ?? $request->user_id;
         $ulb_id = $user->ulb_id ?? $request->ulb_id;
@@ -1415,35 +1520,32 @@ class WaterConsumerWfController extends Controller
         if (!empty($allRolse)) {
             $fromRole = array_values(objToArray($allRolse->where("id", $request->senderRoleId)))[0] ?? [];
         }
-        if (strtoupper($mUserType) == $_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][""] || ($fromRole["can_upload_document"] ?? false) ||  ($fromRole["can_verify_document"] ?? false)) 
-        {
+        if (strtoupper($mUserType) == $_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][""] || ($fromRole["can_upload_document"] ?? false) ||  ($fromRole["can_verify_document"] ?? false)) {
             $documents = $this->getDocList($request);
-            if (!$documents->original["status"]) 
-            {
+            if (!$documents->original["status"]) {
                 return false;
             }
             $applicationDoc = $documents->original["data"]["listDocs"];
-            $ownerDoc = $documents->original["data"]["ownerDocs"]??collect([]);
+            $ownerDoc = $documents->original["data"]["ownerDocs"] ?? collect([]);
             $appMandetoryDoc = $applicationDoc->whereIn("docType", ["R", "OR"]);
             $appUploadedDoc = $applicationDoc->whereNotNull("uploadedDoc");
             $appUploadedDocVerified = collect();
             $appUploadedDocRejected = collect();
-            $appMadetoryDocRejected  = collect(); 
-            $appUploadedDoc->map(function ($val) use ($appUploadedDocVerified,$appUploadedDocRejected,$appMadetoryDocRejected) {
-                
+            $appMadetoryDocRejected  = collect();
+            $appUploadedDoc->map(function ($val) use ($appUploadedDocVerified, $appUploadedDocRejected, $appMadetoryDocRejected) {
+
                 $appUploadedDocVerified->push(["is_docVerify" => (!empty($val["uploadedDoc"]) ?  (((collect($val["uploadedDoc"])->all())["verifyStatus"]) ? true : false) : true)]);
-                $appUploadedDocRejected->push(["is_docRejected" => (!empty($val["uploadedDoc"]) ?  (((collect($val["uploadedDoc"])->all())["verifyStatus"]==2) ? true : false) : false)]);
-                if(in_array($val["docType"],["R", "OR"]))
-                {
-                    $appMadetoryDocRejected->push(["is_docRejected" => (!empty($val["uploadedDoc"]) ?  (((collect($val["uploadedDoc"])->all())["verifyStatus"]==2) ? true : false) : false)]);
+                $appUploadedDocRejected->push(["is_docRejected" => (!empty($val["uploadedDoc"]) ?  (((collect($val["uploadedDoc"])->all())["verifyStatus"] == 2) ? true : false) : false)]);
+                if (in_array($val["docType"], ["R", "OR"])) {
+                    $appMadetoryDocRejected->push(["is_docRejected" => (!empty($val["uploadedDoc"]) ?  (((collect($val["uploadedDoc"])->all())["verifyStatus"] == 2) ? true : false) : false)]);
                 }
             });
             $is_appUploadedDocVerified          = $appUploadedDocVerified->where("is_docVerify", false);
             $is_appUploadedDocRejected          = $appUploadedDocRejected->where("is_docRejected", true);
             $is_appUploadedMadetoryDocRejected  = $appMadetoryDocRejected->where("is_docRejected", true);
             // $is_appMandUploadedDoc              = $appMandetoryDoc->whereNull("uploadedDoc");
-            $is_appMandUploadedDoc = $appMandetoryDoc->filter(function($val){
-                return ($val["uploadedDoc"]=="" || $val["uploadedDoc"]==null);
+            $is_appMandUploadedDoc = $appMandetoryDoc->filter(function ($val) {
+                return ($val["uploadedDoc"] == "" || $val["uploadedDoc"] == null);
             });
             $Wdocuments = collect();
             $ownerDoc->map(function ($val) use ($Wdocuments) {
@@ -1452,8 +1554,8 @@ class WaterConsumerWfController extends Controller
                     $val1["ownerId"] = $ownerId;
                     $val1["is_uploded"] = (in_array($val1["docType"], ["R", "OR"]))  ? ((!empty($val1["uploadedDoc"])) ? true : false) : true;
                     $val1["is_docVerify"] = !empty($val1["uploadedDoc"]) ?  (((collect($val1["uploadedDoc"])->all())["verifyStatus"]) ? true : false) : true;
-                    $val1["is_docRejected"] = !empty($val1["uploadedDoc"]) ?  (((collect($val1["uploadedDoc"])->all())["verifyStatus"]==2) ? true : false) : false;
-                    $val1["is_madetory_docRejected"] = (!empty($val1["uploadedDoc"]) && in_array($val1["docType"],["R", "OR"]))?  (((collect($val1["uploadedDoc"])->all())["verifyStatus"]==2) ? true : false) : false;
+                    $val1["is_docRejected"] = !empty($val1["uploadedDoc"]) ?  (((collect($val1["uploadedDoc"])->all())["verifyStatus"] == 2) ? true : false) : false;
+                    $val1["is_madetory_docRejected"] = (!empty($val1["uploadedDoc"]) && in_array($val1["docType"], ["R", "OR"])) ?  (((collect($val1["uploadedDoc"])->all())["verifyStatus"] == 2) ? true : false) : false;
                     $Wdocuments->push($val1);
                 });
             });
@@ -1463,12 +1565,10 @@ class WaterConsumerWfController extends Controller
             $is_ownerDocVerify              = $Wdocuments->where("is_docVerify", false);
             $is_ownerDocRejected            = $Wdocuments->where("is_docRejected", true);
             $is_ownerMadetoryDocRejected    = $Wdocuments->where("is_madetory_docRejected", true);
-            if (($fromRole["can_upload_document"] ?? false) || strtoupper($mUserType) == $_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][""]) 
-            {
+            if (($fromRole["can_upload_document"] ?? false) || strtoupper($mUserType) == $_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][""]) {
                 return (empty($is_ownerUploadedDoc->all()) && empty($is_ownerDocRejected->all()) && empty($is_appMandUploadedDoc->all()) && empty($is_appUploadedDocRejected->all()));
             }
-            if ($fromRole["can_verify_document"] ?? false) 
-            {
+            if ($fromRole["can_verify_document"] ?? false) {
                 return (empty($is_ownerDocVerify->all()) && empty($is_appUploadedDocVerified->all()) && empty($is_ownerMadetoryDocRejected->all()) && empty($is_appUploadedMadetoryDocRejected->all()));
             }
         }
@@ -1486,8 +1586,8 @@ class WaterConsumerWfController extends Controller
             $_MODULE_ID                   = Config::get('module-constants.WATER_MODULE_ID');
 
             $refWorkflowId = $_WF_MASTER_Id;
-            $_COMMON_FUNCTION = new CommonFunction();        
-            $_TRADE_CONSTAINT  =Config::get("TradeConstant");
+            $_COMMON_FUNCTION = new CommonFunction();
+            $_TRADE_CONSTAINT  = Config::get("TradeConstant");
             $role = $_COMMON_FUNCTION->getUserRoll($user_id, $ulb_id, $refWorkflowId);
 
             $req->validate([
@@ -1499,7 +1599,7 @@ class WaterConsumerWfController extends Controller
                 throw new Exception("Citizen Not Allowed");
             }
 
-            
+
             $refWorkflowId = $_WF_MASTER_Id;
 
             $waterConsumerActive = WaterConsumerActiveRequest::find($req->applicationId);;
@@ -1553,7 +1653,7 @@ class WaterConsumerWfController extends Controller
                 $approvedConsumerActive->id = $waterConsumerActive->id;
                 $approvedConsumerActive->save();
                 $waterConsumerActive->delete();
-                $msg =  "Application Successfully Approved !!. Your License No Is " ;
+                $msg =  "Application Successfully Approved !!. Your License No Is ";
             }
 
             // Rejection
