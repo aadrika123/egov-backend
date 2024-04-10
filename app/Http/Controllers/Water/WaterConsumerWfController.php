@@ -838,7 +838,7 @@ class WaterConsumerWfController extends Controller
         $refWaterApplication = $application;#$mWaterApplication->getApplicationById($application)->first();
         
         $moduleId       = Config::get('module-constants.WATER_MODULE_ID');
-        $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "LAST_PAYMENT_RECEIPT")->requirements;
+        $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "DISCONNECTION_APPLICATION_FORM")->requirements;
 
         // if (!$refWaterApplication->citizen_id)         // Holding No, SAF No // Static
         // {
@@ -853,7 +853,7 @@ class WaterConsumerWfController extends Controller
         $mWfActiveDocument = new WfActiveDocument();
         $applicationId = $refApplication->id;
         $workflowId = $refApplication->workflow_id;
-        $moduleId = Config::get('module-constants.WATER_MODULE_ID');DB::connection("pgsql_master")->enableQueryLog();
+        $moduleId = Config::get('module-constants.WATER_MODULE_ID');DB::connection("pgsql_master");
         $uploadedDocs = $mWfActiveDocument->getDocByRefIds($applicationId, $workflowId, $moduleId);
         // dd($applicationId,$workflowId,$moduleId,DB::connection("pgsql_master")->getQueryLog());
         $explodeDocs = collect(explode('#', $documentList))->filter();
