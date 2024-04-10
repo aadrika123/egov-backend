@@ -552,8 +552,8 @@ class WaterConsumerWfController extends Controller
             $commonFunction = new CommonFunction();
 
             $occupiedWards  = $this->getWardByUserId($userId)->pluck('ward_id');
-            $roleId         = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
-            $workflowIds    = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
+             $roleId         = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
+             $workflowIds    = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
             $refWorkflow                    = Config::get('workflow-constants.WATER_DISCONNECTION');
             //$roleId[] = $commonFunction->getUserRoll($userId,$ulbId,$refWorkflow)->role_id;
 

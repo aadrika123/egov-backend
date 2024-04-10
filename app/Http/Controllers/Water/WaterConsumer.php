@@ -1851,9 +1851,9 @@ class WaterConsumer extends Controller
                 throw new Exception("Water Consumer not found on the given consumer Id");
             }
             # Check the condition for deactivation
-
-            $refDetails = $this->PreConsumerDeactivationCheck($request, $user);
             $ulbId      = $request->ulbId ??$user->ulb_id??2;
+            $refDetails = $this->PreConsumerDeactivationCheck($request, $user);
+            //$ulbId      = $request->ulbId ??$user->ulb_id??2;
 
             # Get initiater and finisher
             $ulbWorkflowId = $ulbWorkflowObj->getulbWorkflowId($refWorkflow, $ulbId);
