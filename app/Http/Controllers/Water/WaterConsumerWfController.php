@@ -936,6 +936,34 @@ class WaterConsumerWfController extends Controller
             return responseMsgs(false, [$e->getMessage(),$e->getFile(),$e->getLine()], "", "010203", "1.0", "", 'POST', "");
         }
     }
+    public function checkParamForDocUpload($isCitizen, $applicantDetals, $user)
+
+    {
+        $refWorkFlowMaster = Config::get('workflow-constants.WATER_MASTER_ID');
+        switch ($isCitizen) {
+                # For citizen 
+            case (true):
+                if (!is_null($applicantDetals->current_role) && $applicantDetals->parked == true) {
+                    return true;
+                }
+                if (!is_null($applicantDetals->current_role)) {
+                    throw new Exception("You aren't allowed to upload document!");
+                }
+                break;
+                # For user
+            case (false):
+                $userId = $user->id;
+                $ulbId = $applicantDetals->ulb_id;
+                $role = $this->getUserRoll($userId, $ulbId, $refWorkFlowMaster);
+                if (is_null($role)) {
+                    throw new Exception("You dont have any role!");
+                }
+                if ($role->can_upload_document != true) {
+                    throw new Exception("You dont have permission to upload Document!");
+                }
+                break;
+        }
+    }
 
     public function uploadDocuments(Request $req)
     {
@@ -1087,7 +1115,7 @@ class WaterConsumerWfController extends Controller
             ];
             $mWfDocument->docVerifyReject($wfDocId, $myRequest);
             $this->commit();
-            $doc = $this->getDocList($request);dd($doc);
+            $doc = $this->getDocList($request);//dd($doc);
             $docVerifyStatus = $doc->original["data"]["docVerifyStatus"] ?? 0;
 
             return responseMsgs(true, ["docVerifyStatus" => $docVerifyStatus], "", "tc7.1", "1.0", "", "POST", $request->deviceId ?? "");
