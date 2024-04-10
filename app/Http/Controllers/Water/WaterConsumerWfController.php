@@ -840,10 +840,10 @@ class WaterConsumerWfController extends Controller
         $moduleId       = Config::get('module-constants.WATER_MODULE_ID');
         $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "LAST_PAYMENT_RECEIPT")->requirements;
 
-        if (!$refWaterApplication->citizen_id)         // Holding No, SAF No // Static
-        {
-            $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "DISCONNECTION_APPLICATION_FORM")->requirements;
-        }
+        // if (!$refWaterApplication->citizen_id)         // Holding No, SAF No // Static
+        // {
+        //     $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "DISCONNECTION_APPLICATION_FORM")->requirements;
+        // }
         $documentList = $this->filterDocument($documentList, $application);
         return $documentList;
     }
