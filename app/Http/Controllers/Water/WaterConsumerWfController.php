@@ -21,6 +21,7 @@ use App\Models\WorkflowTrack;
 use App\Repository\Common\CommonFunction;
 use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
 use App\Traits\Ward;
+use App\Traits\Water\WaterRequestTrait;
 use App\Traits\Water\WaterTrait;
 use App\Traits\Workflow\Workflow;
 use Carbon\Carbon;
@@ -45,6 +46,7 @@ class WaterConsumerWfController extends Controller
     use Ward;
     use Workflow;
     use WaterTrait;
+    use WaterRequestTrait;
 
     private $_waterRoles;
     private $_waterModuleId;
