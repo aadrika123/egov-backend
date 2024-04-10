@@ -30,7 +30,7 @@ class WaterConsumerActiveRequest extends Model
         $mWaterConsumerActiveRequest->apply_from                = $refRequest['applyFrom'];
         $mWaterConsumerActiveRequest->initiator                 = $refRequest['initiatorRoleId'];
         $mWaterConsumerActiveRequest->workflow_id               = $refRequest['ulbWorkflowId'];
-        $mWaterConsumerActiveRequest->ulb_id                    = $req['ulbId'];
+        $mWaterConsumerActiveRequest->ulb_id                    = $refRequest['ulbId'];
         $mWaterConsumerActiveRequest->finisher                  = $refRequest['finisherRoleId'];
         $mWaterConsumerActiveRequest->user_type                 = $refRequest['userType'];
         $mWaterConsumerActiveRequest->application_no            = $applicationNo;

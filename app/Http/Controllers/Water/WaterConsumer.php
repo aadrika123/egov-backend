@@ -1898,6 +1898,7 @@ class WaterConsumer extends Controller
             $refRequest["chargeCategoryId"]  = $refConsumerCharges['WATER_DISCONNECTION'];
             $refRequest["amount"]            = $chargeAmount->amount;
             $refRequest['userType']          = $user->user_type;
+            $refRequest['ulbId']          = $ulbId;
 
             $this->begin();
             $idGeneration       = new PrefixIdGenerator($refConParamId['WCD'], $ulbId);
