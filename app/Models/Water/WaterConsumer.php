@@ -448,4 +448,19 @@ class WaterConsumer extends Model
         ->where("tran_type","Demand Collection")
         ->orderBy("id","DESC");
     }
+
+    public function getOwners()
+    {
+        return $this->hasMany(WaterConsumerOwner::class,"consumer_id","id")->where("status",1)->get();
+    }
+
+    public function getPropType()
+    {
+        return $this->hasMany(WaterPropertyTypeMstr::class,"id","property_type_id")->first();
+    }
+
+    public function getPipelineType()
+    {
+        return $this->hasMany(WaterParamPipelineType::class,"id","pipeline_type_id")->first();
+    }
 }

@@ -133,8 +133,8 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
         //written by Prity Pandey
         Route::post('admin/consumer/apply-deactivation', 'applyDeactivation');  
         Route::post('get_consumer_details_by_id', 'getByApplicationId');
-        Route::post('consumer_doc_upload', 'uploadWaterDocForDeactivation');  
-        Route::post('get/consumer_doc', 'getDocList'); 
+        //Route::post('consumer_doc_upload', 'uploadWaterDocForDeactivation');  
+        //Route::post('get/consumer_doc', 'getDocList'); 
         Route::post('applicant/search', 'searchApplication'); 
     });
 
@@ -156,11 +156,18 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
         //written by prity pandey 
         Route::post('consumer/req/inbox', 'consumerInbox');                                         // Workflow
         Route::post('consumer/req/outbox', 'consumerOutbox');
+        Route::post('deactivation/back-to-citizen', 'backToCitizen');
         Route::post('consumer/deactivation-escalate-inbox', 'specialInbox');
         Route::post('consumer/deactivation-btc-inbox', 'btcInbox');
-        Route::post('consumer_doc-verify-reject', 'docVerifyRejects');
-        Route::post('consumer/req/post-next-level', 'consumerPostNextLevel');
-        Route::post('consumer/req/approval-rejection', 'consumerDeactivationApprovalRejection');
+        Route::post('consumer/deactivation-worklfow-by-id', 'getConsumerDetails');
+        Route::post('consumer/deactivation-get-doc-list', 'getDocList'); 
+        Route::post('consumer/deactivation-upload-documents', 'uploadDocuments'); 
+        Route::post('consumer/deactivation-documents-verify', 'documentVerify'); 
+        Route::post('consumer/deactivation-post-next-level', 'postNextLevelRequestV1'); 
+        Route::post('consumer/deactivation-approve-rejet', 'approveReject'); 
+        //Route::post('consumer_doc-verify-reject', 'docVerifyRejects');
+        //Route::post('consumer/req/post-next-level', 'consumerPostNextLevel');
+        //Route::post('consumer/req/approval-rejection', 'consumerDeactivationApprovalRejection');
     });
 
     /**
