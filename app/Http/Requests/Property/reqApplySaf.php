@@ -158,7 +158,7 @@ class reqApplySaf extends FormRequest
                     'message' => $validator->errors(),
                     'errors' => $validator->errors()
                 ],
-                422
+                200
             )
         );
     }
