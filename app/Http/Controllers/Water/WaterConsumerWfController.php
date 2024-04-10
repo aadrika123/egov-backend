@@ -1150,6 +1150,7 @@ class WaterConsumerWfController extends Controller
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
         }
+    }
 
     public function documentVerify(Request $request)
     {
