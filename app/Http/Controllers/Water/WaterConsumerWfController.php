@@ -763,7 +763,7 @@ class WaterConsumerWfController extends Controller
             $owners = $consumerDetails->getOwners()??new Collection();
 
             $wards = UlbWardMaster::where("id",$data->ward_mstr_id)->first();
-            $ulb = UlbMaster::where("id",$data->ulb_id)->first();
+            $ulb = ModelsUlbMaster::where("id",$data->ulb_id)->first();
             $data->ward_no = $wards->ward_name??null;
             $data->ulb_name = $ulb->ulb_name??null;
             $data->apply_date = Carbon::parse($data->apply_date)->format("d-m-Y H:i:s");
