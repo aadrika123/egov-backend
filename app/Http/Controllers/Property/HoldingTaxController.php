@@ -270,7 +270,6 @@ class HoldingTaxController extends Controller
                $canTakePayment = in_array($loggedInUserType, ['Citizen']) ? true : false;
             }
 
-
             $demand['can_pay'] = $canTakePayment;
             // $demand['can_pay'] = true;
 

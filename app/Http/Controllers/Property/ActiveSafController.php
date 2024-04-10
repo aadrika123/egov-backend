@@ -1853,6 +1853,8 @@ class ActiveSafController extends Controller
             DB::beginTransaction();
 
             $orderDetails = $this->saveGenerateOrderid($req);
+            if ($orderDetails->original['status'] == false)
+                    throw new Exception($orderDetails->original['data']);
             $demands = array_merge($demands->toArray(), [
                 'orderId' => $orderDetails['orderId']
             ]);

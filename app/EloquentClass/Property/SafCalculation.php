@@ -545,7 +545,7 @@ class SafCalculation
     {
         $readPropertyType = $this->_propertyDetails['propertyType'];
         if (in_array($readPropertyType, [$this->_vacantPropertyTypeId, $this->_individualPropTypeId])) {                                             // Vacant Land condition with independent building
-            if (in_array(isset($this->_propertyDetails['assessmentType']), [1, 'New Assessment']) || $readPropertyType == $this->_vacantPropertyTypeId) {      // checking assessment type for individual property and property type for vacant land
+            if (isset($this->_propertyDetails['assessmentType']) &&(in_array($this->_propertyDetails['assessmentType'], [1, 'New Assessment']) ||$readPropertyType == $this->_vacantPropertyTypeId)) {      // checking assessment type for individual property and property type for vacant land
                 $calculateQuaterlyRuleSets = $this->calculateQuaterlyRulesets("vacantLand");
                 $ruleSetsWithMobileTower = collect($this->_mobileQuaterlyRuleSets)->merge($calculateQuaterlyRuleSets);        // Collapse with mobile tower
                 $ruleSetsWithHoardingBoard = collect($this->_hoardingQuaterlyRuleSets)->merge($ruleSetsWithMobileTower);      // Collapse with hoarding board
