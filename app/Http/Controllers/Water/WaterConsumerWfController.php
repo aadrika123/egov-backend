@@ -631,14 +631,14 @@ class WaterConsumerWfController extends Controller
 
     public function specialInbox(Request $req)
     {
-        $validated = Validator::make(
-            $req->all(),
-            [
-                'perPage' => 'nullable|integer',
-            ]
-        );
-        if ($validated->fails())
-            return validationError($validated);
+        // $validated = Validator::make(
+        //     $req->all(),
+        //     [
+        //         'perPage' => 'nullable|integer',
+        //     ]
+        // );
+        // if ($validated->fails())
+        //     return validationError($validated);
 
         try {
             $user                   = authUser($req);
@@ -660,15 +660,16 @@ class WaterConsumerWfController extends Controller
                 ->where('water_consumer_active_requests.is_escalate', true)
                 ->where('water_consumer_active_requests.parked', false)
                 ->orderByDesc('water_consumer_active_requests.id')
-                ->paginate($pages);
+                ->get();
+                //->paginate($pages);
 
-            $list = [
-                "current_page" => $inboxDetails->currentPage(),
-                "last_page" => $inboxDetails->lastPage(),
-                "data" => $inboxDetails->items(),
-                "total" => $inboxDetails->total(),
-            ];
-            return responseMsgs(true, "List of Appication!", $list, "", "01", "723 ms", "POST", "");
+            // $list = [
+            //     "current_page" => $inboxDetails->currentPage(),
+            //     "last_page" => $inboxDetails->lastPage(),
+            //     "data" => $inboxDetails->items(),
+            //     "total" => $inboxDetails->total(),
+            // ];
+            // return responseMsgs(true, "List of Appication!", $list, "", "01", "723 ms", "POST", "");
 
             return responseMsgs(true, "Successfully listed consumer req inbox details!", $inboxDetails, "", "01", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
@@ -678,14 +679,14 @@ class WaterConsumerWfController extends Controller
 
     public function btcInbox(Request $req)
     {
-        $validated = Validator::make(
-            $req->all(),
-            [
-                'perPage' => 'nullable|integer',
-            ]
-        );
-        if ($validated->fails())
-            return validationError($validated);
+        // $validated = Validator::make(
+        //     $req->all(),
+        //     [
+        //         'perPage' => 'nullable|integer',
+        //     ]
+        // );
+        // if ($validated->fails())
+        //     return validationError($validated);
 
         try {
             $user                   = authUser($req);
@@ -707,15 +708,16 @@ class WaterConsumerWfController extends Controller
                 ->where('water_consumer_active_requests.is_escalate', false)
                 ->where('water_consumer_active_requests.parked', TRUE)
                 ->orderByDesc('water_consumer_active_requests.id')
-                ->paginate($pages);
+                ->get();
+                //->paginate($pages);
 
-            $list = [
-                "current_page" => $inboxDetails->currentPage(),
-                "last_page" => $inboxDetails->lastPage(),
-                "data" => $inboxDetails->items(),
-                "total" => $inboxDetails->total(),
-            ];
-            return responseMsgs(true, "List of Appication!", $list, "", "01", "723 ms", "POST", "");
+            // $list = [
+            //     "current_page" => $inboxDetails->currentPage(),
+            //     "last_page" => $inboxDetails->lastPage(),
+            //     "data" => $inboxDetails->items(),
+            //     "total" => $inboxDetails->total(),
+            // ];
+            // return responseMsgs(true, "List of Appication!", $list, "", "01", "723 ms", "POST", "");
 
             return responseMsgs(true, "Successfully listed consumer req inbox details!", $inboxDetails, "", "01", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
