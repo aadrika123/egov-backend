@@ -128,10 +128,11 @@ trait WaterTrait
         | Serial No : 04
         | Working
      */
-   
+
     public function getConsumerWfBaseQuerry($workflowIds, $ulbId)
     {
-        return WaterConsumerActiveRequest::select('water_consumer_active_requests.*','wco.applicant_name','wco.mobile_no')
+        return WaterConsumerActiveRequest::select('water_consumer_active_requests.*', 'wco.applicant_name', 'wco.mobile_no','water_consumers.consumer_no')
+            ->join('water_consumers', 'water_consumers.id', 'water_consumer_active_requests.consumer_id')
             ->join('water_consumer_owners AS wco', 'wco.consumer_id', 'water_consumer_active_requests.consumer_id')
             ->leftjoin('ulb_ward_masters AS uwm', 'uwm.id', 'water_consumer_active_requests.ward_mstr_id')
             ->join('ulb_masters AS um', 'um.id', 'water_consumer_active_requests.ulb_id')
