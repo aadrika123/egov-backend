@@ -200,7 +200,8 @@ class HoldingTaxController extends Controller
                 'is_petrol_pump',
                 'is_water_harvesting',
                 'ulb_id',
-                'prop_address'
+                'prop_address',
+                'area_of_plot'
             ]);
             $basicDtls["holding_type"] = $holdingType;
             $basicDtls["ownership_type"] = $ownershipType;
@@ -284,6 +285,7 @@ class HoldingTaxController extends Controller
             $demand['dueReceipt'] = [
                 'holdingNo' => $basicDtls['holding_no'],
                 'new_holding_no' => $basicDtls['new_holding_no'],
+                'area_of_plot' => $basicDtls['area_of_plot'],
                 'date' => $todayDate,
                 'wardNo' => $basicDtls['old_ward_no'],
                 'newWardNo' => $basicDtls['new_ward_no'],

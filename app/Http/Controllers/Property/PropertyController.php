@@ -11,6 +11,7 @@ use App\Models\Property\PropActiveHarvesting;
 use App\Models\Property\PropActiveObjection;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropDemand;
+use App\Models\Property\PropFloor;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropSaf;
@@ -511,6 +512,121 @@ class PropertyController extends Controller
         } catch (Exception $e) {
             DB::connection("pgsql_master")->rollBack();
             return responseMsgs(false, $e->getMessage(), "", "011706", "01", responseTime(), "POST", $request->deviceId);
+        }
+    }
+
+    /**
+     * | Check Amalgamation reqs
+     */
+    public function checkAmalgamation(Request $request)
+    {
+        try {
+            $validated = Validator::make(
+                $request->all(),
+                [
+                    'propertyId' => 'required|array',
+                ]
+            );
+            if ($validated->fails()) {
+                return validationError($validated);
+            }
+            $mPropProperties = new PropProperty();
+            $mPropFloor = new PropFloor();
+            $holdingTaxController = new HoldingTaxController($this->_safRepo);
+            $holdingDtls = $mPropProperties->getMultipleProperty($request->propertyId);
+            $plotArea = collect($holdingDtls)->sum('area_of_plot');
+            $propertyIds = collect($holdingDtls)->pluck('id');
+            $floorDtls = $mPropFloor->getAppartmentFloor($propertyIds)->get();
+            $demands = array();
+
+            foreach ($propertyIds as $propId) {
+                $request->merge(["propId" => $propId]);
+                $demand = $holdingTaxController->getHoldingDues($request);
+                $demand = $demand->original;
+                if ($demand['status'] == false)
+                    // $demandDetails = $demand['data']['duesList'];
+                    array_push($demands, $demand);
+            }
+            return $demands;
+
+
+            return responseMsgs(true, "Amalgamation Requirement Fulfilled", [], '011707', '01', responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], '011707', '01', responseTime(), $request->getMethod(), $request->deviceId);
+        }
+    }
+
+    /**
+     * | Check Amalgamation Property
+     */
+    public function checkAmalgamationProperty(Request $request)
+    {
+        try {
+            $validated = Validator::make(
+                $request->all(),
+                [
+                    'holdingNo' => 'required|array',
+                ]
+            );
+            if ($validated->fails()) {
+                return validationError($validated);
+            }
+            $mPropProperties = new PropProperty();
+            $mPropFloor = new PropFloor();
+            $holdingTaxController = new HoldingTaxController($this->_safRepo);
+            $holdingDtls = $mPropProperties->searchCollectiveHolding($request->holdingNo);
+            if (collect($holdingDtls)->isEmpty())
+                throw new Exception("No Property found for the respective holding no.");
+
+            $plotArea = collect($holdingDtls)->sum('area_of_plot');
+            $propertyIds = collect($holdingDtls)->pluck('id');
+            $floorDtls = $mPropFloor->getAppartmentFloor($propertyIds)->get();
+            $demands = array();
+            foreach ($propertyIds as $propId) {
+                $request->merge(["propId" => $propId]);
+                $demand = $holdingTaxController->getHoldingDues($request);
+                $demand = $demand->original;
+                if ($demand['status'] == false) {
+                    $demand['data']['basicDetails']['property_id'] = $propId;
+                    array_push($demands, $demand['data']['basicDetails']);
+                }
+            }
+
+            if (collect($demands)->isEmpty())
+                throw new Exception("Previous Demand is not clear for the respective property.");
+
+            return responseMsgs(true, "Amalgamation Requirement Fulfilled", $demands, '011707', '01', responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], '011707', '01', responseTime(), $request->getMethod(), $request->deviceId);
+        }
+    }
+
+    /**
+     * | Master Holding Data
+     */
+    public function masterHoldingData(Request $request)
+    {
+        try {
+            // $validated = Validator::make(
+            //     $request->all(),
+            //     [
+            //         'holdingNo' => 'required|array',
+            //     ]
+            // );
+            // if ($validated->fails()) {
+            //     return validationError($validated);
+            // }
+            $mPropFloor = new PropFloor();
+            $safController = new ActiveSafController($this->_safRepo);
+            $propIds = collect($request->amalgamation)->pluck('propId')->unique();
+            $masterHoldingId = collect($request->amalgamation)->where('isMasterHolding', true)->first();
+            $reqPropId = new Request(['propertyId' => $masterHoldingId['propId']]);
+            $masterData = $safController->getPropByHoldingNo($reqPropId)->original['data'];
+
+
+            return responseMsgs(true, "Master Holding Data", $masterData, '011707', '01', responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], '011707', '01', responseTime(), $request->getMethod(), $request->deviceId);
         }
     }
 }

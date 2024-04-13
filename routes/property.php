@@ -329,7 +329,9 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
     Route::post('basic-edit', 'basicPropertyEdit');                          #API_ID = 011704
     Route::post('check-property', 'CheckProperty');                          #API_ID = 011705
     Route::post('citizen-status-update', 'citizenStatusUpdate');             #API_ID = 011706
-
+    Route::post('check-amalgamation', 'checkAmalgamation');                  #API_ID = 011707
+    Route::post('check-amalgamation-property', 'checkAmalgamationProperty'); #API_ID = 011707
+    Route::post('master-holding-data', 'masterHoldingData');                 #API_ID = 011707
   });
 
   /**
@@ -509,7 +511,7 @@ Route::controller(ReportController::class)->group(function () {
   Route::post('reports/saf/leveluserpending', 'levelUserPending');             #API_ID = 012406
   Route::post('reports/saf/userwiselevelpending', 'userWiseLevelPending');     #API_ID = 012407
   Route::post('reports/saf/userWiseWardWireLevelPending', 'userWiseWardWireLevelPending');  #API_ID = 012408
-  Route::post('reports/saf/saf-sam-fam-geotagging', 'safSamFamGeotagging'); #API_ID = 012409        
+  Route::post('reports/saf/saf-sam-fam-geotagging', 'safSamFamGeotagging'); #API_ID = 012409
   Route::post('reports/ward-wise-holding', 'wardWiseHoldingReport');        #API_ID = 012410
   Route::post('reports/list-fy', 'listFY');                                 #API_ID = 012411
   Route::post('reports/print-bulk-receipt', 'bulkReceipt');                 #API_ID = 012412
@@ -526,8 +528,8 @@ Route::controller(ReportController::class)->group(function () {
   Route::post('reports/saf/payment-mode-wise-summery', 'SafPaymentModeWiseSummery');  #API_ID = 012423
   Route::post('reports/property/dcb', 'PropDCB');                  #API_ID = 012424                
   Route::post('reports/property/ward-wise-dcb', 'PropWardWiseDCB');          #API_ID = 012425
-  Route::post('reports/property/holding-wise-fine-rebate', 'PropFineRebate');  #API_ID = 012426         
-  Route::post('reports/property/deactivated-list', 'PropDeactedList');  #API_ID = 012427                 
+  Route::post('reports/property/holding-wise-fine-rebate', 'PropFineRebate');  #API_ID = 012426   
+  Route::post('reports/property/deactivated-list', 'PropDeactedList');    #API_ID = 012427
   Route::post('reports/mpl', 'mplReport');                                #API_ID = 012428
   Route::post('reports/mpl2', 'mplReport2');                              #API_ID = 012429
   Route::post('geo', 'getLocality');
@@ -679,7 +681,7 @@ Route::controller(MasterReferenceController::class)->group(function () {
   Route::post('m-prop-multi-factor-get', 'MPropMultiFactorById');
   Route::post('m-prop-multi-factor-list', 'allMPropMultiFactorList');
 
-  
+
   //m-prop-rental-value
   Route::post('m-prop-rental-value-get', 'MPropRentalValueById');
   Route::post('m-prop-rental-value-list', 'allMPropRentalValueList');
@@ -692,7 +694,7 @@ Route::controller(MasterReferenceController::class)->group(function () {
   Route::post('m-prop-vacant-rentalrates-get', 'MPropVacantRentalrateById');
   Route::post('m-prop-vacant-rentalrates-list', 'allMPropVacantRentalrateList');
 
-  
+
   //m-slider
   Route::post('m-slider-create', 'createSlider');
   Route::post('m-slider-update', 'updateSlider');
@@ -770,14 +772,14 @@ Route::controller(CitizenController::class)->group(function () {
   Route::post('citizen/property-count', 'propertyCount');
 });
 
-  #Added By Prity Pandey
-  #Date 31/10/2023
-  #Route for getting location based ward list 
-  /**
+#Added By Prity Pandey
+#Date 31/10/2023
+#Route for getting location based ward list 
+/**
 | Serial No :25
-   */
-  Route::controller(LocationController::class)->group(function () {
-    Route::post('location', 'location_list');                               #API_ID = 012501
-    Route::post('location/ward-list', 'bindLocationWithWards');             #API_ID = 012502
-    Route::post('map/level1', 'mapLevel1');                                 #API_ID = 012503
-  });
+ */
+Route::controller(LocationController::class)->group(function () {
+  Route::post('location', 'location_list');                               #API_ID = 012501
+  Route::post('location/ward-list', 'bindLocationWithWards');             #API_ID = 012502
+  Route::post('map/level1', 'mapLevel1');                                 #API_ID = 012503
+});

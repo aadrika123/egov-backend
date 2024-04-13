@@ -741,6 +741,18 @@ class PropProperty extends Model
             ->get();
     }
 
+    /**
+     * | get New Holding
+     */
+    public function getMultipleProperty($propertyId)
+    {
+        return PropProperty::on('pgsql::read')
+            ->whereIn('id', $propertyId)
+            ->where('status',1)
+            ->orderByDesc('id')
+            ->get();
+    }
+
      /**
      * | get owners details of property
      */
