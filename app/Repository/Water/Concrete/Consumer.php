@@ -268,7 +268,7 @@ class Consumer implements IConsumer
         $response["consumer_tax"]    = (array)null;
         try {
             $conter = 0;
-            $refUser              = authUser($req);
+            $refUser              = Auth()->user();
             $refUserId            = $refUser->id ?? 0;
             $refUlbId             = $refUser->ulb_id ?? 0;
             $refUlb             = UlbMaster::select("ulb_type")->find($refUlbId);
