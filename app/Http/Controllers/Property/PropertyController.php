@@ -617,12 +617,17 @@ class PropertyController extends Controller
             //     return validationError($validated);
             // }
             $mPropFloor = new PropFloor();
+            $mPropProperties = new PropProperty();
             $safController = new ActiveSafController($this->_safRepo);
             $propIds = collect($request->amalgamation)->pluck('propId')->unique();
+            $holdingDtls = $mPropProperties->getMultipleProperty($propIds);
+            $plotArea = collect($holdingDtls)->sum('area_of_plot');
+            $floorDtls = $mPropFloor->getAppartmentFloor($propIds)->get();
             $masterHoldingId = collect($request->amalgamation)->where('isMasterHolding', true)->first();
             $reqPropId = new Request(['propertyId' => $masterHoldingId['propId']]);
             $masterData = $safController->getPropByHoldingNo($reqPropId)->original['data'];
-
+            $masterData['floors'] = $floorDtls;
+            $masterData['area_of_plot'] = $plotArea;
 
             return responseMsgs(true, "Master Holding Data", $masterData, '011707', '01', responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
