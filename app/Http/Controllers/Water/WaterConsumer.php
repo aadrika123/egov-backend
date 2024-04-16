@@ -426,7 +426,7 @@ class WaterConsumer extends Controller
         if ($lastDemand) {
             $refDemandUpto = Carbon::parse($lastDemand->demand_upto);
             if ($refDemandUpto > $today) {
-                throw new Exception("The demand is generated till" . "" . $lastDemand->demand_upto);
+                throw new Exception("The demand is generated till " . "" . $lastDemand->demand_upto);
             }
             $startDate  = Carbon::parse($refDemandUpto);
             $uptoMonth  = $startDate;
