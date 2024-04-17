@@ -421,15 +421,20 @@ class WaterNewConnection implements IWaterNewConnection
     /**
      * | Differenciate the water module payment 
      */
-    public function razorPayResponse($args)
+    public function razorPayResponse( $args)
     {
         try {
-            # valication 
+            # validation 
             $RazorPayRequest = WaterRazorPayRequest::select("*")
                 ->where("order_id", $args["orderId"])
                 ->where("related_id", $args["id"])
                 ->where("status", 2)
                 ->first();
+            // $RazorPayRequest = WaterRazorPayRequest::select("*")
+            //     ->where("order_id", 'order_NzZevOU2QkTCbz')
+            //     ->where("related_id", 4147)
+            //     ->where("status", 2)
+            //     ->first();
             if (!$RazorPayRequest) {
                 throw new Exception("Data Not Found");
             }
@@ -456,7 +461,7 @@ class WaterNewConnection implements IWaterNewConnection
                     $response = $mWaterPaymentController->endOnlineConReqPayment($args, $RazorPayRequest);
                     break;
                 default:
-                    throw new Exception("Invalide Transaction");
+                    throw new Exception("Invalid Transaction");
             }
             return $response;
         } catch (Exception $e) {

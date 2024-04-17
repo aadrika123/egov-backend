@@ -1773,9 +1773,9 @@ class WaterPaymentController extends Controller
                 ->where('demand_from', '>=', $startingYear)
                 ->where('demand_upto', '<=', $endYear)
                 ->get();
-            if (!$RazorPayRequest || round($webhookData['amount']) != round($RazorPayRequest['amount'])) {
-                throw new Exception("Payble Amount Missmatch!!!");
-            }
+            // if (!$RazorPayRequest || round($webhookData['amount']) != round($RazorPayRequest['amount'])) {
+            //     throw new Exception("Payble Amount Missmatch!!!");
+            // }
 
             $this->begin();
             # save payment data in razorpay response table
