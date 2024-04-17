@@ -646,7 +646,7 @@ class WaterNewConnection implements IWaterNewConnection
         try {
             $refUser        = authUser($request);
             $refUserId      = $refUser->id;
-            $refUlbId       = $refUser->ulb_id;
+            // $refUlbId       = $refUser->ulb_id;
             $mDemands       = null;
             $application = null;
             $transection = null;
@@ -666,7 +666,7 @@ class WaterNewConnection implements IWaterNewConnection
                 ->where("water_razor_pay_requests.status", 1)
                 ->first();
             if (!$WaterRazorPayResponse) {
-                throw new Exception("Not Transection Found...");
+                throw new Exception("No Transaction Found...");
             }
             if ($WaterRazorPayResponse->payment_from == "New Connection") {
                 $application = WaterApplication::find($WaterRazorPayResponse->related_id);
