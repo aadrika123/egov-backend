@@ -285,7 +285,7 @@ class Consumer implements IConsumer
             $get_initial_reading = $this->getLastMeterReading($mConsumerId);
             $initial_reading = $get_initial_reading->initial_reading ?? 0;
             if ($final_reading <= $initial_reading) {
-                throw new Exception("Final Reading Should be Greatr than Previuse Reading");
+                throw new Exception("Final Reading Should be Greater than Previous Reading");
             }
             if ($refMeterStatus->connection_type == 1 || $refMeterStatus->connection_type == 2) {
                 if ($upto_date == "") {
@@ -505,7 +505,7 @@ class Consumer implements IConsumer
                 $get_initial_reading = $this->getLastMeterReading($mConsumerId);
                 $initial_reading = $get_initial_reading->initial_reading ?? 0;
                 if ($final_reading <= $initial_reading) {
-                    throw new Exception("Final Reading Should be Grater than Priviuse Reading!!!");
+                    throw new Exception("Final Reading Should be Greater than Previous Reading");
                 }
                 $diff_reading = $final_reading - $initial_reading;
                 if (!$args) {
