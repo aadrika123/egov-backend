@@ -354,10 +354,13 @@ class WaterConsumer extends Model
         )
             ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_consumers.id')
             ->join('ulb_masters', 'ulb_masters.id', 'water_consumers.ulb_id')
-            ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_consumers.ward_mstr_id')
+            ->leftJoin('ulb_ward_masters', function ($join) {
+                $join->on('ulb_ward_masters.id', '=', 'water_consumers.ward_mstr_id')
+                    ->where('ulb_ward_masters.status', true);
+            })
+            // ->where('ulb_ward_masters.status', true)
             ->where('water_consumers.' . $key, $refNo)
             ->where('water_consumers.status', 1)
-            ->where('ulb_ward_masters.status', true)
             ->groupBy(
                 'water_consumers.saf_no',
                 'water_consumers.holding_no',
@@ -443,29 +446,29 @@ class WaterConsumer extends Model
 
     public function lastTran()
     {
-        return $this->hasMany(WaterTran::class,"related_id","id")
-        ->whereIn("status",[1,2])
-        ->where("tran_type","Demand Collection")
-        ->orderBy("id","DESC");
+        return $this->hasMany(WaterTran::class, "related_id", "id")
+            ->whereIn("status", [1, 2])
+            ->where("tran_type", "Demand Collection")
+            ->orderBy("id", "DESC");
     }
 
     public function getOwners()
     {
-        return $this->hasMany(WaterConsumerOwner::class,"consumer_id","id")->where("status",1)->get();
+        return $this->hasMany(WaterConsumerOwner::class, "consumer_id", "id")->where("status", 1)->get();
     }
 
     public function getPropType()
     {
-        return $this->hasMany(WaterPropertyTypeMstr::class,"id","property_type_id")->first();
+        return $this->hasMany(WaterPropertyTypeMstr::class, "id", "property_type_id")->first();
     }
 
     public function getPipelineType()
     {
-        return $this->hasMany(WaterParamPipelineType::class,"id","pipeline_type_id")->first();
+        return $this->hasMany(WaterParamPipelineType::class, "id", "pipeline_type_id")->first();
     }
 
     public function getWaterApplication()
     {
-        return $this->hasOne(WaterApprovalApplicationDetail::class,"id","apply_connection_id")->first();
+        return $this->hasOne(WaterApprovalApplicationDetail::class, "id", "apply_connection_id")->first();
     }
 }

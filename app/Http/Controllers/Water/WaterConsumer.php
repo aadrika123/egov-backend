@@ -1075,21 +1075,21 @@ class WaterConsumer extends Controller
             $dbKey = "consumer_no";
             $consumerDetails = $mWaterWaterConsumer->getRefDetailByConsumerNo($dbKey, $refConsumerNo)->first();
             if (is_null($consumerDetails)) {
-                throw new Exception("consumer Details not found!");
+                throw new Exception("Consumer Details not found!");
             }
-            $applicationDetails = $this->Repository->getconsumerRelatedData($consumerDetails->id);
+          return  $applicationDetails = $this->Repository->getconsumerRelatedData($consumerDetails->id);
             if (is_null($applicationDetails)) {
                 throw new Exception("Application Details not found!");
             }
             $transactionDetails = $mWaterTran->getTransNo($consumerDetails->apply_connection_id, null)->get();
             $checkTransaction = collect($transactionDetails)->first();
             if ($checkTransaction) {
-                throw new Exception("transactions not found!");
+                throw new Exception("Transaction not found!");
             }
 
-            $consumerDetails;           // consumer related details 
-            $applicationDetails;        // application / owners / siteinspection related details 
-            $transactionDetails;        // all transactions details 
+            $consumerDetails;           // consumer related details
+            $applicationDetails;        // application / owners / siteinspection related details
+            $transactionDetails;        // all transactions details
             $var = null;
 
             $returnValues = [
