@@ -1909,14 +1909,15 @@ class WaterPaymentController extends Controller
             $refDepartmentSection = $this->_departmentSection;
 
             $refRequest     = $request->toArray();
-            $flipRequest    = collect($refRequest)->flip();
-            $key            = $flipRequest[$request->consumerNo];
-            $string         = preg_replace("/([A-Z])/", "_$1", $key);
-            $refstring      = strtolower($string);
+            // $flipRequest    = collect($refRequest)->flip();
+            // $key            = $refRequest[$request->consumerNo];
+            // $string         = preg_replace("/([A-Z])/", "_$1", $key);
+            // $refstring      = strtolower($string);
+            $refstring      = 'consumer_no';
 
             $consumerDetails = $mWaterConsumer->getRefDetailByConsumerNo($refstring, $request->consumerNo)->first();
             if (!$consumerDetails) {
-                throw new Exception("Consumer details not found!");
+                throw new Exception("Consumer details not found");
             }
 
             # Demand Details 
