@@ -1599,7 +1599,7 @@ class WaterPaymentController extends Controller
                 ->orderBy('demand_from')
                 ->get();
             $taxids = collect($consumerDemands)->pluck('consumer_tax_id')->filter();
-            if (!empty($taxids) || !is_null($taxids)) {
+            if (collect($taxids)->isNotEmpty()) {
                 $meterReadings = $mWaterConsumerTax->getTaxById($taxids)
                     ->orderByDesc('id')
                     ->get();
