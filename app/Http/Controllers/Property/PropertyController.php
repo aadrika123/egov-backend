@@ -607,15 +607,6 @@ class PropertyController extends Controller
     public function masterHoldingData(Request $request)
     {
         try {
-            // $validated = Validator::make(
-            //     $request->all(),
-            //     [
-            //         'holdingNo' => 'required|array',
-            //     ]
-            // );
-            // if ($validated->fails()) {
-            //     return validationError($validated);
-            // }
             $mPropFloor = new PropFloor();
             $mPropProperties = new PropProperty();
             $safController = new ActiveSafController($this->_safRepo);
@@ -634,6 +625,4 @@ class PropertyController extends Controller
             return responseMsgs(false, $e->getMessage(), [], '011707', '01', responseTime(), $request->getMethod(), $request->deviceId);
         }
     }
-    // <div>
-    // </div>
 }
