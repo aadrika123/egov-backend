@@ -421,7 +421,7 @@ class WaterNewConnection implements IWaterNewConnection
     /**
      * | Differenciate the water module payment 
      */
-    public function razorPayResponse( $args)
+    public function razorPayResponse($args)
     {
         try {
             # validation 
