@@ -1724,7 +1724,7 @@ class WaterPaymentController extends Controller
             $temp['mobile'] = $refUser->mobile;
             $temp['email']  = $refUser->email;
             $temp['userId'] = $refUser->id;
-            $temp['ulbId']  = $refUser->ulb_id ?? null;
+            $temp['ulbId']  = $refUser->ulb_id ?? $myRequest->ulbId;
             return responseMsgs(true, "", $temp, "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             $this->rollback();
