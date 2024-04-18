@@ -180,7 +180,17 @@ class PropFloor extends Model
      */
     public function getAppartmentFloor($propIds)
     {
-        return PropFloor::select('prop_floors.*')
+        return PropFloor::select(
+            'prop_floors.*',
+            'f.floor_name',
+            'u.usage_type',
+            'o.occupancy_type',
+            'c.construction_type'
+        )
+            ->join('ref_prop_floors as f', 'f.id', '=', 'prop_floors.floor_mstr_id')
+            ->join('ref_prop_usage_types as u', 'u.id', '=', 'prop_floors.usage_type_mstr_id')
+            ->join('ref_prop_occupancy_types as o', 'o.id', '=', 'prop_floors.occupancy_type_mstr_id')
+            ->join('ref_prop_construction_types as c', 'c.id', '=', 'prop_floors.const_type_mstr_id')
             ->whereIn('prop_floors.property_id', $propIds)
             ->where('prop_floors.status', 1)
             ->orderByDesc('id');
