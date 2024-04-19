@@ -1868,7 +1868,7 @@ class NewConnectionController extends Controller
             [
                 'filterBy'  => 'required',
                 'parameter' => 'required',
-                'pages'     => 'nullable',
+                'perPage'   => 'nullable',
             ]
         );
         if ($validated->fails())
@@ -1878,7 +1878,7 @@ class NewConnectionController extends Controller
             $mWaterConsumer = new WaterConsumer();
             $key            = $request->filterBy;
             $paramenter     = $request->parameter;
-            $pages          = $request->pages ?? 10;
+            $pages          = $request->perPage ?? 10;
             $string         = preg_replace("/([A-Z])/", "_$1", $key);
             $refstring      = strtolower($string);
 
@@ -1942,7 +1942,7 @@ class NewConnectionController extends Controller
             [
                 'filterBy'  => 'required|in:newConnection,regularization,name,mobileNo,safNo,holdingNo',
                 'parameter' => $request->filterBy == 'mobileNo' ? 'required|numeric|digits:10' : "required",
-                'pages'     => 'nullable|integer',
+                'perPage'   => 'nullable|integer',
             ]
         );
         if ($validated->fails())
