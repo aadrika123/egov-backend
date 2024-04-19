@@ -1950,7 +1950,7 @@ class NewConnectionController extends Controller
         try {
             $key                = $request->filterBy;
             $parameter          = $request->parameter;
-            $pages              = $request->pages ?? 10;
+            $pages              = $request->perPage ?? 10;
             $mWaterApplicant    = new WaterApplication();
             $connectionTypes    = Config::get('waterConstaint.CONNECTION_TYPE');
 
