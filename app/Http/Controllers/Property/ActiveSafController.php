@@ -1526,6 +1526,7 @@ class ActiveSafController extends Controller
                 $msg = "Application Rejected Successfully";
                 $metaReqs['verificationStatus'] = 0;
             }
+
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs['workflowId'] = $safDetails->workflow_id;
             $metaReqs['refTableDotId'] = Config::get('PropertyConstaint.SAF_REF_TABLE');
@@ -1687,6 +1688,16 @@ class ActiveSafController extends Controller
                     }
                 }
             }
+        }
+
+        // Property Deactivation
+        if (in_array($activeSaf->assessment_type, ['New Assessment', 'Mutation', 'Bifurcation'])) {
+            $approvedProperty = PropProperty::where('saf_id', $activeSaf->id)->where('status', 1)->first();
+            if (!$approvedProperty)
+                throw new Exception("Approved Property Not Found");
+
+            $approvedProperty->status = 0;
+            $approvedProperty->save();
         }
     }
 
@@ -1855,7 +1866,7 @@ class ActiveSafController extends Controller
             $orderDetails = $this->saveGenerateOrderid($req);
             if (!is_array($orderDetails))
                 throw new Exception($orderDetails->original['data']);
-            
+
             $demands = array_merge($demands->toArray(), [
                 'orderId' => $orderDetails['orderId']
             ]);
