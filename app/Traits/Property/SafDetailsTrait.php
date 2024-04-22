@@ -388,7 +388,7 @@ trait SafDetailsTrait
             ['displayString' => 'Building Type', 'key' => 'buildingType', 'value' => $req->building_type, 'canBtc' => 'true', 'canEdit' => 'true'],
             ['displayString' => 'Property Usage Type', 'key' => 'propertyUsageType', 'value' => $req->prop_usage_type, 'canBtc' => 'true', 'canEdit' => 'true'],
             ['displayString' => 'Application-Date', 'key' => 'applyDate', 'value' => $req->application_date],
-            ['displayString' => 'Plot-Area(sqt)', 'key' => 'plotArea', 'value' => $req->area_of_plot],
+            ['displayString' => 'Plot-Area(In Dismil)', 'key' => 'plotArea', 'value' => $req->area_of_plot],
             ['displayString' => 'Water-Harvesting', 'key' => 'isWaterHarvesting', 'value' => ($req->is_water_harvesting == true) ? 'Yes' : 'No'],
             ['displayString' => 'Hoarding-Board', 'key' => 'isHoardingBoard', 'value' => ($req->is_hoarding_board == true) ? 'Yes' : 'No']
         ]);

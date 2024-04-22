@@ -660,7 +660,7 @@ class NewConnectionController extends Controller
                 ->orderByDesc('water_applications.id')
                 ->get();
 
-            return responseMsgs(true, "field Verified Inbox", remove_null($waterList), 010125, 1.0, "", "POST", "");
+            return responseMsgs(true, "field Verified Inbox", remove_null($waterList), 010125, 1.0,responseTime(), "POST", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -718,7 +718,7 @@ class NewConnectionController extends Controller
             $WorkflowTrack->saveTrack($req);
 
             $this->commit();
-            return responseMsgs(true, "Successfully Done", "", "", "1.0", "350ms", "POST", $req->deviceId);
+            return responseMsgs(true, "Successfully Done", "", "", "1.0", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             $this->rollback();
             return responseMsg(false, $e->getMessage(), "");
@@ -742,7 +742,7 @@ class NewConnectionController extends Controller
             throw new Exception("You dont have permission to BTC!");
         }
         if ($mWaterApplication->current_role != $role->role_id) {
-            throw new Exception("the application is not under your possession!");
+            throw new Exception("The application is not under your possession!");
         }
         $activeDocs = collect($rawDoc)['original']['data'];
         $canBtc = $activeDocs->contains(function ($item) {
