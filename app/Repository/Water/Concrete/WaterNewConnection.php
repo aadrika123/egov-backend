@@ -424,12 +424,17 @@ class WaterNewConnection implements IWaterNewConnection
     public function razorPayResponse($args)
     {
         try {
-            # valication 
+            # validation 
             $RazorPayRequest = WaterRazorPayRequest::select("*")
                 ->where("order_id", $args["orderId"])
                 ->where("related_id", $args["id"])
                 ->where("status", 2)
                 ->first();
+            // $RazorPayRequest = WaterRazorPayRequest::select("*")
+            //     ->where("order_id", 'order_NzZevOU2QkTCbz')
+            //     ->where("related_id", 4147)
+            //     ->where("status", 2)
+            //     ->first();
             if (!$RazorPayRequest) {
                 throw new Exception("Data Not Found");
             }
@@ -456,7 +461,7 @@ class WaterNewConnection implements IWaterNewConnection
                     $response = $mWaterPaymentController->endOnlineConReqPayment($args, $RazorPayRequest);
                     break;
                 default:
-                    throw new Exception("Invalide Transaction");
+                    throw new Exception("Invalid Transaction");
             }
             return $response;
         } catch (Exception $e) {
@@ -646,7 +651,7 @@ class WaterNewConnection implements IWaterNewConnection
         try {
             $refUser        = authUser($request);
             $refUserId      = $refUser->id;
-            $refUlbId       = $refUser->ulb_id;
+            // $refUlbId       = $refUser->ulb_id;
             $mDemands       = null;
             $application = null;
             $transection = null;
@@ -666,7 +671,7 @@ class WaterNewConnection implements IWaterNewConnection
                 ->where("water_razor_pay_requests.status", 1)
                 ->first();
             if (!$WaterRazorPayResponse) {
-                throw new Exception("Not Transection Found...");
+                throw new Exception("No Transaction Found...");
             }
             if ($WaterRazorPayResponse->payment_from == "New Connection") {
                 $application = WaterApplication::find($WaterRazorPayResponse->related_id);
@@ -694,7 +699,7 @@ class WaterNewConnection implements IWaterNewConnection
                 throw new Exception("Application Not Found....");
             }
             if (!$transection) {
-                throw new Exception("Not Transection Data Found....");
+                throw new Exception("Transaction Data Not Found....");
             }
             $data["amount"]            = $WaterRazorPayResponse->amount;
             $data["applicationId"]     = $WaterRazorPayResponse->related_id;
@@ -702,7 +707,7 @@ class WaterNewConnection implements IWaterNewConnection
             $data["tranType"]          = $WaterRazorPayResponse->payment_from;
             $data["transectionId"]     = $transection->id;
             $data["transectionNo"]     = $transection->tran_no;
-            $data["transectionDate"]   = $transection->tran_date;
+            $data["transectionDate"]   = Carbon::parse($transection->tran_date)->format('d-m-Y');
             $data['paymentRecipt']     = config('app.url') . $path . $WaterRazorPayResponse->related_id . "/" . $transection->id;
             return responseMsg(true, "", $data);
         } catch (Exception $e) {

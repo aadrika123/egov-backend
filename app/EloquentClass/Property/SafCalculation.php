@@ -178,9 +178,11 @@ class SafCalculation
 
         if ($this->_propertyDetails['propertyType'] != 4)                     // Property Should not be Vacant Land for Reading Capital Value Rate
         {
-            $this->_capitalValueRate = $this->readCapitalvalueRate();        // Calculate Capital Value Rate 
-            if (!$this->_capitalValueRate)
-                throw new Exception("CV Rate Not Available for this ward");
+            if (collect($this->_floors)->isNotEmpty()) {
+                $this->_capitalValueRate = $this->readCapitalvalueRate();        // Calculate Capital Value Rate 
+                if (!$this->_capitalValueRate)
+                    throw new Exception("CV Rate Not Available for this ward");
+            }
         }
 
         if ($propertyDetails['isMobileTower'] == 1 || $propertyDetails['isHoardingBoard'] == 1 || $propertyDetails['isPetrolPump'] == 1)
@@ -545,7 +547,7 @@ class SafCalculation
     {
         $readPropertyType = $this->_propertyDetails['propertyType'];
         if (in_array($readPropertyType, [$this->_vacantPropertyTypeId, $this->_individualPropTypeId])) {                                             // Vacant Land condition with independent building
-            if (isset($this->_propertyDetails['assessmentType']) &&(in_array($this->_propertyDetails['assessmentType'], [1, 'New Assessment']) ||$readPropertyType == $this->_vacantPropertyTypeId)) {      // checking assessment type for individual property and property type for vacant land
+            if (isset($this->_propertyDetails['assessmentType']) && (in_array($this->_propertyDetails['assessmentType'], [1, 'New Assessment']) || $readPropertyType == $this->_vacantPropertyTypeId)) {      // checking assessment type for individual property and property type for vacant land
                 $calculateQuaterlyRuleSets = $this->calculateQuaterlyRulesets("vacantLand");
                 $ruleSetsWithMobileTower = collect($this->_mobileQuaterlyRuleSets)->merge($calculateQuaterlyRuleSets);        // Collapse with mobile tower
                 $ruleSetsWithHoardingBoard = collect($this->_hoardingQuaterlyRuleSets)->merge($ruleSetsWithMobileTower);      // Collapse with hoarding board
@@ -1138,7 +1140,7 @@ class SafCalculation
             $readCircleRate =  $readCircleRate->max_rate;
             if (collect($readCircleRate)->isEmpty())
                 throw new Exception("Circle Rate Not Available");
-            
+
             $readFloorUsageType = $this->_floors[$key]['useType'];
             // $readBuildupArea = $this->_floors[$key]['buildupArea'];
             $readBuildupArea = isset($this->_floors[$key]['biBuildupArea']) ? $this->_floors[$key]['biBuildupArea'] : $this->_floors[$key]['buildupArea'];
@@ -1219,7 +1221,7 @@ class SafCalculation
         ];
         return $tax;
     }
-    
+
     public function calculateRuleSet3V2($key, $onePercPenalty, $dateFrom)
     {
         // Vacant Land RuleSet3
@@ -1287,7 +1289,7 @@ class SafCalculation
             $readCircleRate =  $readCircleRate->max_rate;
             if (collect($readCircleRate)->isEmpty())
                 throw new Exception("Circle Rate Not Available");
-            
+
             $readFloorUsageType = $this->_floors[$key]['useType'];
             // $readBuildupArea = $this->_floors[$key]['buildupArea'];
             $readBuildupArea = isset($this->_floors[$key]['biBuildupArea']) ? $this->_floors[$key]['biBuildupArea'] : $this->_floors[$key]['buildupArea'];
@@ -1388,11 +1390,11 @@ class SafCalculation
 
         $this->_GRID['demand']['totalQuarters'] = $this->_GRID['details']->count();
         // From Quarter Year and Quarter Month
-        $this->_GRID['demand']['fromQuarterYear'] = $this->_GRID['details']->first()['quarterYear'];
-        $this->_GRID['demand']['fromQuarter'] = $this->_GRID['details']->first()['qtr'];
+        $this->_GRID['demand']['fromQuarterYear'] = $this->_GRID['details']->first()['quarterYear']??null;
+        $this->_GRID['demand']['fromQuarter'] = $this->_GRID['details']->first()['qtr']??null;
         // To Quarter Year and Quarter Month
-        $this->_GRID['demand']['toQuarterYear'] = $this->_GRID['details']->last()['quarterYear'];
-        $this->_GRID['demand']['toQuarter'] = $this->_GRID['details']->last()['qtr'];
+        $this->_GRID['demand']['toQuarterYear'] = $this->_GRID['details']->last()['quarterYear']??null;
+        $this->_GRID['demand']['toQuarter'] = $this->_GRID['details']->last()['qtr']??null;
 
         $this->_GRID['demand']['isResidential'] = $this->_isResidential;
 

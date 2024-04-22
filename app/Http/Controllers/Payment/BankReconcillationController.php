@@ -144,7 +144,7 @@ class BankReconcillationController extends Controller
             if (collect($data)->isNotEmpty()) {
                 return responseMsgs(true, "Data Acording to request!", $data, '012301', '01', responseTime() ?? '382ms-547ms', 'Post', $request->deviceId);
             }
-            return responseMsg(false, "data not found!", "");
+            return responseMsg(false, "Data not found!", "");
         } catch (Exception $error) {
             return responseMsg(false,  $error->getMessage(), [], '012301', '01', responseTime(), 'Post', $request->deviceId);
         }
@@ -193,9 +193,9 @@ class BankReconcillationController extends Controller
             }
 
             if ($data)
-                return responseMsg(true, "data found", $data,"012302", "1.0", "", "POST", $request->deviceId ?? "");
+                return responseMsg(true, "Data found", $data,"012302", "1.0", "", "POST", $request->deviceId ?? "");
             else
-                return responseMsg(false, "data not found!", "","012302", "1.0", "", "POST", $request->deviceId ?? "");
+                return responseMsg(false, "Data not found!", "","012302", "1.0", "", "POST", $request->deviceId ?? "");
         } catch (Exception $error) {
             return responseMsg(false, "ERROR!", $error->getMessage());
         }

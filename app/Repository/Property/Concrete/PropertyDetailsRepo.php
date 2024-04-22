@@ -44,25 +44,25 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
                     if (empty($filterByHolding)) {
                         return responseMsg(false, "Data Not Found!", $request->search);
                     }
-                    return responseMsg(true, "Data According to Holding!", remove_null($filterByHolding));
+                    return responseMsg(true, "Data According to Holding", remove_null($filterByHolding));
                     break;
                 case ("OwnerDetail"):
                     return $owner = $this->searchByOwner($request);
                     $filterByOwner = collect($owner)->first();
                     if (empty($filterByOwner)) {
-                        return responseMsg(false, "Data Not Found!", $request->search);
+                        return responseMsg(false, "Data Not Found", $request->search);
                     }
                     return responseMsg(true, "Data According to Owner!", remove_null($filterByOwner));
                     break;
                 case ("Address"):
                     $filterByAddress = $this->searchByAddress($request);
                     if (empty($filterByAddress['0'])) {
-                        return responseMsg(false, "Data Not Found!", $request->search);
+                        return responseMsg(false, "Data Not Found", $request->search);
                     }
-                    return responseMsg(true, "Data According to Address!", remove_null($filterByAddress));
+                    return responseMsg(true, "Data According to Address", remove_null($filterByAddress));
                     break;
                 default:
-                    return responseMsg(false, "Not a Valid Entry for Filtration Error Retry!", "");
+                    return responseMsg(false, "Not a valid entry for filtration error retry!", "");
             }
         } catch (Exception $error) {
             return responseMsg(false, "ERROR!", $error->getMessage());
@@ -222,7 +222,7 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
                         if (empty($filterByReAssisment['0'])) {
                             return responseMsg(false, "Data Not Found!", $request->search);
                         }
-                        return responseMsg(true, "Data According to ReAssisment!", remove_null($filterByReAssisment));
+                        return responseMsg(true, "Data According to Re Assessment!", remove_null($filterByReAssisment));
                     }
                     break;
                 case ("newAssisment"): {
@@ -230,11 +230,11 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
                         if (empty($filterByNewAssisment['0'])) {
                             return responseMsg(false, "Data Not Found!", $request->search);
                         }
-                        return responseMsg(true, "Data According to NewAssisment!", remove_null($filterByNewAssisment));
+                        return responseMsg(true, "Data According to New Assessment!", remove_null($filterByNewAssisment));
                     }
                     break;
                 default:
-                    return responseMsg(false, "Not a Valid Entry for Filtration Error Retry!", $request->filteredBy);
+                    return responseMsg(false, "Not a valid entry for filtration error Retry!", $request->filteredBy);
             }
         } catch (Exception $error) {
             return responseMsg(false, "ERROR!", $error->getMessage());
@@ -244,7 +244,7 @@ class PropertyDetailsRepo implements iPropertyDetailsRepo
     /**
      * |-------------------------- details of Active Concillation  2.1 -----------------------------------------------
      * | @param request
-     * | Operation : serch applicants by ward/ cncession Id
+     * | Operation : serch applicants by ward/ concession Id
      */
     public function searchByConcession($request)
     {

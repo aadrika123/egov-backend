@@ -607,17 +607,9 @@ class PropertyController extends Controller
     public function masterHoldingData(Request $request)
     {
         try {
-            // $validated = Validator::make(
-            //     $request->all(),
-            //     [
-            //         'holdingNo' => 'required|array',
-            //     ]
-            // );
-            // if ($validated->fails()) {
-            //     return validationError($validated);
-            // }
             $mPropFloor = new PropFloor();
             $mPropProperties = new PropProperty();
+            $holdingLists = array();
             $safController = new ActiveSafController($this->_safRepo);
             $propIds = collect($request->amalgamation)->pluck('propId')->unique();
             $holdingDtls = $mPropProperties->getMultipleProperty($propIds);
@@ -628,6 +620,11 @@ class PropertyController extends Controller
             $masterData = $safController->getPropByHoldingNo($reqPropId)->original['data'];
             $masterData['floors'] = $floorDtls;
             $masterData['area_of_plot'] = $plotArea;
+            foreach ($holdingDtls as $property) {
+                $holdingList = $property->new_holding_no ?? $property->holding_no;
+                array_push($holdingLists, $holdingList);
+            }
+            $masterData['holdingNoLists'] = $holdingLists;
 
             return responseMsgs(true, "Master Holding Data", $masterData, '011707', '01', responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {

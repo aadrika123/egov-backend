@@ -1081,7 +1081,7 @@ class NewConnectionRepository implements iNewConnection
             ['displayString' => 'Connection Type',      'key' => 'ConnectionType',    'value' => $collectionApplications->connection_type],
             ['displayString' => 'Connection Through',   'key' => 'ConnectionThrough', 'value' => $collectionApplications->connection_through],
             ['displayString' => 'Apply-Date',           'key' => 'ApplyDate',         'value' => $collectionApplications->apply_date],
-            ['displayString' => 'Total Area (sqt)',     'key' => 'TotalArea',         'value' => $collectionApplications->area_sqft]
+            ['displayString' => 'Total Area (Sqft.)',     'key' => 'TotalArea',         'value' => $collectionApplications->area_sqft]
         ]);
     }
 

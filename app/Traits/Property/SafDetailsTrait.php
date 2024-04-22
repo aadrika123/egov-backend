@@ -91,7 +91,8 @@ trait SafDetailsTrait
                 $key + 1,
                 $ownerDetail['owner_name'],
                 $ownerDetail['gender'],
-                Carbon::parse($ownerDetail['dob'])->format('d-m-Y'),
+                isset($ownerDetail['dob']) ? Carbon::parse($ownerDetail['dob'])->format('d-m-Y') : "",
+                // Carbon::parse($ownerDetail['dob'])->format('d-m-Y'),
                 $ownerDetail['guardian_name'],
                 $ownerDetail['relation_type'],
                 $ownerDetail['mobile_no'],
@@ -171,7 +172,7 @@ trait SafDetailsTrait
     public function generateBiCardDetails($req, $ownerDetails)
     {
         $owners = collect($ownerDetails)->implode('owner_name', ',');
-       return new Collection([
+        return new Collection([
             ['displayString' => 'Ward No', 'key' => 'wardNo', 'value' => $req->old_ward_no],
             ['displayString' => 'SAF No.', 'key' => 'safNo', 'value' => $req->saf_no],
             ['displayString' => 'Owners', 'key' => 'ownerName', 'value' => $owners],
@@ -388,7 +389,7 @@ trait SafDetailsTrait
             ['displayString' => 'Building Type', 'key' => 'buildingType', 'value' => $req->building_type, 'canBtc' => 'true', 'canEdit' => 'true'],
             ['displayString' => 'Property Usage Type', 'key' => 'propertyUsageType', 'value' => $req->prop_usage_type, 'canBtc' => 'true', 'canEdit' => 'true'],
             ['displayString' => 'Application-Date', 'key' => 'applyDate', 'value' => $req->application_date],
-            ['displayString' => 'Plot-Area(sqt)', 'key' => 'plotArea', 'value' => $req->area_of_plot],
+            ['displayString' => 'Plot-Area(In Dismil)', 'key' => 'plotArea', 'value' => $req->area_of_plot],
             ['displayString' => 'Water-Harvesting', 'key' => 'isWaterHarvesting', 'value' => ($req->is_water_harvesting == true) ? 'Yes' : 'No'],
             ['displayString' => 'Hoarding-Board', 'key' => 'isHoardingBoard', 'value' => ($req->is_hoarding_board == true) ? 'Yes' : 'No']
         ]);

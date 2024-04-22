@@ -156,9 +156,9 @@ class CalculateSafById
         if ($this->_safDetails['prop_type_mstr_id'] != 4) {
             $floors = $this->_mPropActiveSafFloors->getSafFloorsBySafId($this->_safId);
 
-            if ($this->_safDetails['assessment_type'] == 'Bifurcation') 
+            if (in_array($this->_safDetails['assessment_type'], ['Bifurcation', 'Amalgamation']))
                 $floors = collect($floors)->whereNull('prop_floor_details_id');
-            
+
             foreach ($floors as $floor) {
                 $floorReq = [
                     "floorNo" => $floor['floor_mstr_id'],
@@ -226,6 +226,8 @@ class CalculateSafById
      */
     public function generateSafDemand()
     {
+        $dueFrom = "";
+        $dueTo   = "";
         $this->generateDemand();
 
         if (in_array($this->_safDetails['assessment_type'], $this->_adjustmentAssessmentTypes))     // In Case of Reassessment Adjust the Amount
@@ -234,8 +236,10 @@ class CalculateSafById
         $this->calculateOnePercPenalty();   // (1.2.2)
 
         $demandDetails = $this->_demandDetails;
-        $dueFrom = "Quarter " . $demandDetails->first()['qtr'] . '/' . 'Year ' . $demandDetails->first()['fyear'];
-        $dueTo = "Quarter " . $demandDetails->last()['qtr'] . '/' . 'Year ' . $demandDetails->last()['fyear'];
+        if (collect($demandDetails)->isNotEmpty()) {
+            $dueFrom = "Quarter " . $demandDetails->first()['qtr'] . '/' . 'Year ' . $demandDetails->first()['fyear'];
+            $dueTo = "Quarter " . $demandDetails->last()['qtr'] . '/' . 'Year ' . $demandDetails->last()['fyear'];
+        }
 
         $totalTax = roundFigure($demandDetails->sum('balance'));
         $totalOnePercPenalty = roundFigure($demandDetails->sum('onePercPenaltyTax'));
@@ -244,10 +248,10 @@ class CalculateSafById
         $totalPenaltiesAmt = $totalOnePercPenalty + $this->_calculatedDemand['demand']['lateAssessmentPenalty'];
 
         $this->_generatedDemand['demand'] = [
-            'dueFromFyear' => $demandDetails->first()['fyear'],
-            'dueToFyear' => $demandDetails->last()['fyear'],
-            'dueFromQtr' => $demandDetails->first()['qtr'],
-            'dueToQtr' => $demandDetails->last()['qtr'],
+            'dueFromFyear' => $demandDetails->first()['fyear'] ?? null,
+            'dueToFyear' => $demandDetails->last()['fyear'] ?? null,
+            'dueFromQtr' => $demandDetails->first()['qtr'] ?? null,
+            'dueToQtr' => $demandDetails->last()['qtr'] ?? null,
             'totalTax' => $totalTax,
             'totalOnePercPenalty' => $totalOnePercPenalty,
             'totalQuarters' => $demandDetails->count(),
@@ -426,18 +430,39 @@ class CalculateSafById
      */
     public function generateTaxDtls()
     {
+        // $taxDetails = collect();
+        // $demandDetails = $this->_generatedDemand['details'];
+        // $groupByDemands = collect($demandDetails)->groupBy('amount');
+        // $currentTax = $groupByDemands->last()->first()['amount'];          // Get Current Demand Arv Rate
+        // foreach ($groupByDemands as $key => $item) {
+        //     $firstTax = collect($item)->first();
+        //     if ($key == $currentTax)
+        //         $firstTax['status'] = "Current";
+        //     else
+        //         $firstTax['status'] = "Old";
+
+        //     $taxDetails->push($firstTax);
+        // }
+        // $this->_generatedDemand['taxDetails'] = $taxDetails;
+
+        /**
+            Changes by Mrinal on 19-04-2024 due to error in api/property/saf/get-demand-by-id
+         */
+
         $taxDetails = collect();
         $demandDetails = $this->_generatedDemand['details'];
         $groupByDemands = collect($demandDetails)->groupBy('amount');
-        $currentTax = $groupByDemands->last()->first()['amount'];          // Get Current Demand Arv Rate
-        foreach ($groupByDemands as $key => $item) {
-            $firstTax = collect($item)->first();
-            if ($key == $currentTax)
-                $firstTax['status'] = "Current";
-            else
-                $firstTax['status'] = "Old";
+        if (collect($groupByDemands)->isNotEmpty()) {
+            $currentTax = $groupByDemands->last()->first()['amount'];          // Get Current Demand Arv Rate
+            foreach ($groupByDemands as $key => $item) {
+                $firstTax = collect($item)->first();
+                if ($key == $currentTax)
+                    $firstTax['status'] = "Current";
+                else
+                    $firstTax['status'] = "Old";
 
-            $taxDetails->push($firstTax);
+                $taxDetails->push($firstTax);
+            }
         }
         $this->_generatedDemand['taxDetails'] = $taxDetails;
     }

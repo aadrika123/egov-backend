@@ -1599,7 +1599,7 @@ class WaterPaymentController extends Controller
                 ->orderBy('demand_from')
                 ->get();
             $taxids = collect($consumerDemands)->pluck('consumer_tax_id')->filter();
-            if (!empty($taxids) || !is_null($taxids)) {
+            if (collect($taxids)->isNotEmpty()) {
                 $meterReadings = $mWaterConsumerTax->getTaxById($taxids)
                     ->orderByDesc('id')
                     ->get();
@@ -1724,7 +1724,7 @@ class WaterPaymentController extends Controller
             $temp['mobile'] = $refUser->mobile;
             $temp['email']  = $refUser->email;
             $temp['userId'] = $refUser->id;
-            $temp['ulbId']  = $refUser->ulb_id ?? null;
+            $temp['ulbId']  = $refUser->ulb_id ?? $myRequest->ulbId;
             return responseMsgs(true, "", $temp, "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             $this->rollback();
@@ -1773,9 +1773,9 @@ class WaterPaymentController extends Controller
                 ->where('demand_from', '>=', $startingYear)
                 ->where('demand_upto', '<=', $endYear)
                 ->get();
-            if (!$RazorPayRequest || round($webhookData['amount']) != round($RazorPayRequest['amount'])) {
-                throw new Exception("Payble Amount Missmatch!!!");
-            }
+            // if (!$RazorPayRequest || round($webhookData['amount']) != round($RazorPayRequest['amount'])) {
+            //     throw new Exception("Payble Amount Missmatch!!!");
+            // }
 
             $this->begin();
             # save payment data in razorpay response table
@@ -1909,14 +1909,15 @@ class WaterPaymentController extends Controller
             $refDepartmentSection = $this->_departmentSection;
 
             $refRequest     = $request->toArray();
-            $flipRequest    = collect($refRequest)->flip();
-            $key            = $flipRequest[$request->consumerNo];
-            $string         = preg_replace("/([A-Z])/", "_$1", $key);
-            $refstring      = strtolower($string);
+            // $flipRequest    = collect($refRequest)->flip();
+            // $key            = $refRequest[$request->consumerNo];
+            // $string         = preg_replace("/([A-Z])/", "_$1", $key);
+            // $refstring      = strtolower($string);
+            $refstring      = 'consumer_no';
 
             $consumerDetails = $mWaterConsumer->getRefDetailByConsumerNo($refstring, $request->consumerNo)->first();
             if (!$consumerDetails) {
-                throw new Exception("Consumer details not found!");
+                throw new Exception("Consumer details not found");
             }
 
             # Demand Details 

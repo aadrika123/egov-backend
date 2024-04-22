@@ -163,7 +163,7 @@ class WaterTran extends Model
         $waterTrans->adjustment_amount  = $req['adjustedAmount'] ?? 0;
         $waterTrans->pg_response_id     = $req['pgResponseId'] ?? null;
         $waterTrans->pg_id              = $req['pgId'] ?? null;
-        if ($req->penaltyIds) {
+        if (isset($req->penaltyIds)) {
             $waterTrans->penalty_ids    = $req->penaltyIds;
             $waterTrans->is_penalty     = $req->isPenalty;
         }

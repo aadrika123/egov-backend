@@ -90,6 +90,7 @@ class NewConnectionController extends Controller
     private $_waterModulId;
     protected $_DB_NAME;
     protected $_DB;
+    protected $_DB_MASTER;
 
     /**
      * | Construct defination
@@ -98,6 +99,7 @@ class NewConnectionController extends Controller
     {
         $this->_DB_NAME = "pgsql_water";
         $this->_DB = DB::connection($this->_DB_NAME);
+        $this->_DB_MASTER = DB::connection("pgsql_master");
         $this->_commonFunction = new CommonFunction();
         $this->newConnection = $newConnection;
         $this->_dealingAssistent = Config::get('workflow-constants.DEALING_ASSISTENT_WF_ID');
@@ -112,9 +114,12 @@ class NewConnectionController extends Controller
     {
         $db1 = DB::connection()->getDatabaseName();
         $db2 = $this->_DB->getDatabaseName();
+        $db3 = $this->_DB_MASTER->getDatabaseName();
         DB::beginTransaction();
         if ($db1 != $db2)
             $this->_DB->beginTransaction();
+        if ($db1 != $db3 && $db2 != $db3)
+            $this->_DB_MASTER->beginTransaction();
     }
     /**
      * | Database transaction connection
@@ -123,9 +128,12 @@ class NewConnectionController extends Controller
     {
         $db1 = DB::connection()->getDatabaseName();
         $db2 = $this->_DB->getDatabaseName();
+        $db3 = $this->_DB_MASTER->getDatabaseName();
         DB::rollBack();
         if ($db1 != $db2)
             $this->_DB->rollBack();
+        if ($db1 != $db3 && $db2 != $db3)
+            $this->_DB_MASTER->rollBack();
     }
     /**
      * | Database transaction connection
@@ -134,9 +142,12 @@ class NewConnectionController extends Controller
     {
         $db1 = DB::connection()->getDatabaseName();
         $db2 = $this->_DB->getDatabaseName();
+        $db3 = $this->_DB_MASTER->getDatabaseName();
         DB::commit();
         if ($db1 != $db2)
             $this->_DB->commit();
+        if ($db1 != $db3 && $db2 != $db3)
+            $this->_DB_MASTER->commit();
     }
 
 
@@ -185,7 +196,7 @@ class NewConnectionController extends Controller
             $waterList = $this->getWaterApplicatioList($workflowIds, $ulbId)
                 ->whereIn('water_applications.current_role', $roleId)
                 // ->whereIn('water_applications.ward_id', $occupiedWards)
-               // ->where('water_applications.is_escalate', false)
+                // ->where('water_applications.is_escalate', false)
                 ->where('water_applications.parked', false)
                 // ->orderByDesc('water_applications.id')
                 ->get();
@@ -625,7 +636,7 @@ class NewConnectionController extends Controller
             if ($checkExist) {
                 return responseMsgs(true, "Approved Application Details!", $approvedWater, "", "03", "ms", "POST", "");
             }
-            throw new Exception("data Not found!");
+            throw new Exception("Data Not Found!");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -660,7 +671,7 @@ class NewConnectionController extends Controller
                 ->orderByDesc('water_applications.id')
                 ->get();
 
-            return responseMsgs(true, "field Verified Inbox", remove_null($waterList), 010125, 1.0, "", "POST", "");
+            return responseMsgs(true, "field Verified Inbox", remove_null($waterList), 010125, 1.0, responseTime(), "POST", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -718,7 +729,7 @@ class NewConnectionController extends Controller
             $WorkflowTrack->saveTrack($req);
 
             $this->commit();
-            return responseMsgs(true, "Successfully Done", "", "", "1.0", "350ms", "POST", $req->deviceId);
+            return responseMsgs(true, "Successfully Done", "", "", "1.0", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             $this->rollback();
             return responseMsg(false, $e->getMessage(), "");
@@ -742,7 +753,7 @@ class NewConnectionController extends Controller
             throw new Exception("You dont have permission to BTC!");
         }
         if ($mWaterApplication->current_role != $role->role_id) {
-            throw new Exception("the application is not under your possession!");
+            throw new Exception("The application is not under your possession!");
         }
         $activeDocs = collect($rawDoc)['original']['data'];
         $canBtc = $activeDocs->contains(function ($item) {
@@ -806,19 +817,19 @@ class NewConnectionController extends Controller
     {
         $refUserType = Config::get("waterConstaint.REF_USER_TYPE");
         if (!$applicationDetails) {
-            throw new Exception("Relted Data or Owner not found!");
+            throw new Exception("Related Data or Owner not found!");
         }
         if ($applicationDetails->payment_status == 1) {
-            throw new Exception("Your paymnet is done application Cannot be Deleted!");
+            throw new Exception("Your payment is done application Cannot be Deleted!");
         }
         if ($user->user_type != $refUserType["1"]) {
-            throw new Exception("You are not logedIn as Citizen!");
+            throw new Exception("You are not logged In as Citizen!");
         }
         if ($applicationDetails->user_id != $user->id) {
-            throw new Exception("You'r not the user of this form!");
+            throw new Exception("You are not the user of this form!");
         }
         if (!is_null($applicationDetails->current_role)) {
-            throw new Exception("application is under process can't be deleted!");
+            throw new Exception("Application is under process can't be deleted!");
         }
     }
 
@@ -1487,7 +1498,7 @@ class NewConnectionController extends Controller
                     $application = collect($mPropActiveSaf->getSafDtlBySafUlbNo($request->id, $request->ulbId));
                     $checkExist = collect($application)->first();
                     if (!$checkExist) {
-                        throw new Exception("Data According to SAF Not Found!");
+                        throw new Exception("Data according to SAF not found!");
                     }
                     if ($application['prop_type_mstr_id'] == $refPropertyTypes['VACANT LAND']) {
                         throw new Exception("water Cannot Be applied on VACANT LAND!");
@@ -1667,7 +1678,7 @@ class NewConnectionController extends Controller
 
             $refWaterApplication = $mWaterApplication->getApplicationById($req->applicationId)->first();                      // Get Saf Details
             if (!$refWaterApplication) {
-                throw new Exception("Application Not Found for this id");
+                throw new Exception("Application not found for this id");
             }
             $refWaterApplicant = $mWaterApplicant->getOwnerList($req->applicationId)->get();
             $documentList = $this->getWaterDocLists($refWaterApplication);
@@ -1868,7 +1879,7 @@ class NewConnectionController extends Controller
             [
                 'filterBy'  => 'required',
                 'parameter' => 'required',
-                'pages'     => 'nullable',
+                'perPage'   => 'nullable',
             ]
         );
         if ($validated->fails())
@@ -1878,7 +1889,7 @@ class NewConnectionController extends Controller
             $mWaterConsumer = new WaterConsumer();
             $key            = $request->filterBy;
             $paramenter     = $request->parameter;
-            $pages          = $request->pages ?? 10;
+            $pages          = $request->perPage ?? 10;
             $string         = preg_replace("/([A-Z])/", "_$1", $key);
             $refstring      = strtolower($string);
 
@@ -1887,39 +1898,39 @@ class NewConnectionController extends Controller
                     $waterReturnDetails = $mWaterConsumer->getDetailByConsumerNo($request, $refstring, $paramenter)->paginate($pages);
                     $checkVal = collect($waterReturnDetails)->last();
                     if (!$checkVal || $checkVal == 0)
-                        throw new Exception("Data according to " . $key . " not Found!");
+                        throw new Exception("Data according to " . strtolower(preg_replace("/([A-Z])/", " $1", $key)) . " not found!");
                     break;
                 case ("holdingNo"):                                                                         // Static
                     $waterReturnDetails = $mWaterConsumer->getDetailByConsumerNo($request, $refstring, $paramenter)->paginate($pages);
                     $checkVal = collect($waterReturnDetails)->last();
                     if (!$checkVal || $checkVal == 0)
-                        throw new Exception("Data according to " . $key . " not Found!");
+                        throw new Exception("Data according to " . strtolower(preg_replace("/([A-Z])/", " $1", $key)) . " not found!");
                     break;
                 case ("safNo"):                                                                             // Static
                     $waterReturnDetails = $mWaterConsumer->getDetailByConsumerNo($request, $refstring, $paramenter)->paginate($pages);
                     $checkVal = collect($waterReturnDetails)->last();
                     if (!$checkVal || $checkVal == 0)
-                        throw new Exception("Data according to " . $key . " not Found!");
+                        throw new Exception("Data according to " . strtolower(preg_replace("/([A-Z])/", " $1", $key)) . " not found!");
                     break;
                 case ("applicantName"):                                                                     // Static
                     $paramenter = strtoupper($paramenter);
                     $waterReturnDetails = $mWaterConsumer->getDetailByOwnerDetails($refstring, $paramenter)->paginate($pages);
                     $checkVal = collect($waterReturnDetails)->last();
                     if (!$checkVal || $checkVal == 0)
-                        throw new Exception("Data according to " . $key . " not Found!");
+                        throw new Exception("Data according to " . strtolower(preg_replace("/([A-Z])/", " $1", $key)) . " not found!");
                     break;
                 case ('mobileNo'):                                                                          // Static
                     $paramenter = strtoupper($paramenter);
                     $waterReturnDetails = $mWaterConsumer->getDetailByOwnerDetails($refstring, $paramenter)->paginate($pages);
                     $checkVal = collect($waterReturnDetails)->last();
                     if (!$checkVal || $checkVal == 0)
-                        throw new Exception("Data according to " . $key . " not Found!");
+                        throw new Exception("Data according to " . strtolower(preg_replace("/([A-Z])/", " $1", $key)) . " not found!");
                     break;
                 case ('applicationNo'):
                     $waterReturnDetails = $mWaterConsumer->getDetailByApplicationNo($paramenter)->paginate($pages);
                     $checkVal = collect($waterReturnDetails)->last();
                     if (!$checkVal || $checkVal == 0)
-                        throw new Exception("Data according to " . $key . " not Found!");
+                        throw new Exception("Data according to " . strtolower(preg_replace("/([A-Z])/", " $1", $key)) . " not found!");
                     break;
                 default:
                     throw new Exception("Data provided in filterBy is not valid!");
@@ -1942,7 +1953,7 @@ class NewConnectionController extends Controller
             [
                 'filterBy'  => 'required|in:newConnection,regularization,name,mobileNo,safNo,holdingNo',
                 'parameter' => $request->filterBy == 'mobileNo' ? 'required|numeric|digits:10' : "required",
-                'pages'     => 'nullable|integer',
+                'perPage'   => 'nullable|integer',
             ]
         );
         if ($validated->fails())
@@ -1950,7 +1961,9 @@ class NewConnectionController extends Controller
         try {
             $key                = $request->filterBy;
             $parameter          = $request->parameter;
-            $pages              = $request->pages ?? 10;
+            $pages              = $request->perPage ?? 10;
+            $string             = preg_replace("/([A-Z])/", " $1", $key);
+            $refstring          = strtolower($string);
             $mWaterApplicant    = new WaterApplication();
             $connectionTypes    = Config::get('waterConstaint.CONNECTION_TYPE');
 
@@ -1959,13 +1972,13 @@ class NewConnectionController extends Controller
                     $returnData = $mWaterApplicant->getDetailsByApplicationNo($request, $connectionTypes['NEW_CONNECTION'], $parameter)->paginate($pages);
                     $checkVal = collect($returnData)->last();
                     if (!$checkVal || $checkVal == 0)
-                        throw new Exception("Data according to " . $key . " not Found!");
+                        throw new Exception("Data according to " . $refstring . " not found!");
                     break;
                 case ("regularization"):                                                                    // Static
                     $returnData = $mWaterApplicant->getDetailsByApplicationNo($request, $connectionTypes['REGULAIZATION'], $parameter)->paginate($pages);
                     $checkVal = collect($returnData)->last();
                     if (!$checkVal || $checkVal == 0)
-                        throw new Exception("Data according to " . $key . " not Found!");
+                        throw new Exception("Data according to " . $refstring . " not found!");
                     break;
                 case ("name"):                                                                              // Static
                     $returnData = $mWaterApplicant->getDetailsByParameters($request)
@@ -1973,7 +1986,7 @@ class NewConnectionController extends Controller
                         ->paginate($pages);
                     $checkVal = collect($returnData)->last();
                     if (!$checkVal || $checkVal == 0)
-                        throw new Exception("Data according to " . $key . " not Found!");
+                        throw new Exception("Data according to " . $refstring . " not found!");
                     break;
                 case ("mobileNo"):                                                                          // Static
                     $returnData = $mWaterApplicant->getDetailsByParameters($request)
@@ -1981,7 +1994,7 @@ class NewConnectionController extends Controller
                         ->paginate($pages);
                     $checkVal = collect($returnData)->last();
                     if (!$checkVal || $checkVal == 0)
-                        throw new Exception("Data according to " . $key . " not Found!");
+                        throw new Exception("Data according to " . $refstring . " not found!");
                     break;
                 case ("safNo"):                                                                             // Static
                     $returnData = $mWaterApplicant->getDetailsByParameters($request)
@@ -1989,7 +2002,7 @@ class NewConnectionController extends Controller
                         ->paginate($pages);
                     $checkVal = collect($returnData)->last();
                     if (!$checkVal || $checkVal == 0)
-                        throw new Exception("Data according to " . $key . " not Found!");
+                        throw new Exception("Data according to " . $refstring . " not found!");
                     break;
                 case ("holdingNo"):                                                                         // Static
                     $returnData = $mWaterApplicant->getDetailsByParameters($request)
@@ -1997,12 +2010,12 @@ class NewConnectionController extends Controller
                         ->paginate($pages);
                     $checkVal = collect($returnData)->last();
                     if (!$checkVal || $checkVal == 0)
-                        throw new Exception("Data according to " . $key . " not Found!");
+                        throw new Exception("Data according to " . $refstring . " not found!");
                     break;
             }
-            return responseMsgs(true, "List of Appication!", $returnData, "", "01", "723 ms", "POST", "");
+            return responseMsgs(true, "List of Appication!", $returnData, "", "01", responseTime(), "POST", $request->deviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $request->deviceId);
+            return responseMsgs(false, $e->getMessage(), [], "", "01", responseTime(), "POST", $request->deviceId);
         }
     }
 
@@ -2760,7 +2773,7 @@ class NewConnectionController extends Controller
                 $returnData['pipeline_type_name']   = $flipPipelineTypeMapping[$returnData->pipeline_type_id];
                 return responseMsgs(true, "JE Inspection details!", remove_null($returnData), "", "01", ".ms", "POST", $request->deviceId);
             }
-            return responseMsgs(true, "Data not Found!", remove_null($returnData), "", "01", ".ms", "POST", $request->deviceId);
+            return responseMsgs(true, "Data not found!", remove_null($returnData), "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", $request->deviceId);
         }
@@ -2818,8 +2831,7 @@ class NewConnectionController extends Controller
         $applicationDetails = $mWaterApplication->getApplicationById($applicationId)
             ->where('is_field_verified', true)
             ->first();
-        if(!$applicationDetails)
-        {
+        if (!$applicationDetails) {
             $applicationDetails = $approve->find($applicationId);
         }
         if (!$applicationDetails) {
@@ -2830,7 +2842,7 @@ class NewConnectionController extends Controller
             ->first();
         if (!$jeData) {
             $jeData = $mWaterSiteInspection->getSiteDetails($applicationId)
-            ->first();
+                ->first();
         }
         if (!$jeData) {
             throw new Exception("JE site inspection data not found!");

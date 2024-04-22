@@ -268,7 +268,7 @@ class Consumer implements IConsumer
         $response["consumer_tax"]    = (array)null;
         try {
             $conter = 0;
-            $refUser              = authUser($req);
+            $refUser              = Auth()->user();
             $refUserId            = $refUser->id ?? 0;
             $refUlbId             = $refUser->ulb_id ?? 0;
             $refUlb             = UlbMaster::select("ulb_type")->find($refUlbId);
@@ -285,7 +285,7 @@ class Consumer implements IConsumer
             $get_initial_reading = $this->getLastMeterReading($mConsumerId);
             $initial_reading = $get_initial_reading->initial_reading ?? 0;
             if ($final_reading <= $initial_reading) {
-                throw new Exception("Final Reading Should be Greatr than Previuse Reading");
+                throw new Exception("Final Reading Should be Greater than Previous Reading");
             }
             if ($refMeterStatus->connection_type == 1 || $refMeterStatus->connection_type == 2) {
                 if ($upto_date == "") {
@@ -505,7 +505,7 @@ class Consumer implements IConsumer
                 $get_initial_reading = $this->getLastMeterReading($mConsumerId);
                 $initial_reading = $get_initial_reading->initial_reading ?? 0;
                 if ($final_reading <= $initial_reading) {
-                    throw new Exception("Final Reading Should be Grater than Priviuse Reading!!!");
+                    throw new Exception("Final Reading Should be Greater than Previous Reading");
                 }
                 $diff_reading = $final_reading - $initial_reading;
                 if (!$args) {
@@ -802,16 +802,16 @@ class Consumer implements IConsumer
             'water_approval_application_details.saf_no',
             'ulb_ward_masters.ward_name',
             'ulb_masters.ulb_name',
-            'water_param_pipeline_types.pipeline_type as pipeline_type_name',
-            'site.property_type_id AS site_property_type_id',
-            'site.pipeline_type_id AS site_pipeline_type_id',
+            // 'water_param_pipeline_types.pipeline_type as pipeline_type_name',
+            // 'site.property_type_id AS site_property_type_id',
+            // 'site.pipeline_type_id AS site_pipeline_type_id',
             DB::raw("string_agg(water_approval_applicants.applicant_name,',') as applicantName"),
             DB::raw("string_agg(water_approval_applicants.mobile_no::VARCHAR,',') as mobileNo"),
             DB::raw("string_agg(water_approval_applicants.guardian_name,',') as guardianName"),
         )
             ->join('ulb_masters', 'ulb_masters.id', '=', 'water_approval_application_details.ulb_id')
             ->join('water_approval_applicants', 'water_approval_applicants.application_id', '=', 'water_approval_application_details.id')
-            ->join(
+            ->leftjoin(
                 DB::raw("(SELECT * FROM water_site_inspections
                                 WHERE order_officer = '" . $refJe['JE'] . "'
                                 AND apply_connection_id = $applicationId
@@ -822,7 +822,7 @@ class Consumer implements IConsumer
                     $join->on("site.apply_connection_id", "=", "water_approval_application_details.id");
                 }
             )
-            ->join("water_param_pipeline_types", "water_param_pipeline_types.id", "site.pipeline_type_id")
+            // ->join("water_param_pipeline_types", "water_param_pipeline_types.id", "site.pipeline_type_id")
             ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_approval_application_details.ward_id')
             ->where('water_approval_application_details.status', true)
             ->where('water_approval_application_details.id', $applicationId)
@@ -838,9 +838,9 @@ class Consumer implements IConsumer
                 'ulb_ward_masters.ward_name',
                 'ulb_masters.id',
                 'ulb_masters.ulb_name',
-                'water_param_pipeline_types.pipeline_type',
-                'site.property_type_id',
-                'site.pipeline_type_id',
+                // 'water_param_pipeline_types.pipeline_type',
+                // 'site.property_type_id',
+                // 'site.pipeline_type_id',
             )
             ->first();
     }
