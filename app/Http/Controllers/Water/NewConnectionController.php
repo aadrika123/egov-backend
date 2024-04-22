@@ -1148,7 +1148,7 @@ class NewConnectionController extends Controller
             } else {
                 $this->updateWaterStatus($req, $getWaterDetails);
             }
-
+            
             $this->commit();
             return responseMsgs(true, "Document Uploadation Successful", "", "", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
