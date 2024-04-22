@@ -90,6 +90,7 @@ class NewConnectionController extends Controller
     private $_waterModulId;
     protected $_DB_NAME;
     protected $_DB;
+    protected $_DB_MASTER;
 
     /**
      * | Construct defination
@@ -98,6 +99,7 @@ class NewConnectionController extends Controller
     {
         $this->_DB_NAME = "pgsql_water";
         $this->_DB = DB::connection($this->_DB_NAME);
+        $this->_DB_MASTER = DB::connection("pgsql_master");
         $this->_commonFunction = new CommonFunction();
         $this->newConnection = $newConnection;
         $this->_dealingAssistent = Config::get('workflow-constants.DEALING_ASSISTENT_WF_ID');
@@ -112,9 +114,12 @@ class NewConnectionController extends Controller
     {
         $db1 = DB::connection()->getDatabaseName();
         $db2 = $this->_DB->getDatabaseName();
+        $db3 = $this->_DB_MASTER->getDatabaseName();
         DB::beginTransaction();
         if ($db1 != $db2)
             $this->_DB->beginTransaction();
+        if ($db1 != $db3 && $db2 != $db3)
+            $this->_DB_MASTER->beginTransaction();
     }
     /**
      * | Database transaction connection
@@ -123,9 +128,12 @@ class NewConnectionController extends Controller
     {
         $db1 = DB::connection()->getDatabaseName();
         $db2 = $this->_DB->getDatabaseName();
+        $db3 = $this->_DB_MASTER->getDatabaseName();
         DB::rollBack();
         if ($db1 != $db2)
             $this->_DB->rollBack();
+        if ($db1 != $db3 && $db2 != $db3)
+            $this->_DB_MASTER->rollBack();
     }
     /**
      * | Database transaction connection
@@ -134,9 +142,12 @@ class NewConnectionController extends Controller
     {
         $db1 = DB::connection()->getDatabaseName();
         $db2 = $this->_DB->getDatabaseName();
+        $db3 = $this->_DB_MASTER->getDatabaseName();
         DB::commit();
         if ($db1 != $db2)
             $this->_DB->commit();
+        if ($db1 != $db3 && $db2 != $db3)
+            $this->_DB_MASTER->commit();
     }
 
 
@@ -185,7 +196,7 @@ class NewConnectionController extends Controller
             $waterList = $this->getWaterApplicatioList($workflowIds, $ulbId)
                 ->whereIn('water_applications.current_role', $roleId)
                 // ->whereIn('water_applications.ward_id', $occupiedWards)
-               // ->where('water_applications.is_escalate', false)
+                // ->where('water_applications.is_escalate', false)
                 ->where('water_applications.parked', false)
                 // ->orderByDesc('water_applications.id')
                 ->get();
@@ -660,7 +671,7 @@ class NewConnectionController extends Controller
                 ->orderByDesc('water_applications.id')
                 ->get();
 
-            return responseMsgs(true, "field Verified Inbox", remove_null($waterList), 010125, 1.0,responseTime(), "POST", "");
+            return responseMsgs(true, "field Verified Inbox", remove_null($waterList), 010125, 1.0, responseTime(), "POST", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -2818,8 +2829,7 @@ class NewConnectionController extends Controller
         $applicationDetails = $mWaterApplication->getApplicationById($applicationId)
             ->where('is_field_verified', true)
             ->first();
-        if(!$applicationDetails)
-        {
+        if (!$applicationDetails) {
             $applicationDetails = $approve->find($applicationId);
         }
         if (!$applicationDetails) {
@@ -2830,7 +2840,7 @@ class NewConnectionController extends Controller
             ->first();
         if (!$jeData) {
             $jeData = $mWaterSiteInspection->getSiteDetails($applicationId)
-            ->first();
+                ->first();
         }
         if (!$jeData) {
             throw new Exception("JE site inspection data not found!");
