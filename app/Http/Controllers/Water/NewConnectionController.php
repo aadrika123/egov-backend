@@ -1962,6 +1962,8 @@ class NewConnectionController extends Controller
             $key                = $request->filterBy;
             $parameter          = $request->parameter;
             $pages              = $request->perPage ?? 10;
+            $string             = preg_replace("/([A-Z])/", " $1", $key);
+            $refstring          = strtolower($string);
             $mWaterApplicant    = new WaterApplication();
             $connectionTypes    = Config::get('waterConstaint.CONNECTION_TYPE');
 
@@ -1970,13 +1972,13 @@ class NewConnectionController extends Controller
                     $returnData = $mWaterApplicant->getDetailsByApplicationNo($request, $connectionTypes['NEW_CONNECTION'], $parameter)->paginate($pages);
                     $checkVal = collect($returnData)->last();
                     if (!$checkVal || $checkVal == 0)
-                        throw new Exception("Data according to " . $key . " not Found!");
+                        throw new Exception("Data according to " . $refstring . " not found!");
                     break;
                 case ("regularization"):                                                                    // Static
                     $returnData = $mWaterApplicant->getDetailsByApplicationNo($request, $connectionTypes['REGULAIZATION'], $parameter)->paginate($pages);
                     $checkVal = collect($returnData)->last();
                     if (!$checkVal || $checkVal == 0)
-                        throw new Exception("Data according to " . $key . " not Found!");
+                        throw new Exception("Data according to " . $refstring . " not found!");
                     break;
                 case ("name"):                                                                              // Static
                     $returnData = $mWaterApplicant->getDetailsByParameters($request)
@@ -1984,7 +1986,7 @@ class NewConnectionController extends Controller
                         ->paginate($pages);
                     $checkVal = collect($returnData)->last();
                     if (!$checkVal || $checkVal == 0)
-                        throw new Exception("Data according to " . $key . " not Found!");
+                        throw new Exception("Data according to " . $refstring . " not found!");
                     break;
                 case ("mobileNo"):                                                                          // Static
                     $returnData = $mWaterApplicant->getDetailsByParameters($request)
@@ -1992,7 +1994,7 @@ class NewConnectionController extends Controller
                         ->paginate($pages);
                     $checkVal = collect($returnData)->last();
                     if (!$checkVal || $checkVal == 0)
-                        throw new Exception("Data according to " . $key . " not Found!");
+                        throw new Exception("Data according to " . $refstring . " not found!");
                     break;
                 case ("safNo"):                                                                             // Static
                     $returnData = $mWaterApplicant->getDetailsByParameters($request)
@@ -2000,7 +2002,7 @@ class NewConnectionController extends Controller
                         ->paginate($pages);
                     $checkVal = collect($returnData)->last();
                     if (!$checkVal || $checkVal == 0)
-                        throw new Exception("Data according to " . $key . " not Found!");
+                        throw new Exception("Data according to " . $refstring . " not found!");
                     break;
                 case ("holdingNo"):                                                                         // Static
                     $returnData = $mWaterApplicant->getDetailsByParameters($request)
@@ -2008,12 +2010,12 @@ class NewConnectionController extends Controller
                         ->paginate($pages);
                     $checkVal = collect($returnData)->last();
                     if (!$checkVal || $checkVal == 0)
-                        throw new Exception("Data according to " . $key . " not Found!");
+                        throw new Exception("Data according to " . $refstring . " not found!");
                     break;
             }
-            return responseMsgs(true, "List of Appication!", $returnData, "", "01", "723 ms", "POST", "");
+            return responseMsgs(true, "List of Appication!", $returnData, "", "01", responseTime(), "POST", $request->deviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $request->deviceId);
+            return responseMsgs(false, $e->getMessage(), [], "", "01", responseTime(), "POST", $request->deviceId);
         }
     }
 

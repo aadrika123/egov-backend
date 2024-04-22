@@ -1946,8 +1946,6 @@ class WaterConsumer extends Controller
 
     public function searchApplication(Request $request)
     {
-
-
         $validated = Validator::make(
             $request->all(),
             [
@@ -1980,7 +1978,7 @@ class WaterConsumer extends Controller
             $returnData = $returnData->paginate($pages);
             $checkVal = collect($returnData)->last();
             if (!$checkVal || $checkVal == 0)
-                throw new Exception("Data according to " . $key . " not Found!");
+                throw new Exception("Data according to " . strtolower( preg_replace("/([A-Z])/", " $1", $key) ). " not found!");
             $list = [
                     "current_page" => $returnData->currentPage(),
                     "last_page" => $returnData->lastPage(),
@@ -1989,9 +1987,9 @@ class WaterConsumer extends Controller
                         }),
                     "total" => $returnData->total(),
                 ]; 
-            return responseMsgs(true, "List of Appication!", $list, "", "01", "723 ms", "POST", "");
+            return responseMsgs(true, "List of Appication!", $list, "", "01", responseTime(), "POST", $request->deviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $request->deviceId);
+            return responseMsgs(false, $e->getMessage(), [], "", "01", responseTime(), "POST", $request->deviceId);
         }
     }
 
