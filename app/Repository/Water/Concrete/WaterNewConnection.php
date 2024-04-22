@@ -699,7 +699,7 @@ class WaterNewConnection implements IWaterNewConnection
                 throw new Exception("Application Not Found....");
             }
             if (!$transection) {
-                throw new Exception("Not Transection Data Found....");
+                throw new Exception("Transaction Data Not Found....");
             }
             $data["amount"]            = $WaterRazorPayResponse->amount;
             $data["applicationId"]     = $WaterRazorPayResponse->related_id;
@@ -707,7 +707,7 @@ class WaterNewConnection implements IWaterNewConnection
             $data["tranType"]          = $WaterRazorPayResponse->payment_from;
             $data["transectionId"]     = $transection->id;
             $data["transectionNo"]     = $transection->tran_no;
-            $data["transectionDate"]   = $transection->tran_date;
+            $data["transectionDate"]   = Carbon::parse($transection->tran_date)->format('d-m-Y');
             $data['paymentRecipt']     = config('app.url') . $path . $WaterRazorPayResponse->related_id . "/" . $transection->id;
             return responseMsg(true, "", $data);
         } catch (Exception $e) {
