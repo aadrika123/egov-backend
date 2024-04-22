@@ -1898,39 +1898,39 @@ class NewConnectionController extends Controller
                     $waterReturnDetails = $mWaterConsumer->getDetailByConsumerNo($request, $refstring, $paramenter)->paginate($pages);
                     $checkVal = collect($waterReturnDetails)->last();
                     if (!$checkVal || $checkVal == 0)
-                        throw new Exception("Data according to " . $key . " not found!");
+                        throw new Exception("Data according to " . strtolower(preg_replace("/([A-Z])/", " $1", $key)) . " not found!");
                     break;
                 case ("holdingNo"):                                                                         // Static
                     $waterReturnDetails = $mWaterConsumer->getDetailByConsumerNo($request, $refstring, $paramenter)->paginate($pages);
                     $checkVal = collect($waterReturnDetails)->last();
                     if (!$checkVal || $checkVal == 0)
-                        throw new Exception("Data according to " . $key . " not found!");
+                        throw new Exception("Data according to " . strtolower(preg_replace("/([A-Z])/", " $1", $key)) . " not found!");
                     break;
                 case ("safNo"):                                                                             // Static
                     $waterReturnDetails = $mWaterConsumer->getDetailByConsumerNo($request, $refstring, $paramenter)->paginate($pages);
                     $checkVal = collect($waterReturnDetails)->last();
                     if (!$checkVal || $checkVal == 0)
-                        throw new Exception("Data according to " . $key . " not found!");
+                        throw new Exception("Data according to " . strtolower(preg_replace("/([A-Z])/", " $1", $key)) . " not found!");
                     break;
                 case ("applicantName"):                                                                     // Static
                     $paramenter = strtoupper($paramenter);
                     $waterReturnDetails = $mWaterConsumer->getDetailByOwnerDetails($refstring, $paramenter)->paginate($pages);
                     $checkVal = collect($waterReturnDetails)->last();
                     if (!$checkVal || $checkVal == 0)
-                        throw new Exception("Data according to " . $key . " not found!");
+                        throw new Exception("Data according to " . strtolower(preg_replace("/([A-Z])/", " $1", $key)) . " not found!");
                     break;
                 case ('mobileNo'):                                                                          // Static
                     $paramenter = strtoupper($paramenter);
                     $waterReturnDetails = $mWaterConsumer->getDetailByOwnerDetails($refstring, $paramenter)->paginate($pages);
                     $checkVal = collect($waterReturnDetails)->last();
                     if (!$checkVal || $checkVal == 0)
-                        throw new Exception("Data according to " . $key . " not found!");
+                        throw new Exception("Data according to " . strtolower(preg_replace("/([A-Z])/", " $1", $key)) . " not found!");
                     break;
                 case ('applicationNo'):
                     $waterReturnDetails = $mWaterConsumer->getDetailByApplicationNo($paramenter)->paginate($pages);
                     $checkVal = collect($waterReturnDetails)->last();
                     if (!$checkVal || $checkVal == 0)
-                        throw new Exception("Data according to " . $key . " not found!");
+                        throw new Exception("Data according to " . strtolower(preg_replace("/([A-Z])/", " $1", $key)) . " not found!");
                     break;
                 default:
                     throw new Exception("Data provided in filterBy is not valid!");
