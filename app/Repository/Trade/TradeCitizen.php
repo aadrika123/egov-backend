@@ -815,7 +815,9 @@ class TradeCitizen implements ITradeCitizen
                 $val->doc_path = $api["doc_path"] ?? "";
                 $val->api = $api ?? "";
                 return $val;
-            });;
+            });
+            $rejectedDoc = (($refUploadDocuments)->where("verify_status",2));
+            $refApplication->document_upload_status = $refApplication->is_parked ? 0 : $refApplication->document_upload_status ;
 
 
             $pendingAt  = $init_finish['initiator']['id'];

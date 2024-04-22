@@ -2,6 +2,7 @@
 
 namespace App\Repository\Water\Concrete;
 
+use App\Http\Controllers\Water\NewConnectionController;
 use App\MicroServices\IdGenerator\PrefixIdGenerator;
 use App\Models\CustomDetail;
 use App\Models\Property\PropActiveSaf;
@@ -26,6 +27,7 @@ use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\Workflows\WfWorkflowrolemap;
 use App\Models\WorkflowTrack;
+use App\Repository\Common\CommonFunction;
 use App\Repository\Water\Interfaces\iNewConnection;
 use App\Traits\Ward;
 use App\Traits\Workflow\Workflow;
@@ -40,6 +42,7 @@ use Illuminate\Support\Facades\DB;
 use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
 use Illuminate\Validation\Rules\Exists;
 use Nette\Utils\Random;
+use Illuminate\Support\Facades\App;
 
 /**
  * | -------------- Repository for the New Water Connection Operations ----------------------- |
@@ -64,6 +67,10 @@ class NewConnectionRepository implements iNewConnection
     protected $_DB_NAME;
     protected $_DB;
 
+    protected $_COMMON_FUNCTION;
+    protected $_REF_TABLE;
+    protected $_LEVEL_COMMENT_STATUS = [];
+
     public function __construct()
     {
         $this->_dealingAssistent = Config::get('workflow-constants.DEALING_ASSISTENT_WF_ID');
@@ -74,6 +81,10 @@ class NewConnectionRepository implements iNewConnection
         $this->_waterRoles = Config::get('waterConstaint.ROLE-LABEL');
         $this->_DB_NAME             = "pgsql_water";
         $this->_DB                  = DB::connection($this->_DB_NAME);
+
+        $this->_COMMON_FUNCTION =  new CommonFunction();
+        $this->_REF_TABLE = 'water_applications.id';
+        $this->_LEVEL_COMMENT_STATUS = Config::get('workflow-constants.VERIFICATION-STATUS');
     }
 
 
@@ -393,12 +404,52 @@ class NewConnectionRepository implements iNewConnection
      */
     public function postNextLevel($req)
     {
+        #====this code added by sandeep==================
+        $user = Auth()->user();
+        $user_id = $user->id;
+        $ulb_id = $user->ulb_id;        
+        $allRolse     = collect($this->_COMMON_FUNCTION->getAllRoles($user_id, $ulb_id, $this->_waterWorkflowId, 0, true));
+        $role = $this->_COMMON_FUNCTION->getUserRoll($user_id, $ulb_id, $this->_waterWorkflowId);
+
+        if (!$this->_COMMON_FUNCTION->checkUsersWithtocken("users")) {
+            throw new Exception("Citizen Not Allowed");
+        }
+
+        if (!$req->senderRoleId) {
+            $req->merge(["senderRoleId" => $role->role_id ?? 0]);
+        }
+        if (!$req->receiverRoleId) {
+            if ($req->action == 'forward') {
+                $req->merge(["receiverRoleId" => $role->forward_role_id ?? 0]);
+            }
+            if ($req->action == 'backward') {
+                $req->merge(["receiverRoleId" => $role->backward_role_id ?? 0]);
+            }
+        }
+
+        $initFinish   = $this->_COMMON_FUNCTION->iniatorFinisher($user_id, $ulb_id, $this->_waterWorkflowId);
+        $receiverRole = array_values(objToArray($allRolse->where("id", $req->receiverRoleId)))[0] ?? [];
+        $senderRole   = array_values(objToArray($allRolse->where("id", $req->senderRoleId)))[0] ?? [];
+        #====end this code added by sandeep==================
+
         $mWfWorkflows       = new WfWorkflow();
         $waterTrack         = new WorkflowTrack();
         $mWfRoleMaps        = new WfWorkflowrolemap();
         $current            = Carbon::now();
         $wfLevels           = Config::get('waterConstaint.ROLE-LABEL');
         $waterApplication   = WaterApplication::find($req->applicationId);
+
+        #====this code added by sandeep==================
+        if (!$waterApplication) {
+            throw new Exception("Data Not Found");
+        }
+        if ($waterApplication->current_role != $role->role_id && !$role->is_initiator && (!$waterApplication->parked)) {
+            throw new Exception("You Have Not Pending This Application");
+        }
+        if ($waterApplication->parked && !$role->is_initiator) {
+            throw new Exception("You Aer Not Authorized For Forword BTC Application");
+        }
+        #====end this code added by sandeep==================
 
         # Derivative Assignments
         $senderRoleId = $waterApplication->current_role;
@@ -409,6 +460,39 @@ class NewConnectionRepository implements iNewConnection
             'roleId' => $senderRoleId
         ]);
         $forwardBackwardIds = $mWfRoleMaps->getWfBackForwardIds($roleMapsReqs);
+        #====this code added by sandeep==================
+        $documents = $this->checkWorckFlowForwardBackord($req);
+        if ((($senderRole["serial_no"] ?? 0) < ($receiverRole["serial_no"] ?? 0)) && !$documents) {
+            if (($role->doc_upload_status ?? false) && $waterApplication->parked) {
+                throw new Exception("Rejected Document Are Not Uploaded");
+            }
+            if (($role->doc_upload_status ?? false)) {
+                throw new Exception("No Every Madetry Documents are Uploaded");
+            }
+            if ($role->doc_status ?? false) {
+                throw new Exception("Not able to forward application because documents not fully verified");
+            }
+            throw new Exception("Not Every Actoin Are Performed");
+        }
+        if ($role->can_upload_document) {
+            if (($role->serial_no < $receiverRole["serial_no"] ?? 0)) {
+                $waterApplication->doc_upload_status = true;
+                // $waterApplication->pending_status = 1;
+                $waterApplication->parked = false;
+            }
+            if (($role->serial_no > $receiverRole["serial_no"] ?? 0)) {
+                $waterApplication->doc_upload_status = false;
+            }
+        }
+        if ($role->can_verify_document) {
+            if (($role->serial_no < $receiverRole["serial_no"] ?? 0)) {
+                $waterApplication->doc_status = true;
+            }
+            if (($role->serial_no > $receiverRole["serial_no"] ?? 0)) {
+                $waterApplication->doc_status = false;
+            }
+        }
+        #==== end this code added by sandeep==================
 
         $this->begin();
         if ($req->action == 'forward') {
@@ -428,32 +512,53 @@ class NewConnectionRepository implements iNewConnection
         }
 
         $waterApplication->save();
-        $metaReqs['moduleId']           = $this->_waterModulId;
-        $metaReqs['workflowId']         = $waterApplication->workflow_id;
-        $metaReqs['refTableDotId']      = 'water_applications.id';                                                          // Static
-        $metaReqs['refTableIdValue']    = $req->applicationId;
-        $metaReqs['senderRoleId']       = $senderRoleId;
-        $metaReqs['user_id']            = authUser($req)->id;
-        $metaReqs['trackDate']          = $current->format('Y-m-d H:i:s');
-        $req->request->add($metaReqs);
-        $waterTrack->saveTrack($req);
 
-        # check in all the cases the data if entered in the track table 
-        // Updation of Received Date
-        $preWorkflowReq = [
-            'workflowId'        => $waterApplication->workflow_id,
-            'refTableDotId'     => "water_applications.id",
-            'refTableIdValue'   => $req->applicationId,
-            'receiverRoleId'    => $senderRoleId
-        ];
+        $track = new WorkflowTrack();
+        $lastworkflowtrack = $track->select("*")
+            ->where('ref_table_id_value', $req->applicationId)
+            ->where('module_id', $this->_waterModulId)
+            ->where('ref_table_dot_id', $this->_REF_TABLE)
+            ->whereNotNull('sender_role_id')
+            ->orderBy("track_date", 'DESC')
+            ->first();
 
-        $previousWorkflowTrack = $waterTrack->getWfTrackByRefId($preWorkflowReq);
-        if ($previousWorkflowTrack) {
-            $previousWorkflowTrack->update([
-                'forward_date' => $current->format('Y-m-d'),
-                'forward_time' => $current->format('H:i:s')
-            ]);
-        }
+        $metaReqs['moduleId'] = $this->_waterModulId;
+        $metaReqs['workflowId'] = $waterApplication->workflow_id;
+        $metaReqs['refTableDotId'] = $this->_REF_TABLE;
+        $metaReqs['refTableIdValue'] = $req->applicationId;
+        $metaReqs['user_id'] = $user_id;
+        $metaReqs['ulb_id'] = $ulb_id;
+        $metaReqs['trackDate'] = $lastworkflowtrack && $lastworkflowtrack->forward_date ? ($lastworkflowtrack->forward_date . " " . $lastworkflowtrack->forward_time) : Carbon::now()->format('Y-m-d H:i:s');
+        $metaReqs['forwardDate'] = Carbon::now()->format('Y-m-d');
+        $metaReqs['forwardTime'] = Carbon::now()->format('H:i:s');
+        $metaReqs['verificationStatus'] = ($req->action == 'forward') ? $this->_LEVEL_COMMENT_STATUS["VERIFY"] : $this->_LEVEL_COMMENT_STATUS["BACKWARD"];
+        $req->merge($metaReqs);
+        $track->saveTrack($req);
+            
+        // $metaReqs['moduleId']           = $this->_waterModulId;
+        // $metaReqs['workflowId']         = $waterApplication->workflow_id;
+        // $metaReqs['refTableDotId']      = 'water_applications.id';                                                          // Static
+        // $metaReqs['refTableIdValue']    = $req->applicationId;
+        // $metaReqs['senderRoleId']       = $senderRoleId;
+        // $metaReqs['user_id']            = authUser($req)->id;
+        // $metaReqs['trackDate']          = $current->format('Y-m-d H:i:s');
+        // $req->request->add($metaReqs);
+        // $waterTrack->saveTrack($req);
+
+        // # check in all the cases the data if entered in the track table 
+        // // Updation of Received Date
+        // $preWorkflowReq = [
+        //     'workflowId'        => $waterApplication->workflow_id,
+        //     'refTableDotId'     => "water_applications.id",
+        //     'refTableIdValue'   => $req->applicationId,
+        //     'receiverRoleId'    => $senderRoleId
+        // ];
+
+        // $previousWorkflowTrack = $waterTrack->getWfTrackByRefId($preWorkflowReq);
+        // $previousWorkflowTrack->update([
+        //     'forward_date' => $current->format('Y-m-d'),
+        //     'forward_time' => $current->format('H:i:s')
+        // ]);
         $this->commit();
         return responseMsgs(true, "Successfully Forwarded The Application!!", "", "", "", '01', '.ms', 'Post', '');
     }
@@ -519,6 +624,82 @@ class NewConnectionRepository implements iNewConnection
                 }
                 break;
         }
+    }
+
+    /**
+     * check forward and backward condition with document
+     */
+    public function checkWorckFlowForwardBackord(Request $request)
+    {
+        $user = Auth()->user();
+        $user_id = $user->id ?? $request->user_id;
+        $ulb_id = $user->ulb_id ?? $request->ulb_id;
+        $refWorkflowId = $this->_waterWorkflowId;
+        $allRolse = collect($this->_COMMON_FUNCTION->getAllRoles($user_id, $ulb_id, $refWorkflowId, 0, true));
+        $mUserType      = $this->_COMMON_FUNCTION->userType($refWorkflowId, $ulb_id);
+        $fromRole = [];
+        if (!empty($allRolse)) {
+            $fromRole = array_values(objToArray($allRolse->where("id", $request->senderRoleId)))[0] ?? [];
+        }
+        if ((!$this->_COMMON_FUNCTION->checkUsersWithtocken("users")) || ($fromRole["can_upload_document"] ?? false) ||  ($fromRole["can_verify_document"] ?? false)) 
+        {
+            $controller = App::makeWith(NewConnectionController::class,["iNewConnection"=>iNewConnection::class]);
+            $documents = $controller->getDocList($request);
+            if (!$documents->original["status"]) 
+            {
+                return false;
+            }
+            $applicationDoc = $documents->original["data"]["listDocs"];
+            $ownerDoc = $documents->original["data"]["ownerDocs"];
+            $appMandetoryDoc = $applicationDoc->whereIn("docType", ["R", "OR"]);
+            $appUploadedDoc = $applicationDoc->whereNotNull("uploadedDoc");
+            $appUploadedDocVerified = collect();
+            $appUploadedDocRejected = collect();
+            $appMadetoryDocRejected  = collect(); 
+            $appUploadedDoc->map(function ($val) use ($appUploadedDocVerified,$appUploadedDocRejected,$appMadetoryDocRejected) {
+                
+                $appUploadedDocVerified->push(["is_docVerify" => (!empty($val["uploadedDoc"]) ?  (((collect($val["uploadedDoc"])->all())["verifyStatus"]) ? true : false) : true)]);
+                $appUploadedDocRejected->push(["is_docRejected" => (!empty($val["uploadedDoc"]) ?  (((collect($val["uploadedDoc"])->all())["verifyStatus"]==2) ? true : false) : false)]);
+                if(in_array($val["docType"],["R", "OR"]))
+                {
+                    $appMadetoryDocRejected->push(["is_docRejected" => (!empty($val["uploadedDoc"]) ?  (((collect($val["uploadedDoc"])->all())["verifyStatus"]==2) ? true : false) : false)]);
+                }
+            });
+            $is_appUploadedDocVerified          = $appUploadedDocVerified->where("is_docVerify", false);
+            $is_appUploadedDocRejected          = $appUploadedDocRejected->where("is_docRejected", true);
+            $is_appUploadedMadetoryDocRejected  = $appMadetoryDocRejected->where("is_docRejected", true);
+            // $is_appMandUploadedDoc              = $appMandetoryDoc->whereNull("uploadedDoc");
+            $is_appMandUploadedDoc = $appMandetoryDoc->filter(function($val){
+                return ($val["uploadedDoc"]=="" || $val["uploadedDoc"]==null);
+            });
+            $Wdocuments = collect();
+            $ownerDoc->map(function ($val) use ($Wdocuments) {
+                $ownerId = $val["ownerDetails"]["ownerId"] ?? "";
+                $val["documents"]->map(function ($val1) use ($Wdocuments, $ownerId) {
+                    $val1["ownerId"] = $ownerId;
+                    $val1["is_uploded"] = (in_array($val1["docType"], ["R", "OR"]))  ? ((!empty($val1["uploadedDoc"])) ? true : false) : true;
+                    $val1["is_docVerify"] = !empty($val1["uploadedDoc"]) ?  (((collect($val1["uploadedDoc"])->all())["verifyStatus"]) ? true : false) : true;
+                    $val1["is_docRejected"] = !empty($val1["uploadedDoc"]) ?  (((collect($val1["uploadedDoc"])->all())["verifyStatus"]==2) ? true : false) : false;
+                    $val1["is_madetory_docRejected"] = (!empty($val1["uploadedDoc"]) && in_array($val1["docType"],["R", "OR"]))?  (((collect($val1["uploadedDoc"])->all())["verifyStatus"]==2) ? true : false) : false;
+                    $Wdocuments->push($val1);
+                });
+            });
+
+            $ownerMandetoryDoc              = $Wdocuments->whereIn("docType", ["R", "OR"]);
+            $is_ownerUploadedDoc            = $Wdocuments->where("is_uploded", false);
+            $is_ownerDocVerify              = $Wdocuments->where("is_docVerify", false);
+            $is_ownerDocRejected            = $Wdocuments->where("is_docRejected", true);
+            $is_ownerMadetoryDocRejected    = $Wdocuments->where("is_madetory_docRejected", true);
+            if (($fromRole["can_upload_document"] ?? false) || (!$this->_COMMON_FUNCTION->checkUsersWithtocken("users"))) 
+            {
+                return (empty($is_ownerUploadedDoc->all()) && empty($is_ownerDocRejected->all()) && empty($is_appMandUploadedDoc->all()) && empty($is_appUploadedDocRejected->all()));
+            }
+            if ($fromRole["can_verify_document"] ?? false) 
+            {
+                return (empty($is_ownerDocVerify->all()) && empty($is_appUploadedDocVerified->all()) && empty($is_ownerMadetoryDocRejected->all()) && empty($is_appUploadedMadetoryDocRejected->all()));
+            }
+        }
+        return true;
     }
 
 
@@ -747,7 +928,12 @@ class NewConnectionRepository implements iNewConnection
         # Level comment
         $mtableId = $applicationDetails->first()->id;
         $mRefTable = "water_applications.id";
-        $levelComment['levelComment'] = $mWorkflowTracks->getTracksByRefId($mRefTable, $mtableId);
+        $levelComment['levelComment'] = $mWorkflowTracks->getTracksByRefId($mRefTable, $mtableId)->map(function($val){  
+            $val->forward_date = $val->forward_date?Carbon::parse($val->forward_date)->format("d-m-Y"):"";
+            $val->track_date = $val->track_date?Carbon::parse($val->track_date)->format("d-m-Y"):"";
+            $val->duration = (Carbon::parse($val->forward_date)->diffInDays(Carbon::parse($val->track_date))) . " Days";
+            return $val;
+        });
 
         #citizen comment
         $refCitizenId = $applicationDetails->first()->user_id;

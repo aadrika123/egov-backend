@@ -3649,6 +3649,7 @@ class Trade implements ITrade
             $status =  $this->check($DocsType);
             $DocsType['docUploadStatus'] = ($status["docUploadStatus"] ?? false) ? 1 : 0;
             $DocsType['docVerifyStatus'] = ($status["docVerifyStatus"] ?? false) ? 1 : 0;
+            $DocsType['paymentStatus'] = $refApplication->payment_status;
             return responseMsgs(true, "Documents Fetched", remove_null($DocsType), "010203", "1.0", "", 'POST', "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", "", 'POST', "");

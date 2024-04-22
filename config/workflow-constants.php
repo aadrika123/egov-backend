@@ -55,4 +55,14 @@ return [
         "FERRULE_CLEANING_CHECKING" => "37",
         "PIPE_SHIFTING_ALTERATION"  => "38",
     ],
+
+    "VERIFICATION-STATUS"=>
+    [
+        "PENDING"   => 0,
+        "VERIFY"    => 1,
+        "BTC"       => 2,
+        "REJECT"    => 3,
+        "BACKWARD"  => 4,
+        "APROVE"    => 5,
+    ],
 ];
