@@ -402,11 +402,13 @@ class WaterConsumer extends Model
             'water_consumers.saf_no',
             'water_consumers.ulb_id',
             'ulb_ward_masters.ward_name',
+            'ulb_name',
             DB::raw("string_agg(water_consumer_owners.applicant_name,',') as applicant_name"),
             DB::raw("string_agg(water_consumer_owners.mobile_no::VARCHAR,',') as mobile_no"),
             DB::raw("string_agg(water_consumer_owners.guardian_name,',') as guardian_name"),
         )
             ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_consumers.id')
+            ->join('ulb_masters', 'ulb_masters.id', '=', 'water_consumers.ulb_id')
             ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_consumers.ward_mstr_id')
             ->whereIn("water_consumers.id", $consumerIds)
             ->where('water_consumers.status', 1)
@@ -419,7 +421,8 @@ class WaterConsumer extends Model
                 'water_consumer_owners.consumer_id',
                 'water_consumers.consumer_no',
                 'water_consumers.ward_mstr_id',
-                'ulb_ward_masters.ward_name'
+                'ulb_ward_masters.ward_name',
+                'ulb_name'
             );
     }
 
