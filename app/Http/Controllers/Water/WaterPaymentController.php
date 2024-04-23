@@ -1488,7 +1488,9 @@ class WaterPaymentController extends Controller
             $connectionTran = $mWaterTran->getTransNo($applicationId, null)->get();                        // Water Connection payment History
             $checkTrans = collect($connectionTran)->first();
             if (!$checkTrans)
-                throw new Exception("Water Application Tran Details not Found!!");
+            {
+                // throw new Exception("Water Application Tran Details not Found!!");
+            }
 
             # Connection Charges And Penalty
             $refConnectionDetails = $mWaterConnectionCharge->getWaterchargesById($applicationId)->get();
