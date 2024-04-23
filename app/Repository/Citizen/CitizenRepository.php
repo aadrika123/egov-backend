@@ -154,6 +154,7 @@ class CitizenRepository implements iCitizenRepository
         $applications = array();
         $propertyApplications = DB::table('prop_active_safs')
             ->Join('wf_roles as r', 'r.id', '=', 'prop_active_safs.current_role')
+            ->Join('ulb_masters', 'ulb_masters.id', '=', 'prop_active_safs.ulb_id')
             ->leftJoin('prop_transactions as t', 't.saf_id', '=', 'prop_active_safs.id')
             ->select(
                 'prop_active_safs.id as application_id',
@@ -184,6 +185,7 @@ class CitizenRepository implements iCitizenRepository
                 't.tran_date as transaction_date',
                 'prop_active_safs.is_agency_verified',
                 'prop_active_safs.is_field_verified as is_ulb_verified',
+                'ulb_masters.ulb_name'
             )
             ->where('prop_active_safs.citizen_id', $userId)
             ->where('prop_active_safs.status', 1)
@@ -268,10 +270,11 @@ class CitizenRepository implements iCitizenRepository
     public function appliedWaterApplications($userId)
     {
         $applications = array();
-        $waterApplications = WaterApplication::select('id as application_id', 'category', 'application_no', 'holding_no', 'workflow_id', 'created_at', 'updated_at')
+        $waterApplications = WaterApplication::select('water_applications.id as application_id', 'water_applications.category', 'application_no', 'holding_no', 'workflow_id', 'water_applications.created_at', 'water_applications.updated_at', 'ulb_name')
+            ->join('ulb_masters', 'ulb_masters.id', '=', 'water_applications.ulb_id')
             ->where('user_id', $userId)
             ->where('status', 1)
-            ->orderByDesc('id')
+            ->orderByDesc('water_applications.id')
             ->get();
         $applications['applications'] = $waterApplications;
         $applications['totalApplications'] = $waterApplications->count();
@@ -285,10 +288,11 @@ class CitizenRepository implements iCitizenRepository
     public function appliedTradeApplications($userId)
     {
         $applications = array();
-        $tradeApplications = ActiveTradeLicence::select('id as application_id', 'application_no', 'holding_no', 'workflow_id', 'created_at', 'updated_at')
+        $tradeApplications = ActiveTradeLicence::select('active_trade_licences.id as application_id', 'application_no', 'holding_no', 'workflow_id', 'active_trade_licences.created_at', 'active_trade_licences.updated_at','ulb_name')
+            ->join('ulb_masters', 'ulb_masters.id', '=', 'active_trade_licences.ulb_id')
             ->where('citizen_id', $userId)
             ->where('is_active', 1)
-            ->orderByDesc('id')
+            ->orderByDesc('active_trade_licences.id')
             ->get();
         $applications['applications'] = $tradeApplications;
         $applications['totalApplications'] = $tradeApplications->count();
@@ -310,9 +314,11 @@ class CitizenRepository implements iCitizenRepository
                                 o.owner_name,
                                 p.balance AS leftAmount,
                                 t.amount AS lastPaidAmount,
-                                t.tran_date AS lastPaidDate
+                                t.tran_date AS lastPaidDate,
+                                ulb_name
 
                                 FROM prop_properties p
+                                join ulb_masters on ulb_masters.id = p.ulb_id
                                 LEFT JOIN (
                                     SELECT property_id,amount,tran_date,
                                         ROW_NUMBER() OVER(
@@ -364,10 +370,12 @@ class CitizenRepository implements iCitizenRepository
                     'prop_owners.owner_name',
                     'prop_properties.balance',
                     'prop_transactions.amount',
+                    "ulb_name",
                     DB::raw("TO_CHAR(prop_transactions.tran_date, 'DD-MM-YYYY') as tran_date"),
 
                 )
                 ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
+                ->join('ulb_masters', 'ulb_masters.id', 'prop_properties.ulb_id')
                 ->leftjoin('prop_transactions', 'prop_transactions.property_id', 'prop_properties.id')
                 ->orderBydesc('prop_transactions.id')
                 ->first();
@@ -381,6 +389,7 @@ class CitizenRepository implements iCitizenRepository
                 'leftamount' => $propdtl->balance,
                 'lastpaidamount' => $propdtl->amount,
                 'lastpaiddate' => $propdtl->tran_date,
+                'ulb_name' => $propdtl->ulb_name,
             ];
 
             array_push($data, $propDtls);
