@@ -803,7 +803,7 @@ class ActiveSafController extends Controller
             if (collect($data)->isEmpty())
                 throw new Exception("Application Not Found");
 
-
+            $data->application_date = Carbon::parse($data->application_date)->format('d-m-Y');
             if ($data->payment_status == 0) {
                 $data->current_role_name = null;
                 $data->current_role_name2 = "Payment is Pending";
