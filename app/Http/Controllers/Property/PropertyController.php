@@ -354,8 +354,9 @@ class PropertyController extends Controller
                 $demand = $holdingTaxController->getHoldingDues($req);
                 if ($demand->original['status'] == true) {
                     $demandDetails = $demand->original['data']['duesList'];
-                    // if (in_array($type, ['Bifurcation', 'Mutation']))
-                    //     $sms = "Please Clear The Due Amount Of ₹" . $demandDetails['payableAmount'] . " Before Applying The Application.";
+                    //Temporary solution please comment next two lines
+                    if (in_array($type, ['Reassesment', 'Mutation', 'Bifurcation']))
+                        $sms = "Please Clear The Due Amount Of ₹" . $demandDetails['payableAmount'] . " Before Applying The Application.";
                     if ($demandDetails['dueFromFyear'] < getFY())
                         $sms = "Please Clear The Arrear Amount Of ₹" . $demandDetails['payableAmount'] . " Before Applying The Application.";
                 }
