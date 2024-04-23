@@ -92,6 +92,10 @@ class NewConnectionController extends Controller
     protected $_DB;
     protected $_DB_MASTER;
 
+    protected $_COMMON_FUNCTION;
+    protected $_REF_TABLE;
+    protected $_LEVEL_COMMENT_STATUS = [];
+
     /**
      * | Construct defination
      */
@@ -105,6 +109,10 @@ class NewConnectionController extends Controller
         $this->_dealingAssistent = Config::get('workflow-constants.DEALING_ASSISTENT_WF_ID');
         $this->_waterRoles = Config::get('waterConstaint.ROLE-LABEL');
         $this->_waterModulId = Config::get('module-constants.WATER_MODULE_ID');
+
+        $this->_COMMON_FUNCTION =  new CommonFunction();
+        $this->_REF_TABLE = 'water_applications.id';
+        $this->_LEVEL_COMMENT_STATUS = Config::get('workflow-constants.VERIFICATION-STATUS');
     }
 
     /**
@@ -720,19 +728,35 @@ class NewConnectionController extends Controller
                 $mWaterApplication->doc_upload_status = false;              //  Docupload Status false
             }
             $mWaterApplication->save();
-            $metaReqs['moduleId']           = Config::get('module-constants.WATER_MODULE_ID');
+
+            $track = new WorkflowTrack();
+            $lastworkflowtrack = $track->select("*")
+                ->where('ref_table_id_value', $req->applicationId)
+                ->where('module_id', $this->_waterModulId)
+                ->where('ref_table_dot_id', $this->_REF_TABLE)
+                ->whereNotNull('sender_role_id')
+                ->orderBy("track_date", 'DESC')
+                ->first();
+
+            $metaReqs['moduleId']           = $this->_waterModulId;
             $metaReqs['workflowId']         = $mWaterApplication->workflow_id;
-            $metaReqs['refTableDotId']      = 'water_applications.id';
+            $metaReqs['refTableDotId']      = $this->_REF_TABLE;
             $metaReqs['refTableIdValue']    = $req->applicationId;
             $metaReqs['senderRoleId']       = $role->role_id;
+
+            $metaReqs['trackDate'] = $lastworkflowtrack && $lastworkflowtrack->forward_date ? ($lastworkflowtrack->forward_date . " " . $lastworkflowtrack->forward_time) : Carbon::now()->format('Y-m-d H:i:s');
+            $metaReqs['forwardDate'] = Carbon::now()->format('Y-m-d');
+            $metaReqs['forwardTime'] = Carbon::now()->format('H:i:s');
+            $metaReqs['verificationStatus'] = $this->_LEVEL_COMMENT_STATUS["BTC"];#2
+
             $req->request->add($metaReqs);
             $WorkflowTrack->saveTrack($req);
 
             $this->commit();
-            return responseMsgs(true, "Successfully Done", "", "", "1.0", responseTime(), "POST", $req->deviceId);
+            return responseMsgs(true, "BTC Successfully Done", "", "", "1.0", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             $this->rollback();
-            return responseMsg(false, $e->getMessage(), "");
+            return responseMsg(false, [$e->getMessage(),$e->getFile(),$e->getLine()], "");
         }
     }
 
@@ -760,7 +784,7 @@ class NewConnectionController extends Controller
             return $item['verify_status'] == 2;
         });
         if (!$canBtc) {
-            throw new Exception("Document not rejected! cannot perform BTC!");
+            // throw new Exception("Document not rejected! cannot perform BTC!");
         }
     }
 
@@ -2179,9 +2203,9 @@ class NewConnectionController extends Controller
             # calculation details
             $charges = $mWaterConnectionCharge->getWaterchargesById($refAppDetails['id'])
                 ->orderByDesc('id')
-                ->firstOrFail();
+                ->first();
 
-            switch ($charges['charge_category']) {
+            switch ($charges['charge_category']??null) {
                 case ($refChargeCatagory['SITE_INSPECTON']):
                     $chargeId = $refChargeCatagoryValue['SITE_INSPECTON'];
                     break;
@@ -2193,14 +2217,14 @@ class NewConnectionController extends Controller
                     break;
             }
 
-            if ($charges['paid_status'] == 0) {
+            if (($charges['paid_status']??false) == 0) {
                 $calculation['calculation'] = [
-                    'connectionFee'     => $charges['conn_fee'],
-                    'penalty'           => $charges['penalty'],
-                    'totalAmount'       => $charges['amount'],
-                    'chargeCatagory'    => $charges['charge_category'],
-                    'chargeCatagoryId'  => $chargeId,
-                    'paidStatus'        => $charges['paid_status']
+                    'connectionFee'     => $charges['conn_fee']??0,
+                    'penalty'           => $charges['penalty']??0,
+                    'totalAmount'       => $charges['amount']??0,
+                    'chargeCatagory'    => $charges['charge_category']??"",
+                    'chargeCatagoryId'  => $chargeId??0,
+                    'paidStatus'        => $charges['paid_status']??0
                 ];
                 $waterTransDetail = array_merge($calculation, $waterTransDetail);
             } else {
@@ -2226,7 +2250,7 @@ class NewConnectionController extends Controller
             }
 
             # penalty Data 
-            if ($charges['penalty'] > 0) {
+            if (($charges['penalty']??false) > 0) {
                 $ids = null;
                 $penalty['penaltyInstallments'] = $mWaterPenaltyInstallment->getPenaltyByApplicationId($request->applicationId)
                     ->where('paid_status', 0)
