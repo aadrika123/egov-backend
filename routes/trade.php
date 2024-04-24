@@ -99,7 +99,8 @@ Route::group(['middleware' => ['json.response', "auth_maker"]], function () {
 
         Route::post('application/citizen-add', 'applyApplication');                #id = c2        
 
-        Route::post('notice/citizen-details', "getDenialDetails");                 #id = c3 
+        Route::post('notice/citizen-details', "getDenialDetails");                 #id = c3
+        Route::post('application/send-to-officer', 'sendToLevel'); 
 
         Route::post('application/pay-razorpay-charge', 'handeRazorPay');           #id = c4
 
