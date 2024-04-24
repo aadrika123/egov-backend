@@ -285,7 +285,7 @@ class CalculateSafById
         else
             $this->_generatedDemand['demand']['isPayable'] = true;
 
-        if (in_array($this->_safDetails['assessment_type'], ['Reassessment', 'Re Assessment', 'Mutation', 'Bifurcation']))
+        if (in_array($this->_safDetails['assessment_type'], ['Reassessment', 'Re Assessment', 'Mutation', 'Bifurcation', 'Amalgamation']))
             $this->_generatedDemand['demand']['isPayable'] = true;
     }
 
