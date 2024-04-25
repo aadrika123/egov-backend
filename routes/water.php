@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Water\ConsumerActionRequest;
 use App\Http\Controllers\Water\NewConnectionController;
 use App\Http\Controllers\Water\WaterApplication;
 use App\Http\Controllers\Water\WaterConsumer;
@@ -218,6 +219,17 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
         Route::post('getby-id-water-pipeline-type', 'getDataId');
         Route::post('delete-water-pipeline-type', 'dataActiveDeactive');
         Route::post('update-water-pipeline-type', 'updateDataById');
+    });
+
+    /**
+     * create by - Sandeep Bara
+     * date      - 2024-04-24
+     * =========== this is for consumer disconnection=============
+     */
+    Route::controller(ConsumerActionRequest::class)->group(function(){        
+        Route::post('request/discon/sedule-inspection', 'setDisconnectionSitInspection');
+        Route::post("request/discon/getInspectinMaster","getSiteInspectionCompar");
+        Route::post("request/discon/inspection","updateSiteInspection");
     });
 });
 Route::controller(WaterApplication::class)->group(function () {
