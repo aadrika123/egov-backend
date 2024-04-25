@@ -26,6 +26,7 @@ class WaterDisconnectionSiteInspection extends siteAdjustment
     {
         $rules = parent::rules();
         $ModelWaterDisconnectionSiteInspections = new WaterDisconnectionSiteInspections();
+        $rules["tsMap"]="nullable";
         $rules ["applicationId"]="required|digits_between:1,9223372036854775807|exists:".$ModelWaterDisconnectionSiteInspections->getConnectionName().".".$ModelWaterDisconnectionSiteInspections->getTable().",id";
         return $rules;
     }
