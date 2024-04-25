@@ -69,4 +69,24 @@ class WaterDisconnectionSiteInspections extends WaterParamModel
     {
         return $this->belongsTo(WaterConsumerActiveRequest::class,"request_id","id","id")->first();
     }
+
+    public function getPropType()
+    {
+        return $this->hasMany(WaterPropertyTypeMstr::class, "id", "property_type_id")->first();
+    }
+
+    public function getPipelineType()
+    {
+        return $this->hasMany(WaterParamPipelineType::class, "id", "pipeline_type_id")->first();
+    }
+
+    public function getConnectionType()
+    {
+        return $this->hasMany(WaterConnectionTypeMstr::class, "id", "connection_type_id")->first();
+    }
+
+    public function getApplicationInspection()
+    {
+        return $this->hasOne(WaterSiteInspection::class, "id", "water_site_inspections_id")->first();
+    }
 }

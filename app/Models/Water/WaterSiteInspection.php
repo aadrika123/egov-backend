@@ -165,4 +165,19 @@ class WaterSiteInspection extends Model
                 'status' => 0
             ]);
     }
+
+    public function getPropType()
+    {
+        return $this->hasMany(WaterPropertyTypeMstr::class, "id", "property_type_id")->first();
+    }
+
+    public function getPipelineType()
+    {
+        return $this->hasMany(WaterParamPipelineType::class, "id", "pipeline_type_id")->first();
+    }
+
+    public function getConnectionType()
+    {
+        return $this->hasMany(WaterConnectionTypeMstr::class, "id", "connection_type_id")->first();
+    }
 }

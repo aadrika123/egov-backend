@@ -184,4 +184,126 @@ class ConsumerActionRequest extends Controller
             return responseMsgs(false, $e->getMessage(), [], '', '01', responseTime(), $request->getMethod(), $request->deviceId);
         }
     }
+
+    public function getInspectionData(Request $request)
+    {
+        $ModelWaterDisconnectionSiteInspections = new WaterDisconnectionSiteInspections();
+        $rules = [
+            "applicationId" =>"required|digits_between:1,9223372036854775807|exists:".$ModelWaterDisconnectionSiteInspections->getConnectionName().".".$ModelWaterDisconnectionSiteInspections->getTable().",id"
+        ];
+        $validated = Validator::make(
+            $request->all(),
+            $rules
+        );
+        if ($validated->fails()){
+            return validationErrorV2($validated);
+        }
+        try{
+            $data = $ModelWaterDisconnectionSiteInspections->find($request->applicationId);            
+            $lastInspections = $data->getApplicationInspection();
+            $deactivationRequestData = $data->getConsumerRequests();
+            $consumerData = $deactivationRequestData->getConserDtls();
+            if(!$consumerData) {
+                throw new Exception("Consumer data not found");
+            }
+            $propertyType  = $data->getPropType();
+            $pipelineType  = $data->getPipelineType();
+            $connectionType  = $data->getConnectionType();
+
+            $lastInspectPropertyType  = $lastInspections->getPropType();
+            $lastInspectPipelineType  = $lastInspections->getPipelineType();
+            $lastInspectConnectionType  = $lastInspections->getConnectionType();
+
+            $data->propertyType = $propertyType ? $propertyType->property_type:"";
+            $data->pipelineType = $pipelineType ? $pipelineType->pipeline_type:"";
+            $data->connectionType = $connectionType ? $connectionType->connection_type:"";
+
+            $lastInspections->propertyType = $lastInspectPropertyType ? $lastInspectPropertyType->property_type:"";
+            $lastInspections->pipelineType = $lastInspectPipelineType ? $lastInspectPipelineType->pipeline_type:"";
+            $lastInspections->connectionType = $lastInspectConnectionType ? $lastInspectConnectionType->connection_type:"";
+
+            $compairData=[
+                [
+                    "name"=>"connection through",
+                    "app"=>$lastInspections->connection_through,
+                    "inspection"=>$data->connection_through,
+                ],
+                [
+                    "name"=>"property type",
+                    "app"=>$lastInspections->propertyType,
+                    "inspection"=>$data->propertyType,
+                ],
+                [
+                    "name"=>"pipeline type",
+                    "app"=>$lastInspections->pipelineType,
+                    "inspection"=>$data->pipelineType,
+                ],
+                [
+                    "name"=>"connection type",
+                    "app"=>$lastInspections->connectionType,
+                    "inspection"=>$data->connectionType,
+                ],
+                [
+                    "name"=>"category",
+                    "app"=>$lastInspections->category,
+                    "inspection"=>$data->category,
+                ],
+                [
+                    "name"=>"flat count",
+                    "app"=>$lastInspections->flat_count,
+                    "inspection"=>$data->flat_count,
+                ],
+                [
+                    "name"=>"area sqft",
+                    "app"=>$lastInspections->area_sqft,
+                    "inspection"=>$data->area_sqft,
+                ],
+                [
+                    "name"=>"pipeline size",
+                    "app"=>$lastInspections->pipeline_size,
+                    "inspection"=>$data->pipeline_size,
+                ],
+                [
+                    "name"=>"pipeline size type",
+                    "app"=>$lastInspections->pipeline_size_type,
+                    "inspection"=>$data->pipeline_size_type,
+                ],
+                [
+                    "name"=>"pipeline size type",
+                    "app"=>$lastInspections->pipeline_size_type,
+                    "inspection"=>$data->pipeline_size_type,
+                ],
+                [
+                    "name"=>"pipe size",
+                    "app"=>$lastInspections->pipe_size,
+                    "inspection"=>$data->pipe_size,
+                ],
+                [
+                    "name"=>"pipe type",
+                    "app"=>$lastInspections->pipe_type,
+                    "inspection"=>$data->pipe_type,
+                ],
+                [
+                    "name"=>"ferrule type",
+                    "app"=>$lastInspections->ferrule_type,
+                    "inspection"=>$data->ferrule_type,
+                ],
+                [
+                    "name"=>"road type",
+                    "app"=>$lastInspections->road_type,
+                    "inspection"=>$data->road_type,
+                ],
+            ];
+            $response = [
+                "compairData" =>$compairData,
+                "consumerData" =>$consumerData,
+            ];
+    
+            return responseMsgs(true, "", $response, '', '01', responseTime(), $request->getMethod(), $request->deviceId);
+        }
+        catch(Exception $e)
+        {
+            return responseMsgs(false, $e->getMessage(), [], '', '01', responseTime(), $request->getMethod(), $request->deviceId);
+        }
+    }
 }
