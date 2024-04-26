@@ -229,7 +229,9 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
     Route::controller(ConsumerActionRequest::class)->group(function(){        
         Route::post('request/discon/sedule-inspection', 'setDisconnectionSitInspection');
         Route::post("request/discon/getInspectinMaster","getSiteInspectionCompar");
+        Route::post('request/discon/sedule-cancel', 'cancelDisconnectionSitInspection');
         Route::post("request/discon/inspection","updateSiteInspection");
+        Route::post("request/discon/get-inspection-dtls","getInspectionData");
     });
 });
 Route::controller(WaterApplication::class)->group(function () {

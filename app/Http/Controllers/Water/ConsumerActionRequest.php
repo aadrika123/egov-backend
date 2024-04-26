@@ -152,6 +152,38 @@ class ConsumerActionRequest extends Controller
 
     }
 
+    public function cancelDisconnectionSitInspection(Request $request)
+    {
+        $ModelWaterDisconnectionSiteInspections = new WaterDisconnectionSiteInspections();
+        $rules = [
+            "applicationId" =>"required|digits_between:1,9223372036854775807|exists:".$ModelWaterDisconnectionSiteInspections->getConnectionName().".".$ModelWaterDisconnectionSiteInspections->getTable().",id"
+        ];
+        $validated = Validator::make(
+            $request->all(),
+            $rules
+        );
+        if ($validated->fails()){
+            return validationErrorV2($validated);
+        }
+        try{
+            $schedules = $ModelWaterDisconnectionSiteInspections->find($request->applicationId);
+            if(!$schedules)
+            {
+                throw new Exception("schedule for inspection first");
+            }
+            $this->begin();
+            $schedules->status = 0;
+            $schedules->update();
+            $this->commit();
+            return responseMsgs(true, "Site Inspection Canceled", "", '', '01', responseTime(), $request->getMethod(), $request->deviceId);
+        }
+        catch(Exception $e)
+        {
+            $this->rollback();
+            return responseMsgs(false, $e->getMessage(), [], '', '01', responseTime(), $request->getMethod(), $request->deviceId);
+        }
+    }
+
     public function updateSiteInspection(WaterDisconnectionSiteInspection $request)
     {
         try{
