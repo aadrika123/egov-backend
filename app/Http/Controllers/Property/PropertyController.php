@@ -634,4 +634,6 @@ class PropertyController extends Controller
             return responseMsgs(false, $e->getMessage(), [], '011707', '01', responseTime(), $request->getMethod(), $request->deviceId);
         }
     }
+    // <div>
+    // </div>
 }
