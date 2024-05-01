@@ -59,6 +59,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
 use Symfony\Component\CssSelector\Node\FunctionNode;
 use App\Traits\Water\WaterTrait;
+use Illuminate\Support\Facades\Auth;
 
 class WaterConsumer extends Controller
 {
@@ -416,7 +417,7 @@ class WaterConsumer extends Controller
      */
     public function checkDemandGeneration($request, $consumerDetails)
     {
-        $user                   = authUser($request);
+        $user                   = Auth()->user();
         $today                  = Carbon::now();
         $refConsumerId          = $request->consumerId;
         $mWaterConsumerDemand   = new WaterConsumerDemand();
@@ -1314,7 +1315,7 @@ class WaterConsumer extends Controller
      */
     public function checkUserType($req)
     {
-        $user = authUser($req);
+        $user = Auth()->user();
         $confUserType = Config::get("waterConstaint.REF_USER_TYPE");
         $userType = $user->user_type;
 
