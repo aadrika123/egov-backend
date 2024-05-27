@@ -98,7 +98,7 @@ class RazorpayPaymentController extends Controller
     public function verifyPaymentStatus(Request $req)
     {
         $req->validate([
-            'razorpayOrderId' => 'required',
+            // 'razorpayOrderId' => 'required',
             'razorpayPaymentId' => 'required',
         ]);
         try {
