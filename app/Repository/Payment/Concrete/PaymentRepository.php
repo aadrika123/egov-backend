@@ -375,7 +375,6 @@ class PaymentRepository implements iPayment
                         $petApi = $mApiMaster->getApiEndpoint($pet);
                         $petRequest = Http::withHeaders([])
                             ->post("$petApi->end_point", $transfer);
-                        $petRequest;
                         break;
                     case ('11'):
                         $waterTanker = 77;
@@ -401,7 +400,7 @@ class PaymentRepository implements iPayment
                         break;
                 }
             }
-            return responseMsg(true, "Webhook Data Collected!", $request->event);
+            return responseMsg(true, "Webhook Data Collected!", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $e->getLine());
         }
