@@ -326,8 +326,8 @@ class PaymentRepository implements iPayment
                 'workflowId'    => $webhookData->workflow_id,
                 'transactionNo' => $actualTransactionNo,
                 'userId'        => $webhookData->user_id,
-                'ulbId'         => $webhookData->ulb_id,
-                'departmentId'  => $webhookData->department_id,         //ModuleId
+                'ulbId'         => $request['ulb_id'],
+                'departmentId'  => $depatmentId,                        //ModuleId
                 'orderId'       => $webhookData->payment_order_id,
                 'paymentId'     => $webhookData->payment_id,
                 'tranDate'      => $request['created_at'],
@@ -395,12 +395,12 @@ class PaymentRepository implements iPayment
                         $mApiMaster = new ApiMaster();
                         $marriageApi = $mApiMaster->getApiEndpoint($marriage);
                         $details = Http::withHeaders([])
-                            ->post("$marriageApi->end_point", $transfer);
+                            ->post("localhost:8001/api/marriage/save-tran-dtl", $transfer);
                         $details;
                         break;
                 }
             }
-            return responseMsg(true, "Webhook Data Collected!", "");
+            return responseMsg(true, "Webhook Data Collected!", $actualTransactionNo);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $e->getLine());
         }
