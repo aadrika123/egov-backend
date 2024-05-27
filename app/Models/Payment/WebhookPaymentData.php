@@ -124,7 +124,7 @@ class WebhookPaymentData extends Model
         $webhookData->payment_created_at           = $webhookEntity['created_at'];
 
         # user details
-        $webhookData->user_id                      = $webhookEntity['notes']['userId'];
+        $webhookData->user_id                      = $webhookEntity['notes']['userId']??null;
         $webhookData->department_id                = $webhookEntity['notes']['departmentId'];   // moduleId
         $webhookData->workflow_id                  = $webhookEntity['notes']['workflowId'];
         $webhookData->ulb_id                       = $webhookEntity['notes']['ulbId'];
