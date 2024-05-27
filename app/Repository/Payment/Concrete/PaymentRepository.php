@@ -274,8 +274,8 @@ class PaymentRepository implements iPayment
     {
         try {
             # creating json of webhook data
-            // $paymentId = $request->payload['payment']['entity']['id'];
-            // Storage::disk('public')->put($paymentId . '.json', json_encode($request->all()));
+            $paymentId = $request->payload['payment']['entity']['id'];
+            Storage::disk('public')->put($paymentId . '.json', json_encode($request->all()));
 
             if (!empty($request)) {
                 $mWebhookDetails = $this->collectWebhookDetails($request);
