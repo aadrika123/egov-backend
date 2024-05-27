@@ -359,7 +359,7 @@ class WfActiveDocument extends Model
     {
         $docUrl = Config::get('module-constants.DOC_URL');
         return WfActiveDocument::select(
-            DB::raw("concat('$docUrl/',relative_path,'/',document) as doc_path"),
+            // DB::raw("concat('$docUrl/',relative_path,'/',document) as doc_path"),
             // DB::raw("concat(relative_path,'/',document) as doc_path"),
             '*'
         )
