@@ -272,7 +272,7 @@ class TradeApplication extends Controller
 
     #=====================[📝 📖 CREATE NEW APPLICATION | S.L (2.0) 📖 📝]========================================================
     public function applyApplication(ReqAddRecorde $request)
-    { 
+    {
         $refUser            = Auth()->user();
         $refUserId          = $refUser->id;
         $refUlbId           = $refUser->ulb_id;

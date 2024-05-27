@@ -48,7 +48,7 @@ if (!function_exists('SMSJHGOVT')) {
                 $response = ['response' => false, 'status' => 'failure', 'msg' => $result];
             }
 
-            print_r($response);
+            // print_r($response);
             return $response;
         } else {
             if ($templateid == NULL)
@@ -64,7 +64,7 @@ if (!function_exists('send_sms')) {
     {
        return $res=SMSJHGOVT("8906128883", $message, $templateid);
     //    return $res=SMSJHGOVT("8797770238", $message, $templateid);
-        print_var($message);
+        // print_var($message);
         // $res=SMSJHGOVT($mobile, $message, $templateid);
         return []; //$res;
     }
