@@ -1259,7 +1259,7 @@ class WaterPaymentController extends Controller
                         }
                         collect($refPenallty)->map(function ($value) {
                             if ($value['paid_status'] == 1) {
-                                throw new Exception("payment for the respoctive Penaty has been done!");
+                                throw new Exception("Payment for the respective penalty has been done!");
                             }
                         });
                         $refPenaltySumAmount = collect($refPenallty)->map(function ($value) {
@@ -1297,7 +1297,7 @@ class WaterPaymentController extends Controller
                         $actualPenaltyAmountRebate = (10 / 100 * $actualCharge['penalty']);
                         $callAmount = $actualCharge['amount'] - $actualPenaltyAmountRebate;
                         if ($req->amount != $callAmount) {
-                            throw new Exception("Connection amount Not Matched!");
+                            throw new Exception("Connection amount not matched!");
                         }
 
                         $actualPenalty = collect($refPenallty)->sum('balance_amount');

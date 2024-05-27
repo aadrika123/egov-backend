@@ -447,7 +447,7 @@ class NewConnectionRepository implements iNewConnection
             throw new Exception("You Have Not Pending This Application");
         }
         if ($waterApplication->parked && !$role->is_initiator) {
-            throw new Exception("You Aer Not Authorized For Forword BTC Application");
+            throw new Exception("You are not the authorized user to forward BTC application");
         }
         #====end this code added by sandeep==================
 
@@ -464,15 +464,15 @@ class NewConnectionRepository implements iNewConnection
         $documents = $this->checkWorckFlowForwardBackord($req);
         if ((($senderRole["serial_no"] ?? 0) < ($receiverRole["serial_no"] ?? 0)) && !$documents) {
             if (($role->doc_upload_status ?? false) && $waterApplication->parked) {
-                throw new Exception("Rejected Document Are Not Uploaded");
+                throw new Exception("Rejected document are not uploaded");
             }
             if (($role->doc_upload_status ?? false)) {
-                throw new Exception("No Every Madetry Documents are Uploaded");
+                throw new Exception("Please upload all the documents");
             }
             if ($role->doc_status ?? false) {
-                throw new Exception("Not able to forward application because documents not fully verified");
+                throw new Exception("Full documents are not verified");
             }
-            throw new Exception("Not Every Actoin Are Performed");
+            throw new Exception("Not Every Action Are Performed");
         }
         if ($role->can_upload_document) {
             if (($role->serial_no < $receiverRole["serial_no"] ?? 0)) {

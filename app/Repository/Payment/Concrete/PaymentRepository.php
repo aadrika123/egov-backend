@@ -301,9 +301,9 @@ class PaymentRepository implements iPayment
             $aCard          = $request['card_id'];
             $amount         = $request['amount'];
 
-            $actulaAmount = $amount / 100;
+            $actulaAmount = $amount;
             $firstKey = "";
-            $actualTransactionNo = $this->generatingTransactionId($request->ulbId);
+            $actualTransactionNo = $this->generatingTransactionId($request['ulb_id']);
 
             # Save card details 
             if (!is_null($aCard)) {
@@ -330,13 +330,13 @@ class PaymentRepository implements iPayment
                 'departmentId'  => $webhookData->department_id,         //ModuleId
                 'orderId'       => $webhookData->payment_order_id,
                 'paymentId'     => $webhookData->payment_id,
-                'tranDate'      => $request->created_at,
+                'tranDate'      => $request['created_at'],
                 'gatewayType'   => 1,                                   // Razorpay Id
             ];
 
             # conditionaly upadting the request data
-            if ($status == 'captured' && $captured == 1) {
-                PaymentRequest::where('razorpay_order_id', $webhookData->order_id)
+            if ($captured == 1) {
+                PaymentRequest::where('razorpay_order_id', $webhookData->payment_order_id)
                     ->update(['payment_status' => 1]);
 
                 # calling function for the modules                  

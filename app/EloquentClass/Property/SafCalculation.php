@@ -770,7 +770,7 @@ class SafCalculation
         }
 
         // is implimented rule set 3 (2021-2022 TO 2023-2024)
-        if ($dateFrom < $this->_effectiveDateRule3v2) {
+        if ($dateFrom >= $this->_effectiveDateRule3v2) {
             $quarterDueDate = calculateQuaterDueDate($dateFrom);                        // One Percent Penalty
             $onePercPenalty = $this->onePercPenalty($quarterDueDate);
             $ruleSets[] = [
@@ -785,19 +785,19 @@ class SafCalculation
         }
 
         // it's the version 2 of rule set 3.2 (2024-2025 TO TILL NOW)
-        if ($dateFrom >= $this->_effectiveDateRule3v2) {
-            $quarterDueDate = calculateQuaterDueDate($dateFrom);                        // One Percent Penalty
-            $onePercPenalty = $this->onePercPenalty($quarterDueDate);
-            $ruleSets[] = [
-                "quarterYear" => calculateFyear($dateFrom),
-                "ruleSet" => "RuleSet3V2",
-                "qtr" => calculateQtr($dateFrom),
-                "dueDate" => calculateQuaterDueDate($dateFrom)
-            ];
-            $tax = $this->calculateRuleSet3V2($key, $onePercPenalty, $dateFrom);
-            $ruleSetsWithTaxes = array_merge($readFloorDetail, $ruleSets[0], $tax);
-            return $ruleSetsWithTaxes;
-        }
+        // if ($dateFrom >= $this->_effectiveDateRule3v2) {
+        //     $quarterDueDate = calculateQuaterDueDate($dateFrom);                        // One Percent Penalty
+        //     $onePercPenalty = $this->onePercPenalty($quarterDueDate);
+        //     $ruleSets[] = [
+        //         "quarterYear" => calculateFyear($dateFrom),
+        //         "ruleSet" => "RuleSet3V2",
+        //         "qtr" => calculateQtr($dateFrom),
+        //         "dueDate" => calculateQuaterDueDate($dateFrom)
+        //     ];
+        //     $tax = $this->calculateRuleSet3V2($key, $onePercPenalty, $dateFrom);
+        //     $ruleSetsWithTaxes = array_merge($readFloorDetail, $ruleSets[0], $tax);
+        //     return $ruleSetsWithTaxes;
+        // }
     }
 
     /**
