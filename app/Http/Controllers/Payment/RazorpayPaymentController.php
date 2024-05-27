@@ -216,7 +216,7 @@ class RazorpayPaymentController extends Controller
     public function getTranByOrderId(Request $req)
     {
         $req->validate([
-            'orderId' => 'required',
+            // 'orderId' => 'required',
             'paymentId' => 'required'
         ]);
         try {
