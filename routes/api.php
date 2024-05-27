@@ -461,6 +461,7 @@ Route::controller(ReferenceController::class)->group(function () {
  */
 Route::controller(DemoController::class)->group(function () {
     Route::post('water-connection', 'waterConnection');
+    Route::post('test-sms', 'sendSms');
 });
 #-------------------------- document read ------------------------------
 Route::get('/getImageLink', function () {

@@ -348,7 +348,8 @@ class PaymentRepository implements iPayment
             ];
 
             # conditionaly upadting the request data
-            if ($status == 'captured' && $captured == 1) {
+            // if ($status == 'captured' && $captured == 1)
+            if ($status == 'authorized') {
                 PaymentRequest::where('razorpay_order_id', $webhookEntity['order_id'])
                     ->update(['payment_status' => 1]);
 

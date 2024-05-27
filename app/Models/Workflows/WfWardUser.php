@@ -18,6 +18,7 @@ class WfWardUser extends Model
     {
         return WfWardUser::on('pgsql::read')
             ->select('id', 'ward_id')
+            ->where('is_suspended',false)
             ->where('user_id', $userId)
             ->orderBy('ward_id')
             ->get();

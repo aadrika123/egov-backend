@@ -32,7 +32,7 @@ if (!function_exists('SMSJHGOVT')) {
             }
             rtrim($fields, '&');
             $post = curl_init();
-            //curl_setopt($post, CURLOPT_SSLVERSION, 5); // uncomment for systems supporting TLSv1.1 only
+            // curl_setopt($post, CURLOPT_SSLVERSION, 5); // uncomment for systems supporting TLSv1.1 only
             curl_setopt($post, CURLOPT_SSLVERSION, 6); // use for systems supporting TLSv1.2 or comment the line
             curl_setopt($post, CURLOPT_SSL_VERIFYPEER, false);
             curl_setopt($post, CURLOPT_URL, $url);
@@ -48,7 +48,7 @@ if (!function_exists('SMSJHGOVT')) {
                 $response = ['response' => false, 'status' => 'failure', 'msg' => $result];
             }
 
-            //print_r($response);
+            print_r($response);
             return $response;
         } else {
             if ($templateid == NULL)
@@ -62,8 +62,9 @@ if (!function_exists('SMSJHGOVT')) {
 if (!function_exists('send_sms')) {
     function send_sms($mobile, $message, $templateid)
     {
-        // $res=SMSJHGOVT("7050180186", $message, $templateid);
-        //print_var($message);
+       return $res=SMSJHGOVT("8906128883", $message, $templateid);
+    //    return $res=SMSJHGOVT("8797770238", $message, $templateid);
+        print_var($message);
         // $res=SMSJHGOVT($mobile, $message, $templateid);
         return []; //$res;
     }
