@@ -342,7 +342,7 @@ class PaymentRepository implements iPayment
                 # calling function for the modules                  
                 switch ($depatmentId) {
                     case ('1'):
-                        $refpropertyType = $webhookData->workflowId;
+                        $refpropertyType = $webhookData->workflow_id;
                         if ($refpropertyType == 0) {
                             $objHoldingTaxController = new HoldingTaxController($this->_safRepo);
                             $transfer = new ReqPayment($transfer);
@@ -395,12 +395,13 @@ class PaymentRepository implements iPayment
                         $mApiMaster = new ApiMaster();
                         $marriageApi = $mApiMaster->getApiEndpoint($marriage);
                         $details = Http::withHeaders([])
-                            ->post("localhost:8001/api/marriage/save-tran-dtl", $transfer);
+                            ->post("$marriageApi->end_point", $transfer);
                         $details;
                         break;
                 }
+                return responseMsg(true, "Webhook Data Collected!", $actualTransactionNo);
             }
-            return responseMsg(true, "Webhook Data Collected!", $actualTransactionNo);
+            return responseMsg(true, "Webhook Data Collected!", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $e->getLine());
         }
