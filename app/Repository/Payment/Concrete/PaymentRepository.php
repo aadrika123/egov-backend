@@ -398,6 +398,14 @@ class PaymentRepository implements iPayment
                             ->post("$marriageApi->end_point", $transfer);
                         $details;
                         break;
+                    case ('15'):                                            //<-------------------(Rig Machine)
+                        $marriage = 15;
+                        $mApiMaster = new ApiMaster();
+                        $marriageApi = $mApiMaster->getApiEndpoint($marriage);
+                        $details = Http::withHeaders([])
+                            ->post("$marriageApi->end_point", $transfer);
+                        $details;
+                        break;
                 }
                 return responseMsg(true, "Webhook Data Collected!", $actualTransactionNo);
             }
