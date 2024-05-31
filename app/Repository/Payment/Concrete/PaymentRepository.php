@@ -369,19 +369,19 @@ class PaymentRepository implements iPayment
                         Http::withHeaders([])
                             ->post("$api->end_point", $transfer);
                         break;
-                    case ('9'):
+                    case ('9'):                                              //<-------------------(Pet)
                         $pet = 80;
                         $mApiMaster = new ApiMaster();
                         $petApi = $mApiMaster->getApiEndpoint($pet);
                         $petRequest = Http::withHeaders([])
                             ->post("$petApi->end_point", $transfer);
                         break;
-                    case ('11'):
-                        $waterTanker = 77;
+                    case ('11'):                                            //<-------------------(Water Tanker)
+                        $waterTanker = 11;
                         $mApiMaster = new ApiMaster();
-                        $petApi = $mApiMaster->getApiEndpoint($waterTanker);
+                        $waterTankerApi = $mApiMaster->getApiEndpoint($waterTanker);
                         Http::withHeaders([])
-                            ->post("$petApi->end_point", $transfer);
+                            ->post("$waterTankerApi->end_point", $transfer);
                         break;
                     case ('12'):
                         $waterTanker = 78;
@@ -399,12 +399,19 @@ class PaymentRepository implements iPayment
                         $details;
                         break;
                     case ('15'):                                            //<-------------------(Rig Machine)
-                        $marriage = 15;
+                        $rig = 15;
                         $mApiMaster = new ApiMaster();
-                        $marriageApi = $mApiMaster->getApiEndpoint($marriage);
-                        $details = Http::withHeaders([])
-                            ->post("$marriageApi->end_point", $transfer);
+                        $rigApi     = $mApiMaster->getApiEndpoint($rig);
+                        $details    = Http::withHeaders([])
+                            ->post("$rigApi->end_point", $transfer);
                         $details;
+                        break;
+                    case ('16'):                                            //<-------------------(Septic Tanker)
+                        $septicTanker = 11;
+                        $mApiMaster = new ApiMaster();
+                        $septicTankerApi = $mApiMaster->getApiEndpoint($septicTanker);
+                        Http::withHeaders([])
+                            ->post("$septicTankerApi->end_point", $transfer);
                         break;
                 }
                 return responseMsg(true, "Webhook Data Collected!", $actualTransactionNo);
