@@ -332,6 +332,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
     Route::post('check-amalgamation', 'checkAmalgamation');                  #API_ID = 011707
     Route::post('check-amalgamation-property', 'checkAmalgamationProperty'); #API_ID = 011707
     Route::post('master-holding-data', 'masterHoldingData');                 #API_ID = 011707
+    Route::post('getpropLatLong', 'getpropLatLong');                 #API_ID = 011707
   });
 
   /**

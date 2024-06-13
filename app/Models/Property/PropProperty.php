@@ -713,7 +713,7 @@ class PropProperty extends Model
             ->orderByDesc('prop_properties.id')
             ->distinct('property_id')
             ->skip(0)
-            ->take(500)
+            ->take(300)
             ->get();
     }
 
