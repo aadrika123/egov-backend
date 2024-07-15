@@ -709,6 +709,14 @@ Route::controller(MasterReferenceController::class)->group(function () {
   Route::post('m-assets-get', 'allListAssetesv2');
   Route::post('m-assets-delete', 'deleteAssetesv2');
   Route::post('m-assets-get-by-id', 'Assetesv2ById');
+
+  //m- notice
+  Route::post('m-notice-create', 'addNotice');
+  Route::post('m-notice-update', 'updateNoticeType');
+  Route::post('m-notice-list', 'noticeList');
+  Route::post('m-notice-get-by-id', 'noticeTypebyId');
+  Route::post('m-notice-delete', 'deleteNoticeType');
+
 });
 
 

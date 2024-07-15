@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Property;
 
 use App\Http\Controllers\Controller;
 use App\MicroServices\DocUpload;
+use App\Models\ImportantNotice;
 use App\Models\MAsset;
 use App\Models\Property\MPropRoadType;
 use App\Models\RefPropFloor;
@@ -40,6 +41,7 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Http\Request;
 use Exception;
 use Illuminate\Support\Facades\DB;
+use Sabberworm\CSS\Property\Import;
 
 class MasterReferenceController extends Controller
 {
@@ -1914,4 +1916,82 @@ class MasterReferenceController extends Controller
     //         return responseMsg(false, $e->getMessage(), "");
     //     }
     // }
+
+
+    public function addNotice(Request $req)
+    {
+        try {
+            $req->validate([
+                'notice' => 'required',
+            ]);
+            $create = new ImportantNotice();
+            $create->addNoticeType($req);
+
+            return responseMsgs(true, "Successfully Saved", "", "120101", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120101", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function noticeList(Request $req)
+    {
+        try {
+            $list = new ImportantNotice();
+            $masters = $list->listNoticeType();
+
+            return responseMsgs(true, "All NoticeType List", $masters, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    
+    public function updateNoticeType(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required',
+                'notice' => 'required'
+            ]);
+            $update = new ImportantNotice();
+            $list  = $update->updateNoticeType($req);
+
+            return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function noticeTypebyId(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required'
+            ]);
+            $listById = new ImportantNotice();
+            $list  = $listById->getById($req);
+            if (!$list)
+                return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            else
+                return responseMsgs(true, "Notice Type List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    
+    public function deleteNoticeType(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required',
+                'status' => 'required|boolean'
+            ]);
+            $delete = new ImportantNotice();
+            $message = $delete->deleteNoticeType($req);
+            return responseMsgs(true, "", $message, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
 }
