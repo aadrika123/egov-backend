@@ -717,6 +717,13 @@ Route::controller(MasterReferenceController::class)->group(function () {
   Route::post('m-notice-get-by-id', 'noticeTypebyId');
   Route::post('m-notice-delete', 'deleteNoticeType');
 
+  //m- announcement
+  Route::post('m-announcement-create', 'addAnnouncement');
+  Route::post('m-announcement-update', 'updateAnnouncementType');
+  Route::post('m-announcement-list', 'announcementList');
+  Route::post('m-announcement-get-by-id', 'announcementTypebyId');
+  Route::post('m-announcement-delete', 'deleteAnnouncementType');
+
 });
 
 
