@@ -745,12 +745,19 @@ Route::controller(MasterReferenceController::class)->group(function () {
   Route::post('m-app-get-by-id', 'appbyId');
   Route::post('m-app-delete', 'deleteapp');
 
-  //m- add mobile scheme
+  //m- add scheme
   Route::post('m-scheme-create', 'addscheme');
   Route::post('m-scheme-update', 'updatescheme');
   Route::post('m-scheme-list', 'schemeList');
   Route::post('m-scheme-get-by-id', 'schemebyId');
   Route::post('m-scheme-delete', 'deletescheme');
+
+  //m- news
+  Route::post('m-news-create', 'addnews');
+  Route::post('m-news-update', 'updatenews');
+  Route::post('m-news-list', 'newsList');
+  Route::post('m-news-get-by-id', 'newsbyId');
+  Route::post('m-news-delete', 'deletenews');
 
 });
 

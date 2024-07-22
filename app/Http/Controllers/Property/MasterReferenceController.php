@@ -8,6 +8,7 @@ use App\Models\Announcement;
 use App\Models\ImportantNotice;
 use App\Models\MAsset;
 use App\Models\MMobileAppLink;
+use App\Models\MNewsEvent;
 use App\Models\MScheme;
 use App\Models\Property\MPropRoadType;
 use App\Models\RefPropFloor;
@@ -2389,6 +2390,85 @@ class MasterReferenceController extends Controller
             ]);
             $delete = new MScheme();
             $message = $delete->deleteScheme($req);
+            return responseMsgs(true, "", $message, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function addnews(Request $req)
+    {
+        try {
+            $req->validate([
+                'news' => 'required',
+                'newsLink' => 'required',
+            ]);
+            $create = new MNewsEvent();
+            $create->addNews($req);
+
+            return responseMsgs(true, "Successfully Saved", "", "120101", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120101", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function newsList(Request $req)
+    {
+        try {
+            $list = new MNewsEvent();
+            $masters = $list->listNews();
+
+            return responseMsgs(true, "All News List", $masters, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    
+    public function updatenews(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required',
+                'news' => 'nullable',
+                'newsLink' => 'nullable',
+            ]);
+            $heading = new MNewsEvent();
+            $list  = $heading->updateNews($req);
+
+            return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function newsbyId(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required'
+            ]);
+            $listById = new MNewsEvent();
+            $list  = $listById->getById($req);
+            if (!$list)
+                return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            else
+                return responseMsgs(true, "News List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    
+    public function deletenews(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required',
+                'status' => 'required|boolean'
+            ]);
+            $delete = new MNewsEvent();
+            $message = $delete->deleteNews($req);
             return responseMsgs(true, "", $message, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
