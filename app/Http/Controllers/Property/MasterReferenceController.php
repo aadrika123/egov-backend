@@ -7,6 +7,7 @@ use App\MicroServices\DocUpload;
 use App\Models\Announcement;
 use App\Models\ImportantNotice;
 use App\Models\MAsset;
+use App\Models\MEService;
 use App\Models\MMobileAppLink;
 use App\Models\MNewsEvent;
 use App\Models\MScheme;
@@ -2469,6 +2470,85 @@ class MasterReferenceController extends Controller
             ]);
             $delete = new MNewsEvent();
             $message = $delete->deleteNews($req);
+            return responseMsgs(true, "", $message, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function addService(Request $req)
+    {
+        try {
+            $req->validate([
+                'service' => 'required',
+                'serviceLink' => 'required',
+            ]);
+            $create = new MEService();
+            $create->addService($req);
+
+            return responseMsgs(true, "Successfully Saved", "", "120101", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120101", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function ServiceList(Request $req)
+    {
+        try {
+            $list = new MEService();
+            $masters = $list->listServices();
+
+            return responseMsgs(true, "All Services List", $masters, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    
+    public function updateService(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required',
+                'service' => 'nullable',
+                'serviceLink' => 'nullable'
+            ]);
+            $heading = new MEService();
+            $list  = $heading->updateServices($req);
+
+            return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function ServicebyId(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required'
+            ]);
+            $listById = new MEService();
+            $list  = $listById->getById($req);
+            if (!$list)
+                return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            else
+                return responseMsgs(true, "Services List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    
+    public function deleteService(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required',
+                'status' => 'required|boolean'
+            ]);
+            $delete = new MEService();
+            $message = $delete->deleteServices($req);
             return responseMsgs(true, "", $message, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);

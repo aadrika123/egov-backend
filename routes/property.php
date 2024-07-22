@@ -759,6 +759,13 @@ Route::controller(MasterReferenceController::class)->group(function () {
   Route::post('m-news-get-by-id', 'newsbyId');
   Route::post('m-news-delete', 'deletenews');
 
+  //m- e-services
+  Route::post('m-e-service-create', 'addService');
+  Route::post('m-e-service-update', 'updateService');
+  Route::post('m-e-service-list', 'ServiceList');
+  Route::post('m-e-service-get-by-id', 'ServicebyId');
+  Route::post('m-e-service-delete', 'deleteService');
+
 });
 
 
