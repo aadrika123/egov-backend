@@ -46,7 +46,7 @@ class UserManualHeadingDescription extends Model
         $data->description = $req->description;
         $data->video_link = $req->videoLink;
         $data->user_manual_link = $req->userManualLink;
-        $data->update();
+        $data->save();
     }
 
     public function getById($req)
