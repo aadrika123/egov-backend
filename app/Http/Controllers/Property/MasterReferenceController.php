@@ -7,6 +7,7 @@ use App\MicroServices\DocUpload;
 use App\Models\Announcement;
 use App\Models\ImportantNotice;
 use App\Models\MAsset;
+use App\Models\MMobileAppLink;
 use App\Models\Property\MPropRoadType;
 use App\Models\RefPropFloor;
 use App\Models\RefPropConstructionType;
@@ -2228,6 +2229,86 @@ class MasterReferenceController extends Controller
             ]);
             $delete = new UserManualHeadingDescription();
             $message = $delete->deleteUserHeading($req);
+            return responseMsgs(true, "", $message, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    
+    public function addapp(Request $req)
+    {
+        try {
+            $req->validate([
+                'appName' => 'required',
+                'appLink' => 'required',
+            ]);
+            $create = new MMobileAppLink();
+            $create->addMApp($req);
+
+            return responseMsgs(true, "Successfully Saved", "", "120101", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120101", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function appList(Request $req)
+    {
+        try {
+            $list = new MMobileAppLink();
+            $masters = $list->listMApp();
+
+            return responseMsgs(true, "All App List", $masters, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    
+    public function updateapp(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required',
+                'appName' => 'nullable',
+                'appLink' => 'nullable',
+            ]);
+            $heading = new MMobileAppLink();
+            $list  = $heading->updateMApp($req);
+
+            return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function appbyId(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required'
+            ]);
+            $listById = new MMobileAppLink();
+            $list  = $listById->getById($req);
+            if (!$list)
+                return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            else
+                return responseMsgs(true, "App List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    
+    public function deleteapp(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required',
+                'status' => 'required|boolean'
+            ]);
+            $delete = new MMobileAppLink();
+            $message = $delete->deleteMApp($req);
             return responseMsgs(true, "", $message, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);

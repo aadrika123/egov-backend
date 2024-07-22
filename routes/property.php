@@ -738,6 +738,13 @@ Route::controller(MasterReferenceController::class)->group(function () {
   Route::post('m-heading-description-get-by-id', 'userHeadingbyId');
   Route::post('m-heading-description-delete', 'deleteHeading');
 
+  //m- user manual heading
+  Route::post('m-app-create', 'addapp');
+  Route::post('m-app-update', 'updateapp');
+  Route::post('m-app-list', 'appList');
+  Route::post('m-app-get-by-id', 'appbyId');
+  Route::post('m-app-delete', 'deleteapp');
+
 });
 
 
