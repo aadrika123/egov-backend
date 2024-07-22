@@ -8,6 +8,7 @@ use App\Models\Announcement;
 use App\Models\ImportantNotice;
 use App\Models\MAsset;
 use App\Models\MMobileAppLink;
+use App\Models\MScheme;
 use App\Models\Property\MPropRoadType;
 use App\Models\RefPropFloor;
 use App\Models\RefPropConstructionType;
@@ -2309,6 +2310,85 @@ class MasterReferenceController extends Controller
             ]);
             $delete = new MMobileAppLink();
             $message = $delete->deleteMApp($req);
+            return responseMsgs(true, "", $message, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function addscheme(Request $req)
+    {
+        try {
+            $req->validate([
+                'schemeName' => 'required',
+                'schemeLink' => 'required',
+            ]);
+            $create = new MScheme();
+            $create->addScheme($req);
+
+            return responseMsgs(true, "Successfully Saved", "", "120101", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120101", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function schemeList(Request $req)
+    {
+        try {
+            $list = new MScheme();
+            $masters = $list->listScheme();
+
+            return responseMsgs(true, "All Scheme List", $masters, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    
+    public function updatescheme(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required',
+                'schemeName' => 'nullable',
+                'schemeLink' => 'nullable',
+            ]);
+            $heading = new MScheme();
+            $list  = $heading->updateScheme($req);
+
+            return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function schemebyId(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required'
+            ]);
+            $listById = new MScheme();
+            $list  = $listById->getById($req);
+            if (!$list)
+                return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            else
+                return responseMsgs(true, "Scheme List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    
+    public function deletescheme(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required',
+                'status' => 'required|boolean'
+            ]);
+            $delete = new MScheme();
+            $message = $delete->deleteScheme($req);
             return responseMsgs(true, "", $message, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);

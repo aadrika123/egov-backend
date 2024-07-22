@@ -738,12 +738,19 @@ Route::controller(MasterReferenceController::class)->group(function () {
   Route::post('m-heading-description-get-by-id', 'userHeadingbyId');
   Route::post('m-heading-description-delete', 'deleteHeading');
 
-  //m- user manual heading
+  //m- add mobile app
   Route::post('m-app-create', 'addapp');
   Route::post('m-app-update', 'updateapp');
   Route::post('m-app-list', 'appList');
   Route::post('m-app-get-by-id', 'appbyId');
   Route::post('m-app-delete', 'deleteapp');
+
+  //m- add mobile scheme
+  Route::post('m-scheme-create', 'addscheme');
+  Route::post('m-scheme-update', 'updatescheme');
+  Route::post('m-scheme-list', 'schemeList');
+  Route::post('m-scheme-get-by-id', 'schemebyId');
+  Route::post('m-scheme-delete', 'deletescheme');
 
 });
 
