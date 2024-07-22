@@ -32,6 +32,7 @@ use App\Models\Property\MPropMultiFactor;
 use App\Models\Property\MPropRentalValue;
 use App\Models\Property\MPropVacantRentalrate;
 use App\Models\UserManualHeading;
+use App\Models\UserManualHeadingDescription;
 use Illuminate\Support\Facades\Config;
 
 
@@ -2146,6 +2147,87 @@ class MasterReferenceController extends Controller
             ]);
             $delete = new UserManualHeading();
             $message = $delete->deleteUserManualHeading($req);
+            return responseMsgs(true, "", $message, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function addHeadingDescription(Request $req)
+    {
+        try {
+            $req->validate([
+                'headingId'=>'required|int',
+                'description' => 'required',
+                'videoLink' => 'nullable',
+                'userManualLink' => 'nullable',
+            ]);
+            $create = new UserManualHeadingDescription();
+            $create->addHeadingDes($req);
+
+            return responseMsgs(true, "Successfully Saved", "", "120101", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120101", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function userHeadingList(Request $req)
+    {
+        try {
+            $list = new UserManualHeadingDescription();
+            $masters = $list->listUserManualHeading();
+
+            return responseMsgs(true, "All User Manual Heading Description List", $masters, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function updateHeading(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required',
+                'headingId'=>'required|int',
+                'description' => 'required',
+                'videoLink' => 'nullable',
+                'userManualLink' => 'nullable',
+            ]);
+            $heading = new UserManualHeadingDescription();
+            $list  = $heading->updateUserManualHeading($req);
+
+            return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function userHeadingbyId(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required'
+            ]);
+            $listById = new UserManualHeadingDescription();
+            $list  = $listById->getById($req);
+            if (!$list)
+                return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            else
+                return responseMsgs(true, "User MAnual Description List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function deleteHeading(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required',
+                'status' => 'required|boolean'
+            ]);
+            $delete = new UserManualHeadingDescription();
+            $message = $delete->deleteUserHeading($req);
             return responseMsgs(true, "", $message, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
