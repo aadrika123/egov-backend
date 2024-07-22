@@ -31,6 +31,7 @@ use App\Models\Property\MPropBuildingRentalrate;
 use App\Models\Property\MPropMultiFactor;
 use App\Models\Property\MPropRentalValue;
 use App\Models\Property\MPropVacantRentalrate;
+use App\Models\UserManualHeading;
 use Illuminate\Support\Facades\Config;
 
 
@@ -2067,6 +2068,84 @@ class MasterReferenceController extends Controller
             ]);
             $delete = new Announcement();
             $message = $delete->deleteAnnouncementType($req);
+            return responseMsgs(true, "", $message, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+
+    public function addUserManualHeading(Request $req)
+    {
+        try {
+            $req->validate([
+                'heading' => 'required',
+            ]);
+            $create = new UserManualHeading();
+            $create->addHeading($req);
+
+            return responseMsgs(true, "Successfully Saved", "", "120101", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120101", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function userManualHeadingList(Request $req)
+    {
+        try {
+            $list = new UserManualHeading();
+            $masters = $list->listUserManualHeading();
+
+            return responseMsgs(true, "All User Manual Heading List", $masters, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    
+    public function updateUserManualHeading(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required',
+                'heading' => 'required'
+            ]);
+            $heading = new UserManualHeading();
+            $list  = $heading->updateUserManualHeading($req);
+
+            return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function userManualHeadingbyId(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required'
+            ]);
+            $listById = new UserManualHeading();
+            $list  = $listById->getById($req);
+            if (!$list)
+                return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            else
+                return responseMsgs(true, "Announcement Type List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    
+    public function deleteUserManualHeading(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required',
+                'status' => 'required|boolean'
+            ]);
+            $delete = new UserManualHeading();
+            $message = $delete->deleteUserManualHeading($req);
             return responseMsgs(true, "", $message, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
