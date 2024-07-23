@@ -26,13 +26,15 @@ class UserManualHeadingDescription extends Model
         $list = UserManualHeadingDescription::select(
             'user_manual_heading_descriptions.id',
             'user_manual_headings.heading',
+            'user_manual_headings.id as heading_id',
+          
             'user_manual_heading_descriptions.description',
             'user_manual_heading_descriptions.video_link',
             'user_manual_heading_descriptions.user_manual_link',
             'user_manual_heading_descriptions.status as is_suspended'
         )
             ->join('user_manual_headings', 'user_manual_headings.id', '=', 'user_manual_heading_descriptions.heading_id')
-            ->orderBy('id', 'asc')
+            ->orderBy('user_manual_heading_descriptions.id', 'asc')
             ->get();
         return $list;
     }
