@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Property;
 use App\Http\Controllers\Controller;
 use App\MicroServices\DocUpload;
 use App\Models\Announcement;
+use App\Models\Department;
 use App\Models\ImportantLink;
 use App\Models\ImportantNotice;
 use App\Models\MAsset;
@@ -1956,7 +1957,7 @@ class MasterReferenceController extends Controller
         }
     }
 
-    
+
     public function updateNoticeType(Request $req)
     {
         try {
@@ -1990,7 +1991,7 @@ class MasterReferenceController extends Controller
         }
     }
 
-    
+
     public function deleteNoticeType(Request $req)
     {
         try {
@@ -2033,7 +2034,7 @@ class MasterReferenceController extends Controller
         }
     }
 
-    
+
     public function updateAnnouncementType(Request $req)
     {
         try {
@@ -2067,7 +2068,7 @@ class MasterReferenceController extends Controller
         }
     }
 
-    
+
     public function deleteAnnouncementType(Request $req)
     {
         try {
@@ -2111,7 +2112,7 @@ class MasterReferenceController extends Controller
         }
     }
 
-    
+
     public function updateUserManualHeading(Request $req)
     {
         try {
@@ -2145,7 +2146,7 @@ class MasterReferenceController extends Controller
         }
     }
 
-    
+
     public function deleteUserManualHeading(Request $req)
     {
         try {
@@ -2165,7 +2166,7 @@ class MasterReferenceController extends Controller
     {
         try {
             $req->validate([
-                'headingId'=>'required|int',
+                'headingId' => 'required|int',
                 'description' => 'required',
                 'videoLink' => 'nullable',
                 'userManualLink' => 'nullable',
@@ -2196,7 +2197,7 @@ class MasterReferenceController extends Controller
         try {
             $req->validate([
                 'id' => 'required',
-                'headingId'=>'required|int',
+                'headingId' => 'required|int',
                 'description' => 'required',
                 'videoLink' => 'nullable',
                 'userManualLink' => 'nullable',
@@ -2242,7 +2243,7 @@ class MasterReferenceController extends Controller
         }
     }
 
-    
+
     public function addapp(Request $req)
     {
         try {
@@ -2271,7 +2272,7 @@ class MasterReferenceController extends Controller
         }
     }
 
-    
+
     public function updateapp(Request $req)
     {
         try {
@@ -2306,7 +2307,7 @@ class MasterReferenceController extends Controller
         }
     }
 
-    
+
     public function deleteapp(Request $req)
     {
         try {
@@ -2350,7 +2351,7 @@ class MasterReferenceController extends Controller
         }
     }
 
-    
+
     public function updatescheme(Request $req)
     {
         try {
@@ -2385,7 +2386,7 @@ class MasterReferenceController extends Controller
         }
     }
 
-    
+
     public function deletescheme(Request $req)
     {
         try {
@@ -2429,7 +2430,7 @@ class MasterReferenceController extends Controller
         }
     }
 
-    
+
     public function updatenews(Request $req)
     {
         try {
@@ -2464,7 +2465,7 @@ class MasterReferenceController extends Controller
         }
     }
 
-    
+
     public function deletenews(Request $req)
     {
         try {
@@ -2508,7 +2509,7 @@ class MasterReferenceController extends Controller
         }
     }
 
-    
+
     public function updateService(Request $req)
     {
         try {
@@ -2543,7 +2544,7 @@ class MasterReferenceController extends Controller
         }
     }
 
-    
+
     public function deleteService(Request $req)
     {
         try {
@@ -2634,7 +2635,7 @@ class MasterReferenceController extends Controller
         }
     }
 
-    
+
     public function addQuickLink(Request $req)
     {
         try {
@@ -2656,7 +2657,7 @@ class MasterReferenceController extends Controller
         try {
             $req->validate([
                 'id' => 'required',
-               'linkHeading' => 'nullable',
+                'linkHeading' => 'nullable',
                 'quickLink' => 'nullable',
             ]);
             $heading = new QuickLink();
@@ -2712,7 +2713,7 @@ class MasterReferenceController extends Controller
         }
     }
 
-     
+
     public function addImportantLink(Request $req)
     {
         try {
@@ -2734,7 +2735,7 @@ class MasterReferenceController extends Controller
         try {
             $req->validate([
                 'id' => 'required',
-               'linkHeading' => 'nullable',
+                'linkHeading' => 'nullable',
                 'importantLink' => 'nullable',
             ]);
             $heading = new ImportantLink();
@@ -2811,7 +2812,7 @@ class MasterReferenceController extends Controller
         try {
             $req->validate([
                 'id' => 'required',
-               'linkHeading' => 'nullable',
+                'linkHeading' => 'nullable',
                 'usefulLink' => 'nullable',
             ]);
             $heading = new UsefulLink();
@@ -2861,6 +2862,84 @@ class MasterReferenceController extends Controller
             ]);
             $delete = new UsefulLink();
             $message = $delete->deleteLink($req);
+            return responseMsgs(true, "", $message, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+
+    public function addDepartment(Request $req)
+    {
+        try {
+            $req->validate([
+                'departnameName' => 'required',
+                'link' => 'required',
+            ]);
+            $create = new Department();
+            $create->addDepartment($req);
+
+            return responseMsgs(true, "Successfully Saved", "", "120101", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120101", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function updateDepartment(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required',
+                'departnameName' => 'nullable',
+                'link' => 'nullable',
+            ]);
+            $heading = new Department();
+            $list  = $heading->updateDepartment($req);
+
+            return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function departmentList(Request $req)
+    {
+        try {
+            $list = new Department();
+            $masters = $list->listDepartment();
+
+            return responseMsgs(true, "All List", $masters, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function departmentbyId(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required'
+            ]);
+            $listById = new Department();
+            $list  = $listById->getById($req);
+            if (!$list)
+                return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            else
+                return responseMsgs(true, "List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function deleteDepartment(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required',
+                'status' => 'required|boolean'
+            ]);
+            $delete = new Department();
+            $message = $delete->deleteDepartment($req);
             return responseMsgs(true, "", $message, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);

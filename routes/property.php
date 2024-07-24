@@ -794,6 +794,13 @@ Route::controller(MasterReferenceController::class)->group(function () {
     Route::post('m-useful-link-get-by-id', 'usefulLinkbyId');
     Route::post('m-useful-link-delete', 'deleteUsefulLink');
 
+     //m- department
+     Route::post('m-department-create', 'addDepartment');
+     Route::post('m-department-update', 'updateDepartment');
+     Route::post('m-department-list', 'departmentList');
+     Route::post('m-department-get-by-id', 'departmentbyId');
+     Route::post('m-department-delete', 'deleteDepartment');
+
 });
 
 
