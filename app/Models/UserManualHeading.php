@@ -42,7 +42,7 @@ class UserManualHeading extends Model
             'user_manual_heading_descriptions.user_manual_link',
             'user_manual_heading_descriptions.video_link'
         )
-            ->join('user_manual_heading_descriptions', 'user_manual_heading_descriptions.heading_id', '=', 'user_manual_headings.id')
+            ->leftjoin('user_manual_heading_descriptions', 'user_manual_heading_descriptions.heading_id', '=', 'user_manual_headings.id')
             ->orderBy('user_manual_headings.id', 'asc')
             ->get()
             ->groupBy('id')
