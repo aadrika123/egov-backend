@@ -773,6 +773,13 @@ Route::controller(MasterReferenceController::class)->group(function () {
    Route::post('m-whats-new-get-by-id', 'WhatsNewbyId');
    Route::post('m-whats-new-delete', 'deleteWhatsNew');
 
+   //m- quick-link
+   Route::post('m-quick-link-create', 'addQuickLink');
+   Route::post('m-quick-link-update', 'updateQuickLink');
+   Route::post('m-quick-link-list', 'quickLinkList');
+   Route::post('m-quick-link-get-by-id', 'quickLinkbyId');
+   Route::post('m-quick-link-delete', 'deleteQuickLink');
+
 });
 
 

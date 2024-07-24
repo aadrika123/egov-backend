@@ -36,6 +36,7 @@ use App\Models\Property\MPropBuildingRentalrate;
 use App\Models\Property\MPropMultiFactor;
 use App\Models\Property\MPropRentalValue;
 use App\Models\Property\MPropVacantRentalrate;
+use App\Models\QuickLink;
 use App\Models\UserManualHeading;
 use App\Models\UserManualHeadingDescription;
 use Illuminate\Support\Facades\Config;
@@ -2625,6 +2626,84 @@ class MasterReferenceController extends Controller
             ]);
             $delete = new MWhat();
             $message = $delete->deleteWhatNew($req);
+            return responseMsgs(true, "", $message, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    
+    public function addQuickLink(Request $req)
+    {
+        try {
+            $req->validate([
+                'linkHeading' => 'required',
+                'quickLink' => 'required',
+            ]);
+            $create = new QuickLink();
+            $create->addlink($req);
+
+            return responseMsgs(true, "Successfully Saved", "", "120101", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120101", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function updateQuickLink(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required',
+               'linkHeading' => 'nullable',
+                'quickLink' => 'nullable',
+            ]);
+            $heading = new QuickLink();
+            $list  = $heading->updateLink($req);
+
+            return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function quickLinkList(Request $req)
+    {
+        try {
+            $list = new QuickLink();
+            $masters = $list->listQuickLink();
+
+            return responseMsgs(true, "All List", $masters, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function quickLinkbyId(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required'
+            ]);
+            $listById = new QuickLink();
+            $list  = $listById->getById($req);
+            if (!$list)
+                return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            else
+                return responseMsgs(true, "List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function deleteQuickLink(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required',
+                'status' => 'required|boolean'
+            ]);
+            $delete = new QuickLink();
+            $message = $delete->deleteLink($req);
             return responseMsgs(true, "", $message, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
