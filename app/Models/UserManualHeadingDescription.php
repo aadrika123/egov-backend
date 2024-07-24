@@ -27,7 +27,6 @@ class UserManualHeadingDescription extends Model
             'user_manual_heading_descriptions.id',
             'user_manual_headings.heading',
             'user_manual_headings.id as heading_id',
-          
             'user_manual_heading_descriptions.description',
             'user_manual_heading_descriptions.video_link',
             'user_manual_heading_descriptions.user_manual_link',
