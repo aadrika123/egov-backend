@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Property;
 use App\Http\Controllers\Controller;
 use App\MicroServices\DocUpload;
 use App\Models\Announcement;
+use App\Models\Contact;
 use App\Models\Department;
 use App\Models\ImportantLink;
 use App\Models\ImportantNotice;
@@ -2940,6 +2941,89 @@ class MasterReferenceController extends Controller
             ]);
             $delete = new Department();
             $message = $delete->deleteDepartment($req);
+            return responseMsgs(true, "", $message, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function addContact(Request $req)
+    {
+        try {
+            $req->validate([
+                'departnameName' => 'required',
+                'address' => 'required',
+                'mobile'=>"required",
+                'email'=>'required|email',
+                'fax'=>'required',
+            ]);
+            $create = new Contact();
+            $create->addContact($req);
+
+            return responseMsgs(true, "Successfully Saved", "", "120101", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120101", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function updateContact(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required',
+                'departnameName' => 'nullable',
+                'address' => 'nullable',
+                'mobile'=>"nullable",
+                'email'=>'nullable|email',
+                'fax'=>'nullable'
+            ]);
+            $heading = new Contact();
+            $list  = $heading->updateContact($req);
+
+            return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function ContactList(Request $req)
+    {
+        try {
+            $list = new Contact();
+            $masters = $list->listContact();
+
+            return responseMsgs(true, "All List", $masters, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function ContactbyId(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required'
+            ]);
+            $listById = new Contact();
+            $list  = $listById->getById($req);
+            if (!$list)
+                return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            else
+                return responseMsgs(true, "List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function deleteContact(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required',
+                'status' => 'required|boolean'
+            ]);
+            $delete = new Contact();
+            $message = $delete->deleteContact($req);
             return responseMsgs(true, "", $message, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);

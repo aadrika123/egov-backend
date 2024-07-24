@@ -801,6 +801,14 @@ Route::controller(MasterReferenceController::class)->group(function () {
      Route::post('m-department-get-by-id', 'departmentbyId');
      Route::post('m-department-delete', 'deleteDepartment');
 
+     
+     //m- contact
+     Route::post('m-contact-create', 'addContact');
+     Route::post('m-contact-update', 'updateContact');
+     Route::post('m-contact-list', 'ContactList');
+     Route::post('m-contact-get-by-id', 'ContactbyId');
+     Route::post('m-contact-delete', 'deleteContact');
+
 });
 
 
