@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Property;
 use App\Http\Controllers\Controller;
 use App\MicroServices\DocUpload;
 use App\Models\Announcement;
+use App\Models\ImportantLink;
 use App\Models\ImportantNotice;
 use App\Models\MAsset;
 use App\Models\MEService;
@@ -37,6 +38,7 @@ use App\Models\Property\MPropMultiFactor;
 use App\Models\Property\MPropRentalValue;
 use App\Models\Property\MPropVacantRentalrate;
 use App\Models\QuickLink;
+use App\Models\UsefulLink;
 use App\Models\UserManualHeading;
 use App\Models\UserManualHeadingDescription;
 use Illuminate\Support\Facades\Config;
@@ -2710,4 +2712,158 @@ class MasterReferenceController extends Controller
         }
     }
 
+     
+    public function addImportantLink(Request $req)
+    {
+        try {
+            $req->validate([
+                'linkHeading' => 'required',
+                'importantLink' => 'required',
+            ]);
+            $create = new ImportantLink();
+            $create->addlink($req);
+
+            return responseMsgs(true, "Successfully Saved", "", "120101", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120101", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function updateImportantLink(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required',
+               'linkHeading' => 'nullable',
+                'importantLink' => 'nullable',
+            ]);
+            $heading = new ImportantLink();
+            $list  = $heading->updateLink($req);
+
+            return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function importantLinkList(Request $req)
+    {
+        try {
+            $list = new ImportantLink();
+            $masters = $list->listImportantLink();
+
+            return responseMsgs(true, "All List", $masters, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function importantLinkbyId(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required'
+            ]);
+            $listById = new ImportantLink();
+            $list  = $listById->getById($req);
+            if (!$list)
+                return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            else
+                return responseMsgs(true, "List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function deleteImportantLink(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required',
+                'status' => 'required|boolean'
+            ]);
+            $delete = new ImportantLink();
+            $message = $delete->deleteLink($req);
+            return responseMsgs(true, "", $message, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function addUsefulLink(Request $req)
+    {
+        try {
+            $req->validate([
+                'linkHeading' => 'required',
+                'usefulLink' => 'required',
+            ]);
+            $create = new UsefulLink();
+            $create->addlink($req);
+
+            return responseMsgs(true, "Successfully Saved", "", "120101", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120101", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function updateUsefulLink(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required',
+               'linkHeading' => 'nullable',
+                'usefulLink' => 'nullable',
+            ]);
+            $heading = new UsefulLink();
+            $list  = $heading->updateLink($req);
+
+            return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function usefulLinkList(Request $req)
+    {
+        try {
+            $list = new UsefulLink();
+            $masters = $list->listUsefulLink();
+
+            return responseMsgs(true, "All List", $masters, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function usefulLinkbyId(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required'
+            ]);
+            $listById = new UsefulLink();
+            $list  = $listById->getById($req);
+            if (!$list)
+                return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            else
+                return responseMsgs(true, "List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function deleteUsefulLink(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required',
+                'status' => 'required|boolean'
+            ]);
+            $delete = new UsefulLink();
+            $message = $delete->deleteLink($req);
+            return responseMsgs(true, "", $message, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
 }

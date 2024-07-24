@@ -780,6 +780,20 @@ Route::controller(MasterReferenceController::class)->group(function () {
    Route::post('m-quick-link-get-by-id', 'quickLinkbyId');
    Route::post('m-quick-link-delete', 'deleteQuickLink');
 
+   //m- important-link
+   Route::post('m-important-link-create', 'addImportantLink');
+   Route::post('m-important-link-update', 'updateImportantLink');
+   Route::post('m-important-link-list', 'importantLinkList');
+   Route::post('m-important-link-get-by-id', 'importantLinkbyId');
+   Route::post('m-important-link-delete', 'deleteImportantLink');
+
+    //m- useful-link
+    Route::post('m-useful-link-create', 'addUsefulLink');
+    Route::post('m-useful-link-update', 'updateUsefulLink');
+    Route::post('m-useful-link-list', 'usefulLinkList');
+    Route::post('m-useful-link-get-by-id', 'usefulLinkbyId');
+    Route::post('m-useful-link-delete', 'deleteUsefulLink');
+
 });
 
 
