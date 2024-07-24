@@ -27,6 +27,7 @@ use App\Models\RefPropRebateType;
 use App\Models\RefPropTransferMode;
 use App\Models\RefPropUsageType;
 use App\Models\MSlider;
+use App\Models\MWhat;
 use App\Models\Property\MPropForgeryType;
 use App\Models\Property\MPropCvRate;
 use App\Models\Property\MCapitalValueRate;
@@ -2554,4 +2555,80 @@ class MasterReferenceController extends Controller
             return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
         }
     }
+
+    public function addWhatsNew(Request $req)
+    {
+        try {
+            $req->validate([
+                'whatsNew' => 'required',
+            ]);
+            $create = new MWhat();
+            $create->addWhatsNew($req);
+
+            return responseMsgs(true, "Successfully Saved", "", "120101", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120101", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function updateWhatsNew(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required',
+                'whatsNew' => 'required',
+            ]);
+            $heading = new MWhat();
+            $list  = $heading->updateWhatNew($req);
+
+            return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function WhatsNewList(Request $req)
+    {
+        try {
+            $list = new MWhat();
+            $masters = $list->listWhatNew();
+
+            return responseMsgs(true, "All List", $masters, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function WhatsNewbyId(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required'
+            ]);
+            $listById = new MWhat();
+            $list  = $listById->getById($req);
+            if (!$list)
+                return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            else
+                return responseMsgs(true, "List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function deleteWhatsNew(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required',
+                'status' => 'required|boolean'
+            ]);
+            $delete = new MWhat();
+            $message = $delete->deleteWhatNew($req);
+            return responseMsgs(true, "", $message, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
 }

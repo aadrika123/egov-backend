@@ -771,7 +771,7 @@ Route::controller(MasterReferenceController::class)->group(function () {
    Route::post('m-whats-new-update', 'updateWhatsNew');
    Route::post('m-whats-new-list', 'WhatsNewList');
    Route::post('m-whats-new-get-by-id', 'WhatsNewbyId');
-   Route::post('m-whats-newe-delete', 'deleteWhatsNew');
+   Route::post('m-whats-new-delete', 'deleteWhatsNew');
 
 });
 
