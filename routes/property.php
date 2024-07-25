@@ -809,6 +809,19 @@ Route::controller(MasterReferenceController::class)->group(function () {
      Route::post('m-contact-get-by-id', 'ContactbyId');
      Route::post('m-contact-delete', 'deleteContact');
 
+     //m- citizen desk heading
+     Route::post('m-c-desk-create', 'addCDesk');
+     Route::post('m-c-desk-update', 'updateCDesk');
+     Route::post('m-c-desk-list', 'CDeskList');
+     Route::post('m-c-desk-get-by-id', 'CDeskbyId');
+     Route::post('m-c-desk-delete', 'deleteCDesk');
+
+     //m- citizen desk description
+     Route::post('m-c-desk-des-create', 'addCDeskDesc');
+     Route::post('m-c-desk-des-update', 'updateCDeskDesc');
+     Route::post('m-c-desk-des-get-by-id', 'CDeskDescbyId');
+     Route::post('m-c-desk-des-delete', 'deleteCDeskDesc');
+
 });
 
 
