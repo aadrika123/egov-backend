@@ -43,6 +43,8 @@ class UserManualHeading extends Model
             'user_manual_heading_descriptions.video_link'
         )
             ->leftjoin('user_manual_heading_descriptions', 'user_manual_heading_descriptions.heading_id', '=', 'user_manual_headings.id')
+            ->where('user_manual_heading_descriptions.status',1)
+            ->where('user_manual_headings.status',1)
             ->orderBy('user_manual_headings.id', 'asc')
             ->get()
             ->groupBy('id')

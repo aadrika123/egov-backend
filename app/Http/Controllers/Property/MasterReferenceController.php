@@ -2201,7 +2201,7 @@ class MasterReferenceController extends Controller
             $req->validate([
                 'id' => 'required',
                 'headingId' => 'required|int',
-                'description' => 'required',
+                'description' => 'nullable',
                 'videoLink' => 'nullable',
                 'userManualLink' => 'nullable',
             ]);
@@ -3068,7 +3068,7 @@ class MasterReferenceController extends Controller
     {
         try {
             $list = new CitizenDesk();
-            $masters = $list->listContact();
+            $masters = $list->listCDesk();
 
             return responseMsgs(true, "All List", $masters, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
@@ -3130,10 +3130,12 @@ class MasterReferenceController extends Controller
         try {
             $req->validate([
                 'id' => 'required',
-                'heading' => 'nullable'
+                'heading' => 'nullable',
+                'link'=>'nullable',
+                'deskId'=>'nullable'
             ]);
-            $heading = new CitizenDesk();
-            $list  = $heading->updateCDesk($req);
+            $heading = new CitizenDeskDescription();
+            $list  = $heading->updateCDeskDesc($req);
 
             return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
@@ -3147,7 +3149,7 @@ class MasterReferenceController extends Controller
             $req->validate([
                 'id' => 'required'
             ]);
-            $listById = new CitizenDesk();
+            $listById = new CitizenDeskDescription();
             $list  = $listById->getById($req);
             if (!$list)
                 return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
@@ -3165,8 +3167,8 @@ class MasterReferenceController extends Controller
                 'id' => 'required',
                 'status' => 'required|boolean'
             ]);
-            $delete = new CitizenDesk();
-            $message = $delete->deleteCDesk($req);
+            $delete = new CitizenDeskDescription();
+            $message = $delete->deleteCDeskDesc($req);
             return responseMsgs(true, "", $message, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);

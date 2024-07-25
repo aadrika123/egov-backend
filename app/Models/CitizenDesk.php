@@ -30,20 +30,19 @@ class CitizenDesk extends Model
     //     return $list;
     // }
 
-    public function listUserManualHeading()
+    public function listCDesk()
     {
         // Fetch user manual headings with associated descriptions
         $list = CitizenDesk::select(
-            'user_manual_headings.id',
-            'user_manual_headings.heading',
-            'user_manual_headings.status as is_suspended',
-            'user_manual_heading_descriptions.id as description_id',
-            'user_manual_heading_descriptions.description',
-            'user_manual_heading_descriptions.user_manual_link',
-            'user_manual_heading_descriptions.video_link'
+            'citizen_desks.id',
+            'citizen_desks.heading',
+            'citizen_desks.status as is_suspended',
+            'citizen_desk_descriptions.id as description_id',
+            'citizen_desk_descriptions.heading as desk_description',
+            'citizen_desk_descriptions.links as description_link'
         )
-            ->leftjoin('user_manual_heading_descriptions', 'user_manual_heading_descriptions.heading_id', '=', 'user_manual_headings.id')
-            ->orderBy('user_manual_headings.id', 'asc')
+            ->leftjoin('citizen_desk_descriptions', 'citizen_desk_descriptions.desk_id', '=', 'citizen_desks.id')
+            ->orderBy('citizen_desks.id', 'asc')
             ->get()
             ->groupBy('id')
             ->map(function ($item) {
@@ -56,9 +55,8 @@ class CitizenDesk extends Model
                     'data' => $item->map(function ($data) {
                         return [
                             'description_id' => $data->description_id,
-                            'description' => $data->description,
-                            'user_manual_link' => $data->user_manual_link,
-                            'video_link' => $data->video_link
+                            'heading' => $data->heading,
+                            'links' => $data->links
                         ];
                     })->values() // Ensure nested data has numeric indices
                 ];
