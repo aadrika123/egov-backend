@@ -30,8 +30,8 @@ class Contact extends Model
         $data->department_name = $req->departnameName;
         $data->address = $req->address;
         $data->mobile_no = $req->mobile;
-        $data->email = $req->address;
-        $data->fax = $req->address;
+        $data->email = $req->email;
+        $data->fax = $req->fax;
         $data->update();
     }
 
