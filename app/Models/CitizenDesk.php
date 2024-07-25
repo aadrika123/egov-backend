@@ -42,6 +42,8 @@ class CitizenDesk extends Model
             'citizen_desk_descriptions.links as description_link'
         )
             ->leftjoin('citizen_desk_descriptions', 'citizen_desk_descriptions.desk_id', '=', 'citizen_desks.id')
+            ->where('citizen_desk_descriptions.status',1)
+            ->where('citizen_desks.status',1)
             ->orderBy('citizen_desks.id', 'asc')
             ->get()
             ->groupBy('id')
@@ -55,8 +57,8 @@ class CitizenDesk extends Model
                     'data' => $item->map(function ($data) {
                         return [
                             'description_id' => $data->description_id,
-                            'heading' => $data->heading,
-                            'links' => $data->links
+                            'desk_description' => $data->desk_description,
+                            'description_link' => $data->description_link
                         ];
                     })->values() // Ensure nested data has numeric indices
                 ];

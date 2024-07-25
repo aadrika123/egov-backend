@@ -3112,7 +3112,7 @@ class MasterReferenceController extends Controller
     {
         try {
             $req->validate([
-                'heading' => 'required',
+                'headingDesc' => 'required',
                 'link'=>'required',
                 'deskId'=>'required'
             ]);
@@ -3130,7 +3130,7 @@ class MasterReferenceController extends Controller
         try {
             $req->validate([
                 'id' => 'required',
-                'heading' => 'nullable',
+                'headingDesc' => 'nullable',
                 'link'=>'nullable',
                 'deskId'=>'nullable'
             ]);

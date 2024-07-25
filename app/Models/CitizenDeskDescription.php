@@ -14,7 +14,7 @@ class CitizenDeskDescription extends Model
     public function addCDeskDes($req)
     {
         $data = new CitizenDeskDescription();
-        $data->heading = $req->heading;
+        $data->heading = $req->headingDesc;
         $data->links = $req->link;
         $data->desk_id = $req->deskId;
         $data->save();
@@ -25,7 +25,7 @@ class CitizenDeskDescription extends Model
         $data = CitizenDeskDescription::where('id', $req->id)
             ->where('status', 1)
             ->first();
-        $data->heading = $req->heading;
+        $data->heading = $req->headingDesc;
         $data->links = $req->link;
         $data->desk_id = $req->deskId;
         $data->update();
