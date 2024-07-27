@@ -64,4 +64,12 @@ class ImportantNotice extends Model
         }
         return $message;
     }
+
+    public function listDash()
+    {
+        return ImportantNotice::select('*')
+            ->where('status', 1)
+            ->orderBy('id', 'asc')
+            ->get();
+    }
 }

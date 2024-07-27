@@ -64,4 +64,14 @@ class Announcement extends Model
         }
         return $message;
     }
+
+    public function listDash()
+    {
+        return Announcement::select(
+            '*'
+        )
+            ->where('status', 1)
+            ->orderBy('id', 'asc')
+            ->get();
+    }
 }

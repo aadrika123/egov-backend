@@ -64,4 +64,12 @@ class MWhat extends Model
         }
         return $message;
     }
+
+    public function listDash()
+    {
+        return MWhat::select('*')
+            ->where('status', 1)
+            ->orderBy('id', 'asc')
+            ->get();
+    }
 }

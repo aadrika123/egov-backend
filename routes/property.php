@@ -824,6 +824,10 @@ Route::controller(MasterReferenceController::class)->group(function () {
      Route::post('m-c-desk-des-get-by-id', 'CDeskDescbyId');
      Route::post('m-c-desk-des-delete', 'deleteCDeskDesc');
 
+
+     //master dashboard api
+     Route::post('m-dashboard-data', 'dashboardData');
+
 });
 
 

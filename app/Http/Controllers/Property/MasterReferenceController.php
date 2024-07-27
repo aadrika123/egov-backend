@@ -3201,4 +3201,30 @@ class MasterReferenceController extends Controller
             return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
         }
     }
+
+
+    public function dashboardData(Request $req)
+    {
+        try{
+        $whatsnew = new Mwhat();
+        $notice = new ImportantNotice();
+        $announcement = new Announcement();
+        $quickLink = new QuickLink();
+        $what = $whatsnew->listDash();
+        $noticeDtl = $notice->listDash();
+        $announceDtl =  $announcement->listDash();
+        $quickDtl = $quickLink->listDash();
+        $list = [
+            "Whats New" => $what,
+            "Important Notice" =>$noticeDtl,
+            "Announcement" => $announceDtl,
+            "Quick Links" =>$quickDtl
+        ];
+
+        return responseMsgs(true, "All Dtaa", $list, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+    } catch (Exception $e) {
+        return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+    }
+
+    }
 }

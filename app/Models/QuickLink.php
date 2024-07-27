@@ -46,7 +46,7 @@ class QuickLink extends Model
     {
         $list = QuickLink::select(
             'id',
-           'link_heading',
+            'link_heading',
             'quick_link',
             'status as is_suspended'
         )
@@ -67,5 +67,14 @@ class QuickLink extends Model
             $message = "Data Enabled";
         }
         return $message;
+    }
+
+    public function listDash()
+    {
+        return QuickLink::select(
+            '*'
+        )->where('status', 1)
+            ->orderBy('id', 'asc')
+            ->get();
     }
 }
