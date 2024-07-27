@@ -18,17 +18,37 @@ class UserManualHeading extends Model
         $data->save();
     }
 
-    // public function listUserManualHeading()
-    // {
-    //     $list = UserManualHeading::select(
-    //         'id',
-    //         'heading',
-    //         'status as is_suspended'
-    //     )->join('user_manual_heading_descriptions','user_manual_heading_descriptions.heading_id','=','user_manual_headings.id')
-    //         ->orderBy('user_manual_headings.id', 'asc')
-    //         ->get();
-    //     return $list;
-    // }
+    public function listUserManualHeadingMaster()
+    {
+        $list = UserManualHeading::select(
+            'id',
+            'heading',
+            'status as is_suspended'
+        )->where('status', 1)
+            ->orderBy('user_manual_headings.id', 'asc')
+            ->get();
+        return $list;
+    }
+
+    public function listUserManualHeadingMasterDesc($headingId)
+    {
+        $list = UserManualHeading::select(
+            'user_manual_headings.id as heading_id',
+            'user_manual_headings.heading',
+            'user_manual_headings.status as is_suspended',
+            'user_manual_heading_descriptions.id as description_id',
+            'user_manual_heading_descriptions.description',
+            'user_manual_heading_descriptions.user_manual_link',
+            'user_manual_heading_descriptions.video_link'
+        )->leftjoin('user_manual_heading_descriptions', 'user_manual_heading_descriptions.heading_id', '=', 'user_manual_headings.id')
+            ->where('user_manual_headings.status', 1)
+
+            ->where('user_manual_heading_descriptions.status', 1)
+            ->where('user_manual_headings.id', $headingId)
+            ->orderBy('user_manual_headings.id', 'asc')
+            ->get();
+        return $list;
+    }
 
     public function listUserManualHeading()
     {

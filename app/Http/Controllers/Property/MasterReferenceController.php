@@ -2115,6 +2115,33 @@ class MasterReferenceController extends Controller
         }
     }
 
+    public function userManualHeadingListMaster(Request $req)
+    {
+        try {
+            $list = new UserManualHeading();
+            $masters = $list->listUserManualHeadingMaster();
+
+            return responseMsgs(true, "All User Manual Heading List", $masters, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function userManualHeadingListMasterDesc(Request $req)
+    {
+        try {
+            $req->validate([
+                'headingId' => 'required',
+            ]);
+            $list = new UserManualHeading();
+            $masters = $list->listUserManualHeadingMasterDesc($req->headingId);
+
+            return responseMsgs(true, "All User Manual Heading List", $masters, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
 
     public function updateUserManualHeading(Request $req)
     {

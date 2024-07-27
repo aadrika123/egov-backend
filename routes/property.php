@@ -728,6 +728,8 @@ Route::controller(MasterReferenceController::class)->group(function () {
   Route::post('m-heading-create', 'addUserManualHeading');
   Route::post('m-heading-update', 'updateUserManualHeading');
   Route::post('m-heading-list', 'userManualHeadingList');
+  Route::post('m-heading-list-master', 'userManualHeadingListMaster');
+  Route::post('m-heading-list-master-desc', 'userManualHeadingListMasterDesc');
   Route::post('m-heading-get-by-id', 'userManualHeadingbyId');
   Route::post('m-heading-delete', 'deleteUserManualHeading');
 
