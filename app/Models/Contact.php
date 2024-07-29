@@ -80,4 +80,13 @@ class Contact extends Model
         }
         return $message;
     }
+
+    public function listDash()
+    {
+        return Contact::select(
+            '*'
+        )->where('status', 1)
+            ->orderBy('id', 'asc')
+            ->get();
+    }
 }

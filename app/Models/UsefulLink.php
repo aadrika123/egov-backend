@@ -47,7 +47,7 @@ class UsefulLink extends Model
     {
         $list = UsefulLink::select(
             'id',
-           'link_heading',
+            'link_heading',
             'links',
             'status as is_suspended'
         )
@@ -68,5 +68,14 @@ class UsefulLink extends Model
             $message = "Data Enabled";
         }
         return $message;
+    }
+
+    public function listDash()
+    {
+        return UsefulLink::select(
+            '*'
+        )->where('status', 1)
+            ->orderBy('id', 'asc')
+            ->get();
     }
 }

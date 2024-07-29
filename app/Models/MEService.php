@@ -69,4 +69,13 @@ class MEService extends Model
         }
         return $message;
     }
+
+    public function listDash()
+    {
+        return MEService::select(
+            '*'
+        )->where('status', 1)
+            ->orderBy('id', 'asc')
+            ->get();
+    }
 }

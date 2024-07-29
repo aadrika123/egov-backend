@@ -46,7 +46,7 @@ class ImportantLink extends Model
     {
         $list = ImportantLink::select(
             'id',
-           'link_heading',
+            'link_heading',
             'links',
             'status as is_suspended'
         )
@@ -67,5 +67,14 @@ class ImportantLink extends Model
             $message = "Data Enabled";
         }
         return $message;
+    }
+
+    public function listDash()
+    {
+        return ImportantLink::select(
+            '*'
+        )->where('status', 1)
+            ->orderBy('id', 'asc')
+            ->get();
     }
 }

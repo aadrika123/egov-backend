@@ -68,4 +68,13 @@ class Department extends Model
         }
         return $message;
     }
+
+    public function listDash()
+    {
+        return Department::select(
+            '*'
+        )->where('status', 1)
+            ->orderBy('id', 'asc')
+            ->get();
+    }
 }

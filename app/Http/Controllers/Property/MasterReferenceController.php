@@ -2982,9 +2982,9 @@ class MasterReferenceController extends Controller
             $req->validate([
                 'departnameName' => 'required',
                 'address' => 'required',
-                'mobile'=>"required",
-                'email'=>'required|email',
-                'fax'=>'required',
+                'mobile' => "required",
+                'email' => 'required|email',
+                'fax' => 'required',
             ]);
             $create = new Contact();
             $create->addContact($req);
@@ -3002,9 +3002,9 @@ class MasterReferenceController extends Controller
                 'id' => 'required',
                 'departnameName' => 'nullable',
                 'address' => 'nullable',
-                'mobile'=>"nullable",
-                'email'=>'nullable|email',
-                'fax'=>'nullable'
+                'mobile' => "nullable",
+                'email' => 'nullable|email',
+                'fax' => 'nullable'
             ]);
             $heading = new Contact();
             $list  = $heading->updateContact($req);
@@ -3140,8 +3140,8 @@ class MasterReferenceController extends Controller
         try {
             $req->validate([
                 'headingDesc' => 'required',
-                'link'=>'required',
-                'deskId'=>'required'
+                'link' => 'required',
+                'deskId' => 'required'
             ]);
             $create = new CitizenDeskDescription();
             $create->addCDeskDes($req);
@@ -3158,8 +3158,8 @@ class MasterReferenceController extends Controller
             $req->validate([
                 'id' => 'required',
                 'headingDesc' => 'nullable',
-                'link'=>'nullable',
-                'deskId'=>'nullable'
+                'link' => 'nullable',
+                'deskId' => 'nullable'
             ]);
             $heading = new CitizenDeskDescription();
             $list  = $heading->updateCDeskDesc($req);
@@ -3205,35 +3205,49 @@ class MasterReferenceController extends Controller
 
     public function dashboardData(Request $req)
     {
-        try{
-        $whatsnew = new Mwhat();
-        $notice = new ImportantNotice();
-        $announcement = new Announcement();
-        $quickLink = new QuickLink();
-        $scheme = new MScheme();
-        $mobileApp = new MMobileAppLink();
-        $newsEvent = new MNewsEvent();
-        $what = $whatsnew->listDash();
-        $noticeDtl = $notice->listDash();
-        $announceDtl =  $announcement->listDash();
-        $quickDtl = $quickLink->listDash();
-        $schemeDtl = $scheme->listDash();
-        $mobileAppDtl = $mobileApp->listDash();
-        $newsEventDtl = $newsEvent->listDash();
-        $list = [
-            "Whats New" => $what,
-            "Important Notice" =>$noticeDtl,
-            "Announcement" => $announceDtl,
-            "Quick Links" =>$quickDtl,
-            "Scheme" =>$schemeDtl,
-            "Mobile App" => $mobileAppDtl,
-            "News Event" => $newsEventDtl
-        ];
+        try {
+            $whatsnew = new Mwhat();
+            $notice = new ImportantNotice();
+            $announcement = new Announcement();
+            $quickLink = new QuickLink();
+            $scheme = new MScheme();
+            $mobileApp = new MMobileAppLink();
+            $newsEvent = new MNewsEvent();
+            $eService = new MEService();
+            $impLink = new ImportantLink();
+            $usefulLink = new UsefulLink();
+            $department =  new Department();
+            $contact = new Contact();
+            $what = $whatsnew->listDash();
+            $noticeDtl = $notice->listDash();
+            $announceDtl =  $announcement->listDash();
+            $quickDtl = $quickLink->listDash();
+            $schemeDtl = $scheme->listDash();
+            $mobileAppDtl = $mobileApp->listDash();
+            $newsEventDtl = $newsEvent->listDash();
+            $eServiceDtl = $eService->listDash();
+            $impLinkDtl = $impLink->listDash();
+            $usefulLinkDtl = $usefulLink->listDash();
+            $departmentDtl = $department->listDash();
+            $contactDtl = $contact->listDash();
+            $list = [
+                "Whats New" => $what,
+                "Important Notice" => $noticeDtl,
+                "Announcement" => $announceDtl,
+                "Quick Links" => $quickDtl,
+                "Scheme" => $schemeDtl,
+                "Mobile App" => $mobileAppDtl,
+                "News Event" => $newsEventDtl,
+                "E-Service" => $eServiceDtl,
+                "Important Link" => $impLinkDtl,
+                "Usefull Link" => $usefulLinkDtl,
+                "Department" => $departmentDtl,
+                "Contact" => $contactDtl
+            ];
 
-        return responseMsgs(true, "All Dtaa", $list, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
-    } catch (Exception $e) {
-        return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
-    }
-
+            return responseMsgs(true, "All Dtaa", $list, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
     }
 }
