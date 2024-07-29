@@ -80,4 +80,13 @@ class AboutUsDetail extends Model
         }
         return $message;
     }
+
+    public function listDash()
+    {
+        return AboutUsDetail::select(
+            '*'
+        )->where('status', 1)
+            ->orderBy('id', 'asc')
+            ->get();
+    }
 }
