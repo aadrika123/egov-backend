@@ -59,7 +59,7 @@ class UserManualHeading extends Model
             'user_manual_headings.status as is_suspended',
             'user_manual_heading_descriptions.id as description_id',
             'user_manual_heading_descriptions.description',
-            'user_manual_heading_descriptions.status as is_suspended',
+            'user_manual_heading_descriptions.status as is_suspended_v1',
             'user_manual_heading_descriptions.user_manual_link',
             'user_manual_heading_descriptions.video_link'
         )
@@ -82,7 +82,7 @@ class UserManualHeading extends Model
                             'description' => $data->description,
                             'user_manual_link' => $data->user_manual_link,
                             'video_link' => $data->video_link,
-                            'is_suspended' =>$data->is_suspended
+                            'is_suspended_v1' =>$data->is_suspended_v1
                         ];
                     })->values() // Ensure nested data has numeric indices
                 ];
