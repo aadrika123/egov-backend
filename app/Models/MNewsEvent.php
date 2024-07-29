@@ -69,4 +69,13 @@ class MNewsEvent extends Model
         }
         return $message;
     }
+
+    public function listDash()
+    {
+        return  MNewsEvent::select(
+            '*'
+        )->where('status', 1)
+            ->orderBy('id', 'asc')
+            ->get();
+    }
 }

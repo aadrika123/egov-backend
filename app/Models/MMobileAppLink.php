@@ -69,4 +69,13 @@ class MMobileAppLink extends Model
         }
         return $message;
     }
+
+    public function listDash()
+    {
+        return MMobileAppLink::select(
+            '*'
+        )->where('status', 1)
+            ->orderBy('id', 'asc')
+            ->get();
+    }
 }

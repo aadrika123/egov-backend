@@ -3210,15 +3210,24 @@ class MasterReferenceController extends Controller
         $notice = new ImportantNotice();
         $announcement = new Announcement();
         $quickLink = new QuickLink();
+        $scheme = new MScheme();
+        $mobileApp = new MMobileAppLink();
+        $newsEvent = new MNewsEvent();
         $what = $whatsnew->listDash();
         $noticeDtl = $notice->listDash();
         $announceDtl =  $announcement->listDash();
         $quickDtl = $quickLink->listDash();
+        $schemeDtl = $scheme->listDash();
+        $mobileAppDtl = $mobileApp->listDash();
+        $newsEventDtl = $newsEvent->listDash();
         $list = [
             "Whats New" => $what,
             "Important Notice" =>$noticeDtl,
             "Announcement" => $announceDtl,
-            "Quick Links" =>$quickDtl
+            "Quick Links" =>$quickDtl,
+            "Scheme" =>$schemeDtl,
+            "Mobile App" => $mobileAppDtl,
+            "News Event" => $newsEventDtl
         ];
 
         return responseMsgs(true, "All Dtaa", $list, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);

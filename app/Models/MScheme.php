@@ -69,4 +69,13 @@ class MScheme extends Model
         }
         return $message;
     }
+
+    public function listDash()
+    {
+        return MScheme::select(
+            '*'
+        )->where('status', 1)
+            ->orderBy('id', 'asc')
+            ->get();
+    }
 }
