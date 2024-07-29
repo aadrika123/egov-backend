@@ -41,7 +41,7 @@ class ActRule extends Model
         return $list;
     }
 
-    public function deleteSlider($req)
+    public function deleteRule($req)
     {
         $sliderType = self::find($req->id);
         $oldStatus = $sliderType->status;

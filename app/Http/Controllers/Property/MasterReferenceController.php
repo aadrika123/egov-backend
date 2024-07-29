@@ -3373,7 +3373,7 @@ class MasterReferenceController extends Controller
             $masters = $list->listRule()->map(function ($val) use ($docUpload) {
                 $url = $docUpload->getSingleDocUrl($val);
                 $val->is_suspended = $val->status;
-                $val->slider_image_url = $url["doc_path"] ?? null;
+                $val->rule_image_url = $url["doc_path"] ?? null;
                 return $val;
             });
 
@@ -3409,7 +3409,7 @@ class MasterReferenceController extends Controller
             $docUpload = new DocUpload();
             $url = $docUpload->getSingleDocUrl($message);
             $message->is_suspended = $message->status;
-            $message->slider_image_url = $url["doc_path"] ?? null;
+            $message->rule_image_url = $url["doc_path"] ?? null;
             return responseMsgs(true, " Details", $message, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
