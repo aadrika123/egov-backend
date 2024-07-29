@@ -15,8 +15,8 @@ class MAsset extends Model
     public function store($req)
     {
         $obj = new self;
-        $obj->key =$req->key;
-        $obj->asset_file =$req->assetFile;
+        $obj->key = $req->key;
+        $obj->asset_file = $req->assetFile;
         $obj->asset_name = $req->assetName;
         $obj->ulb_id = $req->ulbId;
         $obj->unique_id = $req->uniqueId;
@@ -30,18 +30,18 @@ class MAsset extends Model
         $data = self::where('id', $req->id)
             ->where('status', true)
             ->first();
-        $data->key = $req->key ??$data->key;
-        $data->asset_file = $req->assetFile ??$data->asset_file;
-        $data->asset_name = $req->assetName ??$data->asset_name;
-        $data->ulb_id = $req->ulbId ??$data->ulb_id;
-        $data->unique_id = $req->uniqueId ??$data->unique_id;
-        $data->reference_no = $req->ReferenceNo ??$data->reference_no;
+        $data->key = $req->key ?? $data->key;
+        $data->asset_file = $req->assetFile ?? $data->asset_file;
+        $data->asset_name = $req->assetName ?? $data->asset_name;
+        $data->ulb_id = $req->ulbId ?? $data->ulb_id;
+        $data->unique_id = $req->uniqueId ?? $data->unique_id;
+        $data->reference_no = $req->ReferenceNo ?? $data->reference_no;
         return $data->update();
     }
 
     public function allList()
     {
-        return self::orderBy("id","ASC")->get();
+        return self::orderBy("id", "ASC")->get();
     }
 
     public function deleteAssets($req)
@@ -63,5 +63,13 @@ class MAsset extends Model
         $list = self::where('id', $req->id)
             ->first();
         return $list;
+    }
+
+    public function listDash()
+    {
+        return self::select('*')
+            ->where('status', 1)
+            ->orderBy("id", "ASC")
+            ->get();
     }
 }

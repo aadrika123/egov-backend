@@ -768,66 +768,71 @@ Route::controller(MasterReferenceController::class)->group(function () {
   Route::post('m-e-service-get-by-id', 'ServicebyId');
   Route::post('m-e-service-delete', 'deleteService');
 
-   //m- whats-new
-   Route::post('m-whats-new-create', 'addWhatsNew');
-   Route::post('m-whats-new-update', 'updateWhatsNew');
-   Route::post('m-whats-new-list', 'WhatsNewList');
-   Route::post('m-whats-new-get-by-id', 'WhatsNewbyId');
-   Route::post('m-whats-new-delete', 'deleteWhatsNew');
+  //m- whats-new
+  Route::post('m-whats-new-create', 'addWhatsNew');
+  Route::post('m-whats-new-update', 'updateWhatsNew');
+  Route::post('m-whats-new-list', 'WhatsNewList');
+  Route::post('m-whats-new-get-by-id', 'WhatsNewbyId');
+  Route::post('m-whats-new-delete', 'deleteWhatsNew');
 
-   //m- quick-link
-   Route::post('m-quick-link-create', 'addQuickLink');
-   Route::post('m-quick-link-update', 'updateQuickLink');
-   Route::post('m-quick-link-list', 'quickLinkList');
-   Route::post('m-quick-link-get-by-id', 'quickLinkbyId');
-   Route::post('m-quick-link-delete', 'deleteQuickLink');
+  //m- quick-link
+  Route::post('m-quick-link-create', 'addQuickLink');
+  Route::post('m-quick-link-update', 'updateQuickLink');
+  Route::post('m-quick-link-list', 'quickLinkList');
+  Route::post('m-quick-link-get-by-id', 'quickLinkbyId');
+  Route::post('m-quick-link-delete', 'deleteQuickLink');
 
-   //m- important-link
-   Route::post('m-important-link-create', 'addImportantLink');
-   Route::post('m-important-link-update', 'updateImportantLink');
-   Route::post('m-important-link-list', 'importantLinkList');
-   Route::post('m-important-link-get-by-id', 'importantLinkbyId');
-   Route::post('m-important-link-delete', 'deleteImportantLink');
+  //m- important-link
+  Route::post('m-important-link-create', 'addImportantLink');
+  Route::post('m-important-link-update', 'updateImportantLink');
+  Route::post('m-important-link-list', 'importantLinkList');
+  Route::post('m-important-link-get-by-id', 'importantLinkbyId');
+  Route::post('m-important-link-delete', 'deleteImportantLink');
 
-    //m- useful-link
-    Route::post('m-useful-link-create', 'addUsefulLink');
-    Route::post('m-useful-link-update', 'updateUsefulLink');
-    Route::post('m-useful-link-list', 'usefulLinkList');
-    Route::post('m-useful-link-get-by-id', 'usefulLinkbyId');
-    Route::post('m-useful-link-delete', 'deleteUsefulLink');
+  //m- useful-link
+  Route::post('m-useful-link-create', 'addUsefulLink');
+  Route::post('m-useful-link-update', 'updateUsefulLink');
+  Route::post('m-useful-link-list', 'usefulLinkList');
+  Route::post('m-useful-link-get-by-id', 'usefulLinkbyId');
+  Route::post('m-useful-link-delete', 'deleteUsefulLink');
 
-     //m- department
-     Route::post('m-department-create', 'addDepartment');
-     Route::post('m-department-update', 'updateDepartment');
-     Route::post('m-department-list', 'departmentList');
-     Route::post('m-department-get-by-id', 'departmentbyId');
-     Route::post('m-department-delete', 'deleteDepartment');
-
-     
-     //m- contact
-     Route::post('m-contact-create', 'addContact');
-     Route::post('m-contact-update', 'updateContact');
-     Route::post('m-contact-list', 'ContactList');
-     Route::post('m-contact-get-by-id', 'ContactbyId');
-     Route::post('m-contact-delete', 'deleteContact');
-
-     //m- citizen desk heading
-     Route::post('m-c-desk-create', 'addCDesk');
-     Route::post('m-c-desk-update', 'updateCDesk');
-     Route::post('m-c-desk-list', 'CDeskList');
-     Route::post('m-c-desk-get-by-id', 'CDeskbyId');
-     Route::post('m-c-desk-delete', 'deleteCDesk');
-
-     //m- citizen desk description
-     Route::post('m-c-desk-des-create', 'addCDeskDesc');
-     Route::post('m-c-desk-des-update', 'updateCDeskDesc');
-     Route::post('m-c-desk-des-get-by-id', 'CDeskDescbyId');
-     Route::post('m-c-desk-des-delete', 'deleteCDeskDesc');
+  //m- department
+  Route::post('m-department-create', 'addDepartment');
+  Route::post('m-department-update', 'updateDepartment');
+  Route::post('m-department-list', 'departmentList');
+  Route::post('m-department-get-by-id', 'departmentbyId');
+  Route::post('m-department-delete', 'deleteDepartment');
 
 
-     //master dashboard api
-     Route::post('m-dashboard-data', 'dashboardData');
+  //m- contact
+  Route::post('m-contact-create', 'addContact');
+  Route::post('m-contact-update', 'updateContact');
+  Route::post('m-contact-list', 'ContactList');
+  Route::post('m-contact-get-by-id', 'ContactbyId');
+  Route::post('m-contact-delete', 'deleteContact');
 
+  //m- citizen desk heading
+  Route::post('m-c-desk-create', 'addCDesk');
+  Route::post('m-c-desk-update', 'updateCDesk');
+  Route::post('m-c-desk-list', 'CDeskList');
+  Route::post('m-c-desk-get-by-id', 'CDeskbyId');
+  Route::post('m-c-desk-delete', 'deleteCDesk');
+
+  //m- citizen desk description
+  Route::post('m-c-desk-des-create', 'addCDeskDesc');
+  Route::post('m-c-desk-des-update', 'updateCDeskDesc');
+  Route::post('m-c-desk-des-get-by-id', 'CDeskDescbyId');
+  Route::post('m-c-desk-des-delete', 'deleteCDeskDesc'); 
+
+  //m- About us
+  Route::post('m-c-desk-des-create', 'addCDeskDesc');
+  Route::post('m-c-desk-des-update', 'updateCDeskDesc');
+  Route::post('m-c-desk-des-get-by-id', 'CDeskDescbyId');
+  Route::post('m-c-desk-des-delete', 'deleteCDeskDesc');
+
+
+  //master dashboard api
+  Route::post('m-dashboard-data', 'dashboardData');
 });
 
 

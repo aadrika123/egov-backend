@@ -15,15 +15,15 @@ class MSlider extends Model
 
     //written by prity pandey
     public function addSlider($req)
-    
+
     {
-       $data = new self;
-       $data->slider_name = $req->sliderName;
-       $data->unique_id = $req->uniqueId;
-       $data->reference_no = $req->ReferenceNo;
-       $data->slider_image_url = $req->sliderImageUrl;
-       $data->save();
-       return $data->id;
+        $data = new self;
+        $data->slider_name = $req->sliderName;
+        $data->unique_id = $req->uniqueId;
+        $data->reference_no = $req->ReferenceNo;
+        $data->slider_image_url = $req->sliderImageUrl;
+        $data->save();
+        return $data->id;
     }
 
     public function updateSlider($req)
@@ -31,10 +31,10 @@ class MSlider extends Model
         $data = MSlider::where('id', $req->id)
             ->where('status', true)
             ->first();
-        $data->slider_name = $req->sliderName ??$data->slider_name;
-        $data->slider_image_url = $req->sliderImageUrl ??$data->slider_image_url;
-        $data->reference_no = $req->ReferenceNo ??$data->reference_no;
-        $data->unique_id = $req->uniqueId ??$data->unique_id;
+        $data->slider_name = $req->sliderName ?? $data->slider_name;
+        $data->slider_image_url = $req->sliderImageUrl ?? $data->slider_image_url;
+        $data->reference_no = $req->ReferenceNo ?? $data->reference_no;
+        $data->unique_id = $req->uniqueId ?? $data->unique_id;
         return $data->update();
     }
 
@@ -66,5 +66,13 @@ class MSlider extends Model
         $list = MSlider::where('id', $req->id)
             ->first();
         return $list;
+    }
+
+    public function listDash()
+    {
+        return MSlider::select('*')
+            ->where('status', 1)
+            ->orderBy('id', 'asc')
+            ->get();
     }
 }
