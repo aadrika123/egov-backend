@@ -3383,6 +3383,20 @@ class MasterReferenceController extends Controller
         }
     }
 
+    public function listActRulev1(Request $req)
+    {
+            $list = new ActRule();
+            $docUpload = new DocUpload;
+            $masters = $list->listDash()->map(function ($val) use ($docUpload) {
+                $url = $docUpload->getSingleDocUrl($val);
+                $val->is_suspended = $val->status;
+                $val->rule_image_url = $url["doc_path"] ?? null;
+                return $val;
+            });
+
+            return  $masters;
+    }
+
     public function deleteActRule(Request $req)
     {
         try {
@@ -3448,6 +3462,7 @@ class MasterReferenceController extends Controller
             $sliderDtl = $this->allSliderListv1($req);
             $assetdtl = $this->allListAssetesv1($req);
             $aboutUsDtl = $aboutUs->listDash();
+            $actRuleDtl = $this->listActRulev1($req);
             $list = [
                 "Whats New" => $what,
                 "Important Notice" => $noticeDtl,
@@ -3464,7 +3479,8 @@ class MasterReferenceController extends Controller
                 "citizenDesk" => $cDeskDtl,
                 "Assets" => $assetdtl,
                 "Slider" => $sliderDtl,
-                "About Us" => $aboutUsDtl
+                "About Us" => $aboutUsDtl,
+                "Act Rule" =>$actRuleDtl
             ];
 
             return responseMsgs(true, "All Dtaa", $list, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
