@@ -39,7 +39,7 @@ class CitizenDesk extends Model
             'citizen_desks.status as is_suspended',
             'citizen_desk_descriptions.id as description_id',
             'citizen_desk_descriptions.heading as desk_description',
-            'citizen_desk_descriptions.status as description_status',
+            'citizen_desk_descriptions.status as is_suspended',
             'citizen_desk_descriptions.links as description_link'
         )
             ->leftjoin('citizen_desk_descriptions', 'citizen_desk_descriptions.desk_id', '=', 'citizen_desks.id')
@@ -60,7 +60,7 @@ class CitizenDesk extends Model
                             'description_id' => $data->description_id,
                             'desk_description' => $data->desk_description,
                             'description_link' => $data->description_link,
-                            'description_status' =>$data->description_status
+                            'is_suspended' =>$data->is_suspended
                         ];
                     })->values() // Ensure nested data has numeric indices
                 ];
