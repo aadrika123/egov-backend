@@ -3218,6 +3218,7 @@ class MasterReferenceController extends Controller
             $usefulLink = new UsefulLink();
             $department =  new Department();
             $contact = new Contact();
+            $citizenDesk = new CitizenDesk();
             $what = $whatsnew->listDash();
             $noticeDtl = $notice->listDash();
             $announceDtl =  $announcement->listDash();
@@ -3230,6 +3231,7 @@ class MasterReferenceController extends Controller
             $usefulLinkDtl = $usefulLink->listDash();
             $departmentDtl = $department->listDash();
             $contactDtl = $contact->listDash();
+            $cDeskDtl = $citizenDesk->listDash();
             $list = [
                 "Whats New" => $what,
                 "Important Notice" => $noticeDtl,
@@ -3242,7 +3244,8 @@ class MasterReferenceController extends Controller
                 "Important Link" => $impLinkDtl,
                 "Usefull Link" => $usefulLinkDtl,
                 "Department" => $departmentDtl,
-                "Contact" => $contactDtl
+                "Contact" => $contactDtl,
+                "citizenDesk" => $cDeskDtl
             ];
 
             return responseMsgs(true, "All Dtaa", $list, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);

@@ -104,4 +104,75 @@ class CitizenDesk extends Model
         }
         return $message;
     }
+
+    // public function listDash()
+    // {
+
+    //     $list = CitizenDesk::select(
+    //         'citizen_desks.id',
+    //         'citizen_desks.heading',
+    //         'citizen_desks.status as is_suspended',
+    //         'citizen_desk_descriptions.id as description_id',
+    //         'citizen_desk_descriptions.heading as desk_description',
+    //         'citizen_desk_descriptions.links as description_link'
+    //     )
+    //         ->Join('citizen_desk_descriptions', 'citizen_desk_descriptions.desk_id', '=', 'citizen_desks.id')
+    //         ->where('citizen_desks.status', 1)
+    //         ->where('citizen_desk_descriptions.status', 1)
+    //         ->orderBy('citizen_desks.id', 'asc')
+    //         ->get()
+    //         ->groupBy('citizen_desks.id')
+    //         ->map(function ($item) {
+    //             // Get the first item as the heading details
+    //             $heading = $item->first();
+    //             return [
+    //                 //'id' => $heading->id,
+    //                 'heading' => $heading->heading,
+    //                 // 'is_suspended' => $heading->is_suspended,
+    //                 'data' => $item->map(function ($data) {
+    //                     return [
+    //                         'description_id' => $data->description_id,
+    //                         'desk_description' => $data->desk_description,
+    //                         'description_link' => $data->description_link
+    //                     ];
+    //                 })->values()
+    //             ];
+    //         })
+    //         ->values();
+
+    //     return $list;
+    // }
+
+    public function listDash()
+    {
+        // Fetch user manual headings with associated descriptions
+        $list = CitizenDesk::select(
+            'citizen_desks.id',
+            'citizen_desks.heading',
+            'citizen_desks.status as is_suspended',
+            'citizen_desk_descriptions.id as description_id',
+            'citizen_desk_descriptions.heading as desk_description',
+            'citizen_desk_descriptions.links as description_link'
+        )
+            ->leftJoin('citizen_desk_descriptions', 'citizen_desk_descriptions.desk_id', '=', 'citizen_desks.id')
+            ->orderBy('citizen_desks.id', 'asc')
+            ->get()
+            ->groupBy('heading') 
+            ->map(function ($item) {
+                $heading = $item->first();
+                return [
+                    'heading' => $heading->heading,
+                    'data' => $item->map(function ($data) {
+                        return [
+                            'description_id' => $data->description_id,
+                            'desk_description' => $data->desk_description,
+                            'description_link' => $data->description_link
+                        ];
+                    })->values()
+                ];
+            })
+            ->values();
+
+        return $list;
+    }
 }
