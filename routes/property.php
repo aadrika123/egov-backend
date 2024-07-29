@@ -825,10 +825,11 @@ Route::controller(MasterReferenceController::class)->group(function () {
   Route::post('m-c-desk-des-delete', 'deleteCDeskDesc'); 
 
   //m- About us
-  Route::post('m-c-desk-des-create', 'addCDeskDesc');
-  Route::post('m-c-desk-des-update', 'updateCDeskDesc');
-  Route::post('m-c-desk-des-get-by-id', 'CDeskDescbyId');
-  Route::post('m-c-desk-des-delete', 'deleteCDeskDesc');
+  Route::post('m-about-us-create', 'addAboutUs');
+  Route::post('m-about-us-update', 'updateAboutUs');
+  Route::post('m-about-us-list', 'listAboutUs');
+  Route::post('m-about-us-get-by-id', 'aboutUsbyId');
+  Route::post('m-about-us-delete', 'deleteAboutUs');
 
 
   //master dashboard api

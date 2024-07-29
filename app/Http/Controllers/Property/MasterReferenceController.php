@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Property;
 
 use App\Http\Controllers\Controller;
 use App\MicroServices\DocUpload;
+use App\Models\AboutUsDetail;
 use App\Models\Announcement;
 use App\Models\CitizenDesk;
 use App\Models\CitizenDeskDescription;
@@ -3202,7 +3203,88 @@ class MasterReferenceController extends Controller
         }
     }
 
+    public function addAboutUs(Request $req)
+    {
+        try {
+            $req->validate([
+                'aboutUs' => 'required|string',
+                'vision' => 'required|string',
+                'mission' => 'required|string',
+                'objective' => 'required|string',
+                'function' => 'required|string',
+            ]);
+            $create = new AboutUsDetail();
+            $create->addAboutUs($req);
 
+            return responseMsgs(true, "Successfully Saved", "", "120101", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120101", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function updateAboutUs(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required',
+                'aboutUs' => 'nullable|string',
+                'vision' => 'nullable|string',
+                'mission' => 'nullable|string',
+                'objective' => 'nullable|string',
+                'function' => 'nullable|string',
+            ]);
+            $heading = new AboutUsDetail();
+            $list  = $heading->updateAboutUs($req);
+
+            return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function listAboutUs(Request $req)
+    {
+        try {
+            $list = new AboutUsDetail();
+            $masters = $list->listAboutUs();
+
+            return responseMsgs(true, "All List", $masters, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function aboutUsbyId(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required'
+            ]);
+            $listById = new AboutUsDetail();
+            $list  = $listById->getById($req);
+            if (!$list)
+                return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            else
+                return responseMsgs(true, "List", $list, "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120103", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function deleteAboutUs(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required',
+                'status' => 'required|boolean'
+            ]);
+            $delete = new AboutUsDetail();
+            $message = $delete->deleteAboutUs($req);
+            return responseMsgs(true, "", $message, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
     public function dashboardData(Request $req)
     {
         try {
