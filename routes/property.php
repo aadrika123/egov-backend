@@ -831,6 +831,13 @@ Route::controller(MasterReferenceController::class)->group(function () {
   Route::post('m-about-us-get-by-id', 'aboutUsbyId');
   Route::post('m-about-us-delete', 'deleteAboutUs');
 
+  //m- About us
+  Route::post('m-act-rules-create', 'addActRule');
+  Route::post('m-act-rules-update', 'updateActRule');
+  Route::post('m-act-rules-list', 'listActRule');
+  Route::post('m-act-rules-get-by-id', 'actRulebyId');
+  Route::post('m-act-rules-delete', 'deleteActRule');
+
 
   //master dashboard api
   Route::post('m-dashboard-data', 'dashboardData');

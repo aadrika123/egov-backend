@@ -2,53 +2,48 @@
 
 namespace App\Models;
 
-use App\MicroServices\DocUpload;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-
-class MSlider extends Model
+class ActRule extends Model
 {
     use HasFactory;
     protected $guarded = [];
     protected $connection = "pgsql_master";
-
-    //written by prity pandey
-    public function addSlider($req)
+    public function addRule($req)
 
     {
         $data = new self;
-        $data->slider_name = $req->sliderName;
+        $data->rule_name = $req->ruleName;
         $data->unique_id = $req->uniqueId;
         $data->reference_no = $req->ReferenceNo;
-        $data->slider_image_url = $req->sliderImageUrl;
+        $data->rule_image_url = $req->ruleImage;
         $data->save();
         return $data->id;
     }
 
-    public function updateSlider($req)
+    public function updateRule($req)
     {
-        $data = MSlider::where('id', $req->id)
+        $data = self::where('id', $req->id)
             ->where('status', true)
             ->first();
-        $data->slider_name = $req->sliderName ?? $data->slider_name;
-        $data->slider_image_url = $req->sliderImageUrl ?? $data->slider_image_url;
+        $data->rule_name = $req->ruleName ?? $data->rule_name;
+        $data->rule_image_url = $req->ruleImage ?? $data->rule_image_url;
         $data->reference_no = $req->ReferenceNo ?? $data->reference_no;
         $data->unique_id = $req->uniqueId ?? $data->unique_id;
         return $data->update();
     }
 
-
-    public function listSlider()
+    public function listRule()
     {
-        $list = MSlider::orderBy('id', 'asc')
+        $list = self::orderBy('id', 'asc')
             ->get();
         return $list;
     }
-    
+
     public function deleteSlider($req)
     {
-        $sliderType = MSlider::find($req->id);
+        $sliderType = self::find($req->id);
         $oldStatus = $sliderType->status;
         $sliderType->status = $req->status;
         $sliderType->save();
@@ -62,14 +57,14 @@ class MSlider extends Model
 
     public function getById($req)
     {
-        $list = MSlider::where('id', $req->id)
+        $list = self::where('id', $req->id)
             ->first();
         return $list;
     }
 
     public function listDash()
     {
-        return MSlider::select('*')
+        return self::select('*')
             ->where('status', 1)
             ->orderBy('id', 'asc')
             ->get();

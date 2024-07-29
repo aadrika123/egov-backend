@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Property;
 use App\Http\Controllers\Controller;
 use App\MicroServices\DocUpload;
 use App\Models\AboutUsDetail;
+use App\Models\ActRule;
 use App\Models\Announcement;
 use App\Models\CitizenDesk;
 use App\Models\CitizenDeskDescription;
@@ -1591,6 +1592,21 @@ class MasterReferenceController extends Controller
         }
     }
 
+    public function allSliderListv1(Request $req)
+    {
+        $list = new MSlider();
+        $docUpload = new DocUpload;
+        $masters = $list->listDash()->map(function ($val) use ($docUpload) {
+            $url = $docUpload->getSingleDocUrl($val);
+            $val->is_suspended = $val->status;
+            $val->slider_image_url = $url["doc_path"] ?? null;
+            return $val;
+        });
+
+        return $masters;
+    }
+
+
     public function deleteSlider(Request $req)
     {
         try {
@@ -1795,6 +1811,20 @@ class MasterReferenceController extends Controller
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
         }
+    }
+
+    public function allListAssetesv1(Request $req)
+    {
+        $create = new MAsset();
+        $docUpload = new DocUpload();
+        $data = $create->listDash()->map(function ($val) use ($docUpload) {
+            $url = $val->asset_file ? ["doc_path" => trim(Config::get('module-constants.DOC_URL') . "/" . $val->asset_file)] : $docUpload->getSingleDocUrl($val);
+            $val->is_suspended = $val->status;
+            $val->asset_file = $url["doc_path"] ?? null;
+            return $val;
+        });
+
+        return $data;
     }
 
     public function deleteAssetesv2(Request $req)
@@ -3285,6 +3315,106 @@ class MasterReferenceController extends Controller
             return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
         }
     }
+
+    public function addActRule(Request $req)
+    {
+        try {
+            $req->validate([
+                'ruleName' => 'required',
+                'ruleImage' => 'required|mimes:pdf'
+            ]);
+            $req->merge(["document" => $req->ruleImage]);
+            $docUpload = new DocUpload;
+            $data = $docUpload->checkDoc($req);
+            if (!$data["status"]) {
+                throw new Exception("Document Not uploaded");
+            }
+            $req->merge($data["data"]);
+            $create = new ActRule();
+            if (!$create->addRule($req)) {
+                throw new Exception("data not stored");
+            }
+
+            return responseMsgs(true, "Successfully Saved", "", "120101", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120101", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function updateActRule(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required',
+                'ruleName' => 'nullable',
+                'ruleImage' => 'nullable|mimes:pdf'
+            ]);
+            $req->merge(["document" => $req->ruleImage]);
+            $docUpload = new DocUpload;
+            $data = $docUpload->checkDoc($req);
+            if (!$data["status"]) {
+                throw new Exception("Document Not uploaded");
+            }
+            $req->merge($data["data"]);
+            $update = new ActRule();
+            $list  = $update->updateRule($req);
+
+            return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function listActRule(Request $req)
+    {
+        try {
+            $list = new ActRule();
+            $docUpload = new DocUpload;
+            $masters = $list->listRule()->map(function ($val) use ($docUpload) {
+                $url = $docUpload->getSingleDocUrl($val);
+                $val->is_suspended = $val->status;
+                $val->slider_image_url = $url["doc_path"] ?? null;
+                return $val;
+            });
+
+            return responseMsgs(true, "All List", $masters, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function deleteActRule(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required',
+                'status' => 'required'
+            ]);
+            $delete = new ActRule();
+            $message = $delete->deleteRule($req);
+            return responseMsgs(true, "", $message, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function actRulebyId(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required'
+            ]);
+            $list = new ActRule();
+            $message = $list->getById($req);
+            $docUpload = new DocUpload();
+            $url = $docUpload->getSingleDocUrl($message);
+            $message->is_suspended = $message->status;
+            $message->slider_image_url = $url["doc_path"] ?? null;
+            return responseMsgs(true, " Details", $message, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
     public function dashboardData(Request $req)
     {
         try {
@@ -3301,8 +3431,6 @@ class MasterReferenceController extends Controller
             $department =  new Department();
             $contact = new Contact();
             $citizenDesk = new CitizenDesk();
-            $asset = new MAsset();
-            $slider =  new MSlider();
             $aboutUs = new AboutUsDetail();
             $what = $whatsnew->listDash();
             $noticeDtl = $notice->listDash();
@@ -3317,8 +3445,8 @@ class MasterReferenceController extends Controller
             $departmentDtl = $department->listDash();
             $contactDtl = $contact->listDash();
             $cDeskDtl = $citizenDesk->listDash();
-            $assetdtl = $asset->listDash();
-            $sliderdtl =  $slider->listDash();
+            $sliderDtl = $this->allSliderListv1($req);
+            $assetdtl = $this->allListAssetesv1($req);
             $aboutUsDtl = $aboutUs->listDash();
             $list = [
                 "Whats New" => $what,
@@ -3335,7 +3463,7 @@ class MasterReferenceController extends Controller
                 "Contact" => $contactDtl,
                 "citizenDesk" => $cDeskDtl,
                 "Assets" => $assetdtl,
-                "Slider" => $sliderdtl,
+                "Slider" => $sliderDtl,
                 "About Us" => $aboutUsDtl
             ];
 
