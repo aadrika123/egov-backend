@@ -3516,7 +3516,7 @@ class MasterReferenceController extends Controller
                 $val->image_url = $url["doc_path"] ?? null;
                 return $val;
             });
-            return 
+            return $masters;
     }
 
     public function deleteAdministrative(Request $req)
@@ -3603,7 +3603,8 @@ class MasterReferenceController extends Controller
                 "Assets" => $assetdtl,
                 "Slider" => $sliderDtl,
                 "About Us" => $aboutUsDtl,
-                "Act Rule" =>$actRuleDtl
+                "Act Rule" =>$actRuleDtl,
+                "Administrative" =>$admistrativeDtl
             ];
 
             return responseMsgs(true, "All Dtaa", $list, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
