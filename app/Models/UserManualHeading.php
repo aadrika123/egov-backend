@@ -64,13 +64,10 @@ class UserManualHeading extends Model
             'user_manual_heading_descriptions.video_link'
         )
             ->leftjoin('user_manual_heading_descriptions', 'user_manual_heading_descriptions.heading_id', '=', 'user_manual_headings.id')
-            // ->where('user_manual_heading_descriptions.status',1)
-            // ->where('user_manual_headings.status',1)
             ->orderBy('user_manual_headings.id', 'asc')
             ->get()
             ->groupBy('id')
             ->map(function ($item) {
-                // Get the first item as the heading details
                 $heading = $item->first();
                 return [
                     'id' => $heading->id,
@@ -84,10 +81,10 @@ class UserManualHeading extends Model
                             'video_link' => $data->video_link,
                             'is_suspended_v1' =>$data->is_suspended_v1
                         ];
-                    })->values() // Ensure nested data has numeric indices
+                    })->values() 
                 ];
             })
-            ->values(); // Ensure the outer collection has numeric indices
+            ->values(); 
 
         return $list;
     }

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\MicroServices\DocUpload;
 use App\Models\AboutUsDetail;
 use App\Models\ActRule;
+use App\Models\Administrative;
 use App\Models\Announcement;
 use App\Models\CitizenDesk;
 use App\Models\CitizenDeskDescription;
@@ -3429,6 +3430,127 @@ class MasterReferenceController extends Controller
             return responseMsgs(false, $e->getMessage(), "", "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
         }
     }
+
+    public function addAdministrative(Request $req)
+    {
+        try {
+            $req->validate([
+                'Name' => 'required',
+                'designation' => 'required',
+                'Image' => 'required|mimes:pdf,jpeg,png,jpg',
+                'address' => 'required',
+                'phone' => "required",
+                'email' => 'required|email',
+            ]);
+            $req->merge(["document" => $req->Image]);
+            $docUpload = new DocUpload;
+            $data = $docUpload->checkDoc($req);
+            if (!$data["status"]) {
+                throw new Exception("Document Not uploaded");
+            }
+            $req->merge($data["data"]);
+            $create = new Administrative();
+            if (!$create->addAdministrative($req)) {
+                throw new Exception("data not stored");
+            }
+
+            return responseMsgs(true, "Successfully Saved", "", "120101", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120101", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function updateAdministrative(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required',
+                'Name' => 'nullable',
+                'designation' => 'nullable',
+                'Image' => 'nullable|mimes:pdf,jpeg,png,jpg',
+                'address' => 'nullable',
+                'phone' => "nullable",
+                'email' => 'nullable|email'
+            ]);
+            $req->merge(["document" => $req->Image]);
+            $docUpload = new DocUpload;
+            $data = $docUpload->checkDoc($req);
+            if (!$data["status"]) {
+                throw new Exception("Document Not uploaded");
+            }
+            $req->merge($data["data"]);
+            $update = new Administrative();
+            $list  = $update->updateAdministrative($req);
+
+            return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function listAdministrative(Request $req)
+    {
+        try {
+            $list = new Administrative();
+            $docUpload = new DocUpload;
+            $masters = $list->listRule()->map(function ($val) use ($docUpload) {
+                $url = $docUpload->getSingleDocUrl($val);
+                $val->is_suspended = $val->status;
+                $val->image_url = $url["doc_path"] ?? null;
+                return $val;
+            });
+
+            return responseMsgs(true, "All List", $masters, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function listAdministrativev1(Request $req)
+    {
+            $list = new Administrative();
+            $docUpload = new DocUpload;
+            $masters = $list->listDash()->map(function ($val) use ($docUpload) {
+                $url = $docUpload->getSingleDocUrl($val);
+                $val->is_suspended = $val->status;
+                $val->image_url = $url["doc_path"] ?? null;
+                return $val;
+            });
+            return 
+    }
+
+    public function deleteAdministrative(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required',
+                'status' => 'required'
+            ]);
+            $delete = new Administrative();
+            $message = $delete->deleteAdministrative($req);
+            return responseMsgs(true, "", $message, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function administrativebyId(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required'
+            ]);
+            $list = new Administrative();
+            $message = $list->getById($req);
+            $docUpload = new DocUpload();
+            $url = $docUpload->getSingleDocUrl($message);
+            $message->is_suspended = $message->status;
+            $message->image_url = $url["doc_path"] ?? null;
+            return responseMsgs(true, " Details", $message, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
     public function dashboardData(Request $req)
     {
         try {
@@ -3463,6 +3585,7 @@ class MasterReferenceController extends Controller
             $assetdtl = $this->allListAssetesv1($req);
             $aboutUsDtl = $aboutUs->listDash();
             $actRuleDtl = $this->listActRulev1($req);
+            $admistrativeDtl = $this->listAdministrativev1($req);
             $list = [
                 "Whats New" => $what,
                 "Important Notice" => $noticeDtl,
