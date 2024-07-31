@@ -39,7 +39,7 @@ class CitizenDesk extends Model
             'citizen_desks.status as is_suspended',
             'citizen_desk_descriptions.id as description_id',
             'citizen_desk_descriptions.heading as desk_description',
-            'citizen_desk_descriptions.status as desk_status',
+            'citizen_desk_descriptions.status as is_suspended_v1',
             'citizen_desk_descriptions.links as description_link'
         )
             ->leftjoin('citizen_desk_descriptions', 'citizen_desk_descriptions.desk_id', '=', 'citizen_desks.id')
@@ -60,7 +60,7 @@ class CitizenDesk extends Model
                             'description_id' => $data->description_id,
                             'desk_description' => $data->desk_description,
                             'description_link' => $data->description_link,
-                            'desk_status' =>$data->desk_status
+                            'is_suspended_v1' => $data->is_suspended_v1
                         ];
                     })->values() // Ensure nested data has numeric indices
                 ];
@@ -157,9 +157,11 @@ class CitizenDesk extends Model
             'citizen_desk_descriptions.links as description_link'
         )
             ->leftJoin('citizen_desk_descriptions', 'citizen_desk_descriptions.desk_id', '=', 'citizen_desks.id')
+            ->where('citizen_desk_descriptions.status', 1)
+            ->where('citizen_desks.status', 1)
             ->orderBy('citizen_desks.id', 'asc')
             ->get()
-            ->groupBy('heading') 
+            ->groupBy('heading')
             ->map(function ($item) {
                 $heading = $item->first();
                 return [
