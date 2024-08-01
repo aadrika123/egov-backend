@@ -32,7 +32,7 @@ class MAsset extends Model
             ->first();
         $data->key = $req->key ?? $data->key;
         $data->asset_file = $req->assetFile ?? $data->asset_file;
-        $data->asset_name = $req->assetName ?? $data->asset_name;
+        $data->asset_name = $data->asset_name;
         $data->ulb_id = $req->ulbId ?? $data->ulb_id;
         $data->unique_id = $req->uniqueId ?? $data->unique_id;
         $data->reference_no = $req->ReferenceNo ?? $data->reference_no;
