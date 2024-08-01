@@ -704,11 +704,18 @@ Route::controller(MasterReferenceController::class)->group(function () {
   Route::post('m-slider-get-by-id', 'sliderById');
 
   //m-assets
-  Route::post('m-assets-create', 'addAssetesv2');
-  Route::post('m-assets-update', 'editAssetesv2');
-  Route::post('m-assets-get', 'allListAssetesv2');
-  Route::post('m-assets-delete', 'deleteAssetesv2');
-  Route::post('m-assets-get-by-id', 'Assetesv2ById');
+  // Route::post('m-assets-create', 'addAssetesv2');
+  // Route::post('m-assets-update', 'editAssetesv2');
+  // Route::post('m-assets-get', 'allListAssetesv2');
+  // Route::post('m-assets-delete', 'deleteAssetesv2');
+  // Route::post('m-assets-get-by-id', 'Assetesv2ById');
+
+   //m-assets-new
+   Route::post('m-assets-create', 'addAssetesv3');
+   Route::post('m-assets-update', 'editAssetesv3');
+   Route::post('m-assets-get', 'allListAssetesv3');
+   Route::post('m-assets-delete', 'deleteAssetesv3');
+   Route::post('m-assets-get-by-id', 'Assetesv3ById');
 
   //m- notice
   Route::post('m-notice-create', 'addNotice');

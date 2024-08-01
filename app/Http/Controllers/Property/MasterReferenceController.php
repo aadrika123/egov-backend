@@ -1645,7 +1645,7 @@ class MasterReferenceController extends Controller
      * |M-Assets
      */
     //Assets crud with DMS
-    public function addAssetes(Request $req)
+    public function addAssetesv3(Request $req)
     {
         $req->validate([
             'key' => 'required',
@@ -1673,7 +1673,7 @@ class MasterReferenceController extends Controller
     }
 
 
-    public function editAssetes(Request $req)
+    public function editAssetesv3(Request $req)
     {
         $req->validate([
             "id" => "required",
@@ -1700,7 +1700,7 @@ class MasterReferenceController extends Controller
         }
     }
 
-    public function allListAssetes(Request $req)
+    public function allListAssetesv3(Request $req)
     {
         try {
             $create = new MAsset();
@@ -1718,8 +1718,61 @@ class MasterReferenceController extends Controller
         }
     }
 
-    #==========================v2================================
 
+    public function allListAssetesDash(Request $req)
+    {
+        $create = new MAsset();
+        $docUpload = new DocUpload();
+        $data = $create->listDash()->map(function ($val) use ($docUpload) {
+            $url = $val->asset_file ? ["doc_path" => trim(Config::get('module-constants.DOC_URL') . "/" . $val->asset_file)] : $docUpload->getSingleDocUrl($val);
+            return [
+                'asset_name' => $val->asset_name,
+                'file_url' => $url["doc_path"] ?? null
+            ];
+        });
+
+        // Reformat the data to use asset_name as the key and file_url as the value
+        $assets = $data->pluck('file_url', 'asset_name')->toArray();
+
+        // Return only the assets as a plain array
+        return $assets;
+    }
+
+    public function deleteAssetesv3(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required',
+                'status' => 'required'
+            ]);
+            $delete = new MAsset();
+            $message = $delete->deleteAssets($req);
+            return responseMsgs(true, "", $message, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    public function Assetesv3ById(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required'
+            ]);
+            $list = new MAsset();
+            $message = $list->getById($req);
+            $docUpload = new DocUpload();
+            $url = $docUpload->getSingleDocUrl($message);
+            $message->is_suspended = $message->status;
+            $message->asset_file = $url["doc_path"] ?? null;
+            return responseMsgs(true, "Slider Details", $message, "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+    #==========================v2================================
+    # function for upload and all functionality with local folder
+    # not in used
     public function addAssetesv2(Request $req)
     {
         $req->validate([
@@ -1879,7 +1932,7 @@ class MasterReferenceController extends Controller
         }
     }
 
-
+    #=======================end=============================
 
     #============================penalty type crud===========================
     // public function addPenaltyType(Request $req)
@@ -3599,7 +3652,7 @@ class MasterReferenceController extends Controller
             $contactDtl = $contact->listDash();
             $cDeskDtl = $citizenDesk->listDash();
             $sliderDtl = $this->allSliderListv1($req);
-            $assetdtl = $this->allListAssetesv1($req);
+            $assetdtl = $this->allListAssetesDash($req);
             $aboutUsDtl = $aboutUs->listDash();
             $actRuleDtl = $this->listActRulev1($req);
             $admistrativeDtl = $this->listAdministrativev1($req);
