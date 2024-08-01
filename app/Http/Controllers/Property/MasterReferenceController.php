@@ -1763,7 +1763,7 @@ class MasterReferenceController extends Controller
         $req->validate([
             "id" => "required",
             'key' => 'required',
-            "assetName" => "required",
+            "assetName" => "nullable",
             'assetFile' => 'required|mimes:pdf,jpeg,png,jpg',
             "ulbId" => "nullable"
         ]);
@@ -1818,15 +1818,31 @@ class MasterReferenceController extends Controller
     {
         $create = new MAsset();
         $docUpload = new DocUpload();
+        // $data = $create->listDash()->map(function ($val) use ($docUpload) {
+        //     $url = $val->asset_file ? ["doc_path" => trim(Config::get('module-constants.DOC_URL') . "/" . $val->asset_file)] : $docUpload->getSingleDocUrl($val);
+        //     $val->is_suspended = $val->status;
+        //     $val->asset_file = $url["doc_path"] ?? null;
+        //     return $val;
+        // });
+
+        // // Return the transformed data
+        // return $data;
+
         $data = $create->listDash()->map(function ($val) use ($docUpload) {
             $url = $val->asset_file ? ["doc_path" => trim(Config::get('module-constants.DOC_URL') . "/" . $val->asset_file)] : $docUpload->getSingleDocUrl($val);
-            $val->is_suspended = $val->status;
-            $val->asset_file = $url["doc_path"] ?? null;
-            return $val;
+            return [
+                'asset_name' => $val->asset_name,
+                'file_url' => $url["doc_path"] ?? null
+            ];
         });
 
-        return $data;
+        // Reformat the data to use asset_name as the key and file_url as the value
+        $assets = $data->pluck('file_url', 'asset_name')->toArray();
+
+        // Return only the assets as a plain array
+        return $assets;
     }
+
 
     public function deleteAssetesv2(Request $req)
     {
@@ -3134,7 +3150,7 @@ class MasterReferenceController extends Controller
             return responseMsgs(false, $e->getMessage(), "", "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
         }
     }
-    
+
 
     public function CDeskbyId(Request $req)
     {
@@ -3387,16 +3403,16 @@ class MasterReferenceController extends Controller
 
     public function listActRulev1(Request $req)
     {
-            $list = new ActRule();
-            $docUpload = new DocUpload;
-            $masters = $list->listDash()->map(function ($val) use ($docUpload) {
-                $url = $docUpload->getSingleDocUrl($val);
-                $val->is_suspended = $val->status;
-                $val->rule_image_url = $url["doc_path"] ?? null;
-                return $val;
-            });
+        $list = new ActRule();
+        $docUpload = new DocUpload;
+        $masters = $list->listDash()->map(function ($val) use ($docUpload) {
+            $url = $docUpload->getSingleDocUrl($val);
+            $val->is_suspended = $val->status;
+            $val->rule_image_url = $url["doc_path"] ?? null;
+            return $val;
+        });
 
-            return  $masters;
+        return  $masters;
     }
 
     public function deleteActRule(Request $req)
@@ -3509,15 +3525,15 @@ class MasterReferenceController extends Controller
 
     public function listAdministrativev1(Request $req)
     {
-            $list = new Administrative();
-            $docUpload = new DocUpload;
-            $masters = $list->listDash()->map(function ($val) use ($docUpload) {
-                $url = $docUpload->getSingleDocUrl($val);
-                $val->is_suspended = $val->status;
-                $val->image_url = $url["doc_path"] ?? null;
-                return $val;
-            });
-            return $masters;
+        $list = new Administrative();
+        $docUpload = new DocUpload;
+        $masters = $list->listDash()->map(function ($val) use ($docUpload) {
+            $url = $docUpload->getSingleDocUrl($val);
+            $val->is_suspended = $val->status;
+            $val->image_url = $url["doc_path"] ?? null;
+            return $val;
+        });
+        return $masters;
     }
 
     public function deleteAdministrative(Request $req)
@@ -3604,11 +3620,11 @@ class MasterReferenceController extends Controller
                 "Assets" => $assetdtl,
                 "Slider" => $sliderDtl,
                 "About Us" => $aboutUsDtl,
-                "Act Rule" =>$actRuleDtl,
-                "Administrative" =>$admistrativeDtl
+                "Act Rule" => $actRuleDtl,
+                "Administrative" => $admistrativeDtl
             ];
 
-            return responseMsgs(true, "All Dtaa", $list, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            return responseMsgs(true, "All Data", $list, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
         }
