@@ -1723,16 +1723,26 @@ class MasterReferenceController extends Controller
     {
         $create = new MAsset();
         $docUpload = new DocUpload();
-        $data = $create->listDash()->map(function ($val) use ($docUpload) {
-            $url = $val->asset_file ? ["doc_path" => trim(Config::get('module-constants.DOC_URL') . "/" . $val->asset_file)] : $docUpload->getSingleDocUrl($val);
+        $masters = $create->listDash()->map(function ($val) use ($docUpload) {
+            $url = $docUpload->getSingleDocUrl($val);
+            $val->is_suspended = $val->status;
+            $val->asset_file = $url["doc_path"] ?? null;
+            //return $val;
             return [
                 'asset_name' => $val->asset_name,
                 'file_url' => $url["doc_path"] ?? null
             ];
         });
+        // $data = $create->listDash()->map(function ($val) use ($docUpload) {
+        //     $url = $val->asset_file ? ["doc_path" => trim(Config::get('module-constants.DOC_URL') . "/" . $val->asset_file)] : $docUpload->getSingleDocUrl($val);
+        //     return [
+        //         'asset_name' => $val->asset_name,
+        //         'file_url' => $url["doc_path"] ?? null
+        //     ];
+        // });
 
         // Reformat the data to use asset_name as the key and file_url as the value
-        $assets = $data->pluck('file_url', 'asset_name')->toArray();
+        $assets = $masters->pluck('file_url', 'asset_name')->toArray();
 
         // Return only the assets as a plain array
         return $assets;
