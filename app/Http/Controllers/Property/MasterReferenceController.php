@@ -1763,7 +1763,7 @@ class MasterReferenceController extends Controller
         $req->validate([
             "id" => "required",
             'key' => 'required',
-            "assetName" => "nullable",
+            "assetName" => "required",
             'assetFile' => 'required|mimes:pdf,jpeg,png,jpg',
             "ulbId" => "nullable"
         ]);
