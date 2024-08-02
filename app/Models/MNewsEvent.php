@@ -36,7 +36,7 @@ class MNewsEvent extends Model
     public function updateNews($req)
     {
         $data = MNewsEvent::where('id', $req->id)
-            ->where('status', 1)
+            //->where('status', 1)
             ->first();
         $data->news = $req->news;
         $data->news_link = $req->newsLink;

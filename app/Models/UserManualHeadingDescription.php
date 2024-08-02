@@ -41,7 +41,7 @@ class UserManualHeadingDescription extends Model
     public function updateUserManualHeading($req)
     {
         $data = UserManualHeadingDescription::where('id', $req->id)
-            ->where('status', 1)
+            //->where('status', 1)
             ->first();
         $data->heading_id = $req->headingId;
         $data->description = $req->description;

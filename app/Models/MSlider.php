@@ -29,7 +29,7 @@ class MSlider extends Model
     public function updateSlider($req)
     {
         $data = MSlider::where('id', $req->id)
-            ->where('status', true)
+            //->where('status', true)
             ->first();
         $data->slider_name = $req->sliderName ?? $data->slider_name;
         $data->slider_image_url = $req->sliderImageUrl ?? $data->slider_image_url;

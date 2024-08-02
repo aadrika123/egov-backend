@@ -36,7 +36,7 @@ class MMobileAppLink extends Model
     public function updateMApp($req)
     {
         $data = MMobileAppLink::where('id', $req->id)
-            ->where('status', 1)
+           // ->where('status', 1)
             ->first();
         $data->app_name = $req->appName;
         $data->app_link = $req->appLink;

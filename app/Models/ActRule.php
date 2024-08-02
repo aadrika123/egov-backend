@@ -25,7 +25,7 @@ class ActRule extends Model
     public function updateRule($req)
     {
         $data = self::where('id', $req->id)
-            ->where('status', true)
+            //->where('status', true)
             ->first();
         $data->rule_name = $req->ruleName ?? $data->rule_name;
         $data->rule_image_url = $req->ruleImage ?? $data->rule_image_url;

@@ -36,7 +36,7 @@ class MScheme extends Model
     public function updateScheme($req)
     {
         $data = MScheme::where('id', $req->id)
-            ->where('status', 1)
+            //->where('status', 1)
             ->first();
         $data->scheme_name = $req->schemeName;
         $data->scheme_link = $req->schemeLink;

@@ -22,7 +22,7 @@ class Department extends Model
     public function updateDepartment($req)
     {
         $data = Department::where('id', $req->id)
-            ->where('status', 1)
+            //->where('status', 1)
             ->first();
         $data->department_name = $req->departnameName;
         $data->department_links = $req->link;

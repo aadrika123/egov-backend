@@ -22,7 +22,7 @@ class QuickLink extends Model
     public function updateLink($req)
     {
         $data = QuickLink::where('id', $req->id)
-            ->where('status', 1)
+            //->where('status', 1)
             ->first();
         $data->link_heading = $req->linkHeading;
         $data->quick_link = $req->quickLink;

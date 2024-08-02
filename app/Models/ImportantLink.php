@@ -22,7 +22,7 @@ class ImportantLink extends Model
     public function updateLink($req)
     {
         $data = ImportantLink::where('id', $req->id)
-            ->where('status', 1)
+           // ->where('status', 1)
             ->first();
         $data->link_heading = $req->linkHeading;
         $data->links = $req->importantLink;

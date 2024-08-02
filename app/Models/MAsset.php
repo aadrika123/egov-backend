@@ -28,7 +28,7 @@ class MAsset extends Model
     public function edit($req)
     {
         $data = self::where('id', $req->id)
-            ->where('status', true)
+            //->where('status', true)
             ->first();
         $data->key = $req->key ?? $data->key;
         $data->asset_file = $req->assetFile ?? $data->asset_file;

@@ -75,7 +75,7 @@ class CitizenDesk extends Model
     public function updateCDesk($req)
     {
         $data = CitizenDesk::where('id', $req->id)
-            ->where('status', 1)
+            //->where('status', 1)
             ->first();
         $data->heading = $req->heading;
         $data->update();

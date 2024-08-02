@@ -36,7 +36,7 @@ class MEService extends Model
     public function updateServices($req)
     {
         $data = MEService::where('id', $req->id)
-            ->where('status', 1)
+           // ->where('status', 1)
             ->first();
         $data->service = $req->service;
         $data->service_link = $req->serviceLink;

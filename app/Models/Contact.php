@@ -25,7 +25,7 @@ class Contact extends Model
     public function updateContact($req)
     {
         $data = self::where('id', $req->id)
-            ->where('status', 1)
+            //->where('status', 1)
             ->first();
         $data->department_name = $req->departnameName;
         $data->address = $req->address;

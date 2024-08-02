@@ -29,7 +29,7 @@ class Administrative extends Model
     public function updateAdministrative($req)
     {
         $data = self::where('id', $req->id)
-            ->where('status', true)
+            //->where('status', true)
             ->first();
         $data->name = $req->Name ?? $data->name;
         $data->image_url = $req->Image ?? $data->image_url;

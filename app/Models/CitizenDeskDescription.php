@@ -23,7 +23,7 @@ class CitizenDeskDescription extends Model
     public function updateCDeskDesc($req)
     {
         $data = CitizenDeskDescription::where('id', $req->id)
-            ->where('status', 1)
+            //->where('status', 1)
             ->first();
         $data->heading = $req->headingDesc;
         $data->links = $req->link;

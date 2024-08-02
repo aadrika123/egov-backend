@@ -21,7 +21,7 @@ class MWhat extends Model
     public function updateWhatNew($req)
     {
         $data = MWhat::where('id', $req->id)
-            ->where('status', 1)
+            //->where('status', 1)
             ->first();
         $data->whats_new = $req->whatsNew;
         $data->update();

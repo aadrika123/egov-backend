@@ -33,7 +33,7 @@ class Announcement extends Model
     public function updateAnnouncementType($req)
     {
         $data = Announcement::where('id', $req->id)
-            ->where('status', true)
+            //->where('status', true)
             ->first();
         $data->announcement = $req->announcement;
         $data->save();

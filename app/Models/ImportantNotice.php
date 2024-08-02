@@ -33,7 +33,7 @@ class ImportantNotice extends Model
     public function updateNoticeType($req)
     {
         $data = ImportantNotice::where('id', $req->id)
-            ->where('status', true)
+            //->where('status', true)
             ->first();
         $data->notice = $req->notice;
         $data->save();

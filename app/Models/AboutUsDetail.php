@@ -25,7 +25,7 @@ class AboutUsDetail extends Model
     public function updateAboutUs($req)
     {
         $data = AboutUsDetail::where('id', $req->id)
-            ->where('status', 1)
+            //->where('status', 1)
             ->first();
         $data->about_us = $req->aboutUs;
         $data->vision = $req->vision;
