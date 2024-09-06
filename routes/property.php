@@ -545,6 +545,8 @@ Route::controller(ReportController::class)->group(function () {
 //Written by Prity Pandey
 Route::controller(ReportController::class)->group(function () {
   Route::post('reports/property/collection', 'collectionReport');
+  Route::post('reports/oldHolding', 'oldHolding');
+
 });
 /**
     | Test Purpose

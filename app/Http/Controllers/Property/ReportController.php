@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\UlbMaster;
 use App\Models\MplYearlyReport;
 use App\Models\Property\PropDemand;
+use App\Models\Property\PropProperty;
 use App\Models\Property\PropTransaction;
 use App\Models\Trade\TradeTransaction;
 use App\Models\UlbMaster as ModelsUlbMaster;
@@ -597,137 +598,130 @@ class ReportController extends Controller
      * | Mpl Report
      */
 
-     public function mplReport(Request $request)
-     {
-         try {
-             $ulbId = $request->ulbId ;
-             $fyear = getFY();
-             $fyArr = explode("-", $fyear);
-             $privYear = ($fyArr[0] - 1) . "-" . ($fyArr[1] - 1);
-             $prevYearData =  DB::connection('pgsql_reports')
-                 ->table('mpl_yearly_reports')
-                 ->where("fyear", $privYear) ;
-                // ->where(DB::raw("CAST(created_at AS DATE)"),Carbon::now()->format("Y-m-d"));
-             $currentYearData =  DB::connection('pgsql_reports')
-                 ->table('mpl_yearly_reports')
-                 ->where("fyear", $fyear);
-                // ->where(DB::raw("CAST(created_at AS DATE)"),Carbon::now()->format("Y-m-d"));
-            if($ulbId)
-            {
-                $currentYearData = $currentYearData->where("ulb_id",$ulbId);
-                $prevYearData = $prevYearData->where("ulb_id",$ulbId);
+    public function mplReport(Request $request)
+    {
+        try {
+            $ulbId = $request->ulbId;
+            $fyear = getFY();
+            $fyArr = explode("-", $fyear);
+            $privYear = ($fyArr[0] - 1) . "-" . ($fyArr[1] - 1);
+            $prevYearData =  DB::connection('pgsql_reports')
+                ->table('mpl_yearly_reports')
+                ->where("fyear", $privYear);
+            // ->where(DB::raw("CAST(created_at AS DATE)"),Carbon::now()->format("Y-m-d"));
+            $currentYearData =  DB::connection('pgsql_reports')
+                ->table('mpl_yearly_reports')
+                ->where("fyear", $fyear);
+            // ->where(DB::raw("CAST(created_at AS DATE)"),Carbon::now()->format("Y-m-d"));
+            if ($ulbId) {
+                $currentYearData = $currentYearData->where("ulb_id", $ulbId);
+                $prevYearData = $prevYearData->where("ulb_id", $ulbId);
             }
-            $prevYearData = $prevYearData->get()->map(function($val){
-                $val->top_area_property_transaction_ward_count_total = 
-                (
-                    $val->top_area_property_transaction_ward1_count + 
-                    $val->top_area_property_transaction_ward2_count +
-                    $val->top_area_property_transaction_ward3_count +
-                    $val->top_area_property_transaction_ward4_count +
-                    $val->top_area_property_transaction_ward5_count 
-                );
-                $val->top_area_saf_ward_count_total = 
-                (
-                    $val->top_area_saf_ward1_count + 
-                    $val->top_area_saf_ward2_count +
-                    $val->top_area_saf_ward3_count +
-                    $val->top_area_saf_ward4_count +
-                    $val->top_area_saf_ward5_count 
-                );
-                $val->top_defaulter_ward_count_total = 
-                (
-                    $val->top_defaulter_ward1_count + 
-                    $val->top_defaulter_ward2_count +
-                    $val->top_defaulter_ward3_count +
-                    $val->top_defaulter_ward4_count +
-                    $val->top_defaulter_ward5_count 
-                );
+            $prevYearData = $prevYearData->get()->map(function ($val) {
+                $val->top_area_property_transaction_ward_count_total =
+                    (
+                        $val->top_area_property_transaction_ward1_count +
+                        $val->top_area_property_transaction_ward2_count +
+                        $val->top_area_property_transaction_ward3_count +
+                        $val->top_area_property_transaction_ward4_count +
+                        $val->top_area_property_transaction_ward5_count
+                    );
+                $val->top_area_saf_ward_count_total =
+                    (
+                        $val->top_area_saf_ward1_count +
+                        $val->top_area_saf_ward2_count +
+                        $val->top_area_saf_ward3_count +
+                        $val->top_area_saf_ward4_count +
+                        $val->top_area_saf_ward5_count
+                    );
+                $val->top_defaulter_ward_count_total =
+                    (
+                        $val->top_defaulter_ward1_count +
+                        $val->top_defaulter_ward2_count +
+                        $val->top_defaulter_ward3_count +
+                        $val->top_defaulter_ward4_count +
+                        $val->top_defaulter_ward5_count
+                    );
                 return $val;
             });
-            $currentYearData = $currentYearData->get()->map(function($val){
-                $val->top_area_property_transaction_ward_count_total = 
-                (
-                    $val->top_area_property_transaction_ward1_count +
-                    $val->top_area_property_transaction_ward2_count +
-                    $val->top_area_property_transaction_ward3_count +
-                    $val->top_area_property_transaction_ward4_count +
-                    $val->top_area_property_transaction_ward5_count 
-                );
-                $val->top_area_saf_ward_count_total = 
-                (
-                    $val->top_area_saf_ward1_count + 
-                    $val->top_area_saf_ward2_count +
-                    $val->top_area_saf_ward3_count +
-                    $val->top_area_saf_ward4_count +
-                    $val->top_area_saf_ward5_count 
-                );
-                $val->top_defaulter_ward_count_total = 
-                (
-                    $val->top_defaulter_ward1_count + 
-                    $val->top_defaulter_ward2_count +
-                    $val->top_defaulter_ward3_count +
-                    $val->top_defaulter_ward4_count +
-                    $val->top_defaulter_ward5_count 
-                );
+            $currentYearData = $currentYearData->get()->map(function ($val) {
+                $val->top_area_property_transaction_ward_count_total =
+                    (
+                        $val->top_area_property_transaction_ward1_count +
+                        $val->top_area_property_transaction_ward2_count +
+                        $val->top_area_property_transaction_ward3_count +
+                        $val->top_area_property_transaction_ward4_count +
+                        $val->top_area_property_transaction_ward5_count
+                    );
+                $val->top_area_saf_ward_count_total =
+                    (
+                        $val->top_area_saf_ward1_count +
+                        $val->top_area_saf_ward2_count +
+                        $val->top_area_saf_ward3_count +
+                        $val->top_area_saf_ward4_count +
+                        $val->top_area_saf_ward5_count
+                    );
+                $val->top_defaulter_ward_count_total =
+                    (
+                        $val->top_defaulter_ward1_count +
+                        $val->top_defaulter_ward2_count +
+                        $val->top_defaulter_ward3_count +
+                        $val->top_defaulter_ward4_count +
+                        $val->top_defaulter_ward5_count
+                    );
                 return $val;
             });
             // dd( $data['Property Zone Collection']['a_zone_name'] =  ((collect($currentYearData)->whereNotNull("a_zone_name")->where("a_zone_name","<>","")->first())->a_zone_name),$currentYearData);
             $topFiveUlbs = collect();
             $couter = 0;
-            foreach( collect(($currentYearData)->sortByDesc("top_area_property_transaction_ward_count_total")) as $val)
-            {
-                if($couter>=5)
-                {
+            foreach (collect(($currentYearData)->sortByDesc("top_area_property_transaction_ward_count_total")) as $val) {
+                if ($couter >= 5) {
                     break;
                 }
-                ++$couter;                
+                ++$couter;
                 $topFiveUlbs->push($val);
             }
             $topFiveSafCount = collect();
             $couter = 0;
-            foreach( collect(($currentYearData)->sortByDesc("top_area_saf_ward_count_total")) as $val)
-            {
-                if($couter>=5)
-                {
+            foreach (collect(($currentYearData)->sortByDesc("top_area_saf_ward_count_total")) as $val) {
+                if ($couter >= 5) {
                     break;
                 }
-                ++$couter;                
+                ++$couter;
                 $topFiveSafCount->push($val);
             }
             $topFivedefaulterCount = collect();
             $couter = 0;
-            foreach( collect(($currentYearData)->sortByDesc("top_defaulter_ward_count_total")) as $val)
-            {
-                if($couter>=5)
-                {
+            foreach (collect(($currentYearData)->sortByDesc("top_defaulter_ward_count_total")) as $val) {
+                if ($couter >= 5) {
                     break;
                 }
-                ++$couter;                
+                ++$couter;
                 $topFivedefaulterCount->push($val);
             }
-        
-             #_Assessment Categories ??
-            $data['Assessment Categories']['total_assessment']  = collect($currentYearData)->sum("total_assessment") ?? 0; 
+
+            #_Assessment Categories ??
+            $data['Assessment Categories']['total_assessment']  = collect($currentYearData)->sum("total_assessment") ?? 0;
             $data['Prop Categories']['total_assessment']  = collect($currentYearData)->sum("total_property") ?? 0;
             $data['Prop Categories']['total_residential_props'] = collect($currentYearData)->sum("total_residential_props") ?? 0;
             $data['Prop Categories']['total_commercial_props']  = collect($currentYearData)->sum("total_commercial_props") ?? 0;
             $data['Prop Categories']['total_govt_props']  = collect($currentYearData)->sum("total_govt_props") ?? 0;
             $data['Prop Categories']['total_industrial_props'] = collect($currentYearData)->sum("total_industrial_props") ?? 0;
             $data['Prop Categories']['total_religious_props'] = collect($currentYearData)->sum("total_religious_props") ?? 0;
-            $data['Prop Categories']['total_trust_props'] = collect($currentYearData)->sum("total_trust_props") ?? 0; 
-            $data['Prop Categories']['total_mixed_props'] = collect($currentYearData)->sum("total_mixed_props") ?? 0; 
+            $data['Prop Categories']['total_trust_props'] = collect($currentYearData)->sum("total_trust_props") ?? 0;
+            $data['Prop Categories']['total_mixed_props'] = collect($currentYearData)->sum("total_mixed_props") ?? 0;
             $data['Prop Categories']['vacand']  = collect($currentYearData)->sum("vacant_property") ?? 0;
 
             #prop_dcb
             round(collect($currentYearData)->sum("current_year_cash_collection") / 10000000, 2);
-            $data['Prop DCB']['prop_current_demand']  = round(collect($currentYearData)->sum("prop_current_demand")/ 10000000, 2);
-            $data['Prop DCB']['prop_arrear_demand']  = round(collect($currentYearData)->sum("prop_arrear_demand")/ 10000000, 2);
-            $data['Prop DCB']['prop_current_collection']  = round(collect($currentYearData)->sum("prop_current_collection")/ 10000000, 2);
-            $data['Prop DCB']['prop_arrear_collection']  = round(collect($currentYearData)->sum("prop_arrear_collection")/ 10000000, 2);
-            $data['Prop DCB']['prop_outsatnding_current_demand']  = round(collect($currentYearData)->sum("prop_outsatnding_current_demand")/ 10000000, 2);
+            $data['Prop DCB']['prop_current_demand']  = round(collect($currentYearData)->sum("prop_current_demand") / 10000000, 2);
+            $data['Prop DCB']['prop_arrear_demand']  = round(collect($currentYearData)->sum("prop_arrear_demand") / 10000000, 2);
+            $data['Prop DCB']['prop_current_collection']  = round(collect($currentYearData)->sum("prop_current_collection") / 10000000, 2);
+            $data['Prop DCB']['prop_arrear_collection']  = round(collect($currentYearData)->sum("prop_arrear_collection") / 10000000, 2);
+            $data['Prop DCB']['prop_outsatnding_current_demand']  = round(collect($currentYearData)->sum("prop_outsatnding_current_demand") / 10000000, 2);
             $data['Prop DCB']['prop_current_collection_efficiency']  = collect($currentYearData)->sum("prop_current_collection_efficiency");
             $data['Prop DCB']['prop_arrear_collection_efficiency']  = collect($currentYearData)->sum("prop_arrear_collection_efficiency");
-          
+
             #_Ownership ??
             $data['Ownership']['total_ownership'] = collect($currentYearData)->sum("total_property") ?? 0;
             $data['Ownership']['owned_property']  = collect($currentYearData)->sum("owned_property") ?? 0;
@@ -738,115 +732,115 @@ class ReportController extends Controller
             // $data['Property']['prop_current_demand']    = round(($currentYearData->prop_current_demand ?? 0) / 10000000, 2);
             // $data['Property']['prop_arrear_demand']    = round(($currentYearData->prop_arrear_demand ?? 0) / 10000000, 2);
             // $data['Property']['prop_total_demand']    = round(($currentYearData->prop_total_demand ?? 0) / 10000000, 2);
-            
-            $data['Property Zone Collection']['a_zone_name'] =  ((collect($currentYearData)->whereNotNull("a_zone_name")->where("a_zone_name","<>","")->first())->a_zone_name ?? "") ;
-           
+
+            $data['Property Zone Collection']['a_zone_name'] =  ((collect($currentYearData)->whereNotNull("a_zone_name")->where("a_zone_name", "<>", "")->first())->a_zone_name ?? "");
+
             $data['Property Zone Collection']['a_prop_total_hh'] = collect($currentYearData)->sum("a_prop_total_hh");
             $data['Property Zone Collection']['a_prop_total_amount'] = collect($currentYearData)->sum("a_prop_total_amount");
-            $data['Property Zone Collection']['b_zone_name']  = ((collect($currentYearData)->whereNotNull("b_zone_name")->where("b_zone_name","<>","")->first())->b_zone_name ?? "") ;
+            $data['Property Zone Collection']['b_zone_name']  = ((collect($currentYearData)->whereNotNull("b_zone_name")->where("b_zone_name", "<>", "")->first())->b_zone_name ?? "");
             $data['Property Zone Collection']['b_prop_total_hh'] = collect($currentYearData)->sum("b_prop_total_hh");
             $data['Property Zone Collection']['b_prop_total_amount'] = collect($currentYearData)->sum("b_prop_total_amount");
-                                        
-            
+
+
             //  #_Top Areas Property Transactions 
             //  /**
 
             //   include ward no
             //   */
-            $data['Top Areas Property Transactions']['ward1_count'] = $ulbId ?  (collect($currentYearData)->sum("top_area_property_transaction_ward1_count") ?? 0) : collect(($topFiveUlbs[0]??[]))["top_area_property_transaction_ward_count_total"]??0;
-            
-             $data['Top Areas Property Transactions']['ward1_name']  = 
-             $ulbId ?  ((collect($currentYearData)->first())->top_area_property_transaction_ward1_name ?? "") : collect(($topFiveUlbs[0]??[]))["ulb_name"]??"";
+            $data['Top Areas Property Transactions']['ward1_count'] = $ulbId ?  (collect($currentYearData)->sum("top_area_property_transaction_ward1_count") ?? 0) : collect(($topFiveUlbs[0] ?? []))["top_area_property_transaction_ward_count_total"] ?? 0;
 
-             $data['Top Areas Property Transactions']['ward2_count'] = $ulbId ?  (collect($currentYearData)->sum("top_area_property_transaction_ward2_count") ?? 0) : collect(($topFiveUlbs[1]??[]))["top_area_property_transaction_ward_count_total"]??0;
-                        
-             $data['Top Areas Property Transactions']['ward2_name']  = 
-             $ulbId ?  ((collect($currentYearData)->first())->top_area_property_transaction_ward2_name ?? "") : collect(($topFiveUlbs[1]??[]))["ulb_name"]??"";
+            $data['Top Areas Property Transactions']['ward1_name']  =
+                $ulbId ?  ((collect($currentYearData)->first())->top_area_property_transaction_ward1_name ?? "") : collect(($topFiveUlbs[0] ?? []))["ulb_name"] ?? "";
 
-             $data['Top Areas Property Transactions']['ward3_count'] = $ulbId ?  (collect($currentYearData)->sum("top_area_property_transaction_ward3_count") ?? 0) : collect(($topFiveUlbs[1]??[]))["top_area_property_transaction_ward_count_total"]??0;
+            $data['Top Areas Property Transactions']['ward2_count'] = $ulbId ?  (collect($currentYearData)->sum("top_area_property_transaction_ward2_count") ?? 0) : collect(($topFiveUlbs[1] ?? []))["top_area_property_transaction_ward_count_total"] ?? 0;
 
-             $data['Top Areas Property Transactions']['ward3_name']  = 
-             $ulbId ?  ((collect($currentYearData)->first())->top_area_property_transaction_ward3_name ?? "") : collect(($topFiveUlbs[2]??[]))["ulb_name"]??"";
-             $data['Top Areas Property Transactions']['ward4_count'] = $ulbId ?  (collect($currentYearData)->sum("top_area_property_transaction_ward4_count") ?? 0) : collect(($topFiveUlbs[1]??[]))["top_area_property_transaction_ward_count_total"]??0;
+            $data['Top Areas Property Transactions']['ward2_name']  =
+                $ulbId ?  ((collect($currentYearData)->first())->top_area_property_transaction_ward2_name ?? "") : collect(($topFiveUlbs[1] ?? []))["ulb_name"] ?? "";
 
-             $data['Top Areas Property Transactions']['ward4_name']  = 
-             $ulbId ?  ((collect($currentYearData)->first())->top_area_property_transaction_ward4_name ?? "") : collect(($topFiveUlbs[3]??[]))["ulb_name"]??"";
-             $data['Top Areas Property Transactions']['ward5_count'] = $ulbId ?  (collect($currentYearData)->sum("top_area_property_transaction_ward5_count") ?? 0) : collect(($topFiveUlbs[1]??[]))["top_area_property_transaction_ward_count_total"]??0;
+            $data['Top Areas Property Transactions']['ward3_count'] = $ulbId ?  (collect($currentYearData)->sum("top_area_property_transaction_ward3_count") ?? 0) : collect(($topFiveUlbs[1] ?? []))["top_area_property_transaction_ward_count_total"] ?? 0;
 
-             $data['Top Areas Property Transactions']['ward5_name']  = 
-             $ulbId ?  ((collect($currentYearData)->first())->top_area_property_transaction_ward5_name ?? "") : collect(($topFiveUlbs[4]??[]))["ulb_name"]??"";
+            $data['Top Areas Property Transactions']['ward3_name']  =
+                $ulbId ?  ((collect($currentYearData)->first())->top_area_property_transaction_ward3_name ?? "") : collect(($topFiveUlbs[2] ?? []))["ulb_name"] ?? "";
+            $data['Top Areas Property Transactions']['ward4_count'] = $ulbId ?  (collect($currentYearData)->sum("top_area_property_transaction_ward4_count") ?? 0) : collect(($topFiveUlbs[1] ?? []))["top_area_property_transaction_ward_count_total"] ?? 0;
+
+            $data['Top Areas Property Transactions']['ward4_name']  =
+                $ulbId ?  ((collect($currentYearData)->first())->top_area_property_transaction_ward4_name ?? "") : collect(($topFiveUlbs[3] ?? []))["ulb_name"] ?? "";
+            $data['Top Areas Property Transactions']['ward5_count'] = $ulbId ?  (collect($currentYearData)->sum("top_area_property_transaction_ward5_count") ?? 0) : collect(($topFiveUlbs[1] ?? []))["top_area_property_transaction_ward_count_total"] ?? 0;
+
+            $data['Top Areas Property Transactions']['ward5_name']  =
+                $ulbId ?  ((collect($currentYearData)->first())->top_area_property_transaction_ward5_name ?? "") : collect(($topFiveUlbs[4] ?? []))["ulb_name"] ?? "";
 
 
-             //  #_Top Areas saf count 
+            //  #_Top Areas saf count 
             //  /**
             //   include ward no
             //   */
-            $data['Top Areas Saf']['ward1_count'] = $ulbId ?  (collect($currentYearData)->sum("top_area_saf_ward1_count") ?? 0) : collect(($topFiveSafCount[0]??[]))["top_area_saf_ward_count_total"]??0;
-            
-             $data['Top Areas Saf']['ward1_name']  = 
-             $ulbId ?  ((collect($currentYearData)->first())->top_area_saf_ward1_name ?? "") : collect(($topFiveSafCount[0]??[]))["ulb_name"]??"";
+            $data['Top Areas Saf']['ward1_count'] = $ulbId ?  (collect($currentYearData)->sum("top_area_saf_ward1_count") ?? 0) : collect(($topFiveSafCount[0] ?? []))["top_area_saf_ward_count_total"] ?? 0;
 
-             $data['Top Areas Saf']['ward2_count'] = $ulbId ?  (collect($currentYearData)->sum("top_area_saf_ward2_count") ?? 0) : collect(($topFiveSafCount[1]??[]))["top_area_saf_ward_count_total"]??0;
-                        
-             $data['Top Areas Saf']['ward2_name']  = 
-             $ulbId ?  ((collect($currentYearData)->first())->top_area_saf_ward2_name ?? "") : collect(($topFiveSafCount[1]??[]))["ulb_name"]??"";
+            $data['Top Areas Saf']['ward1_name']  =
+                $ulbId ?  ((collect($currentYearData)->first())->top_area_saf_ward1_name ?? "") : collect(($topFiveSafCount[0] ?? []))["ulb_name"] ?? "";
 
-             $data['Top Areas Saf']['ward3_count'] = $ulbId ?  (collect($currentYearData)->sum("top_area_saf_ward3_count") ?? 0) : collect(($topFiveSafCount[2]??[]))["top_area_saf_ward_count_total"]??0;
+            $data['Top Areas Saf']['ward2_count'] = $ulbId ?  (collect($currentYearData)->sum("top_area_saf_ward2_count") ?? 0) : collect(($topFiveSafCount[1] ?? []))["top_area_saf_ward_count_total"] ?? 0;
 
-             $data['Top Areas Saf']['ward3_name']  = 
-             $ulbId ?  ((collect($currentYearData)->first())->top_area_saf_ward3_name ?? "") : collect(($topFiveSafCount[2]??[]))["ulb_name"]??"";
-             $data['Top Areas Saf']['ward4_count'] = $ulbId ?  (collect($currentYearData)->sum("top_area_saf_ward4_count") ?? 0) : collect(($topFiveSafCount[3]??[]))["top_area_saf_ward_count_total"]??0;
+            $data['Top Areas Saf']['ward2_name']  =
+                $ulbId ?  ((collect($currentYearData)->first())->top_area_saf_ward2_name ?? "") : collect(($topFiveSafCount[1] ?? []))["ulb_name"] ?? "";
 
-             $data['Top Areas Saf']['ward4_name']  = 
-             $ulbId ?  ((collect($currentYearData)->first())->top_area_saf_ward4_name ?? "") : collect(($topFiveSafCount[3]??[]))["ulb_name"]??"";
-             $data['Top Areas Saf']['ward5_count'] = $ulbId ?  (collect($currentYearData)->sum("top_area_saf_ward5_count") ?? 0) : collect(($topFiveSafCount[4]??[]))["top_area_saf_ward_count_total"]??0;
+            $data['Top Areas Saf']['ward3_count'] = $ulbId ?  (collect($currentYearData)->sum("top_area_saf_ward3_count") ?? 0) : collect(($topFiveSafCount[2] ?? []))["top_area_saf_ward_count_total"] ?? 0;
 
-             $data['Top Areas Saf']['ward5_name']  = 
-             $ulbId ?  ((collect($currentYearData)->first())->top_area_saf_ward5_name ?? "") : collect(($topFiveSafCount[4]??[]))["ulb_name"]??"";
-            
+            $data['Top Areas Saf']['ward3_name']  =
+                $ulbId ?  ((collect($currentYearData)->first())->top_area_saf_ward3_name ?? "") : collect(($topFiveSafCount[2] ?? []))["ulb_name"] ?? "";
+            $data['Top Areas Saf']['ward4_count'] = $ulbId ?  (collect($currentYearData)->sum("top_area_saf_ward4_count") ?? 0) : collect(($topFiveSafCount[3] ?? []))["top_area_saf_ward_count_total"] ?? 0;
+
+            $data['Top Areas Saf']['ward4_name']  =
+                $ulbId ?  ((collect($currentYearData)->first())->top_area_saf_ward4_name ?? "") : collect(($topFiveSafCount[3] ?? []))["ulb_name"] ?? "";
+            $data['Top Areas Saf']['ward5_count'] = $ulbId ?  (collect($currentYearData)->sum("top_area_saf_ward5_count") ?? 0) : collect(($topFiveSafCount[4] ?? []))["top_area_saf_ward_count_total"] ?? 0;
+
+            $data['Top Areas Saf']['ward5_name']  =
+                $ulbId ?  ((collect($currentYearData)->first())->top_area_saf_ward5_name ?? "") : collect(($topFiveSafCount[4] ?? []))["ulb_name"] ?? "";
+
             //  #_Top Areas defaulter count 
             //  /** 
             //   include ward no
             //   */
-            $data['Top Areas defaulter']['ward1_count'] = $ulbId ?  (collect($currentYearData)->sum("top_defaulter_ward1_count") ?? 0) : collect(($topFivedefaulterCount[0]??[]))["top_area_saf_ward_count_total"]??0;
-            
-             $data['Top Areas defaulter']['ward1_name']  = 
-             $ulbId ?  ((collect($currentYearData)->first())->top_defaulter_ward1_name ?? "") : collect(($topFivedefaulterCount[0]??[]))["ulb_name"]??"";
+            $data['Top Areas defaulter']['ward1_count'] = $ulbId ?  (collect($currentYearData)->sum("top_defaulter_ward1_count") ?? 0) : collect(($topFivedefaulterCount[0] ?? []))["top_area_saf_ward_count_total"] ?? 0;
 
-             $data['Top Areas defaulter']['ward1_amount']  = 
-             $ulbId ?  ((collect($currentYearData)->first())->top_defaulter_ward1_amount ?? "") : collect(($topFivedefaulterCount[0]??[]))["top_defaulter_ward1_amount"]??"";
+            $data['Top Areas defaulter']['ward1_name']  =
+                $ulbId ?  ((collect($currentYearData)->first())->top_defaulter_ward1_name ?? "") : collect(($topFivedefaulterCount[0] ?? []))["ulb_name"] ?? "";
 
-             $data['Top Areas defaulter']['ward2_count'] = $ulbId ?  (collect($currentYearData)->sum("top_defaulter_ward2_count") ?? 0) : collect(($topFivedefaulterCount[1]??[]))["top_area_saf_ward_count_total"]??0;
-                        
-             $data['Top Areas defaulter']['ward2_name']  = 
-             $ulbId ?  ((collect($currentYearData)->first())->top_defaulter_ward2_name ?? "") : collect(($topFivedefaulterCount[1]??[]))["ulb_name"]??"";
+            $data['Top Areas defaulter']['ward1_amount']  =
+                $ulbId ?  ((collect($currentYearData)->first())->top_defaulter_ward1_amount ?? "") : collect(($topFivedefaulterCount[0] ?? []))["top_defaulter_ward1_amount"] ?? "";
 
-             $data['Top Areas defaulter']['ward2_amount']  = 
-             $ulbId ?  ((collect($currentYearData)->first())->top_defaulter_ward2_amount ?? "") : collect(($topFivedefaulterCount[1]??[]))["top_defaulter_ward2_amount"]??"";
+            $data['Top Areas defaulter']['ward2_count'] = $ulbId ?  (collect($currentYearData)->sum("top_defaulter_ward2_count") ?? 0) : collect(($topFivedefaulterCount[1] ?? []))["top_area_saf_ward_count_total"] ?? 0;
 
-             $data['Top Areas defaulter']['ward3_count'] = $ulbId ?  (collect($currentYearData)->sum("top_defaulter_ward3_count") ?? 0) : collect(($topFivedefaulterCount[2]??[]))["top_area_saf_ward_count_total"]??0;
+            $data['Top Areas defaulter']['ward2_name']  =
+                $ulbId ?  ((collect($currentYearData)->first())->top_defaulter_ward2_name ?? "") : collect(($topFivedefaulterCount[1] ?? []))["ulb_name"] ?? "";
 
-             $data['Top Areas defaulter']['ward3_name']  = 
-             $ulbId ?  ((collect($currentYearData)->first())->top_defaulter_ward3_name ?? "") : collect(($topFivedefaulterCount[2]??[]))["ulb_name"]??"";
+            $data['Top Areas defaulter']['ward2_amount']  =
+                $ulbId ?  ((collect($currentYearData)->first())->top_defaulter_ward2_amount ?? "") : collect(($topFivedefaulterCount[1] ?? []))["top_defaulter_ward2_amount"] ?? "";
 
-             $data['Top Areas defaulter']['ward3_amount']  = 
-             $ulbId ?  ((collect($currentYearData)->first())->top_defaulter_ward3_amount ?? "") : collect(($topFivedefaulterCount[2]??[]))["top_defaulter_ward3_amount"]??"";
+            $data['Top Areas defaulter']['ward3_count'] = $ulbId ?  (collect($currentYearData)->sum("top_defaulter_ward3_count") ?? 0) : collect(($topFivedefaulterCount[2] ?? []))["top_area_saf_ward_count_total"] ?? 0;
 
-             $data['Top Areas defaulter']['ward4_count'] = $ulbId ?  (collect($currentYearData)->sum("top_defaulter_ward4_count") ?? 0) : collect(($topFivedefaulterCount[3]??[]))["top_area_saf_ward_count_total"]??0;
+            $data['Top Areas defaulter']['ward3_name']  =
+                $ulbId ?  ((collect($currentYearData)->first())->top_defaulter_ward3_name ?? "") : collect(($topFivedefaulterCount[2] ?? []))["ulb_name"] ?? "";
 
-             $data['Top Areas defaulter']['ward4_name']  = 
-             $ulbId ?  ((collect($currentYearData)->first())->top_defaulter_ward4_name ?? "") : collect(($topFivedefaulterCount[3]??[]))["ulb_name"]??"";
+            $data['Top Areas defaulter']['ward3_amount']  =
+                $ulbId ?  ((collect($currentYearData)->first())->top_defaulter_ward3_amount ?? "") : collect(($topFivedefaulterCount[2] ?? []))["top_defaulter_ward3_amount"] ?? "";
 
-             $data['Top Areas defaulter']['ward4_amount']  = 
-             $ulbId ?  ((collect($currentYearData)->first())->top_defaulter_ward4_amount ?? "") : collect(($topFivedefaulterCount[3]??[]))["top_defaulter_ward4_amount"]??"";
+            $data['Top Areas defaulter']['ward4_count'] = $ulbId ?  (collect($currentYearData)->sum("top_defaulter_ward4_count") ?? 0) : collect(($topFivedefaulterCount[3] ?? []))["top_area_saf_ward_count_total"] ?? 0;
 
-             $data['Top Areas defaulter']['ward5_count'] = $ulbId ?  (collect($currentYearData)->sum("top_defaulter_ward5_count") ?? 0) : collect(($topFivedefaulterCount[4]??[]))["top_area_saf_ward_count_total"]??0;
+            $data['Top Areas defaulter']['ward4_name']  =
+                $ulbId ?  ((collect($currentYearData)->first())->top_defaulter_ward4_name ?? "") : collect(($topFivedefaulterCount[3] ?? []))["ulb_name"] ?? "";
 
-             $data['Top Areas defaulter']['ward5_name']  = 
-             $ulbId ?  ((collect($currentYearData)->first())->top_defaulter_ward5_name ?? "") : collect(($topFivedefaulterCount[4]??[]))["ulb_name"]??"";
+            $data['Top Areas defaulter']['ward4_amount']  =
+                $ulbId ?  ((collect($currentYearData)->first())->top_defaulter_ward4_amount ?? "") : collect(($topFivedefaulterCount[3] ?? []))["top_defaulter_ward4_amount"] ?? "";
 
-             $data['Top Areas defaulter']['ward5_amount']  = 
-             $ulbId ?  ((collect($currentYearData)->first())->top_defaulter_ward5_amount ?? "") : collect(($topFivedefaulterCount[4]??[]))["top_defaulter_ward5_amount"]??"";
+            $data['Top Areas defaulter']['ward5_count'] = $ulbId ?  (collect($currentYearData)->sum("top_defaulter_ward5_count") ?? 0) : collect(($topFivedefaulterCount[4] ?? []))["top_area_saf_ward_count_total"] ?? 0;
+
+            $data['Top Areas defaulter']['ward5_name']  =
+                $ulbId ?  ((collect($currentYearData)->first())->top_defaulter_ward5_name ?? "") : collect(($topFivedefaulterCount[4] ?? []))["ulb_name"] ?? "";
+
+            $data['Top Areas defaulter']['ward5_amount']  =
+                $ulbId ?  ((collect($currentYearData)->first())->top_defaulter_ward5_amount ?? "") : collect(($topFivedefaulterCount[4] ?? []))["top_defaulter_ward5_amount"] ?? "";
 
             # Employee count
             $data['Employee count']['tc_count'] = collect($currentYearData)->sum("tc_count") ?? 0;
@@ -870,10 +864,10 @@ class ReportController extends Controller
             $data['Payment Modes']['current_year_neft_collection'] = round(collect($currentYearData)->sum("current_year_neft_collection") / 10000000, 2);
             $data['Payment Modes']['current_year_rtgs_collection'] = round(collect($currentYearData)->sum("current_year_rtgs_collection") / 10000000, 2);
             $data['Payment Modes']['current_year_online_collection'] = round(collect($currentYearData)->sum("current_year_online_collection") / 10000000, 2);
-            
- 
-             #trade
-             $data['Trade']['tota_trade_licenses'] = collect($currentYearData)->sum("total_trade_licenses");
+
+
+            #trade
+            $data['Trade']['tota_trade_licenses'] = collect($currentYearData)->sum("total_trade_licenses");
             $data['Trade']['total_trade_licenses_underprocess'] = collect($currentYearData)->sum("total_trade_licenses_underprocess");
             $data['Trade']['trade_current_cash_payment'] = round(collect($currentYearData)->sum("trade_current_cash_payment") / 10000000, 2);
             $data['Trade']['trade_current_cheque_payment'] = round(collect($currentYearData)->sum("trade_current_cheque_payment") / 10000000, 2);
@@ -895,30 +889,30 @@ class ReportController extends Controller
             $data['Trade']['trade_renewal_more_then_1_year_and_less_then_5_years'] = collect($currentYearData)->sum("trade_renewal_more_then_1_year_and_less_then_5_years");
             $data['Trade']['trade_renewal_more_then_5_year'] = collect($currentYearData)->sum("trade_renewal_more_then_5_year");
 
-        
-             // #water
-             $data['Water']['water_connection_underprocess'] = collect($currentYearData)->sum("water_connection_underprocess");
-             $data['Water']['water_fix_connection_type'] = collect($currentYearData)->sum("water_fix_connection_type");
-             $data['Water']['water_meter_connection_type'] = collect($currentYearData)->sum("water_meter_connection_type");
-             $data['Water']['water_current_demand'] = round(collect($currentYearData)->sum("water_current_demand") / 10000000, 2); # in cr
-             $data['Water']['water_arrear_demand'] = round(collect($currentYearData)->sum("water_arrear_demand") / 10000000, 2); # in cr
-             
-             $data['Water']['water_current_collection'] = round(collect($currentYearData)->sum("water_current_collection") / 10000000, 2); # in cr
-             $data['Water']['water_arrear_collection'] = round(collect($currentYearData)->sum("water_arrear_collection") / 10000000, 2); # in cr
-             $data['Water']['water_total_collection'] = round(collect($currentYearData)->sum("water_total_collection") / 10000000, 2); # in cr
+
+            // #water
+            $data['Water']['water_connection_underprocess'] = collect($currentYearData)->sum("water_connection_underprocess");
+            $data['Water']['water_fix_connection_type'] = collect($currentYearData)->sum("water_fix_connection_type");
+            $data['Water']['water_meter_connection_type'] = collect($currentYearData)->sum("water_meter_connection_type");
+            $data['Water']['water_current_demand'] = round(collect($currentYearData)->sum("water_current_demand") / 10000000, 2); # in cr
+            $data['Water']['water_arrear_demand'] = round(collect($currentYearData)->sum("water_arrear_demand") / 10000000, 2); # in cr
+
+            $data['Water']['water_current_collection'] = round(collect($currentYearData)->sum("water_current_collection") / 10000000, 2); # in cr
+            $data['Water']['water_arrear_collection'] = round(collect($currentYearData)->sum("water_arrear_collection") / 10000000, 2); # in cr
+            $data['Water']['water_total_collection'] = round(collect($currentYearData)->sum("water_total_collection") / 10000000, 2); # in cr
             $data['Water']['water_current_collection_efficiency'] = collect($currentYearData)->sum("water_current_collection_efficiency");
             $data['Water']['water_arrear_collection_efficiency'] = collect($currentYearData)->sum("water_arrear_collection_efficiency");
 
- 
-             return responseMsgs(true, "Mpl Report", $data, "", 01, responseTime(), $request->getMethod(), $request->deviceId);
-         } catch (Exception $e) {
-             return responseMsgs(false, [$e->getMessage(),$e->getFile(),$e->getLine()], "", "", 01, responseTime(), $request->getMethod(), $request->deviceId);
-         }
-     }
-   
-    
 
-   
+            return responseMsgs(true, "Mpl Report", $data, "", 01, responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, [$e->getMessage(), $e->getFile(), $e->getLine()], "", "", 01, responseTime(), $request->getMethod(), $request->deviceId);
+        }
+    }
+
+
+
+
 
     /**
      * | 
@@ -957,103 +951,86 @@ class ReportController extends Controller
         return response()->json(['error' => 'Locality not found'], 404);
     }
 
-   
+
 
     public function mplReportCollectionNew(Request $request)
     {
-    try {
-        $request->merge(["metaData" => ["012430", 1.1, null, $request->getMethod(), null]]);
-        $validation = Validator::make($request->all(), [
-            "ulbId" => "nullable|digits_between:1,9223372036854775807"
-        ]);
-
-        if ($validation->fails()) {
-            return responseMsgs(false, "Ulb_Id validation failed", $validation->errors(), "", 01, responseTime(), $request->getMethod(), $request->deviceId);
-        }
-
-        $ulbId = $request->ulbId;
-        $currentDate = Carbon::now()->format("Y-m-d");
-
-        // PropTransaction Query
-        $propTransactionQuery = PropTransaction::select(DB::raw("SUM(prop_transactions.amount) AS total_amount, COUNT(distinct (prop_transactions.property_id)) AS total_hh, count(id) as total_tran"))
-            ->wherein("status", [1, 2])
-            ->where("tran_date", $currentDate)
-            ->wherenotnull("property_id");
-
-        if ($ulbId) {
-            $propTransactionQuery->where("ulb_id", $ulbId);
-        }
-
-        $propTransactionQuery = $propTransactionQuery->get();
-        $propTransactionQuery = ($propTransactionQuery
-            ->map(function ($val) {
-                $val->total_amount = $val->total_amount ? $val->total_amount : 0;
-                return ($val);
-            }))
-            ->first();
-
-        // TradeTransaction Query
-        $tradeTransactionQuery = TradeTransaction::select(DB::raw("sum(paid_amount) as total_amount, count(distinct(temp_id)) as total_license, count(id) as total_tran"))
-            ->wherein("status", [1, 2])
-            ->where("tran_date", $currentDate);
-
-        if ($ulbId) {
-            $tradeTransactionQuery->where("ulb_id", $ulbId);
-        }
-
-        $tradeTransactionQuery = $tradeTransactionQuery->get();
-        $tradeTransactionQuery = ($tradeTransactionQuery
-            ->map(function ($val) {
-                $val->total_amount = $val->total_amount ? $val->total_amount : 0;
-                return ($val);
-            }))
-            ->first();
-
-        // WaterTransaction Query
-        $waterTransactionQuery = WaterTran::select(
-            DB::raw("sum(amount)as total_amount , count(distinct(related_id)) as total_consumer, count(id) as total_tran")
-        )
-            ->wherein("status", [1, 2])
-            ->where("tran_date", $currentDate)
-            ->where("tran_type", 'Demand Collection');
-
-        if ($ulbId) {
-            $waterTransactionQuery->where("ulb_id", $ulbId);
-        }
-
-        $waterTransactionQuery = $waterTransactionQuery->get();
-        $waterTransactionQuery = ($waterTransactionQuery
-            ->map(function ($val) {
-                $val->total_amount = $val->total_amount ? $val->total_amount : 0;
-                return ($val);
-            }))
-            ->first();
-
-        // Combine the results
-        $toDayCollection = $propTransactionQuery->total_amount + $tradeTransactionQuery->total_amount + $waterTransactionQuery->total_amount;
-        $data = [
-            "toDayCollection" => ($toDayCollection ? $toDayCollection : 0),
-            "propDetails" => $propTransactionQuery,
-            "tradeDetails" => $tradeTransactionQuery,
-            "waterDetails" => $waterTransactionQuery,
-        ];
-
-        return responseMsgs(true, "Mpl Report Today Coll", $data, "", 01, responseTime(), $request->getMethod(), $request->deviceId);
-    } catch (\Exception $e) {
-        return responseMsgs(false, $e->getMessage(), "", "", 01, responseTime(), $request->getMethod(), $request->deviceId);
-    }
-}
-
-    // written by prity
-    public function ulbList(Request $request)
-    {
         try {
-           $sql= "
-                select id , ulb_name
-                from ulb_masters
-                order by ulb_name;
-           ";
-           $data = DB::select($sql);
+            $request->merge(["metaData" => ["012430", 1.1, null, $request->getMethod(), null]]);
+            $validation = Validator::make($request->all(), [
+                "ulbId" => "nullable|digits_between:1,9223372036854775807"
+            ]);
+
+            if ($validation->fails()) {
+                return responseMsgs(false, "Ulb_Id validation failed", $validation->errors(), "", 01, responseTime(), $request->getMethod(), $request->deviceId);
+            }
+
+            $ulbId = $request->ulbId;
+            $currentDate = Carbon::now()->format("Y-m-d");
+
+            // PropTransaction Query
+            $propTransactionQuery = PropTransaction::select(DB::raw("SUM(prop_transactions.amount) AS total_amount, COUNT(distinct (prop_transactions.property_id)) AS total_hh, count(id) as total_tran"))
+                ->wherein("status", [1, 2])
+                ->where("tran_date", $currentDate)
+                ->wherenotnull("property_id");
+
+            if ($ulbId) {
+                $propTransactionQuery->where("ulb_id", $ulbId);
+            }
+
+            $propTransactionQuery = $propTransactionQuery->get();
+            $propTransactionQuery = ($propTransactionQuery
+                ->map(function ($val) {
+                    $val->total_amount = $val->total_amount ? $val->total_amount : 0;
+                    return ($val);
+                }))
+                ->first();
+
+            // TradeTransaction Query
+            $tradeTransactionQuery = TradeTransaction::select(DB::raw("sum(paid_amount) as total_amount, count(distinct(temp_id)) as total_license, count(id) as total_tran"))
+                ->wherein("status", [1, 2])
+                ->where("tran_date", $currentDate);
+
+            if ($ulbId) {
+                $tradeTransactionQuery->where("ulb_id", $ulbId);
+            }
+
+            $tradeTransactionQuery = $tradeTransactionQuery->get();
+            $tradeTransactionQuery = ($tradeTransactionQuery
+                ->map(function ($val) {
+                    $val->total_amount = $val->total_amount ? $val->total_amount : 0;
+                    return ($val);
+                }))
+                ->first();
+
+            // WaterTransaction Query
+            $waterTransactionQuery = WaterTran::select(
+                DB::raw("sum(amount)as total_amount , count(distinct(related_id)) as total_consumer, count(id) as total_tran")
+            )
+                ->wherein("status", [1, 2])
+                ->where("tran_date", $currentDate)
+                ->where("tran_type", 'Demand Collection');
+
+            if ($ulbId) {
+                $waterTransactionQuery->where("ulb_id", $ulbId);
+            }
+
+            $waterTransactionQuery = $waterTransactionQuery->get();
+            $waterTransactionQuery = ($waterTransactionQuery
+                ->map(function ($val) {
+                    $val->total_amount = $val->total_amount ? $val->total_amount : 0;
+                    return ($val);
+                }))
+                ->first();
+
+            // Combine the results
+            $toDayCollection = $propTransactionQuery->total_amount + $tradeTransactionQuery->total_amount + $waterTransactionQuery->total_amount;
+            $data = [
+                "toDayCollection" => ($toDayCollection ? $toDayCollection : 0),
+                "propDetails" => $propTransactionQuery,
+                "tradeDetails" => $tradeTransactionQuery,
+                "waterDetails" => $waterTransactionQuery,
+            ];
 
             return responseMsgs(true, "Mpl Report Today Coll", $data, "", 01, responseTime(), $request->getMethod(), $request->deviceId);
         } catch (\Exception $e) {
@@ -1061,7 +1038,24 @@ class ReportController extends Controller
         }
     }
 
-   
+    // written by prity
+    public function ulbList(Request $request)
+    {
+        try {
+            $sql = "
+                select id , ulb_name
+                from ulb_masters
+                order by ulb_name;
+           ";
+            $data = DB::select($sql);
+
+            return responseMsgs(true, "Mpl Report Today Coll", $data, "", 01, responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (\Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "", 01, responseTime(), $request->getMethod(), $request->deviceId);
+        }
+    }
+
+
 
     // written by prity pandey
     public function liveDashboardUpdate(Request $request)
@@ -1678,7 +1672,7 @@ class ReportController extends Controller
 
                         --where ulb_masters.id =2
         ";
-       // print_var($sql);die;
+        // print_var($sql);die;
         $data = DB::select($sql);
         //dd($data);
         //dd($waterdata);
@@ -1686,46 +1680,45 @@ class ReportController extends Controller
         $waterdata = $this->waterdetails();
         DB::connection("pgsql_reports")->beginTransaction();
         //return $data = $data[0];
-       //dd(($waterdata->where("ulb_id","1")->first())->ulb_id);
-    //    $tradedata = $this->tradedetails();
-    //    $waterdata = $this->waterdetails();
-        foreach( $data as $key=>$val)
-        {
+        //dd(($waterdata->where("ulb_id","1")->first())->ulb_id);
+        //    $tradedata = $this->tradedetails();
+        //    $waterdata = $this->waterdetails();
+        foreach ($data as $key => $val) {
             $mMplYearlyReport = new MplYearlyReport();
 
             $updateReqs = [
-                "ulb_name"=>$val->ulb_name??"",
-                "total_assessment" => $val->total_assessed_props??0,
-                "total_property" => $val->total_props??0,
-                "owned_property" => $val->total_owned_props??0,
-                "rented_property" => $val->total_rented_props??0,
-                "mixed_property" => $val->total_mixed_owned_props??0,
-                "vacant_property" => ($val->total_vacant_land + $val->null_prop_data +$val->null_floor_data)??0,    
-                "current_year_cash_collection" => $val->current_cash_payment??0,
-                "current_year_card_collection" => $val->current_card_payment??0 ,
-                "current_year_dd_collection"   => $val->current_dd_payment??0,
-                "current_year_cheque_collection" => $val->current_cheque_payment??0,
-                "current_year_neft_collection" => $val->current_neft_payment??0,
-                "current_year_rtgs_collection" => $val->current_rtgs_payment??0,
-                "current_year_upi_collection" => $val->current_isure_payment??0,
-                "current_year_online_collection" => $val->current_online_payment ??0,
-                'prop_current_demand'  => $val->prop_current_demand??0,
-                'prop_arrear_demand'  => $val->old_demands??0,
-                'prop_outsatnding_current_demand'  => $val->outstanding_of_this_year??0,
-                'prop_current_collection'  => $val->current_collection??0,
-                'prop_arrear_collection'  => $val->arrear_collection??0,
-                'prop_current_collection_efficiency'  => $val->prop_current_collection_efficiency??0,
-                'prop_arrear_collection_efficiency'  => $val->prop_arrear_collection_efficiency??0,
+                "ulb_name" => $val->ulb_name ?? "",
+                "total_assessment" => $val->total_assessed_props ?? 0,
+                "total_property" => $val->total_props ?? 0,
+                "owned_property" => $val->total_owned_props ?? 0,
+                "rented_property" => $val->total_rented_props ?? 0,
+                "mixed_property" => $val->total_mixed_owned_props ?? 0,
+                "vacant_property" => ($val->total_vacant_land + $val->null_prop_data + $val->null_floor_data) ?? 0,
+                "current_year_cash_collection" => $val->current_cash_payment ?? 0,
+                "current_year_card_collection" => $val->current_card_payment ?? 0,
+                "current_year_dd_collection"   => $val->current_dd_payment ?? 0,
+                "current_year_cheque_collection" => $val->current_cheque_payment ?? 0,
+                "current_year_neft_collection" => $val->current_neft_payment ?? 0,
+                "current_year_rtgs_collection" => $val->current_rtgs_payment ?? 0,
+                "current_year_upi_collection" => $val->current_isure_payment ?? 0,
+                "current_year_online_collection" => $val->current_online_payment ?? 0,
+                'prop_current_demand'  => $val->prop_current_demand ?? 0,
+                'prop_arrear_demand'  => $val->old_demands ?? 0,
+                'prop_outsatnding_current_demand'  => $val->outstanding_of_this_year ?? 0,
+                'prop_current_collection'  => $val->current_collection ?? 0,
+                'prop_arrear_collection'  => $val->arrear_collection ?? 0,
+                'prop_current_collection_efficiency'  => $val->prop_current_collection_efficiency ?? 0,
+                'prop_arrear_collection_efficiency'  => $val->prop_arrear_collection_efficiency ?? 0,
 
-                
 
-                'total_residential_props'  => $val->total_residential_props??0,
-                'total_commercial_props'  => $val->total_commercial_props??0,
-                'total_govt_props'  => $val->total_govt_props??0,
-                'total_industrial_props'  => $val->total_industrial_props??0,
-                'total_religious_props'  => $val->total_religious_props??0,
-                'total_trust_props'  => $val->total_trust_props??0,
-                'total_mixed_props'  => $val->total_mixed_props??0,
+
+                'total_residential_props'  => $val->total_residential_props ?? 0,
+                'total_commercial_props'  => $val->total_commercial_props ?? 0,
+                'total_govt_props'  => $val->total_govt_props ?? 0,
+                'total_industrial_props'  => $val->total_industrial_props ?? 0,
+                'total_religious_props'  => $val->total_religious_props ?? 0,
+                'total_trust_props'  => $val->total_trust_props ?? 0,
+                'total_mixed_props'  => $val->total_mixed_props ?? 0,
                 'a_zone_name' => ($val->zone_a_name) ?? "",
                 'a_prop_total_hh' => ($val->zone_a_prop_total_hh) ?? 0,
                 'a_prop_total_amount' => ($val->zone_a_prop_total_amount) ?? 0,
@@ -1786,62 +1779,61 @@ class ReportController extends Controller
                 "total_unpaid_property" => $val->total_unpaid_property,
                 "total_paid_property" => $val->total_paid_property,
                 "current_unpaid_property" => $val->current_unpaid_property,
-                
-             #trade
-            'total_trade_licenses'  => ($tradedata->where("ulb_id",$val->id)->first())->total_trade_licenses ?? 0,
-            'total_trade_licenses_underprocess' => ($tradedata->where("ulb_id",$val->id)->first())->total_trade_licenses_underprocess ?? 0,
-            'trade_current_cash_payment' => ($tradedata->where("ulb_id",$val->id)->first())->trade_current_cash_payment ?? 0,
-            'trade_current_cheque_payment' => ($tradedata->where("ulb_id",$val->id)->first())->trade_current_cheque_payment ?? 0,
-            'trade_current_dd_payment' => ($tradedata->where("ulb_id",$val->id)->first())->trade_current_dd_payment ?? 0,
-            'trade_current_card_payment' => ($tradedata->where("ulb_id",$val->id)->first())->trade_current_card_payment ?? 0,
-            'trade_current_neft_payment' => ($tradedata->where("ulb_id",$val->id)->first())->trade_current_neft_payment ?? 0,
-            'trade_current_rtgs_payment' => ($tradedata->where("ulb_id",$val->id)->first())->trade_current_rtgs_payment ?? 0,
-            'trade_current_online_payment' => ($tradedata->where("ulb_id",$val->id)->first())->trade_current_online_payment ?? 0,
-            'trade_current_online_counts' => ($tradedata->where("ulb_id",$val->id)->first())->trade_current_online_counts ?? 0,
-            'trade_lastyear_cash_payment' => ($tradedata->where("ulb_id",$val->id)->first())->trade_lastyear_cash_payment ?? 0,
-            'trade_lastyear_cheque_payment' => ($tradedata->where("ulb_id",$val->id)->first())->trade_lastyear_cheque_payment ?? 0,
-            'trade_lastyear_dd_payment' => ($tradedata->where("ulb_id",$val->id)->first())->trade_lastyear_dd_payment ?? 0,
-            'trade_lastyear_neft_payment' => ($tradedata->where("ulb_id",$val->id)->first())->trade_lastyear_neft_payment ?? 0,
-            'trade_lastyear_rtgs_payment' => ($tradedata->where("ulb_id",$val->id)->first())->trade_lastyear_rtgs_payment ?? 0,
-            'trade_lastyear_online_payment' => ($tradedata->where("ulb_id",$val->id)->first())->trade_lastyear_online_payment ?? 0,
-            'trade_lastyear_online_counts' => ($tradedata->where("ulb_id",$val->id)->first())->trade_lastyear_online_counts ?? 0,
-            'trade_renewal_less_then_1_year' => ($tradedata->where("ulb_id",$val->id)->first())->less_then_1_year ?? 0,
-            'trade_renewal_more_then_1_year' => ($tradedata->where("ulb_id",$val->id)->first())->more_then_1_year ?? 0,
-            'trade_renewal_more_then_1_year_and_less_then_5_years' => ($tradedata->where("ulb_id",$val->id)->first())->more_then_1_year_and_less_then_5_years ?? 0,
-            'trade_renewal_more_then_5_year' => ($tradedata->where("ulb_id",$val->id)->first())->more_then_5_year ?? 0,
 
-             #water
-             'water_connection_underprocess'  => ($waterdata->where("ulb_id",$val->id)->first())->water_connection_underprocess,
-             'water_fix_connection_type'  => ($waterdata->where("ulb_id",$val->id)->first())->water_fix_connection_type,
-             'water_meter_connection_type'  => ($waterdata->where("ulb_id",$val->id)->first())->water_meter_connection_type,
-             'water_current_demand'  => ($waterdata->where("ulb_id",$val->id)->first())->water_current_demand,
-             'water_arrear_demand'  => ($waterdata->where("ulb_id",$val->id)->first())->water_arrear_demand,
-             'water_current_collection'  => ($waterdata->where("ulb_id",$val->id)->first())->water_current_collection,
-             'water_arrear_collection'  => ($waterdata->where("ulb_id",$val->id)->first())->water_arrear_collection,
-             'water_total_collection'  => ($waterdata->where("ulb_id",$val->id)->first())->water_total_collection,
-             'water_total_prev_collection'  => ($waterdata->where("ulb_id",$val->id)->first())->water_total_prev_collection,
-             'water_arrear_collection_efficiency'  => ($waterdata->where("ulb_id",$val->id)->first())->water_arrear_collection_efficiency,
-             'water_current_collection_efficiency'  => ($waterdata->where("ulb_id",$val->id)->first())->water_current_collection_efficiency,
-             'water_current_outstanding'  => ($waterdata->where("ulb_id",$val->id)->first())->water_current_outstanding,
-             'water_arrear_outstanding'  => ($waterdata->where("ulb_id",$val->id)->first())->water_arrear_outstanding
+                #trade
+                'total_trade_licenses'  => ($tradedata->where("ulb_id", $val->id)->first())->total_trade_licenses ?? 0,
+                'total_trade_licenses_underprocess' => ($tradedata->where("ulb_id", $val->id)->first())->total_trade_licenses_underprocess ?? 0,
+                'trade_current_cash_payment' => ($tradedata->where("ulb_id", $val->id)->first())->trade_current_cash_payment ?? 0,
+                'trade_current_cheque_payment' => ($tradedata->where("ulb_id", $val->id)->first())->trade_current_cheque_payment ?? 0,
+                'trade_current_dd_payment' => ($tradedata->where("ulb_id", $val->id)->first())->trade_current_dd_payment ?? 0,
+                'trade_current_card_payment' => ($tradedata->where("ulb_id", $val->id)->first())->trade_current_card_payment ?? 0,
+                'trade_current_neft_payment' => ($tradedata->where("ulb_id", $val->id)->first())->trade_current_neft_payment ?? 0,
+                'trade_current_rtgs_payment' => ($tradedata->where("ulb_id", $val->id)->first())->trade_current_rtgs_payment ?? 0,
+                'trade_current_online_payment' => ($tradedata->where("ulb_id", $val->id)->first())->trade_current_online_payment ?? 0,
+                'trade_current_online_counts' => ($tradedata->where("ulb_id", $val->id)->first())->trade_current_online_counts ?? 0,
+                'trade_lastyear_cash_payment' => ($tradedata->where("ulb_id", $val->id)->first())->trade_lastyear_cash_payment ?? 0,
+                'trade_lastyear_cheque_payment' => ($tradedata->where("ulb_id", $val->id)->first())->trade_lastyear_cheque_payment ?? 0,
+                'trade_lastyear_dd_payment' => ($tradedata->where("ulb_id", $val->id)->first())->trade_lastyear_dd_payment ?? 0,
+                'trade_lastyear_neft_payment' => ($tradedata->where("ulb_id", $val->id)->first())->trade_lastyear_neft_payment ?? 0,
+                'trade_lastyear_rtgs_payment' => ($tradedata->where("ulb_id", $val->id)->first())->trade_lastyear_rtgs_payment ?? 0,
+                'trade_lastyear_online_payment' => ($tradedata->where("ulb_id", $val->id)->first())->trade_lastyear_online_payment ?? 0,
+                'trade_lastyear_online_counts' => ($tradedata->where("ulb_id", $val->id)->first())->trade_lastyear_online_counts ?? 0,
+                'trade_renewal_less_then_1_year' => ($tradedata->where("ulb_id", $val->id)->first())->less_then_1_year ?? 0,
+                'trade_renewal_more_then_1_year' => ($tradedata->where("ulb_id", $val->id)->first())->more_then_1_year ?? 0,
+                'trade_renewal_more_then_1_year_and_less_then_5_years' => ($tradedata->where("ulb_id", $val->id)->first())->more_then_1_year_and_less_then_5_years ?? 0,
+                'trade_renewal_more_then_5_year' => ($tradedata->where("ulb_id", $val->id)->first())->more_then_5_year ?? 0,
+
+                #water
+                'water_connection_underprocess'  => ($waterdata->where("ulb_id", $val->id)->first())->water_connection_underprocess,
+                'water_fix_connection_type'  => ($waterdata->where("ulb_id", $val->id)->first())->water_fix_connection_type,
+                'water_meter_connection_type'  => ($waterdata->where("ulb_id", $val->id)->first())->water_meter_connection_type,
+                'water_current_demand'  => ($waterdata->where("ulb_id", $val->id)->first())->water_current_demand,
+                'water_arrear_demand'  => ($waterdata->where("ulb_id", $val->id)->first())->water_arrear_demand,
+                'water_current_collection'  => ($waterdata->where("ulb_id", $val->id)->first())->water_current_collection,
+                'water_arrear_collection'  => ($waterdata->where("ulb_id", $val->id)->first())->water_arrear_collection,
+                'water_total_collection'  => ($waterdata->where("ulb_id", $val->id)->first())->water_total_collection,
+                'water_total_prev_collection'  => ($waterdata->where("ulb_id", $val->id)->first())->water_total_prev_collection,
+                'water_arrear_collection_efficiency'  => ($waterdata->where("ulb_id", $val->id)->first())->water_arrear_collection_efficiency,
+                'water_current_collection_efficiency'  => ($waterdata->where("ulb_id", $val->id)->first())->water_current_collection_efficiency,
+                'water_current_outstanding'  => ($waterdata->where("ulb_id", $val->id)->first())->water_current_outstanding,
+                'water_arrear_outstanding'  => ($waterdata->where("ulb_id", $val->id)->first())->water_arrear_outstanding
 
             ];
-            $testData = $mMplYearlyReport->where("ulb_id",$val->id)->where("fyear",$currentFy)->first();
-            if($testData)
-            {
-                $mMplYearlyReport->where("ulb_id",$val->id)->where("fyear",$currentFy)->update($updateReqs);
-                print_var("Update =>".$val->id." ".$val->ulb_name);
+            $testData = $mMplYearlyReport->where("ulb_id", $val->id)->where("fyear", $currentFy)->first();
+            if ($testData) {
+                $mMplYearlyReport->where("ulb_id", $val->id)->where("fyear", $currentFy)->update($updateReqs);
+                print_var("Update =>" . $val->id . " " . $val->ulb_name);
                 continue;
             }
-            $updateReqs["fyear"] =$currentFy;
-            $updateReqs["ulb_id"]=$val->id;
-            $updateReqs["created_at"]=Carbon::now();
+            $updateReqs["fyear"] = $currentFy;
+            $updateReqs["ulb_id"] = $val->id;
+            $updateReqs["created_at"] = Carbon::now();
             $mMplYearlyReport->create($updateReqs);
-            print_var("insert =>".$val->id." ".$val->ulb_name);
+            print_var("insert =>" . $val->id . " " . $val->ulb_name);
         }
-        
-        DB::connection("pgsql_reports")->commit();return ("ok");
-        
+
+        DB::connection("pgsql_reports")->commit();
+        return ("ok");
     }
     public function tradedetails()
     {
@@ -2002,7 +1994,7 @@ class ReportController extends Controller
     }
 
     public function waterdetails()
-    {                            
+    {
         $sql = "                                
                 with   water_connection_underprocess as (                                                                          
                     select count(id) as water_connection_underprocess,ulb_id
@@ -2151,7 +2143,27 @@ class ReportController extends Controller
         return (object)$respons;
     }
 
+
+    public function oldHolding(Request $request)
+    {
+        try {
+           
+            $request->validate([
+                'oldHoldingNo' => 'required|string'
+            ]);
+            $oldHoldingNo = $request->oldHoldingNo;
+
+            $property =  PropProperty::select('new_holding_no')
+                ->where('holding_no', $oldHoldingNo)
+                ->first();
+            if (!$property) {
+                throw new Exception("New holding_no of this holding_no does not exist");
+            }
+
+            return responseMsgs(true, "Holding Reports", $property );
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "");
+        }
+            
+    }
 }
-
-
-
