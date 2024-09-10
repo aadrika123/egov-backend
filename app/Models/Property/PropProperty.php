@@ -686,7 +686,7 @@ class PropProperty extends Model
     /**
      * | Get details according to ward for heat map
      */
-    public function getPropLatlong($wardId)
+    public function getPropLatlong($wardId,$ulbId)
     {
         return PropProperty::on('pgsql::read')
             ->select(
@@ -704,7 +704,9 @@ class PropProperty extends Model
             )
             ->join('prop_saf_geotag_uploads', 'prop_saf_geotag_uploads.saf_id', '=', 'prop_properties.saf_id')
             ->join('prop_owners', 'prop_owners.property_id', '=', 'prop_properties.id')
+            ->join('ulb_masters', 'ulb_masters.id.', 'prop_properties.ulb_id')
             ->where('prop_properties.ward_mstr_id', $wardId)
+            ->where('prop_properties.ulb_id', $ulbId)
             ->whereNotNull('prop_properties.new_holding_no')
             ->where('direction_type', 'front view')
             ->where('prop_properties.status', 1)
@@ -748,20 +750,20 @@ class PropProperty extends Model
     {
         return PropProperty::on('pgsql::read')
             ->whereIn('id', $propertyId)
-            ->where('status',1)
+            ->where('status', 1)
             ->orderByDesc('id')
             ->get();
     }
 
-     /**
+    /**
      * | get owners details of property
      */
     public function owners()
     {
-        return $this->hasMany(PropOwner::class,"property_id","id")
-                ->where("prop_owners.status",1)
-                ->orderBy("prop_owners.id","ASC")
-                ->select("*",DB::raw("case when dob is not null and dob<=(current_date - interval '60 years')::date then true else false end as is_senior_citizen"));
+        return $this->hasMany(PropOwner::class, "property_id", "id")
+            ->where("prop_owners.status", 1)
+            ->orderBy("prop_owners.id", "ASC")
+            ->select("*", DB::raw("case when dob is not null and dob<=(current_date - interval '60 years')::date then true else false end as is_senior_citizen"));
     }
 
     /**
@@ -769,62 +771,57 @@ class PropProperty extends Model
      */
     public function floors()
     {
-        return $this->hasMany(PropFloor::class,"property_id","id")
-                ->join("ref_prop_floors","ref_prop_floors.id","prop_floors.floor_mstr_id")
-                //->join("ref_prop_types","ref_prop_types.id","prop_floors.usage_type_mstr_id")
-                ->join("ref_prop_construction_types","ref_prop_construction_types.id","prop_floors.const_type_mstr_id")
-                ->join("ref_prop_occupancy_types","ref_prop_occupancy_types.id","prop_floors.occupancy_type_mstr_id")
-                ->join("ref_prop_usage_types","ref_prop_usage_types.id","prop_floors.usage_type_mstr_id")
-                ->where("prop_floors.status",1)
-                ->orderBy("prop_floors.id","ASC");;
-                }
+        return $this->hasMany(PropFloor::class, "property_id", "id")
+            ->join("ref_prop_floors", "ref_prop_floors.id", "prop_floors.floor_mstr_id")
+            //->join("ref_prop_types","ref_prop_types.id","prop_floors.usage_type_mstr_id")
+            ->join("ref_prop_construction_types", "ref_prop_construction_types.id", "prop_floors.const_type_mstr_id")
+            ->join("ref_prop_occupancy_types", "ref_prop_occupancy_types.id", "prop_floors.occupancy_type_mstr_id")
+            ->join("ref_prop_usage_types", "ref_prop_usage_types.id", "prop_floors.usage_type_mstr_id")
+            ->where("prop_floors.status", 1)
+            ->orderBy("prop_floors.id", "ASC");;
+    }
 
     /** 
      * | get geotag location details of property
      */
     public function geotags()
     {
-        return $this->hasMany(PropSafGeotagUpload::class,"saf_id","saf_id")
-        ->where("prop_saf_geotag_uploads.status",1)
-        ->orderBy("prop_saf_geotag_uploads.saf_id","ASC");
-                
+        return $this->hasMany(PropSafGeotagUpload::class, "saf_id", "saf_id")
+            ->where("prop_saf_geotag_uploads.status", 1)
+            ->orderBy("prop_saf_geotag_uploads.saf_id", "ASC");
     }
     public function demands()
     {
-        return $this->hasMany(PropDemand::class,"property_id","id")
-        ->where("prop_demands.status",1)
-        ->where("prop_demands.paid_status",0);
-                
+        return $this->hasMany(PropDemand::class, "property_id", "id")
+            ->where("prop_demands.status", 1)
+            ->where("prop_demands.paid_status", 0);
     }
 
     public function lastTransection()
     {
-        return $this->hasMany(PropTransaction::class,"property_id","id")
-        ->whereIn("status",[1,2])
-        ->orderBy("id","DESC");
-                
+        return $this->hasMany(PropTransaction::class, "property_id", "id")
+            ->whereIn("status", [1, 2])
+            ->orderBy("id", "DESC");
     }
 
     public function waterConsumer()
     {
-        return $this->hasMany(WaterConsumer::class,"prop_dtl_id","id")
-        ->where("status",1)
-        ->orderBy("id","DESC")
-        ->select("consumer_no","id");
-                
+        return $this->hasMany(WaterConsumer::class, "prop_dtl_id", "id")
+            ->where("status", 1)
+            ->orderBy("id", "DESC")
+            ->select("consumer_no", "id");
     }
 
     public function tradeConnection()
     {
-       $ativeTrade = $this->hasMany(ActiveTradeLicence::class,"property_id","id")
-        ->where("is_active",true)
-        ->orderBy("id","DESC")
-        ->select("application_no","id","holding_no","license_no","valid_from","valid_upto");
-        $approveLicense = $this->hasMany(TradeLicence::class,"property_id","id")
-        ->where("is_active",true)
-        ->orderBy("id","DESC")
-        ->select("application_no","id","holding_no","license_no","valid_from","valid_upto");
+        $ativeTrade = $this->hasMany(ActiveTradeLicence::class, "property_id", "id")
+            ->where("is_active", true)
+            ->orderBy("id", "DESC")
+            ->select("application_no", "id", "holding_no", "license_no", "valid_from", "valid_upto");
+        $approveLicense = $this->hasMany(TradeLicence::class, "property_id", "id")
+            ->where("is_active", true)
+            ->orderBy("id", "DESC")
+            ->select("application_no", "id", "holding_no", "license_no", "valid_from", "valid_upto");
         return $ativeTrade->union($approveLicense);
-                
     }
 }

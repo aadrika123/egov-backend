@@ -399,11 +399,12 @@ class PropertyController extends Controller
     {
         $req->validate([
             'wardId' => 'required|integer',
+            'ulbId' =>  'nullable|integer',
         ]);
         try {
             $mPropDemand    = new PropDemand();
             $mPropProperty  = new PropProperty();
-            $propDetails    = $mPropProperty->getPropLatlong($req->wardId);
+            $propDetails    = $mPropProperty->getPropLatlong($req->wardId, $req->ulbId);
             $propertyIds    = $propDetails->pluck('property_id');
             $propDemand     = $mPropDemand->getDueDemandByPropIdV2($propertyIds);
             $propDemand     = collect($propDemand);
