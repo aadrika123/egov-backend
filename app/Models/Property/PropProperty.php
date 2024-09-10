@@ -704,7 +704,7 @@ class PropProperty extends Model
             )
             ->join('prop_saf_geotag_uploads', 'prop_saf_geotag_uploads.saf_id', '=', 'prop_properties.saf_id')
             ->join('prop_owners', 'prop_owners.property_id', '=', 'prop_properties.id')
-            ->join('ulb_masters', 'ulb_masters.id.', 'prop_properties.ulb_id')
+            ->join('ulb_masters', 'ulb_masters.id', 'prop_properties.ulb_id')
             ->where('prop_properties.ward_mstr_id', $wardId)
             ->where('prop_properties.ulb_id', $ulbId)
             ->whereNotNull('prop_properties.new_holding_no')
