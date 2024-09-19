@@ -24,8 +24,11 @@ class Cluster extends Model
      */
     public function saveClusterDetails($request)
     {
-        $userId = auth()->user()->id;
-        $ulbId = auth()->user()->ulb_id;
+        // $userId = auth()->user()->id;
+        // $ulbId = auth()->user()->ulb_id;
+        $user = authUser($request);
+        $userId = $user->id;
+        $ulbId = $request->ulbId ?? $user->ulb_id;
 
         $newCluster = new Cluster();
         $newCluster->ulb_id                 = $ulbId;
