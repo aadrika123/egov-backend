@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Exception;
+use Illuminate\Contracts\Auth\Guard;
 
 class PropActiveObjection extends Model
 {
@@ -55,8 +56,8 @@ class PropActiveObjection extends Model
      */
     public function getObjectionById($objId)
     {
-        return  PropActiveObjection::on('pgsql::read')
-            ->select(
+        //return  PropActiveObjection::on('pgsql::read')
+        return  PropActiveObjection::select(
                 'prop_active_objections.*',
                 'prop_active_objections.date',
                 DB::raw("TO_CHAR(prop_active_objections.date, 'DD-MM-YYYY') as date"),
@@ -86,7 +87,7 @@ class PropActiveObjection extends Model
             ->leftjoin('ref_prop_types as pt', 'pt.id', '=', 'p.prop_type_mstr_id')
             ->leftJoin('prop_apartment_dtls as a', 'a.id', '=', 'p.apartment_details_id')
             ->leftJoin('m_prop_forgery_types', 'm_prop_forgery_types.id', '=', 'prop_active_objections.forgery_type_mstr_id')
-            ->where('p.status', 1)
+            ->where('prop_active_objections.status', 1)
             ->where('prop_active_objections.id', $objId)
             ->first();
     }

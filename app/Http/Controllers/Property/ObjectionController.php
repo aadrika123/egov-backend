@@ -682,6 +682,11 @@ class ObjectionController extends Controller
                                     PropProperty::where('id', $activeObjection->id)
                                         ->update(['rwh_date_from' => $objDtl->applicant_data]);
                                     break;
+
+                                case (5):
+                                        PropProperty::where('id', $activeObjection->id)
+                                            ->update(['area_of_plot' => $objDtl->applicant_data]);
+                                        break;
                             }
                         }
                     }

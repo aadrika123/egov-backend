@@ -35,7 +35,7 @@ class ThirdPartyController extends Controller
             $request->all(),
             [
                 'mobileNo' => "required|digits:10|regex:/[0-9]{10}/", #exists:active_citizens,mobile|
-                //'type' => "nullable|in:Register,Forgot",
+                'type' => "nullable|in:Register,Forgot",
             ]
         );
         if ($validated->fails())
