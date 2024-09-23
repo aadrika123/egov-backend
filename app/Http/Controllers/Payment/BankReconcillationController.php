@@ -290,7 +290,7 @@ class BankReconcillationController extends Controller
                                 ->update(
                                     [
                                         'paid_status' => $applicationPaymentStatus,
-                                        'balance' => $safDemandDtl->amount - $safDemandDtl->adjust_amount,
+                                        //'balance' => $safDemandDtl->amount - $safDemandDtl->adjust_amount,
                                     ]
                                 );
                         }
@@ -301,7 +301,7 @@ class BankReconcillationController extends Controller
                                 ->update(
                                     [
                                         'paid_status' => $applicationPaymentStatus,
-                                        'balance' => $propDemandDtl->amount - $propDemandDtl->adjust_amt,
+                                       // 'balance' => $propDemandDtl->amount - $propDemandDtl->adjust_amt,
                                     ]
                                 );
                         }
