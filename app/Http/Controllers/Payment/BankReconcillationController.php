@@ -301,7 +301,7 @@ class BankReconcillationController extends Controller
                                 ->update(
                                     [
                                         'paid_status' => $applicationPaymentStatus,
-                                       // 'balance' => $propDemandDtl->amount - $propDemandDtl->adjust_amt,
+                                        'balance' => $propDemandDtl->amount - $propDemandDtl->adjust_amt,
                                     ]
                                 );
                         }
