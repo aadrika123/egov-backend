@@ -1288,7 +1288,7 @@ class ConcessionController extends Controller
         $req = new Request($refReq);
         $refDocList = $mWfActiveDocument->getDocsByActiveId($req);
         // Property List Documents
-        $ifPropDocUnverified = $refDocList->contains('verify_status', 0);
+        $ifPropDocUnverified = $refDocList->contains('verify_status', [0,2]);
         if ($ifPropDocUnverified == 1)
             return 0;
         else
