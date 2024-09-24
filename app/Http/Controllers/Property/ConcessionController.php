@@ -1258,7 +1258,7 @@ class ConcessionController extends Controller
             $ifFullDocVerifiedV1 = $this->ifFullDocVerified($applicationId);
 
             if ($ifFullDocVerifiedV1 == 1) {                                     // If The Document Fully Verified Update Verify Status
-                $concessionDtl->doc_verify_status = 1;
+                $concessionDtl->doc_verify_status = 0;
                 $concessionDtl->save();
             }
 
@@ -1288,7 +1288,7 @@ class ConcessionController extends Controller
         $req = new Request($refReq);
         $refDocList = $mWfActiveDocument->getDocsByActiveId($req);
         // Property List Documents
-        $ifPropDocUnverified = $refDocList->contains('verify_status', [0,2]);
+        $ifPropDocUnverified = $refDocList->contains('verify_status', 0);
         if ($ifPropDocUnverified == 1)
             return 0;
         else
