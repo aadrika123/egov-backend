@@ -133,11 +133,11 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
         Route::post('applywater-ferule-cleaning', 'applyConsumerRequest');                  //<---- cheange the route name Admin / Citizen
 
         //written by Prity Pandey
-        Route::post('admin/consumer/apply-deactivation', 'applyDeactivation');  
+        Route::post('admin/consumer/apply-deactivation', 'applyDeactivation');
         Route::post('get_consumer_details_by_id', 'getByApplicationId');
         //Route::post('consumer_doc_upload', 'uploadWaterDocForDeactivation');  
         //Route::post('get/consumer_doc', 'getDocList'); 
-        Route::post('applicant/search', 'searchApplication'); 
+        Route::post('applicant/search', 'searchApplication');
     });
 
 
@@ -162,12 +162,12 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
         Route::post('consumer/deactivation-escalate-inbox', 'specialInbox');
         Route::post('consumer/deactivation-btc-inbox', 'btcInbox');
         Route::post('consumer/deactivation-worklfow-by-id', 'getConsumerDetails');
-        Route::post('consumer/deactivation-get-doc-list', 'getDocList'); 
-        Route::post('consumer/deactivation-upload-documents', 'uploadDocuments'); 
+        Route::post('consumer/deactivation-get-doc-list', 'getDocList');
+        Route::post('consumer/deactivation-upload-documents', 'uploadDocuments');
         Route::post('consumer/deactivation-upload-documents_view', 'getUploadDocuments');
-        Route::post('consumer/deactivation-documents-verify', 'documentVerify'); 
-        Route::post('consumer/deactivation-post-next-level', 'postNextLevelRequestV1'); 
-        Route::post('consumer/deactivation-approve-rejet', 'approveReject'); 
+        Route::post('consumer/deactivation-documents-verify', 'documentVerify');
+        Route::post('consumer/deactivation-post-next-level', 'postNextLevelRequestV1');
+        Route::post('consumer/deactivation-approve-rejet', 'approveReject');
         //Route::post('consumer_doc-verify-reject', 'docVerifyRejects');
         //Route::post('consumer/req/post-next-level', 'consumerPostNextLevel');
         //Route::post('consumer/req/approval-rejection', 'consumerDeactivationApprovalRejection');
@@ -183,6 +183,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
         Route::post('consumer/report/dcb-pie-chart', 'dcbPieChart');                                    //02
         Route::post('report-cosumer', 'consumerReport');                                                //03
         Route::post('connection-collection', 'connectionCollection');                                   //04
+        Route::post('new-connection-report', 'newConnectioReport');                                     //05
     });
 
 
@@ -226,12 +227,12 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
      * date      - 2024-04-24
      * =========== this is for consumer disconnection=============
      */
-    Route::controller(ConsumerActionRequest::class)->group(function(){        
+    Route::controller(ConsumerActionRequest::class)->group(function () {
         Route::post('request/discon/sedule-inspection', 'setDisconnectionSitInspection');
-        Route::post("request/discon/getInspectinMaster","getSiteInspectionCompar");
+        Route::post("request/discon/getInspectinMaster", "getSiteInspectionCompar");
         Route::post('request/discon/sedule-cancel', 'cancelDisconnectionSitInspection');
-        Route::post("request/discon/inspection","updateSiteInspection");
-        Route::post("request/discon/get-inspection-dtls","getInspectionData");
+        Route::post("request/discon/inspection", "updateSiteInspection");
+        Route::post("request/discon/get-inspection-dtls", "getInspectionData");
     });
 });
 Route::controller(WaterApplication::class)->group(function () {
