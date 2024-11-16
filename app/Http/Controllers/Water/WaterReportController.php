@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Water;
 
 use App\Http\Controllers\Controller;
+use App\Models\Water\WaterApplication;
 use App\Models\Water\WaterConsumer;
 use App\Models\Water\WaterTran;
 use App\Traits\Water\WaterTrait;
@@ -1104,6 +1105,134 @@ class WaterReportController extends Controller
                 "last_page"     => $paginator->lastPage(),
                 "totalHolding"  => $totalHolding,
                 "totalAmount"   => $totalAmount,
+                "data"          => $paginator->items(),
+                "total"         => $paginator->total(),
+                // "numberOfPages" => $numberOfPages
+            ];
+            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
+            return responseMsgs(true, "", $list, $queryRunTime);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $request->all());
+        }
+    }
+    /**
+     * |Level Wise Report
+     */
+    public function levelWiseReport(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                "fromDate"      => "required|date|date_format:Y-m-d",
+                "uptoDate"      => "required|date|date_format:Y-m-d",
+                "wardId"        => "nullable|digits_between:1,9223372036854775807",
+                "userId"        => "nullable|digits_between:1,9223372036854775807",
+                "paymentMode"   => "nullable",
+                "page"          => "nullable|digits_between:1,9223372036854775807",
+                "perPage"       => "nullable|digits_between:1,9223372036854775807",
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+        try {
+            $refUser        = authUser($request);
+            $refUserId      = $refUser->id;
+            $ulbId          = $refUser->ulb_id;
+            $wardId = null;
+            $propertyTypeId = null;
+            $connectionType = null;
+            $roleTypeId = null;
+            $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
+
+            if ($request->fromDate) {
+                $fromDate = $request->fromDate;
+            }
+            if ($request->uptoDate) {
+                $uptoDate = $request->uptoDate;
+            }
+            if ($request->wardId) {
+                $wardId = $request->wardId;
+            }
+            if ($request->userId) {
+                $userId = $request->userId;
+            }
+            if ($request->paymentMode) {
+                $paymentMode = $request->paymentMode;
+            }
+            if ($request->propertyType) {
+                $propertyTypeId = $request->propertyType;
+            }
+            if ($request->connectionType) {
+                $connectionType = $request->connectionType;
+            }
+            if ($request->roleTypeId) {
+                $roleTypeId = $request->roleTypeId;
+            }
+
+            // DB::enableQueryLog();
+            $data = WaterApplication::select(
+                DB::raw("
+                            water_applications.id AS application_id,
+                            ulb_ward_masters.ward_name AS ward_no,
+                             'consumer' as type,
+                            water_applications.application_no,
+                            CONCAT('', water_applications.holding_no, '') AS holding_no,
+                            water_applicants.owner_name,
+                            water_applicants.mobile_no,
+                            water_property_type_mstrs.property_type,
+                            water_connection_type_mstrs.connection_type,
+                            wf_roles.role_name
+
+                "),
+            )
+                ->JOIN(
+                    DB::RAW("(
+                        SELECT  STRING_AGG(applicant_name, ', ') AS owner_name, 
+                                STRING_AGG(mobile_no::TEXT, ', ') AS mobile_no, 
+                                water_applicants.application_id 
+                        FROM water_applicants 
+                        JOIN water_applications on water_applications.id = water_applicants.application_id 
+                        AND water_applications.apply_date BETWEEN '$fromDate' AND '$uptoDate'
+                        "
+                        . ($ulbId ? " AND water_applications.ulb_id = $ulbId" : "")
+                        . "
+                        GROUP BY water_applicants.application_id
+                        ) AS water_applicants
+                        "),
+                    function ($join) {
+                        $join->on("water_applicants.application_id", "=", "water_applications.id");
+                    }
+                )
+                ->leftJOIN("ulb_ward_masters", "ulb_ward_masters.id", "water_applications.ward_id")
+                ->join('water_property_type_mstrs', 'water_property_type_mstrs.id', 'water_applications.property_type_id')
+                ->join('water_connection_type_mstrs', 'water_connection_type_mstrs.id', 'water_applications.connection_type_id')
+                ->join('wf_roles', 'wf_roles.id', 'water_applications.current_role')
+                // ->LEFTJOIN("users", "users.id", "water_trans.emp_dtl_id")
+                ->whereBetween("water_applications.apply_date", [$fromDate, $uptoDate]);
+            if ($wardId) {
+                $data = $data->where("ulb_ward_masters.id", $wardId);
+            }
+            if ($propertyTypeId) {
+                $data = $data->where("water_applications.property_type_id", $propertyTypeId);
+            }
+            if ($connectionType) {
+                $data = $data->where("water_applications.connection_type_id", $connectionType);
+            }
+            if ($roleTypeId) {
+                $data = $data->where("water_applications.current_role", $roleTypeId);
+            }
+            $paginator = collect();
+
+            $data2 = $data;
+            $totalHolding = $data2->count("water_applications.id");
+            $perPage = $request->perPage ? $request->perPage : 5;
+            $page = $request->page && $request->page > 0 ? $request->page : 1;
+
+            $paginator = $data->paginate($perPage);
+            $list = [
+                "current_page"  => $paginator->currentPage(),
+                "last_page"     => $paginator->lastPage(),
+                "totalHolding"  => $totalHolding,
                 "data"          => $paginator->items(),
                 "total"         => $paginator->total(),
                 // "numberOfPages" => $numberOfPages

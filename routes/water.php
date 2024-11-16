@@ -184,6 +184,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
         Route::post('report-cosumer', 'consumerReport');                                                //03
         Route::post('connection-collection', 'connectionCollection');                                   //04
         Route::post('new-connection-report', 'newConnectioReport');                                     //05
+        Route::post('level-wise-report', 'levelWiseReport');                                           //05
     });
 
 
