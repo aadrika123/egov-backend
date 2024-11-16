@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Water;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Water\colllectionReport;
 use App\Models\Water\WaterApplication;
 use App\Models\Water\WaterConsumer;
 use App\Models\Water\WaterTran;
@@ -1176,6 +1177,7 @@ class WaterReportController extends Controller
                             ulb_ward_masters.ward_name AS ward_no,
                              'consumer' as type,
                             water_applications.application_no,
+                            water_applications.apply_date,
                             CONCAT('', water_applications.holding_no, '') AS holding_no,
                             water_applicants.owner_name,
                             water_applicants.mobile_no,
@@ -1458,6 +1460,168 @@ class WaterReportController extends Controller
             ];
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime, $action, $deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
+        }
+    }
+    /**
+     * | water Collection report 
+     */
+    public function tcCollectionReport(colllectionReport $request)
+    {
+        $request->merge(["metaData" => ["pr1.1", 1.1, null, $request->getMethod(), null,]]);
+        $metaData = collect($request->metaData)->all();
+
+        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
+        // return $request->all();
+        try {
+
+            $refUser        = authUser($request);
+            $ulbId          = $refUser->ulb_id;
+            $wardId = null;
+            $userId = null;
+            $ulbId = null;
+            $paymentMode = null;
+            $now                        = Carbon::now()->format('Y-m-d');
+            $fromDate = $uptoDate       = Carbon::now()->format("Y-m-d");
+            $fromDate = $uptoDate       = Carbon::now()->format("Y-m-d");
+            $now                        = Carbon::now();
+            $currentDate                = Carbon::now()->format('Y-m-d');
+            $currentDate                = $now->format('Y-m-d');
+            $zoneId = $wardId = null;
+            $currentYear                = collect(explode('-', $request->fiYear))->first() ?? $now->year;
+            $currentFyear               = $request->fiYear ?? getFinancialYear($currentDate);
+            $startOfCurrentYear         = Carbon::createFromDate($currentYear, 4, 1);           // Start date of current financial year
+            $startOfPreviousYear        = $startOfCurrentYear->copy()->subYear();               // Start date of previous financial year
+            $previousFinancialYear      = getFinancialYear($startOfPreviousYear);
+
+            #get financial  year 
+            $refDate = $this->getFyearDate($currentFyear);
+            $fromDates = $refDate['fromDate'];
+            $uptoDates = $refDate['uptoDate'];
+
+            #common function 
+            $refDate = $this->getFyearDate($previousFinancialYear);
+            $previousFromDate = $refDate['fromDate'];
+            $previousUptoDate = $refDate['uptoDate'];
+
+            if ($request->fromDate) {
+                $fromDate = $request->fromDate;
+            }
+            if ($request->uptoDate) {
+                $uptoDate = $request->uptoDate;
+            }
+            if ($request->wardId) {
+                $wardId = $request->wardId;
+            }
+
+            if ($request->userId) {
+                $userId = $request->userId;
+            }
+
+            # In Case of any logged in TC User
+            // if ($refUser->user_type == "TC") {
+            //     $userId = $refUser->id;
+            // }
+
+            if ($request->paymentMode) {
+                $paymentMode = $request->paymentMode;
+            }
+            // if ($request->ulbId) {
+            //     $ulbId = $request->ulbId;
+            // }
+            if ($request->zoneId) {
+                $zoneId = $request->zoneId;
+            }
+
+            // DB::enableQueryLog();
+            $data = ("SELECT 
+              subquery.tran_id,
+              subquery.tran_no,
+              COALESCE(subquery.arrear_collections, 0) AS arrear_collections,
+              COALESCE(subquery.current_collections, 0) AS current_collections,
+              COALESCE(subquery.arrear_collections, 0) + COALESCE(subquery.current_collections, 0) AS total_collections,
+              subquery.consumer_no,
+              subquery.ward_name,
+              subquery.amount,
+              subquery.address,
+              subquery.transactiondate,
+              subquery.user_name,
+              subquery.tran_type,
+              subquery.paymentstatus,
+              subquery.applicant_name
+              
+     FROM (
+         SELECT 
+            --  SUM(CASE WHEN water_consumer_collections.demand_from  <= '$previousUptoDate'   THEN water_consumer_collections.paid_amount ELSE 0 END) AS arrear_collections, 
+            --  SUM(CASE WHEN water_consumer_collections.demand_upto >=  '$fromDates'   AND water_trans.tran_date >= '$fromDates' THEN water_consumer_collections.paid_amount ELSE 0 END) AS current_collections,
+                water_trans.id as tran_id,
+                water_trans.tran_date,
+                water_trans.tran_no,
+                water_consumers.consumer_no,water_trans.payment_mode,
+                water_trans.amount,
+                ulb_ward_masters.ward_name,
+                water_consumers.address,
+                water_trans.tran_date AS transactiondate,
+                users.user_name,
+                users.name,
+                water_trans.tran_type,
+                water_trans.payment_mode AS paymentstatus,
+                water_consumer_owners.applicant_name,
+
+              --  Arrear Collections: Payments for demands up to the previous financial year
+        SUM(CASE 
+            WHEN water_consumer_collections.demand_upto <= '$previousUptoDate' THEN water_consumer_collections.amount 
+            ELSE 0 
+        END) AS arrear_collections,
+
+        -- Current Collections: Payments for demands in the current financial year
+        SUM(CASE 
+            WHEN water_consumer_collections.demand_from >= '$fromDates' AND water_consumer_collections.demand_upto <= '$uptoDates' 
+            THEN water_consumer_collections.amount 
+            ELSE 0 
+        END) AS current_collections
+          
+        FROM water_trans 
+        LEFT JOIN ulb_ward_masters ON ulb_ward_masters.id=water_trans.ward_id
+        LEFT JOIN water_consumers ON water_consumers.id=water_trans.related_id
+        left JOIN water_consumer_owners ON water_consumer_owners.consumer_id=water_trans.related_id
+        -- JOIN water_consumer_demands ON water_consumer_demands.consumer_id=water_trans.related_id
+        JOIN water_consumer_collections on water_consumer_collections.transaction_id = water_trans.id
+        LEFT JOIN users ON users.id=water_trans.emp_dtl_id
+        where water_trans.related_id is not null 
+        and water_trans.status in (1, 2) 
+       -- and tran_type = 'Demand Collection'
+        and water_trans.tran_date between '$fromDate' and '$uptoDate'
+                    " . ($ulbId ? " AND  water_trans.ulb_id = $ulbId" : "") . "
+                    " . ($wardId ? " AND water_consumers.ward_mstr_id = $wardId" : "") . "
+                    " . ($userId ? " AND water_trans.emp_dtl_id = $userId" : "") . "
+                    " . ($paymentMode ? " AND water_trans.payment_mode = '$paymentMode'" : "") . "
+            --AND water_consumer_demands.paid_status=1
+        GROUP BY 
+                water_trans.id,
+                    water_consumers.consumer_no,
+                    ulb_ward_masters.ward_name,
+                    water_consumers.address,
+                    users.user_name,
+                    users.name,
+                    water_consumer_owners.applicant_name,
+                    water_trans.tran_type
+     ) AS subquery");
+            $data = DB::connection('pgsql_water')->select(DB::raw($data));
+            $refData = collect($data);
+
+            $refDetailsV2 = [
+                "array" => $data,
+                "sum_current_coll" => roundFigure($refData->pluck('current_collections')->sum() ?? 0),
+                "sum_arrear_coll" => roundFigure($refData->pluck('arrear_collections')->sum() ?? 0),
+                "sum_total_coll" => roundFigure($refData->pluck('total_collections')->sum() ?? 0),
+                "totalAmount"   =>  roundFigure($refData->pluck('amount')->sum() ?? 0),
+                "totalColletion" => $refData->pluck('tran_id')->count(),
+                "currentDate"  => $currentDate
+            ];
+            $queryRunTime = (collect(DB::connection('pgsql_water'))->sum("time"));
+            return responseMsgs(true, "collection Report", $refDetailsV2, $apiId, $version, $queryRunTime, $action, $deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
         }
