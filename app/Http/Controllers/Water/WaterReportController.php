@@ -1052,7 +1052,8 @@ class WaterReportController extends Controller
                             water_owner_detail.owner_name,
                             water_owner_detail.mobile_no,
                             water_property_type_mstrs.property_type,
-                            water_connection_type_mstrs.connection_type
+                            water_connection_type_mstrs.connection_type,
+                            water_trans.amount
 
                 "),
             )
@@ -1076,6 +1077,7 @@ class WaterReportController extends Controller
                 )
                 ->JOIN("ulb_ward_masters", "ulb_ward_masters.id", "water_consumers.ward_mstr_id")
                 ->join('water_property_type_mstrs', 'water_property_type_mstrs.id', 'water_consumers.property_type_id')
+                ->join('water_trans', 'water_trans.related_id', 'water_consumers.apply_connection_id')
                 ->join('water_connection_type_mstrs', 'water_connection_type_mstrs.id', 'water_consumers.connection_type_id')
                 // ->LEFTJOIN("users", "users.id", "water_trans.emp_dtl_id")
                 ->whereBetween("water_consumers.application_apply_date", [$fromDate, $uptoDate]);
@@ -1092,6 +1094,7 @@ class WaterReportController extends Controller
 
             $data2 = $data;
             $totalHolding = $data2->count("water_consumers.id");
+            $totalAmount = $data2->sum("water_trans.amount");
             $perPage = $request->perPage ? $request->perPage : 5;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
 
@@ -1100,6 +1103,7 @@ class WaterReportController extends Controller
                 "current_page"  => $paginator->currentPage(),
                 "last_page"     => $paginator->lastPage(),
                 "totalHolding"  => $totalHolding,
+                "totalAmount"   => $totalAmount,
                 "data"          => $paginator->items(),
                 "total"         => $paginator->total(),
                 // "numberOfPages" => $numberOfPages
