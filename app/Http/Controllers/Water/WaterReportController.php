@@ -679,7 +679,8 @@ class WaterReportController extends Controller
             ";
             // dd($connectionType);
             # Data Structuring
-            $dcb = DB::select($select . $from);
+            $dcb = DB::connection('pgsql_water')->select(DB::raw($select . $from));
+            // $dcb = DB::select($select . $from);
             $data['total_arrear_demand']                = round(collect($dcb)->sum('arrear_demand'), 0);
             $data['total_current_demand']               = round(collect($dcb)->sum('current_demand'), 0);
             $data['total_arrear_collection']            = round(collect($dcb)->sum('arrear_collection'), 0);
