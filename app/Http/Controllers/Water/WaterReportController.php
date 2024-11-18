@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Water;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Water\colllectionReport;
 use App\Models\Water\WaterApplication;
+use App\Models\Water\WaterApprovalApplicationDetail;
 use App\Models\Water\WaterConsumer;
+use App\Models\Water\WaterRejectionApplicationDetail;
 use App\Models\Water\WaterTran;
 use App\Traits\Water\WaterTrait;
 use Carbon\Carbon;
@@ -1625,6 +1627,48 @@ class WaterReportController extends Controller
             return responseMsgs(true, "collection Report", $refDetailsV2, $apiId, $version, $queryRunTime, $action, $deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
+        }
+    }
+    /**
+     * | approve reject application
+     */
+    public function approveRejectReports(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'reportType' => 'required|in:Approve,Reject',
+            'wardNo' => 'nullable',
+            'applicationType' => 'nullable|in:New Apply,Renew',
+            'applicationStatus' => 'nullable|in:Approve,Reject,All',
+            'dateFrom' => 'nullable|date_format:Y-m-d',
+            'dateUpto' => 'nullable|date_format:Y-m-d',
+        ]);
+        if ($validator->fails()) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'validation error',
+                'errors'  => $validator->errors()
+            ], 200);
+        }
+        try {
+            $waterApproveApplication = new WaterApprovalApplicationDetail();
+            $waterRejectApplication = new WaterRejectionApplicationDetail();
+            $user = Auth()->user();
+            $ulbId = $user->ulb_id ?? null;
+            $response = [];
+            $perPage = $request->perPage ?: 10;
+            if ($request->reportType == 'Approve') {
+                $response = $waterApproveApplication->getApplicationWithStatus($request);
+                $response['user_name'] = $user->name;
+            }
+            if ($request->reportType == 'Reject') {
+                $response = $waterRejectApplication->getApplicationWithStatus($request);
+                $response['user_name'] = $user->name;
+            }
+            if ($response) {
+                return responseMsgs(true, "Market Application List Fetch Succefully !!!", $response, "055017", "1.0", responseTime(), "POST", $request->deviceId);
+            }
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], "055017", "1.0", responseTime(), "POST", $request->deviceId);
         }
     }
 }

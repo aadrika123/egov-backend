@@ -186,6 +186,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
         Route::post('new-connection-report', 'newConnectioReport');                                     //05
         Route::post('level-wise-report', 'levelWiseReport');                                           //06
         Route::post('aggregate-report', 'tcCollectionReport');                                           //07
+        Route::post('approve-reject-report', 'approveRejectReports');                                           //07
     });
 
 
