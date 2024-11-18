@@ -37,6 +37,7 @@ use App\Models\Water\WaterParamConnFee;
 use App\Models\Water\WaterPenaltyInstallment;
 use App\Models\Water\WaterPropertyTypeMstr;
 use App\Models\Water\WaterRejectApplicant;
+use App\Models\Water\WaterRejectionApplicant;
 use App\Models\Water\WaterRejectionApplicationDetail;
 use App\Models\Water\WaterSiteInspection;
 use App\Models\Water\WaterSiteInspectionsScheduling;
@@ -1382,6 +1383,135 @@ class NewConnectionController extends Controller
 
             $requiedDocType = $refWaterNewConnection->getDocumentTypeList($refApplication);  # get All Related Document Type List
             $refOwneres = $refWaterNewConnection->getOwnereDtlByLId($refApplication->id);    # get Owneres List
+            $ownerList = collect($refOwneres)->map(function ($value) {
+                $return['applicant_name'] = $value['applicant_name'];
+                $return['ownerID'] = $value['id'];
+                return $return;
+            });
+            foreach ($requiedDocType as $val) {
+                $doc = (array) null;
+                $doc["ownerName"] = $ownerList;
+                $doc['docName'] = $val->doc_for;
+                $refDocName  = str_replace('_', ' ', $val->doc_for);
+                $doc["refDocName"] = ucwords(strtolower($refDocName));
+                $doc['isMadatory'] = $val->is_mandatory;
+                $ref['docValue'] = $refWaterNewConnection->getDocumentList($val->doc_for);  # get All Related Document List
+                $doc['docVal'] = $docFor = collect($ref['docValue'])->map(function ($value) {
+                    $refDoc = $value['doc_name'];
+                    $refText = str_replace('_', ' ', $refDoc);
+                    $value['dispayName'] = ucwords(strtolower($refText));
+                    return $value;
+                });
+                $docFor = collect($ref['docValue'])->map(function ($value) {
+                    return $value['doc_name'];
+                });
+
+                $doc['uploadDoc'] = [];
+                $uploadDoc = $refWfActiveDocument->getDocByRefIdsDocCode($refApplication->id, $refApplication->workflow_id, $moduleId, $docFor); # Check Document is Uploaded Of That Type
+                $uploadDoc = $docUpload->getDocUrl($uploadDoc);           #_Calling BLL for Document Path from DMS
+                if (isset($uploadDoc->first()['doc_path'])) {
+                    // $path = $refWaterNewConnection->readDocumentPath($uploadDoc->first()['doc_path']);
+                    $doc["uploadDoc"]["doc_path"] = $uploadDoc->first()['doc_path'] ?? null;
+                    $doc["uploadDoc"]["doc_code"] = $uploadDoc->first()['doc_code'];
+                    $doc["uploadDoc"]["verify_status"] = $uploadDoc->first()['verify_status'];
+                }
+                array_push($requiedDocs, $doc);
+            }
+            foreach ($refOwneres as $key => $val) {
+                $docRefList = ["CONSUMER_PHOTO", "ID_PROOF"];
+                foreach ($docRefList as $key => $refOwnerDoc) {
+                    $doc = (array) null;
+                    $testOwnersDoc[] = (array) null;
+                    $doc["ownerId"] = $val->id;
+                    $doc["ownerName"] = $val->applicant_name;
+                    $doc["docName"]   = $refOwnerDoc;
+                    $refDocName  = str_replace('_', ' ', $refOwnerDoc);
+                    $doc["refDocName"] = ucwords(strtolower($refDocName));
+                    $doc['isMadatory'] = 1;
+                    $ref['docValue'] = $refWaterNewConnection->getDocumentList([$refOwnerDoc]);   #"CONSUMER_PHOTO"
+                    $doc['docVal'] = $docFor = collect($ref['docValue'])->map(function ($value) {
+                        $refDoc = $value['doc_name'];
+                        $refText = str_replace('_', ' ', $refDoc);
+                        $value['dispayName'] = ucwords(strtolower($refText));
+                        return $value;
+                    });
+                    $refdocForId = collect($ref['docValue'])->map(function ($value, $key) {
+                        return $value['doc_name'];
+                    });
+                    $doc['uploadDoc'] = [];
+                    $uploadDoc = $refWfActiveDocument->getOwnerDocByRefIdsDocCode($refApplication->id, $refApplication->workflow_id, $moduleId, $refdocForId, $doc["ownerId"]); # Check Document is Uploaded Of That Type
+                    $uploadDoc = $docUpload->getDocUrl($uploadDoc);           #_Calling BLL for Document Path from DMS
+                    if (isset($uploadDoc->first()['doc_path'])) {
+                        // $path = $refWaterNewConnection->readDocumentPath($uploadDoc->first()['doc_path']);
+                        $doc["uploadDoc"]["doc_path"] = $uploadDoc->first()['doc_path'] ?? null;
+                        $doc["uploadDoc"]["doc_code"] = $uploadDoc->first()['doc_code'];
+                        $doc["uploadDoc"]["verify_status"] = $uploadDoc->first()['verify_status'];
+                    }
+                    array_push($testOwnersDoc, $doc);
+                }
+            }
+            $ownerDoc = collect($testOwnersDoc)->filter()->values();
+
+            $data["documentsList"]  = $requiedDocs;
+            $data["ownersDocList"]  = $ownerDoc;
+            $data['doc_upload_status'] = $refApplication['doc_upload_status'];
+            $data['connectionCharges'] = $connectionCharges;
+            return responseMsg(true, "Document Uploaded!", $data);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
+    }
+    /**
+     * | Get the document to be upoaded with list of dock uploaded 
+        | Serial No :  
+        | Working / Citizen Upload
+     */
+    public function getDocToUploadv1(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'applicationId' => 'required|numeric'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+        try {
+            $refApplication         = (array)null;
+            $refOwneres             = (array)null;
+            $requiedDocs            = (array)null;
+            $testOwnersDoc          = (array)null;
+            $data                   = (array)null;
+            $docUpload = new DocUpload;
+            $refWaterNewConnection  = new WaterNewConnection();
+            $refWfActiveDocument    = new WfActiveDocument();
+            $mWaterConnectionCharge = new WaterConnectionCharge();
+            $moduleId               = Config::get('module-constants.WATER_MODULE_ID');
+
+            $connectionId = $request->applicationId;
+            if ($request->applicationType == 'Approve') {
+                $refApplication = WaterApprovalApplicationDetail::where("status", 1)->find($connectionId);
+            } else {
+                $refApplication = WaterRejectionApplicationDetail::where("status", 1)->find($connectionId);
+            }
+            if (!$refApplication) {
+                throw new Exception("Application Not Found!");
+            }
+
+            $connectionCharges = $mWaterConnectionCharge->getWaterchargesById($connectionId)
+                ->where('charge_category', '!=', "Site Inspection")                         # Static
+                ->first();
+            $connectionCharges['type'] = Config::get('waterConstaint.New_Connection');
+            $connectionCharges['applicationNo'] = $refApplication->application_no;
+            $connectionCharges['applicationId'] = $refApplication->id;
+
+            $requiedDocType = $refWaterNewConnection->getDocumentTypeListv1($refApplication);  # get All Related Document Type List
+            if ($request->applicationType == 'Approve') {
+                $refOwneres = $refWaterNewConnection->getApproveOwnereDtlByLId($refApplication->id);
+            } else {
+                $refOwneres = $refWaterNewConnection->getRejectOwnereDtlByLId($refApplication->id);
+            }
+            # get Owneres List
             $ownerList = collect($refOwneres)->map(function ($value) {
                 $return['applicant_name'] = $value['applicant_name'];
                 $return['ownerID'] = $value['id'];
@@ -2899,17 +3029,17 @@ class NewConnectionController extends Controller
 
         try {
             // $user = authUser($request);
-            $mWaterSiteInspectionsScheduling = new WaterSiteInspectionsScheduling();
-            $mWaterConnectionCharge  = new WaterConnectionCharge();
-            $mWaterApproveApplication = new WaterApprovalApplicationDetail();
-            $mWaterRejectApplication = new WaterRejectionApplicationDetail();
-            $mWaterApplicant   = new WaterApprovalApplicant();
-            $mWaterRejectApplicant = new WaterRejectApplicant();
-            $mWaterTran = new WaterTran();
+            $mWaterSiteInspectionsScheduling  = new WaterSiteInspectionsScheduling();
+            $mWaterConnectionCharge           = new WaterConnectionCharge();
+            $mWaterApproveApplication         = new WaterApprovalApplicationDetail();
+            $mWaterRejectApplication          = new WaterRejectionApplicationDetail();
+            $mWaterApplicant                  = new WaterApprovalApplicant();
+            $mWaterRejectApplicant            = new WaterRejectionApplicant();
+            $mWaterTran                       = new WaterTran();
             $roleDetails = Config::get('waterConstaint.ROLE-LABEL');
 
             # Application Details
-            if ($request->aplicationType == 'Approve') {
+            if ($request->applicationType == 'Approve') {
                 $applicationDetails['applicationDetails'] = $mWaterApproveApplication->getApprovedApplicationById($request->applicationId)->first();
             } else {
                 $applicationDetails['applicationDetails'] = $mWaterRejectApplication->getRejectApplicationById($request->applicationId)->first();
@@ -2924,7 +3054,7 @@ class NewConnectionController extends Controller
             // $documentDetails['documentDetails'] = collect($document)['original']['data'];
 
             # owner details
-            if ($request->aplicationType == 'Approve') {
+            if ($request->applicationType == 'Approve') {
                 $ownerDetails['ownerDetails'] = $mWaterApplicant->getOwnerList($request->applicationId)->get();
             } else {
                 $ownerDetails['ownerDetails'] = $mWaterRejectApplicant->getOwnerList($request->applicationId)->get();

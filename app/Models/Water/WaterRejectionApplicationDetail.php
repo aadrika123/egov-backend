@@ -22,6 +22,7 @@ class WaterRejectionApplicationDetail extends Model
     }
     public function getApplicationWithStatus($request)
     {
+        
         $user = Auth()->user();
         $ulbId = $user->ulb_id ?? null;
         $perPage = $request->perPage ?: 10;

@@ -66,6 +66,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
         Route::post('search-consumer', 'searchWaterConsumer');                                          // Admin/Consumer   
         Route::post('consumer/get-listed-details', 'approvedWaterApplications');                        // Consumer 
         Route::post('admin/application/application-details', 'getApplicationDetailsv1');                // admin
+        Route::post('admin/application/document-details', 'getDocToUploadv1');                // admin
 
         # Site Inspection
         Route::post('admin/search-application', 'searchApplicationByParameter');                        // Admin

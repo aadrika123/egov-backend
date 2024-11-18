@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Models\Water\WaterApplicant;
 use App\Models\Water\WaterApplicantDoc;
 use App\Models\Water\WaterApplication;
+use App\Models\Water\WaterApprovalApplicant;
 use App\Models\Water\WaterConnectionCharge;
 use App\Models\Water\WaterConsumer;
 use App\Models\Water\WaterParamConnFee;
@@ -20,6 +21,8 @@ use App\Models\Water\WaterParamDocumentType;
 use App\Models\Water\WaterPenaltyInstallment;
 use App\Models\Water\WaterRazorPayRequest;
 use App\Models\Water\WaterRazorPayResponse;
+use App\Models\Water\WaterRejectApplicant;
+use App\Models\Water\WaterRejectionApplicant;
 use App\Models\Water\WaterSiteInspection;
 use App\Models\Water\WaterSiteInspectionsScheduling;
 use App\Models\Water\WaterTran;
@@ -1297,6 +1300,45 @@ class WaterNewConnection implements IWaterNewConnection
             ->get();
         return $doc;
     }
+    public function getDocumentTypeListv1($application)
+    {
+        $return = (array)null;
+        $type   = ["METER_BILL", "ADDRESS_PROOF", "OTHER"];
+        if (in_array($application->connection_through, [1, 2]))      // Holding No, SAF No
+        {
+            $type[] = "HOLDING_PROOF";
+        }
+        if (strtoupper($application->category) == "BPL")                // FOR BPL APPLICATION
+        {
+            $type[] = "BPL";
+        }
+        if ($application->property_type_id == 2)                        // FOR COMERCIAL APPLICATION
+        {
+            $type[] = "COMMERCIAL";
+        }
+        if ($application->apply_from != "Online")                       // Online
+        {
+            $type[]  = "FORM_SCAN_COPY";
+        }
+        if ($application->owner_type == 2)                              // In case of Tanent
+        {
+            $type[]  = "TENANT";
+        }
+        if ($application->property_type_id == 7)                        // Appartment
+        {
+            $type[]  = "APPARTMENT";
+        }
+        $doc = WaterParamDocumentType::select(
+            "doc_for",
+            DB::raw("CASE WHEN doc_for ='OTHER' THEN 0 
+                                                ELSE 1 END AS is_mandatory")
+        )
+            ->whereIn("doc_for", $type)
+            ->where("status", 1)
+            ->groupBy("doc_for")
+            ->get();
+        return $doc;
+    }
 
     // Not used 
     public function getDocumentList($doc_for)
@@ -1374,6 +1416,33 @@ class WaterNewConnection implements IWaterNewConnection
     {
         try {
             $ownerDtl   = WaterApplicant::select("*")
+                ->where("application_id", $applicationId)
+                ->where("status", 1)
+                ->get();
+            return $ownerDtl;
+        } catch (Exception $e) {
+            echo $e->getMessage();
+        }
+    }
+    /**
+     * |approve applicant
+     */
+    public function getApproveOwnereDtlByLId($applicationId)
+    {
+        try {
+            $ownerDtl   = WaterApprovalApplicant::select("*")
+                ->where("application_id", $applicationId)
+                ->where("status", 1)
+                ->get();
+            return $ownerDtl;
+        } catch (Exception $e) {
+            echo $e->getMessage();
+        }
+    }
+    public function getRejectOwnereDtlByLId($applicationId)
+    {
+        try {
+            $ownerDtl   = WaterRejectionApplicant::select("*")
                 ->where("application_id", $applicationId)
                 ->where("status", 1)
                 ->get();
