@@ -48,7 +48,7 @@ class WaterRejectionApplicationDetail extends Model
             ->whereBetween('apply_date', [$dateFrom, $dateUpto]);
 
         if ($request->wardId) {
-            $approved->where('ulb_ward_masters.ward_id', $request->wardId);
+            $approved->where('ulb_ward_masters.id', $request->wardId);
         }
         if ($request->connectionType) {
             $approved->where('water_rejection_application_details.connection_type_id', $request->connectionType);
