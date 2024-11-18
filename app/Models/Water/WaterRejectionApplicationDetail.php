@@ -66,4 +66,40 @@ class WaterRejectionApplicationDetail extends Model
             'total' => $data->total()
         ];
     }
+    /**
+     * | Get
+     */
+    public function getRejectApplicationById($applicationId)
+    {
+        return WaterRejectionApplicationDetail::select(
+            'water_rejection_application_details.id',
+            'water_rejection_application_details.application_no',
+            'water_rejection_application_details.ward_id',
+            'water_rejection_application_details.address',
+            'water_rejection_application_details.holding_no',
+            'water_rejection_application_details.saf_no',
+            'ulb_ward_masters.ward_name',
+            'ulb_masters.ulb_name',
+            DB::raw("string_agg(water_rejection_applicants.applicant_name,',') as applicantName"),
+            DB::raw("string_agg(water_rejection_applicants.mobile_no::VARCHAR,',') as mobileNo"),
+            DB::raw("string_agg(water_rejection_applicants.guardian_name,',') as guardianName"),
+        )
+            ->join('ulb_masters', 'ulb_masters.id', '=', 'water_rejection_application_details.ulb_id')
+            ->join('water_rejection_applicants', 'water_rejection_applicants.application_id', '=', 'water_rejection_application_details.id')
+            ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_rejection_application_details.ward_id')
+            ->where('water_rejection_application_details.status', true)
+            ->where('water_rejection_application_details.id', $applicationId)
+            ->groupBy(
+                'water_rejection_application_details.saf_no',
+                'water_rejection_application_details.holding_no',
+                'water_rejection_application_details.address',
+                'water_rejection_application_details.id',
+                'water_rejection_application_details.application_no',
+                'water_rejection_application_details.ward_id',
+                'water_rejection_application_details.ulb_id',
+                'ulb_ward_masters.ward_name',
+                'ulb_masters.id',
+                'ulb_masters.ulb_name'
+            );
+    }
 }

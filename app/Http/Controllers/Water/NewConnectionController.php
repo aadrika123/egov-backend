@@ -36,6 +36,8 @@ use App\Models\Water\WaterOwnerTypeMstr;
 use App\Models\Water\WaterParamConnFee;
 use App\Models\Water\WaterPenaltyInstallment;
 use App\Models\Water\WaterPropertyTypeMstr;
+use App\Models\Water\WaterRejectApplicant;
+use App\Models\Water\WaterRejectionApplicationDetail;
 use App\Models\Water\WaterSiteInspection;
 use App\Models\Water\WaterSiteInspectionsScheduling;
 use App\Models\Water\WaterTran;
@@ -747,7 +749,7 @@ class NewConnectionController extends Controller
             $metaReqs['trackDate'] = $lastworkflowtrack && $lastworkflowtrack->forward_date ? ($lastworkflowtrack->forward_date . " " . $lastworkflowtrack->forward_time) : Carbon::now()->format('Y-m-d H:i:s');
             $metaReqs['forwardDate'] = Carbon::now()->format('Y-m-d');
             $metaReqs['forwardTime'] = Carbon::now()->format('H:i:s');
-            $metaReqs['verificationStatus'] = $this->_LEVEL_COMMENT_STATUS["BTC"];#2
+            $metaReqs['verificationStatus'] = $this->_LEVEL_COMMENT_STATUS["BTC"]; #2
 
             $req->request->add($metaReqs);
             $WorkflowTrack->saveTrack($req);
@@ -756,7 +758,7 @@ class NewConnectionController extends Controller
             return responseMsgs(true, "BTC Successfully Done", "", "", "1.0", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             $this->rollback();
-            return responseMsg(false, [$e->getMessage(),$e->getFile(),$e->getLine()], "");
+            return responseMsg(false, [$e->getMessage(), $e->getFile(), $e->getLine()], "");
         }
     }
 
@@ -1172,7 +1174,7 @@ class NewConnectionController extends Controller
             } else {
                 $this->updateWaterStatus($req, $getWaterDetails);
             }
-            
+
             $this->commit();
             return responseMsgs(true, "Document Uploadation Successful", "", "", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
@@ -2205,7 +2207,7 @@ class NewConnectionController extends Controller
                 ->orderByDesc('id')
                 ->first();
 
-            switch ($charges['charge_category']??null) {
+            switch ($charges['charge_category'] ?? null) {
                 case ($refChargeCatagory['SITE_INSPECTON']):
                     $chargeId = $refChargeCatagoryValue['SITE_INSPECTON'];
                     break;
@@ -2217,14 +2219,14 @@ class NewConnectionController extends Controller
                     break;
             }
 
-            if (($charges['paid_status']??false) == 0) {
+            if (($charges['paid_status'] ?? false) == 0) {
                 $calculation['calculation'] = [
-                    'connectionFee'     => $charges['conn_fee']??0,
-                    'penalty'           => $charges['penalty']??0,
-                    'totalAmount'       => $charges['amount']??0,
-                    'chargeCatagory'    => $charges['charge_category']??"",
-                    'chargeCatagoryId'  => $chargeId??0,
-                    'paidStatus'        => $charges['paid_status']??0
+                    'connectionFee'     => $charges['conn_fee'] ?? 0,
+                    'penalty'           => $charges['penalty'] ?? 0,
+                    'totalAmount'       => $charges['amount'] ?? 0,
+                    'chargeCatagory'    => $charges['charge_category'] ?? "",
+                    'chargeCatagoryId'  => $chargeId ?? 0,
+                    'paidStatus'        => $charges['paid_status'] ?? 0
                 ];
                 $waterTransDetail = array_merge($calculation, $waterTransDetail);
             } else {
@@ -2250,7 +2252,7 @@ class NewConnectionController extends Controller
             }
 
             # penalty Data 
-            if (($charges['penalty']??false) > 0) {
+            if (($charges['penalty'] ?? false) > 0) {
                 $ids = null;
                 $penalty['penaltyInstallments'] = $mWaterPenaltyInstallment->getPenaltyByApplicationId($request->applicationId)
                     ->where('paid_status', 0)
@@ -2877,6 +2879,90 @@ class NewConnectionController extends Controller
             'ferrule_type'  => $jeData->ferrule_type
         ];
         return $returnData;
+    }
+    /**
+     * | Citizen view : Get Application Details 
+     * | Get the active application details for citizen
+        | Serial No :
+        | Working 
+     */
+    public function getApplicationDetailsv1(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'applicationId' => 'required|integer',
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+            // $user = authUser($request);
+            $mWaterSiteInspectionsScheduling = new WaterSiteInspectionsScheduling();
+            $mWaterConnectionCharge  = new WaterConnectionCharge();
+            $mWaterApproveApplication = new WaterApprovalApplicationDetail();
+            $mWaterRejectApplication = new WaterRejectionApplicationDetail();
+            $mWaterApplicant   = new WaterApprovalApplicant();
+            $mWaterRejectApplicant = new WaterRejectApplicant();
+            $mWaterTran = new WaterTran();
+            $roleDetails = Config::get('waterConstaint.ROLE-LABEL');
+
+            # Application Details
+            if ($request->aplicationType == 'Approve') {
+                $applicationDetails['applicationDetails'] = $mWaterApproveApplication->getApprovedApplicationById($request->applicationId)->first();
+            } else {
+                $applicationDetails['applicationDetails'] = $mWaterRejectApplication->getRejectApplicationById($request->applicationId)->first();
+            }
+            # Document Details
+            $metaReqs = [
+                'userId'    => 1,
+                'ulbId'     => $user->ulb_id ?? $applicationDetails['applicationDetails']['ulb_id'],
+            ];
+            $request->request->add($metaReqs);
+            // $document = $this->getDocToUpload($request);                                                    // get the doc details
+            // $documentDetails['documentDetails'] = collect($document)['original']['data'];
+
+            # owner details
+            if ($request->aplicationType == 'Approve') {
+                $ownerDetails['ownerDetails'] = $mWaterApplicant->getOwnerList($request->applicationId)->get();
+            } else {
+                $ownerDetails['ownerDetails'] = $mWaterRejectApplicant->getOwnerList($request->applicationId)->get();
+            }
+
+
+            # Payment Details 
+            $refAppDetails = collect($applicationDetails)->first();
+            $waterTransaction = $mWaterTran->getTransNo($refAppDetails->id, $refAppDetails->connection_type)->get();
+            $waterTransDetail['waterTransDetail'] = $waterTransaction;
+
+            # calculation details
+            $charges = $mWaterConnectionCharge->getWaterchargesById($refAppDetails['id'])
+                ->where('paid_status', 0)
+                ->first();
+            if ($charges) {
+                $calculation['calculation'] = [
+                    'connectionFee'     => $charges['conn_fee'],
+                    'penalty'           => $charges['penalty'],
+                    'totalAmount'       => $charges['amount'],
+                    'chargeCatagory'    => $charges['charge_category'],
+                    'paidStatus'        => $charges['paid_status']
+                ];
+                $waterTransDetail = array_merge($waterTransDetail, $calculation);
+            }
+
+            # Site inspection schedule time/date Details 
+            if ($applicationDetails['applicationDetails']['current_role'] == $roleDetails['JE']) {
+                $inspectionTime = $mWaterSiteInspectionsScheduling->getInspectionData($applicationDetails['applicationDetails']['id'])->first();
+                $applicationDetails['applicationDetails']['scheduledTime'] = $inspectionTime->inspection_time ?? null;
+                $applicationDetails['applicationDetails']['scheduledDate'] = $inspectionTime->inspection_date ?? null;
+            }
+
+            $returnData = array_merge($applicationDetails, $ownerDetails, $waterTransDetail); //$documentDetails,
+            return responseMsgs(true, "Application Data!", remove_null($returnData), "", "", "", "Post", "");
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
     }
 
 
