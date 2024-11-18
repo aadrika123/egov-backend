@@ -1665,7 +1665,7 @@ class WaterReportController extends Controller
                 $response['user_name'] = $user->name;
             }
             if ($response) {
-                return responseMsgs(true, "Market Application List Fetch Succefully !!!", $response, "055017", "1.0", responseTime(), "POST", $request->deviceId);
+                return responseMsgs(true, "Application List Fetch Succefully !!!", $response, "055017", "1.0", responseTime(), "POST", $request->deviceId);
             }
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], "055017", "1.0", responseTime(), "POST", $request->deviceId);

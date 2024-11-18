@@ -94,19 +94,23 @@ class WaterApprovalApplicationDetail extends Model
         $approved = WaterApprovalApplicationDetail::select(
             'water_approval_application_details.id',
             'water_approval_application_details.application_no',
+            'water_approval_application_details.holding_no',
             DB::raw("TO_CHAR(water_approval_application_details.apply_date, 'DD-MM-YYYY') as application_date"),
             'ulb_ward_masters.ward_name as ward_no',
             'water_approval_application_details.ulb_id',
+            'water_approval_applicants.applicant_name as owner_name',
+            'water_connection_type_mstrs.connection_type',
             DB::raw("'Approve' as application_status")
         )
             ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'water_approval_application_details.ward_id')
             ->join('water_approval_applicants', 'water_approval_applicants.application_id', 'water_approval_application_details.id')
+            ->join('water_connection_type_mstrs', 'water_connection_type_mstrs.id', 'water_approval_application_details.connection_type_id')
             ->where('water_approval_application_details.ulb_id', $ulbId)
             ->whereBetween('apply_date', [$dateFrom, $dateUpto]);
 
-        // if ($request->wardNo) {
-        //     $approved->where('water_approval_application_details.ward_id', $request->wardNo);
-        // }
+        if ($request->wardNo) {
+            $approved->where('water_approval_application_details.ward_id', $request->wardNo);
+        }
 
         $data = null;
         // if ($request->applicationStatus == 'All') {
@@ -115,7 +119,7 @@ class WaterApprovalApplicationDetail extends Model
         //     $data = $approved;
         // } else $data = $approved;
         // if ($data) {
-            $data = $approved->paginate($perPage);
+        $data = $approved->paginate($perPage);
         // } else {
         //     $data = collect([]);
         // }
