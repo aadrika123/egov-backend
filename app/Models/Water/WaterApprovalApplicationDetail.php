@@ -95,6 +95,8 @@ class WaterApprovalApplicationDetail extends Model
             'water_approval_application_details.id',
             'water_approval_application_details.application_no',
             'water_approval_application_details.holding_no',
+            'water_approval_application_details.connection_type_id',
+            'water_approval_application_details.property_type_id',
             DB::raw("TO_CHAR(water_approval_application_details.apply_date, 'DD-MM-YYYY') as application_date"),
             'ulb_ward_masters.ward_name as ward_no',
             'water_approval_application_details.ulb_id',
@@ -108,8 +110,14 @@ class WaterApprovalApplicationDetail extends Model
             ->where('water_approval_application_details.ulb_id', $ulbId)
             ->whereBetween('apply_date', [$dateFrom, $dateUpto]);
 
-        if ($request->wardNo) {
-            $approved->where('water_approval_application_details.ward_id', $request->wardNo);
+        if ($request->wardId) {
+            $approved->where('ulb_ward_masters.ward_id', $request->wardId);
+        }
+        if ($request->connectionType) {
+            $approved->where('water_approval_application_details.connection_type_id', $request->connectionType);
+        }
+        if ($request->propertyType) {
+            $approved->where('water_approval_application_details.property_type_id', $request->propertyType);
         }
 
         $data = null;

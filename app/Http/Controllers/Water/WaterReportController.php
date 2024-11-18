@@ -1636,11 +1636,12 @@ class WaterReportController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'reportType' => 'required|in:Approve,Reject',
-            'wardNo' => 'nullable',
+            'wardId' => 'nullable',
             'applicationType' => 'nullable|in:New Apply,Renew',
             'applicationStatus' => 'nullable|in:Approve,Reject,All',
             'dateFrom' => 'nullable|date_format:Y-m-d',
             'dateUpto' => 'nullable|date_format:Y-m-d',
+            'connectionType' => 'nullable'
         ]);
         if ($validator->fails()) {
             return response()->json([
