@@ -98,7 +98,7 @@ class WaterApprovalApplicationDetail extends Model
             DB::raw("TO_CHAR(water_approval_application_details.apply_date, 'DD-MM-YYYY') as application_date"),
             'ulb_ward_masters.ward_name as ward_no',
             'water_approval_application_details.ulb_id',
-            'water_approval_applicants.applicant_name as owner_name',
+            'water_approval_applicants.applicant_name',
             'water_connection_type_mstrs.connection_type',
             DB::raw("'Approve' as application_status")
         )
