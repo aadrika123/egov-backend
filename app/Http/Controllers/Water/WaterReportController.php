@@ -1549,7 +1549,7 @@ class WaterReportController extends Controller
               subquery.amount,
               subquery.address,
               subquery.transactiondate,
-              subquery.user_name,
+              subquery.name as user_name,
               subquery.tran_type,
               subquery.paymentstatus,
               subquery.applicant_name
@@ -1586,12 +1586,13 @@ class WaterReportController extends Controller
         END) AS current_collections
           
         FROM water_trans 
+        JOIN users ON users.id=water_trans.emp_dtl_id
         LEFT JOIN ulb_ward_masters ON ulb_ward_masters.id=water_trans.ward_id
         LEFT JOIN water_consumers ON water_consumers.id=water_trans.related_id
         left JOIN water_consumer_owners ON water_consumer_owners.consumer_id=water_trans.related_id
         -- JOIN water_consumer_demands ON water_consumer_demands.consumer_id=water_trans.related_id
         JOIN water_consumer_collections on water_consumer_collections.transaction_id = water_trans.id
-        LEFT JOIN users ON users.id=water_trans.emp_dtl_id
+       
         where water_trans.related_id is not null 
         and water_trans.status in (1, 2) 
        -- and tran_type = 'Demand Collection'
