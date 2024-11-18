@@ -3028,7 +3028,7 @@ class NewConnectionController extends Controller
             return validationError($validated);
 
         try {
-            // $user = authUser($request);
+            $user = authUser($request);
             $mWaterSiteInspectionsScheduling  = new WaterSiteInspectionsScheduling();
             $mWaterConnectionCharge           = new WaterConnectionCharge();
             $mWaterApproveApplication         = new WaterApprovalApplicationDetail();
@@ -3046,7 +3046,7 @@ class NewConnectionController extends Controller
             }
             # Document Details
             $metaReqs = [
-                'userId'    => 1,
+                'userId'    => $user->id,
                 'ulbId'     => $user->ulb_id ?? $applicationDetails['applicationDetails']['ulb_id'],
             ];
             $request->request->add($metaReqs);

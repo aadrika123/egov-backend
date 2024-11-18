@@ -88,7 +88,6 @@ class WaterRejectionApplicationDetail extends Model
             ->join('ulb_masters', 'ulb_masters.id', '=', 'water_rejection_application_details.ulb_id')
             ->join('water_rejection_applicants', 'water_rejection_applicants.application_id', '=', 'water_rejection_application_details.id')
             ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_rejection_application_details.ward_id')
-            ->where('water_rejection_application_details.status', true)
             ->where('water_rejection_application_details.id', $applicationId)
             ->groupBy(
                 'water_rejection_application_details.saf_no',
