@@ -22,7 +22,7 @@ class WaterRejectionApplicationDetail extends Model
     }
     public function getApplicationWithStatus($request)
     {
-        
+
         $user = Auth()->user();
         $ulbId = $user->ulb_id ?? null;
         $perPage = $request->perPage ?: 10;
@@ -39,11 +39,18 @@ class WaterRejectionApplicationDetail extends Model
             'water_rejection_applicants.applicant_name',
             'water_rejection_application_details.ulb_id',
             'water_connection_type_mstrs.connection_type',
-            DB::raw("'Reject' as application_status")
+            DB::raw("'Reject' as application_status"),
+            'workflow_tracks.message as reason'
+
         )
             ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'water_rejection_application_details.ward_id')
             ->join('water_rejection_applicants', 'water_rejection_applicants.application_id', 'water_rejection_application_details.id')
             ->join('water_connection_type_mstrs', 'water_connection_type_mstrs.id', 'water_rejection_application_details.connection_type_id')
+            ->leftjoin('workflow_tracks', function ($join) {
+                $join->on('workflow_tracks.ref_table_id_value', '=', 'water_rejection_application_details.id')
+                    ->where('workflow_tracks.receiver_role_id', null)
+                    ->where('workflow_tracks.verification_status', 0);
+            })
             ->where('water_rejection_application_details.ulb_id', $ulbId)
             ->whereBetween('apply_date', [$dateFrom, $dateUpto]);
 

@@ -27,12 +27,12 @@ class WaterConsumerActiveRequest extends Model
         $mWaterConsumerActiveRequest->reason                    = $req['reason'] ?? null;
         $mWaterConsumerActiveRequest->amount                    = $refRequest['amount'];
         $mWaterConsumerActiveRequest->remarks                   = $req['remarks'];
-        $mWaterConsumerActiveRequest->apply_from                = $refRequest['applyFrom'];
+        // $mWaterConsumerActiveRequest->apply_from                = $refRequest['applyFrom'];
         $mWaterConsumerActiveRequest->initiator                 = $refRequest['initiatorRoleId'];
         $mWaterConsumerActiveRequest->workflow_id               = $refRequest['ulbWorkflowId'];
         $mWaterConsumerActiveRequest->ulb_id                    = $refRequest['ulbId'];
         $mWaterConsumerActiveRequest->finisher                  = $refRequest['finisherRoleId'];
-        $mWaterConsumerActiveRequest->user_type                 = $refRequest['userType'];
+        // $mWaterConsumerActiveRequest->user_type                 = $refRequest['userType'];
         $mWaterConsumerActiveRequest->application_no            = $applicationNo;
         $mWaterConsumerActiveRequest->charge_catagory_id        = $refRequest['chargeCategoryId'];
         $mWaterConsumerActiveRequest->corresponding_mobile_no   = $req->mobileNo ?? null;
@@ -48,6 +48,15 @@ class WaterConsumerActiveRequest extends Model
     public function getRequestByConId($consumerId)
     {
         return WaterConsumerActiveRequest::where('consumer_id', $consumerId)
+            ->where('status', 1)
+            ->orderByDesc('id');
+    }
+    /**
+     * | Get Active appication by consumer Id
+     */
+    public function getRequestByAppId($applicationId)
+    {
+        return WaterConsumerActiveRequest::where('id', $applicationId)
             ->where('status', 1)
             ->orderByDesc('id');
     }
@@ -193,7 +202,7 @@ class WaterConsumerActiveRequest extends Model
             "water_consumer_owners.mobile_no",
         )
             ->leftjoin('water_consumers', 'water_consumers.id', 'water_consumer_active_requests.consumer_id')
-            ->leftjoin('water_consumer_owners','water_consumer_owners.consumer_id','water_consumers.id')
+            ->leftjoin('water_consumer_owners', 'water_consumer_owners.consumer_id', 'water_consumers.id')
             ->where('water_consumer_active_requests.status', 1)
             ->orderByDesc('water_consumer_active_requests.id');
     }
@@ -208,7 +217,7 @@ class WaterConsumerActiveRequest extends Model
 
     public function getConserDtls()
     {
-        return $this->belongsTo(WaterConsumer::class,"consumer_id","id","id")->first();
+        return $this->belongsTo(WaterConsumer::class, "consumer_id", "id", "id")->first();
     }
 
     //eoc
@@ -248,5 +257,43 @@ class WaterConsumerActiveRequest extends Model
         $mWaterConsumeActive->current_role             = $refRequest['initiatorRoleId'];
         $mWaterConsumeActive->save();
         return $mWaterConsumeActive;
+    }
+
+    /**
+     * |------------------- Get the Application details by applicationNo -------------------|
+     * | @param applicationNo
+     * | @param connectionTypes 
+     * | @return 
+     */
+    public function getDetailsByParameters($req, $applicationNo)
+    {
+        return WaterConsumerActiveRequest::select(
+            'water_consumer_active_requests.id',
+            'water_consumer_active_requests.application_no',
+            'water_consumer_active_requests.ward_mstr_id',
+            'water_consumers.address',
+            'water_consumers.holding_no',
+            'water_consumers.saf_no',
+            'ulb_ward_masters.ward_name',
+            DB::raw("string_agg(water_consumer_owners.applicant_name,',') as applicantName"),
+            DB::raw("string_agg(water_consumers.mobile_no::VARCHAR,',') as mobileNo"),
+            DB::raw("string_agg(water_consumers.guardian_name,',') as guardianName"),
+        )
+            ->join('water_consumers', 'water_consumers.id', '=', 'water_consumer_active_requests.consumer_id')
+            ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_consumer_active_requests.ward_mstr_id')
+            ->where('water_consumer_active_requests.status', true)
+            ->where('water_consumer_active_requests.charge_category_id', 2)
+            ->where('water_consumer_active_requests.application_no', 'LIKE', '%' . $applicationNo . '%')
+            ->where('water_consumer_active_requests.ulb_id', authUser($req)->ulb_id)
+            ->groupBy(
+                'water_consumers.saf_no',
+                'water_consumers.holding_no',
+                'water_consumers.address',
+                'water_consumer_active_requests.id',
+                'water_applicants.application_id',
+                'water_consumer_active_requests.application_no',
+                'water_consumer_active_requests.ward_mstr_id',
+                'ulb_ward_masters.ward_name'
+            );
     }
 }

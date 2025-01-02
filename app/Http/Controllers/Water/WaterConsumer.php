@@ -649,7 +649,7 @@ class WaterConsumer extends Controller
         $relativePath   = Config::get('waterConstaint.WATER_RELATIVE_PATH');
         $folder = public_path("/$relativePath");
         if (!file_exists($folder)) {
-            mkdir($folder,0777);
+            mkdir($folder, 0777);
         }
 
         $imageName = $docUpload->upload($refImageName, $document, $relativePath);
@@ -725,7 +725,7 @@ class WaterConsumer extends Controller
         | Check if the consumer applied for other requests
         | Ceheck the date of the consumer demand
      */
-    public function PreConsumerDeactivationCheck($request, $user)
+    public function PreConsumerDeactivationCheck($request)
     {
         $consumerId                     = $request->consumerId;
         $mWaterWaterConsumer            = new WaterWaterConsumer();
@@ -1077,7 +1077,7 @@ class WaterConsumer extends Controller
             if (is_null($consumerDetails)) {
                 throw new Exception("Consumer Details not found!");
             }
-          return  $applicationDetails = $this->Repository->getconsumerRelatedData($consumerDetails->id);
+             $applicationDetails = $this->Repository->getconsumerRelatedData($consumerDetails->id);
             if (is_null($applicationDetails)) {
                 throw new Exception("Application Details not found!");
             }
@@ -1820,19 +1820,23 @@ class WaterConsumer extends Controller
         $validated = Validator::make(
             $request->all(),
             [
-                'consumerId'    => "required|digits_between:1,9223372036854775807",
-                'ulbId'         => "nullable",
-                'reason'        => "required",
-                'remarks'       => "required",
-                'address'        => "required",
-                'mobileNo'       => "required|digits:10|regex:/[0-9]{10}/"
+                'consumerId'           => "required|digits_between:1,9223372036854775807",
+                'ulbId'                => "nullable",
+                'reason'               => "required",
+                'remarks'              => "required",
+                'address'              => "required",
+                'mobileNo'             => "required|digits:10|regex:/[0-9]{10}/",
+                'documents'            => 'required|array',
+                'documents.*.image'    => 'required|mimes:png,jpeg,pdf,jpg',
+                'documents.*.docCode'  => 'required|string',
+                'documents.*.ownerDtlId' => 'nullable|integer'
             ]
         );
         if ($validated->fails())
             return validationError($validated);
 
         try {
-            $user                           = authUser($request);
+            //  return    $user                           = authUser($request);
             $refRequest                     = array();
             $ulbWorkflowObj                 = new WfWorkflow();
             $mWorkflowTrack                 = new WorkflowTrack();
@@ -1852,9 +1856,8 @@ class WaterConsumer extends Controller
                 throw new Exception("Water Consumer not found on the given consumer Id");
             }
             # Check the condition for deactivation
-            $ulbId      = $request->ulbId ??$user->ulb_id??2;
-            $refDetails = $this->PreConsumerDeactivationCheck($request, $user);
-            //$ulbId      = $request->ulbId ??$user->ulb_id??2;
+            $refDetails = $this->PreConsumerDeactivationCheck($request);
+            $ulbId      = $request->ulbId ?? $user->ulb_id ?? 2;
 
             # Get initiater and finisher
             $ulbWorkflowId = $ulbWorkflowObj->getulbWorkflowId($refWorkflow, $ulbId);
@@ -1870,23 +1873,23 @@ class WaterConsumer extends Controller
             }
 
             # If the user is not citizen
-            if ($user->user_type != $refUserType['1']) {
-                $request->request->add(['workflowId' => $refWorkflow]);
-                $roleDetails = $this->getRole($request);
-                if (!$roleDetails) {
-                    throw new Exception("Role detail Not found!");
-                }
-                $roleId = $roleDetails['wf_role_id'];
-                $refRequest = [
-                    "applyFrom" => $user->user_type,
-                    "empId"     => $user->id
-                ];
-            } else {
-                $refRequest = [
-                    "applyFrom" => $refApplyFrom['1'],
-                    "citizenId" => $user->id
-                ];
-            }
+            // if ($user->user_type != $refUserType['1']) {
+            //     $request->request->add(['workflowId' => $refWorkflow]);
+            //     $roleDetails = $this->getRole($request);
+            //     if (!$roleDetails) {
+            //         throw new Exception("Role detail Not found!");
+            //     }
+            //     $roleId = $roleDetails['wf_role_id'];
+            //     $refRequest = [
+            //         "applyFrom" => $user->user_type,
+            //         "empId"     => $user->id
+            //     ];
+            // } else {
+            //     $refRequest = [
+            //         "applyFrom" => $refApplyFrom['1'],
+            //         "citizenId" => $user->id
+            //     ];
+            // }
 
             # Get chrages for deactivation
             $chargeAmount = $mWaterConsumerChargeCategory->getChargesByid($refConsumerCharges['WATER_DISCONNECTION']);
@@ -1898,24 +1901,29 @@ class WaterConsumer extends Controller
             $refRequest["ulbWorkflowId"]     = $ulbWorkflowId->id;
             $refRequest["chargeCategoryId"]  = $refConsumerCharges['WATER_DISCONNECTION'];
             $refRequest["amount"]            = $chargeAmount->amount;
-            $refRequest['userType']          = $user->user_type;
-            $refRequest['ulbId']          = $ulbId;
+            // $refRequest['userType']          = $user->user_type;
+            $refRequest['ulbId']             = $ulbId;
+
 
             $this->begin();
             $idGeneration       = new PrefixIdGenerator($refConParamId['WCD'], $ulbId);
             $applicationNo      = $idGeneration->generate();
             $applicationNo      = str_replace('/', '-', $applicationNo);
             $deactivatedDetails = $mWaterConsumerActiveRequest->saveRequestDetails($request, $refDetails['consumerDetails'], $refRequest, $applicationNo);
+
+            #Upload Document in dms System
+            $mDocuments = $request->documents;
+            $this->uploadDocument($deactivatedDetails['id'], $mDocuments, $request->auth);
+
             $metaRequest = [
                 'chargeAmount'      => $chargeAmount->amount,
                 'amount'            => $chargeAmount->amount,
                 'ruleSet'           => null,
                 'chargeCategoryId'  => $refConsumerCharges['WATER_DISCONNECTION'],
-                'relatedId'         => $deactivatedDetails['id'],
-                'status'            => 2                                                   // Static
+                'relatedId'         => $deactivatedDetails['id'],                                                 // Static
             ];
             $mWaterConsumerCharge->saveConsumerCharges($metaRequest, $request->consumerId, $refChargeList['2']);
-            $mWaterWaterConsumer->dissconnetConsumer($request->consumerId, $metaRequest['status']);
+            // $mWaterWaterConsumer->dissconnetConsumer($request->consumerId, $metaRequest['status']);
 
             # Save data in track
             $metaReqs = new Request(
@@ -1943,6 +1951,51 @@ class WaterConsumer extends Controller
         }
     }
 
+    /**
+     * upload Document By Citizen At the time of Registration
+     * @param Request $req
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function uploadDocument($tempId, $documents, $auth)
+    {
+        $docUpload = new DocUpload;
+        $mWfActiveDocument = new WfActiveDocument();
+        $mWaterConsumerActiveRequest = new WaterConsumerActiveRequest();
+        $confModuleId                   = Config::get('module-constants.WATER_MODULE_ID');
+        // $relativePath = Config::get('constants.BANQUTE_MARRIGE_HALL.RELATIVE_PATH');
+
+        collect($documents)->map(function ($doc) use ($tempId, $docUpload, $mWfActiveDocument, $mWaterConsumerActiveRequest, $confModuleId, $auth) {
+            $metaReqs = array();
+            $getApplicationDtls = $mWaterConsumerActiveRequest->getRequestByAppId($tempId)->first();
+            $refImageName = $doc['docCode'];
+            $refImageName = $getApplicationDtls->id . '-' . $refImageName;
+            $documentImg = $doc['image'];
+            $newRequest = new Request([
+                'document' => $documentImg
+            ]);
+            $imageName = $docUpload->checkDoc($newRequest);
+            $metaReqs['moduleId'] = $confModuleId;
+            $metaReqs['activeId'] = $getApplicationDtls->id;
+            $metaReqs['workflowId'] = $getApplicationDtls->workflow_id;
+            $metaReqs['ulbId'] = $getApplicationDtls->ulb_id;
+            // $metaReqs['relativePath'] = $relativePath;
+            $metaReqs['document'] = $imageName;
+            $metaReqs['docCode'] = $doc['docCode'];
+            $metaReqs['ownerDtlId'] = $doc['ownerDtlId'] ?? null;
+            $metaReqs['uniqueId'] = $imageName['data']['uniqueId'];
+            $metaReqs['referenceNo'] = $imageName['data']['ReferenceNo'];
+            $a = new Request($metaReqs);
+            // $mWfActiveDocument->postDocuments($a,$auth);
+            $metaReqs =  $mWfActiveDocument->metaReq($metaReqs);
+            $mWfActiveDocument->create($metaReqs);
+            // foreach($metaReqs as $key=>$val)
+            // {
+            //     $mWfActiveDocument->$key = $val;
+            // }
+            // $mWfActiveDocument->save();
+        });
+    }
+
 
     public function searchApplication(Request $request)
     {
@@ -1967,10 +2020,10 @@ class WaterConsumer extends Controller
                     $returnData->where("water_consumer_owners.applicant_name", 'ILIKE', '%' . $parameter . '%');
                     break;
                 case ("mobileNo"):                                                                          // Static
-                    $returnData ->where("water_consumer_owners.mobile_no", $parameter);
+                    $returnData->where("water_consumer_owners.mobile_no", $parameter);
                     break;
                 case ("applicationNo"):                                                                             // Static
-                    $returnData ->where("water_consumer_active_requests.application_no", 'LIKE', '%' . $parameter . '%');
+                    $returnData->where("water_consumer_active_requests.application_no", 'LIKE', '%' . $parameter . '%');
                     break;
             }
 
@@ -1978,15 +2031,15 @@ class WaterConsumer extends Controller
             $returnData = $returnData->paginate($pages);
             $checkVal = collect($returnData)->last();
             if (!$checkVal || $checkVal == 0)
-                throw new Exception("Data according to " . strtolower( preg_replace("/([A-Z])/", " $1", $key) ). " not found!");
+                throw new Exception("Data according to " . strtolower(preg_replace("/([A-Z])/", " $1", $key)) . " not found!");
             $list = [
-                    "current_page" => $returnData->currentPage(),
-                    "last_page" => $returnData->lastPage(),
-                    "data" => collect($returnData->items())->map(function($val){
-                            return $val->only("id","reason","remarks","application_no","apply_date","workflow_id","consumer_no","address","applicant_name","mobile_no");
-                        }),
-                    "total" => $returnData->total(),
-                ]; 
+                "current_page" => $returnData->currentPage(),
+                "last_page" => $returnData->lastPage(),
+                "data" => collect($returnData->items())->map(function ($val) {
+                    return $val->only("id", "reason", "remarks", "application_no", "apply_date", "workflow_id", "consumer_no", "address", "applicant_name", "mobile_no");
+                }),
+                "total" => $returnData->total(),
+            ];
             return responseMsgs(true, "List of Appication!", $list, "", "01", responseTime(), "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], "", "01", responseTime(), "POST", $request->deviceId);
@@ -2043,8 +2096,8 @@ class WaterConsumer extends Controller
 
     public function getByApplicationId(ReqApplicationId $request)
     {
-        try {       
-               
+        try {
+
             $data = WaterConsumerActiveRequest::find($request->applicationId);
             // dd($data,$request->all(),DB::connection("pgsql_water")->getQueryLog());
             if (!$data) {
@@ -2055,10 +2108,10 @@ class WaterConsumer extends Controller
             }
             $data->consumerDetails = $data->getConserDtls();
             $data->consumerDetails->owners = $data->consumerDetails->getOwners();
-            $wards = UlbWardMaster::where("id",$data->ward_mstr_id)->first();
-            $ulb = UlbMaster::where("id",$data->ulb_id)->first();
-            $data->ward_no = $wards->ward_name??null;
-            $data->ulb_name = $ulb->ulb_name??null;
+            $wards = UlbWardMaster::where("id", $data->ward_mstr_id)->first();
+            $ulb = UlbMaster::where("id", $data->ulb_id)->first();
+            $data->ward_no = $wards->ward_name ?? null;
+            $data->ulb_name = $ulb->ulb_name ?? null;
 
             return responseMsgs(true, "Respective Consumer Deactivated!", remove_null($data), "", "02", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {

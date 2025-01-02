@@ -626,7 +626,6 @@ class WaterApplication extends Model
                 'doc_status' => true
             ]);
     }
-
     /**
      * | Update the parked status false 
      */

@@ -41,14 +41,54 @@ class WfActiveDocument extends Model
             "module_id" => $req->moduleId,
             "relative_path" => $req->relativePath,
             "document" => $req->document,
-            "uploaded_by" => Auth()->user()->id,
-            "uploaded_by_type" => Auth()->user()->user_type,
+            // "uploaded_by" => Auth()->user()->id,
+            // "uploaded_by_type" => Auth()->user()->user_type,
             "remarks" => $req->remarks ?? null,
             "doc_code" => $req->docCode,
             "owner_dtl_id" => $req->ownerDtlId,
             "doc_category" => $req->docCategory ?? null,
             "unique_id" => $req->uniqueId ?? null,
             "reference_no" => $req->referenceNo ?? null,
+            "status"    => 1,
+            "verify_status" => 0
+        ];
+    }
+
+
+    /**
+     * | Meta Request function for updation and post the request
+     */
+    public function metaReq($req)
+    {
+        // return [
+        //     "active_id" => $req->activeId,
+        //     "workflow_id" => $req->workflowId,
+        //     "ulb_id" => $req->ulbId,
+        //     "module_id" => $req->moduleId,
+        //     "relative_path" => $req->relativePath,
+        //     "document" => $req->document,
+        //     "uploaded_by" =>  Auth()->user()->id,
+        //     "uploaded_by_type" => Auth()->user()->user_type,
+        //     "remarks" => $req->remarks ?? null,
+        //     "doc_code" => $req->docCode,
+        //     "owner_dtl_id" => $req->ownerDtlId,
+        //     "doc_category" => $req->docCategory ?? null
+        // ];
+        return [
+            "active_id" => $req['activeId'],
+            "workflow_id" => $req['workflowId'],
+            "ulb_id" => $req['ulbId'],
+            "module_id" => $req['moduleId'],
+            // "relative_path" => $req['relativePath'],
+            //"document" => $req['document1111']??null,
+            // "uploaded_by" =>  Auth()->user()->id,
+            // "uploaded_by_type" => Auth()->user()->user_type,
+            "remarks" => $req->remarks ?? null,
+            "doc_code" => $req['docCode'],
+            "owner_dtl_id" => $req['ownerDtlId'],
+            "doc_category" => $req['docCategory'] ?? null,
+            "unique_id" => $req['uniqueId'] ?? null,
+            "reference_no" => $req['referenceNo'] ?? null,
         ];
     }
 
@@ -63,7 +103,8 @@ class WfActiveDocument extends Model
                 "verify_status" => $req->verifyStatus
             ]);
         }
-        WfActiveDocument::create($metaReqs);
+        $var =  WfActiveDocument::create($metaReqs);
+        return $var;
     }
 
     /**
@@ -191,11 +232,35 @@ class WfActiveDocument extends Model
                 'd.doc_code',
                 'd.doc_category',
                 'd.status',
-               'o.applicant_name as owner_name',
+                'o.applicant_name as owner_name',
                 'unique_id',
                 'reference_no',
             )
             ->leftJoin('water_applicants as o', 'o.id', '=', 'd.owner_dtl_id')
+            ->where('d.active_id', $applicationId)
+            ->where('d.workflow_id', $workflowId)
+            ->where('d.module_id', $moduleId)
+            ->where('d.status', '!=', 0)
+            ->get();
+    }
+    # water document View
+    public function getWaterDocsByAppNov1($applicationId, $workflowId, $moduleId)
+    {
+        $secondConnection = 'pgsql_master';
+        return DB::connection($secondConnection)
+            ->table('wf_active_documents as d')
+            ->select(
+                'd.id',
+                'd.document',
+                DB::raw("concat(relative_path,'/',document) as ref_doc_path"),
+                'd.remarks',
+                'd.verify_status',
+                'd.doc_code',
+                'd.doc_category',
+                'd.status',
+                'unique_id',
+                'reference_no',
+            )
             ->where('d.active_id', $applicationId)
             ->where('d.workflow_id', $workflowId)
             ->where('d.module_id', $moduleId)
@@ -427,7 +492,8 @@ class WfActiveDocument extends Model
      */
     public function deactivateRejectedDoc($metaReqs)
     {
-        WfActiveDocument::where('active_id', $metaReqs->activeId)
+        WfActiveDocument::select('.*')
+            ->where('active_id', $metaReqs->activeId)
             ->where('workflow_id', $metaReqs->workflowId)
             ->where('module_id', $metaReqs->moduleId)
             ->where('doc_code', $metaReqs->docCode)
