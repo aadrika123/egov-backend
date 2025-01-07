@@ -1904,6 +1904,8 @@ class WaterConsumer extends Controller
             // $refRequest['userType']          = $user->user_type;
             $refRequest['ulbId']             = $ulbId;
 
+            $refRequest["corresponding_address"] = $request->address;
+
 
             $this->begin();
             $idGeneration       = new PrefixIdGenerator($refConParamId['WCD'], $ulbId);
