@@ -559,7 +559,7 @@ class WaterConsumerWfController extends Controller
 
             $inboxDetails = $this->getConsumerWfBaseQuerry($workflowIds, $ulbId)
                 ->whereIn('water_consumer_active_requests.current_role', $roleId)
-                ->whereIn('water_consumer_active_requests.ward_mstr_id', $occupiedWards)
+                // ->whereIn('water_consumer_active_requests.ward_mstr_id', $occupiedWards)
                 ->where('water_consumer_active_requests.is_escalate', false)
                 ->where('water_consumer_active_requests.parked', false)
                 ->orderByDesc('water_consumer_active_requests.id')
@@ -604,13 +604,13 @@ class WaterConsumerWfController extends Controller
             $roleId         = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
             $workflowIds    = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
             $refWorkflow                    = Config::get('workflow-constants.WATER_DISCONNECTION');
-            $roleId[] = $commonFunction->getUserRoll($userId, $ulbId, $refWorkflow)->role_id;
+            // $roleId[] = $commonFunction->getUserRoll($userId, $ulbId, $refWorkflow)->role_id;
 
             $inboxDetails = $this->getConsumerWfBaseQuerry($workflowIds, $ulbId)
                 ->whereNotIn('water_consumer_active_requests.current_role', $roleId)
                 ->whereIn('water_consumer_active_requests.ward_mstr_id', $occupiedWards)
                 ->where('water_consumer_active_requests.is_escalate', false)
-                // ->where('water_consumer_active_requests.parked', false)
+                ->where('water_consumer_active_requests.parked', false)
                 ->orderByDesc('water_consumer_active_requests.id')
                 ->get();
                 //->paginate($pages);
@@ -652,7 +652,7 @@ class WaterConsumerWfController extends Controller
             $roleId         = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
             $workflowIds    = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
             $refWorkflow                    = Config::get('workflow-constants.WATER_DISCONNECTION');
-            $roleId[] = $commonFunction->getUserRoll($userId, $ulbId, $refWorkflow)->role_id;
+            // $roleId[] = $commonFunction->getUserRoll($userId, $ulbId, $refWorkflow)->role_id;
 
             $inboxDetails = $this->getConsumerWfBaseQuerry($workflowIds, $ulbId)
                 ->whereIn('water_consumer_active_requests.current_role', $roleId)
@@ -700,7 +700,7 @@ class WaterConsumerWfController extends Controller
             $roleId         = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
             $workflowIds    = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
             $refWorkflow                    = Config::get('workflow-constants.WATER_DISCONNECTION');
-            $roleId[] = $commonFunction->getUserRoll($userId, $ulbId, $refWorkflow)->role_id;
+            // $roleId[] = $commonFunction->getUserRoll($userId, $ulbId, $refWorkflow)->role_id;
 
             $inboxDetails = $this->getConsumerWfBaseQuerry($workflowIds, $ulbId)
                 ->whereIn('water_consumer_active_requests.current_role', $roleId)

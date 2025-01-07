@@ -27,6 +27,7 @@ class WaterConsumerActiveRequest extends Model
         $mWaterConsumerActiveRequest->reason                    = $req['reason'] ?? null;
         $mWaterConsumerActiveRequest->amount                    = $refRequest['amount'];
         $mWaterConsumerActiveRequest->remarks                   = $req['remarks'];
+        $mWaterConsumerActiveRequest->corresponding_address     = $req['address'] ?? null;
         // $mWaterConsumerActiveRequest->apply_from                = $refRequest['applyFrom'];
         $mWaterConsumerActiveRequest->initiator                 = $refRequest['initiatorRoleId'];
         $mWaterConsumerActiveRequest->workflow_id               = $refRequest['ulbWorkflowId'];
@@ -34,7 +35,7 @@ class WaterConsumerActiveRequest extends Model
         $mWaterConsumerActiveRequest->finisher                  = $refRequest['finisherRoleId'];
         // $mWaterConsumerActiveRequest->user_type                 = $refRequest['userType'];
         $mWaterConsumerActiveRequest->application_no            = $applicationNo;
-        $mWaterConsumerActiveRequest->charge_catagory_id        = $refRequest['chargeCategoryId'];
+        $mWaterConsumerActiveRequest->charge_catagory_id        = $refRequest['chargeCategoryId']; 
         $mWaterConsumerActiveRequest->corresponding_mobile_no   = $req->mobileNo ?? null;
         $mWaterConsumerActiveRequest->save();
         return [
