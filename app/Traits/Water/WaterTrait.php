@@ -136,7 +136,7 @@ trait WaterTrait
             ->join('water_consumer_owners AS wco', 'wco.consumer_id', 'water_consumer_active_requests.consumer_id')
             ->leftjoin('ulb_ward_masters AS uwm', 'uwm.id', 'water_consumer_active_requests.ward_mstr_id')
             ->join('ulb_masters AS um', 'um.id', 'water_consumer_active_requests.ulb_id')
-            ->where('water_consumer_active_requests.status', 1)
+            ->where('water_consumer_active_requests.status', true)
             ->where('water_consumer_active_requests.payment_status', 1)
             ->where('water_consumer_active_requests.ulb_id', $ulbId)
             ->whereIn('water_consumer_active_requests.workflow_id', $workflowIds);

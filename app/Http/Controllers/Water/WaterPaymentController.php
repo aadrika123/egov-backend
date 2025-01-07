@@ -2160,7 +2160,7 @@ class WaterPaymentController extends Controller
 
             $offlinePaymentModes = Config::get('payment-constants.VERIFICATION_PAYMENT_MODES');
             $activeConRequest = $mWaterConsumerActiveRequest->getActiveReqById($applicatinId)
-                ->where('payment_status', null)
+                ->where('payment_status',0)
                 ->first();
             if (!$activeConRequest) {
                 throw new Exception("Application details not found!");
