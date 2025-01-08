@@ -27,6 +27,7 @@ use App\Models\Water\WaterConnectionThroughMstr;
 use App\Models\Water\WaterConnectionThroughMstrs;
 use App\Models\Water\WaterConnectionTypeMstr;
 use App\Models\Water\WaterConsumer;
+use App\Models\Water\WaterConsumerActiveRequest;
 use App\Models\Water\WaterConsumerDemand;
 use App\Models\Water\WaterConsumerInitialMeter;
 use App\Models\Water\WaterConsumerMeter;
@@ -2107,7 +2108,7 @@ class NewConnectionController extends Controller
         $validated = Validator::make(
             $request->all(),
             [
-                'filterBy'  => 'required|in:newConnection,regularization,name,mobileNo,safNo,holdingNo',
+                'filterBy'  => 'required|in:newConnection,regularization,name,mobileNo,safNo,holdingNo,discConnection',
                 'parameter' => $request->filterBy == 'mobileNo' ? 'required|numeric|digits:10' : "required",
                 'perPage'   => 'nullable|integer',
             ]
@@ -2121,6 +2122,7 @@ class NewConnectionController extends Controller
             $string             = preg_replace("/([A-Z])/", " $1", $key);
             $refstring          = strtolower($string);
             $mWaterApplicant    = new WaterApplication();
+            $mwaterDisc         = new WaterConsumerActiveRequest();
             $connectionTypes    = Config::get('waterConstaint.CONNECTION_TYPE');
 
             switch ($key) {
@@ -2168,6 +2170,16 @@ class NewConnectionController extends Controller
                     if (!$checkVal || $checkVal == 0)
                         throw new Exception("Data according to " . $refstring . " not found!");
                     break;
+
+                // added by alok    
+                case ("discConnection"):
+                    $returnData = $mwaterDisc->getDetailsByAppNoWaterDisc($request, $parameter)->paginate($pages);
+                    $checkVal = collect($returnData)->last();
+                    if (!$checkVal || $checkVal == 0)
+                        throw new Exception("Data according to " . $refstring . " not found!");
+                    break;
+                    
+
             }
             return responseMsgs(true, "List of Appication!", $returnData, "", "01", responseTime(), "POST", $request->deviceId);
         } catch (Exception $e) {

@@ -27,7 +27,7 @@ class WaterConsumerActiveRequest extends Model
         $mWaterConsumerActiveRequest->reason                    = $req['reason'] ?? null;
         $mWaterConsumerActiveRequest->amount                    = $refRequest['amount'];
         $mWaterConsumerActiveRequest->remarks                   = $req['remarks'];
-        $mWaterConsumerActiveRequest->corresponding_address     = $req['address'] ?? null;
+        $mWaterConsumerActiveRequest->corresponding_address     = $req['address'] ?? null; // added by alok
         // $mWaterConsumerActiveRequest->apply_from                = $refRequest['applyFrom'];
         $mWaterConsumerActiveRequest->initiator                 = $refRequest['initiatorRoleId'];
         $mWaterConsumerActiveRequest->workflow_id               = $refRequest['ulbWorkflowId'];
@@ -297,4 +297,24 @@ class WaterConsumerActiveRequest extends Model
                 'ulb_ward_masters.ward_name'
             );
     }
+
+    public function getDetailsByAppNoWaterDisc($req, $applicationNo)
+    {
+        return WaterConsumerActiveRequest::select(
+            'application_no',
+            DB::raw("DATE(apply_date) as apply_date"),
+            'current_role',
+            'corresponding_mobile_no',
+            // 'payment_status'
+            DB::raw("CASE
+                    WHEN payment_status = 1 THEN 'Paid'
+                    WHEN payment_status = 0 THEN 'Unpaid'
+                    ELSE 'UnKnown'
+                    END AS payment_status")
+        )
+            ->where('charge_catagory_id', 2)
+            ->where('application_no', 'LIKE', '%' . $applicationNo . '%')
+            ->where('ulb_id', authUser($req)->ulb_id);
+    }
+    
 }

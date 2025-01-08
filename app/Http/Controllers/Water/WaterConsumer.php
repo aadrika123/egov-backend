@@ -1904,7 +1904,7 @@ class WaterConsumer extends Controller
             // $refRequest['userType']          = $user->user_type;
             $refRequest['ulbId']             = $ulbId;
 
-            $refRequest["corresponding_address"] = $request->address;
+            $refRequest["corresponding_address"] = $request->address; // Added by alok
 
 
             $this->begin();
