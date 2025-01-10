@@ -322,7 +322,7 @@ class PropertyDetailsController extends Controller
                 }
             }
 
-            app()->bind('pipeline.key', function() use ($key) {
+            app()->bind('pipeline.key', function () use ($key) {
                 return $key;
             });
 
@@ -492,5 +492,129 @@ class PropertyDetailsController extends Controller
     public function getUserDetails(Request $request)
     {
         return $this->propertyDetails->getUserDetails($request);
+    }
+
+    /**
+     * |this function for grievance to search property holding details
+     */
+    public function propertyListByKeyGrv(Request $request)
+    {
+        $request->validate([
+            'filteredBy' => "required",
+            'parameter' => "nullable",
+            'zoneId' => "nullable|digits_between:1,9223372036854775807",
+            'wardId' => "nullable|digits_between:1,9223372036854775807",
+            'ulbId' => "required|int"
+        ]);
+
+        try {
+            $mPropProperty = new PropProperty();
+            $mWfRoleUser = new WfRoleusermap();
+            $ulbId = $request->ulbId;
+            $key = $request->filteredBy;
+            $parameter = $request->parameter;
+            $isLegacy = $request->isLegacy;
+            $perPage = $request->perPage ?? 10;
+
+            switch ($key) {
+                case ("holdingNo"):
+                    $data = $mPropProperty->searchProperty($ulbId)
+                        ->where('prop_properties.holding_no', $parameter)
+                        ->orWhere('prop_properties.new_holding_no', $parameter);
+                    break;
+
+                case ("ptn"):
+                    $data = $mPropProperty->searchProperty($ulbId)
+                        ->where('prop_properties.pt_no', 'LIKE', '%' . $parameter . '%');
+                    break;
+
+                case ("ownerName"):
+                    $data = $mPropProperty->searchProperty($ulbId)
+                        ->where('prop_owners.owner_name', 'LIKE', '%' . strtoupper($parameter) . '%');
+                    break;
+
+                case ("address"):
+                    $data = $mPropProperty->searchProperty($ulbId)
+                        ->where('prop_properties.prop_address', 'LIKE', '%' . strtoupper($parameter) . '%');
+                    break;
+
+                case ("mobileNo"):
+                    $data = $mPropProperty->searchProperty($ulbId)
+                        ->where('prop_owners.mobile_no', 'LIKE', '%' . $parameter . '%');
+                    break;
+
+                case ("khataNo"):
+                    if ($request->khataNo)
+                        $data = $mPropProperty->searchProperty($ulbId)
+                            ->where('prop_properties.khata_no', $request->khataNo);
+
+                    if ($request->plotNo)
+                        $data = $mPropProperty->searchProperty($ulbId)
+                            ->where('prop_properties.plot_no',  $request->plotNo);
+
+                    if ($request->maujaName)
+                        $data = $mPropProperty->searchProperty($ulbId)
+                            ->where('prop_properties.village_mauja_name',  $request->maujaName);
+
+                    if ($request->khataNo && $request->plotNo)
+                        $data = $mPropProperty->searchProperty($ulbId)
+                            ->where('prop_properties.khata_no',  $request->khataNo)
+                            ->where('prop_properties.plot_no',  $request->plotNo);
+
+                    if ($request->khataNo && $request->maujaName)
+                        $data = $mPropProperty->searchProperty($ulbId)
+                            ->where('prop_properties.khata_no',  $request->khataNo)
+                            ->where('prop_properties.village_mauja_name',  $request->maujaName);
+
+                    if ($request->plotNo && $request->maujaName)
+                        $data = $mPropProperty->searchProperty($ulbId)
+                            ->where('prop_properties.plot_no',  $request->plotNo)
+                            ->where('prop_properties.village_mauja_name',  $request->maujaName);
+
+                    if ($request->khataNo && $request->plotNo && $request->maujaName)
+                        $data = $mPropProperty->searchProperty($ulbId)
+                            ->where('prop_properties.khata_no',  $request->khataNo)
+                            ->where('prop_properties.plot_no',  $request->plotNo)
+                            ->where('prop_properties.village_mauja_name',  $request->maujaName);
+                    break;
+            }
+            //modified by prity pandey
+            if ($request->zoneId)
+                $data = $data->where("prop_properties.zone_mstr_id", $request->zoneId);
+
+            if ($request->wardId)
+                $data = $data->where("prop_properties.new_ward_mstr_id", $request->wardId);
+
+            if ($isLegacy == true) {
+                $paginator = $data->where('new_holding_no', null)
+                    ->where('latitude', null)
+                    ->where('longitude', null)
+                    ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'latitude', 'longitude')
+                    ->paginate($perPage);
+            }
+            if ($isLegacy == false) {
+                if ($key == 'ptn') {
+                    $paginator =
+                        $data
+                        ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'latitude', 'longitude')
+                        ->paginate($perPage);
+                } else {
+                    $paginator = $data->where('new_holding_no', '!=', null)
+                        ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'latitude', 'longitude')
+                        ->paginate($perPage);
+                }
+            }
+
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
+            ];
+
+            return responseMsgs(true, "Application Details", remove_null($list), "011302", "1.0", "", "POST", $request->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "011302", "1.0", "", "POST", $request->deviceId ?? "");
+        }
     }
 }

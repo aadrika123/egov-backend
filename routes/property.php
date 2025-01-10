@@ -546,7 +546,6 @@ Route::controller(ReportController::class)->group(function () {
 Route::controller(ReportController::class)->group(function () {
   Route::post('reports/property/collection', 'collectionReport');
   Route::post('reports/oldHolding', 'oldHolding');
-
 });
 /**
     | Test Purpose
@@ -712,12 +711,12 @@ Route::controller(MasterReferenceController::class)->group(function () {
   // Route::post('m-assets-delete', 'deleteAssetesv2');
   // Route::post('m-assets-get-by-id', 'Assetesv2ById');
 
-   //m-assets-new
-   Route::post('m-assets-create', 'addAssetesv3');
-   Route::post('m-assets-update', 'editAssetesv3');
-   Route::post('m-assets-get', 'allListAssetesv3');
-   Route::post('m-assets-delete', 'deleteAssetesv3');
-   Route::post('m-assets-get-by-id', 'Assetesv3ById');
+  //m-assets-new
+  Route::post('m-assets-create', 'addAssetesv3');
+  Route::post('m-assets-update', 'editAssetesv3');
+  Route::post('m-assets-get', 'allListAssetesv3');
+  Route::post('m-assets-delete', 'deleteAssetesv3');
+  Route::post('m-assets-get-by-id', 'Assetesv3ById');
 
   //m- notice
   Route::post('m-notice-create', 'addNotice');
@@ -831,7 +830,7 @@ Route::controller(MasterReferenceController::class)->group(function () {
   Route::post('m-c-desk-des-create', 'addCDeskDesc');
   Route::post('m-c-desk-des-update', 'updateCDeskDesc');
   Route::post('m-c-desk-des-get-by-id', 'CDeskDescbyId');
-  Route::post('m-c-desk-des-delete', 'deleteCDeskDesc'); 
+  Route::post('m-c-desk-des-delete', 'deleteCDeskDesc');
 
   //m- About us
   Route::post('m-about-us-create', 'addAboutUs');
@@ -931,4 +930,9 @@ Route::controller(LocationController::class)->group(function () {
   Route::post('location', 'location_list');                               #API_ID = 012501
   Route::post('location/ward-list', 'bindLocationWithWards');             #API_ID = 012502
   Route::post('map/level1', 'mapLevel1');                                 #API_ID = 012503
+});
+
+
+Route::controller(PropertyDetailsController::class)->group(function () {
+  Route::post('grievance/get-filter-property-details', 'propertyListByKeyGrv');              #API_ID = 011302        
 });
