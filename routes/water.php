@@ -102,6 +102,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
 
         # Site inspection 
         Route::post('site-verification/save-site-details', 'saveSitedetails');                          // Admin
+        Route::post('admin/dis-generate-payment-receipt', 'generateOfflinePaymentReceiptv1');                          // Admin
     });
 
     /**

@@ -266,7 +266,7 @@ class WaterPaymentController extends Controller
             //     throw new Exception("This Consumer has not ApplicationId!!");
 
             # if demand transactions exist
-            $connectionTran = $applicationId?$mWaterTran->getTransNo($applicationId, null)->get():collect([]);                        // Water Connection payment History
+            $connectionTran = $applicationId ? $mWaterTran->getTransNo($applicationId, null)->get() : collect([]);                        // Water Connection payment History
             $connectionTran = collect($connectionTran)->sortByDesc('id')->values();
             // if((!$connectionTran->first() || is_null($connectionTran)) && $applicationId)
             //     throw new Exception("Water Application's Transaction Details not Found!!");
@@ -1487,8 +1487,7 @@ class WaterPaymentController extends Controller
             # if demand transaction exist
             $connectionTran = $mWaterTran->getTransNo($applicationId, null)->get();                        // Water Connection payment History
             $checkTrans = collect($connectionTran)->first();
-            if (!$checkTrans)
-            {
+            if (!$checkTrans) {
                 // throw new Exception("Water Application Tran Details not Found!!");
             }
 
@@ -2160,7 +2159,7 @@ class WaterPaymentController extends Controller
 
             $offlinePaymentModes = Config::get('payment-constants.VERIFICATION_PAYMENT_MODES');
             $activeConRequest = $mWaterConsumerActiveRequest->getActiveReqById($applicatinId)
-                ->where('payment_status',0)
+                ->where('payment_status', 0)
                 ->first();
             if (!$activeConRequest) {
                 throw new Exception("Application details not found!");
@@ -2275,7 +2274,7 @@ class WaterPaymentController extends Controller
                 'bank_name'         => $req['bankName'],
                 'tran_date'         => $req['todayDate'],
                 'user_id'           => $req['userId'],
-               // 'ulb_id'            => $req['ulbId'],
+                // 'ulb_id'            => $req['ulbId'],
                 'ward_no'           => $req['ward_no']
             ];
             $mTempTransaction->tempTransaction($tranReqs);
@@ -2315,5 +2314,109 @@ class WaterPaymentController extends Controller
             $waterTrans['id'],
             $charges['id'],
         );
+    }
+
+    public function generateOfflinePaymentReceiptv1(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'transactionNo' => 'required'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+        try {
+            $refTransactionNo = $req->transactionNo;
+
+            $mWaterConsumerCharge               = new WaterConsumerCharge();
+            $mWaterPenaltyInstallment           = new WaterPenaltyInstallment();
+            $mWaterApplication                  = new WaterApplication();
+            $mWaterActiveApplicationDetail      = new WaterConsumerActiveRequest();
+            $mWaterChequeDtl                    = new WaterChequeDtl();
+            $mWaterTran                         = new WaterTran();
+            $mWaterTranFineRebate               = new WaterTranFineRebate();
+            $mWaterSecondConsumer               = new waterConsumer();
+            $mwaterSiteInspection               = new WaterSiteInspection();
+
+            $mTowards           = $this->_towards;
+            $mAccDescription    = $this->_accDescription;
+            $mDepartmentSection = $this->_departmentSection;
+            $mPaymentModes      = $this->_paymentModes;
+            $mSearchForRebate   = Config::get("waterConstaint.PENALTY_HEAD");
+
+            # transaction Deatils
+            $transactionDetails = $mWaterTran->getTransactionByTransactionNo($refTransactionNo)
+                ->first();
+            if (!$transactionDetails) {
+                throw new Exception("Data according to transaction no is not found!");
+            }
+            #  Data not equal to Cash
+            if (!in_array($transactionDetails['payment_mode'], [$mPaymentModes['1'], $mPaymentModes['5']])) {
+                $chequeDetails = $mWaterChequeDtl->getChequeDtlsByTransId($transactionDetails['id'])->firstorfail();
+            }
+            # Application Deatils
+            $applicationDetails = $mWaterActiveApplicationDetail->getApplicationByUserV1($transactionDetails->related_id)->first();
+            # Connection Charges
+            $connectionCharges = $mWaterConsumerCharge->getChargesById($applicationDetails->consumer_id)
+                ->first();
+            # Transaction Date
+            $refDate = $transactionDetails->tran_date;
+            $transactionDate = Carbon::parse($refDate)->format('Y-m-d');
+            $currentTime = date('H:i:s');
+            $returnValues = [
+                "departmentSection"     => $mDepartmentSection,
+                "accountDescription"    => $mAccDescription,
+                "transactionDate"       => $transactionDate,
+                "transactionTime"       => $currentTime,
+                "transactionNo"         => $refTransactionNo,
+                "applicationNo"         => $applicationDetails['application_no'],
+                "consumerNo"           => $applicationDetails['consumer_no'],
+                "customerName"          => $applicationDetails['applicantname'],
+                "customerMobile"        => $applicationDetails['mobileNo'],
+                "address"               => $applicationDetails['address'],
+                "paidFrom"              => $connectionCharges['charge_category'] ?? $transactionDetails['tran_type'],
+                "holdingNo"             => $applicationDetails['holding_no'],
+                "propertyNo"             => $applicationDetails['property_no'],
+                "propertyType"          => $applicationDetails['property_type'],
+                "meterNo"               => $applicationDetails['meter_no'],
+                "safNo"                 => $applicationDetails['saf_no'],
+                "consumerNo"            => $applicationDetails['consumer_no'],
+                "paidUpto"              => "",
+                "paymentMode"           => $transactionDetails['payment_mode'],
+                "bankName"              => $chequeDetails['bank_name'] ?? null,                                  // in case of cheque,dd,nfts
+                "branchName"            => $chequeDetails['branch_name'] ?? null,                                  // in case of chque,dd,nfts
+                "chequeNo"              => $chequeDetails['cheque_no'] ?? null,                                  // in case of chque,dd,nfts
+                "chequeDate"            => $chequeDetails['cheque_date'] ?? null,                                  // in case of chque,dd,nfts
+                "monthlyRate"           => "",
+                "demandAmount"          => $transactionDetails->amount,
+                "taxDetails"            => "",
+                "ulbId"                 => $transactionDetails['ulb_id'],
+                "ulbName"               => $applicationDetails['ulb_name'],
+                "WardNo"                => $applicationDetails['ward_name'],
+                "logo"                  => $applicationDetails['logo'],
+                "towards"               => $mTowards,
+                "description"           => $mAccDescription,
+                "rebate"                => $rebateAmount ?? 0,                                                           // Static
+                "connectionFee"         => $connectionCharges['conn_fee'] ?? 0,
+                "totalPaidAmount"       => $transactionDetails->amount,
+                "penaltyAmount"         => $totalPenaltyAmount ?? 0,
+                "tabize"                => $applicationDetails['tab_size'],
+                "category"              => $applicationDetails['category'],
+                "guardianName"          => $applicationDetails['guardianName'],
+                "association"           => $applicationDetails['association_with'],
+                "mobileNo"              => $applicationDetails['mobile_no'],
+                "roadType"              => $applicationDetails['road_type'],
+                "roadTypeAmount"        => $applicationDetails['per_meter_amount'],
+                // "roadWidth"             => $details['per_meter'],
+                "ConnectionAmount"      => $applicationDetails['connecton_amount'],
+                // "roadCutterAmount"      => $applicationDetails['per_meter_amount'] * $details['per_meter'],
+
+                "paidAmtInWords"        => getIndianCurrency($transactionDetails->amount),
+            ];
+            return responseMsgs(true, "Payment Receipt", remove_null($returnValues), "", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", "ms", "POST", "");
+        }
     }
 }

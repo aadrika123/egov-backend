@@ -130,6 +130,49 @@ class WaterConsumerActiveRequest extends Model
             ->where('water_consumer_active_requests.status', 1)
             ->orderByDesc('water_consumer_active_requests.id');
     }
+    // get consumer Details
+    public function getApplicationByUserV1($userId)
+    {
+        return WaterConsumerActiveRequest::select(
+            'water_consumer_active_requests.id',
+            'water_consumer_active_requests.consumer_id',
+            'water_consumer_active_requests.reason',
+            'water_consumer_active_requests.remarks',
+            'water_consumer_active_requests.amount',
+            'water_consumer_active_requests.application_no',
+            DB::raw('REPLACE(water_consumer_charges.charge_category, \'_\', \' \') as charge_category'),
+            'water_consumer_active_requests.corresponding_address',
+            'water_consumer_active_requests.corresponding_mobile_no',
+            'water_consumers.consumer_no',
+            'water_consumer_active_requests.ward_mstr_id',
+            'water_consumer_active_requests.apply_date',
+            'water_consumer_active_requests.payment_status',
+            'ulb_ward_masters.ward_name',
+            'ulb_masters.ulb_name',
+            DB::raw('(
+                SELECT string_agg(applicant_name, \',\') 
+                FROM water_consumer_owners 
+                WHERE water_consumer_owners.consumer_id = water_consumer_active_requests.consumer_id
+            ) as applicantName'),
+            DB::raw('(
+                SELECT string_agg(mobile_no::VARCHAR, \',\') 
+                FROM water_consumer_owners 
+                WHERE water_consumer_owners.consumer_id = water_consumer_active_requests.consumer_id
+            ) as mobileNo'),
+            DB::raw('(
+                SELECT string_agg(guardian_name, \',\') 
+                FROM water_consumer_owners 
+                WHERE water_consumer_owners.consumer_id = water_consumer_active_requests.consumer_id
+            ) as guardianName')
+        )
+            ->join('ulb_masters', 'ulb_masters.id', '=', 'water_consumer_active_requests.ulb_id')
+            ->join('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_consumer_active_requests.ward_mstr_id')
+            ->join('water_consumer_charges', 'water_consumer_charges.related_id', '=', 'water_consumer_active_requests.id')
+            ->leftJoin('water_consumers', 'water_consumers.id', '=', 'water_consumer_active_requests.consumer_id')
+            ->where('water_consumer_active_requests.id', $userId)
+            ->where('water_consumer_active_requests.status', 1)
+            ->orderByDesc('water_consumer_active_requests.id');
+    }
 
     //written by prity pandey
     public function getConsumerByApplication($applicationId)
