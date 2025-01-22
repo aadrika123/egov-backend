@@ -28,14 +28,15 @@ class WaterConsumerActiveRequest extends Model
         $mWaterConsumerActiveRequest->amount                    = $refRequest['amount'];
         $mWaterConsumerActiveRequest->remarks                   = $req['remarks'];
         $mWaterConsumerActiveRequest->corresponding_address     = $req['address'] ?? null; // added by alok
-        // $mWaterConsumerActiveRequest->apply_from                = $refRequest['applyFrom'];
+        $mWaterConsumerActiveRequest->apply_from                = $refRequest['applyFrom'];
         $mWaterConsumerActiveRequest->initiator                 = $refRequest['initiatorRoleId'];
+        $mWaterConsumerActiveRequest->current_role              = $refRequest['initiatorRoleId'];
         $mWaterConsumerActiveRequest->workflow_id               = $refRequest['ulbWorkflowId'];
         $mWaterConsumerActiveRequest->ulb_id                    = $refRequest['ulbId'];
         $mWaterConsumerActiveRequest->finisher                  = $refRequest['finisherRoleId'];
-        // $mWaterConsumerActiveRequest->user_type                 = $refRequest['userType'];
+        $mWaterConsumerActiveRequest->user_type                 = $refRequest['userType'];
         $mWaterConsumerActiveRequest->application_no            = $applicationNo;
-        $mWaterConsumerActiveRequest->charge_catagory_id        = $refRequest['chargeCategoryId']; 
+        $mWaterConsumerActiveRequest->charge_catagory_id        = $refRequest['chargeCategoryId'];
         $mWaterConsumerActiveRequest->corresponding_mobile_no   = $req->mobileNo ?? null;
         $mWaterConsumerActiveRequest->save();
         return [
@@ -316,5 +317,13 @@ class WaterConsumerActiveRequest extends Model
             ->where('application_no', 'LIKE', '%' . $applicationNo . '%')
             ->where('ulb_id', authUser($req)->ulb_id);
     }
-    
+
+    public function updateUploadStatus($applicationId, $status)
+    {
+        return  WaterConsumerActiveRequest::where('id', $applicationId)
+            ->where('status', true)
+            ->update([
+                "doc_upload_status" => $status
+            ]);
+    }
 }

@@ -1077,7 +1077,7 @@ class WaterConsumer extends Controller
             if (is_null($consumerDetails)) {
                 throw new Exception("Consumer Details not found!");
             }
-             $applicationDetails = $this->Repository->getconsumerRelatedData($consumerDetails->id);
+            $applicationDetails = $this->Repository->getconsumerRelatedData($consumerDetails->id);
             if (is_null($applicationDetails)) {
                 throw new Exception("Application Details not found!");
             }
@@ -1836,7 +1836,7 @@ class WaterConsumer extends Controller
             return validationError($validated);
 
         try {
-            //  return    $user                           = authUser($request);
+            $user                           = authUser($request);
             $refRequest                     = array();
             $ulbWorkflowObj                 = new WfWorkflow();
             $mWorkflowTrack                 = new WorkflowTrack();
@@ -1857,7 +1857,7 @@ class WaterConsumer extends Controller
             }
             # Check the condition for deactivation
             $refDetails = $this->PreConsumerDeactivationCheck($request);
-            $ulbId      = $request->ulbId ?? $user->ulb_id ?? 2;
+            $ulbId      = $request->ulbId;
 
             # Get initiater and finisher
             $ulbWorkflowId = $ulbWorkflowObj->getulbWorkflowId($refWorkflow, $ulbId);
@@ -1873,23 +1873,23 @@ class WaterConsumer extends Controller
             }
 
             # If the user is not citizen
-            // if ($user->user_type != $refUserType['1']) {
-            //     $request->request->add(['workflowId' => $refWorkflow]);
-            //     $roleDetails = $this->getRole($request);
-            //     if (!$roleDetails) {
-            //         throw new Exception("Role detail Not found!");
-            //     }
-            //     $roleId = $roleDetails['wf_role_id'];
-            //     $refRequest = [
-            //         "applyFrom" => $user->user_type,
-            //         "empId"     => $user->id
-            //     ];
-            // } else {
-            //     $refRequest = [
-            //         "applyFrom" => $refApplyFrom['1'],
-            //         "citizenId" => $user->id
-            //     ];
-            // }
+            if ($user->user_type != $refUserType['1']) {
+                $request->request->add(['workflowId' => $refWorkflow]);
+                $roleDetails = $this->getRole($request);
+                if (!$roleDetails) {
+                    throw new Exception("Role detail Not found!");
+                }
+                $roleId = $roleDetails['wf_role_id'];
+                $refRequest = [
+                    "applyFrom" => $user->user_type,
+                    "empId"     => $user->id
+                ];
+            } else {
+                $refRequest = [
+                    "applyFrom" => $refApplyFrom['1'],
+                    "citizenId" => $user->id
+                ];
+            }
 
             # Get chrages for deactivation
             $chargeAmount = $mWaterConsumerChargeCategory->getChargesByid($refConsumerCharges['WATER_DISCONNECTION']);
@@ -1901,7 +1901,7 @@ class WaterConsumer extends Controller
             $refRequest["ulbWorkflowId"]     = $ulbWorkflowId->id;
             $refRequest["chargeCategoryId"]  = $refConsumerCharges['WATER_DISCONNECTION'];
             $refRequest["amount"]            = $chargeAmount->amount;
-            // $refRequest['userType']          = $user->user_type;
+            $refRequest['userType']          = $user->user_type;
             $refRequest['ulbId']             = $ulbId;
 
             $refRequest["corresponding_address"] = $request->address; // Added by alok
@@ -1925,7 +1925,6 @@ class WaterConsumer extends Controller
                 'relatedId'         => $deactivatedDetails['id'],                                                 // Static
             ];
             $mWaterConsumerCharge->saveConsumerCharges($metaRequest, $request->consumerId, $refChargeList['2']);
-            // $mWaterWaterConsumer->dissconnetConsumer($request->consumerId, $metaRequest['status']);
 
             # Save data in track
             $metaReqs = new Request(
@@ -1990,6 +1989,7 @@ class WaterConsumer extends Controller
             // $mWfActiveDocument->postDocuments($a,$auth);
             $metaReqs =  $mWfActiveDocument->metaReq($metaReqs);
             $mWfActiveDocument->create($metaReqs);
+            $mWaterConsumerActiveRequest->updateUploadStatus($tempId, true);
             // foreach($metaReqs as $key=>$val)
             // {
             //     $mWfActiveDocument->$key = $val;
