@@ -356,6 +356,7 @@ class WaterConsumerActiveRequest extends Model
         return WaterConsumerActiveRequest::select(
             'water_consumer_active_requests.id',
             'water_consumer_active_requests.application_no',
+            'water_consumer_charge_categories.charge_category',
             DB::raw("DATE(water_consumer_active_requests.apply_date) as apply_date"),
             'water_consumer_active_requests.current_role',
             'water_consumer_active_requests.corresponding_mobile_no',
@@ -370,6 +371,7 @@ class WaterConsumerActiveRequest extends Model
                     END AS payment_status")
         )
             ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', 'water_consumer_active_requests.consumer_id')
+            ->join('water_consumer_charge_categories', 'water_consumer_charge_categories.id', 'water_consumer_active_requests.charge_catagory_id')
             ->where('water_consumer_active_requests.charge_catagory_id', 2)
             ->where('water_consumer_active_requests.application_no', 'LIKE', '%' . $applicationNo . '%')
             ->where('water_consumer_active_requests.ulb_id', authUser($req)->ulb_id)
@@ -382,7 +384,8 @@ class WaterConsumerActiveRequest extends Model
                 'water_consumer_owners.applicant_name',
                 'water_consumer_owners.mobile_no',
                 'water_consumer_active_requests.payment_status',
-                'water_consumer_active_requests.id'
+                'water_consumer_active_requests.id',
+                'water_consumer_charge_categories.charge_category'
             );
     }
 
@@ -467,7 +470,7 @@ class WaterConsumerActiveRequest extends Model
             'water_consumer_active_requests.consumer_id',
             'water_consumer_active_requests.id as applicationId',
             'water_consumer_active_requests.ward_mstr_id',
-            // 'water_consumer_active_requests.mobile_no',
+            'water_consumer_active_requests.ulb_id',
             'water_consumers.consumer_no',
             'water_consumer_active_requests.status',
             'water_consumers.user_type',

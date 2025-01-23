@@ -101,6 +101,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
         Route::post('consumer/online-request-payment', 'initiateOnlineConRequestPayment');              // Citizen
         Route::post('consumer/offline-request-payment', 'offlineConReqPayment');                        // Admin
 
+
         # Site inspection 
         Route::post('site-verification/save-site-details', 'saveSitedetails');                          // Admin
         Route::post('admin/dis-generate-payment-receipt', 'generateOfflinePaymentReceiptv1');                          // Admin
@@ -163,6 +164,8 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
         Route::post('get-details-applications-by-id', 'getApplicationDetails');                        // Admin / Changes             
         Route::post('get-details-disconnections', 'getRequestedApplication');                       // Citizen / Changes the route name
         Route::post('consumer/req/approval-rejection', 'consumerApprovalRejection');
+        Route::post('workflow/get-doc-list-je', 'getDocListForJe');                                             // Workflow
+        Route::post('workflow/upload-doc-je', 'uploadWaterDocJe');                                             // Workflow
         //written by prity pandey 
         Route::post('consumer/req/inbox', 'consumerInbox');                                         // Workflow
         Route::post('consumer/req/outbox', 'consumerOutbox');

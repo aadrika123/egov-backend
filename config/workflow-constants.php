@@ -26,6 +26,7 @@ return [
     "PROPERTY_WAIVER_ID"                => "35",
 
     "WATER_MASTER_ID"                   => "15",
+    "WATER_MASTER_DIS_ID"               => "193",
     "WATER_DISCONNECTION"               => "33",
     "TRADE_MASTER_ID"                   => "16",
     "TRADE_NOTICE_ID"                   => "17",
