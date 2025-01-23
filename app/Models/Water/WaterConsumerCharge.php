@@ -77,4 +77,15 @@ class WaterConsumerCharge extends Model
         return WaterConsumerCharge::where('id', $id)
             ->where('status', 1);
     }
+
+    public function getConsumerChargesByConsumerId($consumerId){
+        return self::select(
+            'water_consumer_charges.id',
+            'water_consumer_charges.charge_category',
+            'water_consumer_charges.amount',
+            'water_consumer_charges.paid_status'
+        )
+        ->where('water_consumer_charges.consumer_id',$consumerId)
+        ->get();
+    }
 }

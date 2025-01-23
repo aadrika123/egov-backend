@@ -2419,4 +2419,93 @@ class WaterPaymentController extends Controller
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", "ms", "POST", "");
         }
     }
+
+    /**
+     * | Get the payment history for the Application
+     * | @param request
+        | Serial No : 08
+        | Working
+     */
+    public function getDisApplicationPaymentHistory(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'id' => 'required|digits_between:1,9223372036854775807'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+        try {
+            $mWaterTran                          = new WaterTran();
+            $mWaterConsumerActiveRequest         = new WaterConsumerActiveRequest();
+            $mWaterConsumerCharge                = new WaterConsumerCharge();
+            $mWaterPenaltyInstallment            = new WaterPenaltyInstallment();
+
+            $transactions = array();
+            $applicationId = $request->id;
+
+            # Application Details
+            $waterDtls = $mWaterConsumerActiveRequest->getRequestByAppId($applicationId)->first();
+            if (!$waterDtls)
+                throw new Exception("Water Application Not Found!");
+
+            # if demand transaction exist
+            $connectionTran = $mWaterTran->getTransNo($applicationId, null)->get();                        // Water Connection payment History
+            $checkTrans = collect($connectionTran)->first();
+            if (!$checkTrans) {
+                // throw new Exception("Water Application Tran Details not Found!!");
+            }
+
+            # Connection Charges And Penalty
+            $refConnectionDetails = $mWaterConsumerCharge->getConsumerCharges($waterDtls->consumer_id)->get();
+            $penaltyList = collect($refConnectionDetails)->map(function ($value, $key)
+            use ($mWaterPenaltyInstallment, $applicationId) {
+                if ($value['penalty'] > 0) {
+                    $penaltyList = $mWaterPenaltyInstallment->getPenaltyByApplicationId($applicationId)
+                        ->where('payment_from', $value['charge_category'])
+                        ->get();
+
+                    #check the penalty paid status
+                    $checkPenalty = collect($penaltyList)->map(function ($penaltyList) {
+                        if ($penaltyList['paid_status'] == 0) {
+                            return false;
+                        }
+                        return true;
+                    });
+                    switch ($checkPenalty) {
+                        case ($checkPenalty->contains(false)):
+                            $penaltyPaymentStatus = false;
+                            break;
+                        default:
+                            $penaltyPaymentStatus = true;
+                            break;
+                    }
+
+                    # collect the penalty amount to be paid 
+                    $penaltyAmount = collect($penaltyList)->map(function ($secondvalue) {
+                        if ($secondvalue['paid_status'] == 0) {
+                            return $secondvalue['balance_amount'];
+                        }
+                    })->filter()->sum();
+
+                    # return data
+                    if ($penaltyPaymentStatus == 0 || $value['paid_status'] == 0) {
+                        $status['penaltyPaymentStatus']     = $penaltyPaymentStatus ?? null;
+                        $status['chargeCatagory']           = $value['charge_category'];
+                        $status['penaltyAmount']            = $penaltyAmount;
+                        return $status;
+                    }
+                }
+            })->filter();
+            # return Data
+            $transactions = [
+                "transactionHistory" => collect($connectionTran)->sortByDesc('id')->values(),
+                "paymentList" => $penaltyList->values()->first()
+            ];
+            return responseMsgs(true, "", remove_null($transactions), "", "01", "ms", "POST", $request->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", "ms", "POST", "");
+        }
+    }
 }

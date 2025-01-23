@@ -131,7 +131,16 @@ trait WaterTrait
 
     public function getConsumerWfBaseQuerry($workflowIds, $ulbId)
     {
-        return WaterConsumerActiveRequest::select('water_consumer_active_requests.*', 'wco.applicant_name', 'wco.mobile_no','water_consumers.consumer_no')
+        return WaterConsumerActiveRequest::select(
+            'water_consumer_active_requests.id',
+            'water_consumer_active_requests.application_no',
+            'wco.applicant_name',
+            'wco.mobile_no',
+            'water_consumers.consumer_no',
+            DB::raw("string_agg(wco.applicant_name,',') as applicantName"),
+            DB::raw("string_agg(wco.mobile_no::VARCHAR,',') as mobileNo"),
+            DB::raw("string_agg(wco.guardian_name,',') as guardianName"),
+        )
             ->join('water_consumers', 'water_consumers.id', 'water_consumer_active_requests.consumer_id')
             ->join('water_consumer_owners AS wco', 'wco.consumer_id', 'water_consumer_active_requests.consumer_id')
             ->leftjoin('ulb_ward_masters AS uwm', 'uwm.id', 'water_consumer_active_requests.ward_mstr_id')
@@ -139,7 +148,15 @@ trait WaterTrait
             ->where('water_consumer_active_requests.status', true)
             ->where('water_consumer_active_requests.payment_status', 1)
             ->where('water_consumer_active_requests.ulb_id', $ulbId)
-            ->whereIn('water_consumer_active_requests.workflow_id', $workflowIds);
+            ->whereIn('water_consumer_active_requests.workflow_id', $workflowIds)
+            ->groupBy(
+                'water_consumer_active_requests.id',
+                'water_consumer_active_requests.application_no',
+                'wco.applicant_name',
+                'wco.mobile_no',
+                'water_consumers.consumer_no',
+                'uwm.ward_name',
+            );
     }
 
 

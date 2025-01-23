@@ -91,6 +91,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
         Route::post('admin/application/generate-payment-receipt', 'generateOfflinePaymentReceipt');     // Citizen / Admin
         Route::post('consumer/calculate-month-demand', 'callDemandByMonth');                            // Admin/Consumer
         Route::post('application/payment/get-payment-history', 'getApplicationPaymentHistory');         // Admin/Consumer
+
         Route::post('consumer/offline-demand-payment', 'offlineDemandPayment');                         // Consumer
         Route::post('application/payment/offline/pay-connection-charge', 'offlineConnectionPayment');   // Admin
         Route::post('consumer/demand/generate-payment-receipt', 'generateDemandPaymentReceipt');        // Admin/ Citizen
@@ -103,6 +104,9 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
         # Site inspection 
         Route::post('site-verification/save-site-details', 'saveSitedetails');                          // Admin
         Route::post('admin/dis-generate-payment-receipt', 'generateOfflinePaymentReceiptv1');                          // Admin
+
+        # disconnectionnApis
+        Route::post('disconnection/payment/get-payment-history', 'getDisApplicationPaymentHistory');         // Admin/Consumer
     });
 
     /**
@@ -156,7 +160,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
         Route::post('consumer/req/get-worklfow-by-id', 'getWorkflow');                       // Here
 
         # Consuemr Request View Api // Arshad
-        Route::post('get-details-applications', 'getConApplicationDetails');                        // Admin / Changes             
+        Route::post('get-details-applications-by-id', 'getApplicationDetails');                        // Admin / Changes             
         Route::post('get-details-disconnections', 'getRequestedApplication');                       // Citizen / Changes the route name
         Route::post('consumer/req/approval-rejection', 'consumerApprovalRejection');
         //written by prity pandey 
@@ -170,10 +174,10 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
         Route::post('consumer/deactivation-upload-documents', 'uploadDocuments');
         Route::post('consumer/deactivation-upload-documents_view', 'getUploadDocuments');
         Route::post('consumer/deactivation-documents-verify', 'documentVerify');
-        Route::post('consumer/deactivation-post-next-level', 'postNextLevelRequestV1');
         Route::post('consumer/deactivation-approve-rejet', 'approveReject');
+        Route::post('consumer/req/post-next-level', 'consumerPostNextLevel');
         //Route::post('consumer_doc-verify-reject', 'docVerifyRejects');
-        //Route::post('consumer/req/post-next-level', 'consumerPostNextLevel');
+
         //Route::post('consumer/req/approval-rejection', 'consumerDeactivationApprovalRejection');
     });
 

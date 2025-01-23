@@ -20,4 +20,19 @@ class WaterConsumerOwner extends Model
         return WaterConsumerOwner::where('status', true)
             ->where('consumer_id', $consumerId);
     }
+
+    public function ownerByApplication($consumerId)
+    {
+        return WaterConsumerOwner::select(
+            'water_consumer_owners.applicant_name as owner_name',
+            'guardian_name',
+            'mobile_no',
+            'email',
+            'city',
+            'district'
+        )
+            // ->join('water_applications', 'water_applications.id', '=', 'water_applicants.application_id')
+            ->where('water_consumer_owners.consumer_id', $consumerId)
+            ->where('water_consumer_owners.status', 1);
+    }
 }

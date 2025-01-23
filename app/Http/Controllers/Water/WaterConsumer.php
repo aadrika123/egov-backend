@@ -1857,7 +1857,7 @@ class WaterConsumer extends Controller
             }
             # Check the condition for deactivation
             $refDetails = $this->PreConsumerDeactivationCheck($request);
-            $ulbId      = $request->ulbId;
+            $ulbId      = $request->ulbId  ?? $user->ulb_id;
 
             # Get initiater and finisher
             $ulbWorkflowId = $ulbWorkflowObj->getulbWorkflowId($refWorkflow, $ulbId);
