@@ -521,4 +521,38 @@ class WaterConsumerActiveRequest extends Model
             ->where('water_consumer_active_requests.id', $request->applicationId)
             ->where('water_consumer_active_requests.status', true);
     }
+
+    public function updateJeVarifications($applicationId)
+    {
+        WaterConsumerActiveRequest::where('id', $applicationId)
+            ->update([
+                'je_doc_upload_status' => true,
+                'is_field_verified' => true,
+            ]);
+    }
+
+    /**
+     * | Deactivate the doc Upload Status 
+     */
+    public function updateVerifystatus($metaReqs, $status)
+    {
+        return  WaterConsumerActiveRequest::where('id', $metaReqs['refTableIdValue'])
+            ->where('status', true)
+            ->update([
+                "verify_status" => $status,
+                "emp_details_id" => $metaReqs['user_id']
+            ]);
+    }
+    /**
+     * | Deactivate the doc Upload Status 
+     */
+    public function updateVerifyComplainRequest($metaReqs, $userId)
+    {
+        return  WaterConsumerActiveRequest::where('id', $metaReqs->applicationId)
+            ->where('status', true)
+            ->update([
+                "verify_status" => 2,
+                "emp_details_id" => $userId,
+            ]);
+    }
 }

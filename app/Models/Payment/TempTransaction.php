@@ -40,7 +40,7 @@ class TempTransaction extends Model
             ->where('tran_date', $date)
             ->where('temp_transactions.status', 1)
             ->where('user_id', $userId)
-           // ->where('temp_transactions.ulb_id', $ulbId)
+            ->where('temp_transactions.ulb_id', $ulbId)
             ->get();
     }
 

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\UlbMaster;
 use App\Http\Requests\Water\ReqApplicationId;
 use App\MicroServices\DocUpload;
+use App\MicroServices\IdGenerator\PrefixIdGenerator;
 use App\Models\CustomDetail;
 use App\Models\Masters\RefRequiredDocument;
 use App\Models\UlbMaster as ModelsUlbMaster;
@@ -13,7 +14,10 @@ use App\Models\UlbWardMaster;
 use App\Models\Water\WaterConnectionCharge;
 use App\Models\Water\WaterConsumerActiveRequest;
 use App\Models\Water\WaterConsumerCharge;
+use App\Models\Water\WaterConsumerDemand;
+use App\Models\Water\WaterConsumerMeter;
 use App\Models\Water\WaterConsumerOwner;
+use App\Models\Water\WaterConsumer;
 use App\Models\Water\WaterSiteInspection;
 use App\Models\Water\WaterSiteInspectionsScheduling;
 use App\Models\Water\WaterTran;
@@ -344,18 +348,24 @@ class WaterConsumerWfController extends Controller
                     throw new Exception("payment Not Fully paid");
                 break;
             case $wfLevels['JE']:                                                                       // JE Coditon in case of site adjustment
-                if ($application->doc_status == false || $application->payment_status != 1)
-                    throw new Exception("Document Not Fully Verified or Payment in not Done!");
+                // if ($application->doc_status == false || $application->payment_status != 1)
+                //     throw new Exception("Document Not Fully Verified or Payment in not Done!");
                 if ($application->doc_upload_status == false) {
                     throw new Exception("Document Not Fully Uploaded");
                 }
-                $siteDetails = $mWaterSiteInspection->getSiteDetails($application->id)
-                    ->where('order_officer', $refRole['JE'])
-                    ->where('payment_status', 1)
-                    ->first();
-                if (!$siteDetails) {
-                    throw new Exception("Site Not Verified!");
+                if ($application->is_field_verified == false) {
+                    throw new Exception("Field Verification Failed");
                 }
+                if ($application->je_doc_upload_status == false) {
+                    throw new Exception("Report Not Submitted");
+                }
+                // $siteDetails = $mWaterSiteInspection->getSiteDetails($application->id)
+                //     ->where('order_officer', $refRole['JE'])
+                //     ->where('payment_status', 1)
+                //     ->first();
+                // if (!$siteDetails) {
+                //     throw new Exception("Site Not Verified!");
+                // }
                 break;
             case $wfLevels['SH']:                                                                       // SH conditional checking
                 if ($application->doc_status == false || $application->payment_status != 1)
@@ -418,59 +428,59 @@ class WaterConsumerWfController extends Controller
     /**
      * water disconnection approval or reject 
      */
-    public function consumerApprovalRejection(Request $request)
-    {
-        $request->validate([
-            "applicationId" => "required",
-            "status"        => "required",
-            "comment"       => "required"
-        ]);
-        try {
-            $mWfRoleUsermap = new WfRoleusermap();
-            $waterDetails = WaterConsumerActiveRequest::find($request->applicationId);
+    // public function consumerApprovalRejection(Request $request)
+    // {
+    //     $request->validate([
+    //         "applicationId" => "required",
+    //         "status"        => "required",
+    //         "comment"       => "required"
+    //     ]);
+    //     try {
+    //         $mWfRoleUsermap = new WfRoleusermap();
+    //         $waterDetails = WaterConsumerActiveRequest::find($request->applicationId);
 
-            # check the login user is AE or not
-            $userId = authUser($request)->id;
-            $workflowId = $waterDetails->workflow_id;
-            $getRoleReq = new Request([                                                 // make request to get role id of the user
-                'userId' => $userId,
-                'workflowId' => $workflowId
-            ]);
-            $readRoleDtls = $mWfRoleUsermap->getRoleByUserWfId($getRoleReq);
-            $roleId = $readRoleDtls->wf_role_id;
-            if ($roleId != $waterDetails->finisher) {
-                throw new Exception("You are not the Finisher!");
-            }
-            DB::beginTransaction();
-            $this->approvalRejectionWater($request, $roleId);
-            DB::commit();
-            return responseMsg(true, "Request approved/rejected successfully", "");;
-        } catch (Exception $e) {
-            // DB::rollBack();
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-    public function approvalRejectionWater($request, $roleId)
-    {
+    //         # check the login user is AE or not
+    //         $userId = authUser($request)->id;
+    //         $workflowId = $waterDetails->workflow_id;
+    //         $getRoleReq = new Request([                                                 // make request to get role id of the user
+    //             'userId' => $userId,
+    //             'workflowId' => $workflowId
+    //         ]);
+    //         $readRoleDtls = $mWfRoleUsermap->getRoleByUserWfId($getRoleReq);
+    //         $roleId = $readRoleDtls->wf_role_id;
+    //         if ($roleId != $waterDetails->finisher) {
+    //             throw new Exception("You are not the Finisher!");
+    //         }
+    //         DB::beginTransaction();
+    //         $this->approvalRejectionWater($request, $roleId);
+    //         DB::commit();
+    //         return responseMsg(true, "Request approved/rejected successfully", "");;
+    //     } catch (Exception $e) {
+    //         // DB::rollBack();
+    //         return responseMsg(false, $e->getMessage(), "");
+    //     }
+    // }
+    // public function approvalRejectionWater($request, $roleId)
+    // {
 
-        $mWaterConsumerActive  =  new WaterConsumerActiveRequest();
-        $this->preApprovalConditionCheck($request, $roleId);
+    //     $mWaterConsumerActive  =  new WaterConsumerActiveRequest();
+    //     $this->preApprovalConditionCheck($request, $roleId);
 
-        # Approval of water application 
-        if ($request->status == 1) {
+    //     # Approval of water application 
+    //     if ($request->status == 1) {
 
-            $mWaterConsumerActive->finalApproval($request);
-            $msg = "Application Successfully Approved !!";
-        }
-        # Rejection of water application
-        if ($request->status == 0) {
-            $mWaterConsumerActive->finalRejectionOfAppication($request);
-            $msg = "Application Successfully Rejected !!";
-        }
+    //         $mWaterConsumerActive->finalApproval($request);
+    //         $msg = "Application Successfully Approved !!";
+    //     }
+    //     # Rejection of water application
+    //     if ($request->status == 0) {
+    //         $mWaterConsumerActive->finalRejectionOfAppication($request);
+    //         $msg = "Application Successfully Rejected !!";
+    //     }
 
 
-        return responseMsgs(true, $msg, $request ?? "Empty", '', 01, '.ms', 'Post', $request->deviceId);
-    }
+    //     return responseMsgs(true, $msg, $request ?? "Empty", '', 01, '.ms', 'Post', $request->deviceId);
+    // }
 
 
     /**
@@ -1817,7 +1827,7 @@ class WaterConsumerWfController extends Controller
         return true;
     }
 
-    public function approveReject(Request $req)
+    public function approveRejectv1(Request $req)
     {
         try {
             $user = Auth()->user();
@@ -2175,7 +2185,7 @@ class WaterConsumerWfController extends Controller
             $relativePath       = Config::get('waterConstaint.WATER_RELATIVE_PATH');
             $refmoduleId        = Config::get('module-constants.WATER_MODULE_ID');
 
-            $getWaterDetails    = $mWaterApplication->fullWaterDetails($req)->firstOrFail();;
+            $getWaterDetails    = $mWaterApplication->fullWaterDetails($req)->firstOrFail();
             $refImageName       = $req->docRefName;
             $refImageName       = $getWaterDetails->id . '-' . str_replace(' ', '_', $refImageName);
             $docDetail          = $docUpload->checkDoc($req);
@@ -2212,17 +2222,8 @@ class WaterConsumerWfController extends Controller
             if (collect($ifDocExist)->isNotEmpty()) {
                 $mWfActiveDocument->editDocuments($ifDocExist, $metaReqs);
             }
-
-            #check full doc upload
-            // $refCheckDocument = $this->checkFullDocUpload($req);
-
-            # Update the Doc Upload Satus in Application Table
-            // if ($refCheckDocument->contains(false)) {
-            //     $mWaterApplication->deactivateUploadStatus($applicationId);
-            // } else {
-            //     $this->updateWaterStatus($req, $getWaterDetails);
-            // }
-
+            #update Diconnection Report  doc upload status and field verify
+            $mWaterApplication->updateJeVarifications($applicationId);
             # if the application is parked and btc s
             if ($getWaterDetails->parked == true) {
                 $mWfActiveDocument->deactivateRejectedDoc($metaReqs);
@@ -2244,4 +2245,164 @@ class WaterConsumerWfController extends Controller
             return responseMsgs(false, $e->getMessage(), "", "", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
+
+    /**
+     * water disconnection approval or reject 
+     */
+    public function consumerApprovalRejection(Request $request)
+    {
+        $request->validate([
+            "applicationId" => "required",
+            "status"        => "required",
+            "comment"       => "required"
+        ]);
+        try {
+            $mWfRoleUsermap = new WfRoleusermap();
+            $waterDetails = WaterConsumerActiveRequest::find($request->applicationId);
+
+            # check the login user is AE or not
+            $userId = authUser($request)->id;
+            $workflowId = $waterDetails->workflow_id;
+            $getRoleReq = new Request([                                                 // make request to get role id of the user
+                'userId' => $userId,
+                'workflowId' => $workflowId
+            ]);
+            $readRoleDtls = $mWfRoleUsermap->getRoleByUserWfId($getRoleReq);
+            $roleId = $readRoleDtls->wf_role_id;
+            if ($roleId != $waterDetails->finisher) {
+                throw new Exception("You are not the Finisher!");
+            }
+            $this->begin();
+            $this->approvalRejectionWater($request, $roleId);
+            $this->commit();
+            return responseMsg(true, "Request approved/rejected successfully", "");;
+        } catch (Exception $e) {
+            $this->rollback();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Function for Final Approval Or Rejection 
+     */
+    public function approveReject($request, $roleId)
+    {
+
+        $mWaterConsumerActive  =  new WaterConsumerActiveRequest();
+        $consumerParamId    = Config::get("waterConstaint.PARAM_IDS.DISC");
+        $refJe              = Config::get("waterConstaint.ROLE-LABEL.JE");
+        $refWaterDetails  = $this->preApprovalConditionCheck($request, $roleId);
+
+
+        # Approval of water application 
+        if ($request->status == 1) {
+
+            $this->finalApproval($request, $refJe);
+            $msg = "Application Successfully Approved !!";
+        }
+        # Rejection of water application
+        if ($request->status == 0) {
+            $this->finalRejectionOfAppication($request);
+            $msg = "Application Successfully Rejected !!";
+        }
+        return responseMsgs(true, $msg, $request ?? "Empty", '', 01, '.ms', 'Post', $request->deviceId);
+    }
+
+    /**
+     * |------------------- Final Approval of the water disconnection application -------------------|
+     * | @param request
+     * | @param consumerNo
+     */
+    public function finalApproval($request, $refJe)
+    {
+        # object creation
+        $mwaterConsumerActiveRequest      = new WaterConsumerActiveRequest();
+        $mWaterSiteInspection             = new WaterSiteInspection();
+        $mWaterConsumer                   = new WaterConsumer();
+        $mWaterConsumerMeter              = new WaterConsumerMeter();
+        $mWaterConsumerDemand             = new WaterConsumerDemand();
+        $mWaterConsumerOwner              = new WaterConsumerOwner();
+        $waterTrack                       = new WorkflowTrack();
+
+        # checking if consumer already exist 
+        $approvedWater = WaterConsumerActiveRequest::query()
+            ->where('id', $request->applicationId)
+            ->first();
+        $checkExist = $mwaterConsumerActiveRequest->getApproveApplication($approvedWater->id);
+        if (!$checkExist) {
+            throw new Exception("Application Not Found");
+        } elseif ($checkExist->verify_status == 1) {
+
+            throw new Exception('Already Approve Application');
+        } elseif ($checkExist->verify_status == 2) {
+            throw new Exception('Already Rejected Applications');
+        }
+        $checkconsumer = $mWaterConsumer->getConsumerById($approvedWater->consumer_id);
+        if (!$checkconsumer) {
+            throw new Exception("Consumer Not Found");
+        }
+        # data formating for save the consumer details 
+        $siteDetails = $mWaterSiteInspection->getSiteDetails($request->applicationId)
+            // ->where('payment_status', 1)
+            ->where('order_officer', $refJe)
+            ->first();
+        if (isset($siteDetails)) {
+            $refData = [
+                'connection_type_id'    => $siteDetails['connection_type_id'],
+                'connection_through'    => $siteDetails['connection_through'],
+                'pipeline_type_id'      => $siteDetails['pipeline_type_id'],
+                'property_type_id'      => $siteDetails['property_type_id'],
+                'category'              => $siteDetails['category'],
+                'area_sqft'             => $siteDetails['area_sqft'],
+                'area_asmt'             => sqFtToSqMt($siteDetails['area_sqft'])
+            ];
+            $approvedWaterRep = collect($approvedWater)->merge($refData);
+        }
+
+        # dend record in the track table 
+        $metaReqs = [
+            'moduleId'          => Config::get("module-constants.WATER_MODULE_ID"),
+            'workflowId'        => $approvedWater->workflow_id,
+            'refTableDotId'     => 'water_applications.id',
+            'refTableIdValue'   => $approvedWater->id,
+            'user_id'           => authUser($request)->id,
+        ];
+        $request->request->add($metaReqs);
+        $waterTrack->saveTrack($request);
+        # update verify status
+        $mwaterConsumerActiveRequest->updateVerifystatus($metaReqs, $request->status);
+        $consumerOwnedetails = $mWaterConsumerOwner->getConsumerOwner($checkExist->consumer_id)->first();
+        // Here update all the entities related to request of consumers
+        if ($checkExist->charge_catagory_id == 2) { // This for Disconnection
+            $mWaterConsumer->dissconnetConsumer($consumerOwnedetails->consumer_id, 0);
+        }
+    }
+
+        /**
+     * |------------------- Final rejection of the Application -------------------|
+     * | Transfer the data to new table
+     */
+    public function finalRejectionOfAppication($request)
+    {
+        $userId = authUser($request)->id;
+        $mWaterConsumerActive  =  new WaterConsumerActiveRequest();
+        $rejectedWater = WaterConsumerActiveRequest::query()
+            ->where('id', $request->applicationId)
+            ->first();
+
+
+        # save record in track table 
+        $waterTrack = new WorkflowTrack();
+        $metaReqs['moduleId'] =  Config::get("module-constants.WATER_MODULE_ID");
+        $metaReqs['workflowId'] = $rejectedWater->workflow_id;
+        $metaReqs['refTableDotId'] = 'water_consumer_active_requests.id';
+        $metaReqs['refTableIdValue'] = $rejectedWater->id;
+        $metaReqs['user_id'] = authUser($request)->id;
+        $request->request->add($metaReqs);
+        $waterTrack->saveTrack($request);
+
+        #update Verify Status
+        $mWaterConsumerActive->updateVerifyComplainRequest($request, $userId);
+    }
+
 }
