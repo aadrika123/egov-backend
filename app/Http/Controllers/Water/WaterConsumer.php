@@ -1093,10 +1093,10 @@ class WaterConsumer extends Controller
             // return $consumerDetails->ulb_id;
             $propertyDetails = $mProperty->getPropByHolding($consumerDetails->holding_no, $consumerDetails->ulb_id);
             // water consumer owner details 
-            $mWaterConsumerOwner = $mWaterConsumerOwner->ownerByApplication($consumerDetails->id)->get();
+            $mWaterConsumerOwner = $mWaterConsumerOwner->ownerByApplication($consumerDetails->id)->first();
 
             $mWaterSiteInspection = new WaterSiteInspection();
-            $siteInspectionDetails = $mWaterSiteInspection->getInspectionById($consumerDetails->apply_connection_id)->get();
+            $siteInspectionDetails = $mWaterSiteInspection->getInspectionById($consumerDetails->apply_connection_id)->first();
 
             $consumerDetails;                // consumer related details
             $mWaterConsumerOwner;           // consumer owner details
