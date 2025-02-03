@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Requests\Trade;
+
 use Illuminate\Support\Facades\Config;
 use Carbon\Carbon;
 
@@ -9,12 +10,11 @@ class ReqAddRecorde extends TradeRequest
     public function __construct()
     {
         parent::__construct();
-
     }
     public function rules()
-    {   
+    {
         $refWorkflowId      = $this->_WF_MASTER_Id;
-        $mUserType          = $this->_COMMON_FUNCTION->userType($refWorkflowId);        
+        $mUserType          = $this->_COMMON_FUNCTION->userType($refWorkflowId);
         $mNowdate           = $this->_CURRENT_DATE;
         $mTimstamp          = $this->_CURRENT_DATE_TIME;
         $mRegex             = $this->_REX_ALPHA_NUM_DOT_SPACE;
@@ -29,15 +29,13 @@ class ReqAddRecorde extends TradeRequest
 
         $rules["applicationType"] = $this->_REX_APPLICATION_TYPE;
 
-        $mApplicationTypeId = $this->_TRADE_CONSTAINT["APPLICATION-TYPE"][$this->applicationType]??0;
-        
-        if (!in_array($mApplicationTypeId, [1]))
-        {
+        $mApplicationTypeId = $this->_TRADE_CONSTAINT["APPLICATION-TYPE"][$this->applicationType] ?? 0;
+
+        if (!in_array($mApplicationTypeId, [1])) {
             $rules["licenseId"] = "required|digits_between:1,9223372036854775807";
         }
-        
-        if (in_array($mApplicationTypeId, [1])) 
-        {
+
+        if (in_array($mApplicationTypeId, [1])) {
             $rules["firmDetails.areaSqft"] = "required|numeric";
             $rules["firmDetails.businessAddress"] = "required|regex:$mFramNameRegex";
             $rules["firmDetails.businessDescription"] = "required|regex:$mFramNameRegex";
@@ -90,11 +88,10 @@ class ReqAddRecorde extends TradeRequest
             $rules["ownerDetails.*.guardianName"] = "nullable|regex:$mOwnerName";
             $rules["ownerDetails.*.mobileNo"] = "required|digits:10|regex:$mMobileNo";
             $rules["ownerDetails.*.email"] = "email|nullable";
-        } 
-        elseif (in_array($mApplicationTypeId, [2, 4])) # 2- Renewal,4- Surender
+        } elseif (in_array($mApplicationTypeId, [2, 4])) # 2- Renewal,4- Surender
         {
-            $rules["firmDetails.holdingNo"] = "required";
-            
+            $rules["firmDetails.holdingNo"] = "nullable";
+
             if ($mApplicationTypeId == 2) {
                 $rules["licenseDetails.licenseFor"] = "required|int";
                 if (isset($this->firmDetails["tocStatus"]) && $this->firmDetails["tocStatus"]) {
@@ -113,8 +110,7 @@ class ReqAddRecorde extends TradeRequest
                     $rules["licenseDetails.branchName"] = "required|regex:$mRegex";
                 }
             }
-        } 
-        elseif (in_array($mApplicationTypeId, [3])) # 3- Amendment
+        } elseif (in_array($mApplicationTypeId, [3])) # 3- Amendment
         {
             $rules["firmDetails.areaSqft"] = "required|numeric";
             $rules["firmDetails.businessDescription"] = "required|regex:$mFramNameRegex";
