@@ -1075,6 +1075,7 @@ class WaterConsumer extends Controller
             $mWaterTran             = new WaterTran();
             $mProperty              = new PropProperty();
             $mWaterConsumerOwner    = new WaterConsumerOwner();
+            $mUlbDetails            = new UlbMaster();
 
             $dbKey = "consumer_no";
             $consumerDetails = $mWaterWaterConsumer->getRefDetailByConsumerNo($dbKey, $refConsumerNo)->first();
@@ -1097,6 +1098,8 @@ class WaterConsumer extends Controller
 
             $mWaterSiteInspection = new WaterSiteInspection();
             $siteInspectionDetails = $mWaterSiteInspection->getInspectionById($consumerDetails->apply_connection_id)->first();
+
+            $ulbDetails = $mUlbDetails->getUlbDetails($consumerDetails->ulb_id);
 
             $consumerDetails;                // consumer related details
             $mWaterConsumerOwner;           // consumer owner details
@@ -1126,6 +1129,7 @@ class WaterConsumer extends Controller
                 // "AppliedFrom"           => $var,
                 "ownersDetails"         => $mWaterConsumerOwner,
                 "siteInspectionDetails" => $siteInspectionDetails,
+                "ulbDetails"            => $ulbDetails,
 
 
             ];
