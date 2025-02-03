@@ -91,6 +91,7 @@ class WaterApprovalApplicationDetail extends Model
         $perPage = $request->perPage ?: 10;
         $dateFrom = $request->dateFrom ?: Carbon::now()->format('Y-m-d');
         $dateUpto = $request->dateUpto ?: Carbon::now()->format('Y-m-d');
+
         $approved = WaterApprovalApplicationDetail::select(
             'water_approval_application_details.id',
             'water_approval_application_details.application_no',
@@ -100,15 +101,26 @@ class WaterApprovalApplicationDetail extends Model
             DB::raw("TO_CHAR(water_approval_application_details.apply_date, 'DD-MM-YYYY') as application_date"),
             'ulb_ward_masters.ward_name as ward_no',
             'water_approval_application_details.ulb_id',
-            'water_approval_applicants.applicant_name',
             'water_connection_type_mstrs.connection_type',
-            DB::raw("'Approve' as application_status")
+            DB::raw("'Approve' as application_status"),
+            DB::raw("STRING_AGG(water_approval_applicants.applicant_name, ', ') as applicant_names")                 // Aggregate multiple applicants
         )
             ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'water_approval_application_details.ward_id')
             ->join('water_approval_applicants', 'water_approval_applicants.application_id', 'water_approval_application_details.id')
             ->join('water_connection_type_mstrs', 'water_connection_type_mstrs.id', 'water_approval_application_details.connection_type_id')
             ->where('water_approval_application_details.ulb_id', $ulbId)
-            ->whereBetween('apply_date', [$dateFrom, $dateUpto]);
+            ->whereBetween('apply_date', [$dateFrom, $dateUpto])
+            ->groupBy(
+                'water_approval_application_details.id',
+                'water_approval_application_details.application_no',
+                'water_approval_application_details.holding_no',
+                'water_approval_application_details.connection_type_id',
+                'water_approval_application_details.property_type_id',
+                'water_approval_application_details.apply_date',
+                'ulb_ward_masters.ward_name',
+                'water_approval_application_details.ulb_id',
+                'water_connection_type_mstrs.connection_type'
+            );
 
         if ($request->wardId) {
             $approved->where('ulb_ward_masters.id', $request->wardId);
@@ -120,22 +132,12 @@ class WaterApprovalApplicationDetail extends Model
             $approved->where('water_approval_application_details.property_type_id', $request->propertyType);
         }
 
-        $data = null;
-        // if ($request->applicationStatus == 'All') {
-        // } elseif ($request->applicationStatus == 'Reject') {
-        // } elseif ($request->applicationStatus == 'Approve') {
-        //     $data = $approved;
-        // } else $data = $approved;
-        // if ($data) {
         $data = $approved->paginate($perPage);
-        // } else {
-        //     $data = collect([]);
-        // }
 
         return [
-            'current_page' => $data instanceof \Illuminate\Pagination\LengthAwarePaginator ? $data->currentPage() : 1,
-            'last_page' => $data instanceof \Illuminate\Pagination\LengthAwarePaginator ? $data->lastPage() : 1,
-            'data' => $data instanceof \Illuminate\Pagination\LengthAwarePaginator ? $data->items() : $data,
+            'current_page' => $data->currentPage(),
+            'last_page' => $data->lastPage(),
+            'data' => $data->items(),
             'total' => $data->total()
         ];
     }

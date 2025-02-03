@@ -220,7 +220,7 @@ class WaterConsumerDemand extends Model
     {
         return WaterConsumerDemand::whereIn('id', $ids)
             ->where('status', true)
-            ->where('paid_status', 1);
+            ->where('paid_status', '<>', 0);
     }
 
     /**

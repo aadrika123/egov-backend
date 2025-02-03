@@ -1566,7 +1566,7 @@ class WaterPaymentController extends Controller
             $mWaterConsumerDemand   = new WaterConsumerDemand();
             $mWaterConsumer         = new WaterConsumer();
             $mWaterTranDetail       = new WaterTranDetail();
-            $mWaterChequeDtl        = new WaterChequeDtl();
+            $mWaterChequeDtl        = new WaterChequeDtl(); 
             $mWaterTran             = new WaterTran();
             $mWaterConsumerMeter    = new WaterConsumerMeter();
             $mWaterConsumerTax      = new WaterConsumerTax();
