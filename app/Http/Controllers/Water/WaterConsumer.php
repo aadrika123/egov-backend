@@ -1126,6 +1126,8 @@ class WaterConsumer extends Controller
                 "safNo"                 => $consumerDetails->saf_no,
                 "builUpArea"            => $propertyDetails->area_of_plot,
                 "connectionThrough"     => $consumerDetails->connection_through,
+                "propertyType"          => $consumerDetails->property_type,
+                "connectionType"          => $consumerDetails->connection_type,
                 // "AppliedFrom"           => $var,
                 "ownersDetails"         => $mWaterConsumerOwner,
                 "siteInspectionDetails" => $siteInspectionDetails,
