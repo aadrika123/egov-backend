@@ -792,7 +792,7 @@ class Consumer implements IConsumer
      */
     public function getconsumerRelatedData($applicationId)
     {
-        $refJe = Config::get("waterConstaint.ROLE-LABEL");
+        // $refJe = Config::get("waterConstaint.ROLE-LABEL");
         return WaterApprovalApplicationDetail::select(
             'water_approval_application_details.id',
             'water_approval_application_details.application_no',
@@ -803,18 +803,18 @@ class Consumer implements IConsumer
             'ulb_ward_masters.ward_name',
             'ulb_masters.ulb_name',
             // 'water_param_pipeline_types.pipeline_type as pipeline_type_name',
-            // 'site.property_type_id AS site_property_type_id',
-            // 'site.pipeline_type_id AS site_pipeline_type_id',
+            // 'site.category',
+            // 'site.area_sqft',
+            // 'site.pipeline_size',
             DB::raw("string_agg(water_approval_applicants.applicant_name,',') as applicantName"),
             DB::raw("string_agg(water_approval_applicants.mobile_no::VARCHAR,',') as mobileNo"),
             DB::raw("string_agg(water_approval_applicants.guardian_name,',') as guardianName"),
         )
             ->join('ulb_masters', 'ulb_masters.id', '=', 'water_approval_application_details.ulb_id')
-            ->join('water_approval_applicants', 'water_approval_applicants.application_id', '=', 'water_approval_application_details.id')
+            ->join('water_approval_applicants', 'water_approval_applicants.application_id', '=', 'water_approval_application_details.id')                   //WHERE order_officer = '" . $refJe['JE'] . "'
             ->leftjoin(
-                DB::raw("(SELECT * FROM water_site_inspections
-                                WHERE order_officer = '" . $refJe['JE'] . "'
-                                AND apply_connection_id = $applicationId
+                DB::raw("(SELECT * FROM water_site_inspections                                    
+                                where apply_connection_id = $applicationId
             	                ORDER BY id DESC 
             	                LIMIT 1
                         )as site "),

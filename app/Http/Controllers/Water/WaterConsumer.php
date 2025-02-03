@@ -13,6 +13,7 @@ use App\MicroServices\IdGenerator\PrefixIdGenerator;
 use App\Models\Citizen\ActiveCitizenUndercare;
 use App\Models\Masters\RefRequiredDocument;
 use App\Models\Payment\TempTransaction;
+use App\Models\Property\PropProperty;
 use App\Models\UlbMaster;
 use App\Models\UlbWardMaster;
 use App\Models\Water\WaterAdvance;
@@ -31,6 +32,7 @@ use App\Models\Water\WaterConsumerDemand;
 use App\Models\Water\WaterConsumerDisconnection;
 use App\Models\Water\WaterConsumerInitialMeter;
 use App\Models\Water\WaterConsumerMeter;
+use App\Models\Water\WaterConsumerOwner;
 use App\Models\Water\WaterConsumerTax;
 use App\Models\Water\WaterDisconnection;
 use App\Models\Water\WaterMeterReadingDoc;
@@ -1071,6 +1073,8 @@ class WaterConsumer extends Controller
             $refConsumerNo          = $request->consumerNo;
             $mWaterWaterConsumer    = new WaterWaterConsumer();
             $mWaterTran             = new WaterTran();
+            $mProperty              = new PropProperty();
+            $mWaterConsumerOwner    = new WaterConsumerOwner();
 
             $dbKey = "consumer_no";
             $consumerDetails = $mWaterWaterConsumer->getRefDetailByConsumerNo($dbKey, $refConsumerNo)->first();
@@ -1086,33 +1090,42 @@ class WaterConsumer extends Controller
             if ($checkTransaction) {
                 throw new Exception("Transaction not found!");
             }
+            // return $consumerDetails->ulb_id;
+            $propertyDetails = $mProperty->getPropByHolding($consumerDetails->holding_no, $consumerDetails->ulb_id);
+            // water consumer owner details 
+            $mWaterConsumerOwner = $mWaterConsumerOwner->ownerByApplication($consumerDetails->id)->get();
 
-            $consumerDetails;           // consumer related details
-            $applicationDetails;        // application / owners / siteinspection related details
-            $transactionDetails;        // all transactions details
+            $mWaterSiteInspection = new WaterSiteInspection();
+            $siteInspectionDetails = $mWaterSiteInspection->getInspectionById($consumerDetails->apply_connection_id)->get();
+
+            $consumerDetails;                // consumer related details
+            $mWaterConsumerOwner;           // consumer owner details
+            $applicationDetails;           // application / owners / siteinspection related details
+            $transactionDetails;          // all transactions details
+            $propertyDetails;            // all property details
             $var = null;
 
             $returnValues = [
-                "consumerNo"            => $var,
-                "applicationNo"         => $var,
+                "consumerNo"            => $consumerDetails->consumer_no,
+                "applicationNo"         => $applicationDetails->application_no,
                 "year"                  => $var,
                 "receivingDate"         => $var,
-                "ApprovalDate"          => $var,
-                "receiptNo"             => $var,
-                "paymentDate"           => $var,
-                "wardNo"                => $var,
-                "applicantName"         => $var,
-                "guardianName"          => $var,
-                "correspondingAddress"  => $var,
-                "mobileNo"              => $var,
+                "ApprovalDate"          => $consumerDetails->approval_date,
+                "receiptNo"             => $transactionDetails['tran_no'] ?? null,
+                "paymentDate"           => $transactionDetails['tran_date'] ?? null,
+                "wardNo"                => $consumerDetails->ward_name,
+                "applicantName"         => $consumerDetails->applicant_name,
+                "guardianName"          => $consumerDetails->guardian_name,
+                "correspondingAddress"  => $consumerDetails->address,
+                "mobileNo"              => $consumerDetails->mobile_no,
                 "email"                 => $var,
-                "holdingNo"             => $var,
-                "safNo"                 => $var,
-                "builUpArea"            => $var,
-                "connectionThrough"     => $var,
-                "AppliedFrom"           => $var,
-                "ownersDetails"         => $var,
-                "siteInspectionDetails" => $var,
+                "holdingNo"             => $consumerDetails->holding_no,
+                "safNo"                 => $consumerDetails->saf_no,
+                "builUpArea"            => $propertyDetails->area_of_plot,
+                "connectionThrough"     => $consumerDetails->connection_through,
+                // "AppliedFrom"           => $var,
+                "ownersDetails"         => $mWaterConsumerOwner,
+                "siteInspectionDetails" => $siteInspectionDetails,
 
 
             ];

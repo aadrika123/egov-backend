@@ -345,6 +345,10 @@ class WaterConsumer extends Model
             'water_consumers.holding_no',
             'water_consumers.saf_no',
             'water_consumers.ulb_id',
+            'water_consumers.holding_no',
+            'water_consumers.saf_no',
+            'water_consumers.apply_connection_id',
+            'water_connection_through_mstrs.connection_through',
             'ulb_ward_masters.ward_name',
             'ulb_masters.ulb_name',
             'ulb_masters.logo',
@@ -357,6 +361,10 @@ class WaterConsumer extends Model
             ->leftJoin('ulb_ward_masters', function ($join) {
                 $join->on('ulb_ward_masters.id', '=', 'water_consumers.ward_mstr_id')
                     ->where('ulb_ward_masters.status', true);
+            })
+            ->leftJoin('water_connection_through_mstrs', function ($join) {
+                $join->on('water_connection_through_mstrs.id', '=', 'water_consumers.connection_through_id')
+                    ->where('water_connection_through_mstrs.status', true);
             })
             // ->where('ulb_ward_masters.status', true)
             ->where('water_consumers.' . $key, $refNo)
@@ -373,7 +381,8 @@ class WaterConsumer extends Model
                 'water_consumers.ward_mstr_id',
                 'ulb_ward_masters.ward_name',
                 'ulb_masters.logo',
-                'ulb_masters.ulb_name'
+                'ulb_masters.ulb_name',
+                'water_connection_through_mstrs.connection_through'
             );
     }
 
