@@ -472,7 +472,7 @@ class NewConnectionRepository implements iNewConnection
             if ($role->doc_status ?? false) {
                 throw new Exception("Full documents are not verified");
             }
-            throw new Exception("Not Every Action Are Performed");
+            // throw new Exception("Not Every Action Are Performed");
         }
         if ($role->can_upload_document) {
             if (($role->serial_no < $receiverRole["serial_no"] ?? 0)) {
