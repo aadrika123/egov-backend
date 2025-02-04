@@ -517,13 +517,15 @@ class WaterNewConnection implements IWaterNewConnection
                         ->where("charge_category", $refConnectionCharge['SITE_INSPECTON'])
                         ->get();
                     $cahges = $mDemands->sum("conn_fee") ?? 0;
-                    if ($penalty_id) {
-                        $mPenalty = WaterPenaltyInstallment::select("*")
-                            ->whereIn("id", $penalty_id)
-                            ->get();
-                        $cahges = $cahges + ($mPenalty->sum("balance_amount"));
+                    if (!empty($penalty_id)) {
+                        $penalty_ids = is_array($penalty_id) ? array_filter($penalty_id) : [intval($penalty_id)];
+                        if (!empty($penalty_ids)) {
+                            $mPenalty = WaterPenaltyInstallment::whereIn("id", $penalty_ids)->get();
+                            $cahges += $mPenalty->sum("balance_amount");
+                        }
                     }
                 }
+
                 if ($RazorPayRequest['payment_from'] == $refConnectionCharge['REGULAIZATION']) {
                     $isPenalty = 1;
                     $filteredArray = array_filter($id, function ($value, $key) {
