@@ -10,6 +10,7 @@ use App\Http\Requests\Water\siteAdjustment;
 use App\MicroServices\IdGeneration;
 use App\Models\Payment\TempTransaction;
 use App\Models\Payment\WebhookPaymentData;
+use App\Models\UlbMaster;
 use App\Models\Water\WaterAdjustment;
 use App\Models\Water\WaterAdvance;
 use App\Models\Water\WaterApplication;
@@ -332,6 +333,7 @@ class WaterPaymentController extends Controller
             $mWaterChequeDtl                    = new WaterChequeDtl();
             $mWaterTran                         = new WaterTran();
             $mWaterTranFineRebate               = new WaterTranFineRebate();
+            $mUlbDetails                        = new UlbMaster();
 
             $mTowards           = $this->_towards;
             $mAccDescription    = $this->_accDescription;
@@ -373,6 +375,8 @@ class WaterPaymentController extends Controller
                     $rebateAmount = $refRebaterDetails['amount'];
                 }
             }
+            # ulb details 
+            $ulbDetails = $mUlbDetails->getUlbDetails($transactionDetails->ulb_id);
 
             # Transaction Date
             $refDate = $transactionDetails->tran_date;
@@ -410,6 +414,7 @@ class WaterPaymentController extends Controller
                 "totalPaidAmount"       => $transactionDetails->amount,
                 "penaltyAmount"         => $totalPenaltyAmount ?? 0,
                 "paidAmtInWords"        => getIndianCurrency($transactionDetails->amount),
+                "ulbDetails"            => $ulbDetails,
             ];
             return responseMsgs(true, "Payment Receipt", remove_null($returnValues), "", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
@@ -1566,7 +1571,7 @@ class WaterPaymentController extends Controller
             $mWaterConsumerDemand   = new WaterConsumerDemand();
             $mWaterConsumer         = new WaterConsumer();
             $mWaterTranDetail       = new WaterTranDetail();
-            $mWaterChequeDtl        = new WaterChequeDtl(); 
+            $mWaterChequeDtl        = new WaterChequeDtl();
             $mWaterTran             = new WaterTran();
             $mWaterConsumerMeter    = new WaterConsumerMeter();
             $mWaterConsumerTax      = new WaterConsumerTax();
