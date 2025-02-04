@@ -1575,6 +1575,7 @@ class WaterPaymentController extends Controller
             $mWaterTran             = new WaterTran();
             $mWaterConsumerMeter    = new WaterConsumerMeter();
             $mWaterConsumerTax      = new WaterConsumerTax();
+            $mUlbDetails            = new UlbMaster();
 
             $mTowardsDemand     = Config::get("waterConstaint.TOWARDS_DEMAND");
             $mTranType          = Config::get("waterConstaint.PAYMENT_FOR");
@@ -1623,6 +1624,9 @@ class WaterPaymentController extends Controller
             # consumer meter details 
             $consumerMeterDetails = $mWaterConsumerMeter->getMeterDetailsByConsumerId($consumerDetails->id)
                 ->first();
+
+            # ULb Details 
+            $ulbDetails = $mUlbDetails->getUlbDetails($transactionDetails->ulb_id);
 
             # water consumer consumed
             $consumerTaxes = $mWaterConsumerDemand->getConsumerTax($demandIds);
@@ -1675,6 +1679,7 @@ class WaterPaymentController extends Controller
                 "lastMeterReading"      => $lastDemand ?? null,
                 "currentMeterReading"   => $currentDemand ?? null,
                 "paidAmtInWords"        => getIndianCurrency($transactionDetails->amount),
+                "ulbDetails"            => $ulbDetails,
 
             ];
             return responseMsgs(true, "Payment Receipt", remove_null($returnValues), "", "1.0", "", "POST", $req->deviceId ?? "");
