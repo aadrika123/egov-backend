@@ -3692,4 +3692,21 @@ class MasterReferenceController extends Controller
             return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
         }
     }
+
+    // added by alok 
+    public function dashboardSliderData(Request $req)
+    {
+        try {
+       
+            $sliderDtl = $this->allSliderListv1($req);
+            $list = [
+             
+                "Slider" => $sliderDtl,
+            ];
+
+            return responseMsgs(true, "All Data", $list, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
 }

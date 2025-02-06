@@ -856,6 +856,9 @@ Route::controller(MasterReferenceController::class)->group(function () {
 
   //master dashboard api
   Route::post('m-dashboard-data', 'dashboardData');
+
+  //alok
+  Route::post('m-dashboard-slider-data', 'dashboardSliderData');
 });
 
 
