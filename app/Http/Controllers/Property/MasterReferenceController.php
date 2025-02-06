@@ -1593,149 +1593,18 @@ class MasterReferenceController extends Controller
         }
     }
 
-    // public function allSliderListv1(Request $req)
-    // {
-    //     $list = new MSlider();
-    //     $docUpload = new DocUpload;
-    //     $masters = $list->listDash()->map(function ($val) use ($docUpload) {
-    //         $url = $docUpload->getSingleDocUrl($val);
-    //         $val->is_suspended = $val->status;
-    //         $val->slider_image_url = $url["doc_path"] ?? null;
-    //         return $val;
-    //     });
-
-    //     return $masters;
-    // }
-
-    public function allSliderListv1()
-{
-    $masters = [
-        [
-            "id" => 1,
-            "slider_name" => "comman",
-            "slider_image_url" => "https://jharkhandegovernance.com/dms/uploads/1738743917972-154373333.png",
-            "unique_id" => "f9f54fca998f18db",
-            "reference_no" => "REF1738743917975",
-            "status" => 1,
-            "created_at" => "2024-03-27T06:59:48.000000Z",
-            "updated_at" => "2025-02-05T08:25:17.000000Z",
-            "is_suspended" => 1
-        ],
-        [
-            "id" => 2,
-            "slider_name" => "Property",
-            "slider_image_url" => "https://jharkhandegovernance.com/dms/uploads/1738744111498-467884315.png",
-            "unique_id" => "cafd0e3ceae7d064",
-            "reference_no" => "REF1738744111501",
-            "status" => 1,
-            "created_at" => "2024-03-28T04:58:03.000000Z",
-            "updated_at" => "2025-02-05T08:28:31.000000Z",
-            "is_suspended" => 1
-        ],
-        [
-            "id" => 4,
-            "slider_name" => "Municipal trade",
-            "slider_image_url" => "https://jharkhandegovernance.com/dms/uploads/1738750350265-595625943.png",
-            "unique_id" => "d5a0ddfb21741522",
-            "reference_no" => "REF1738750350267",
-            "status" => 1,
-            "created_at" => "2024-03-30T05:32:29.000000Z",
-            "updated_at" => "2025-02-05T10:12:30.000000Z",
-            "is_suspended" => 1
-        ],
-        [
-            "id" => 5,
-            "slider_name" => "Advertisement",
-            "slider_image_url" => "https://jharkhandegovernance.com/dms/uploads/1738750324100-71629062.png",
-            "unique_id" => "cd71bbb4a62d9c1d",
-            "reference_no" => "REF1738750324103",
-            "status" => 1,
-            "created_at" => "2024-08-02T05:12:25.000000Z",
-            "updated_at" => "2025-02-05T10:12:04.000000Z",
-            "is_suspended" => 1
-        ],
-        [
-            "id" => 6,
-            "slider_name" => "Water tanker",
-            "slider_image_url" => "https://jharkhandegovernance.com/dms/uploads/1738750341389-169783598.png",
-            "unique_id" => "191a5c54b73c6556",
-            "reference_no" => "REF1738750341392",
-            "status" => 1,
-            "created_at" => "2024-08-02T05:13:54.000000Z",
-            "updated_at" => "2025-02-05T10:12:21.000000Z",
-            "is_suspended" => 1
-        ],
-        [
-            "id" => 7,
-            "slider_name" => "Septic tank",
-            "slider_image_url" => "https://jharkhandegovernance.com/dms/uploads/1738750334215-794198714.png",
-            "unique_id" => "799da1e481533ddd",
-            "reference_no" => "REF1738750334216",
-            "status" => 1,
-            "created_at" => "2024-08-02T05:15:10.000000Z",
-            "updated_at" => "2025-02-05T10:12:14.000000Z",
-            "is_suspended" => 1
-        ],
-        [
-            "id" => 8,
-            "slider_name" => "Pet",
-            "slider_image_url" => "https://jharkhandegovernance.com/dms/uploads/1738750194086-692523730.png",
-            "unique_id" => "4260efd7a62c761a",
-            "reference_no" => "REF1738750194087",
-            "status" => 1,
-            "created_at" => "2024-08-02T05:28:18.000000Z",
-            "updated_at" => "2025-02-05T10:09:54.000000Z",
-            "is_suspended" => 1
-        ],
-        [
-            "id" => 9,
-            "slider_name" => "SWM",
-            "slider_image_url" => "https://jharkhandegovernance.com/dms/uploads/1738750212657-601569430.png",
-            "unique_id" => "9cfdb37371429a19",
-            "reference_no" => "REF1738750212658",
-            "status" => 1,
-            "created_at" => "2024-08-02T05:28:53.000000Z",
-            "updated_at" => "2025-02-05T10:10:12.000000Z",
-            "is_suspended" => 1
-        ],
-        [
-            "id" => 10,
-            "slider_name" => "Fines and Penalty",
-            "slider_image_url" => "https://jharkhandegovernance.com/dms/uploads/1724680421801-876738984.svg",
-            "unique_id" => "8743e44d0e582361",
-            "reference_no" => "REF1724680421830",
-            "status" => 1,
-            "created_at" => "2024-08-02T06:54:27.000000Z",
-            "updated_at" => "2024-08-26T13:53:46.000000Z",
-            "is_suspended" => 1
-        ],
-        [
-            "id" => 25,
-            "slider_name" => "Parking",
-            "slider_image_url" => "https://jharkhandegovernance.com/dms/uploads/1738750179958-501649815.png",
-            "unique_id" => "9b8a3bed921e6f0b",
-            "reference_no" => "REF1738750179960",
-            "status" => 1,
-            "created_at" => "2024-10-24T07:56:48.000000Z",
-            "updated_at" => "2025-02-05T10:09:39.000000Z",
-            "is_suspended" => 1
-        ],
-        [
-            "id" => 27,
-            "slider_name" => "Grievance",
-            "slider_image_url" => "https://jharkhandegovernance.com/dms/uploads/1738750141839-190585606.png",
-            "unique_id" => "740b316d94882d82",
-            "reference_no" => "REF1738750141840",
-            "status" => 1,
-            "created_at" => "2024-10-24T07:57:42.000000Z",
-            "updated_at" => "2025-02-05T10:09:01.000000Z",
-            "is_suspended" => 1
-        ],
-    ];
-
-    return response()->json($masters);
-}
-
+    public function allSliderListv1(Request $req)
+    {
+        $list = new MSlider();
+        $docUpload = new DocUpload;
+        $masters = $list->listDash()->map(function ($val) use ($docUpload) {
+            $url = $docUpload->getSingleDocUrl($val);
+            $val->is_suspended = $val->status;
+            $val->slider_image_url = $url["doc_path"] ?? null;
+            return $val;
+        });
+        return $masters;
+    }
 
     public function deleteSlider(Request $req)
     {
