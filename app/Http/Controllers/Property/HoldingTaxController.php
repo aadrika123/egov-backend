@@ -268,7 +268,7 @@ class HoldingTaxController extends Controller
 
             $demand['basicDetails'] = $basicDtls;
             if ($canTakePayment == false) {
-               $canTakePayment = in_array($loggedInUserType, ['Citizen']) ? true : false;
+                $canTakePayment = in_array($loggedInUserType, ['Citizen']) ? true : false;
             }
 
             $demand['can_pay'] = $canTakePayment;
@@ -1331,12 +1331,12 @@ class HoldingTaxController extends Controller
      */
     public function getClusterHoldingDues(Request $req)
     {
-        $req->validate([
-            'clusterId' => 'required|integer'
-        ]);
+        // $req->validate([
+        //     'clusterId' => 'required|integer'
+        // ]);
         try {
             $todayDate = Carbon::now();
-            $clusterId = $req->clusterId;
+            $clusterId = $req->id;
             $mPropProperty = new PropProperty();
             $mClusters = new Cluster();
             $penaltyRebateCalc = new PenaltyRebateCalculation;
@@ -1450,10 +1450,12 @@ class HoldingTaxController extends Controller
      */
     public function clusterPayment(ReqPayment $req)
     {
+        // $dueReq = new Request([
+        //     'clusterId' => $req->id
+        // ]);
+
         try {
-            $dueReq = new Request([
-                'clusterId' => $req->id
-            ]);
+            // return $req;
             $clusterId = $req->id;
             $todayDate = Carbon::now();
             $idGeneration = new IdGeneration;
@@ -1462,7 +1464,7 @@ class HoldingTaxController extends Controller
             $offlinePaymentModes = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
             $mPropAdjustment = new PropAdjustment();
 
-            $dues = $this->getClusterHoldingDues($dueReq);
+            $dues = $this->getClusterHoldingDues($req);
 
             if ($dues->original['status'] == false)
                 throw new Exception($dues->original['message']);
