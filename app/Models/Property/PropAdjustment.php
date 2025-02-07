@@ -18,4 +18,11 @@ class PropAdjustment extends Model
     {
         PropAdjustment::create($req);
     }
+
+    public function deactivateAdjustmentAmtByTrId($tranId)
+    {
+        return self::where("tran_id", $tranId)->update([
+            "status" => 0
+        ]);
+    }
 }

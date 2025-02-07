@@ -52,4 +52,12 @@ class TempTransaction extends Model
             ->where('tran_date', $date)
             ->where('temp_transactions.ulb_id', $ulbId);
     }
+
+    public function getTempTranByTranId($tranId, $moduleId)
+    {
+        return self::where('transaction_id', $tranId)
+            ->where('module_id', $moduleId)
+            ->where('status', 1)
+            ->first();
+    }
 }

@@ -9,7 +9,7 @@ class WaterAdvance extends Model
 {
     use HasFactory;
     protected $connection = 'pgsql_water';
-    
+
     /**
      * | Get Advance respective for consumer id
      * | list all the advance toward consumer
@@ -40,5 +40,12 @@ class WaterAdvance extends Model
         $mWaterAdvance->advance_for     = $advanceFor;
         $mWaterAdvance->relative_path   = $docDetails['relaivePath'];
         $mWaterAdvance->save();
+    }
+
+    public function deactivateAdvanceByTrId($tranId)
+    {
+        return self::where("tran_id", $tranId)->update([
+            "status" => 0
+        ]);
     }
 }

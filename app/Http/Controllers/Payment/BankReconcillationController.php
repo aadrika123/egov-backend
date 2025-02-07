@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers\Payment;
 
+use App\BLL\Property\DeactivateTran;
+use App\BLL\Water\WaterTranDeactivate;
 use App\Http\Controllers\Controller;
+use App\MicroServices\DocUpload;
 use App\Models\Payment\PaymentReconciliation;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropChequeDtl;
@@ -11,6 +14,7 @@ use App\Models\Property\PropProperty;
 use App\Models\Property\PropSafsDemand;
 use App\Models\Property\PropTranDtl;
 use App\Models\Property\PropTransaction;
+use App\Models\Property\PropTransactionDeactivateDtl;
 use App\Models\Trade\ActiveTradeLicence;
 use App\Models\Trade\TradeChequeDtl;
 use App\Models\Trade\TradeTransaction;
@@ -22,6 +26,7 @@ use App\Models\Water\WaterConsumerDemand;
 use App\Models\Water\WaterPenaltyInstallment;
 use App\Models\Water\WaterTran;
 use App\Models\Water\WaterTranDetail;
+use App\Models\Water\WaterTransactionDeactivateDtl;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
@@ -193,9 +198,9 @@ class BankReconcillationController extends Controller
             }
 
             if ($data)
-                return responseMsg(true, "Data found", $data,"012302", "1.0", "", "POST", $request->deviceId ?? "");
+                return responseMsg(true, "Data found", $data, "012302", "1.0", "", "POST", $request->deviceId ?? "");
             else
-                return responseMsg(false, "Data not found!", "","012302", "1.0", "", "POST", $request->deviceId ?? "");
+                return responseMsg(false, "Data not found!", "", "012302", "1.0", "", "POST", $request->deviceId ?? "");
         } catch (Exception $error) {
             return responseMsg(false, "ERROR!", $error->getMessage());
         }
@@ -481,13 +486,188 @@ class BankReconcillationController extends Controller
             DB::connection('pgsql_master')->commit();
             DB::connection('pgsql_water')->commit();
             DB::connection('pgsql_trade')->commit();
-            return responseMsg(true, "Data Updated!", '',"012303", "1.0", "", "POST", $request->deviceId ?? "");
+            return responseMsg(true, "Data Updated!", '', "012303", "1.0", "", "POST", $request->deviceId ?? "");
         } catch (Exception $error) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
             DB::connection('pgsql_water')->rollBack();
             DB::connection('pgsql_trade')->rollBack();
             return responseMsg(false, "ERROR!", $error->getMessage());
+        }
+    }
+
+    /**
+     * | tran deactive search
+     */
+    public function searchTransactionNo(Request $req)
+    {
+        $validator = Validator::make($req->all(), [
+            "transactionNo" => "required",
+            "tranType" => "required|In:Property,Water,Trade,Advertisements"
+        ]);
+
+        if ($validator->fails())
+            return validationError($validator);
+        try {
+            if ($req->tranType == "Property") {
+                $mPropTransaction = new PropTransaction();
+                $transactionDtl = $mPropTransaction->getTransByTranNo($req->transactionNo);
+            }
+            if ($req->tranType == "Water") {
+                $mWaterTransaction = new WaterTran();
+                $transactionDtl = $mWaterTransaction->getTransByTranNO($req->transactionNo);
+            }
+            return responseMsgs(true, "Transaction No is", $transactionDtl, "", 01, responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "", 01, responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    /**
+     * | Required @param Request
+     * | Required @return 
+     */
+    public function deactivateTransaction(Request $req)
+    {
+        $validator = Validator::make($req->all(), [
+            "id" => "required|integer",                         // Transaction ID
+            "moduleId" => "required|integer"
+
+        ]);
+        if ($validator->fails())
+            return validationError($validator);
+
+        try {
+            $propertyModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $waterModuleId = Config::get('module-constants.WATER_MODULE_ID');
+            $tradeModuleId = Config::get('module-constants.TRADE_MODULE_ID');
+            $advertisementModuleId = Config::get('module-constants.ADVERTISEMENT_MODULE_ID');
+            $docUpload = new DocUpload;
+            $document = $req->document;
+            $refImageName = $req->id . "_" . $req->moduleId . "_" . (Carbon::now()->format("Y-m-d"));
+            // $relativePath = $req->moduleId == $propertyModuleId ? "Property/TranDeactivate" : ($req->moduleId == $waterModuleId ? "Water/TranDeactivate" : ($req->moduleId == $tradeModuleId ? "Trade/TranDeactivate" : "Others/TranDeactivate"));
+            $relativePath = $req->moduleId == $propertyModuleId ? "Property/TranDeactivate"
+                : ($req->moduleId == $waterModuleId ? "Water/TranDeactivate"
+                    : ($req->moduleId == $tradeModuleId ? "Trade/TranDeactivate"
+                        : ($req->moduleId == $advertisementModuleId ? "Advertisement/Transaction"
+                            : "Others/TranDeactivate")));
+
+            $user = authUser($req);
+            DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
+            DB::connection('pgsql_water')->beginTransaction();
+            DB::connection('pgsql_trade')->beginTransaction();
+            // DB::connection('pgsql_advertisements')->beginTransaction();
+
+            $imageName = $docUpload->checkDoc($req);
+            $deactivationArr = [
+                "tran_id" => $req->id,
+                "deactivated_by" => $user->id,
+                "reason" => $req->remarks,
+                // "file_path" => $imageName,
+                "reason" => $req->remarks,
+                "unique_id" => $imageName['data']['uniqueId'] ?? "",
+                "reference_no" => $imageName['data']['ReferenceNo'] ?? "",
+                "deactive_date" => $req->deactiveDate ?? Carbon::now()->format("Y-m-d"),
+            ];
+            #_For Property Transaction Deactivation
+            if ($req->moduleId == $propertyModuleId) {
+                $deactivateTran = new DeactivateTran($req->id);                 // Property or Saf Deactivate Transaction
+                $deactivateTran->deactivate();
+                $propTranDeativetion = new PropTransactionDeactivateDtl();
+                $checkTran = PropTransactionDeactivateDtl::where('tran_id', $req->id);
+                if ($checkTran->exists()) {
+                    throw new Exception("Transaction Already Deactivated");
+                }
+                $propTranDeativetion->create($deactivationArr);
+            }
+
+            #_For Water Transaction Deactivation
+            if ($req->moduleId == $waterModuleId) {
+                $waterDeactivateTran = new WaterTranDeactivate($req->id);
+                $waterDeactivateTran->deactivate();
+                // $waterReq = new Request([
+                //     "transactionId" => $req->id
+                // ]);
+                // $cWaterPaymentController = new WaterPaymentController();
+                // $cWaterPaymentController->transactionDeactivation($waterReq);
+                $waterTranDeativetion = new WaterTransactionDeactivateDtl();
+                $waterTranDeativetion->create($deactivationArr);
+            }
+
+            #_For Trade Transaction Deactivation
+            // if ($req->moduleId == $tradeModuleId) {
+            //     $tradeTrans = TradeTransaction::find($req->id);
+            //     $tradeTranDeativetion = new TradeTransactionDeactivateDtl();
+            //     $tradeTranDeativetion->create($deactivationArr);
+            //     if (!$tradeTrans) {
+            //         throw new Exception("Trade Transaction Not Available");
+            //     }
+            //     if (!$tradeTrans->is_verified) {
+            //         throw new Exception("Transaction Verified");
+            //     }
+            //     $application = ActiveTradeLicence::find($tradeTrans->temp_id);
+            //     if (!$application) {
+            //         $application = TradeLicence::find($tradeTrans->temp_id);
+            //     }
+            //     if (!$application) {
+            //         throw new Exception("Application Not Found");
+            //     }
+            //     if (!in_array(Str::upper($tradeTrans->payment_mode), ['ONLINE', 'ONL', 'CASH'])) {
+            //         $propChequeDtl = TradeChequeDtl::where('tran_id', $tradeTrans->id)->first();
+            //         $propChequeDtl->status = 0;
+            //         $propChequeDtl->update();
+            //     }
+            //     $application->payment_status = 0;
+            //     $tradeTrans->status = 0;
+            //     $tradeTrans->update();
+            //     $application->update();
+            // }
+            #_For Trade Transaction Deactivation
+            // if ($req->moduleId == $advertisementModuleId) {
+            //     $advertisementTrans = AdTran::find($req->id);
+            //     $advertisementTranDeativetion = new AdTransactionDeactivateDtl();
+            //     $advertisementDirApplicationCharges = new AdDirectApplicationAmount();
+            //     $advertisementApplicationCharges = new AdApplicationAmount();
+            //     $advertisementTranDeativetion->create($deactivationArr);
+            //     if (!$advertisementTrans) {
+            //         throw new Exception("Advertisement Transaction Not Available");
+            //     }
+            //     if ($advertisementTrans->verify_status == 1) {
+            //         throw new Exception("Transaction Verified");
+            //     }
+            //     $application = AgencyHoardingApproveApplication::find($advertisementTrans->related_id);
+            //     if (!$application) {
+            //         throw new Exception("Application Not Found");
+            //     }
+            //     if ($application->direct_hoarding == 1) {
+            //         $advertisementDirApplicationCharges->updateStatus($application->id);
+            //     } else {
+            //         $advertisementApplicationCharges->updateStatus($application->id);
+            //     }
+            //     if (!in_array(Str::upper($advertisementTrans->payment_mode), ['ONLINE', 'ONL', 'CASH'])) {
+            //         $propChequeDtl = AdChequeDtl::where('transaction_id', $advertisementTrans->id)->first();
+            //         $propChequeDtl->status = 0;
+            //         $propChequeDtl->update();
+            //     }
+            //     $application->payment_status = 0;
+            //     $advertisementTrans->status = 0;
+            //     $advertisementTrans->update();
+            //     $application->update();
+            // }
+            DB::commit();
+            DB::connection('pgsql_master')->commit();
+            DB::connection('pgsql_water')->commit();
+            DB::connection('pgsql_trade')->commit();
+            // DB::connection('pgsql_advertisements')->commit();
+            return responseMsgs(true, "Transaction Deactivated", "", "", 01, responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
+            DB::connection('pgsql_water')->rollBack();
+            DB::connection('pgsql_trade')->rollBack();
+            // DB::connection('pgsql_advertisements')->rollBack();
+            return responseMsgs(false, $e->getMessage(), "", "", 01, responseTime(), $req->getMethod(), $req->deviceId);
         }
     }
 }

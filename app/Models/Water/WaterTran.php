@@ -123,7 +123,7 @@ class WaterTran extends Model
     }
 
     public function chequeTranDtl($ulbId)
-    { 
+    {
         return WaterTran::select(
             'water_trans.*',
             DB::raw("TO_CHAR(water_trans.tran_date, 'DD-MM-YYYY') as tran_date"),
@@ -249,5 +249,25 @@ class WaterTran extends Model
                 'is_penalty' => 1,
                 'penalty_ids' => $penaltyIds
             ]);
+    }
+
+    /**
+     * | Get water Transaction by Transaction No
+     */
+    public function getTransByTranNo($tranNo)
+    {
+        return WaterTran::select(
+            'water_trans.id as transaction_id',
+            'water_trans.tran_no as transaction_no',
+            'water_trans.amount',
+            'water_trans.payment_mode',
+            'water_trans.tran_date',
+            'water_trans.tran_type',
+            DB::raw('2 as moduleId'),
+            'water_trans.status'
+        )
+            ->where('water_trans.tran_no', $tranNo)
+            ->where('status', 1)
+            ->get();
     }
 }
