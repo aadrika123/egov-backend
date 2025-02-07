@@ -1603,10 +1603,8 @@ class MasterReferenceController extends Controller
             $val->slider_image_url = $url["doc_path"] ?? null;
             return $val;
         });
-
         return $masters;
     }
-
 
     public function deleteSlider(Request $req)
     {
