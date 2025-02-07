@@ -305,6 +305,7 @@ class Report implements IReport
                 "last_page" => $paginator->lastPage(),
                 "data" => $paginator->items(),
                 "total" => $paginator->total(),
+                "totalAmount" => $paginator->sum("paid_amount"),
             ]; 
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true,"",remove_null($list),$apiId, $version, $queryRunTime,$action,$deviceId);

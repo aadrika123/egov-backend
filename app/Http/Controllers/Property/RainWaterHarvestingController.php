@@ -424,7 +424,7 @@ class RainWaterHarvestingController extends Controller
             $geotagDtl = $mPropHarvestingGeotagUpload->getLatLong($req->applicationId);
 
             $docs =  $mWfActiveDocument->getDocByRefIdsDocCode($req->applicationId, $details->workflow_id, $moduleId, ['WATER_HARVESTING'])->last();
-            // $docs = $docUpload->getSingleDocUrl($docs);           #_Calling BLL for Document Path from DMS
+            $docs = $docUpload->getSingleDocUrl($docs);           #_Calling BLL for Document Path from DMS
             $data = [
                 'id' => $details->id,
                 'applicationNo' => $details->application_no,
