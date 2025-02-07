@@ -670,4 +670,50 @@ class BankReconcillationController extends Controller
             return responseMsgs(false, $e->getMessage(), "", "", 01, responseTime(), $req->getMethod(), $req->deviceId);
         }
     }
+
+    public function tranDeactivatedList(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'fromDate' => 'required|date',
+            'uptoDate' => 'required|date',
+            'moduleId' => 'required|integer',
+        ]);
+        if ($validator->fails()) {
+            return validationError($validator);
+        }
+        try {
+            // $mUser = Auth()->user();
+            $userId = $mUser->id ?? 2;
+            $ulbId = $mUser->ulb_id ?? 2;
+            $perPage = $request->perPage ?? 10;
+            $moduleId = $request->moduleId;
+          $fromDate = $request->fromDate;
+            $uptoDate = $request->uptoDate;
+            $propertyModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $waterModuleId = Config::get('module-constants.WATER_MODULE_ID');
+            $tradeModuleId = Config::get('module-constants.TRADE_MODULE_ID');
+            $mPropTransactionDtl = new PropTransactionDeactivateDtl();
+            $mWaterTransactionDtl = new WaterTransactionDeactivateDtl();
+
+            switch ($moduleId) {
+                case $propertyModuleId:
+                    // $data = PropTransaction::whereBetween('updated_at', [$fromDate, $uptoDate])
+                    $data = $mPropTransactionDtl->getDetails($fromDate, $uptoDate, $moduleId);
+                    break;
+
+                case $waterModuleId:
+                    # code...
+                    $data = $mWaterTransactionDtl->getDetails($fromDate, $uptoDate, $moduleId);
+                    break;
+
+                case $tradeModuleId:
+                    # code...
+                    break;
+            }
+
+            return responseMsgs(true, "Deactivated Tran Detail", $data, "010201", "1.0", responseTime(), "POST", $request->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", responseTime(), "POST", $request->deviceId ?? "");
+        }
+    }
 }

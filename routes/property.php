@@ -490,6 +490,7 @@ Route::controller(BankReconcillationController::class)->group(function () {
   Route::post('cheque-clearance', 'chequeClearance');                                #API_ID = 012303
   Route::post('search-transaction-no', 'searchTransactionNo');                       #API_ID = 012304
   Route::post('deactivate-transaction', 'deactivateTransaction');                       #API_ID = 012304
+  Route::post('deactivate-transaction-dtl', 'tranDeactivatedList');                       #API_ID = 012304
 });
 
 
