@@ -70,7 +70,7 @@ class DeactivateTran
         $this->deactivateTempTrans();                       // (1.3) 
         $this->_PropAdvance->deactivateAdvanceByTrId($this->_transaction->id);
         $this->_PropAdjustment->deactivateAdjustmentAmtByTrId($this->_transaction->id);
-        $this->AdjustArreaInterast();
+        // $this->AdjustArreaInterast();
     }
 
 
@@ -156,44 +156,21 @@ class DeactivateTran
         {
             throw new Exception("demand has not been properly reversed");
         }
-        $propDemand->due_maintanance_amt    = $propDemand->due_maintanance_amt  + $tranDtl->paid_maintanance_amt;
-        $propDemand->due_aging_amt          = $propDemand->due_aging_amt        + $tranDtl->paid_aging_amt;
-        $propDemand->due_general_tax        = $propDemand->due_general_tax      + $tranDtl->paid_general_tax;
-        $propDemand->due_road_tax           = $propDemand->due_road_tax         + $tranDtl->paid_road_tax;
-        $propDemand->due_firefighting_tax   = $propDemand->due_firefighting_tax + $tranDtl->paid_firefighting_tax;
-        $propDemand->due_education_tax      = $propDemand->due_education_tax    + $tranDtl->paid_education_tax;
-        $propDemand->due_water_tax          = $propDemand->due_water_tax        + $tranDtl->paid_water_tax;
-        $propDemand->due_cleanliness_tax    = $propDemand->due_cleanliness_tax  + $tranDtl->paid_cleanliness_tax;
-        $propDemand->due_sewarage_tax       = $propDemand->due_sewarage_tax     + $tranDtl->paid_sewarage_tax;
-        $propDemand->due_tree_tax           = $propDemand->due_tree_tax         + $tranDtl->paid_tree_tax;
-        $propDemand->due_professional_tax   = $propDemand->due_professional_tax + $tranDtl->paid_professional_tax;
-        $propDemand->due_total_tax          = $propDemand->due_total_tax        + $tranDtl->paid_total_tax;
+
+        $propDemand->education_cess      = $propDemand->education_cess    + $tranDtl->education_cess;
+        $propDemand->water_tax          = $propDemand->water_tax        + $tranDtl->water_tax;
         $propDemand->balance                = $propDemand->balance              + $tranDtl->paid_balance;
-        $propDemand->due_balance            = $propDemand->due_balance          + $tranDtl->paid_balance;
-        $propDemand->due_adjust_amt         = $propDemand->due_adjust_amt       + $tranDtl->paid_adjust_amt;
-        $propDemand->due_tax1               = $propDemand->due_tax1             + $tranDtl->paid_tax1;
-        $propDemand->due_tax2               = $propDemand->due_tax2             + $tranDtl->paid_tax2;
-        $propDemand->due_tax3               = $propDemand->due_tax3             + $tranDtl->paid_tax3;
-        $propDemand->due_sp_education_tax   = $propDemand->due_sp_education_tax + $tranDtl->paid_sp_education_tax;
-        $propDemand->due_water_benefit      = $propDemand->due_water_benefit    + $tranDtl->paid_water_benefit;
-        $propDemand->due_water_bill         = $propDemand->due_water_bill       + $tranDtl->paid_water_bill;
-        $propDemand->due_sp_water_cess      = $propDemand->due_sp_water_cess    + $tranDtl->paid_sp_water_cess;
-        $propDemand->due_drain_cess         = $propDemand->due_drain_cess       + $tranDtl->paid_drain_cess;
-        $propDemand->due_light_cess         = $propDemand->due_light_cess       + $tranDtl->paid_light_cess;
-        $propDemand->due_major_building     = $propDemand->due_major_building   + $tranDtl->paid_major_building;
-        $propDemand->due_open_ploat_tax     = $propDemand->due_open_ploat_tax   + $tranDtl->paid_open_ploat_tax;
-        $propDemand->paid_total_tax         = $propDemand->paid_total_tax - $tranDtl->paid_total_tax;
 
-        $propDemand->paid_status = $propDemand->paid_total_tax == 0 ? 0 :  $propDemand->paid_status;
+        $propDemand->paid_status = $propDemand->balance == 0 ? 0 :  $propDemand->paid_status;
 
-        if( $propDemand->paid_status == 1)
-        {
-            $propDemand->is_full_paid = false;
-        }
-        elseif( $propDemand->paid_status == 0)
-        {
-            $propDemand->is_full_paid = true;
-        }
+        // if( $propDemand->paid_status == 1)
+        // {
+        //     $propDemand->is_full_paid = false;
+        // }
+        // elseif( $propDemand->paid_status == 0)
+        // {
+        //     $propDemand->is_full_paid = true;
+        // }
     }
 
     /**

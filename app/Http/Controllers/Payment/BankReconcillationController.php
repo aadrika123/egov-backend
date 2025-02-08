@@ -552,7 +552,7 @@ class BankReconcillationController extends Controller
                         : ($req->moduleId == $advertisementModuleId ? "Advertisement/Transaction"
                             : "Others/TranDeactivate")));
 
-            $user = authUser($req);
+            // $user = authUser($req);
             DB::beginTransaction();
             DB::connection('pgsql_master')->beginTransaction();
             DB::connection('pgsql_water')->beginTransaction();
@@ -562,7 +562,7 @@ class BankReconcillationController extends Controller
             $imageName = $docUpload->checkDoc($req);
             $deactivationArr = [
                 "tran_id" => $req->id,
-                "deactivated_by" => $user->id,
+                // "deactivated_by" => $user->id,
                 "reason" => $req->remarks,
                 // "file_path" => $imageName,
                 "reason" => $req->remarks,
