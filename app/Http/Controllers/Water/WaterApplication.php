@@ -71,7 +71,7 @@ class WaterApplication extends Controller
     public function getJskAppliedApplication(Request $request)
     {
         try {
-           return  $user = authUser($request);
+            $user = authUser($request);
             if (!in_array($user->user_type, ['JSK', 'TC'])) {
                 $canView = false;
             }
