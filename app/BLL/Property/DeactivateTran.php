@@ -143,25 +143,24 @@ class DeactivateTran
             $property = PropProperty::find($propId);
             if (collect($property)->isEmpty())
                 throw new Exception("Property Not Available for this Property ID $propId");
-    
+
             $property->balance = $this->_transaction->arrear_settled_amt;
             $property->save();
         }
-
     }
 
     private function adjustPropDemand(PropDemand $propDemand, $tranDtl)
     {
-        if(round($propDemand->total_tax) < round($propDemand->balance + $tranDtl->paid_balance) && ($propDemand->total_tax) - ($propDemand->balance + $tranDtl->paid_balance)<-1)
-        {
+        if (round($propDemand->total_tax) < round($propDemand->balance + $tranDtl->paid_balance) && ($propDemand->total_tax) - ($propDemand->balance + $tranDtl->paid_balance) < -1) {
             throw new Exception("demand has not been properly reversed");
         }
 
-        $propDemand->education_cess      = $propDemand->education_cess    + $tranDtl->education_cess;
-        $propDemand->water_tax          = $propDemand->water_tax        + $tranDtl->water_tax;
-        $propDemand->balance                = $propDemand->balance              + $tranDtl->paid_balance;
+        $propDemand->education_cess      = $propDemand->education_cess          + $tranDtl->education_cess;
+        $propDemand->water_tax          = $propDemand->water_tax                + $tranDtl->water_tax;
+        $propDemand->balance                = $propDemand->balance              + $tranDtl->total_demand;
+        $propDemand->amount                = $tranDtl->total_demand;
 
-        $propDemand->paid_status = $propDemand->balance == 0 ? 0 :  $propDemand->paid_status;
+        $propDemand->paid_status = 0;
 
         // if( $propDemand->paid_status == 1)
         // {
