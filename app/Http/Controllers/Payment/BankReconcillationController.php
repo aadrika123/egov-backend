@@ -43,7 +43,7 @@ use Illuminate\Support\Facades\Validator;
 class BankReconcillationController extends Controller
 {
     /**
-     * |
+     * |tranDeactivatedList
      */
     public function searchTransaction(Request $request)
     {
@@ -687,7 +687,7 @@ class BankReconcillationController extends Controller
             $ulbId = $mUser->ulb_id ?? 2;
             $perPage = $request->perPage ?? 10;
             $moduleId = $request->moduleId;
-          $fromDate = $request->fromDate;
+            $fromDate = $request->fromDate;
             $uptoDate = $request->uptoDate;
             $propertyModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
             $waterModuleId = Config::get('module-constants.WATER_MODULE_ID');

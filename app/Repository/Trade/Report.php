@@ -2180,7 +2180,7 @@ class Report implements IReport
             ];
             $active = $this->_DB_READ->TABLE("active_trade_licences AS licences")
                 ->select($select)
-                ->join("ulb_masters", "ulb_masters.id", "licences.ulb_id")
+                ->join("ulb_masters", "ulb_masters.id", "licences.ulb_id")  
                 ->join("ulb_ward_masters", function ($join) {
                     $join->on("ulb_ward_masters.id", "=", "licences.ward_id");
                 })
