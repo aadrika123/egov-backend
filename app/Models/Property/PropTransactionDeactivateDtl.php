@@ -14,9 +14,10 @@ class PropTransactionDeactivateDtl extends Model
 
     public function getDetails($fromDate, $uptoDate)
     {
-        $data = self::select(
+        return  self::select(
             DB::raw("
                 prop_transaction_deactivate_dtls.tran_id,
+                prop_transaction_deactivate_dtls.reference_no,
                 p.id AS ref_property_id,
                 ulb_ward_masters.ward_name AS ward_no,
                 'property' AS type,
@@ -57,9 +58,9 @@ class PropTransactionDeactivateDtl extends Model
 
             ->leftJoin("ulb_ward_masters", "ulb_ward_masters.id", "=", "p.ward_mstr_id")
             ->leftJoin("prop_cheque_dtls", "prop_cheque_dtls.transaction_id", "=", "pt.id")
-            ->whereBetween("prop_transaction_deactivate_dtls.deactive_date", [$fromDate, $uptoDate])
-            ->get();
+            ->whereBetween("prop_transaction_deactivate_dtls.deactive_date", [$fromDate, $uptoDate]);
+        // ->get();
 
-        return $data;
+        // return $data;
     }
 }

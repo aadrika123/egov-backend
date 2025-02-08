@@ -692,6 +692,7 @@ class BankReconcillationController extends Controller
             $propertyModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
             $waterModuleId = Config::get('module-constants.WATER_MODULE_ID');
             $tradeModuleId = Config::get('module-constants.TRADE_MODULE_ID');
+            $docUpload = new DocUpload();
             $mPropTransactionDtl = new PropTransactionDeactivateDtl();
             $mWaterTransactionDtl = new WaterTransactionDeactivateDtl();
 
@@ -711,7 +712,29 @@ class BankReconcillationController extends Controller
                     break;
             }
 
-            return responseMsgs(true, "Deactivated Tran Detail", $data, "010201", "1.0", responseTime(), "POST", $request->deviceId ?? "");
+            $paginator = $data->paginate($perPage);
+            $items = collect($paginator->items());
+
+            // Fetch document URLs using reference_no
+            $documents = $docUpload->getDocUrl($items);
+
+            // Merge documents with original data items
+            $mergedData = $items->map(function ($item) use ($documents) {
+                $doc = $documents->firstWhere('id', $item->id);
+                $item->doc_path = $doc['doc_path'] ?? null; // Attach only doc_path if found
+                return $item;
+            });
+
+            $list = [
+                "current_page"  => $paginator->currentPage(),
+                "last_page"     => $paginator->lastPage(),
+                "data"          => $mergedData,
+                "total"         => $paginator->total(),
+            ];
+
+
+
+            return responseMsgs(true, "Deactivated Tran Detail", $list, "010201", "1.0", responseTime(), "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", responseTime(), "POST", $request->deviceId ?? "");
         }
