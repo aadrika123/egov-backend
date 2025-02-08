@@ -28,6 +28,7 @@ class PropTransactionDeactivateDtl extends Model
                 prop_transaction_deactivate_dtls.reason,
                 pt.tran_no,
                 pt.tran_date,
+                pt.amount,
                 pt.payment_mode,
                 prop_cheque_dtls.cheque_no,
                 prop_cheque_dtls.cheque_date,
