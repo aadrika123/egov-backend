@@ -399,7 +399,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
     Route::post('saf/saf-payment',  'paymentSaf');                              // SAF Payment                                                 #API_ID = 010128
     Route::post('saf/calculate-by-saf-id', 'calculateSafBySafId');              // Calculate SAF By SAF ID From Citizen                        #API_ID = 010129
     Route::post('saf/independent/generate-order-id', 'generateOrderId');        // Generate Order ID                                           #API_ID = 010117
-    Route::post('saf/payment-receipt', 'generatePaymentReceipt');               // Generate payment Receipt                                    #API_ID = 010130
+    // Route::post('saf/payment-receipt', 'generatePaymentReceipt');               // Generate payment Receipt                                    #API_ID = 010130
   });
 
   /**
@@ -941,4 +941,7 @@ Route::controller(LocationController::class)->group(function () {
 
 Route::controller(PropertyDetailsController::class)->group(function () {
   Route::post('grievance/get-filter-property-details', 'propertyListByKeyGrv');              #API_ID = 011302        
+});
+Route::controller(ActiveSafController::class)->group(function () {
+  Route::post('saf/payment-receipt', 'generatePaymentReceipt');               // Generate payment Receipt              #API_ID = 011302        
 });
