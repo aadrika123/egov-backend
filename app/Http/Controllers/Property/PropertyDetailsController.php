@@ -617,4 +617,69 @@ class PropertyDetailsController extends Controller
             return responseMsgs(false, $e->getMessage(), "", "011302", "1.0", "", "POST", $request->deviceId ?? "");
         }
     }
+
+    /* 
+    * || Get Owner Details According to Holding No or Saf No
+    * || @param filterBy 
+    * || @param filterValue
+    * || # Added By Alok
+    */
+
+    public function getOwnerDetailsInfo(Request $request)
+    {
+        $request->validate([
+            'filterBy'  => "required|string|in:holdingNo,safNo",
+            'filterValue' => "required|string",
+        ]);
+
+        try {
+            $mpropProperty = new PropProperty();
+
+            // $user = authUser($request);
+                
+            // if (!$user) {
+            //     return response()->json([false, 'message' => 'User not authenticated.',], 401); 
+            // }
+            
+            $filterBy = $request->filterBy;
+            $filterValue = $request->filterValue;
+
+            $filterConditions = [];
+
+            // Handle filtering logic in the controller
+            switch ($filterBy) {
+                case 'holdingNo':
+                    $filterConditions[] = ['prop_properties.holding_no', '=', $filterValue];
+                    $filterConditions[] = ['prop_properties.new_holding_no', '=', $filterValue];
+                    break;
+
+                case 'safNo':
+                    $filterConditions[] = ['prop_safs.saf_no', '=', $filterValue];
+                    break;
+
+                default:
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Invalid filter type provided.',
+                    ], 400);
+            }
+
+            // Pass the filter conditions to the model
+            $ownerDetails = $mpropProperty->getOwnerDetails($filterConditions);
+
+            // Check if no owner details were found
+            if ($ownerDetails->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No Details Found For The ' . $filterBy . '!',
+                ]);
+            }
+
+            return responseMsgs(true, "Application Details", remove_null($ownerDetails), "011302", "1.0", "", "POST", $request->deviceId ?? "");
+        } 
+        
+        catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "011302", "1.0", "", "POST", $request->deviceId ?? "");
+        }
+    }   
 }

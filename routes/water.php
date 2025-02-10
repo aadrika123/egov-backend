@@ -147,6 +147,9 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
         //Route::post('consumer_doc_upload', 'uploadWaterDocForDeactivation');  
         //Route::post('get/consumer_doc', 'getDocList'); 
         Route::post('applicant/search', 'searchApplication');
+
+        //created by: alok
+        Route::post('consumer/get-owner-details', 'getOwnerDetailsInfo');
     });
 
 
