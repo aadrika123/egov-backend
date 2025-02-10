@@ -254,7 +254,7 @@ class WaterTran extends Model
     /**
      * | Get water Transaction by Transaction No
      */
-    public function getTransByTranNo($tranNo)
+    public function getTransByTranNo($tranNo, $ulbId)
     {
         return WaterTran::select(
             'water_trans.id as transaction_id',
@@ -267,6 +267,7 @@ class WaterTran extends Model
             'water_trans.status'
         )
             ->where('water_trans.tran_no', $tranNo)
+            ->where('water_trans.ulb_id', $ulbId)
             ->where('status', 1)
             ->get();
     }

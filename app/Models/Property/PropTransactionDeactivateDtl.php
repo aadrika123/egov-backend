@@ -12,7 +12,7 @@ class PropTransactionDeactivateDtl extends Model
     protected $guarded = [];
     public $timestamps = false;
 
-    public function getDetails($fromDate, $uptoDate)
+    public function getDetails($fromDate, $uptoDate, $ulbId)
     {
         return  self::select(
             DB::raw("
@@ -59,6 +59,7 @@ class PropTransactionDeactivateDtl extends Model
 
             ->leftJoin("ulb_ward_masters", "ulb_ward_masters.id", "=", "p.ward_mstr_id")
             ->leftJoin("prop_cheque_dtls", "prop_cheque_dtls.transaction_id", "=", "pt.id")
+            ->where("pt.ulb_id", $ulbId)
             ->whereBetween("prop_transaction_deactivate_dtls.deactive_date", [$fromDate, $uptoDate])
             ->orderby("prop_transaction_deactivate_dtls.id", "desc");
         // ->get();

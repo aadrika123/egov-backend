@@ -509,13 +509,19 @@ class BankReconcillationController extends Controller
         if ($validator->fails())
             return validationError($validator);
         try {
+            $user = authUser($req);
+            $ulbId = $user->ulb_id;
             if ($req->tranType == "Property") {
                 $mPropTransaction = new PropTransaction();
-                $transactionDtl = $mPropTransaction->getTransByTranNo($req->transactionNo);
+                $transactionDtl = $mPropTransaction->getTransByTranNo($req->transactionNo, $ulbId);
+                if ($transactionDtl->isEmpty())
+                    throw new Exception("Transaction No Not Found");
             }
             if ($req->tranType == "Water") {
                 $mWaterTransaction = new WaterTran();
-                $transactionDtl = $mWaterTransaction->getTransByTranNO($req->transactionNo);
+                $transactionDtl = $mWaterTransaction->getTransByTranNO($req->transactionNo, $ulbId);
+                if ($transactionDtl->isEmpty())
+                    throw new Exception("Transaction No Not Found");
             }
             return responseMsgs(true, "Transaction No is", $transactionDtl, "", 01, responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
@@ -682,9 +688,9 @@ class BankReconcillationController extends Controller
             return validationError($validator);
         }
         try {
-            // $mUser = Auth()->user();
-            $userId = $mUser->id ?? 2;
-            $ulbId = $mUser->ulb_id ?? 2;
+            $mUser = Auth()->user();
+            $userId = $mUser->id;
+            $ulbId = $mUser->ulb_id;
             $perPage = $request->perPage ?? 10;
             $moduleId = $request->moduleId;
             $fromDate = $request->fromDate;
@@ -699,7 +705,7 @@ class BankReconcillationController extends Controller
             switch ($moduleId) {
                 case $propertyModuleId:
                     // $data = PropTransaction::whereBetween('updated_at', [$fromDate, $uptoDate])
-                    $data = $mPropTransactionDtl->getDetails($fromDate, $uptoDate, $moduleId);
+                    $data = $mPropTransactionDtl->getDetails($fromDate, $uptoDate, $ulbId);
                     if ($request->paymentMode) {
                         $data = $data->where('payment_mode', $request->paymentMode);
                     }

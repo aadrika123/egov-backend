@@ -368,7 +368,7 @@ class PropTransaction extends Model
     /**
      * | Get Property Transaction by Transaction No
      */
-    public function getTransByTranNo($tranNo)
+    public function getTransByTranNo($tranNo, $ulbId)
     {
         return DB::table('prop_transactions as t')
             ->select(
@@ -388,6 +388,7 @@ class PropTransaction extends Model
                 't.status'
             )
             ->where('t.tran_no', $tranNo)
+            ->where('t.ulb_id', $ulbId)
             ->where('status', 1)
             ->get();
     }
