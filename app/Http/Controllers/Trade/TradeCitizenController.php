@@ -12,6 +12,7 @@ use App\Models\Citizen\ActiveCitizenUndercare;
 use App\Models\Trade\RejectedTradeLicence;
 use App\Models\Trade\TradeFineRebete;
 use App\Models\Trade\TradeLicence;
+use App\Models\Trade\TradeOwner;
 use App\Models\Trade\TradeRazorPayRequest;
 use App\Models\Trade\TradeRazorPayResponse;
 use App\Models\Trade\TradeRenewal;
@@ -1214,6 +1215,65 @@ class TradeCitizenController extends Controller
             return responseMsg(true, "application status", remove_null($pending_at));
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /* 
+    * || Get Owner Details Info Filtering By License No Or Application No
+    * || @param filterBy 
+    * || @param filterValue
+    * || # Added By Alok
+    */
+    public function getOwnerDetailsInfo(Request $request)
+    {
+        $request->validate([
+            'filterBy'  => "required|string|in:licenseNo,applicationNo",
+            'filterValue' => "required|string",
+        ]);
+
+        try {
+            $tradeOwnerDtls = new TradeOwner();
+
+           
+            $filterBy = $request->filterBy;
+            $filterValue = $request->filterValue;
+
+            $filterConditions = [];
+
+            // Handle filtering logic in the controller
+            switch ($filterBy) {
+
+                case 'licenseNo':
+                    $filterConditions[] = ['trade_licences.license_no', '=', $filterValue];
+                    break;
+
+                case 'applicationNo':
+                    $filterConditions[] = ['trade_licences.application_no', '=', $filterValue];
+                    break;
+
+                default:
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Invalid filter type provided.',
+                    ], 400);
+            }
+
+            // Pass the filter conditions to the model
+            $ownerDetails = $tradeOwnerDtls->getOwnerDetails($filterConditions);
+
+            // Check if no owner details were found
+            if ($ownerDetails->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No Details Found For The ' . $filterBy . '!',
+                ]);
+            }
+
+            return responseMsgs(true, "Application Details", remove_null($ownerDetails), "011302", "1.0", "", "POST", $request->deviceId ?? "");
+        } 
+        
+        catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "011302", "1.0", "", "POST", $request->deviceId ?? "");
         }
     }
 }

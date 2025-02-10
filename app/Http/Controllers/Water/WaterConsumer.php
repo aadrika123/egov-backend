@@ -2530,4 +2530,62 @@ class WaterConsumer extends Controller
         if ($flag == 0)
             return 0;
     }
+
+    /* 
+    * || Get Owner Details According to Application No or Consumer No
+    * || @param filterBy 
+    * || @param filterValue
+    * || # Added By Alok
+    */
+    public function getOwnerDetailsInfo(Request $request)
+    {
+        $request->validate([
+            'filterBy'  => "required|string|in:applicationNo,consumerNo",
+            'filterValue' => "required|string",
+        ]);
+
+        try {
+            $waterOwnerDtls = new WaterConsumerOwner();
+
+           
+            $filterBy = $request->filterBy;
+            $filterValue = $request->filterValue;
+
+            $filterConditions = [];
+
+            // Handle filtering logic in the controller
+            switch ($filterBy) {
+                case 'consumerNo':
+                    $filterConditions[] = ['water_consumers.consumer_no', '=', $filterValue];
+                    break;
+
+                case 'applicationNo':
+                    $filterConditions[] = ['water_approval_application_details.application_no', '=', $filterValue];
+                    break;
+
+                default:
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Invalid filter type provided.',
+                    ], 400);
+            }
+
+            // Pass the filter conditions to the model
+            $ownerDetails = $waterOwnerDtls->getOwnerDetails($filterConditions);
+
+            // Check if no owner details were found
+            if ($ownerDetails->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No Details Found For The ' . $filterBy . '!',
+                ]);
+            }
+
+            return responseMsgs(true, "Application Details", remove_null($ownerDetails), "011302", "1.0", "", "POST", $request->deviceId ?? "");
+        } 
+        
+        catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "011302", "1.0", "", "POST", $request->deviceId ?? "");
+        }
+    }
 }

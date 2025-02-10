@@ -824,4 +824,57 @@ class PropProperty extends Model
             ->select("application_no", "id", "holding_no", "license_no", "valid_from", "valid_upto");
         return $ativeTrade->union($approveLicense);
     }
+
+
+     /** 
+     * | get owner details of property
+     * | created by: Alok 
+     */
+    public static function getOwnerDetails($filterConditions)
+    {
+        $query = self::select(
+            'prop_properties.id',
+            'prop_properties.holding_no',
+            'prop_safs.saf_no',
+            'prop_properties.pt_no',
+            'prop_properties.khata_no',
+            'prop_properties.plot_no',
+            'prop_properties.ward_mstr_id',
+            'prop_properties.zone_mstr_id',
+            'prop_owners.owner_name',
+            'prop_owners.mobile_no',
+            'prop_properties.prop_address',
+            'prop_properties.ulb_id',
+            'ulb_masters.ulb_name',
+
+            DB::raw("CASE WHEN prop_properties.status = 1 THEN 'Active' ELSE 'Inactive' END AS status")
+        )
+        ->join('prop_owners', 'prop_owners.property_id', '=', 'prop_properties.id')
+        ->join('prop_safs', 'prop_safs.id', '=', 'prop_properties.saf_id')
+        ->leftJoin('ulb_masters', 'ulb_masters.id', '=', 'prop_properties.ulb_id');
+        
+        // Apply filter conditions
+        foreach ($filterConditions as $condition) {
+            $query->orWhere($condition[0], $condition[1], $condition[2]);
+        }
+    
+        $query->where('prop_properties.ulb_id', '=', 2);
+    
+        return $query->groupBy(
+            'prop_properties.id',
+            'prop_properties.holding_no',
+            'prop_properties.pt_no',
+            'prop_properties.khata_no',
+            'prop_properties.plot_no',
+            'prop_properties.prop_address',
+            'prop_properties.zone_mstr_id',
+            'prop_properties.ward_mstr_id',
+            'prop_safs.saf_no',
+            'prop_owners.owner_name',
+            'prop_owners.mobile_no',
+            'prop_properties.ulb_id',
+            'ulb_masters.ulb_name',
+            'prop_properties.status'
+        )->get();
+    }
 }
