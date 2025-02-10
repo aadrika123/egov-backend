@@ -59,7 +59,8 @@ class PropTransactionDeactivateDtl extends Model
 
             ->leftJoin("ulb_ward_masters", "ulb_ward_masters.id", "=", "p.ward_mstr_id")
             ->leftJoin("prop_cheque_dtls", "prop_cheque_dtls.transaction_id", "=", "pt.id")
-            ->whereBetween("prop_transaction_deactivate_dtls.deactive_date", [$fromDate, $uptoDate]);
+            ->whereBetween("prop_transaction_deactivate_dtls.deactive_date", [$fromDate, $uptoDate])
+            ->orderby("prop_transaction_deactivate_dtls.id", "desc");
         // ->get();
 
         // return $data;
