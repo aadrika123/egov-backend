@@ -419,6 +419,101 @@ class Report implements IReport
             return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
         }
     }
+  /*   public function safCollection(Request $request)
+    {
+        $metaData = collect($request->metaData)->all();
+        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
+    
+        try {
+            $refUser = authUser($request);
+            $refUserId = $refUser->id;
+            $ulbId = $refUser->ulb_id;
+            $wardId = $request->wardId ?? null;
+            $userId = $request->userId ?? null;
+            $paymentMode = $request->paymentMode ?? null;
+            $fromDate = $request->fromDate ?? Carbon::now()->format("Y-m-d");
+            $uptoDate = $request->uptoDate ?? Carbon::now()->format("Y-m-d");
+            $perPage = $request->perPage ?? 5;
+    
+            // 🛠 Define the function to fetch data from any table dynamically
+            $fetchSafData = function ($safTable, $ownersTable) use ($ulbId, $wardId, $userId, $paymentMode, $fromDate, $uptoDate) {
+                
+                $safIds = DB::table('prop_transactions')
+                    ->join($safTable, "$safTable.id", '=', "prop_transactions.saf_id")
+                    ->whereBetween('prop_transactions.tran_date', [$fromDate, $uptoDate])
+                    ->when($userId, fn($query) => $query->where('prop_transactions.user_id', $userId))
+                    ->when($paymentMode, fn($query) => $query->where('prop_transactions.payment_mode', strtoupper($paymentMode)))
+                    ->when($ulbId, fn($query) => $query->where('prop_transactions.ulb_id', $ulbId))
+                    ->when($wardId, fn($query) => $query->where("$safTable.ward_mstr_id", $wardId))
+                ->pluck("prop_transactions.saf_id");
+    
+                if ($safIds->isEmpty()) return collect();
+    
+                $owners = DB::table($ownersTable)
+                    ->whereIn("saf_id", $safIds)
+                    ->selectRaw("saf_id, STRING_AGG(owner_name, ', ') AS owner_name, STRING_AGG(mobile_no::TEXT, ', ') AS mobile_no")
+                    ->groupBy('saf_id')
+                    ->get()
+                    ->keyBy("saf_id"); // Optimize lookup
+    
+                
+                return DB::table('prop_transactions')
+              ->join($safTable, "$safTable.id", '=', "prop_transactions.saf_id")
+                    ->leftJoin("ulb_ward_masters", "ulb_ward_masters.id", "=", "$safTable.ward_mstr_id")
+                   ->leftJoin("users", "users.id", "=", "prop_transactions.user_id")
+                    ->leftJoin("prop_cheque_dtls", "prop_cheque_dtls.transaction_id", "=", "prop_transactions.id")
+                    ->whereIn("prop_transactions.saf_id", $safIds)
+                    ->selectRaw("
+                        ulb_ward_masters.ward_name AS ward_no,
+                        prop_transactions.id AS tran_id,
+                        $safTable.holding_no AS holding_no,
+                        COALESCE($safTable.saf_no, 'N/A') AS saf_no,
+                        prop_transactions.saf_id,
+                        CONCAT(prop_transactions.from_fyear, '(', prop_transactions.from_qtr, ')', ' / ', 
+                            prop_transactions.to_fyear, '(', prop_transactions.to_qtr, ')') AS from_upto_fy_qtr,
+                        prop_transactions.tran_date,
+                        prop_transactions.payment_mode AS transaction_mode,
+                        prop_transactions.amount,
+                        users.user_name AS emp_name,
+                        users.id AS user_id,
+                        prop_transactions.tran_no,
+                        prop_cheque_dtls.cheque_no,
+                        prop_cheque_dtls.bank_name,
+                        prop_cheque_dtls.branch_name
+                    ")
+                    ->get()
+                    ->map(function ($row) use ($owners) {
+                        // Merge owner details
+                        $owner = $owners[$row->saf_id] ?? (object) ['owner_name' => null, 'mobile_no' => null];
+                        $row->owner_name = $owner->owner_name;
+                        $row->mobile_no = $owner->mobile_no;
+                        return $row;
+                    });
+            };
+    
+            // Fetch Active, Rejected, and General SAF data separately
+            $activSaf = $fetchSafData("prop_active_safs", "prop_active_safs_owners");
+            $rejectedSaf = $fetchSafData("prop_rejected_safs", "prop_rejected_safs_owners");
+            $saf = $fetchSafData("prop_safs", "prop_safs_owners");
+    
+            // Merge and paginate results
+            $allData = $activSaf->merge($rejectedSaf)->merge($saf);
+            $totalAmount = $allData->sum("amount");
+            $pagedData = $allData->forPage($request->page ?? 1, $perPage);
+    
+            return responseMsgs(true, "", [
+                "current_page" => $request->page ?? 1,
+                "last_page" => ceil($allData->count() / $perPage),
+                "totalAmount" => $totalAmount,
+   "data" => $pagedData->values(),
+                "total" => $allData->count(),
+            ], $apiId, $version, $queryRunTime, $action, $deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
+        }
+    }
+     */
+    
 
     /**
      * | saf prop Individual demand collection

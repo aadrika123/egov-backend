@@ -121,6 +121,9 @@ Route::group(['middleware' => ['json.response', "auth_maker"]], function () {
         Route::post('application/citizen-application-list', "citizenApplicationByCitizenId");
         Route::post('application/citizen-history', "citizenHistory");
         Route::post('application/status', "citizenApplicationStatus");
+
+        //created by : alok    
+        Route::post('application-search/get-owner-details', "getOwnerDetailsInfo");
     });
 
     #-----------report----------------------------------
