@@ -423,7 +423,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
    */
   Route::controller(HoldingTaxController::class)->group(function () {
     Route::post('payment-holding', 'paymentHolding');                       //Payment Holding (For Testing Purpose)                            #API_ID = 011509
-    Route::post('prop-payment-receipt', 'propPaymentReceipt');              //Generate Property Payment Receipt                                #API_ID = 011510
+    // Route::post('prop-payment-receipt', 'propPaymentReceipt');              //Generate Property Payment Receipt                                #API_ID = 011510
     Route::post('independent/get-holding-dues', 'getHoldingDues');          //Property/ Holding Dues                                           #API_ID = 011502
     Route::post('independent/generate-prop-orderid', 'generateOrderId');    //Generate Property Order ID                                       #API_ID = 011503
     Route::post('prop-payment-history', 'propPaymentHistory');              //Property Payment    History                                      #API_ID = 011513
@@ -944,4 +944,8 @@ Route::controller(PropertyDetailsController::class)->group(function () {
 });
 Route::controller(ActiveSafController::class)->group(function () {
   Route::post('saf/payment-receipt', 'generatePaymentReceipt');               // Generate payment Receipt              #API_ID = 011302        
+});
+
+Route::controller(HoldingTaxController::class)->group(function () {
+  Route::post('prop-payment-receipt', 'propPaymentReceipt');               // Generate payment Receipt              #API_ID = 011302        
 });
