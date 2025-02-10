@@ -700,6 +700,12 @@ class BankReconcillationController extends Controller
                 case $propertyModuleId:
                     // $data = PropTransaction::whereBetween('updated_at', [$fromDate, $uptoDate])
                     $data = $mPropTransactionDtl->getDetails($fromDate, $uptoDate, $moduleId);
+                    if ($request->paymentMode) {
+                        $data = $data->where('payment_mode', $request->paymentMode);
+                    }
+                    if ($request->userId) {
+                        $data = $data->where('deactivated_by', $request->userId);
+                    }
                     break;
 
                 case $waterModuleId:
