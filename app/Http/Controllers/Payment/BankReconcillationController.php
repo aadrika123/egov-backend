@@ -688,7 +688,7 @@ class BankReconcillationController extends Controller
             return validationError($validator);
         }
         try {
-            $mUser = Auth()->user();
+            $mUser = authUser($request);
             $userId = $mUser->id;
             $ulbId = $mUser->ulb_id;
             $perPage = $request->perPage ?? 10;
