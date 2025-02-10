@@ -88,6 +88,7 @@ class SafRepository implements iSafRepository
                             JOIN prop_transactions
                             ON (pas.id=prop_transactions.saf_id)
                             WHERE prop_transactions.$userType=$userId
+                            And prop_transactions.status <> 0
                         UNION 
                         SELECT 
                             ps.id, 
@@ -97,10 +98,12 @@ class SafRepository implements iSafRepository
                             JOIN prop_transactions
                             ON (ps.id=prop_transactions.saf_id)
                             WHERE prop_transactions.$userType=$userId
+                            And prop_transactions.status <> 0
                         ) AS s ON s.id = prop_transactions.saf_id 
                         LEFT JOIN prop_properties AS p ON p.id=prop_transactions.property_id
                         WHERE 
                         prop_transactions.$userType = $userId
+                        And prop_transactions.status <> 0
                     ORDER BY prop_transactions.id DESC";
         $result = DB::select($query);
         return $result;

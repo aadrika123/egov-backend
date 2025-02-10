@@ -502,6 +502,8 @@ class HoldingTaxController extends Controller
                 'to_qtr' => $propRazorPayRequest->to_qtr,
                 'demand_amt' => $propRazorPayRequest->demand_amt,
                 'ulb_id' => $propRazorPayRequest->ulb_id,
+                'tran_type' => 'Property',
+
             ];
 
             $storedTransaction = $mPropTrans->storeTrans($tranReqs);
