@@ -279,7 +279,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
     Route::post('active-application/get-user-details', 'getUserDetails');         #API_ID = 011304        
 
     // added by alok
-    Route::post('details/get-owner-details', 'getOwnerDetailsInfo'); 
+    // Route::post('details/get-owner-details', 'getOwnerDetailsInfo'); 
   });
 
 
@@ -943,7 +943,8 @@ Route::controller(LocationController::class)->group(function () {
 
 
 Route::controller(PropertyDetailsController::class)->group(function () {
-  Route::post('grievance/get-filter-property-details', 'propertyListByKeyGrv');              #API_ID = 011302        
+  Route::post('grievance/get-filter-property-details', 'propertyListByKeyGrv');              #API_ID = 011302  
+  Route::post('details/get-owner-details', 'getOwnerDetailsInfo');
 });
 Route::controller(ActiveSafController::class)->group(function () {
   Route::post('saf/payment-receipt', 'generatePaymentReceipt');               // Generate payment Receipt              #API_ID = 011302        

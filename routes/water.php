@@ -149,7 +149,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
         Route::post('applicant/search', 'searchApplication');
 
         //created by: alok
-        Route::post('consumer/get-owner-details', 'getOwnerDetailsInfo');
+        // Route::post('consumer/get-owner-details', 'getOwnerDetailsInfo');
     });
 
 
@@ -257,7 +257,8 @@ Route::controller(WaterApplication::class)->group(function () {
 
 });
 Route::controller(WaterConsumer::class)->group(function () {
-    Route::post('consumerChargeCal', 'calConsumerDemand');                                              //18        
+    Route::post('consumerChargeCal', 'calConsumerDemand');                                              //18  
+    Route::post('consumer/get-owner-details', 'getOwnerDetailsInfo');
 });
 
 
