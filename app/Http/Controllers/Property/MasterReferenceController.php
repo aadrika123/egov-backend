@@ -3550,11 +3550,14 @@ class MasterReferenceController extends Controller
                 'phone' => "nullable",
                 'email' => 'nullable|email'
             ]);
-            $req->merge(["document" => $req->Image]);
-            $docUpload = new DocUpload;
-            $data = $docUpload->checkDoc($req);
-            if (!$data["status"]) {
-                throw new Exception("Document Not uploaded");
+            $data = ['data' => []];
+            if ($req->hasFile('Image')) {
+                $req->merge(["document" => $req->Image]);
+                $docUpload = new DocUpload;
+                $data = $docUpload->checkDoc($req);
+                if (!$data["status"]) {
+                    throw new Exception("Document Not uploaded");
+                }
             }
             $req->merge($data["data"]);
             $update = new Administrative();
@@ -3695,10 +3698,10 @@ class MasterReferenceController extends Controller
     public function dashboardSliderData(Request $req)
     {
         try {
-       
+
             $sliderDtl = $this->allSliderListv1($req);
             $list = [
-             
+
                 "Slider" => $sliderDtl,
             ];
 
