@@ -613,8 +613,7 @@ class HoldingTaxController extends Controller
         try {
             $offlinePaymentModes = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
             $todayDate = Carbon::now();
-            // $userId = authUser($req)->id;
-            $userId = 203;
+            $userId = authUser($req)->id;
             $propDemand = new PropDemand();
             $idGeneration = new IdGeneration;
             $mPropTrans = new PropTransaction();
