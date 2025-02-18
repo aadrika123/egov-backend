@@ -19,7 +19,7 @@ use App\Http\Controllers\Trade\ReportController;
  */
 
 Route::group(['middleware' => ['json.response', "auth_maker"]], function () {
-    
+
     Route::controller(TradeApplication::class)->group(function () {
         Route::post("getApplyData", "getApplyData");
 
@@ -100,7 +100,7 @@ Route::group(['middleware' => ['json.response', "auth_maker"]], function () {
         Route::post('application/citizen-add', 'applyApplication');                #id = c2        
 
         Route::post('notice/citizen-details', "getDenialDetails");                 #id = c3
-        Route::post('application/send-to-officer', 'sendToLevel'); 
+        Route::post('application/send-to-officer', 'sendToLevel');
 
         Route::post('application/pay-razorpay-charge', 'handeRazorPay');           #id = c4
 
@@ -123,7 +123,7 @@ Route::group(['middleware' => ['json.response', "auth_maker"]], function () {
         Route::post('application/status', "citizenApplicationStatus");
 
         //created by : alok    
-        Route::post('application-search/get-owner-details', "getOwnerDetailsInfo");
+
     });
 
     #-----------report----------------------------------
@@ -148,7 +148,7 @@ Route::group(['middleware' => ['json.response', "auth_maker"]], function () {
         Route::post('ward-list', 'WardList');
         Route::post('tc-list', 'TcList');
     });
-    
+
     #-----------mdm-------------------------------------
     Route::controller(TradeController::class)->group(function () {
         // Route::post('firm-type-add', 'addFirmType');
@@ -194,7 +194,10 @@ Route::controller(TradeApplication::class)->group(function () {
 
 //not in use
 Route::controller(ReportController::class)->group(function () {
-    
+
     Route::post("application/notice-summary", "noticeSummary");
-    
+});
+Route::controller(TradeCitizenController::class)->group(function () {
+
+    Route::post('application-search/get-owner-details', "getOwnerDetailsInfo");
 });

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Property;
 
+use App\BLL\Property\SafApprovalBll;
 use App\BLL\Property\CalculateSafById;
 use App\BLL\Property\PaymentReceiptHelper;
 use App\BLL\Property\PostRazorPayPenaltyRebate;
@@ -1420,6 +1421,7 @@ class ActiveSafController extends Controller
 
         try {
             // Check if the Current User is Finisher or Not (Variable Assignments)
+
             $mWfRoleUsermap = new WfRoleusermap();
             $propSafVerification = new PropSafVerification();
             $propSafVerificationDtl = new PropSafVerificationDtl();
@@ -1434,6 +1436,7 @@ class ActiveSafController extends Controller
             $famParamId = Config::get('PropertyConstaint.FAM_PARAM_ID');
             $previousHoldingDeactivation = new PreviousHoldingDeactivation;
             $propIdGenerator = new PropIdGenerator;
+            $safApprovalBll = new SafApprovalBll();;
 
             $userId = authUser($req)->id;
             $safId = $req->applicationId;
@@ -1484,6 +1487,8 @@ class ActiveSafController extends Controller
             if ($req->status == 1) {
                 $safDetails->saf_pending_status = 0;
                 $safDetails->save();
+                // for bifurction, amalgamation, mutation, new assessment
+                // $safApprovalBll->approvalProcess($safId);
 
                 $demand = $mPropDemand->getFirstDemandByFyearPropId($propId, $currentFinYear);
                 if (collect($demand)->isEmpty())

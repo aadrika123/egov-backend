@@ -131,6 +131,7 @@ class HoldingNoGenerator
             $this->_readFloors = $this->_mPropActiveSafFloors->getSafFloorsBySafId($this->_activeSafs->id);
             $pluckedUsageTypeIds = $this->_readFloors->pluck('usage_type_mstr_id');
             $usageType = json_decode(Redis::get('property-all-usage-types'));
+            
             // Property Usage Types
             if (collect($usageType)->isEmpty()) {                                                      // For Buildings
                 $usageType = $this->_refPropUsageType->propAllUsageType();
