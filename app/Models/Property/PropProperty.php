@@ -589,7 +589,7 @@ class PropProperty extends Model
                 $join->on("geotag.saf_id", "=", "prop_properties.saf_id");
             })
             ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
-        ->where('prop_properties.ulb_id', $ulbId);
+            ->where('prop_properties.ulb_id', $ulbId);
     }
 
     /**
@@ -613,6 +613,16 @@ class PropProperty extends Model
         PropProperty::whereIn('id', $propertyIds)
             ->update([
                 'status' => 0
+            ]);
+    }
+    /**
+     * | deactivate holding by ids
+     */
+    public function activateNewHoldingByIds($propertyIds)
+    {
+        PropProperty::whereIn('saf_id', $propertyIds)
+            ->update([
+                'status' => 1
             ]);
     }
 
@@ -686,7 +696,7 @@ class PropProperty extends Model
     /**
      * | Get details according to ward for heat map
      */
-    public function getPropLatlong($wardId,$ulbId)
+    public function getPropLatlong($wardId, $ulbId)
     {
         return PropProperty::on('pgsql::read')
             ->select(
@@ -826,7 +836,7 @@ class PropProperty extends Model
     }
 
 
-     /** 
+    /** 
      * | get owner details of property
      * | created by: Alok 
      */
@@ -849,17 +859,17 @@ class PropProperty extends Model
 
             DB::raw("CASE WHEN prop_properties.status = 1 THEN 'Active' ELSE 'Inactive' END AS status")
         )
-        ->join('prop_owners', 'prop_owners.property_id', '=', 'prop_properties.id')
-        ->join('prop_safs', 'prop_safs.id', '=', 'prop_properties.saf_id')
-        ->leftJoin('ulb_masters', 'ulb_masters.id', '=', 'prop_properties.ulb_id');
-        
+            ->join('prop_owners', 'prop_owners.property_id', '=', 'prop_properties.id')
+            ->join('prop_safs', 'prop_safs.id', '=', 'prop_properties.saf_id')
+            ->leftJoin('ulb_masters', 'ulb_masters.id', '=', 'prop_properties.ulb_id');
+
         // Apply filter conditions
         foreach ($filterConditions as $condition) {
             $query->orWhere($condition[0], $condition[1], $condition[2]);
         }
-    
+
         $query->where('prop_properties.ulb_id', '=', 2);
-    
+
         return $query->groupBy(
             'prop_properties.id',
             'prop_properties.holding_no',
@@ -876,5 +886,18 @@ class PropProperty extends Model
             'ulb_masters.ulb_name',
             'prop_properties.status'
         )->get();
+    }
+
+    /**
+     * | Activate New Holdings
+     */
+    public function activateNewHoldings($safDetails)
+    {
+        $assessmentType = $safDetails->assessment_type;
+        // Deactivate for the kind of properties reassessment,mutation,amalgamation,bifurcation
+        if (in_array($assessmentType, ['Bifurcation'])) {
+            $explodedPreviousHoldingIds = explode(',', $safDetails->id);
+            $this->activateNewHoldingByIds($explodedPreviousHoldingIds);     // Deactivation of Holding
+        }
     }
 }

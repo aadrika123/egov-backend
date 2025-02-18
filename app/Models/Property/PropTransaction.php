@@ -61,8 +61,7 @@ class PropTransaction extends Model
             ->leftJoin("prop_cheque_dtls", "prop_cheque_dtls.transaction_id", "prop_transactions.id")
             ->leftJoin("users as u", "u.id", "prop_transactions.user_id")
             ->where('prop_transactions.status', 1)
-            ->where('tran_no', $tranNo)
-            ->first();
+            ->where('prop_transactions.tran_no', $tranNo);
     }
 
     // getPropTrans as trait function on current object

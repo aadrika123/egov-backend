@@ -1271,6 +1271,7 @@ class ActiveSafController extends Controller
             $propProperties->setTable('prop_properties');
             $propProperties->saf_id = $activeSaf->id;
             $propProperties->new_holding_no = $activeSaf->holding_no;
+            $propProperties->status = 2;                                                                 // it deactivate untill eo approve the saf
             $propProperties->save();
 
             $this->_replicatedPropId = $propProperties->id;
@@ -1524,6 +1525,7 @@ class ActiveSafController extends Controller
                 $metaReqs['verificationStatus'] = 1;
 
                 $previousHoldingDeactivation->deactivatePreviousHoldings($safDetails);  // Previous holding deactivation in case of Mutation, Amalgamation, Bifurcation
+                $mPropProperties->activateNewHoldings($safDetails);                    // New  holding Activate in case of  Bifurcation
             }
             // Rejection
             if ($req->status == 0) {
@@ -2297,7 +2299,10 @@ class ActiveSafController extends Controller
     {
         $validated = Validator::make(
             $req->all(),
-            ['tranNo' => 'required|string']
+            [
+                'tranNo' => 'required|string',
+                'ulbId' => 'nullable|integer'
+            ]
         );
         if ($validated->fails()) {
             return validationError($validated);
@@ -2321,6 +2326,12 @@ class ActiveSafController extends Controller
             $onlineRebate = $rebatePenalMstrs->where('id', 3)->first()['value'];
 
             $safTrans = $transaction->getPropByTranPropIdV2($req->tranNo);
+
+            if ($req->ulbId) {
+                $safTrans->where('prop_transactions.ulb_id', $req->ulbId);
+            }
+            // Finally, execute the query and fetch the first record
+            $safTrans = $safTrans->first();
             if (!$safTrans)
                 throw new Exception("Transaction Not Found");
             if ($safTrans->payment_mode == "CHEQUE" && $safTrans->verify_status == 3)

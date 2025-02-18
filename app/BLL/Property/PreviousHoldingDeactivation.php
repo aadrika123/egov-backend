@@ -33,6 +33,18 @@ class PreviousHoldingDeactivation
             $this->_mPropProperty->deactivateHoldingByIds($explodedPreviousHoldingIds);     // Deactivation of Holding
         }
     }
+    /**
+     * | Activate New Holdings
+     */
+    public function activateNewHoldings($safDetails)
+    {
+        $assessmentType = $safDetails->assessment_type;
+        // Deactivate for the kind of properties reassessment,mutation,amalgamation,bifurcation
+        if (in_array($assessmentType, ['Bifurcation'])) {
+            $explodedPreviousHoldingIds = explode(',', $safDetails->id);
+            $this->_mPropProperty->activateNewHoldingByIds($explodedPreviousHoldingIds);     // Deactivation of Holding
+        }
+    }
 
     /**
      * | Deactivate Previous Holding Demand
