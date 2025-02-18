@@ -2545,47 +2545,31 @@ class WaterConsumer extends Controller
         ]);
 
         try {
-            $waterOwnerDtls = new WaterConsumerOwner();
-
-           
-            $filterBy = $request->filterBy;
-            $filterValue = $request->filterValue;
-
-            $filterConditions = [];
+            $mwaterConsumer = new WaterWaterConsumer();
+            $mwaterApproApplicant = new WaterApprovalApplicationDetail();
+            $key = $request->filterBy;
+            $parameter = $request->filterValue;
 
             // Handle filtering logic in the controller
-            switch ($filterBy) {
+            switch ($key) {
                 case 'consumerNo':
-                    $filterConditions[] = ['water_consumers.consumer_no', '=', $filterValue];
+                    $data = $mwaterConsumer->getOwnerDetails( $parameter)->get();
                     break;
-
+                    
                 case 'applicationNo':
-                    $filterConditions[] = ['water_approval_application_details.application_no', '=', $filterValue];
+                    $data = $mwaterApproApplicant->getOwnerDetails( $parameter)->get();
                     break;
 
-                default:
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Invalid filter type provided.',
-                    ], 400);
             }
 
-            // Pass the filter conditions to the model
-            $ownerDetails = $waterOwnerDtls->getOwnerDetails($filterConditions);
-
-            // Check if no owner details were found
-            if ($ownerDetails->isEmpty()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No Details Found For The ' . $filterBy . '!',
-                ]);
+            if ($data->isEmpty()) {
+                return responseMsgs(false, "No Details Found For The " . $key . '!', "", "", "1.0", "", "POST", $request->deviceId ?? "");
             }
 
-            return responseMsgs(true, "Application Details", remove_null($ownerDetails), "011302", "1.0", "", "POST", $request->deviceId ?? "");
-        } 
+            return responseMsgs(true, "Application Details", remove_null($data), "", "1.0", "", "POST", $request->deviceId ?? "");
         
-        catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "011302", "1.0", "", "POST", $request->deviceId ?? "");
+        }catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "", "1.0", "", "POST", $request->deviceId ?? "");
         }
     }
 }

@@ -19,7 +19,7 @@ use Exception;
 
 class WorkflowController extends Controller
 {
-    //create master
+    //mWfWorkFlow master
     public function createWorkflow(Request $req)
     {
         try {
@@ -30,12 +30,12 @@ class WorkflowController extends Controller
                 'isDocRequired' => 'required',
             ]);
 
-            $create = new WfWorkflow();
-            $create->addWorkflow($req);
+            $mWfWorkFlow = new WfWorkflow();
+            $mWfWorkFlow->addWorkflow($req);
 
-            return responseMsg(true, "Workflow Saved", "");
+            return responseMsgs(true, "Workflow Saved", "", "025821",1.0,"", "POST", 200);
         } catch (Exception $e) {
-            return response()->json(false, $e->getMessage());
+            return responseMsgs(false, $e->getMessage(), "", "025821", 1.0, "", "POST", 400);
         }
     }
 
@@ -43,12 +43,12 @@ class WorkflowController extends Controller
     public function updateWorkflow(Request $req)
     {
         try {
-            $update = new WfWorkflow();
-            $list  = $update->updateWorkflow($req);
+            $mWfWorkFlow = new WfWorkflow();
+            $updateWorkFlow  = $mWfWorkFlow->updateWorkflow($req);
 
-            return responseMsg(true, "Successfully Updated", $list);
+            return responseMsgs(true, "Successfully Updated", $updateWorkFlow, "025822", 1.0, "", "POST", 200);
         } catch (Exception $e) {
-            return response()->json(false, $e->getMessage());
+            return responseMsgs(false, $e->getMessage(), "", "025822", 1.0, "", "POST", 400);
         }
     }
 
@@ -57,12 +57,12 @@ class WorkflowController extends Controller
     {
         try {
 
-            $listById = new WfWorkflow();
-            $list  = $listById->listbyId($req);
+            $mWfWorkFlow = new WfWorkflow();
+            $listById  = $mWfWorkFlow->listWfbyId($req);
 
-            return responseMsg(true, "Workflow List", $list);
+            return responseMsgs(true, "Workflow List", $listById, "025823", 1.0, "", "POST", 200);
         } catch (Exception $e) {
-            return response()->json(false, $e->getMessage());
+            return responseMsgs(false, $e->getMessage(), "", "025823", 1.0, "", "POST", 400);
         }
     }
 
@@ -71,12 +71,12 @@ class WorkflowController extends Controller
     {
         try {
 
-            $list = new WfWorkflow();
-            $workflow = $list->listWorkflow();
+            $mWfWorkFlow = new WfWorkflow();
+            $allWorkflow = $mWfWorkFlow->listAllWorkflow();
 
-            return responseMsg(true, "All Workflow List", $workflow);
+            return responseMsgs(true, "All Workflow List", $allWorkflow, "025824", 1.0, "", "POST", 200);
         } catch (Exception $e) {
-            return response()->json(false, $e->getMessage());
+            return responseMsgs(false, $e->getMessage(), "", "025824", 1.0, "", "POST", 400);
         }
     }
 
@@ -85,12 +85,12 @@ class WorkflowController extends Controller
     public function deleteWorkflow(Request $req)
     {
         try {
-            $delete = new WfWorkflow();
-            $delete->deleteWorkflow($req);
+            $mWfWorkFlow = new WfWorkflow();
+            $mWfWorkFlow->deleteWorkflow($req);
 
-            return responseMsg(true, "Data Deleted", '');
+            return responseMsgs(true, "Data Deleted", "", "025825", 1.0, "", "POST", 200);
         } catch (Exception $e) {
-            return response()->json($e, 400);
+            return responseMsgs(false, $e->getMessage(), "", "025825", 1.0, "", "POST", 400);
         }
     }
 }

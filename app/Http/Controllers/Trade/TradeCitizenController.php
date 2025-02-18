@@ -171,7 +171,7 @@ class TradeCitizenController extends Controller
     {
         $this->_META_DATA["apiId"] = "c1";
         $this->_META_DATA["queryRunTime"] = 2.48;
-        $this->_META_DATA["action"]    = $request->getMethod();
+        $this->_META_DATA["action"] = $request->getMethod();
         $this->_META_DATA["deviceId"] = $request->ip();
         try {
             $rules["ulbId"] = "required|digits_between:1,9223372036854775807";
@@ -222,15 +222,15 @@ class TradeCitizenController extends Controller
     {
         $this->_META_DATA["apiId"] = "c2";
         $this->_META_DATA["queryRunTime"] = 2.48;
-        $this->_META_DATA["action"]    = $request->getMethod();
+        $this->_META_DATA["action"] = $request->getMethod();
         $this->_META_DATA["deviceId"] = $request->ip();
         try {
             if (!$this->_COMMON_FUNCTION->checkUsersWithtocken("active_citizens")) {
                 throw new Exception("Counter User Not Allowed");
             }
-            $refUser            = Auth()->user();
-            $refUserId          = $refUser->id;
-            $refUlbId           = $request->ulbId;
+            $refUser = Auth()->user();
+            $refUserId = $refUser->id;
+            $refUlbId = $request->ulbId;
 
             $wardId = $request->firmDetails["wardNo"];
             $wardId = $this->_MODEL_WARD->getAllWard($request->ulbId)->filter(function ($item) use ($wardId) {
@@ -238,10 +238,10 @@ class TradeCitizenController extends Controller
                     return $item;
                 }
             });
-            $refWorkflowId      = $this->_WF_MASTER_Id;
-            $mUserType          = $this->_COMMON_FUNCTION->userType($refWorkflowId);
-            $refWorkflows       = $this->_COMMON_FUNCTION->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
-            $mApplicationTypeId =  $this->_TRADE_CONSTAINT["APPLICATION-TYPE"][$request->applicationType];
+            $refWorkflowId = $this->_WF_MASTER_Id;
+            $mUserType = $this->_COMMON_FUNCTION->userType($refWorkflowId);
+            $refWorkflows = $this->_COMMON_FUNCTION->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
+            $mApplicationTypeId = $this->_TRADE_CONSTAINT["APPLICATION-TYPE"][$request->applicationType];
             if (sizeOf($wardId) < 1) {
                 throw new Exception("Invalide Ward Id Pase");
             }
@@ -291,7 +291,7 @@ class TradeCitizenController extends Controller
     {
         $this->_META_DATA["apiId"] = "c4";
         $this->_META_DATA["queryRunTime"] = 4.00;
-        $this->_META_DATA["action"]    = $request->getMethod();
+        $this->_META_DATA["action"] = $request->getMethod();
         $this->_META_DATA["deviceId"] = $request->ip();
         try {
             $request->validate(
@@ -303,10 +303,10 @@ class TradeCitizenController extends Controller
                 throw new Exception("Counter User Not Allowed");
             }
             #------------------------ Declaration-----------------------
-            $refUser            = Auth()->user();
-            $refNoticeDetails   = null;
-            $refWorkflowId      = $this->_WF_MASTER_Id;
-            $mNoticeDate        = null;
+            $refUser = Auth()->user();
+            $refNoticeDetails = null;
+            $refWorkflowId = $this->_WF_MASTER_Id;
+            $mNoticeDate = null;
             #------------------------End Declaration-----------------------
             $refLecenceData = $this->_REPOSITORY_TRADE->getActiveLicenseById($request->licenceId);
             if (!$refLecenceData) {
@@ -331,17 +331,17 @@ class TradeCitizenController extends Controller
 
             #-----------End validation-------------------
             #-------------Calculation-----------------------------                
-            $args['areaSqft']            = (float)$refLecenceData->area_in_sqft;
+            $args['areaSqft'] = (float) $refLecenceData->area_in_sqft;
             $args['application_type_id'] = $refLecenceData->application_type_id;
             $args['firmEstdDate'] = !empty(trim($refLecenceData->valid_from)) ? $refLecenceData->valid_from : $refLecenceData->apply_date;
             if ($refLecenceData->application_type_id == 1) {
                 $args['firmEstdDate'] = $refLecenceData->establishment_date;
             }
-            $args['tobacco_status']      = $refLecenceData->tobacco_status;
-            $args['application_no']      = $refLecenceData->application_no;
-            $args['licenseFor']          = $refLecenceData->licence_for_years;
-            $args['nature_of_business']  = $refLecenceData->nature_of_bussiness;
-            $args['noticeDate']          = $mNoticeDate;
+            $args['tobacco_status'] = $refLecenceData->tobacco_status;
+            $args['application_no'] = $refLecenceData->application_no;
+            $args['licenseFor'] = $refLecenceData->licence_for_years;
+            $args['nature_of_business'] = $refLecenceData->nature_of_bussiness;
+            $args['noticeDate'] = $mNoticeDate;
             $chargeData = $this->_REPOSITORY_TRADE->cltCharge($args);
             if ($chargeData['response'] == false || $chargeData['total_charge'] == 0) {
                 throw new Exception("Payble Amount Missmatch!!!");
@@ -364,27 +364,27 @@ class TradeCitizenController extends Controller
             }
             $this->begin();
             $TradeRazorPayRequest = new TradeRazorPayRequest();
-            $TradeRazorPayRequest->temp_id   = $request->licenceId;
+            $TradeRazorPayRequest->temp_id = $request->licenceId;
             $TradeRazorPayRequest->tran_type = $transactionType;
-            $TradeRazorPayRequest->amount       = $totalCharge;
-            $TradeRazorPayRequest->ip_address   = $request->ip();
-            $TradeRazorPayRequest->order_id        = $temp["orderId"];
+            $TradeRazorPayRequest->amount = $totalCharge;
+            $TradeRazorPayRequest->ip_address = $request->ip();
+            $TradeRazorPayRequest->order_id = $temp["orderId"];
             $TradeRazorPayRequest->department_id = $temp["departmentId"];
             $TradeRazorPayRequest->save();
 
-            $temp["requestId"]  = $TradeRazorPayRequest->id;
-            $temp["applicationNo"]  = $refLecenceData->application_no;
-            $temp['name']       = $refUser->user_name;
-            $temp['mobile']     = $refUser->mobile;
-            $temp['email']      = $refUser->email;
-            $temp['userId']     = $refUser->id;
-            $temp['ulbId']      = $refLecenceData->ulb_id;
-            $temp['firmName']   = $refLecenceData->firm_name;
-            $temp['wardNo']     = $refLecenceData->ward_no;
-            $temp['newWardNo']  = $refLecenceData->new_ward_no;
-            $temp['applyDate']  = $refLecenceData->apply_date;
-            $temp['licenceForYears']  = $refLecenceData->licence_for_years;
-            $temp['applicationType']  =  $this->_TRADE_CONSTAINT["APPLICATION-TYPE-BY-ID"][$refLecenceData->application_type_id];
+            $temp["requestId"] = $TradeRazorPayRequest->id;
+            $temp["applicationNo"] = $refLecenceData->application_no;
+            $temp['name'] = $refUser->user_name;
+            $temp['mobile'] = $refUser->mobile;
+            $temp['email'] = $refUser->email;
+            $temp['userId'] = $refUser->id;
+            $temp['ulbId'] = $refLecenceData->ulb_id;
+            $temp['firmName'] = $refLecenceData->firm_name;
+            $temp['wardNo'] = $refLecenceData->ward_no;
+            $temp['newWardNo'] = $refLecenceData->new_ward_no;
+            $temp['applyDate'] = $refLecenceData->apply_date;
+            $temp['licenceForYears'] = $refLecenceData->licence_for_years;
+            $temp['applicationType'] = $this->_TRADE_CONSTAINT["APPLICATION-TYPE-BY-ID"][$refLecenceData->application_type_id];
             $this->commit();
             return responseMsgs(
                 true,
@@ -413,22 +413,22 @@ class TradeCitizenController extends Controller
     public function razorPayResponse($args)
     {
         try {
-            $refUser        = Auth()->user();
-            $refUserId      = $refUser->id ?? $args["userId"];
-            $refUlbId       = $refUser->ulb_id ?? $args["ulbId"];
-            $refWorkflowId  = $this->_WF_MASTER_Id;
-            $refWorkflows   = $this->_COMMON_FUNCTION->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
+            $refUser = Auth()->user();
+            $refUserId = $refUser->id ?? $args["userId"];
+            $refUlbId = $refUser->ulb_id ?? $args["ulbId"];
+            $refWorkflowId = $this->_WF_MASTER_Id;
+            $refWorkflows = $this->_COMMON_FUNCTION->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
             $refNoticeDetails = null;
-            $refDenialId    = null;
-            $refUlbDtl      = UlbMaster::find($refUlbId);
-            $refUlbName     = explode(' ', $refUlbDtl->ulb_name);
-            $mNowDate       = Carbon::now()->format('Y-m-d');
-            $mTimstamp      = Carbon::now()->format('Y-m-d H:i:s');
-            $mDenialAmount  = 0;
+            $refDenialId = null;
+            $refUlbDtl = UlbMaster::find($refUlbId);
+            $refUlbName = explode(' ', $refUlbDtl->ulb_name);
+            $mNowDate = Carbon::now()->format('Y-m-d');
+            $mTimstamp = Carbon::now()->format('Y-m-d H:i:s');
+            $mDenialAmount = 0;
             $mPaymentStatus = 1;
-            $mNoticeDate    = null;
-            $mShortUlbName  = "";
-            $mWardNo        = "";
+            $mNoticeDate = null;
+            $mShortUlbName = "";
+            $mWardNo = "";
             foreach ($refUlbName as $val) {
                 $mShortUlbName .= $val[0];
             }
@@ -465,22 +465,22 @@ class TradeCitizenController extends Controller
             #-----------End valication-------------------
 
             #-------------Calculation-----------------------------                
-            $args['areaSqft']            = (float)$refLecenceData->area_in_sqft;
+            $args['areaSqft'] = (float) $refLecenceData->area_in_sqft;
             $args['application_type_id'] = $refLecenceData->application_type_id;
             $args['firmEstdDate'] = !empty(trim($refLecenceData->valid_from)) ? $refLecenceData->valid_from : $refLecenceData->apply_date;
             if ($refLecenceData->application_type_id == 1) {
                 $args['firmEstdDate'] = $refLecenceData->establishment_date;
             }
-            $args['tobacco_status']      = $refLecenceData->tobacco_status;
-            $args['licenseFor']          = $refLecenceData->licence_for_years;
-            $args['nature_of_business']  = $refLecenceData->nature_of_bussiness;
-            $args['noticeDate']          = $mNoticeDate;
+            $args['tobacco_status'] = $refLecenceData->tobacco_status;
+            $args['licenseFor'] = $refLecenceData->licence_for_years;
+            $args['nature_of_business'] = $refLecenceData->nature_of_bussiness;
+            $args['noticeDate'] = $mNoticeDate;
             $chargeData = $this->_REPOSITORY_TRADE->cltCharge($args);
             if ($chargeData['response'] == false || round($args['amount']) != round($chargeData['total_charge'])) {
                 throw new Exception("Payble Amount Missmatch!!!");
             }
 
-            $transactionType =  $this->_TRADE_CONSTAINT["APPLICATION-TYPE-BY-ID"][$refLecenceData->application_type_id];
+            $transactionType = $this->_TRADE_CONSTAINT["APPLICATION-TYPE-BY-ID"][$refLecenceData->application_type_id];
 
             $rate_id = $chargeData["rate_id"];
             $totalCharge = $chargeData['total_charge'];
@@ -490,73 +490,74 @@ class TradeCitizenController extends Controller
             $this->begin();
 
             $RazorPayResponse = new TradeRazorPayResponse;
-            $RazorPayResponse->temp_id      = $RazorPayRequest->related_id;
-            $RazorPayResponse->request_id   = $RazorPayRequest->id;
-            $RazorPayResponse->amount       = $args['amount'];
-            $RazorPayResponse->merchant_id  = $args['merchantId'] ?? null;
-            $RazorPayResponse->order_id     = $args["orderId"];
-            $RazorPayResponse->payment_id   = $args["paymentId"];
+            $RazorPayResponse->temp_id = $RazorPayRequest->related_id;
+            $RazorPayResponse->request_id = $RazorPayRequest->id;
+            $RazorPayResponse->amount = $args['amount'];
+            $RazorPayResponse->merchant_id = $args['merchantId'] ?? null;
+            $RazorPayResponse->order_id = $args["orderId"];
+            $RazorPayResponse->payment_id = $args["paymentId"];
             $RazorPayResponse->save();
 
             $RazorPayRequest->status = 1;
             $RazorPayRequest->update();
 
             $Tradetransaction = new TradeTransaction;
-            $Tradetransaction->temp_id          = $licenceId;
+            $Tradetransaction->temp_id = $licenceId;
             $Tradetransaction->payment_gateway_type = "razor_pay";
-            $Tradetransaction->response_id      = $RazorPayResponse->id;
-            $Tradetransaction->ward_id          = $refLecenceData->ward_id;
-            $Tradetransaction->tran_type        = $transactionType;
-            $Tradetransaction->tran_date        = $mNowDate;
-            $Tradetransaction->payment_mode     = "Online";
-            $Tradetransaction->rate_id          = $rate_id;
-            $Tradetransaction->paid_amount      = $totalCharge;
-            $Tradetransaction->penalty          = $chargeData['penalty'] + $mDenialAmount + $chargeData['arear_amount'];
-            $Tradetransaction->emp_dtl_id       = $refUserId;
-            $Tradetransaction->created_at       = $mTimstamp;
-            $Tradetransaction->ip_address       = '';
-            $Tradetransaction->ulb_id           = $refUlbId;
+            $Tradetransaction->response_id = $RazorPayResponse->id;
+            $Tradetransaction->ward_id = $refLecenceData->ward_id;
+            $Tradetransaction->tran_type = $transactionType;
+            $Tradetransaction->tran_date = $mNowDate;
+            $Tradetransaction->payment_mode = "Online";
+            $Tradetransaction->rate_id = $rate_id;
+            $Tradetransaction->paid_amount = $totalCharge;
+            $Tradetransaction->penalty = $chargeData['penalty'] + $mDenialAmount + $chargeData['arear_amount'];
+            $Tradetransaction->emp_dtl_id = $refUserId;
+            $Tradetransaction->created_at = $mTimstamp;
+            $Tradetransaction->ip_address = '';
+            $Tradetransaction->ulb_id = $refUlbId;
             $Tradetransaction->save();
-            $transaction_id                     = $Tradetransaction->id;
-            $Tradetransaction->transaction_no   = $args["transactionNo"]; //$this->createTransactionNo($transaction_id);//"TRANML" . date('d') . $transaction_id . date('Y') . date('m') . date('s');
+            $transaction_id = $Tradetransaction->id;
+            $Tradetransaction->transaction_no = $args["transactionNo"]; //$this->createTransactionNo($transaction_id);//"TRANML" . date('d') . $transaction_id . date('Y') . date('m') . date('s');
             $Tradetransaction->update();
 
             $TradeFineRebet = new TradeFineRebete;
-            $TradeFineRebet->tran_id        = $transaction_id;
-            $TradeFineRebet->type           = 'Delay Apply License';
-            $TradeFineRebet->amount         = $chargeData['penalty'];
-            $TradeFineRebet->created_at     = $mTimstamp;
+            $TradeFineRebet->tran_id = $transaction_id;
+            $TradeFineRebet->type = 'Delay Apply License';
+            $TradeFineRebet->amount = $chargeData['penalty'];
+            $TradeFineRebet->created_at = $mTimstamp;
             $TradeFineRebet->save();
 
             $mDenialAmount = $mDenialAmount + $chargeData['arear_amount'];
             if ($mDenialAmount > 0) {
                 $TradeFineRebet2 = new TradeFineRebete;
-                $TradeFineRebet2->tran_id   = $transaction_id;
-                $TradeFineRebet2->type      = 'Denial Apply';
-                $TradeFineRebet2->amount         = $mDenialAmount;
-                $TradeFineRebet2->created_on     = $mTimstamp;
+                $TradeFineRebet2->tran_id = $transaction_id;
+                $TradeFineRebet2->type = 'Denial Apply';
+                $TradeFineRebet2->amount = $mDenialAmount;
+                $TradeFineRebet2->created_on = $mTimstamp;
                 $TradeFineRebet2->save();
             }
             $request = new Request(["applicationId" => $licenceId]);
             if ($mPaymentStatus == 1 && $this->_REPOSITORY_TRADE->checkWorckFlowForwardBackord($request) && $refLecenceData->pending_status == 0) {
                 $refLecenceData->current_role = $refWorkflows['initiator']['forward_id'];
                 $refLecenceData->document_upload_status = 1;
-                $refLecenceData->pending_status  = 1;
+                $refLecenceData->pending_status = 1;
                 $args["sender_role_id"] = $refWorkflows['initiator']['id'];
                 $args["receiver_role_id"] = $refWorkflows['initiator']['forward_id'];
-                $args["citizen_id"] = $refUserId;;
+                $args["citizen_id"] = $refUserId;
+                ;
                 $args["ref_table_dot_id"] = "active_trade_licences";
                 $args["ref_table_id_value"] = $licenceId;
                 $args["workflow_id"] = $refWorkflowId;
                 $args["module_id"] = $this->_MODULE_ID;
 
-                $tem =  $this->_REPOSITORY_TRADE->insertWorkflowTrack($args);
+                $tem = $this->_REPOSITORY_TRADE->insertWorkflowTrack($args);
             }
             if (!$refLecenceData->provisional_license_no) {
                 $provNo = $this->_REPOSITORY_TRADE->createProvisinalNo($mShortUlbName, $mWardNo, $licenceId);
                 $refLecenceData->provisional_license_no = $provNo;
             }
-            $refLecenceData->payment_status         = $mPaymentStatus;
+            $refLecenceData->payment_status = $mPaymentStatus;
             $refLecenceData->save();
 
             if ($refNoticeDetails) {
@@ -569,7 +570,7 @@ class TradeCitizenController extends Controller
             #----------End transaction------------------------
             #----------Response------------------------------
             $res['transactionId'] = $transaction_id; #config('app.url') .
-            $res['paymentReceipt'] =  "/api/trade/application/payment-receipt/" . $licenceId . "/" . $transaction_id;
+            $res['paymentReceipt'] = "/api/trade/application/payment-receipt/" . $licenceId . "/" . $transaction_id;
             return responseMsg(true, "", $res);
         } catch (Exception $e) {
             $this->rollBack();
@@ -582,15 +583,15 @@ class TradeCitizenController extends Controller
             if (!$this->_COMMON_FUNCTION->checkUsersWithtocken("active_citizens")) {
                 throw new Exception("Counter User Not Allowed");
             }
-            $refUser     = Auth()->user();
+            $refUser = Auth()->user();
             $application = null;
             $transection = null;
             $path = "/api/trade/paymentReceipt/";
             $rules = [
-                'orderId'    => 'required|string',
-                'paymentId'  => 'required|string',
+                'orderId' => 'required|string',
+                'paymentId' => 'required|string',
             ];
-            $validator = Validator::make($request->all(), $rules,);
+            $validator = Validator::make($request->all(), $rules, );
             if ($validator->fails()) {
                 return responseMsg(false, $validator->errors(), "");
             }
@@ -615,14 +616,14 @@ class TradeCitizenController extends Controller
             if (!$transection) {
                 throw new Exception("Not Transection Data Found....");
             }
-            $data["amount"]            = $TradeRazorPayResponse->amount;
-            $data["applicationId"]     = $TradeRazorPayResponse->temp_id;
-            $data["applicationNo"]     = $application->application_no;
-            $data["tranType"]          = $TradeRazorPayResponse->tran_type;
-            $data["transectionId"]     = $transection->id;
-            $data["transectionNo"]     = $transection->tran_no;
-            $data["transectionDate"]   = $transection->tran_date;
-            $data['paymentRecipt']     = config('app.url') . $path . $TradeRazorPayResponse->temp_id . "/" . $transection->id;
+            $data["amount"] = $TradeRazorPayResponse->amount;
+            $data["applicationId"] = $TradeRazorPayResponse->temp_id;
+            $data["applicationNo"] = $application->application_no;
+            $data["tranType"] = $TradeRazorPayResponse->tran_type;
+            $data["transectionId"] = $transection->id;
+            $data["transectionNo"] = $transection->tran_no;
+            $data["transectionDate"] = $transection->tran_date;
+            $data['paymentRecipt'] = config('app.url') . $path . $TradeRazorPayResponse->temp_id . "/" . $transection->id;
             return responseMsg(
                 true,
                 "",
@@ -639,39 +640,34 @@ class TradeCitizenController extends Controller
 
     #=======================[📝📖 CITIZEN CAN SEND APPLICATION TO OFFICER FOR VERIFICATION | S.L (4.0) 📖📝]==============================
     public function sendToLevel(ApplicationId $request)
-    {        
-        try{
-            $refUser        = Auth()->user();
-            $refUserId      = $refUser->id ;
-            $refUlbId       = $refUser->ulb_id ?? 0;
+    {
+        try {
+            $refUser = Auth()->user();
+            $refUserId = $refUser->id;
+            $refUlbId = $refUser->ulb_id ?? 0;
             $refLecenceData = ActiveTradeLicence::find($request->applicationId);
-            if(!$refLecenceData)
-            {
+            if (!$refLecenceData) {
                 throw new Exception("Data Not Found!!!");
             }
-            $refWorkflowId  = $this->_WF_MASTER_Id;
-            if(!$refUlbId)
-            {
+            $refWorkflowId = $this->_WF_MASTER_Id;
+            if (!$refUlbId) {
                 $refUlbId = $refLecenceData->ulb_id;
             }
-            $request->merge(["ulb_id"=>$refUlbId]);
+            $request->merge(["ulb_id" => $refUlbId]);
 
-            if(!$this->_REPOSITORY_TRADE->checkWorckFlowForwardBackord($request))
-            {
+            if (!$this->_REPOSITORY_TRADE->checkWorckFlowForwardBackord($request)) {
                 throw new Exception("All Document Are Not Uploded");
             }
-            if($refLecenceData->payment_status==0)
-            {
+            if ($refLecenceData->payment_status == 0) {
                 throw new Exception("Please make Payment first");
             }
-            if($refLecenceData->payment_status!=1)
-            {
+            if ($refLecenceData->payment_status != 1) {
                 throw new Exception("Please is not clear please wait for clearence");
             }
-            
-            $refWorkflows   = $this->_COMMON_FUNCTION->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
-            $allRolse     = collect($this->_COMMON_FUNCTION->getAllRoles($refUserId, $refUlbId, $refWorkflowId, 0, true));
-            $btcFrom = ((collect($allRolse->where("id", $refLecenceData->current_role)->values())[0])??[]);
+
+            $refWorkflows = $this->_COMMON_FUNCTION->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
+            $allRolse = collect($this->_COMMON_FUNCTION->getAllRoles($refUserId, $refUlbId, $refWorkflowId, 0, true));
+            $btcFrom = ((collect($allRolse->where("id", $refLecenceData->current_role)->values())[0]) ?? []);
             $track = new WorkflowTrack();
 
             $metaReqs['moduleId'] = $this->_MODULE_ID;
@@ -684,32 +680,29 @@ class TradeCitizenController extends Controller
             $metaReqs['forwardDate'] = Carbon::now()->format('Y-m-d');
             $metaReqs['forwardTime'] = Carbon::now()->format('H:i:s');
             $metaReqs['senderRoleId'] = $refWorkflows['initiator']['id'];
-            $metaReqs["receiverRoleId"] = $refLecenceData->is_parked ? ($btcFrom["id"]??0) : $refWorkflows['initiator']['forward_role_id'];
-            $metaReqs['verificationStatus'] = $this->_TRADE_CONSTAINT["VERIFICATION-STATUS"]["VERIFY"] ;
+            $metaReqs["receiverRoleId"] = $refLecenceData->is_parked ? ($btcFrom["id"] ?? 0) : $refWorkflows['initiator']['forward_role_id'];
+            $metaReqs['verificationStatus'] = $this->_TRADE_CONSTAINT["VERIFICATION-STATUS"]["VERIFY"];
             $request->merge($metaReqs);
-            
+
             $receiverRole = array_values(objToArray($allRolse->where("id", $request->receiverRoleId)))[0] ?? [];
-            $sms ="";
+            $sms = "";
             $this->begin();
-            if ($refLecenceData->pending_status == 0 ) 
-            {
+            if ($refLecenceData->pending_status == 0) {
                 $refLecenceData->current_role = $refWorkflows['initiator']['forward_role_id'];
                 $refLecenceData->document_upload_status = 1;
-                $refLecenceData->pending_status  = 1;
-                $sms ="Application Forwarded To ".($receiverRole["role_name"] ?? "");
-            }
-            elseif($refLecenceData->is_parked)
-            {
+                $refLecenceData->pending_status = 1;
+                $sms = "Application Forwarded To " . ($receiverRole["role_name"] ?? "");
+            } elseif ($refLecenceData->is_parked) {
                 $refLecenceData->is_parked = false;
                 $refLecenceData->document_upload_status = 1;
-                $sms ="Application Re-Forwarded To ".($receiverRole["role_name"] ?? "");
+                $sms = "Application Re-Forwarded To " . ($receiverRole["role_name"] ?? "");
             }
-            $refLecenceData->update(); 
+            $refLecenceData->update();
             $this->commit();
-            return responseMsg(true,$sms,"",);
-        }catch (Exception $e) {
+            return responseMsg(true, $sms, "", );
+        } catch (Exception $e) {
             $this->rollback();
-            return responseMsg(false,$e->getMessage(),"",);
+            return responseMsg(false, $e->getMessage(), "", );
         }
     }
     # Serial No : 27
@@ -826,10 +819,10 @@ class TradeCitizenController extends Controller
     public function readAtachedLicenseDtl(Request $request)
     {
         try {
-            $refUser        = Auth()->user();
-            $refUserId      = $refUser->id;
-            $refWorkflowId  = $this->_WF_MASTER_Id;
-            $data = (array)null;
+            $refUser = Auth()->user();
+            $refUserId = $refUser->id;
+            $refWorkflowId = $this->_WF_MASTER_Id;
+            $data = (array) null;
             $licenseNo = (new ActiveCitizenUndercare())->getDetailsByCitizenId()
                 ->WHERENOTNULL("license_id");
 
@@ -989,11 +982,11 @@ class TradeCitizenController extends Controller
 
                 $data =
                     $ActiveLicence
-                    ->union($RejectedLicence)
-                    ->union($ApprovedLicence)
-                    ->union($OldLicence)
-                    ->get();
-                    // $ApprovedLicence->get();
+                        ->union($RejectedLicence)
+                        ->union($ApprovedLicence)
+                        ->union($OldLicence)
+                        ->get();
+                // $ApprovedLicence->get();
 
                 $data->map(function ($val) {
                     $option = [];
@@ -1039,16 +1032,16 @@ class TradeCitizenController extends Controller
     {
         try {
             $refUserId = $request->citizenId;
-            $ulbId     = $request->ulbId;
+            $ulbId = $request->ulbId;
             $cotegory = $request->cotegory;
-            $status  = $request->status;
+            $status = $request->status;
             $applicationTypeId = null;
             if ($request->applicationType) {
                 $applicationTypeId = $this->_TRADE_CONSTAINT["APPLICATION-TYPE"][$request->applicationType];
             }
             $activeTrade = ActiveTradeLicence::readConnection()->where("citizen_id", $refUserId)->get();
             $activeTran = $activeTrade->map(function ($val) {
-                $tran =  $val->transactionDtl()->get();
+                $tran = $val->transactionDtl()->get();
                 $tran->map(function ($t) {
                     $t->chequDtl = $t->chequeDtl()->first();
                     return $t;
@@ -1077,7 +1070,7 @@ class TradeCitizenController extends Controller
             });
             $rejecTrade = RejectedTradeLicence::readConnection()->where("citizen_id", $refUserId)->get();
             $rejectTran = $rejecTrade->map(function ($val) {
-                $tran =  $val->transactionDtl()->get();
+                $tran = $val->transactionDtl()->get();
                 $tran->map(function ($t) {
                     $t->chequDtl = $t->chequeDtl()->first();
                     return $t;
@@ -1107,7 +1100,7 @@ class TradeCitizenController extends Controller
 
             $trade = TradeLicence::readConnection()->where("citizen_id", $refUserId)->get();
             $tradeTran = $trade->map(function ($val) {
-                $tran =  $val->transactionDtl()->get();
+                $tran = $val->transactionDtl()->get();
                 $tran->map(function ($t) {
                     $t->chequDtl = $t->chequeDtl()->first();
                     return $t;
@@ -1136,7 +1129,7 @@ class TradeCitizenController extends Controller
             });
             $old = TradeRenewal::readConnection()->where("citizen_id", $refUserId)->get();
             $oldTran = $old->map(function ($val) {
-                $tran =  $val->transactionDtl()->get();
+                $tran = $val->transactionDtl()->get();
                 $tran->map(function ($t) {
                     $t->chequDtl = $t->chequeDtl()->first();
                     return $t;
@@ -1219,61 +1212,47 @@ class TradeCitizenController extends Controller
     }
 
     /* 
-    * || Get Owner Details Info Filtering By License No Or Application No
-    * || @param filterBy 
-    * || @param filterValue
-    * || # Added By Alok
-    */
+     * || Get Owner Details Info Filtering By License No Or Application No
+     * || @param filterBy 
+     * || @param filterValue
+     * || # Added By Alok
+     */
     public function getOwnerDetailsInfo(Request $request)
     {
         $request->validate([
-            'filterBy'  => "required|string|in:licenseNo,applicationNo",
+            'filterBy'    => "required|string|in:licenseNo,applicationNo",
             'filterValue' => "required|string",
         ]);
 
         try {
-            $tradeOwnerDtls = new TradeOwner();
+            $key = $request->filterBy;
+            $parameter = $request->filterValue;
 
-           
-            $filterBy = $request->filterBy;
-            $filterValue = $request->filterValue;
+            $tradeOwnerDtls = new TradeLicence();
 
-            $filterConditions = [];
-
-            // Handle filtering logic in the controller
-            switch ($filterBy) {
-
+            switch ($key) {
                 case 'licenseNo':
-                    $filterConditions[] = ['trade_licences.license_no', '=', $filterValue];
+                    $data = $tradeOwnerDtls->getOwnerDetails($parameter, 'trade_licences.license_no')->get();
                     break;
 
                 case 'applicationNo':
-                    $filterConditions[] = ['trade_licences.application_no', '=', $filterValue];
+                    $data = $tradeOwnerDtls->getOwnerDetails($parameter, 'trade_licences.application_no')->get();
                     break;
 
-                default:
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Invalid filter type provided.',
-                    ], 400);
+                // default:
+                //     return responseMsgs(false, "Invalid" . $key . '!'. "value!", "", "012123", "1.0", "", "POST", $request->deviceId ?? "");
             }
 
-            // Pass the filter conditions to the model
-            $ownerDetails = $tradeOwnerDtls->getOwnerDetails($filterConditions);
-
-            // Check if no owner details were found
-            if ($ownerDetails->isEmpty()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No Details Found For The ' . $filterBy . '!',
-                ]);
+            if ($data->isEmpty()) {
+                return responseMsgs(false, 'No Details Found For ' . $key . '!', "", "012123", "1.0", "", "POST", $request->deviceId ?? "");
             }
 
-            return responseMsgs(true, "Application Details", remove_null($ownerDetails), "011302", "1.0", "", "POST", $request->deviceId ?? "");
+            return responseMsgs(true, "Application Details", remove_null($data), "012123", "1.0", "", "POST", $request->deviceId ?? "");
         } 
-        
         catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "011302", "1.0", "", "POST", $request->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "012123", "1.0", "", "POST", $request->deviceId ?? "");
         }
     }
+
+    
 }

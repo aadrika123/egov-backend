@@ -46,12 +46,12 @@ class WorkflowRoleMapController extends Controller
                 // 'backwardRoleId' => 'required',
             ]);
 
-            $create = new WfWorkflowrolemap();
-            $create->addRoleMap($req);
+            $mWfWorkflowrolemap = new WfWorkflowrolemap();
+            $mWfWorkflowrolemap->addRoleMap($req);
 
-            return responseMsg(true, "Successfully Saved", "");
+            return responseMsgs(true, 'Successfully Saved', "", "025861", 1.0, "", "POST", 200);
         } catch (Exception $e) {
-            return response()->json(false, $e->getMessage());
+            return responseMsgs(false, $e->getMessage(), "", "025861", 1.0, "", "POST", 400);
         }
     }
 
@@ -59,12 +59,12 @@ class WorkflowRoleMapController extends Controller
     public function updateRoleMap(Request $req)
     {
         try {
-            $update = new WfWorkflowrolemap();
-            $list  = $update->updateRoleMap($req);
+            $WfWorkflowrolemap = new WfWorkflowrolemap();
+            $updateMasterlist  = $WfWorkflowrolemap->updateRoleMap($req);
 
-            return responseMsg(true, "Successfully Updated", $list);
+            return responseMsgs(true, 'Successfully Updated', $updateMasterlist, "025862", 1.0, "", "POST", 200);
         } catch (Exception $e) {
-            return response()->json(false, $e->getMessage());
+            return responseMsgs(false, $e->getMessage(), "", "025862", 1.0, "", "POST", 400);
         }
     }
 
@@ -73,12 +73,12 @@ class WorkflowRoleMapController extends Controller
     {
         try {
 
-            $listById = new WfWorkflowrolemap();
-            $list  = $listById->listbyId($req);
+            $WfWorkflowrolemap = new WfWorkflowrolemap();
+            $listById  = $WfWorkflowrolemap->listbyId($req);
 
-            return responseMsg(true, "Role Map List", $list);
+            return responseMsgs(true, 'Role Map List', $listById, "025863", 1.0, "", "POST", 200);
         } catch (Exception $e) {
-            return response()->json(false, $e->getMessage());
+            return responseMsgs(false, $e->getMessage(), "", "025863", 1.0, "", "POST", 400);
         }
     }
 
@@ -87,12 +87,12 @@ class WorkflowRoleMapController extends Controller
     {
         try {
 
-            $list = new WfWorkflowrolemap();
-            $masters = $list->roleMaps();
+            $WfWorkflowrolemap = new WfWorkflowrolemap();
+            $allMastersList = $WfWorkflowrolemap->roleMaps();
 
-            return responseMsg(true, "All Role Map List", $masters);
+            return responseMsgs(true, 'All Role Map List', $allMastersList, "025864", 1.0, "", "POST", 200);
         } catch (Exception $e) {
-            return response()->json(false, $e->getMessage());
+            return responseMsgs(false, $e->getMessage(), "", "025864", 1.0, "", "POST", 400);
         }
     }
 
@@ -101,14 +101,15 @@ class WorkflowRoleMapController extends Controller
     public function deleteRoleMap(Request $req)
     {
         try {
-            $delete = new WfWorkflowrolemap();
-            $delete->deleteRoleMap($req);
+            $WfWorkflowrolemap = new WfWorkflowrolemap();
+            $WfWorkflowrolemap->deleteRoleMap($req);
 
-            return responseMsg(true, "Data Deleted", '');
+            return responseMsgs(true, 'Successfully Saved', "", "025865", 1.0, "", "POST", 200);
         } catch (Exception $e) {
-            return response()->json($e, 400);
+            return responseMsgs(false, $e->getMessage(), "", "025865", 1.0, "", "POST", 400);
         }
     }
+    
 
     //Workflow Info
     public function workflowInfo(Request $req)
@@ -118,7 +119,7 @@ class WorkflowRoleMapController extends Controller
             $mWorkflowMap = new WorkflowMap();
             $mWfWorkflows = new WfWorkflow();
             $mWfWorkflowrolemap = new WfWorkflowrolemap();
-            $ulbId = authUser()->ulb_id;
+            $ulbId = $req->authUser()->ulb_id;
             // $wfMasterId = $req->workflowId;                  // wfMasterId from frontend in the key of wokflowId
             $workflowId = $req->workflowId;                  // wfMasterId from frontend in the key of wokflowId
             // $ulbWorkflow = $mWfWorkflows->getulbWorkflowId($wfMasterId, $ulbId);
@@ -141,9 +142,9 @@ class WorkflowRoleMapController extends Controller
             // pseudo users
             $data['pseudoUsers'] = $this->pseudoUser($ulbId);
 
-            return responseMsgs(true, "Workflow Information", remove_null($data));
+            return responseMsgs(true, "Workflow Information", remove_null($data), "025866", 1.0, "", "POST", 200);
         } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
+            return responseMsgs(false, $e->getMessage(), "", "025866", 1.0, "", "POST", 400);
         }
     }
 

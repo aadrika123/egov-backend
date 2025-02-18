@@ -49,18 +49,18 @@ class WorkflowRoleUserMapRepository implements iWorkflowRoleUserMapRepository
                 return responseMsg(true, "User Exist", "");
             }
             // create
-            $device = new WfRoleusermap;
-            $device->wf_role_id = $request->wfRoleId;
-            $device->user_id = $request->userId;
-            $device->created_by = $createdBy;
-            $device->stamp_date_time = Carbon::now();
-            $device->created_at = Carbon::now();
-            $device->save();
+            $mWfRoleusermap = new WfRoleusermap;
+            $mWfRoleusermap->wf_role_id = $request->wfRoleId;
+            $mWfRoleusermap->user_id = $request->userId;
+            $mWfRoleusermap->created_by = $createdBy;
+            $mWfRoleusermap->stamp_date_time = Carbon::now();
+            $mWfRoleusermap->created_at = Carbon::now();
+            $mWfRoleusermap->save();
 
             Redis::del('roles-user-u-' . $request->userId);
-            return responseMsg(true, "Successfully Saved", "");
+            return responseMsgs(true, "Successfully Saved", "", "025851", 1.0, "", "POST", 200);
         } catch (Exception $e) {
-            return response()->json($e, 400);
+            return responseMsgs(false, $e->getMessage(), "", "025851", 1.0, "", "POST", 400);
         }
     }
 
@@ -71,7 +71,7 @@ class WorkflowRoleUserMapRepository implements iWorkflowRoleUserMapRepository
     {
         $data = WfRoleusermap::where('is_suspended', false)
             ->orderByDesc('id')->get();
-        return $data;
+        return responseMsgs(true, "Successfully Data Fatced", $data, "025852", 1.0, "", "", 200);
     }
 
 
@@ -82,7 +82,7 @@ class WorkflowRoleUserMapRepository implements iWorkflowRoleUserMapRepository
     {
         $data = WfRoleusermap::find($id);
         $data->delete();
-        return response()->json('Successfully Deleted', 200);
+        return responseMsgs(true, "Successfully Deleted", $data, "025853", 1.0, "", "", 200);
     }
 
 
@@ -100,9 +100,9 @@ class WorkflowRoleUserMapRepository implements iWorkflowRoleUserMapRepository
             $device->created_by = $createdBy;
             $device->save();
             Redis::del('roles-user-u-' . $request->userId);                                 // Flush Key of the User Role Permission
-            return responseMsg(true, "Successfully Updated", "");
+            return responseMsgs(true, "Successfully Updated", "", "025854", "", "", "", 200);
         } catch (Exception $e) {
-            return response()->json($e, 400);
+            return responseMsgs(false, $e->getMessage(), "", "025854", 1.0, "", "POST", 400);
         }
     }
 
@@ -116,9 +116,9 @@ class WorkflowRoleUserMapRepository implements iWorkflowRoleUserMapRepository
             ->where('is_suspended', false)
             ->get();
         if ($data) {
-            return response()->json($data, 200);
+            return responseMsgs(true, "Successfully Updated", $data, "025855", "", "", "", 200);
         } else {
-            return response()->json(['Message' => 'Data not found'], 404);
+            return responseMsgs(false, 'Data not found', "", "025855", 1.0, "", "POST", 400);
         }
     }
 
@@ -136,7 +136,7 @@ class WorkflowRoleUserMapRepository implements iWorkflowRoleUserMapRepository
         try {
             // $roles = json_decode(Redis::get('roles-user-u-' . $req->userId));
             // if (!$roles) {
-            $userId = authUser()->id;
+            $userId = $req->authUser()->id;
             $query = "SELECT 
                                 r.id AS role_id,
                                 r.role_name,
@@ -157,9 +157,9 @@ class WorkflowRoleUserMapRepository implements iWorkflowRoleUserMapRepository
             $roles = DB::select($query);
             $this->_redis->set('roles-user-u-' . $req->userId, json_encode($roles));               // Caching Should Be flush on New role Permission to the user
             // }
-            return responseMsg(true, "Role Permissions", remove_null($roles));
+            return responseMsgs(true, "Role Permissions", remove_null($roles), "025856", 1.0, "", "POST", 200);
         } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
+            return responseMsgs(false, $e->getMessage(), "", "025856", 1.0, "", "POST", 400);
         }
     }
 
@@ -181,35 +181,35 @@ class WorkflowRoleUserMapRepository implements iWorkflowRoleUserMapRepository
 
             if ($userRoles) {                                                           // If Data Already Existing
                 switch ($req->status) {
-                    case 1;
+                    case 1:
                         $userRoles->is_suspended = 0;
                         $userRoles->save();
                         return responseMsg(true, "Successfully Enabled the Role Permission for User", "");
-                        break;
-                    case 0;
+                        // break;
+                    case 0:
                         $userRoles->is_suspended = 1;
                         $userRoles->save();
                         return responseMsg(true, "Successfully Disabled the Role Permission", "");
-                        break;
+                        // break;
                 }
             }
 
             $userRoles = new WfRoleusermap();
             $userRoles->wf_role_id = $req->roleId;
             $userRoles->user_id = $req->userId;
-            $userRoles->created_by = authUser()->id;
+            $userRoles->created_by = $req->authUser()->id;
             $userRoles->save();
 
-            return responseMsg(true, "Successfully Enabled the Role Permission for the User", "");
+            return responseMsgs(true, "Successfully Enabled the Role Permission for the User", "", "025857", 1.0, "", "POST", 200);
         } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
+            return responseMsgs(false, $e->getMessage(), "", "025857", 1.0, "", "POST", 400);
         }
     }
 
     //role of logged in user
-    public function roleUser()
+    public function roleUser($req)
     {
-        $userId = authUser()->id;
+        $userId = $req->authUser()->id;
         $role = WfRoleusermap::select('wf_roleusermaps.*')
             ->where('user_id', $userId)
             ->where('is_suspended', false)

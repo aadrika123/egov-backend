@@ -141,4 +141,36 @@ class WaterApprovalApplicationDetail extends Model
             'total' => $data->total()
         ];
     }
+
+    /* 
+    | Get Owner Details According to Filter Conditions
+    | @param $ulbId
+    | created by: Alok
+    */
+    public function getOwnerDetails($parameter)
+    {
+        return self::select(
+            'water_consumer_owners.id',
+            'water_consumer_owners.consumer_id',
+            'water_consumer_owners.applicant_name',
+            'water_consumer_owners.guardian_name',
+            'water_consumer_owners.mobile_no',
+            'water_consumers.address',
+            'water_consumers.category',
+            'water_consumers.area_sqft',
+            'water_consumers.area_sqmt',
+            'water_consumers.consumer_no',
+            'water_consumers.holding_no',
+            'water_approval_application_details.application_no',
+            'water_consumers.saf_no',
+            'water_consumers.ulb_id',
+            'ulb_masters.ulb_name',
+
+            DB::raw("CASE WHEN water_consumer_owners.status = 'true' THEN 'Active' ELSE 'Inactive' END AS status")
+        )
+        ->join('water_consumers', 'water_consumers.id', '=', 'water_approval_application_details.id')
+        ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_consumers.id')
+        ->leftJoin('ulb_masters', 'ulb_masters.id', '=', 'water_consumers.ulb_id')
+        ->where('water_approval_application_details.application_no', $parameter);
+    }
 }

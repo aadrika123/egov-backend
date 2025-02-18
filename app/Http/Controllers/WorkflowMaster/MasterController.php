@@ -28,12 +28,13 @@ class MasterController extends Controller
                 'workflowName' => 'required'
             ]);
 
-            $create = new WfMaster();
-            $create->addMaster($req);
+            $mWfMaster = new WfMaster();
+            $mWfMaster->addMaster($req);
 
-            return responseMsg(true, "Successfully Saved", "");
+            // return responseMsg(true, "Successfully Saved", "");
+            return responseMsgs(true, 'Successfully Saved', "", "025811", 1.0, "", "POST", 200);
         } catch (Exception $e) {
-            return response()->json(false, $e->getMessage());
+            return responseMsgs(false, $e->getMessage(), "", "025811", 1.0, "", "POST", 400);
         }
     }
 
@@ -41,12 +42,13 @@ class MasterController extends Controller
     public function updateMaster(Request $req)
     {
         try {
-            $update = new WfMaster();
-            $list  = $update->updateMaster($req);
+            $mWfMaster = new WfMaster();
+            $updateMaster  = $mWfMaster->updateMaster($req);
 
-            return responseMsg(true, "Successfully Updated", $list);
+            // return responseMsg(true, "Successfully Updated", $updateMaster);
+            return responseMsgs(true, 'Successfully Updated', $updateMaster, "025812", 1.0, "", "POST", 200);
         } catch (Exception $e) {
-            return response()->json(false, $e->getMessage());
+            return responseMsgs(false, $e->getMessage(), "", "025812", 1.0, "", "POST", 400);
         }
     }
 
@@ -55,12 +57,13 @@ class MasterController extends Controller
     {
         try {
 
-            $listById = new WfMaster();
-            $list  = $listById->listbyId($req);
+            $mWfMaster = new WfMaster();
+            $listById  = $mWfMaster->listbyId($req);
 
-            return responseMsg(true, "Master List", $list);
+            // return responseMsg(true, "Master List", $listById);
+            return responseMsgs(true, 'Master List', $listById, "025813", 1.0, "", "POST", 200);
         } catch (Exception $e) {
-            return response()->json(false, $e->getMessage());
+            return responseMsgs(false, $e->getMessage(), "", "025813", 1.0, "", "POST", 400);
         }
     }
 
@@ -69,12 +72,13 @@ class MasterController extends Controller
     {
         try {
 
-            $list = new WfMaster();
-            $masters = $list->listMaster();
+            $mWfMaster = new WfMaster();
+            $masterList = $mWfMaster->listAllMaster();
 
-            return responseMsg(true, "All Master List", $masters);
+            // return responseMsg(true, "All Master List", $masterList);
+            return responseMsgs(true, 'All Master List', $masterList, "025814", 1.0, "", "POST", 200);
         } catch (Exception $e) {
-            return response()->json(false, $e->getMessage());
+            return responseMsgs(false, $e->getMessage(), "", "025814", 1.0, "", "POST", 400);
         }
     }
 
@@ -83,12 +87,13 @@ class MasterController extends Controller
     public function deleteMaster(Request $req)
     {
         try {
-            $delete = new WfMaster();
-            $delete->deleteMaster($req);
+            $mWfMaster = new WfMaster();
+            $mWfMaster->deleteMaster($req);
 
-            return responseMsg(true, "Data Deleted", '');
+            // return responseMsg(true, "Data Deleted", '');
+            return responseMsgs(true, 'Data Deleted', "", "025815", 1.0, "", "POST", 200);
         } catch (Exception $e) {
-            return response()->json($e, 400);
+            return responseMsgs(false, $e->getMessage(), "", "025815", 1.0, "", "POST", 400);
         }
     }
 }

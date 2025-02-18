@@ -279,7 +279,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
     Route::post('active-application/get-user-details', 'getUserDetails');         #API_ID = 011304        
 
     // added by alok
-    // Route::post('details/get-owner-details', 'getOwnerDetailsInfo'); 
+    // Route::post('details/get-owner-details', 'getOwnerDetailsInfo');  #API_ID = 011305
   });
 
 

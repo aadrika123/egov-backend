@@ -13,25 +13,25 @@ class RoleController extends Controller
     public function createRole(Request $req)
     {
         try {
-            $create = new WfRole();
-            $create->addRole($req);
+            $mWfRole = new WfRole();
+            $mWfRole->addRole($req);
 
-            return responseMsg(true, "Successfully Saved", "");
+            return responseMsgs(true, "Successfully Saved", "", "025831", 1.0, "", "POST", 200);
         } catch (Exception $e) {
-            return response()->json(false, $e->getMessage());
+            return responseMsgs(false, $e->getMessage(), "", "025831", 1.0, "", "POST", 400);
         }
     }
 
     //update master
-    public function editRole(Request $req)
+    public function updateRole(Request $req)
     {
         try {
-            $update = new WfRole();
-            $list  = $update->updateRole($req);
+            $mWfRole = new WfRole();
+            $updateRole  = $mWfRole->updateRole($req);
 
-            return responseMsg(true, "Successfully Updated", $list);
+            return responseMsgs(true, "Successfully Updated", $updateRole, "025832", 1.0, "", "POST", 200);
         } catch (Exception $e) {
-            return response()->json(false, $e->getMessage());
+            return responseMsgs(false, $e->getMessage(), "", "025832", 1.0, "", "POST", 400);
         }
     }
 
@@ -40,12 +40,12 @@ class RoleController extends Controller
     {
         try {
 
-            $listById = new WfRole();
-            $list  = $listById->rolebyId($req);
+            $mWfRole = new WfRole();
+            $getRolelist  = $mWfRole->rolebyId($req);
 
-            return responseMsg(true, "Role List", $list);
+            return responseMsgs(true, "Role List", $getRolelist, "025833", 1.0, "", "POST", 200);
         } catch (Exception $e) {
-            return response()->json(false, $e->getMessage());
+            return responseMsgs(false, $e->getMessage(), "", "025833", 1.0, "", "POST", 400);
         }
     }
 
@@ -54,12 +54,12 @@ class RoleController extends Controller
     {
         try {
 
-            $list = new WfRole();
-            $masters = $list->roleList();
+            $mWfRole = new WfRole();
+            $allMastersList = $mWfRole->roleList();
 
-            return responseMsg(true, "All Role List", $masters);
+            return responseMsgs(true, "All Role List", $allMastersList, "025834", 1.0, "", "POST", 200);
         } catch (Exception $e) {
-            return response()->json(false, $e->getMessage());
+            return responseMsgs(false, $e->getMessage(), "", "025834", 1.0, "", "POST", 400);
         }
     }
 
@@ -68,12 +68,12 @@ class RoleController extends Controller
     public function deleteRole(Request $req)
     {
         try {
-            $delete = new WfRole();
-            $delete->deleteRole($req);
+            $mWfRole = new WfRole();
+            $mWfRole->deleteRole($req);
 
-            return responseMsg(true, "Data Deleted", '');
+            return responseMsgs(true, "Data Deleted", '', "025835", 1.0, "", "POST", 200);
         } catch (Exception $e) {
-            return response()->json($e, 400);
+            return responseMsgs(false, $e->getMessage(), "", "025832", 1.0, "", "POST", 400);
         }
     }
 }
