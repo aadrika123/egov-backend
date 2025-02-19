@@ -43,12 +43,12 @@ class WardUserController extends Controller
                 return responseMsg(true, "User Exist", "");
             }
 
-            $create = new WfWardUser();
-            $create->addWardUser($req);
+            $mWfWardUser = new WfWardUser();
+            $mWfWardUser->addWardUser($req);
 
-            return responseMsg(true, "Successfully Saved", "");
+            return responseMsgs(true, "Successfully Saved", "", "025841", 1.0, "", "POST", 200);
         } catch (Exception $e) {
-            return response()->json(false, $e->getMessage());
+            return responseMsgs(false, $e->getMessage(), "", "025841", 1.0, "", "POST", 400);
         }
     }
 
@@ -56,12 +56,12 @@ class WardUserController extends Controller
     public function updateWardUser(Request $req)
     {
         try {
-            $update = new WfWardUser();
-            $list  = $update->updateWardUser($req);
+            $mWfWardUser = new WfWardUser();
+            $updateWardUser  = $mWfWardUser->updateWardUser($req);
 
-            return responseMsg(true, "Successfully Updated", $list);
+            return responseMsgs(true, "Successfully Updated", $updateWardUser, "025842", 1.0, "", "POST", 200);
         } catch (Exception $e) {
-            return response()->json(false, $e->getMessage());
+            return responseMsgs(false, $e->getMessage(), "", "025842", 1.0, "", "POST", 400);
         }
     }
 
@@ -70,12 +70,12 @@ class WardUserController extends Controller
     {
         try {
 
-            $listById = new WfWardUser();
-            $list  = $listById->listbyId($req);
+            $mWfWardUser = new WfWardUser();
+            $wardUserList  = $mWfWardUser->wardUserListbyId($req);
 
-            return responseMsg(true, "WardUser List", $list);
+            return responseMsgs(true, "WardUser List", $wardUserList, "025843", 1.0, "", "POST", 200);
         } catch (Exception $e) {
-            return response()->json(false, $e->getMessage());
+            return responseMsgs(false, $e->getMessage(), "", "025843", 1.0, "", "POST", 400);
         }
     }
 
@@ -84,12 +84,12 @@ class WardUserController extends Controller
     {
         try {
 
-            $list = new WfWardUser();
-            $WardUsers = $list->listWardUser();
+            $mWfWardUser = new WfWardUser();
+            $allWardUsers = $mWfWardUser->listWardUser();
 
-            return responseMsg(true, "All WardUser List", $WardUsers);
+            return responseMsgs(true, "All WardUser List", $allWardUsers, "025844", 1.0, "", 200);
         } catch (Exception $e) {
-            return response()->json(false, $e->getMessage());
+            return responseMsgs(false, $e->getMessage(), "", "025844", 1.0, "", "POST", 400);
         }
     }
 
@@ -98,12 +98,12 @@ class WardUserController extends Controller
     public function deleteWardUser(Request $req)
     {
         try {
-            $delete = new WfWardUser();
-            $delete->deleteWardUser($req);
+            $mWfWardUser = new WfWardUser();
+            $mWfWardUser->deleteWardUser($req);
 
-            return responseMsg(true, "Data Deleted", '');
+            return responseMsgs(true, "Data Deleted", '', "025845", 1.0, "", "POST", 200);
         } catch (Exception $e) {
-            return response()->json($e, 400);
+            return responseMsgs(false, $e->getMessage(), "", "025845", 1.0, "", "POST", 400);
         }
     }
 
@@ -138,9 +138,9 @@ class WardUserController extends Controller
                 ->whereIn('wf_role_id', $tcIds)
                 ->get();
 
-            return responseMsgs(true, "TC List", remove_null($tcList), "010201", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true, "TC List", remove_null($tcList), "025846", 1.0, "", "POST", 200);
         } catch (Exception $e) {
-            return response()->json($e, 400);
+            return responseMsgs(false, $e->getMessage(), "", "025846", 1.0, "", "POST", 400);
         }
     }
 }

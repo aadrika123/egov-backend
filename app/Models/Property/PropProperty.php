@@ -241,7 +241,7 @@ class PropProperty extends Model
      */
     public function searchPropByCluster($clusterId)
     {
-        return  PropProperty::on('pgsql::read')
+        return PropProperty::on('pgsql::read')
             ->select(
                 'prop_properties.id',
                 'prop_properties.new_ward_mstr_id AS new_ward_id',
@@ -788,7 +788,8 @@ class PropProperty extends Model
             ->join("ref_prop_occupancy_types", "ref_prop_occupancy_types.id", "prop_floors.occupancy_type_mstr_id")
             ->join("ref_prop_usage_types", "ref_prop_usage_types.id", "prop_floors.usage_type_mstr_id")
             ->where("prop_floors.status", 1)
-            ->orderBy("prop_floors.id", "ASC");;
+            ->orderBy("prop_floors.id", "ASC");
+        ;
     }
 
     /** 
@@ -840,52 +841,27 @@ class PropProperty extends Model
      * | get owner details of property
      * | created by: Alok 
      */
-    public static function getOwnerDetails($filterConditions)
+    public static function getOwnerDetails($parameter)
     {
-        $query = self::select(
+        return PropProperty::select(
             'prop_properties.id',
             'prop_properties.holding_no',
             'prop_safs.saf_no',
             'prop_properties.pt_no',
             'prop_properties.khata_no',
             'prop_properties.plot_no',
-            'prop_properties.ward_mstr_id',
             'prop_properties.zone_mstr_id',
-            'prop_owners.owner_name',
-            'prop_owners.mobile_no',
             'prop_properties.prop_address',
             'prop_properties.ulb_id',
             'ulb_masters.ulb_name',
-
-            DB::raw("CASE WHEN prop_properties.status = 1 THEN 'Active' ELSE 'Inactive' END AS status")
+            'prop_owners.mobile_no',
+            'prop_owners.owner_name',
+            DB::raw("CASE WHEN prop_properties.status = 1 THEN 'Active' ELSE 'Inactive' END AS status"),
         )
-            ->join('prop_owners', 'prop_owners.property_id', '=', 'prop_properties.id')
-            ->join('prop_safs', 'prop_safs.id', '=', 'prop_properties.saf_id')
-            ->leftJoin('ulb_masters', 'ulb_masters.id', '=', 'prop_properties.ulb_id');
-
-        // Apply filter conditions
-        foreach ($filterConditions as $condition) {
-            $query->orWhere($condition[0], $condition[1], $condition[2]);
-        }
-
-        $query->where('prop_properties.ulb_id', '=', 2);
-
-        return $query->groupBy(
-            'prop_properties.id',
-            'prop_properties.holding_no',
-            'prop_properties.pt_no',
-            'prop_properties.khata_no',
-            'prop_properties.plot_no',
-            'prop_properties.prop_address',
-            'prop_properties.zone_mstr_id',
-            'prop_properties.ward_mstr_id',
-            'prop_safs.saf_no',
-            'prop_owners.owner_name',
-            'prop_owners.mobile_no',
-            'prop_properties.ulb_id',
-            'ulb_masters.ulb_name',
-            'prop_properties.status'
-        )->get();
+        ->join('prop_owners', 'prop_owners.property_id', '=', 'prop_properties.id')
+        ->join('prop_safs', 'prop_safs.id', '=', 'prop_properties.saf_id')
+        ->leftJoin('ulb_masters', 'ulb_masters.id', '=', 'prop_properties.ulb_id')
+        ->where('prop_properties.holding_no', $parameter);
     }
 
     /**

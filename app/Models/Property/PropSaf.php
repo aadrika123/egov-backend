@@ -236,4 +236,30 @@ class PropSaf extends Model
             ->where('previous_holding_id', $previousHoldingId)
             ->count();
     }
+    /** 
+     * | get owner details of property
+     * | created by: Alok 
+     */
+    public static function getOwnerDetails($parameter)
+    {
+        return PropSaf::select(
+            'prop_properties.id',
+            'prop_properties.holding_no',
+            'prop_safs.saf_no',
+            'prop_properties.pt_no',
+            'prop_properties.khata_no',
+            'prop_properties.plot_no',
+            'prop_properties.zone_mstr_id',
+            'prop_properties.prop_address',
+            'prop_properties.ulb_id',
+            'ulb_masters.ulb_name',    
+            'prop_owners.mobile_no',
+            'prop_owners.owner_name',
+            DB::raw("CASE WHEN prop_properties.status = 1 THEN 'Active' ELSE 'Inactive' END AS status"),
+        )
+        ->join('prop_properties',  'prop_properties.saf_id', '=', 'prop_safs.id')
+        ->join('prop_owners', 'prop_owners.property_id', '=', 'prop_properties.id')
+        ->leftJoin('ulb_masters', 'ulb_masters.id', '=', 'prop_properties.ulb_id')
+        ->where('prop_safs.saf_no', $parameter);
+    }    
 }

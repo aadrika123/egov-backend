@@ -123,7 +123,7 @@ Route::group(['middleware' => ['json.response', "auth_maker"]], function () {
         Route::post('application/status', "citizenApplicationStatus");
 
         //created by : alok    
-
+        Route::post('application-search/get-owner-details', "getOwnerDetailsInfo"); #api_id = 012123
     });
 
     #-----------report----------------------------------

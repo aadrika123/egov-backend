@@ -30,45 +30,45 @@ class WfWorkflow extends Model
     public function addWorkflow($req)
     {
         $createdBy = Auth()->user()->id;
-        $data = new WfWorkflow;
-        $data->wf_master_id = $req->wfMasterId;
-        $data->ulb_id = $req->ulbId;
-        $data->alt_name = $req->altName;
-        $data->is_doc_required = $req->isDocRequired;
-        $data->created_by = $createdBy;
-        $data->initiator_role_id = $req->initiatorRoleId;
-        $data->finisher_role_id = $req->finisherRoleId;
-        $data->stamp_date_time = Carbon::now();
-        $data->created_at = Carbon::now();
-        $data->save();
+        $mWfMaster = new WfWorkflow;
+        $mWfMaster->wf_master_id = $req->wfMasterId;
+        $mWfMaster->ulb_id = $req->ulbId;
+        $mWfMaster->alt_name = $req->altName;
+        $mWfMaster->is_doc_required = $req->isDocRequired;
+        $mWfMaster->created_by = $createdBy;
+        $mWfMaster->initiator_role_id = $req->initiatorRoleId;
+        $mWfMaster->finisher_role_id = $req->finisherRoleId;
+        $mWfMaster->stamp_date_time = Carbon::now();
+        $mWfMaster->created_at = Carbon::now();
+        $mWfMaster->save();
     }
 
     //update workflow
     public function updateWorkflow($req)
     {
-        $data = WfWorkflow::find($req->id);
-        $data->wf_master_id = $req->wfMasterId;
-        $data->ulb_id = $req->ulbId;
-        $data->alt_name = $req->altName;
-        $data->is_doc_required = $req->isDocRequired;
-        $data->initiator_role_id = $req->initiatorRoleId;
-        $data->finisher_role_id = $req->finisherRoleId;
-        $data->save();
+        $mWfMaster = WfWorkflow::find($req->id);
+        $mWfMaster->wf_master_id = $req->wfMasterId;
+        $mWfMaster->ulb_id = $req->ulbId;
+        $mWfMaster->alt_name = $req->altName;
+        $mWfMaster->is_doc_required = $req->isDocRequired;
+        $mWfMaster->initiator_role_id = $req->initiatorRoleId;
+        $mWfMaster->finisher_role_id = $req->finisherRoleId;
+        $mWfMaster->save();
     }
 
     //list workflow by id
-    public function listbyId($req)
+    public function listWfbyId($req)
     {
-        $data = WfWorkflow::where('id', $req->id)
+        $mWfMaster = WfWorkflow::where('id', $req->id)
             ->where('is_suspended', false)
             ->first();
-        return $data;
+        return $mWfMaster;
     }
 
     //All workflow list
-    public function listWorkflow()
+    public function listAllWorkflow()
     {
-        $data = WfWorkflow::select(
+        $mWfMaster = WfWorkflow::select(
             'wf_workflows.*',
             'wf_masters.workflow_name',
             'ulb_masters.ulb_name',
@@ -82,7 +82,7 @@ class WfWorkflow extends Model
             ->where('wf_workflows.is_suspended', false)
             ->orderByDesc('wf_workflows.id')
             ->get();
-        return $data;
+        return $mWfMaster;
     }
 
     /**
@@ -90,9 +90,9 @@ class WfWorkflow extends Model
      */
     public function deleteWorkflow($req)
     {
-        $data = WfWorkflow::find($req->id);
-        $data->is_suspended = "true";
-        $data->save();
+        $mWfMaster = WfWorkflow::find($req->id);
+        $mWfMaster->is_suspended = "true";
+        $mWfMaster->save();
     }
 
     /**

@@ -624,7 +624,6 @@ class PropertyDetailsController extends Controller
     * || @param filterValue
     * || # Added By Alok
     */
-
     public function getOwnerDetailsInfo(Request $request)
     {
         $request->validate([
@@ -632,54 +631,32 @@ class PropertyDetailsController extends Controller
             'filterValue' => "required|string",
         ]);
 
-        try {
-            $mpropProperty = new PropProperty();
+        try {          
+            $mpropProperty = new PropProperty();            
+            $mpropSaf = new PropSaf();
+            $key = $request->filterBy;
+            $parameter = $request->filterValue;
 
-            // $user = authUser($request);
-                
-            // if (!$user) {
-            //     return response()->json([false, 'message' => 'User not authenticated.',], 401); 
-            // }
-            
-            $filterBy = $request->filterBy;
-            $filterValue = $request->filterValue;
-
-            $filterConditions = [];
-
-            // Handle filtering logic in the controller
-            switch ($filterBy) {
-                case 'holdingNo':
-                    $filterConditions[] = ['prop_properties.holding_no', '=', $filterValue];
-                    $filterConditions[] = ['prop_properties.new_holding_no', '=', $filterValue];
+            switch ($key) {
+                case ("holdingNo"):                    
+                    $data = $mpropProperty->getOwnerDetails($parameter)->get();
                     break;
 
                 case 'safNo':
-                    $filterConditions[] = ['prop_safs.saf_no', '=', $filterValue];
+                    $data = $mpropSaf->getOwnerDetails($parameter)->get();
                     break;
-
-                default:
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Invalid filter type provided.',
-                    ], 400);
             }
 
-            // Pass the filter conditions to the model
-            $ownerDetails = $mpropProperty->getOwnerDetails($filterConditions);
-
-            // Check if no owner details were found
-            if ($ownerDetails->isEmpty()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No Details Found For The ' . $filterBy . '!',
-                ]);
+            if ($data->isEmpty()) {
+                return responseMsgs(false, "No Details Found For The " . $key . '!', "", "011305", "1.0", "", "POST", $request->deviceId ?? "");
             }
 
-            return responseMsgs(true, "Application Details", remove_null($ownerDetails), "011302", "1.0", "", "POST", $request->deviceId ?? "");
+            return responseMsgs(true, "Application Details", remove_null($data), "011305", "1.0", "", "POST", $request->deviceId ?? "");
         } 
-        
         catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "011302", "1.0", "", "POST", $request->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "011305", "1.0", "", "POST", $request->deviceId ?? "");
         }
-    }   
+    }
+
+
 }

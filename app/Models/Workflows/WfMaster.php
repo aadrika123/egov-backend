@@ -16,38 +16,38 @@ class WfMaster extends Model
     public function addMaster($req)
     {
         $createdBy = Auth()->user()->id;
-        $data = new WfMaster;
-        $data->workflow_name = $req->workflowName;
-        $data->created_by = $createdBy;
-        $data->module_id = $req->moduleId;
-        $data->stamp_date_time = Carbon::now();
-        $data->created_at = Carbon::now();
-        $data->save();
+        $mWfMaster = new WfMaster;
+        $mWfMaster->workflow_name = $req->workflowName;
+        $mWfMaster->created_by = $createdBy;
+        $mWfMaster->module_id = $req->moduleId;
+        $mWfMaster->stamp_date_time = Carbon::now();
+        $mWfMaster->created_at = Carbon::now();
+        $mWfMaster->save();
     }
 
     ///update master list
     public function updateMaster($req)
     {
-        $data = WfMaster::find($req->id);
-        $data->workflow_name = $req->workflowName;
-        $data->module_id = $req->moduleId;
-        $data->save();
+        $mWfMaster = WfMaster::find($req->id);
+        $mWfMaster->workflow_name = $req->workflowName;
+        $mWfMaster->module_id = $req->moduleId;
+        $mWfMaster->save();
     }
 
 
     //list by id
     public function listById($req)
     {
-        $list = WfMaster::where('id', $req->id)
+        $mWfMaster = WfMaster::where('id', $req->id)
             ->where('is_suspended', false)
             ->get();
-        return $list;
+        return $mWfMaster;
     }
 
     //all master list
-    public function listMaster()
+    public function listAllMaster()
     {
-        $list = WfMaster::select(
+        $mWfMaster = WfMaster::select(
             'wf_masters.id',
             'workflow_name',
             'module_name',
@@ -57,15 +57,15 @@ class WfMaster extends Model
             ->where('wf_masters.is_suspended', false)
             ->orderByDesc('wf_masters.id')
             ->get();
-        return $list;
+        return $mWfMaster;
     }
 
 
     //delete master
     public function deleteMaster($req)
     {
-        $data = WfMaster::find($req->id);
-        $data->is_suspended = "true";
-        $data->save();
+        $mWfMaster = WfMaster::find($req->id);
+        $mWfMaster->is_suspended = "true";
+        $mWfMaster->save();
     }
 }
