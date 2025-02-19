@@ -20,9 +20,12 @@ use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropSaf;
 use App\Models\Property\PropSafsOwner;
+use App\Models\Water\WaterConsumer;
 use App\Models\Workflows\WfRoleusermap;
 use App\Pipelines\SearchApplication;
 use App\Repository\Property\Interfaces\iPropertyDetailsRepo;
+use Carbon\Carbon;
+use Dotenv\Validator;
 use Exception;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
@@ -631,14 +634,14 @@ class PropertyDetailsController extends Controller
             'filterValue' => "required|string",
         ]);
 
-        try {          
-            $mpropProperty = new PropProperty();            
+        try {
+            $mpropProperty = new PropProperty();
             $mpropSaf = new PropSaf();
             $key = $request->filterBy;
             $parameter = $request->filterValue;
 
             switch ($key) {
-                case ("holdingNo"):                    
+                case ("holdingNo"):
                     $data = $mpropProperty->getOwnerDetails($parameter)->get();
                     break;
 
@@ -652,11 +655,100 @@ class PropertyDetailsController extends Controller
             }
 
             return responseMsgs(true, "Application Details", remove_null($data), "011305", "1.0", "", "POST", $request->deviceId ?? "");
-        } 
-        catch (Exception $e) {
+        } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011305", "1.0", "", "POST", $request->deviceId ?? "");
         }
     }
 
+    /**
+     * Get detail of citizen property details and water connection details with pending demands
+     */
+    public function citizenPropWaterDtls(Request $request)
+    {
+        try {
+            // Authenticate user
+            $user = authUser($request);
+            $userId = $user->id;
+            $ulbId = $request->ulbId;
 
+            // Property Details with Demand Join (Excluding 0 or NULL demand)
+            $propTransactionQuery = PropProperty::leftJoin('prop_demands', function ($join) {
+                $join->on('prop_demands.property_id', '=', 'prop_properties.id')
+                    ->whereIn('prop_demands.status', [1, 2])
+                    ->where('prop_demands.paid_status', 0);
+            })
+                ->leftJoin('prop_owners', 'prop_owners.property_id', '=', 'prop_properties.id')
+                ->select(
+                    'prop_properties.id as property_id',
+                    'prop_properties.holding_no',
+                    'prop_properties.new_holding_no',
+                    'prop_properties.pt_no',
+                    'prop_properties.zone_mstr_id',
+                    'prop_properties.new_ward_mstr_id',
+                    'prop_properties.village_mauja_name',
+                    'prop_properties.prop_address',
+                    'prop_properties.khata_no',
+                    'prop_properties.plot_no',
+                    'prop_properties.ulb_id',
+                    DB::raw("STRING_AGG(DISTINCT prop_owners.owner_name, ', ') as owners"),
+                    DB::raw("COALESCE(SUM(prop_demands.balance), 0) as total_demand_amount")
+                )
+                ->where("prop_properties.citizen_id", $userId)
+                ->groupBy(
+                    'prop_properties.id',
+                    'prop_properties.holding_no',
+                    'prop_properties.new_holding_no',
+                    'prop_properties.pt_no',
+                    'prop_properties.zone_mstr_id',
+                    'prop_properties.new_ward_mstr_id',
+                    'prop_properties.village_mauja_name',
+                    'prop_properties.prop_address',
+                    'prop_properties.khata_no',
+                    'prop_properties.plot_no',
+                    'prop_properties.ulb_id'
+                )
+                ->havingRaw("SUM(prop_demands.balance) > 0")  // Excludes 0 or NULL total demand
+                ->get();
+
+            // Water Consumer Details with Demand Join (Excluding 0 or NULL demand)
+            $waterConsumerDetails = WaterConsumer::leftJoin('water_consumer_demands', function ($join) {
+                $join->on('water_consumer_demands.consumer_id', '=', 'water_consumers.id')
+                    ->where('water_consumer_demands.status', true)
+                    ->where('water_consumer_demands.paid_status', 0);
+            })
+                ->leftJoin('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_consumers.id')
+                ->select(
+                    'water_consumers.id as consumer_id',
+                    'water_consumers.consumer_no',
+                    'water_consumers.holding_no',
+                    'water_consumers.area_sqft',
+                    'water_consumers.address',
+                    'water_consumers.ulb_id',
+                    DB::raw("STRING_AGG(DISTINCT water_consumer_owners.applicant_name, ', ') as owners"),
+                    DB::raw("COALESCE(SUM(water_consumer_demands.balance_amount), 0) as total_demand_amount")
+                )
+                ->where("water_consumers.user_id", $userId)
+                ->where("water_consumers.user_type", 'Citizen')
+                ->groupBy(
+                    'water_consumers.id',
+                    'water_consumers.consumer_no',
+                    'water_consumers.holding_no',
+                    'water_consumers.area_sqft',
+                    'water_consumers.address',
+                    'water_consumers.ulb_id'
+                )
+                ->havingRaw("SUM(water_consumer_demands.balance_amount) > 0") // Excludes 0 or NULL total demand
+                ->get();
+
+            // Combine the results
+            $data = [
+                "propDetails" => $propTransactionQuery,
+                "waterDetails" => $waterConsumerDetails,
+            ];
+
+            return responseMsgs(true, "Data Fetch Successfully", $data, "", 01, responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (\Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "", 01, responseTime(), $request->getMethod(), $request->deviceId);
+        }
+    }
 }
