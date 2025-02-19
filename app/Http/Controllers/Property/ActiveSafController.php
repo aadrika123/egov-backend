@@ -449,7 +449,16 @@ class ActiveSafController extends Controller
     }
 
     /**
-     * | Fields Verified Inbox
+     * | Fields Verified Inbox 
+     * | @var mUserId Authenticated user ID.
+     * | @var mUlbId Authenticated user ULB ID.
+     * | @var mDeviceId Device ID from the request.
+     * | @var occupiedWardsId List of ward IDs occupied by the user.
+     * | @var roleIds List of role IDs for the user.
+     * | @var workflowIds List of workflow IDs for the user's roles.
+     * | @return \Illuminate\Http\JsonResponse The response message with the list of field-verified SAFs.
+     * | Query Cost- 
+     * |
      */
     public function fieldVerifiedInbox(Request $req)
     {
@@ -1064,8 +1073,24 @@ class ActiveSafController extends Controller
     }
 
     /**
-     * | check Post Condition for backward forward(9.1)
+     * Checks post conditions based on the sender's role in the workflow.
+     * |
+     * | This function validates various conditions required at different workflow levels.
+     * | It also generates property tax numbers, holding numbers,
+     * | and SAM memo numbers when required.
+     * |---------------------------------------------------------------------
+     * 
+     * @param int $senderRoleId The role ID of the sender.
+     * @param array $wfLevels Workflow levels mapping.
+     * @param object $saf SAF (Self-Assessment Form) object containing property details.
+     * @param int $wfMstrId Workflow master ID.
+     * @param int $userId ID of the user performing the action.
+     * 
+     * @throws Exception If any validation check fails.
+     * 
+     * @return array Returns an array containing 'holdingNo', 'samNo', and 'ptNo'.
      */
+
     public function checkPostCondition($senderRoleId, $wfLevels, $saf, $wfMstrId, $userId)
     {
         // Variable Assigments
@@ -1154,9 +1179,17 @@ class ActiveSafController extends Controller
         ];
     }
 
-    /**
-     * |
+    /*
+     * | Updates SAF status and related geotag records based on the sender's role.
+     * 
+     * |  @param $senderRoleId
+     * |  @param $wfLevels
+     * |  @param $saf
+     * 
+     * | Tables:
+     * | `prop_saf_geotag_upload` (updates geotag upload status)
      */
+
     public function checkBackwardCondition($senderRoleId, $wfLevels, $saf)
     {
         $mPropSafGeotagUpload = new PropSafGeotagUpload();
@@ -1573,7 +1606,20 @@ class ActiveSafController extends Controller
     }
 
     /**
-     * | Replication of Final Approval SAf(10.1)
+     * Handles the final approval and replication of a SAF (Self-Assessment Form).
+     * |---------------------------------------------------------------------------
+     * | This function ensures that the verified SAF details, including ownership and floor details, 
+     * | are properly replicated, finalized, and stored in their respective tables.
+     * | --------------------------------------------------------------------------
+     * @param object    $mPropProperties    Model instance for property operations.
+     * @param int       $propId             The property ID associated with the SAF.
+     * @param array     $fieldVerifiedSaf   Collection of field-verified SAF details.
+     * @param object    $activeSaf          The currently active SAF that needs to be replaced.
+     * @param array     $ownerDetails       List of property owner details to be replicated.
+     * @param array     $floorDetails       List of floor details associated with the SAF.
+     * @param int       $safId              The SAF ID that is being approved.
+     * 
+     * |---------------------------------------------------------------------------
      */
     public function finalApprovalSafReplica($mPropProperties, $propId, $fieldVerifiedSaf, $activeSaf, $ownerDetails, $floorDetails, $safId)
     {
@@ -1627,7 +1673,17 @@ class ActiveSafController extends Controller
     }
 
     /**
-     * | Replication of Final Rejection Saf(10.2)
+     * Handles the final rejection of a SAF (Self-Assessment Form).
+     * |------------------------------------------------------------
+     * | This function ensures that all SAF-related details, including owners and floors, 
+     * | are moved to rejected SAF tables and removes active records.
+     * |
+     * | If the SAF involves bifurcation, it rolls back area and floor updates.
+     * |---------------------------------------------------------------------
+     * @param object    $activeSaf      The SAF that is being rejected.
+     * @param array     $ownerDetails   List of property owner details to be moved.
+     * @param array     $floorDetails   List of floor details associated with the SAF.
+     * |---------------------------------------------------------------------------------
      */
     public function finalRejectionSafReplica($activeSaf, $ownerDetails, $floorDetails)
     {

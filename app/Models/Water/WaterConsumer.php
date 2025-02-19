@@ -494,7 +494,7 @@ class WaterConsumer extends Model
     /* 
     | Get Owner Details According to Filter Conditions
     | @param filterConditions
-    | created by: Alok
+    | created by: Alok anand
     */
     public function getOwnerDetails($parameter)
     {
