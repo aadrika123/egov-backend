@@ -111,8 +111,8 @@ return [
             ],
         ],
 
-         #_For market Service
-         'pgsql_advertisements' => [
+        #_For market Service
+        'pgsql_advertisements' => [
             'driver' => 'pgsql',
             'url' => env('DATABASE_URL'),
             'host' => env('DB_ADVERTISEMENTS_HOST', '127.0.0.1'),
@@ -120,6 +120,44 @@ return [
             'database' => env('DB_ADVERTISEMENTS_DATABASE', 'forge'),
             'username' => env('DB_ADVERTISEMENTS_USERNAME', 'forge'),
             'password' => env('DB_ADVERTISEMENTS_PASSWORD', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'schema' => 'public',
+            'sslmode' => 'prefer',
+            'options'   => [
+                PDO::ATTR_PERSISTENT => true,
+            ],
+        ],
+
+        #_For water Tanker Service
+        'pgsql_tanker' => [
+            'driver' => 'pgsql',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_TANKER_HOST', '127.0.0.1'),
+            'port' => env('DB_TANKER_PORT', '5432'),
+            'database' => env('DB_TANKER_DATABASE', 'forge'),
+            'username' => env('DB_TANKER_USERNAME', 'forge'),
+            'password' => env('DB_TANKER_PASSWORD', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'schema' => 'public',
+            'sslmode' => 'prefer',
+            'options'   => [
+                PDO::ATTR_PERSISTENT => true,
+            ],
+        ],
+
+        #_For Fines Service
+        'pgsql_fines' => [
+            'driver' => 'pgsql',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_FINES_HOST', '127.0.0.1'),
+            'port' => env('DB_FINES_PORT', '5432'),
+            'database' => env('DB_FINES_DATABASE', 'forge'),
+            'username' => env('DB_FINES_USERNAME', 'forge'),
+            'password' => env('DB_FINES_PASSWORD', ''),
             'charset' => 'utf8',
             'prefix' => '',
             'prefix_indexes' => true,

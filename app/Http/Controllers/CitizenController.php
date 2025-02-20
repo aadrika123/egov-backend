@@ -498,13 +498,57 @@ class CitizenController extends Controller
                 ->where("status", 1)
                 ->count();
 
+            $agency_count = DB::connection("pgsql_advertisements")->table("adv_agencies")
+                ->where('citizen_id', $userDtl->id)
+                ->count();
+
+            $selfAdvertisement_count = DB::connection("pgsql_advertisements")->table("adv_selfadvertisements")
+                ->where('citizen_id', $userDtl->id)
+                ->count();
+
+            $vehicles_count = DB::connection("pgsql_advertisements")->table("adv_vehicles")
+                ->where('citizen_id', $userDtl->id)
+                ->count();
+
+            $privateLand_count = DB::connection("pgsql_advertisements")->table("adv_privatelands")
+                ->where('citizen_id', $userDtl->id)
+                ->count();
+
+            $lodge_count = DB::connection("pgsql_advertisements")->table("mar_lodges")
+                ->where('citizen_id', $userDtl->id)
+                ->count();
+
+            $banquet_count = DB::connection("pgsql_advertisements")->table("mar_banqute_halls")
+                ->where('citizen_id', $userDtl->id)
+                ->count();
+
+            $waterTanker_count = DB::connection("pgsql_tanker")->table("wt_bookings")
+                ->where('citizen_id', $userDtl->id)
+                ->count();
+
+            $septicTanker_count = DB::connection("pgsql_tanker")->table("st_bookings")
+                ->where('citizen_id', $userDtl->id)
+                ->count();
+
+
+            $rig_count = DB::connection("pgsql_fines")->table("rig_approved_registrations")
+                ->where('citizen_id', $userDtl->id)
+                ->count();
+
+            $totalAdvertisement_count = $agency_count + $selfAdvertisement_count + $vehicles_count + $privateLand_count;  // sum of advertisement 
+            $totalLodgeBanquet_count = $lodge_count + $banquet_count;  // sum of lodge and banquet
 
             $data = [
                 "propDetails" => $propCount + $active_citizen_prop_count->first()->count,
                 "tradeDetails" => $tradeCount->first()->total_trade + $active_citizen_trade_count->first()->count,
                 "waterDetails" => $waterCount->first()->total_water_consumer + $active_citizen_water_count->first()->count,
                 "petDetails" => $pet_registration_count,
-                "marriageDetails" => $marriage_registration_count
+                "marriageDetails" => $marriage_registration_count,
+                "advertisementDetails" => $totalAdvertisement_count,
+                "waterTankerDetails" => $waterTanker_count,
+                "septicTankerDetails" => $septicTanker_count,
+                "lodgeBanquetDetails" => $totalLodgeBanquet_count,
+                "rigDetails" => $rig_count
             ];
             return responseMsgs(true, "Total Count", $data, "", 01, responseTime(), $request->getMethod(), $request->deviceId);
         } catch (\Exception $e) {
