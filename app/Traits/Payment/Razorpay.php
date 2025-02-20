@@ -72,7 +72,7 @@ trait Razorpay
             ]);
 
             $userId             = auth()->user()->id ?? $request->ghostUserId;
-            $workflowDetails    = $mWfWorkflow->listbyId($wfReq);
+            // $workflowDetails    = $mWfWorkflow->listbyId($wfReq);
             $ulbId              = $workflowDetails->ulb_id ?? $request->ulbId;                                           // ulbId
             $refRazorpayId      = Config::get('razorpay.RAZORPAY_ID');
             $refRazorpayKey     = Config::get('razorpay.RAZORPAY_KEY');
