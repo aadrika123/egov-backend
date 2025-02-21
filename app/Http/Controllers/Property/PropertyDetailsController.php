@@ -784,9 +784,9 @@ class PropertyDetailsController extends Controller
                 DB::raw("TO_CHAR(application_date, 'DD-MM-YYYY') as application_date"),
                 'prop_owners.owner_name',
                 'prop_properties.balance',
-                'prop_transactions.amount',
+                // 'prop_transactions.amount',
                 "ulb_name",
-                DB::raw("TO_CHAR(prop_transactions.tran_date, 'DD-MM-YYYY') as tran_date"),
+                // DB::raw("TO_CHAR(prop_transactions.tran_date, 'DD-MM-YYYY') as tran_date"),
                 DB::raw("COALESCE(SUM(prop_demands.balance), 0) as total_demand_amount")
             )
             ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
@@ -795,7 +795,7 @@ class PropertyDetailsController extends Controller
                 $join->on('prop_demands.property_id', '=', 'prop_properties.id')
                     ->where('prop_demands.paid_status', 0);
             })
-            ->leftJoin('prop_transactions', 'prop_transactions.property_id', 'prop_properties.id')
+            // ->leftJoin('prop_transactions', 'prop_transactions.property_id', 'prop_properties.id')
             ->havingRaw("SUM(prop_demands.balance) > 0") // Excludes 0 or NULL total demand
             ->groupBy(
                 'prop_properties.id',
