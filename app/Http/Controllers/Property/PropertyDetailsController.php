@@ -809,7 +809,7 @@ class PropertyDetailsController extends Controller
                 // 'prop_transactions.tran_date',
                 // 'prop_transactions.id'
             )
-            ->orderByDesc('prop_transactions.id')
+            // ->orderByDesc('prop_transactions.id')
             ->get(); // Return as a collection of models
     }
 
