@@ -804,10 +804,10 @@ class PropertyDetailsController extends Controller
                 'prop_properties.application_date',
                 'prop_owners.owner_name',
                 'prop_properties.balance',
-                'prop_transactions.amount',
+                // 'prop_transactions.amount',
                 'ulb_masters.ulb_name',
-                'prop_transactions.tran_date',
-                'prop_transactions.id'
+                // 'prop_transactions.tran_date',
+                // 'prop_transactions.id'
             )
             ->orderByDesc('prop_transactions.id')
             ->get(); // Return as a collection of models
