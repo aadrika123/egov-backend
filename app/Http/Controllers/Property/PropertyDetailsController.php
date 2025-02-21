@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Property;
 
 use App\Http\Controllers\Controller;
+use App\Models\Citizen\ActiveCitizenUndercare;
 use App\Models\Property\PropActiveConcession;
 use App\Models\Property\PropActiveDeactivationRequest;
 use App\Models\Property\PropActiveGbOfficer;
@@ -740,15 +741,106 @@ class PropertyDetailsController extends Controller
                 ->havingRaw("SUM(water_consumer_demands.balance_amount) > 0") // Excludes 0 or NULL total demand
                 ->get();
 
+            $propUndercaredtls = collect($this->getCaretakerProperty($userId));
+
+            $mergedProperties = $propTransactionQuery->merge($propUndercaredtls);
+
+            // water under care 
+            $waterUnderCare = $this->viewCaretakenConnection($request);
+
+            $mergedWater = collect($waterConsumerDetails)->merge(collect($waterUnderCare));
+
             // Combine the results
             $data = [
-                "propDetails" => $propTransactionQuery,
-                "waterDetails" => $waterConsumerDetails,
+                "propDetails" => $mergedProperties,
+                "waterDetails" => $mergedWater,
             ];
 
             return responseMsgs(true, "Data Fetch Successfully", $data, "", 01, responseTime(), $request->getMethod(), $request->deviceId);
         } catch (\Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "", 01, responseTime(), $request->getMethod(), $request->deviceId);
+        }
+    }
+
+    /**
+     * Get properties under caretaker for a given user
+     */
+    public function getCaretakerProperty($userId)
+    {
+        $data = collect(); // Use collection instead of array
+        $mActiveCitizenCareTaker = new ActiveCitizenUndercare();
+        $propertiesByCitizen = $mActiveCitizenCareTaker->getTaggedPropsByCitizenId($userId);
+        $propIds = $propertiesByCitizen->pluck('property_id');
+
+        if ($propIds->isEmpty()) {
+            return $data;
+        }
+
+        return PropProperty::whereIn('prop_properties.id', $propIds)
+            ->select(
+                'prop_properties.id',
+                'prop_properties.holding_no',
+                'prop_properties.new_holding_no',
+                DB::raw("TO_CHAR(application_date, 'DD-MM-YYYY') as application_date"),
+                'prop_owners.owner_name',
+                'prop_properties.balance',
+                'prop_transactions.amount',
+                "ulb_name",
+                DB::raw("TO_CHAR(prop_transactions.tran_date, 'DD-MM-YYYY') as tran_date"),
+                DB::raw("COALESCE(SUM(prop_demands.balance), 0) as total_demand_amount")
+            )
+            ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
+            ->join('ulb_masters', 'ulb_masters.id', 'prop_properties.ulb_id')
+            ->leftJoin('prop_demands', function ($join) {
+                $join->on('prop_demands.property_id', '=', 'prop_properties.id')
+                    ->where('prop_demands.paid_status', 0);
+            })
+            ->leftJoin('prop_transactions', 'prop_transactions.property_id', 'prop_properties.id')
+            ->havingRaw("SUM(prop_demands.balance) > 0") // Excludes 0 or NULL total demand
+            ->groupBy(
+                'prop_properties.id',
+                'prop_properties.holding_no',
+                'prop_properties.new_holding_no',
+                'prop_properties.application_date',
+                'prop_owners.owner_name',
+                'prop_properties.balance',
+                'prop_transactions.amount',
+                'ulb_masters.ulb_name',
+                'prop_transactions.tran_date',
+                'prop_transactions.id'
+            )
+            ->orderByDesc('prop_transactions.id')
+            ->get(); // Return as a collection of models
+    }
+
+    /**
+     * | View details of the caretaken water connection
+     * | using user id
+     * | @param request
+        | Working
+        | Serial No : 07
+     */
+    public function viewCaretakenConnection(Request $request)
+    {
+        try {
+            $mWaterWaterConsumer        = new WaterConsumer();
+            $mActiveCitizenUndercare    = new ActiveCitizenUndercare();
+
+            $connectionDetails = $mActiveCitizenUndercare->getDetailsByCitizenId();
+            $checkDemand = collect($connectionDetails)->first();
+            if (is_null($checkDemand))
+                throw new Exception("Under taken data not found!");
+
+            $consumerIds = collect($connectionDetails)->pluck('consumer_id');
+            $consumerDetails = $mWaterWaterConsumer->getConsumerByIds($consumerIds)->get();
+            $checkConsumer = collect($consumerDetails)->first();
+            if (is_null($checkConsumer)) {
+                throw new Exception("Consuemr Details Not Found!");
+            }
+            return $consumerDetails;
+            // return responseMsgs(true, 'List of undertaken water connections!', remove_null($consumerDetails), "", "01", ".ms", "POST", $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "", "01", ".ms", "POST", $request->deviceId);
         }
     }
 }

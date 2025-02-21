@@ -410,7 +410,7 @@ class WaterConsumer extends Model
     public function getConsumerByIds($consumerIds)
     {
         return WaterConsumer::select(
-            'water_consumers.id',
+            'water_consumers.id as consumer_id',
             'water_consumers.consumer_no',
             'water_consumers.ward_mstr_id',
             'water_consumers.address',
@@ -419,13 +419,19 @@ class WaterConsumer extends Model
             'water_consumers.ulb_id',
             'ulb_ward_masters.ward_name',
             'ulb_name',
-            DB::raw("string_agg(water_consumer_owners.applicant_name,',') as applicant_name"),
-            DB::raw("string_agg(water_consumer_owners.mobile_no::VARCHAR,',') as mobile_no"),
-            DB::raw("string_agg(water_consumer_owners.guardian_name,',') as guardian_name"),
+            DB::raw("string_agg(DISTINCT water_consumer_owners.applicant_name,',') as applicant_name"),
+            DB::raw("string_agg(DISTINCT water_consumer_owners.mobile_no::VARCHAR,',') as mobile_no"),
+            DB::raw("string_agg(DISTINCT water_consumer_owners.guardian_name,',') as guardian_name"),
+            DB::raw("COALESCE(SUM(water_consumer_demands.balance_amount), 0) as total_demand_amount")
         )
             ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_consumers.id')
             ->join('ulb_masters', 'ulb_masters.id', '=', 'water_consumers.ulb_id')
             ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_consumers.ward_mstr_id')
+            ->leftJoin('water_consumer_demands', function ($join) {
+                $join->on('water_consumer_demands.consumer_id', '=', 'water_consumers.id')
+                    ->where('water_consumer_demands.paid_status', 0);
+            })
+            ->havingRaw("SUM(water_consumer_demands.balance_amount) > 0") // Excludes 0 or NULL total demand
             ->whereIn("water_consumers.id", $consumerIds)
             ->where('water_consumers.status', 1)
             ->groupBy(
@@ -517,9 +523,9 @@ class WaterConsumer extends Model
 
             DB::raw("CASE WHEN water_consumer_owners.status = 'true' THEN 'Active' ELSE 'Inactive' END AS status")
         )
-        ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_consumers.id')
-        ->join('water_approval_application_details', 'water_approval_application_details.id', '=', 'water_consumers.id')
-        ->leftJoin('ulb_masters', 'ulb_masters.id', '=', 'water_consumers.ulb_id')
-        ->where('water_consumers.consumer_no', $parameter);
+            ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_consumers.id')
+            ->join('water_approval_application_details', 'water_approval_application_details.id', '=', 'water_consumers.id')
+            ->leftJoin('ulb_masters', 'ulb_masters.id', '=', 'water_consumers.ulb_id')
+            ->where('water_consumers.consumer_no', $parameter);
     }
 }
