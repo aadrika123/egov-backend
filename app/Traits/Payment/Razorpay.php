@@ -110,6 +110,69 @@ trait Razorpay
             return responseMsg(false, "Error Listed Below!", $error->getMessage());
         }
     }
+    /**
+     * | generate order id for the payment of property demand and water demand
+     */
+    public function saveGenerateOrderidv1($request)
+    {
+        // $validated = Validator::make(
+        //     $request->all(),
+        //     [
+        //         'id'            => 'required|integer',
+        //         'amount'        => 'required|',
+        //         'workflowId'    => 'required|',
+        //         'ulbId'         => 'nullable'
+        //     ]
+        // );
+        // if ($validated->fails())
+        //     return validationError($validated);
+
+        try {
+            $mWfWorkflow    = new WfWorkflow();
+            $wfReq = new Request([
+                'id' => $request->workflowId
+            ]);
+
+            // $userId             = auth()->user()->id ?? $request->ghostUserId;
+            $userId             = 203;
+            // $workflowDetails    = $mWfWorkflow->listbyId($wfReq);
+            $ulbId              = $workflowDetails->ulb_id ?? $request->ulbId;                                           // ulbId
+            $refRazorpayId      = Config::get('razorpay.RAZORPAY_ID');
+            $refRazorpayKey     = Config::get('razorpay.RAZORPAY_KEY');
+            $mReciptId          = Str::random(15);                                                      // Static recipt ID
+
+            if (!$ulbId) {
+                throw new Exception("Ulb details not found!");
+            }
+            $mApi = new Api($refRazorpayId, $refRazorpayKey);
+            $mOrder = $mApi->order->create(array(
+                'receipt'           => $mReciptId,
+                'amount'            => $request->all()['amount'] * 100,
+                'currency'          => 'INR',                                                       // Static
+                'payment_capture'   => 1                                                            // Static
+            ));
+
+            $Returndata = [
+                'orderId'       => $mOrder['id'],
+                'amount'        => $request->all()['amount'],
+                'currency'      => 'INR',                                                           // Static
+                // 'userId'        => $userId ?? 203,
+                'ulbId'         => $ulbId,
+                'workflowId'    => $request->workflowId,
+                'applicationId' => $request->id,
+                'departmentId'  => $request->departmentId,
+                'propType'      => $request->propType
+            ];
+
+            // $saveRequestObj = new PaymentRequest();
+            // $saveRequestObj->saveRazorpayRequestv1($userId, $ulbId, $Returndata['orderId'], $request);
+
+            // return responseMsgs(true, "OrderId Generated!", $Returndata, "", "04", responseTime(), "POST", $request->deviceId);
+            return (array)$Returndata;
+        } catch (Exception $error) {
+            return responseMsg(false, "Error Listed Below!", $error->getMessage());
+        }
+    }
 
     /**
      * | ----------------- verification of the signature ------------------------------- |

@@ -305,6 +305,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
     Route::post('prop/cluster-payment', 'clusterPayment');                   //Cluster Payment                                            #API_ID = 011506
     Route::post('prop-dues', 'propertyDues');                                //Property Dues Dynamic                                      #API_ID = 011507            
     Route::post('legacy-payment-holding', 'legacyPaymentHolding');           //Legacy Property Payment                                    #API_ID = 011508
+    Route::post('generate-orderId', 'generateOrderIdv1');           //Legacy Property Payment                                    #API_ID = 011508
   });
 
   /**

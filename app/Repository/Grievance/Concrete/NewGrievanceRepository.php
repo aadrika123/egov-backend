@@ -133,7 +133,7 @@ class NewGrievanceRepository implements iGrievance
         DB::beginTransaction();
         try {
             GrievanceCompApplication::where('id', $id)
-                ->update([
+                ->update([ 
                     'comp_rating' => $req->complaintRate,
                     'comp_remark' => $req->complaintRemark,
                     'comp_comment' => $req->complaintComment

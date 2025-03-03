@@ -97,6 +97,15 @@ class PropProperty extends Model
             ->where('prop_properties.id', $propId)
             ->first();
     }
+    /**
+     * | Get Property Basic Dtls
+     */
+    public function getPropBasicDtlsv1($propId)
+    {
+        return $this->getPropDtls()
+            ->whereIn('prop_properties.id', $propId)
+            ->first();
+    }
 
     /**
      * | Get Property Full Details
