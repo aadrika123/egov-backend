@@ -589,6 +589,9 @@ class PropertyController extends Controller
                 $demand = $holdingTaxController->getHoldingDues($request);
                 $demand = $demand->original;
                 if ($demand['status'] == false) {
+                    throw new Exception("Previous Demand is not clear for the respective property."); // Return false immediately if any demand has status false
+                }
+                if ($demand['status'] == false) {
                     $demand['data']['basicDetails']['property_id'] = $propId;
                     array_push($demands, $demand['data']['basicDetails']);
                 }
