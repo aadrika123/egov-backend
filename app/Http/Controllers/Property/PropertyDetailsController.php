@@ -726,7 +726,9 @@ class PropertyDetailsController extends Controller
                     'water_consumers.address',
                     'water_consumers.ulb_id',
                     DB::raw("STRING_AGG(DISTINCT water_consumer_owners.applicant_name, ', ') as owners"),
-                    DB::raw("COALESCE(SUM(water_consumer_demands.balance_amount), 0) as total_demand_amount")
+                    DB::raw("COALESCE(SUM(water_consumer_demands.balance_amount), 0) as total_demand_amount"),
+                    DB::raw("min(water_consumer_demands.demand_from) as demand_from"),
+                    DB::raw("max(water_consumer_demands.demand_upto) as demand_upto")
                 )
                 ->where("water_consumers.user_id", $userId)
                 ->where("water_consumers.user_type", 'Citizen')

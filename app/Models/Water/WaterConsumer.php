@@ -422,7 +422,9 @@ class WaterConsumer extends Model
             DB::raw("string_agg(DISTINCT water_consumer_owners.applicant_name,',') as applicant_name"),
             DB::raw("string_agg(DISTINCT water_consumer_owners.mobile_no::VARCHAR,',') as mobile_no"),
             DB::raw("string_agg(DISTINCT water_consumer_owners.guardian_name,',') as guardian_name"),
-            DB::raw("COALESCE(SUM(water_consumer_demands.balance_amount), 0) as total_demand_amount")
+            DB::raw("COALESCE(SUM(water_consumer_demands.balance_amount), 0) as total_demand_amount"),
+            DB::raw("min(water_consumer_demands.demand_from) as demand_from"),
+            DB::raw("max(water_consumer_demands.demand_upto) as demand_upto")
         )
             ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_consumers.id')
             ->join('ulb_masters', 'ulb_masters.id', '=', 'water_consumers.ulb_id')
