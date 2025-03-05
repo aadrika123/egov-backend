@@ -650,15 +650,15 @@ class HoldingTaxController extends Controller
                 'amount' => $totalAmountdtl,
                 'workflowId' => '0',
                 'departmentId' => $departmentId,
-                'ulbId' => $propDtls->ulb_id,
-                'id' => $req->propId,
+                // 'ulbId' => $propDtls->ulb_id,
+                'id' => $req->propId ?? $req->consumerDetails['consumerId'],
                 'ghostUserId' => 0,
                 // 'auth' => $authUser
             ]);
             // DB::beginTransaction();
             $orderDetails = $this->saveGenerateOrderidv1($req);                                      //<---------- Generate Order ID Trait
-            $demands = is_array($demands) ? $demands : [];
-            $demands = array_merge($demands, ['orderId' => $orderDetails['orderId']]);
+            // $demands = is_array($demands) ? $demands : [];
+            // $demands = array_merge($demands, ['orderId' => $orderDetails['orderId']]);
             // Store Razor pay Request for property Demand
             if ($req->propId) {
                 foreach ($req->propId as $propId) {
