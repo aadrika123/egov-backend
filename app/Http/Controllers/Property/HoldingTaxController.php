@@ -32,7 +32,6 @@ use App\Models\Property\PropSaf;
 use App\Models\Property\PropSafsDemand;
 use App\Models\Property\PropTranDtl;
 use App\Models\Property\PropTransaction;
-use App\Models\Property\RazorPayRequest;
 use App\Models\UlbMaster;
 use App\Models\Water\WaterAdjustment;
 use App\Models\Water\WaterAdvance;
@@ -612,7 +611,6 @@ class HoldingTaxController extends Controller
             $departmentId = 1;
             $propProperties = new PropProperty();
             $ipAddress = getClientIpAddress();
-            $mrazorPayRequest = new RazorPayRequest();
             $mPropRazorPayRequest = new PropRazorpayRequest();
             $postRazorPayPenaltyRebate = new PostRazorPayPenaltyRebate;
             $mWaterRazorPayRequest = new WaterRazorPayRequest();
