@@ -277,7 +277,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
     Route::post('get-filter-property-details', 'propertyListByKey');              #API_ID = 011302
     Route::get('get-list-saf', 'getListOfSaf');                                   #API_ID = 011303                   
     Route::post('active-application/get-user-details', 'getUserDetails');         #API_ID = 011304        
-    Route::post('citizen/property-water-dtls', 'citizenPropWaterDtls');         #API_ID = 011305        
+    Route::post('citizen/property-water-dtls', 'citizenPropWaterDtls');           #API_ID = 011305        
 
     // added by alok
     // Route::post('details/get-owner-details', 'getOwnerDetailsInfo');  #API_ID = 011305
