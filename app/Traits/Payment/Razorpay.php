@@ -121,7 +121,8 @@ trait Razorpay
                 'id' => $request->workflowId
             ]);
 
-            $userId             = auth()->user()->id ?? $request->ghostUserId;
+            // $userId             = auth()->user()->id ?? $request->ghostUserId;
+            $userId             = 203;
             // $workflowDetails    = $mWfWorkflow->listbyId($wfReq);
             $ulbId              = $workflowDetails->ulb_id ?? $request->ulbId;                                           // ulbId
             $refRazorpayId      = Config::get('razorpay.RAZORPAY_ID');

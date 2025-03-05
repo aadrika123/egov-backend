@@ -619,28 +619,32 @@ class HoldingTaxController extends Controller
             $endPoint = Config::get('razorpay.PAYMENT_GATEWAY_END_POINT');
 
             // $authUser = Auth()->user();
-            $demand = $this->getHoldingDuesv1($req, $req->propId);
+            $amount = 0; // Initialize amount for properties
+            $consumerAmount = 0;
+            if ($req->propId) {
+                foreach ($req->propId as $propId) {
+                    $demand = $this->getHoldingDuesv1($req, $req->propId);
+                    if ($demand->original['status'] == false)
+                        throw new Exception($demand->original['message']);
 
-            if ($demand->original['status'] == false)
-                throw new Exception($demand->original['message']);
+                    $demandData = $demand->original['data'];
+                    if ($demandData)
+                        if (!$demandData)
+                            throw new Exception("Demand Not Available");
+                    $amount  = $demandData['duesList']['payableAmount'];
+                    $demands = $demandData['duesList'];
+                    $demandDetails = $demandData['demandList'];
+                    $propDtls = $propProperties->getPropById($req->propId);
+                    $amount += $demandData['duesList']['payableAmount'];
+                }
+            }
+            // Check if consumerDetails exists and calculate total amount for consumer demands
+            if (!empty($req->consumerDetails)) {
+                $consumerAmount = array_sum(array_column($req->consumerDetails, 'amount')); // Sum consumer amounts
+            }
 
-            $demandData = $demand->original['data'];
-            if ($demandData)
-                if (!$demandData)
-                    throw new Exception("Demand Not Available");
-            $amount  = $demandData['duesList']['payableAmount'];
-            $demands = $demandData['duesList'];
-            $demandDetails = $demandData['demandList'];
-            $propDtls = $propProperties->getPropById($req->propId);
-
-
-
-            // return $refDetails;
-
-            $refDetails['amount'] = $refDetails['amount'] ?? $amount;
-
-            // add amount of property and water consumer demand amount
-            $totalAmountdtl = $amount + $refDetails['amount'];
+            // Final total amount calculation
+            $totalAmountdtl = $amount + $consumerAmount;
 
             $req->request->add([
                 'amount' => $totalAmountdtl,
@@ -653,46 +657,45 @@ class HoldingTaxController extends Controller
             ]);
             // DB::beginTransaction();
             $orderDetails = $this->saveGenerateOrderidv1($req);                                      //<---------- Generate Order ID Trait
-
-            // $demands = array_merge($demands->toArray(), [
-            //     'orderId' => $orderDetails['orderId']
-            // ]);
             $demands = is_array($demands) ? $demands : [];
             $demands = array_merge($demands, ['orderId' => $orderDetails['orderId']]);
             // Store Razor pay Request for property Demand
-            foreach ($req->propId as $propId) {
-                $demand = $this->getHoldingDuesv1($req, $propId);
+            if ($req->propId) {
+                foreach ($req->propId as $propId) {
+                    $demand = $this->getHoldingDuesv1($req, $propId);
 
-                if ($demand->original['status'] == false)
-                    throw new Exception($demand->original['message']);
+                    if ($demand->original['status'] == false)
+                        throw new Exception($demand->original['message']);
 
-                $demandData = $demand->original['data'];
-                if ($demandData)
-                    if (!$demandData)
-                        throw new Exception("Demand Not Available");
-                $amount  = $demandData['duesList']['payableAmount'];
-                $demands = $demandData['duesList'];
-                $demandDetails = $demandData['demandList'];
-                $razorPayRequest = [
-                    'order_id' => $orderDetails['orderId'],
-                    'prop_id' => $propId,
-                    'from_fyear' => $demands['dueFromFyear'],
-                    'from_qtr' => $demands['dueFromQtr'],
-                    'to_fyear' => $demands['dueToFyear'],
-                    'to_qtr' => $demands['dueToQtr'],
-                    'demand_amt' => $demands['totalDues'],
-                    'ulb_id' => $propDtls->ulb_id,
-                    'ip_address' => $ipAddress,
-                    'demand_list' => json_encode($demandDetails, true),
-                    'amount' => $amount,
-                    'advance_amount' => $demands['advanceAmt']
-                ];
-                $storedRazorPayReqs = $mPropRazorPayRequest->store($razorPayRequest);
-                // Store Razor pay penalty Rebates
-                $postRazorPayPenaltyRebate->_propId = $propId;
-                $postRazorPayPenaltyRebate->_razorPayRequestId = $storedRazorPayReqs['razorPayReqId'];
-                $postRazorPayPenaltyRebate->postRazorPayPenaltyRebatesv1($demands, $propId);
+                    $demandData = $demand->original['data'];
+                    if ($demandData)
+                        if (!$demandData)
+                            throw new Exception("Demand Not Available");
+                    $amount  = $demandData['duesList']['payableAmount'];
+                    $demands = $demandData['duesList'];
+                    $demandDetails = $demandData['demandList'];
+                    $razorPayRequest = [
+                        'order_id' => $orderDetails['orderId'],
+                        'prop_id' => $propId,
+                        'from_fyear' => $demands['dueFromFyear'],
+                        'from_qtr' => $demands['dueFromQtr'],
+                        'to_fyear' => $demands['dueToFyear'],
+                        'to_qtr' => $demands['dueToQtr'],
+                        'demand_amt' => $demands['totalDues'],
+                        'ulb_id' => $propDtls->ulb_id,
+                        'ip_address' => $ipAddress,
+                        'demand_list' => json_encode($demandDetails, true),
+                        'amount' => $amount,
+                        'advance_amount' => $demands['advanceAmt']
+                    ];
+                    $storedRazorPayReqs = $mPropRazorPayRequest->store($razorPayRequest);
+                    // Store Razor pay penalty Rebates
+                    $postRazorPayPenaltyRebate->_propId = $propId;
+                    $postRazorPayPenaltyRebate->_razorPayRequestId = $storedRazorPayReqs['razorPayReqId'];
+                    $postRazorPayPenaltyRebate->postRazorPayPenaltyRebatesv1($demands, $propId);
+                }
             }
+
             // for water consumer demand payment
             if (!empty($req->consumerDetails)) {
                 $waterModuleId  = Config::get('module-constants.WATER_MODULE_ID');
