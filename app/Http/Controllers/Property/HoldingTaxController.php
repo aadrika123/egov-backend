@@ -38,6 +38,7 @@ use App\Models\Water\WaterAdjustment;
 use App\Models\Water\WaterAdvance;
 use App\Models\Water\WaterConsumer;
 use App\Models\Water\WaterConsumerDemand;
+use App\Models\Water\WaterRazorPayRequest;
 use App\Models\Workflows\WfActiveDocument;
 use App\Models\Workflows\WfRoleusermap;
 use App\Repository\Property\Interfaces\iSafRepository;
@@ -319,7 +320,7 @@ class HoldingTaxController extends Controller
     /**
      * | Get Holding Dues(2)
      */
-    public function getHoldingDuesv1(Request $req)
+    public function getHoldingDuesv1($req, $propId)
     {
         // $req->validate([
         //     'propId' => 'required|digits_between:1,9223372036854775807'
@@ -353,9 +354,9 @@ class HoldingTaxController extends Controller
             $qtrs = collect([1, 2, 3, 4]);
             $mUlbMasters = new UlbMaster();
 
-            $ownerDetails = $mPropOwners->getOwnerByPropId($req->propId)->first();
+            $ownerDetails = $mPropOwners->getOwnerByPropId($propId)->first();
             $demand = array();
-            $demandList = $mPropDemand->getDueDemandByPropIdv1($req->propId);
+            $demandList = $mPropDemand->getDueDemandByPropId($propId);
             $demandList = collect($demandList);
 
             collect($demandList)->map(function ($value) use ($pendingFYears) {
@@ -376,10 +377,10 @@ class HoldingTaxController extends Controller
                 if (collect($demandTillQtr)->isEmpty())
                     $demandList = collect();                                    // Demand List blank in case of fyear and qtr         
             }
-            $propDtls = $mPropProperty->getPropById($req->propId);
+            $propDtls = $mPropProperty->getPropById($propId);
             $balance = $propDtls->balance ?? 0;
 
-            $propBasicDtls = $mPropProperty->getPropBasicDtlsv1($req->propId);
+            $propBasicDtls = $mPropProperty->getPropBasicDtls($propId);
             if (collect($propBasicDtls)->isEmpty()) {
                 throw new Exception("Property Details Not Available");
             }
@@ -417,7 +418,7 @@ class HoldingTaxController extends Controller
             $onePercTax = ($onePercTax > 0) ? $onePercTax : 0;
 
             $rwhPenaltyTax = roundFigure($demandList->sum('additional_tax'));
-            $advanceAdjustments = $mPropAdvance->getPropAdvanceAdjustAmtv1($req->propId);
+            $advanceAdjustments = $mPropAdvance->getPropAdvanceAdjustAmt($propId);
             if (collect($advanceAdjustments)->isEmpty())
                 $advanceAmt = 0;
             else
@@ -612,12 +613,16 @@ class HoldingTaxController extends Controller
             $propProperties = new PropProperty();
             $ipAddress = getClientIpAddress();
             $mrazorPayRequest = new RazorPayRequest();
+            $mPropRazorPayRequest = new PropRazorpayRequest();
             $postRazorPayPenaltyRebate = new PostRazorPayPenaltyRebate;
+            $mWaterRazorPayRequest = new WaterRazorPayRequest();
+            $mPropDemand = new PropDemand();
             $url      = Config::get('razorpay.PAYMENT_GATEWAY_URL');
             $endPoint = Config::get('razorpay.PAYMENT_GATEWAY_END_POINT');
 
             // $authUser = Auth()->user();
-            $demand = $this->getHoldingDuesv1($req);
+            $demand = $this->getHoldingDuesv1($req, $req->propId);
+
             if ($demand->original['status'] == false)
                 throw new Exception($demand->original['message']);
 
@@ -630,30 +635,7 @@ class HoldingTaxController extends Controller
             $demandDetails = $demandData['demandList'];
             $propDtls = $propProperties->getPropById($req->propId);
 
-            if (!empty($req->consumerDetails)) {
-                $waterModuleId  = Config::get('module-constants.WATER_MODULE_ID');
-                $paymentFor     = Config::get('waterConstaint.PAYMENT_FOR');
-                $totalAmount    = 0;
-                $refDetails     = [];
 
-                foreach ($req->consumerDetails as $consumer) {
-                    $startingDate = Carbon::createFromFormat('Y-m-d', $consumer['demandFrom'])->startOfMonth()->toDateString();
-                    $endDate = Carbon::createFromFormat('Y-m-d', $consumer['demandUpto'])->endOfMonth()->toDateString();
-
-                    $consumerData = $this->preOfflinePaymentParams($consumer, $startingDate, $endDate);
-                    $refDetails[] = $consumerData;
-
-                    // Sum up all consumer charges
-                    if (!empty($consumerData['consumerChages'])) {
-                        foreach ($consumerData['consumerChages'] as $charge) {
-                            $totalAmount += (float) $charge['amount'];
-                        }
-                    }
-                }
-
-                // Add the total amount to the response
-                $refDetails['amount'] = $totalAmount;
-            }
 
             // return $refDetails;
 
@@ -671,33 +653,75 @@ class HoldingTaxController extends Controller
                 'ghostUserId' => 0,
                 // 'auth' => $authUser
             ]);
-            DB::beginTransaction();
+            // DB::beginTransaction();
             $orderDetails = $this->saveGenerateOrderidv1($req);                                      //<---------- Generate Order ID Trait
 
-            $demands = array_merge($demands->toArray(), [
-                'orderId' => $orderDetails['orderId']
-            ]);
-            // Store Razor pay Request
-            $razorPayRequest = [
-                'order_id' => $demands['orderId'],
-                'prop_id' => $req->id,
-                'from_fyear' => $demands['dueFromFyear'],
-                'from_qtr' => $demands['dueFromQtr'],
-                'to_fyear' => $demands['dueToFyear'],
-                'to_qtr' => $demands['dueToQtr'],
-                'demand_amt' => $demands['totalDues'],
-                'ulb_id' => $propDtls->ulb_id,
-                'ip_address' => $ipAddress,
-                'demand_list' => json_encode($demandDetails, true),
-                'amount' => $amount,
-                'advance_amount' => $demands['advanceAmt']
-            ];
-            $storedRazorPayReqs = $mrazorPayRequest->saveRequestData($razorPayRequest, $req->consumerDetails, $paymentFor['1'], $req, $refDetails);
-            // Store Razor pay penalty Rebates
-            // $postRazorPayPenaltyRebate->_propId = $req->id;
-            // $postRazorPayPenaltyRebate->_razorPayRequestId = $storedRazorPayReqs['razorPayReqId'];
-            // $postRazorPayPenaltyRebate->postRazorPayPenaltyRebates($demands);
-            DB::commit();
+            // $demands = array_merge($demands->toArray(), [
+            //     'orderId' => $orderDetails['orderId']
+            // ]);
+            $demands = is_array($demands) ? $demands : [];
+            $demands = array_merge($demands, ['orderId' => $orderDetails['orderId']]);
+            // Store Razor pay Request for property Demand
+            foreach ($req->propId as $propId) {
+                $demand = $this->getHoldingDuesv1($req, $propId);
+
+                if ($demand->original['status'] == false)
+                    throw new Exception($demand->original['message']);
+
+                $demandData = $demand->original['data'];
+                if ($demandData)
+                    if (!$demandData)
+                        throw new Exception("Demand Not Available");
+                $amount  = $demandData['duesList']['payableAmount'];
+                $demands = $demandData['duesList'];
+                $demandDetails = $demandData['demandList'];
+                $razorPayRequest = [
+                    'order_id' => $orderDetails['orderId'],
+                    'prop_id' => $propId,
+                    'from_fyear' => $demands['dueFromFyear'],
+                    'from_qtr' => $demands['dueFromQtr'],
+                    'to_fyear' => $demands['dueToFyear'],
+                    'to_qtr' => $demands['dueToQtr'],
+                    'demand_amt' => $demands['totalDues'],
+                    'ulb_id' => $propDtls->ulb_id,
+                    'ip_address' => $ipAddress,
+                    'demand_list' => json_encode($demandDetails, true),
+                    'amount' => $amount,
+                    'advance_amount' => $demands['advanceAmt']
+                ];
+                $storedRazorPayReqs = $mPropRazorPayRequest->store($razorPayRequest);
+                // Store Razor pay penalty Rebates
+                $postRazorPayPenaltyRebate->_propId = $propId;
+                $postRazorPayPenaltyRebate->_razorPayRequestId = $storedRazorPayReqs['razorPayReqId'];
+                $postRazorPayPenaltyRebate->postRazorPayPenaltyRebatesv1($demands, $propId);
+            }
+            // for water consumer demand payment
+            if (!empty($req->consumerDetails)) {
+                $waterModuleId  = Config::get('module-constants.WATER_MODULE_ID');
+                $paymentFor     = Config::get('waterConstaint.PAYMENT_FOR');
+                $totalAmount    = 0;
+                $refDetails     = [];
+
+                foreach ($req->consumerDetails as $consumer) {
+                    $startingDate = Carbon::createFromFormat('Y-m-d', $consumer['demandFrom'])->startOfMonth()->toDateString();
+                    $endDate = Carbon::createFromFormat('Y-m-d', $consumer['demandUpto'])->endOfMonth()->toDateString();
+
+                    $consumerData = $this->preOfflinePaymentParams($consumer, $startingDate, $endDate);
+                    $refDetails[] = $consumerData;
+                    // store request
+                    $mWaterRazorPayRequest->saveRequestDatav1($consumer, $req, $paymentFor['1'], $razorPayRequest, $consumerData);
+                    // Sum up all consumer charges
+                    if (!empty($consumerData['consumerChages'])) {
+                        foreach ($consumerData['consumerChages'] as $charge) {
+                            $totalAmount += (float) $charge['amount'];
+                        }
+                    }
+                }
+
+                // Add the total amount to the response
+                $refDetails['amount'] = $totalAmount;
+            }
+            // DB::commit();
             return responseMsgs(true, "Order id Generated", remove_null($orderDetails), "011503", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             DB::rollBack();

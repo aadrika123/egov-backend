@@ -115,26 +115,13 @@ trait Razorpay
      */
     public function saveGenerateOrderidv1($request)
     {
-        // $validated = Validator::make(
-        //     $request->all(),
-        //     [
-        //         'id'            => 'required|integer',
-        //         'amount'        => 'required|',
-        //         'workflowId'    => 'required|',
-        //         'ulbId'         => 'nullable'
-        //     ]
-        // );
-        // if ($validated->fails())
-        //     return validationError($validated);
-
         try {
             $mWfWorkflow    = new WfWorkflow();
             $wfReq = new Request([
                 'id' => $request->workflowId
             ]);
 
-            // $userId             = auth()->user()->id ?? $request->ghostUserId;
-            $userId             = 203;
+            $userId             = auth()->user()->id ?? $request->ghostUserId;
             // $workflowDetails    = $mWfWorkflow->listbyId($wfReq);
             $ulbId              = $workflowDetails->ulb_id ?? $request->ulbId;                                           // ulbId
             $refRazorpayId      = Config::get('razorpay.RAZORPAY_ID');
@@ -156,7 +143,7 @@ trait Razorpay
                 'orderId'       => $mOrder['id'],
                 'amount'        => $request->all()['amount'],
                 'currency'      => 'INR',                                                           // Static
-                // 'userId'        => $userId ?? 203,
+                'userId'        => $userId,
                 'ulbId'         => $ulbId,
                 'workflowId'    => $request->workflowId,
                 'applicationId' => $request->id,

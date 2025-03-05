@@ -29,4 +29,21 @@ class WaterRazorPayResponse extends Model
             'razorpayResponseId' => $RazorPayResponse->id
         ];
     }
+    /**
+     * | Save data for the razorpay response
+     */
+    public function savePaymentResponsev1($RazorPayRequest, $webhookData,$transfer)
+    {
+        $RazorPayResponse = new WaterRazorPayResponse();
+        $RazorPayResponse->related_id   = $RazorPayRequest->related_id;
+        $RazorPayResponse->request_id   = $RazorPayRequest->id;
+        $RazorPayResponse->amount       = $webhookData['amount'];
+        $RazorPayResponse->merchant_id  = $webhookData['merchantId'] ?? null;
+        $RazorPayResponse->order_id     = $webhookData["order_id"];
+        $RazorPayResponse->payment_id   = $transfer["paymentId"];
+        $RazorPayResponse->save();
+        return [
+            'razorpayResponseId' => $RazorPayResponse->id
+        ];
+    }
 }

@@ -565,7 +565,7 @@ class WaterPaymentController extends Controller
         ]);
 
         switch ($newCharge) {
-                # in case of connection charge is not 0
+            # in case of connection charge is not 0
             case ($newCharge != 0):
                 # cherge in changes 
                 if ($newConnectionCharges['conn_fee_charge']['conn_fee'] > $applicationCharge['conn_fee']) {
@@ -1246,7 +1246,7 @@ class WaterPaymentController extends Controller
         $isPenalty                  = null;
 
         switch ($req) {
-                # In Case of Residential payment Offline
+            # In Case of Residential payment Offline
             case ($req->chargeCategory == $paramChargeCatagory['REGULAIZATION']):
                 if ($refApplication['connection_type_id'] != $connectionTypeIdConfig['REGULAIZATION']) {
                     throw new Exception("The respective application in not for Regulaization!");
@@ -1324,7 +1324,7 @@ class WaterPaymentController extends Controller
                 }
                 break;
 
-                # In Case of New Connection payment Offline
+            # In Case of New Connection payment Offline
             case ($req->chargeCategory == $paramChargeCatagory['NEW_CONNECTION']):
                 if ($refApplication['connection_type_id'] != $connectionTypeIdConfig['NEW_CONNECTION']) {
                     throw new Exception("The respective application in not for New Connection!");
@@ -1346,7 +1346,7 @@ class WaterPaymentController extends Controller
                 }
                 break;
 
-                # In case of Site Inspection
+            # In case of Site Inspection
             case ($req->chargeCategory == $paramChargeCatagory['SITE_INSPECTON']):
                 $actualCharge = $mWaterConnectionCharge->getWaterchargesById($req->applicationId)
                     ->where('charge_category', $paramChargeCatagory['SITE_INSPECTON'])
@@ -1818,6 +1818,108 @@ class WaterPaymentController extends Controller
             # adjustment data saving
             $refMetaReq = new Request([
                 "consumerId"    => $webhookData['id'],
+                "amount"        => $RazorPayRequest['adjusted_amount'],
+                "userId"        => $refUserId,
+                "remarks"       => "online payment",                            // Static
+            ]);
+            if ($RazorPayRequest['adjusted_amount'] > 0) {
+                $mWaterAdjustment->saveAdjustment($transactionId, $refMetaReq, $adjustmentFor['1']);
+            }
+            # Save the fine data in the 
+            if ($RazorPayRequest['penalty_amount'] > 0) {
+                $this->savePenaltyDetails($transactionId, $RazorPayRequest['penalty_amount']);
+            }
+            foreach ($mDemands as $demand) {
+                # save Water trans details 
+                $mWaterTranDetail->saveDefaultTrans($demand->amount, $demand->consumer_id, $transactionId['id'], $demand->id);
+                $mWaterConsumerCollection->saveConsumerCollection($demand, $transactionId, $refUserId);
+                # update the payment status of the demand 
+                $demand->paid_status = 1;                                          // Static
+                $demand->update();
+            }
+            $this->commit();
+            $res['transactionId'] = $transactionId['id'];
+            return responseMsg(true, "", $res);
+        } catch (Exception $e) {
+            $this->rollback();
+            return responseMsg(false, $e->getMessage(), $webhookData);
+        }
+    }
+    /**
+     * | Online Payment for the consumer Demand
+     * | Data After the Webhook Payment / Called by the Webhook
+     * | @param webhookData
+     * | @param RazorPayRequest
+        | Serial No : 11
+        | Recheck / Not Working
+        | Clear the concept
+        | Save the pgId and pgResponseId in trans table 
+        | Called function 
+     */
+    public function endOnlineDemandPaymentv1($webhookData, $RazorPayRequest, $transfer)
+    {
+        try {
+            # ref var assigning
+            $today          = Carbon::now();
+            $refUserId      = $webhookData["userId"];
+            $refUlbId       = $webhookData["ulbId"];
+            $mDemands       = (array)null;
+
+            # model assigning
+            $mWaterTran                 = new WaterTran();
+            $mWaterTranDetail           = new WaterTranDetail();
+            $mWaterConsumerDemand       = new WaterConsumerDemand();
+            $mWaterRazorPayResponse     = new WaterRazorPayResponse();
+            $mWaterConsumerCollection   = new WaterConsumerCollection();
+            $mWaterAdjustment           = new WaterAdjustment();
+
+            # variable assigning
+            $adjustmentFor = Config::get("waterConstaint.ADVANCE_FOR");
+            $consumerDetails = WaterConsumer::find($webhookData["related_id"]);
+            $consumerId = $webhookData["related_id"];
+            $refDate = explode("--", $RazorPayRequest->demand_from_upto);
+            $startingYear = $refDate[0];
+            $endYear = $refDate[1];
+
+            # calcullate demand
+            $mDemands = $mWaterConsumerDemand->checkConsumerDemand($consumerId)
+                ->where('demand_from', '>=', $startingYear)
+                ->where('demand_upto', '<=', $endYear)
+                ->get();
+            // if (!$RazorPayRequest || round($webhookData['amount']) != round($RazorPayRequest['amount'])) {
+            //     throw new Exception("Payble Amount Missmatch!!!");
+            // }
+
+            $this->begin();
+            # save payment data in razorpay response table
+            $paymentResponseId = $mWaterRazorPayResponse->savePaymentResponsev1($RazorPayRequest, $webhookData,$transfer);
+
+            # save the razorpay request status as 1
+            $RazorPayRequest->status = 1;                                       // Static
+            $RazorPayRequest->update();
+
+            # save data in water transaction table 
+            $metaRequest = [
+                "id"                => $webhookData["related_id"],
+                'amount'            => $webhookData['amount'],
+                'chargeCategory'    => $RazorPayRequest->payment_from,
+                'todayDate'         => $today,
+                'tranNo'            => $transfer["transactionNo"],
+                'paymentMode'       => "Online",                                // Static
+                'citizenId'         => $refUserId,
+                'userType'          => "Citizen" ?? null,                       // Check here // Static
+                'ulbId'             => $refUlbId,
+                'leftDemandAmount'  => $RazorPayRequest->due_amount,
+                'adjustedAmount'    => $RazorPayRequest->adjusted_amount,
+                'pgResponseId'      => $paymentResponseId['razorpayResponseId'],
+                'pgId'              => $webhookData['gatewayType']
+            ];
+            $consumer['ward_mstr_id'] = $consumerDetails->ward_mstr_id;
+            $transactionId = $mWaterTran->waterTransaction($metaRequest, $consumer);
+
+            # adjustment data saving
+            $refMetaReq = new Request([
+                "consumerId"    => $webhookData['related_id'],
                 "amount"        => $RazorPayRequest['adjusted_amount'],
                 "userId"        => $refUserId,
                 "remarks"       => "online payment",                            // Static

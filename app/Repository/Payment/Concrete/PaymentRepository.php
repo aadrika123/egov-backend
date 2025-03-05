@@ -5,6 +5,7 @@ namespace App\Repository\Payment\Concrete;
 use App\Http\Controllers\Property\ActiveSafController;
 use App\Http\Controllers\Property\HoldingTaxController;
 use App\Http\Controllers\Trade\TradeCitizenController;
+use App\Http\Controllers\Water\WaterPaymentController;
 use App\Http\Requests\Property\ReqPayment;
 use App\MicroServices\IdGenerator\PrefixIdGenerator;
 use App\Models\ApiMaster;
@@ -17,7 +18,17 @@ use App\Models\Payment\PaymentReject;
 use App\Models\Payment\PaymentRequest;
 use App\Models\Payment\PaymentSuccess;
 use App\Models\Payment\WebhookPaymentData;
+use App\Models\Property\PropAdjustment;
+use App\Models\Property\PropDemand;
+use App\Models\Property\PropOwner;
+use App\Models\Property\PropPenaltyrebate;
+use App\Models\Property\PropProperty;
+use App\Models\Property\PropRazorpayPenalrebate;
+use App\Models\Property\PropRazorpayRequest;
+use App\Models\Property\PropRazorpayResponse;
+use App\Models\Property\PropTranDtl;
 use App\Models\Property\PropTransaction;
+use App\Models\Water\WaterRazorPayRequest;
 use Illuminate\Http\Request;
 use App\Repository\Payment\Interfaces\iPayment;
 use App\Repository\Property\Concrete\SafRepository;
@@ -32,9 +43,12 @@ use Illuminate\Support\Facades\Storage;
 
 use Exception;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Razorpay\Api\Api;
 use Razorpay\Api\Errors\SignatureVerificationError;
+
+use function PHPUnit\Framework\isEmpty;
 
 /**
  * |--------------------------------------------------------------------------------------------------------|
@@ -50,9 +64,11 @@ class PaymentRepository implements iPayment
     # traits
     use Razorpay;
     protected $_safRepo;
+    protected $_carbon;
     public function __construct(iSafRepository $safRepo)
     {
         $this->_safRepo = $safRepo;
+        $this->_carbon = Carbon::now();
     }
 
     /**
@@ -287,6 +303,308 @@ class PaymentRepository implements iPayment
         }
     }
 
+    /**
+     * | ----------------------------------- payment Gateway ENDS -------------------------------
+     * | collecting the data provided by the webhook in database
+     * | @param requet request from the frontend
+     * | @param error collecting the operation error
+     * | @var mAttributes
+     * | @var mVerification
+     * |
+     * | Rating :
+     * | Time :
+        | Working
+     */
+    public function gettingWebhookDetailsv1(Request $request)
+    {
+        try {
+            # creating json of webhook data
+            // $paymentId = $request->payload['payment']['entity']['id'];
+            // Storage::disk('public')->put($paymentId . '.json', json_encode($request->all()));
+
+            if (!empty($request)) {
+                $mWebhookDetails = $this->collectWebhookDetailsv1($request);
+                return $mWebhookDetails;
+            }
+            return responseMsg(false, "WEBHOOK DATA NOT ACCUIRED!", "");
+        } catch (Exception $error) {
+            return responseMsg(false, "OPERATIONAL ERROR!", $error->getMessage());
+        }
+    }
+
+    public function collectWebhookDetailsv1($webhookData)
+    {
+        $request = $webhookData->toArray();
+        try {
+            # Variable Defining Section
+            $webhookEntity  = "";
+            $contains       = "";
+            $notes          = "";
+            $depatmentId    = $request['departmentId'];  // ModuleId
+            // $status         = $request['status'];
+            $captured       = $request['captured'];
+            // $aCard          = $request['card_id'];
+            $amount         = $request['amount'];
+            $mPropRazorpayRequest = new PropRazorpayRequest();
+            $mWaterRazorpayRequest = new WaterRazorPayRequest();
+
+            $actulaAmount = $amount;
+            // $firstKey = "";
+            $actualTransactionNo = $this->generatingTransactionId($request['ulb_id']);
+
+            // # Save card details 
+            // if (!is_null($aCard)) {
+            //     $webhookCardDetails = $webhookEntity['card'];
+            //     $objcard = new CardDetail();
+            //     $objcard->saveCardDetails($webhookCardDetails);
+            // }
+
+            # Data to be stored in webhook table
+            // $webhookData = new WebhookPaymentData();
+            // $refWebhookDetails = $webhookData->getWebhookRecord($request, $captured, $webhookEntity, $status)->first();
+            // if (is_null($refWebhookDetails)) {
+            //     $webhookData = $webhookData->saveWebhookData($request, $captured, $actulaAmount, $status, $notes, $firstKey, $contains, $actualTransactionNo, $webhookEntity);
+            // }
+            # data transfer to the respective module's database 
+            $transfer = [
+                'paymentMode'   => $webhookData->payment_method,
+                'id'            => $request['applicationId'],
+                'amount'        => $actulaAmount,
+                'workflowId'    => $webhookData->workflow_id,
+                'transactionNo' => $actualTransactionNo,
+                'userId'        => $webhookData->user_id,
+                'ulbId'         => $request['ulb_id'],
+                'departmentId'  => $depatmentId,                        //ModuleId
+                'orderId'       => $webhookData->payment_order_id,
+                'paymentId'     => $webhookData->payment_id,
+                'tranDate'      => $request['created_at'],
+                'gatewayType'   => 1,                                   // Razorpay Id
+                'citizenId'     => $request['citizenId']  ?? ""
+            ];
+            // property Razorpay Request
+
+            // Property Razorpay Request
+            // Property Razorpay Request
+            $checkRequest = $mPropRazorpayRequest->getRazorPayRequestsv1($transfer);
+            $checkWaterRequest = $mWaterRazorpayRequest->getRazorPayRequestsv1($transfer);
+            if ($checkRequest) {
+                foreach ($checkRequest as $req) {
+                    // Convert object to an array before passing it to ReqPayment
+                    $paymentRequest = new ReqPayment($req->toArray());
+
+                    // Call the paymentHolding method
+                    $this->paymentHolding($paymentRequest, $transfer);
+                }
+            }
+            if ($checkWaterRequest) {
+                foreach ($checkWaterRequest as $req) {
+                    // Convert object to an array before passing it to ReqPaymen
+                    $data = $this->razorPayResponse($req, $transfer);
+                }
+            }
+            return responseMsg(true, "Webhook Data Collected!", $actualTransactionNo);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), $e->getLine());
+        }
+    }
+
+
+    /**
+     * | Payment Holding (Case for Online Payment)
+     */
+    public function paymentHolding(ReqPayment $req, $transfer)
+    {
+        try {
+            $userId = $req['userId'];
+            $tranBy = 'ONLINE';
+            $mPropDemand = new PropDemand();
+            $mPropTrans = new PropTransaction();
+            $propId = $req['prop_id'];
+            $mPropAdjustment = new PropAdjustment();
+            $mPropOwner = new PropOwner();
+            $mPropRazorPayRequest = new PropRazorpayRequest();
+            $mPropRazorpayPenalRebates = new PropRazorpayPenalrebate();
+            $mPropPenaltyRebates = new PropPenaltyrebate();
+            $mPropRazorpayResponse = new PropRazorpayResponse();
+
+            $propDetails = PropProperty::findOrFail($propId);
+            $ownerDetails = $mPropOwner->getfirstOwner($propId);
+            $orderId = $req['order_id'];
+            $paymentId = $transfer['paymentId'];
+            $razorPayReqs = new Request([
+                'orderId' => $orderId,
+                'key' => 'prop_id',
+                'keyId' => $propId
+            ]);
+            $propRazorPayRequest = $mPropRazorPayRequest->getRazorPayRequests($razorPayReqs);
+            if (collect($propRazorPayRequest)->isEmpty())
+                throw new Exception("No Order Request Found");
+
+            if (!$userId)
+                $userId = 0;                                                        // For Ghost User in case of online payment
+
+            $tranNo = $transfer['transactionNo'];
+
+            $demands = json_decode($propRazorPayRequest->demand_list, true);
+            $amount = $propRazorPayRequest['amount'];
+            $advanceAmt = $propRazorPayRequest['advance_amount'];
+            if (collect($demands)->isEmpty())
+                throw new Exception("No Dues For this Property");
+
+            DB::beginTransaction();
+            // Replication of Prop Transactions
+            $tranReqs = [
+                'property_id' => $req['prop_id'],
+                'tran_date' => $this->_carbon->format('Y-m-d'),
+                'tran_no' => $tranNo,
+                'payment_mode' => 'ONLINE',
+                'amount' => $amount,
+                'tran_date' => $this->_carbon->format('Y-m-d'),
+                'verify_date' => $this->_carbon->format('Y-m-d'),
+                'citizen_id' => $userId,
+                'is_citizen' => true,
+                'from_fyear' => $propRazorPayRequest->from_fyear,
+                'to_fyear' => $propRazorPayRequest->to_fyear,
+                'from_qtr' => $propRazorPayRequest->from_qtr,
+                'to_qtr' => $propRazorPayRequest->to_qtr,
+                'demand_amt' => $propRazorPayRequest->demand_amt,
+                'ulb_id' => $propRazorPayRequest->ulb_id,
+                'tran_type' => 'Property',
+
+            ];
+
+            $storedTransaction = $mPropTrans->storeTrans($tranReqs);
+            $tranId = $storedTransaction['id'];
+
+            $razorpayPenalRebates = $mPropRazorpayPenalRebates->getPenalRebatesByReqId($propRazorPayRequest->id);
+            // Replication of Razorpay Penalty Rebates to Prop Penal Rebates
+            foreach ($razorpayPenalRebates as $item) {
+                $propPenaltyRebateReqs = [
+                    'tran_id' => $tranId,
+                    'head_name' => $item['head_name'],
+                    'amount' => $item['amount'],
+                    'is_rebate' => $item['is_rebate'],
+                    'tran_date' => $this->_carbon->format('Y-m-d'),
+                    'prop_id' => $req['id'],
+                ];
+                $mPropPenaltyRebates->postRebatePenalty($propPenaltyRebateReqs);
+            }
+
+            // Updation of Prop Razor pay Request
+            $propRazorPayRequest->status = 1;
+            $propRazorPayRequest->payment_id = $paymentId;
+            $propRazorPayRequest->save();
+
+            // Update Prop Razorpay Response
+            $razorpayResponseReq = [
+                'razorpay_request_id' => $propRazorPayRequest->id,
+                'order_id' => $orderId,
+                'payment_id' => $paymentId,
+                'prop_id' => $req['prop_id'],
+                'from_fyear' => $propRazorPayRequest->from_fyear,
+                'from_qtr' => $propRazorPayRequest->from_qtr,
+                'to_fyear' => $propRazorPayRequest->to_fyear,
+                'to_qtr' => $propRazorPayRequest->to_qtr,
+                'demand_amt' => $propRazorPayRequest->demand_amt,
+                'ulb_id' => $propDetails->ulb_id,
+                'ip_address' => getClientIpAddress(),
+            ];
+            $mPropRazorpayResponse->store($razorpayResponseReq);
+
+            // Reflect on Prop Tran Details
+            foreach ($demands as $demand) {
+                $propDemand = $mPropDemand->getDemandById($demand['id']);
+                $propDemand->balance = 0;
+                $propDemand->paid_status = 1;           // <-------- Update Demand Paid Status 
+                $propDemand->save();
+
+                $propTranDtl = new PropTranDtl();
+                $propTranDtl->tran_id = $tranId;
+                $propTranDtl->prop_demand_id = $demand['id'];
+                $propTranDtl->total_demand = $demand['amount'];
+                $propTranDtl->ulb_id = $propDetails->ulb_id;
+                $propTranDtl->save();
+            }
+            // Advance Adjustment 
+            if ($advanceAmt > 0) {
+                $adjustReq = [
+                    'prop_id' => $propId,
+                    'tran_id' => $tranId,
+                    'amount' => $advanceAmt
+                ];
+                if ($tranBy == 'Citizen')
+                    $adjustReq = array_merge($adjustReq, ['citizen_id' => $userId ?? 0]);
+                else
+                    $adjustReq = array_merge($adjustReq, ['user_id' => $userId ?? 0]);
+
+                $mPropAdjustment->store($adjustReq);
+            }
+            DB::commit();
+
+            $ownerName   = $ownerDetails->applicant_name;
+            $ownerMobile = $ownerDetails->mobile_no;
+            $amount      = $req->amount;
+            $holdingNo   = $propDetails->new_holding_no ?? $propDetails->holding_no;
+            $url         = "https://jharkhandegovernance.com/citizen/paymentReceipt/direct/" . $tranNo . "/holding";
+
+            #_Whatsaap Message
+            if (strlen($ownerMobile) == 10) {
+
+                $whatsapp2 = (Whatsapp_Send(
+                    $ownerMobile,
+                    "holding_payment_receipt",
+                    [
+                        "content_type" => "text",
+                        [
+                            $ownerName,
+                            $amount,
+                            $holdingNo,
+                            $url
+                        ]
+                    ]
+                ));
+            }
+
+            return responseMsgs(true, "Payment Successfully Done", ['TransactionNo' => $tranNo], "011509", "1.0", "", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), "", "011509", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
+    /**
+     * | Differenciate the water module payment 
+     */
+    public function razorPayResponse($args, $transfer)
+    {
+        try {
+            # validation 
+            $RazorPayRequest = WaterRazorPayRequest::select("*")
+                ->where("order_id", $args["order_id"])
+                ->where("related_id", $args["related_id"])
+                ->where("status", 2)
+                ->first();
+            // $RazorPayRequest = WaterRazorPayRequest::select("*")
+            //     ->where("order_id", 'order_NzZevOU2QkTCbz')
+            //     ->where("related_id", 4147)
+            //     ->where("status", 2)
+            //     ->first();
+            if (!$RazorPayRequest) {
+                throw new Exception("Data Not Found");
+            }
+            switch ($RazorPayRequest->payment_from) {
+                case ("Demand Collection"):
+                    $mWaterPaymentController = new WaterPaymentController();
+                    $response = $mWaterPaymentController->endOnlineDemandPaymentv1($args, $RazorPayRequest, $transfer);
+                    break;
+                default:
+                    throw new Exception("Invalid Transaction");
+            }
+            return $response;
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), $args);
+        }
+    }
     public function collectWebhookDetails($webhookData)
     {
         $request = $webhookData->toArray();
@@ -332,7 +650,7 @@ class PaymentRepository implements iPayment
                 'paymentId'     => $webhookData->payment_id,
                 'tranDate'      => $request['created_at'],
                 'gatewayType'   => 1,                                   // Razorpay Id
-                'citizenId'     => $request['citizenId']  ?? ""                                
+                'citizenId'     => $request['citizenId']  ?? ""
             ];
 
             # conditionaly upadting the request data

@@ -40,13 +40,7 @@ class PaymentRequest extends Model
         $transaction->user_id = $userId;
         $transaction->workflow_id = $request->workflowId;
         $transaction->ulb_id = $ulbId;
-        // Convert propId and consumerId to comma-separated strings
-        $propIds = isset($request['propId']) ? implode(',', $request['propId']) : null;
-        $consumerIds = isset($request['consumerDetails']) ? implode(',', array_column($request['consumerDetails'], 'consumerId')) : null;
-
-        // Store both propIds and consumerIds in application_id (adjust as per DB structure)
-        $transaction->application_id = $propIds . '|' . $consumerIds;  // Example format: "264524,22|78058,7474"
-        
+        $transaction->application_id = $request->id;
         $transaction->department_id = $request->departmentId;                       //<--------here(CHECK)
         $transaction->razorpay_order_id = $orderId;
         $transaction->amount = $request->amount;

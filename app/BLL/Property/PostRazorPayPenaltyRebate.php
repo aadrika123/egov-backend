@@ -55,6 +55,35 @@ class PostRazorPayPenaltyRebate
             }
         }
     }
+    /**
+     * | Post Razor Pay Request Penalty Rebates
+     */
+    public function postRazorPayPenaltyRebatesv1($dueList, $propId)
+    {
+        $mPropRazorpayPenalrebates = new PropRazorpayPenalrebate();
+        $this->_calculateRebates = $dueList['rebates'];
+        $this->_dueList = $dueList;
+
+        $this->generateHeadName();
+
+        if ($this->_safId == null && $this->_propId == null)
+            throw new Exception("Application Id Not Available");
+
+        foreach ($this->_headNames as $headName) {
+            if ($headName['value'] > 0) {
+                $reqs = [
+                    'razorpay_request_id' => $this->_razorPayRequestId,
+                    'saf_id' => $this->_safId,
+                    'prop_id' => $propId,
+                    'head_name' => $headName['keyString'],
+                    'amount' => $headName['value'],
+                    'is_rebate' => $headName['isRebate'],
+                    'ip_address' => $this->_ipAddress
+                ];
+                $mPropRazorpayPenalrebates->store($reqs);
+            }
+        }
+    }
 
     /**
      * | Generate Head Name

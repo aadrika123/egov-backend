@@ -281,6 +281,15 @@ class PropProperty extends Model
             ->where('status', 1)
             ->get();
     }
+    /**
+     * | holding search
+     */
+    public function searchByHoldingNo($holdingNo)
+    {
+        return PropProperty::where('new_holding_no', $holdingNo)
+            ->where('status', 1)
+            ->get();
+    }
 
     /**
      * | Get Property id by saf id

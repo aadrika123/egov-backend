@@ -67,6 +67,7 @@ Route::group(['middleware' => ['json.response','request_logger']], function () {
 });
 Route::controller(RazorpayPaymentController::class)->group(function () {
     Route::post('razorpay-webhook', 'gettingWebhookDetails');                                       // 14 collecting the all data provided by the webhook and updating the related database
+    Route::post('razorpay-webhook-v1', 'gettingWebhookDetailsv1');                                       // 14 collecting the all data provided by the webhook and updating the related database
     Route::post('get-tran-by-orderid', 'getTranByOrderId');                                     // 15 Get Transaction by Order ID and payment ID
     Route::post('verify-payment-status', 'verifyPaymentStatus');                                // 08 verifiying the payment status and saving both success, fails, suspeciousdata  
 });

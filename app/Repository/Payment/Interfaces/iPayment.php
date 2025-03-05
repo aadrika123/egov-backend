@@ -19,6 +19,7 @@ interface iPayment
     public function getWebhookDetails();                                            //04
     public function verifyPaymentStatus(Request $request);                          // 05
     public function gettingWebhookDetails(Request $request);                        // 06
+    public function gettingWebhookDetailsv1(Request $request);                        // 06
     public function getTransactionNoDetails(Request $request);                      // 07
 
     # Payment Reconciliation

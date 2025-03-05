@@ -577,6 +577,11 @@ class PropertyController extends Controller
             $mPropFloor = new PropFloor();
             $holdingTaxController = new HoldingTaxController($this->_safRepo);
             $holdingDtls = $mPropProperties->searchCollectiveHolding($request->holdingNo);
+            foreach ($request->holdingNo as $holdingNo) {
+                $holdingDtls = $mPropProperties->searchByHoldingNo($holdingNo);
+                if (collect($holdingDtls)->isEmpty())
+                    throw new Exception("No Property found for the respective holding no." . $holdingNo);
+            }
             if (collect($holdingDtls)->isEmpty())
                 throw new Exception("No Property found for the respective holding no.");
 
@@ -589,7 +594,7 @@ class PropertyController extends Controller
                 $demand = $holdingTaxController->getHoldingDues($request);
                 $demand = $demand->original;
                 if ($demand['status'] == true) {
-                    throw new Exception("Previous Demand is not clear for the respective property.". $demand['data']['basicDetails']['holding_no'] ?? 'N/A'); // Return false immediately if any demand has status false
+                    throw new Exception("Previous Demand is not clear for the respective property." . $demand['data']['basicDetails']['holding_no'] ?? 'N/A'); // Return false immediately if any demand has status false
                 }
                 if ($demand['status'] == false) {
                     $demand['data']['basicDetails']['property_id'] = $propId;
