@@ -11,6 +11,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Property\ReqPayment;
 use App\MicroServices\DocUpload;
 use App\MicroServices\IdGeneration;
+use App\Models\Citizen\ActiveCitizenUndercare;
 use App\Models\Cluster\Cluster;
 use App\Models\Payment\TempTransaction;
 use App\Models\Payment\WebhookPaymentData;
@@ -623,19 +624,18 @@ class HoldingTaxController extends Controller
             $consumerAmount = 0;
             if ($req->propId) {
                 foreach ($req->propId as $propId) {
-                    $demand = $this->getHoldingDuesv1($req, $req->propId);
-                    if ($demand->original['status'] == false)
+                    $demand = $this->getHoldingDuesv1($req, $propId);
+                    if ($demand->original['status'] == false) {
                         throw new Exception($demand->original['message']);
+                    }
+
 
                     $demandData = $demand->original['data'];
-                    if ($demandData)
-                        if (!$demandData)
-                            throw new Exception("Demand Not Available");
-                    $amount  = $demandData['duesList']['payableAmount'];
-                    $demands = $demandData['duesList'];
-                    $demandDetails = $demandData['demandList'];
-                    $propDtls = $propProperties->getPropById($req->propId);
-                    $amount += $demandData['duesList']['payableAmount'];
+                    if (!$demandData) {
+                        throw new Exception("Demand Not Available");
+                    }
+
+                    $amount += $demandData['duesList']['payableAmount']; // Summing payable amounts
                 }
             }
             // Check if consumerDetails exists and calculate total amount for consumer demands
@@ -673,6 +673,7 @@ class HoldingTaxController extends Controller
                             throw new Exception("Demand Not Available");
                     $amount  = $demandData['duesList']['payableAmount'];
                     $demands = $demandData['duesList'];
+                    $propDtls = $propProperties->getPropById($req->propId);
                     $demandDetails = $demandData['demandList'];
                     $razorPayRequest = [
                         'order_id' => $orderDetails['orderId'],
@@ -2103,5 +2104,206 @@ class HoldingTaxController extends Controller
             'tableData' => [$dataRow]
         ];
         return responseMsgs(true, "Demand Dues", remove_null($data), "011507 ", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+    }
+
+    /**
+     * Get detail of citizen property details and water connection details with pending demands
+     */
+    public function citizenPropWaterDtls(Request $request)
+    {
+        try {
+            // Authenticate user
+            $user = authUser($request);
+            $userId = $user->id;
+            $ulbId = $request->ulbId;
+
+            // Property Details with Demand Join (Excluding 0 or NULL demand)
+            $propTransactionQuery = PropProperty::leftJoin('prop_demands', function ($join) {
+                $join->on('prop_demands.property_id', '=', 'prop_properties.id')
+                    ->whereIn('prop_demands.status', [1, 2])
+                    ->where('prop_demands.paid_status', 0);
+            })
+                ->leftJoin('prop_owners', 'prop_owners.property_id', '=', 'prop_properties.id')
+                ->select(
+                    'prop_properties.id as property_id',
+                    'prop_properties.holding_no',
+                    'prop_properties.new_holding_no',
+                    'prop_properties.pt_no',
+                    'prop_properties.zone_mstr_id',
+                    'prop_properties.new_ward_mstr_id',
+                    'prop_properties.village_mauja_name',
+                    'prop_properties.prop_address',
+                    'prop_properties.khata_no',
+                    'prop_properties.plot_no',
+                    'prop_properties.ulb_id',
+                    DB::raw("STRING_AGG(DISTINCT prop_owners.owner_name, ', ') as owners")
+                    // DB::raw("COALESCE(SUM(prop_demands.balance), 0) as total_demand_amount")
+                )
+                ->where("prop_properties.citizen_id", $userId)
+                ->groupBy(
+                    'prop_properties.id',
+                    'prop_properties.holding_no',
+                    'prop_properties.new_holding_no',
+                    'prop_properties.pt_no',
+                    'prop_properties.zone_mstr_id',
+                    'prop_properties.new_ward_mstr_id',
+                    'prop_properties.village_mauja_name',
+                    'prop_properties.prop_address',
+                    'prop_properties.khata_no',
+                    'prop_properties.plot_no',
+                    'prop_properties.ulb_id'
+                )
+                ->havingRaw("SUM(prop_demands.balance) > 0")  // Excludes 0 or NULL total demand
+                ->get();
+            // Retrieve dues for each property
+            foreach ($propTransactionQuery as $property) {
+                $request->merge(["propId" => $property->property_id]);
+                $demandDues = $this->getHoldingDues($request);
+
+                if (!$demandDues || !isset($demandDues->original['data'])) {
+                    throw new Exception("Demand Data Not Available");
+                }
+
+                $demandData = $demandDues->original['data'];
+                $property->total_demand_amount = $demandData['duesList']['payableAmount'] ?? 0;
+            }
+            // Water Consumer Details with Demand Join (Excluding 0 or NULL demand)
+            $waterConsumerDetails = WaterConsumer::leftJoin('water_consumer_demands', function ($join) {
+                $join->on('water_consumer_demands.consumer_id', '=', 'water_consumers.id')
+                    ->where('water_consumer_demands.status', true)
+                    ->where('water_consumer_demands.paid_status', 0);
+            })
+                ->leftJoin('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_consumers.id')
+                ->select(
+                    'water_consumers.id as consumer_id',
+                    'water_consumers.consumer_no',
+                    'water_consumers.holding_no',
+                    'water_consumers.area_sqft',
+                    'water_consumers.address',
+                    'water_consumers.ulb_id',
+                    DB::raw("STRING_AGG(DISTINCT water_consumer_owners.applicant_name, ', ') as owners"),
+                    DB::raw("COALESCE(SUM(water_consumer_demands.balance_amount), 0) as total_demand_amount"),
+                    DB::raw("min(water_consumer_demands.demand_from) as demand_from"),
+                    DB::raw("max(water_consumer_demands.demand_upto) as demand_upto")
+                )
+                ->where("water_consumers.user_id", $userId)
+                ->where("water_consumers.user_type", 'Citizen')
+                ->groupBy(
+                    'water_consumers.id',
+                    'water_consumers.consumer_no',
+                    'water_consumers.holding_no',
+                    'water_consumers.area_sqft',
+                    'water_consumers.address',
+                    'water_consumers.ulb_id'
+                )
+                ->havingRaw("SUM(water_consumer_demands.balance_amount) > 0") // Excludes 0 or NULL total demand
+                ->get();
+
+            $propUndercaredtls = collect($this->getCaretakerProperty($userId, $request));
+
+            $mergedProperties = $propTransactionQuery->merge($propUndercaredtls);
+
+            // water under care 
+            $waterUnderCare = $this->viewCaretakenConnection($request);
+
+            $mergedWater = collect($waterConsumerDetails)->merge(collect($waterUnderCare));
+
+            // Combine the results
+            $data = [
+                "propDetails" => $mergedProperties,
+                "waterDetails" => $mergedWater,
+            ];
+
+            return responseMsgs(true, "Data Fetch Successfully", $data, "", 01, responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (\Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "", 01, responseTime(), $request->getMethod(), $request->deviceId);
+        }
+    }
+
+    /**
+     * Get properties under caretaker for a given user
+     */
+    public function getCaretakerProperty($userId, Request $req)
+    {
+        $data = collect(); // Use collection instead of array
+        $mActiveCitizenCareTaker = new ActiveCitizenUndercare();
+        $propertiesByCitizen = $mActiveCitizenCareTaker->getTaggedPropsByCitizenId($userId);
+        $propIds = $propertiesByCitizen->pluck('property_id');
+
+        if ($propIds->isEmpty()) {
+            return $data;
+        }
+
+        $properties = PropProperty::whereIn('prop_properties.id', $propIds)
+            ->select(
+                'prop_properties.id',
+                'prop_properties.holding_no',
+                'prop_properties.new_holding_no',
+                DB::raw("TO_CHAR(application_date, 'DD-MM-YYYY') as application_date"),
+                'prop_owners.owner_name',
+                'prop_properties.balance',
+                'ulb_masters.ulb_name'
+            )
+            ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
+            ->join('ulb_masters', 'ulb_masters.id', 'prop_properties.ulb_id')
+            ->leftJoin('prop_demands', function ($join) {
+                $join->on('prop_demands.property_id', '=', 'prop_properties.id')
+                    ->where('prop_demands.paid_status', 0);
+            })
+            ->havingRaw("SUM(prop_demands.balance) > 0")
+            ->groupBy(
+                'prop_properties.id',
+                'prop_properties.holding_no',
+                'prop_properties.new_holding_no',
+                'prop_properties.application_date',
+                'prop_owners.owner_name',
+                'prop_properties.balance',
+                'ulb_masters.ulb_name',
+            )
+            ->get(); // Fetch initial data without demand amount
+
+        // Retrieve dues for each property
+        foreach ($properties as $property) {
+            $req->merge(["propId" => $property->id]);
+            $demandDues = $this->getHoldingDues($req);
+            $demandData = $demandDues->original['data'];
+            if ($demandData)
+                if (!$demandData)
+                    throw new Exception("Demand Not Available");
+            $property->total_demand_amount  = $demandData['duesList']['payableAmount'];
+        }
+        return $properties;
+    }
+
+
+    /**
+     * | View details of the caretaken water connection
+     * | using user id
+     * | @param request
+        | Working
+        | Serial No : 07
+     */
+    public function viewCaretakenConnection(Request $request)
+    {
+        try {
+            $mWaterWaterConsumer        = new WaterConsumer();
+            $mActiveCitizenUndercare    = new ActiveCitizenUndercare();
+
+            $connectionDetails = $mActiveCitizenUndercare->getDetailsByCitizenId();
+            $checkDemand = collect($connectionDetails)->first();
+            if (is_null($checkDemand))
+                throw new Exception("Under taken data not found!");
+
+            $consumerIds = collect($connectionDetails)->pluck('consumer_id');
+            $consumerDetails = $mWaterWaterConsumer->getConsumerByIds($consumerIds)->get();
+            $checkConsumer = collect($consumerDetails)->first();
+            if (is_null($checkConsumer)) {
+                throw new Exception("Consuemr Details Not Found!");
+            }
+            return $consumerDetails;
+            // return responseMsgs(true, 'List of undertaken water connections!', remove_null($consumerDetails), "", "01", ".ms", "POST", $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "", "01", ".ms", "POST", $request->deviceId);
+        }
     }
 }

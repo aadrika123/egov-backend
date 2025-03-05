@@ -661,181 +661,181 @@ class PropertyDetailsController extends Controller
         }
     }
 
-    /**
-     * Get detail of citizen property details and water connection details with pending demands
-     */
-    public function citizenPropWaterDtls(Request $request)
-    {
-        try {
-            // Authenticate user
-            $user = authUser($request);
-            $userId = $user->id;
-            $ulbId = $request->ulbId;
+    // /**
+    //  * Get detail of citizen property details and water connection details with pending demands
+    //  */
+    // public function citizenPropWaterDtls(Request $request)
+    // {
+    //     try {
+    //         // Authenticate user
+    //         $user = authUser($request);
+    //         $userId = $user->id;
+    //         $ulbId = $request->ulbId;
 
-            // Property Details with Demand Join (Excluding 0 or NULL demand)
-            $propTransactionQuery = PropProperty::leftJoin('prop_demands', function ($join) {
-                $join->on('prop_demands.property_id', '=', 'prop_properties.id')
-                    ->whereIn('prop_demands.status', [1, 2])
-                    ->where('prop_demands.paid_status', 0);
-            })
-                ->leftJoin('prop_owners', 'prop_owners.property_id', '=', 'prop_properties.id')
-                ->select(
-                    'prop_properties.id as property_id',
-                    'prop_properties.holding_no',
-                    'prop_properties.new_holding_no',
-                    'prop_properties.pt_no',
-                    'prop_properties.zone_mstr_id',
-                    'prop_properties.new_ward_mstr_id',
-                    'prop_properties.village_mauja_name',
-                    'prop_properties.prop_address',
-                    'prop_properties.khata_no',
-                    'prop_properties.plot_no',
-                    'prop_properties.ulb_id',
-                    DB::raw("STRING_AGG(DISTINCT prop_owners.owner_name, ', ') as owners"),
-                    DB::raw("COALESCE(SUM(prop_demands.balance), 0) as total_demand_amount")
-                )
-                ->where("prop_properties.citizen_id", $userId)
-                ->groupBy(
-                    'prop_properties.id',
-                    'prop_properties.holding_no',
-                    'prop_properties.new_holding_no',
-                    'prop_properties.pt_no',
-                    'prop_properties.zone_mstr_id',
-                    'prop_properties.new_ward_mstr_id',
-                    'prop_properties.village_mauja_name',
-                    'prop_properties.prop_address',
-                    'prop_properties.khata_no',
-                    'prop_properties.plot_no',
-                    'prop_properties.ulb_id'
-                )
-                ->havingRaw("SUM(prop_demands.balance) > 0")  // Excludes 0 or NULL total demand
-                ->get();
+    //         // Property Details with Demand Join (Excluding 0 or NULL demand)
+    //         $propTransactionQuery = PropProperty::leftJoin('prop_demands', function ($join) {
+    //             $join->on('prop_demands.property_id', '=', 'prop_properties.id')
+    //                 ->whereIn('prop_demands.status', [1, 2])
+    //                 ->where('prop_demands.paid_status', 0);
+    //         })
+    //             ->leftJoin('prop_owners', 'prop_owners.property_id', '=', 'prop_properties.id')
+    //             ->select(
+    //                 'prop_properties.id as property_id',
+    //                 'prop_properties.holding_no',
+    //                 'prop_properties.new_holding_no',
+    //                 'prop_properties.pt_no',
+    //                 'prop_properties.zone_mstr_id',
+    //                 'prop_properties.new_ward_mstr_id',
+    //                 'prop_properties.village_mauja_name',
+    //                 'prop_properties.prop_address',
+    //                 'prop_properties.khata_no',
+    //                 'prop_properties.plot_no',
+    //                 'prop_properties.ulb_id',
+    //                 DB::raw("STRING_AGG(DISTINCT prop_owners.owner_name, ', ') as owners"),
+    //                 DB::raw("COALESCE(SUM(prop_demands.balance), 0) as total_demand_amount")
+    //             )
+    //             ->where("prop_properties.citizen_id", $userId)
+    //             ->groupBy(
+    //                 'prop_properties.id',
+    //                 'prop_properties.holding_no',
+    //                 'prop_properties.new_holding_no',
+    //                 'prop_properties.pt_no',
+    //                 'prop_properties.zone_mstr_id',
+    //                 'prop_properties.new_ward_mstr_id',
+    //                 'prop_properties.village_mauja_name',
+    //                 'prop_properties.prop_address',
+    //                 'prop_properties.khata_no',
+    //                 'prop_properties.plot_no',
+    //                 'prop_properties.ulb_id'
+    //             )
+    //             ->havingRaw("SUM(prop_demands.balance) > 0")  // Excludes 0 or NULL total demand
+    //             ->get();
 
-            // Water Consumer Details with Demand Join (Excluding 0 or NULL demand)
-            $waterConsumerDetails = WaterConsumer::leftJoin('water_consumer_demands', function ($join) {
-                $join->on('water_consumer_demands.consumer_id', '=', 'water_consumers.id')
-                    ->where('water_consumer_demands.status', true)
-                    ->where('water_consumer_demands.paid_status', 0);
-            })
-                ->leftJoin('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_consumers.id')
-                ->select(
-                    'water_consumers.id as consumer_id',
-                    'water_consumers.consumer_no',
-                    'water_consumers.holding_no',
-                    'water_consumers.area_sqft',
-                    'water_consumers.address',
-                    'water_consumers.ulb_id',
-                    DB::raw("STRING_AGG(DISTINCT water_consumer_owners.applicant_name, ', ') as owners"),
-                    DB::raw("COALESCE(SUM(water_consumer_demands.balance_amount), 0) as total_demand_amount"),
-                    DB::raw("min(water_consumer_demands.demand_from) as demand_from"),
-                    DB::raw("max(water_consumer_demands.demand_upto) as demand_upto")
-                )
-                ->where("water_consumers.user_id", $userId)
-                ->where("water_consumers.user_type", 'Citizen')
-                ->groupBy(
-                    'water_consumers.id',
-                    'water_consumers.consumer_no',
-                    'water_consumers.holding_no',
-                    'water_consumers.area_sqft',
-                    'water_consumers.address',
-                    'water_consumers.ulb_id'
-                )
-                ->havingRaw("SUM(water_consumer_demands.balance_amount) > 0") // Excludes 0 or NULL total demand
-                ->get();
+    //         // Water Consumer Details with Demand Join (Excluding 0 or NULL demand)
+    //         $waterConsumerDetails = WaterConsumer::leftJoin('water_consumer_demands', function ($join) {
+    //             $join->on('water_consumer_demands.consumer_id', '=', 'water_consumers.id')
+    //                 ->where('water_consumer_demands.status', true)
+    //                 ->where('water_consumer_demands.paid_status', 0);
+    //         })
+    //             ->leftJoin('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_consumers.id')
+    //             ->select(
+    //                 'water_consumers.id as consumer_id',
+    //                 'water_consumers.consumer_no',
+    //                 'water_consumers.holding_no',
+    //                 'water_consumers.area_sqft',
+    //                 'water_consumers.address',
+    //                 'water_consumers.ulb_id',
+    //                 DB::raw("STRING_AGG(DISTINCT water_consumer_owners.applicant_name, ', ') as owners"),
+    //                 DB::raw("COALESCE(SUM(water_consumer_demands.balance_amount), 0) as total_demand_amount"),
+    //                 DB::raw("min(water_consumer_demands.demand_from) as demand_from"),
+    //                 DB::raw("max(water_consumer_demands.demand_upto) as demand_upto")
+    //             )
+    //             ->where("water_consumers.user_id", $userId)
+    //             ->where("water_consumers.user_type", 'Citizen')
+    //             ->groupBy(
+    //                 'water_consumers.id',
+    //                 'water_consumers.consumer_no',
+    //                 'water_consumers.holding_no',
+    //                 'water_consumers.area_sqft',
+    //                 'water_consumers.address',
+    //                 'water_consumers.ulb_id'
+    //             )
+    //             ->havingRaw("SUM(water_consumer_demands.balance_amount) > 0") // Excludes 0 or NULL total demand
+    //             ->get();
 
-            $propUndercaredtls = collect($this->getCaretakerProperty($userId));
+    //         $propUndercaredtls = collect($this->getCaretakerProperty($userId));
 
-            $mergedProperties = $propTransactionQuery->merge($propUndercaredtls);
+    //         $mergedProperties = $propTransactionQuery->merge($propUndercaredtls);
 
-            // water under care 
-            $waterUnderCare = $this->viewCaretakenConnection($request);
+    //         // water under care 
+    //         $waterUnderCare = $this->viewCaretakenConnection($request);
 
-            $mergedWater = collect($waterConsumerDetails)->merge(collect($waterUnderCare));
+    //         $mergedWater = collect($waterConsumerDetails)->merge(collect($waterUnderCare));
 
-            // Combine the results
-            $data = [
-                "propDetails" => $mergedProperties,
-                "waterDetails" => $mergedWater,
-            ];
+    //         // Combine the results
+    //         $data = [
+    //             "propDetails" => $mergedProperties,
+    //             "waterDetails" => $mergedWater,
+    //         ];
 
-            return responseMsgs(true, "Data Fetch Successfully", $data, "", 01, responseTime(), $request->getMethod(), $request->deviceId);
-        } catch (\Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "", 01, responseTime(), $request->getMethod(), $request->deviceId);
-        }
-    }
+    //         return responseMsgs(true, "Data Fetch Successfully", $data, "", 01, responseTime(), $request->getMethod(), $request->deviceId);
+    //     } catch (\Exception $e) {
+    //         return responseMsgs(false, $e->getMessage(), "", "", 01, responseTime(), $request->getMethod(), $request->deviceId);
+    //     }
+    // }
 
-    /**
-     * Get properties under caretaker for a given user
-     */
-    public function getCaretakerProperty($userId)
-    {
-        $data = collect(); // Use collection instead of array
-        $mActiveCitizenCareTaker = new ActiveCitizenUndercare();
-        $propertiesByCitizen = $mActiveCitizenCareTaker->getTaggedPropsByCitizenId($userId);
-        $propIds = $propertiesByCitizen->pluck('property_id');
+    // /**
+    //  * Get properties under caretaker for a given user
+    //  */
+    // public function getCaretakerProperty($userId)
+    // {
+    //     $data = collect(); // Use collection instead of array
+    //     $mActiveCitizenCareTaker = new ActiveCitizenUndercare();
+    //     $propertiesByCitizen = $mActiveCitizenCareTaker->getTaggedPropsByCitizenId($userId);
+    //     $propIds = $propertiesByCitizen->pluck('property_id');
 
-        if ($propIds->isEmpty()) {
-            return $data;
-        }
+    //     if ($propIds->isEmpty()) {
+    //         return $data;
+    //     }
 
-        return PropProperty::whereIn('prop_properties.id', $propIds)
-            ->select(
-                'prop_properties.id',
-                'prop_properties.holding_no',
-                'prop_properties.new_holding_no',
-                DB::raw("TO_CHAR(application_date, 'DD-MM-YYYY') as application_date"),
-                'prop_owners.owner_name',
-                'prop_properties.balance',
-                "ulb_name",
-                DB::raw("COALESCE(SUM(prop_demands.balance), 0) as total_demand_amount")
-            )
-            ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
-            ->join('ulb_masters', 'ulb_masters.id', 'prop_properties.ulb_id')
-            ->leftJoin('prop_demands', function ($join) {
-                $join->on('prop_demands.property_id', '=', 'prop_properties.id')
-                    ->where('prop_demands.paid_status', 0);
-            })
-            ->havingRaw("SUM(prop_demands.balance) > 0") // Excludes 0 or NULL total demand
-            ->groupBy(
-                'prop_properties.id',
-                'prop_properties.holding_no',
-                'prop_properties.new_holding_no',
-                'prop_properties.application_date',
-                'prop_owners.owner_name',
-                'prop_properties.balance',
-                'ulb_masters.ulb_name',
-            )
-            ->get(); // Return as a collection of models
-    }
+    //     return PropProperty::whereIn('prop_properties.id', $propIds)
+    //         ->select(
+    //             'prop_properties.id',
+    //             'prop_properties.holding_no',
+    //             'prop_properties.new_holding_no',
+    //             DB::raw("TO_CHAR(application_date, 'DD-MM-YYYY') as application_date"),
+    //             'prop_owners.owner_name',
+    //             'prop_properties.balance',
+    //             "ulb_name",
+    //             DB::raw("COALESCE(SUM(prop_demands.balance), 0) as total_demand_amount")
+    //         )
+    //         ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
+    //         ->join('ulb_masters', 'ulb_masters.id', 'prop_properties.ulb_id')
+    //         ->leftJoin('prop_demands', function ($join) {
+    //             $join->on('prop_demands.property_id', '=', 'prop_properties.id')
+    //                 ->where('prop_demands.paid_status', 0);
+    //         })
+    //         ->havingRaw("SUM(prop_demands.balance) > 0") // Excludes 0 or NULL total demand
+    //         ->groupBy(
+    //             'prop_properties.id',
+    //             'prop_properties.holding_no',
+    //             'prop_properties.new_holding_no',
+    //             'prop_properties.application_date',
+    //             'prop_owners.owner_name',
+    //             'prop_properties.balance',
+    //             'ulb_masters.ulb_name',
+    //         )
+    //         ->get(); // Return as a collection of models
+    // }
 
-    /**
-     * | View details of the caretaken water connection
-     * | using user id
-     * | @param request
-        | Working
-        | Serial No : 07
-     */
-    public function viewCaretakenConnection(Request $request)
-    {
-        try {
-            $mWaterWaterConsumer        = new WaterConsumer();
-            $mActiveCitizenUndercare    = new ActiveCitizenUndercare();
+    // /**
+    //  * | View details of the caretaken water connection
+    //  * | using user id
+    //  * | @param request
+    //     | Working
+    //     | Serial No : 07
+    //  */
+    // public function viewCaretakenConnection(Request $request)
+    // {
+    //     try {
+    //         $mWaterWaterConsumer        = new WaterConsumer();
+    //         $mActiveCitizenUndercare    = new ActiveCitizenUndercare();
 
-            $connectionDetails = $mActiveCitizenUndercare->getDetailsByCitizenId();
-            $checkDemand = collect($connectionDetails)->first();
-            if (is_null($checkDemand))
-                throw new Exception("Under taken data not found!");
+    //         $connectionDetails = $mActiveCitizenUndercare->getDetailsByCitizenId();
+    //         $checkDemand = collect($connectionDetails)->first();
+    //         if (is_null($checkDemand))
+    //             throw new Exception("Under taken data not found!");
 
-            $consumerIds = collect($connectionDetails)->pluck('consumer_id');
-            $consumerDetails = $mWaterWaterConsumer->getConsumerByIds($consumerIds)->get();
-            $checkConsumer = collect($consumerDetails)->first();
-            if (is_null($checkConsumer)) {
-                throw new Exception("Consuemr Details Not Found!");
-            }
-            return $consumerDetails;
-            // return responseMsgs(true, 'List of undertaken water connections!', remove_null($consumerDetails), "", "01", ".ms", "POST", $request->deviceId);
-        } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "", "01", ".ms", "POST", $request->deviceId);
-        }
-    }
+    //         $consumerIds = collect($connectionDetails)->pluck('consumer_id');
+    //         $consumerDetails = $mWaterWaterConsumer->getConsumerByIds($consumerIds)->get();
+    //         $checkConsumer = collect($consumerDetails)->first();
+    //         if (is_null($checkConsumer)) {
+    //             throw new Exception("Consuemr Details Not Found!");
+    //         }
+    //         return $consumerDetails;
+    //         // return responseMsgs(true, 'List of undertaken water connections!', remove_null($consumerDetails), "", "01", ".ms", "POST", $request->deviceId);
+    //     } catch (Exception $e) {
+    //         return responseMsgs(false, $e->getMessage(), "", "", "01", ".ms", "POST", $request->deviceId);
+    //     }
+    // }
 }
