@@ -144,7 +144,7 @@ trait Razorpay
                 'amount'        => $request->all()['amount'],
                 'currency'      => 'INR',                                                           // Static
                 'userId'        => $userId,
-                // 'ulbId'         => $ulbId,
+                'ulbId'         => 2,
                 'workflowId'    => $request->workflowId,
                 'applicationId' => $request->id,
                 'departmentId'  => $request->departmentId,
