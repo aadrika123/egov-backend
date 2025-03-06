@@ -2429,14 +2429,18 @@ class HoldingTaxController extends Controller
             if (empty($propReceiptData)) {
                 throw new Exception("No valid property data found for the given transaction number.");
             }
+            // water payment receipts
             $waterReceiptData = $this->generateDemandPaymentReceipt($req);
-            $demandData[] = $waterReceiptData->original['data'];
+            $receiptData[] = $waterReceiptData->original['data'];
             $receiptData = [
                 'propertyReceipt' => $propReceiptData,
-                'waterReceipt' => $demandData,
+                'waterReceipt' => $receiptData,
                 'propSumAmount' => collect($propReceiptData)->sum('totalPaidAmount'),
-                'waterSumAmount' => collect($demandData)->sum('totalPaidAmount'),
-                'sumAmount' => collect($propReceiptData)->sum('totalPaidAmount') + collect($demandData)->sum('totalPaidAmount')
+                'propSumAmountInWords' => getIndianCurrency(collect($propReceiptData)->sum('totalPaidAmount')),
+                'waterSumAmount' => collect($receiptData)->sum('totalPaidAmount'),
+                'waterSumAmountInWords' => getIndianCurrency(collect($receiptData)->sum('totalPaidAmount')),
+                'sumAmount' => collect($propReceiptData)->sum('totalPaidAmount') + collect($receiptData)->sum('totalPaidAmount'),
+                'sumAmountInWords' => getIndianCurrency(collect($propReceiptData)->sum('totalPaidAmount') + collect($receiptData)->sum('totalPaidAmount'))
             ];
 
             return responseMsgs(true, "Payment Receipts", remove_null($receiptData), "011510", "1.0", "", "POST", $req->deviceId ?? "");
