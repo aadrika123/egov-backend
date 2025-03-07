@@ -721,6 +721,9 @@ class HoldingTaxController extends Controller
 
                     $consumerData = $this->preOfflinePaymentParams($consumer, $startingDate, $endDate);
                     $refDetails[] = $consumerData;
+                    $razorPayRequest = [
+                        'order_id' => $orderDetails['orderId'],
+                    ];
                     // store request
                     $mWaterRazorPayRequest->saveRequestDatav1($consumer, $req, $paymentFor['1'], $razorPayRequest, $consumerData);
                     // Sum up all consumer charges
