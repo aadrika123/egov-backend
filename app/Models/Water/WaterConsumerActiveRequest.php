@@ -145,6 +145,7 @@ class WaterConsumerActiveRequest extends Model
         return WaterConsumerActiveRequest::select(
             'water_consumer_active_requests.id',
             'water_consumer_active_requests.consumer_id',
+            'wf_roles.role_name as current_role_name',
             'water_consumer_active_requests.reason',
             'water_consumer_active_requests.remarks',
             'water_consumer_active_requests.amount',
@@ -153,6 +154,15 @@ class WaterConsumerActiveRequest extends Model
             'water_consumer_active_requests.corresponding_address',
             'water_consumer_active_requests.corresponding_mobile_no',
             'water_consumers.consumer_no',
+            'water_consumers.address',
+            'water_owner_type_mstrs.owner_type as owner_char_type',
+            'water_param_pipeline_types.pipeline_type',
+            'water_property_type_mstrs.property_type',
+            'water_connection_through_mstrs.connection_through',
+            'water_consumers.holding_no',
+            'water_connection_type_mstrs.connection_type',
+            'water_consumers.area_sqft',
+            'water_consumers.category',
             'water_consumer_active_requests.ward_mstr_id',
             'water_consumer_active_requests.apply_date',
             'water_consumer_active_requests.payment_status',
@@ -178,11 +188,36 @@ class WaterConsumerActiveRequest extends Model
             ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_consumer_active_requests.ward_mstr_id')
             ->join('water_consumer_charges', 'water_consumer_charges.related_id', '=', 'water_consumer_active_requests.id')
             ->leftJoin('water_consumers', 'water_consumers.id', '=', 'water_consumer_active_requests.consumer_id')
+            ->join('water_owner_type_mstrs', 'water_owner_type_mstrs.id', '=', 'water_consumers.owner_type_id')
+            ->join('water_param_pipeline_types', 'water_param_pipeline_types.id', '=', 'water_consumers.pipeline_type_id')
+            ->join('water_property_type_mstrs', 'water_property_type_mstrs.id', '=', 'water_consumers.property_type_id')
+            ->join('water_connection_through_mstrs', 'water_connection_through_mstrs.id', '=', 'water_consumers.connection_type_id')
+            ->join('water_connection_type_mstrs', 'water_connection_type_mstrs.id', '=', 'water_consumers.connection_type_id')
+            ->join('wf_roles', 'wf_roles.id', 'water_consumer_active_requests.current_role')
             ->where('water_consumer_active_requests.id', $applicationId)
             ->where('water_consumer_active_requests.status', 1)
             ->orderByDesc('water_consumer_active_requests.id');
     }
 
+    // public function getPropertyByConsumerId($consumerId)
+    // {
+    //     return WaterConsumerActiveRequest::select(
+    //         'water_connection_through_mstrs.connection_through',
+    //         'water_consumers.holding_no',
+    //         'water_connection_type_mstrs.connection_type',
+    //         'water_consumers.area_sqft',
+    //         'water_consumers.category',
+           
+    //     )
+    //     ->leftJoin('water_consumers', 'water_consumers.id', '=', 'water_consumer_active_requests.consumer_id')
+    //     ->join('water_connection_through_mstrs', 'water_connection_through_mstrs.id', '=', 'water_consumers.connection_type_id')
+    //     ->join('water_connection_type_mstrs', 'water_connection_type_mstrs.id', '=', 'water_consumers.connection_type_id')
+    //     ->join('wf_roles', 'wf_roles.id', '=', 'water_consumer_active_requests.current_role')
+    //     ->where('water_consumers.id', $consumerId)
+    //     ->where('water_consumer_active_requests.status', 1)
+    //     ->orderByDesc('water_consumer_active_requests.id');
+    // }
+    
     //written by prity pandey
     public function getConsumerByApplication($applicationId)
     {
@@ -358,20 +393,26 @@ class WaterConsumerActiveRequest extends Model
             'water_consumer_active_requests.application_no',
             'water_consumer_charge_categories.charge_category',
             DB::raw("DATE(water_consumer_active_requests.apply_date) as apply_date"),
-            'water_consumer_active_requests.current_role',
+            'wf_roles.role_name as current_role',
             'water_consumer_active_requests.corresponding_mobile_no',
+            'water_consumers.holding_no',
+            'water_consumers.ward_mstr_id',
+            'water_consumer_owners.city as address',
             DB::raw("string_agg(water_consumer_owners.applicant_name,',') as applicantName"),
             DB::raw("string_agg(water_consumer_owners.mobile_no::VARCHAR,',') as mobileNo"),
             DB::raw("string_agg(water_consumer_owners.guardian_name,',') as guardianName"),
-            // 'payment_status'
             DB::raw("CASE
                     WHEN water_consumer_active_requests.payment_status = 1 THEN 'Paid'
                     WHEN water_consumer_active_requests.payment_status = 0 THEN 'Unpaid'
                     ELSE 'UnKnown'
                     END AS payment_status")
         )
+
             ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', 'water_consumer_active_requests.consumer_id')
             ->join('water_consumer_charge_categories', 'water_consumer_charge_categories.id', 'water_consumer_active_requests.charge_catagory_id')
+            ->join('wf_roles', 'wf_roles.id', 'water_consumer_active_requests.current_role')
+            ->join('water_consumers', 'water_consumers.id', 'water_consumer_active_requests.consumer_id')
+
             ->where('water_consumer_active_requests.charge_catagory_id', 2)
             ->where('water_consumer_active_requests.application_no', 'LIKE', '%' . $applicationNo . '%')
             ->where('water_consumer_active_requests.ulb_id', authUser($req)->ulb_id)
@@ -379,13 +420,16 @@ class WaterConsumerActiveRequest extends Model
             ->groupBy(
                 'water_consumer_active_requests.application_no',
                 'water_consumer_active_requests.apply_date',
-                'water_consumer_active_requests.current_role',
+                'wf_roles.role_name',
                 'water_consumer_active_requests.corresponding_mobile_no',
                 'water_consumer_owners.applicant_name',
                 'water_consumer_owners.mobile_no',
                 'water_consumer_active_requests.payment_status',
                 'water_consumer_active_requests.id',
-                'water_consumer_charge_categories.charge_category'
+                'water_consumer_charge_categories.charge_category',
+                'water_consumers.holding_no',
+                'water_consumer_owners.city',
+                'water_consumers.ward_mstr_id',
             );
     }
 

@@ -25,7 +25,7 @@ class WaterConsumerOwner extends Model
     public function ownerByApplication($consumerId)
     {
         return WaterConsumerOwner::select(
-            'water_consumer_owners.applicant_name as owner_name',
+            'water_consumer_owners.applicant_name as applicant_name',
             'guardian_name',
             'mobile_no',
             'email',

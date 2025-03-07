@@ -288,7 +288,10 @@ class ActiveSafController extends Controller
 
     /**
      * | Edit Applied Saf by SAF Id for BackOffice
-     * | @param request $req
+     * | -----------------------------------------------
+     * | Validates request data, updates SAF and owner details within a transaction.
+     * | Rolls back if any error occurs.
+     * | ---------------------------------------------------------------
      */
     public function editSaf(Request $req)
     {
@@ -310,9 +313,10 @@ class ActiveSafController extends Controller
             $mOwners = $req->owner;
 
             DB::beginTransaction();
-            $mPropSaf->edit($req);                                                      // Updation SAF Basic Details
+            $mPropSaf->edit($req); // Updation SAF Basic Details
 
-            collect($mOwners)->map(function ($owner) use ($mPropSafOwners) {            // Updation of Owner Basic Details
+            collect($mOwners)->map(function ($owner) use ($mPropSafOwners) {            
+                // Updation of Owner Basic Details
                 $mPropSafOwners->edit($owner);
             });
 
@@ -327,20 +331,7 @@ class ActiveSafController extends Controller
     /**
      * ---------------------- Saf Workflow Inbox --------------------
      * | Initialization
-     * -----------------
-     * | @var userId > logged in user id
-     * | @var ulbId > Logged In user ulb Id
-     * | @var refWorkflowId > Workflow ID 
-     * | @var workflowId > SAF Wf Workflow ID 
-     * | @var query > Contains the Pg Sql query
-     * | @var workflow > get the Data in laravel Collection
-     * | @var checkDataExisting > check the fetched data collection in array
-     * | @var roleId > Fetch all the Roles for the Logged In user
-     * | @var data > all the Saf data of current logged roleid 
-     * | @var occupiedWard > get all Permitted Ward Of current logged in user id
-     * | @var wardId > filtered Ward Id from the data collection
-     * | @var safInbox > Final returned Data
-     * | @return response #safInbox
+     * -----------------    
      * | Status-Closed
      * | Query Cost- 520ms 
      * | Max Record- 2589
@@ -359,10 +350,10 @@ class ActiveSafController extends Controller
             $ulbId = authUser($req)->ulb_id;
             $perPage = $req->perPage ?? 10;
 
-            $occupiedWards = $mWfWardUser->getWardsByUserId($userId)->pluck('ward_id');                       // Model () to get Occupied Wards of Current User
-            $roleIds = $mWfRoleUser->getRoleIdByUserId($userId)->pluck('wf_role_id');                      // Model to () get Role By User Id
+            $occupiedWards = $mWfWardUser->getWardsByUserId($userId)->pluck('ward_id');            // Model () to get Occupied Wards of Current User
+            $roleIds = $mWfRoleUser->getRoleIdByUserId($userId)->pluck('wf_role_id');              // Model to () get Role By User Id
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleIds)->pluck('workflow_id');
-            $safDtl = $this->Repository->getSaf($workflowIds)                                          // Repository function to get SAF Details
+            $safDtl = $this->Repository->getSaf($workflowIds)                                        // Repository function to get SAF Details
                 ->where('parked', false)
                 ->where('prop_active_safs.ulb_id', $ulbId)
                 ->where('prop_active_safs.status', 1)
@@ -383,8 +374,6 @@ class ActiveSafController extends Controller
                 ->thenReturn()
                 ->paginate($perPage);
 
-
-
             return responseMsgs(true, "Data Fetched", remove_null($safInbox), "010105", "1.0", responseTime(), "POST", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
@@ -393,12 +382,6 @@ class ActiveSafController extends Controller
 
     /**
      * | Inbox for the Back To Citizen parked true
-     * | @var mUserId authenticated user id
-     * | @var mUlbId authenticated user ulb id
-     * | @var readWards get all the wards of the user id
-     * | @var occupiedWardsId get all the wards id of the user id
-     * | @var readRoles get all the roles of the user id
-     * | @var roleIds get all the logged in user role ids
      * | Query Cost- 276ms 
      * | Max Record- 3
      */
@@ -450,15 +433,11 @@ class ActiveSafController extends Controller
     }
 
     /**
-     * | Fields Verified Inbox 
-     * | @var mUserId Authenticated user ID.
-     * | @var mUlbId Authenticated user ULB ID.
-     * | @var mDeviceId Device ID from the request.
-     * | @var occupiedWardsId List of ward IDs occupied by the user.
-     * | @var roleIds List of role IDs for the user.
-     * | @var workflowIds List of workflow IDs for the user's roles.
-     * | @return \Illuminate\Http\JsonResponse The response message with the list of field-verified SAFs.
-     * | Query Cost- 
+     * * Retrieves the field verified inbox for the authenticated user.
+     * | --------------------------------------------------------------------
+     * | This method fetches the SAF records that are field verified and belong to the user's wards and roles.
+     * | It uses pagination to limit the number of records returned per page.
+     * -------------------------------------------------------------------------
      * |
      */
     public function fieldVerifiedInbox(Request $req)
@@ -473,11 +452,11 @@ class ActiveSafController extends Controller
             $mDeviceId = $req->deviceId ?? "";
             $perPage = $req->perPage ?? 10;
 
-            $occupiedWardsId = $mWfWardUser->getWardsByUserId($mUserId)->pluck('ward_id');                  // Model function to get ward list
-            $roleIds = $mWfRoleUser->getRoleIdByUserId($mUserId)->pluck('wf_role_id');                 // Model function to get Role By User Id
+            $occupiedWardsId = $mWfWardUser->getWardsByUserId($mUserId)->pluck('ward_id');           // Model function to get ward list
+            $roleIds = $mWfRoleUser->getRoleIdByUserId($mUserId)->pluck('wf_role_id');               // Model function to get Role By User Id
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleIds)->pluck('workflow_id');
 
-            $safInbox = $this->Repository->getSaf($workflowIds)                 // Repository function getSAF
+            $safInbox = $this->Repository->getSaf($workflowIds)                                        // Repository function getSAF
                 ->where('is_field_verified', true)
                 ->where('prop_active_safs.ulb_id', $mUlbId)
                 ->where('prop_active_safs.status', 1)
@@ -495,10 +474,9 @@ class ActiveSafController extends Controller
 
     /**
      * | Saf Outbox
-     * | @var userId authenticated user id
-     * | @var ulbId authenticated user Ulb Id
-     * | @var workflowRoles get All Roles of the user id
-     * | @var roles filteration of roleid from collections
+     * | Fetches the outbox SAF details for the authenticated user.
+     * | Applies various filters and pagination to the results.
+     * -------------------------------------------------------
      * | Status-Closed
      * | Query Cost- 4sec 173ms
      * | Max Record- 62894
@@ -546,13 +524,9 @@ class ActiveSafController extends Controller
     }
 
     /**
-     * | @var ulbId authenticated user id
-     * | @var ulbId authenticated ulb Id
-     * | @var occupiedWard get ward by user id using trait
-     * | @var wardId Filtered Ward ID from the collections
-     * | @var safData SAF Data List
-     * | @return
-     * | @var \Illuminate\Support\Collection $safData
+     * | Fetches the special inbox SAF  details for the authenticated user.
+     * | Applies various filters and pagination to the results.
+     * ---------------------------------------------
      * | Status-Closed
      * | Query Costing-336ms 
      * | Rating-2 
@@ -774,9 +748,14 @@ class ActiveSafController extends Controller
     }
 
     /**
-     * | Get Static Saf Details
+     * | Retrieves static SAF details based on the provided application ID.
+     * | -----------------------------------------------------
+     * | This function validates the request, fetches SAF details (either active or approved),
+     * | retrieves related owner and floor details, and formats the response accordingly.
+     * ------------------------------------------------------  
      * | Query Cost- 76ms
      * | Max Record - 1
+     * | 
      */
     public function getStaticSafDetails(Request $req)
     {
@@ -785,21 +764,22 @@ class ActiveSafController extends Controller
         ]);
         try {
             // Variable Assignments
-            $mPropOwner = new PropOwner();
-            $mPropActiveSaf = new PropActiveSaf();
-            $mPropSafOwner = new PropSafsOwner();
-            $mPropSaf = new PropSaf();
-            $mPropSafsFloors = new PropSafsFloor();
+            $mPropOwner          = new PropOwner();
+            $mPropActiveSaf      = new PropActiveSaf();
+            $mPropSafOwner       = new PropSafsOwner();
+            $mPropSaf            = new PropSaf();
+            $mPropSafsFloors     = new PropSafsFloor();
             $mPropActiveSafOwner = new PropActiveSafsOwner();
-            $mActiveSafsFloors = new PropActiveSafsFloor();
-            $mPropSafMemoDtls = new PropSafMemoDtl();
+            $mActiveSafsFloors   = new PropActiveSafsFloor();
+            $mPropSafMemoDtls    = new PropSafMemoDtl();
+
             $prevOwnerDtls = array();
             $memoDtls = array();
             $data = array();
 
 
             // Derivative Assignments
-            $data = $mPropActiveSaf->getActiveSafDtls()                         // <------- Model function Active SAF Details
+            $data = $mPropActiveSaf->getActiveSafDtls()              // <------- Model function Active SAF Details
                 ->where('prop_active_safs.id', $req->applicationId)
                 ->first();
             if (collect($data)->isEmpty()) {
@@ -850,7 +830,7 @@ class ActiveSafController extends Controller
     }
 
     /**
-     * @var userId Logged In User Id
+     * @var $userId Logged In User Id
      * desc This function set OR remove application on special category
      * request : escalateStatus (required, int type), safId(required)
      * -----------------Tables---------------------
@@ -883,7 +863,11 @@ class ActiveSafController extends Controller
         }
     }
 
-    // Post Independent Comment
+    /** 
+    * | Adds an independent comment to a SAF based on the application ID.
+    * | Validates the request, saves the comment in the workflow track, and handles transactions. 
+    * | --------------------------------------------------------
+    */
     public function commentIndependent(Request $request)
     {
         $request->validate([
@@ -940,9 +924,6 @@ class ActiveSafController extends Controller
 
     /**
      * | Function for Post Next Level(9)
-     * | @param mixed $request
-     * | @var preLevelPending Get the Previous level pending data for the saf id
-     * | @var levelPending new Level Pending to be add
      * | Multiple Database Connection
      * | Status-Closed
      * | Rating-3 
@@ -1069,27 +1050,17 @@ class ActiveSafController extends Controller
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
-            return responseMsg(false, $e->getMessage(), "", "010113", "1.0", "", "POST", $request->deviceId);
+            return responseMsgs(false, $e->getMessage(), "", "010113", "1.0", "", "POST", $request->deviceId);
         }
     }
 
     /**
      * Checks post conditions based on the sender's role in the workflow.
-     * |
+     * | --------------------------------------------------------------------
      * | This function validates various conditions required at different workflow levels.
      * | It also generates property tax numbers, holding numbers,
      * | and SAM memo numbers when required.
-     * |---------------------------------------------------------------------
-     * 
-     * @param int $senderRoleId The role ID of the sender.
-     * @param array $wfLevels Workflow levels mapping.
-     * @param object $saf SAF (Self-Assessment Form) object containing property details.
-     * @param int $wfMstrId Workflow master ID.
-     * @param int $userId ID of the user performing the action.
-     * 
-     * @throws Exception If any validation check fails.
-     * 
-     * @return array Returns an array containing 'holdingNo', 'samNo', and 'ptNo'.
+     * ------------------------------------------------------------------ 
      */
 
     public function checkPostCondition($senderRoleId, $wfLevels, $saf, $wfMstrId, $userId)
@@ -1180,15 +1151,10 @@ class ActiveSafController extends Controller
         ];
     }
 
-    /*
+    /**
+     * | Checks and applies backward conditions based on the sender's role ID.
      * | Updates SAF status and related geotag records based on the sender's role.
-     * 
-     * |  @param $senderRoleId
-     * |  @param $wfLevels
-     * |  @param $saf
-     * 
-     * | Tables:
-     * | `prop_saf_geotag_upload` (updates geotag upload status)
+     * | ----------------------------------------------------
      */
 
     public function checkBackwardCondition($senderRoleId, $wfLevels, $saf)
@@ -1431,20 +1397,11 @@ class ActiveSafController extends Controller
 
     /**
      * | Approve or Reject The SAF Application
-     * --------------------------------------------------
-     * | ----------------- Initialization ---------------
-     * | @param mixed $req
-     * | @var activeSaf The Saf Record by Saf Id
-     * | @var approvedSaf replication of the saf record to be approved
-     * | @var rejectedSaf replication of the saf record to be rejected
-     * ------------------- Alogrithm ---------------------
-     * | $req->status (if 1 Application to be approved && if 0 application to be rejected)
-     * ------------------- Dump --------------------------
-     * | @return msg
      * | Multiple Database Connection
      * | Status-Closed
      * | Query Cost-430ms 
-     * | Rating-3
+     * | Rating-3 
+     * | -------------------------------------------------------
      */
     public function approvalRejectionSaf(Request $req)
     {
@@ -1613,20 +1570,11 @@ class ActiveSafController extends Controller
     }
 
     /**
-     * Handles the final approval and replication of a SAF (Self-Assessment Form).
+     *   Handles the final approval and replication of a SAF (Self-Assessment Form).
      * |---------------------------------------------------------------------------
      * | This function ensures that the verified SAF details, including ownership and floor details, 
      * | are properly replicated, finalized, and stored in their respective tables.
-     * | --------------------------------------------------------------------------
-     * @param object    $mPropProperties    Model instance for property operations.
-     * @param int       $propId             The property ID associated with the SAF.
-     * @param array     $fieldVerifiedSaf   Collection of field-verified SAF details.
-     * @param object    $activeSaf          The currently active SAF that needs to be replaced.
-     * @param array     $ownerDetails       List of property owner details to be replicated.
-     * @param array     $floorDetails       List of floor details associated with the SAF.
-     * @param int       $safId              The SAF ID that is being approved.
-     * 
-     * |---------------------------------------------------------------------------
+     * --------------------------------------------------------------------------
      */
     public function finalApprovalSafReplica($mPropProperties, $propId, $fieldVerifiedSaf, $activeSaf, $ownerDetails, $floorDetails, $safId)
     {
@@ -1680,17 +1628,13 @@ class ActiveSafController extends Controller
     }
 
     /**
-     * Handles the final rejection of a SAF (Self-Assessment Form).
+     * * Handles the final rejection of a SAF (Self-Assessment Form).
      * |------------------------------------------------------------
      * | This function ensures that all SAF-related details, including owners and floors, 
      * | are moved to rejected SAF tables and removes active records.
      * |
      * | If the SAF involves bifurcation, it rolls back area and floor updates.
-     * |---------------------------------------------------------------------
-     * @param object    $activeSaf      The SAF that is being rejected.
-     * @param array     $ownerDetails   List of property owner details to be moved.
-     * @param array     $floorDetails   List of floor details associated with the SAF.
-     * |---------------------------------------------------------------------------------
+     * -------------------------------------------------------------
      */
     public function finalRejectionSafReplica($activeSaf, $ownerDetails, $floorDetails)
     {
@@ -1766,13 +1710,15 @@ class ActiveSafController extends Controller
 
     /**
      * | Back to Citizen
-     * | @param Request $req
-     * | @var redis Establishing Redis Connection
-     * | @var workflowId Workflow id of the SAF 
+     * | Sends a SAF back to the citizen based on the application ID.
+     * | Validates the request, checks document rejection status, and handles transactions.
+     * | 
+     * | ------------------------------------    
      * | Multiple Database Connection
      * | Status-Closed
      * | Query Costing-401ms
      * | Rating-1 
+     * | ------------------------------------------
      */
     public function backToCitizen(Request $req)
     {
@@ -1838,11 +1784,10 @@ class ActiveSafController extends Controller
     }
 
     /**
-     * | Calculate SAF by Saf ID
-     * | @param req request saf id
-     * | @var array contains all the details for the saf id
-     * | @var data contains the details of the saf id by the current object function
-     * | @return safTaxes returns all the calculated demand
+     * | --------------------------------------------------------
+     * | Calculates the SAF tax based on the SAF ID.
+     * | --------------------------------------------------------
+     * | Validates the request, retrieves SAF details, and calculates the tax demand.
      * | Status-Closed
      * | Query Costing-417ms
      * | Rating-3 
@@ -1879,6 +1824,11 @@ class ActiveSafController extends Controller
 
     /**
      * | One Percent Penalty Calculation(13.1)
+     * | -------------------------------------------------------------------------------
+     * | This function calculates a one percent penalty based on the due date of the item.
+     * | It uses the PenaltyRebateCalculation class to determine the penalty percentage.
+     * | The penalty amount is then calculated based on the balance and added to the item.
+     * | -------------------------------------------------------------------------------
      */
     public function calcOnePercPenalty($item)
     {
@@ -1891,11 +1841,12 @@ class ActiveSafController extends Controller
     }
 
     /**
-     * | Generate Order ID (14)
-     * | @param req requested Data
-     * | @var auth authenticated users credentials
-     * | @var calculateSafById calculated SAF amounts and details by request SAF ID
-     * | @var totalAmount filtered total amount from the collection
+     * | Calculates the SAF tax based on the SAF ID.
+     * | --------------------------------------------------------------
+     * | This method validates parameters, retrieves SAF details, 
+     * | merges the holding number for specific assessment types, 
+     * | and calculates tax demand via CalculateSafById.
+     * |---------------------------------------------------------------
      * | Status-closed
      * | Query Costing-1.41s
      * | Rating - 5
@@ -1962,7 +1913,12 @@ class ActiveSafController extends Controller
 
     /**
      * | Post Penalty Rebates (14.2)
+     * | -----------------------------------------------------------------------------
+     * | Posts penalty and rebate details for a SAF (Some Application Form) transaction.
+     * | Processes the calculated rebates and penalties, and saves them to the database.
+     * | ------------------------------------------------------------------------------
      */
+
     public function postPenaltyRebates($calculateSafById, $safId, $tranId, $clusterId = null)
     {
         $mPaymentRebatePanelties = new PropPenaltyrebate();
@@ -2161,128 +2117,13 @@ class ActiveSafController extends Controller
     }
 
     /**
-     * | Offline Saf Payment
-     * | Multiple Database Connection
-     */
-    public function offlinePaymentSaf(ReqPayment $req)
-    {
-        try {
-            // Variable Assignments
-            $offlinePaymentModes = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
-            $todayDate = Carbon::now();
-            $idGeneration = new IdGeneration;
-            $propTrans = new PropTransaction();
-            $mPropSafsDemands = new PropSafsDemand();
-            $verifyPaymentModes = Config::get('payment-constants.VERIFICATION_PAYMENT_MODES');
-            $mPropTranDtl = new PropTranDtl();
-            $previousHoldingDeactivation = new PreviousHoldingDeactivation;
-            $postSafPropTaxes = new PostSafPropTaxes;
-            $updateSafDemand = new UpdateSafDemand;
-            $safId = $req['id'];
-
-            $activeSaf = PropActiveSaf::findOrFail($req['id']);
-
-            if ($activeSaf->payment_status == 1)
-                throw new Exception("Payment Already Done");
-
-            $userId = authUser($req)->id;                                      // Authenticated user or Ghost User
-            $tranBy = authUser($req)->user_type;
-
-            $tranNo = $req['transactionNo'];
-            // Derivative Assignments
-            if (!$tranNo)
-                $tranNo = $idGeneration->generateTransactionNo($activeSaf->ulb_id);
-
-            $safCalculation = $this->calculateSafBySafId($req);
-            if ($safCalculation->original['status'] == false)
-                throw new Exception($safCalculation->original['message']);
-            $demands = $safCalculation->original['data']['details'];
-            $amount = $safCalculation->original['data']['demand']['payableAmount'];
-
-            if (!$demands || collect($demands)->isEmpty())
-                throw new Exception("Demand Not Available for Payment");
-
-            // Property Transactions
-            $req->merge([
-                'userId' => $userId,
-                'is_citizen' => false,
-                'todayDate' => $todayDate->format('Y-m-d'),
-                'tranNo' => $tranNo,
-                'workflowId' => $activeSaf->workflow_id,
-                'amount' => $amount,
-                'tranBy' => $tranBy,
-                'ulbId' => $activeSaf->ulb_id
-            ]);
-            $activeSaf->payment_status = 1; // Paid for Online or Cash
-            if (in_array($req['paymentMode'], $verifyPaymentModes)) {
-                $req->merge([
-                    'verifyStatus' => 2
-                ]);
-                $activeSaf->payment_status = 2;         // Under Verification for Cheque, Cash, DD
-            }
-            DB::beginTransaction();
-            DB::connection('pgsql_master')->beginTransaction();
-
-            $propTrans = $propTrans->postSafTransaction($req, $demands);
-
-            if (in_array($req['paymentMode'], $offlinePaymentModes)) {
-                $req->merge([
-                    'chequeDate' => $req['chequeDate'],
-                    'tranId' => $propTrans['id'],
-                    "applicationNo" => $activeSaf->saf_no,
-
-                ]);
-                $this->postOtherPaymentModes($req);
-            }
-            // Reflect on Prop Tran Details For Normal Saf
-            if ($activeSaf->is_gb_saf == false) {
-                foreach ($demands as $demand) {
-                    $demand = $demand->toArray();
-                    unset($demand['ruleSet'], $demand['rwhPenalty'], $demand['onePercPenalty'], $demand['onePercPenaltyTax']);
-                    if (isset($demand['status']))
-                        unset($demand['status']);
-                    $demand['paid_status'] = 1;
-                    $demand['saf_id'] = $safId;
-                    $demand['balance'] = 0;
-                    $storedSafDemand = $mPropSafsDemands->postDemands($demand);
-
-                    $tranReq = [
-                        'tran_id' => $propTrans['id'],
-                        'saf_demand_id' => $storedSafDemand['demandId'],
-                        'total_demand' => $demand['amount'],
-                        'ulb_id' => $req['ulbId'],
-                    ];
-                    $mPropTranDtl->store($tranReq);
-                }
-            }
-
-            // GB Saf Demand Adjustments
-            if ($activeSaf->is_gb_saf == true)
-                $updateSafDemand->updateDemand($demands->toArray(), $propTrans['id']);
-
-            // Replication Prop Rebates Penalties
-            $this->postPenaltyRebates($safCalculation, $safId, $propTrans['id']);
-
-            // Deactivate Property Holdings
-            $previousHoldingDeactivation->deactivateHoldingDemands($activeSaf);
-
-            // Update SAF Payment Status
-            $activeSaf->save();
-            $this->sendToWorkflow($activeSaf);        // Send to Workflow(15.2)
-            $demands = collect($demands)->toArray();
-            $postSafPropTaxes->postSafTaxes($safId, $demands, $activeSaf->ulb_id);                  // Save Taxes
-            DB::commit();
-            DB::connection('pgsql_master')->commit();
-            return responseMsgs(true, "Payment Successfully Done",  ['TransactionNo' => $tranNo], "010127", "1.0", responseTime(), "POST", $req->deviceId);
-        } catch (Exception $e) {
-            DB::rollBack();
-            DB::connection('pgsql_master')->rollBack();
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-
-    /**
      * | Post Other Payment Modes for Cheque,DD,Neft
+     * | ---------------------------------------------------
+     * | Handles non-cash payment modes and records transaction details.
+     * |
+     * | If the payment mode is not cash, it stores cheque details.
+     * | Records the transaction in the temp_transactions table.
+     * | ---------------------------------------------------
      */
     public function postOtherPaymentModes($req, $clusterId = null)
     {
@@ -2326,6 +2167,13 @@ class ActiveSafController extends Controller
 
     /**
      * | Send to Workflow Level after payment(15.2)
+     * | ------------------------------------------------------------
+     * | Sends the active SAF to the workflow tracking system.
+     * |
+     * | Prepares workflow tracking data, including workflow ID, reference table, 
+     * | SAF ID, tracking date, module ID, and recipient role.
+     * | Stores the workflow tracking details using the WorkflowTrack model.
+     * | ------------------------------------------------------------
      */
     public function sendToWorkflow($activeSaf)
     {
@@ -2487,24 +2335,6 @@ class ActiveSafController extends Controller
         }
     }
 
-    /**
-     * | Get Transactions by Property id or SAF id
-     * | @param Request $req
-     */
-    public function getTransactionBySafPropId(Request $req)
-    {
-        try {
-            $propTransaction = new PropTransaction();
-            if ($req->safId)                                                // Get By SAF Id
-                $propTrans = $propTransaction->getPropTransBySafId($req->safId);
-            if ($req->propertyId)                                           // Get by Property Id
-                $propTrans = $propTransaction->getPropTransByPropId($req->propertyId);
-
-            return responseMsgs(true, "Property Transactions", remove_null($propTrans), "010122", "01", responseTime(), $req->getMethod(), $req->deviceId);
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
 
     /**
      * | Get Property Details by Property Holding No
@@ -2548,8 +2378,10 @@ class ActiveSafController extends Controller
         }
     }
 
-    //modified by prity pandey Get Property Details by Property Holding No
-    // added water consumer details and trade license details of property
+    /* 
+     | modified by prity pandey : Get Property Details by Property Holding No
+     | added water consumer details and trade license details of property 
+    */
     public function getPropByHoldingNo(Request $req)
     {
         $req->validate(
@@ -2759,7 +2591,11 @@ class ActiveSafController extends Controller
 
     /**
      * | Site Verification
-     * | @param req requested parameter
+     * | --------------------------------------------------
+     * | Handles the site verification process for property assessments.
+     * | If the property is not vacant land, it processes floor details and calculates carpet area.
+     * | Uses transactions to ensure database integrity and rolls back on failure. 
+     * | --------------------------------------------------
      * | Status-Closed
      */
     public function siteVerification(ReqSiteVerification $req)
@@ -2915,6 +2751,13 @@ class ActiveSafController extends Controller
 
     /**
      * | Get The Verification done by Agency Tc
+     * |----------------------------------------------------
+     * | Retrieves Tax Collector (TC) verification details for a given SAF ID.
+     * | Validates the request to ensure `safId` is provided and numeric.
+     * | Fetches verification data from `PropSafVerification` model.
+     * | Fetches geo-tagging data and document URLs for proper linking.
+     * | Returns a structured response containing verification and geo-tagging details. 
+     * |----------------------------------------------------
      */
     public function getTcVerifications(Request $req)
     {
@@ -3341,32 +3184,16 @@ class ActiveSafController extends Controller
         }
     }
 
-    public function getSafVerificationList(Request $request)
-    {
-        $request->validate([
-            'applicationId' => 'required|digits_between:1,9223372036854775807',
-        ]);
-        try {
-            $data = array();
-            $verifications = PropSafVerification::select(
-                'id',
-                'agency_verification',
-                "ulb_verification",
-                "created_at"
-            )
-                ->where("prop_saf_verifications.saf_id", $request->applicationId)
-                ->get();
 
-            $data = $verifications->map(function ($val) {
-                $val->veryfied_by = $val->agency_verification ? "AGENCY TC" : "ULB TC";
-                return $val;
-            });
-            return responseMsgs(true, "Data Fetched", remove_null($data), "010125", "1.0", responseTime(), "POST", $request->deviceId);
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-
+    /**
+     *   Reviews and processes tax calculation details from the given response.
+     * | -------------------------------------------------------------
+     * | Extracts demand details from the response.
+     * | Calculates aggregated tax amounts for each quarter, including holding tax, water tax, latrine tax, education tax, 
+     * | health tax, rainwater harvesting penalty, and total quarterly tax.
+     * | Returns a structured response with processed tax calculation details.
+     * | --------------------------------------------------------------    
+     */
     private function reviewTaxCalculation(object $response)
     {
         try {
@@ -3447,6 +3274,17 @@ class ActiveSafController extends Controller
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+
+    /**
+     *    Compares and reviews tax calculations from two different response objects.
+     * | ----------------------------------------------------------------------
+     * |  Extracts demand details from both responses.
+     * |  Compares the two sets of tax calculations based on rules and quarters.
+     * |  Computes the difference in tax values between the two responses.
+     * |  Calculates the net change in tax components.
+     * |  Returns a structured response with the calculated tax differences.
+     * | ----------------------------------------------------------------------
+      */
 
     private function reviewTaxCalculationCom(object $response, object $response2)
     {
@@ -3602,4 +3440,194 @@ class ActiveSafController extends Controller
         }
     }
     // ---------end----------------
+    
+    #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
+    #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
+
+    /*  
+    * | The following APIs/Functions are currently unused.  
+    * | If they remain unused for four months, they will be permanently removed from the project.  
+    * | Listed On       : 20-02-2025  
+    * | Removal Date    : 01-06-2025  
+    */
+
+
+    /**
+     * | Get Transactions Details by Property id or SAF id
+    */
+    public function getTransactionBySafPropId(Request $req)
+    {
+        try {
+            $propTransaction = new PropTransaction();
+            if ($req->safId)                                                // Get By SAF Id
+                $propTrans = $propTransaction->getPropTransBySafId($req->safId);
+            if ($req->propertyId)                                           // Get by Property Id
+                $propTrans = $propTransaction->getPropTransByPropId($req->propertyId);
+
+            return responseMsgs(true, "Property Transactions", remove_null($propTrans), "010122", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+   /* 
+    * | ------------------------------------------------------------
+    * | Retrieves a list of SAF verifications for a given application ID.
+    * | Validates the request to ensure `applicationId` is provided and within a valid range.
+    * | Fetches verification records from the `PropSafVerification` model based on `saf_id`.
+    * | Returns a structured response with the verification details.
+    * |---------------------------------------------------------------
+    */
+    public function getSafVerificationList(Request $request)
+    {
+        $request->validate([
+            'applicationId' => 'required|digits_between:1,9223372036854775807',
+        ]);
+        try {
+            $data = array();
+            $verifications = PropSafVerification::select(
+                'id',
+                'agency_verification',
+                "ulb_verification",
+                "created_at"
+            )
+                ->where("prop_saf_verifications.saf_id", $request->applicationId)
+                ->get();
+
+            $data = $verifications->map(function ($val) {
+                $val->veryfied_by = $val->agency_verification ? "AGENCY TC" : "ULB TC";
+                return $val;
+            });
+            return responseMsgs(true, "Data Fetched", remove_null($data), "010125", "1.0", responseTime(), "POST", $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Offline Saf Payment
+     * | Multiple Database Connection
+     * | ------------------------------------------------------------
+     * | This function processes offline payments by validating request parameters, verifying payment status, 
+     * | and updating SAF payment records. 
+     * | It includes transaction handling, demand verification, and updates property transaction details accordingly. 
+     * | ------------------------------------------------------------
+     */
+    public function offlinePaymentSaf(ReqPayment $req)
+    {
+        try {
+            // Variable Assignments
+            $offlinePaymentModes = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
+            $todayDate = Carbon::now();
+            $idGeneration = new IdGeneration;
+            $propTrans = new PropTransaction();
+            $mPropSafsDemands = new PropSafsDemand();
+            $verifyPaymentModes = Config::get('payment-constants.VERIFICATION_PAYMENT_MODES');
+            $mPropTranDtl = new PropTranDtl();
+            $previousHoldingDeactivation = new PreviousHoldingDeactivation;
+            $postSafPropTaxes = new PostSafPropTaxes;
+            $updateSafDemand = new UpdateSafDemand;
+            $safId = $req['id'];
+
+            $activeSaf = PropActiveSaf::findOrFail($req['id']);
+
+            if ($activeSaf->payment_status == 1)
+                throw new Exception("Payment Already Done");
+
+            $userId = authUser($req)->id;                                      // Authenticated user or Ghost User
+            $tranBy = authUser($req)->user_type;
+
+            $tranNo = $req['transactionNo'];
+            // Derivative Assignments
+            if (!$tranNo)
+                $tranNo = $idGeneration->generateTransactionNo($activeSaf->ulb_id);
+
+            $safCalculation = $this->calculateSafBySafId($req);
+            if ($safCalculation->original['status'] == false)
+                throw new Exception($safCalculation->original['message']);
+            $demands = $safCalculation->original['data']['details'];
+            $amount = $safCalculation->original['data']['demand']['payableAmount'];
+
+            if (!$demands || collect($demands)->isEmpty())
+                throw new Exception("Demand Not Available for Payment");
+
+            // Property Transactions
+            $req->merge([
+                'userId' => $userId,
+                'is_citizen' => false,
+                'todayDate' => $todayDate->format('Y-m-d'),
+                'tranNo' => $tranNo,
+                'workflowId' => $activeSaf->workflow_id,
+                'amount' => $amount,
+                'tranBy' => $tranBy,
+                'ulbId' => $activeSaf->ulb_id
+            ]);
+            $activeSaf->payment_status = 1; // Paid for Online or Cash
+            if (in_array($req['paymentMode'], $verifyPaymentModes)) {
+                $req->merge([
+                    'verifyStatus' => 2
+                ]);
+                $activeSaf->payment_status = 2;         // Under Verification for Cheque, Cash, DD
+            }
+            DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
+
+            $propTrans = $propTrans->postSafTransaction($req, $demands);
+
+            if (in_array($req['paymentMode'], $offlinePaymentModes)) {
+                $req->merge([
+                    'chequeDate' => $req['chequeDate'],
+                    'tranId' => $propTrans['id'],
+                    "applicationNo" => $activeSaf->saf_no,
+
+                ]);
+                $this->postOtherPaymentModes($req);
+            }
+            // Reflect on Prop Tran Details For Normal Saf
+            if ($activeSaf->is_gb_saf == false) {
+                foreach ($demands as $demand) {
+                    $demand = $demand->toArray();
+                    unset($demand['ruleSet'], $demand['rwhPenalty'], $demand['onePercPenalty'], $demand['onePercPenaltyTax']);
+                    if (isset($demand['status']))
+                        unset($demand['status']);
+                    $demand['paid_status'] = 1;
+                    $demand['saf_id'] = $safId;
+                    $demand['balance'] = 0;
+                    $storedSafDemand = $mPropSafsDemands->postDemands($demand);
+
+                    $tranReq = [
+                        'tran_id' => $propTrans['id'],
+                        'saf_demand_id' => $storedSafDemand['demandId'],
+                        'total_demand' => $demand['amount'],
+                        'ulb_id' => $req['ulbId'],
+                    ];
+                    $mPropTranDtl->store($tranReq);
+                }
+            }
+
+            // GB Saf Demand Adjustments
+            if ($activeSaf->is_gb_saf == true)
+                $updateSafDemand->updateDemand($demands->toArray(), $propTrans['id']);
+
+            // Replication Prop Rebates Penalties
+            $this->postPenaltyRebates($safCalculation, $safId, $propTrans['id']);
+
+            // Deactivate Property Holdings
+            $previousHoldingDeactivation->deactivateHoldingDemands($activeSaf);
+
+            // Update SAF Payment Status
+            $activeSaf->save();
+            $this->sendToWorkflow($activeSaf);        // Send to Workflow(15.2)
+            $demands = collect($demands)->toArray();
+            $postSafPropTaxes->postSafTaxes($safId, $demands, $activeSaf->ulb_id);                  // Save Taxes
+            DB::commit();
+            DB::connection('pgsql_master')->commit();
+            return responseMsgs(true, "Payment Successfully Done",  ['TransactionNo' => $tranNo], "010127", "1.0", responseTime(), "POST", $req->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
 }

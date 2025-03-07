@@ -134,6 +134,8 @@ trait WaterTrait
         return WaterConsumerActiveRequest::select(
             'water_consumer_active_requests.id',
             'water_consumer_active_requests.application_no',
+            'water_consumer_active_requests.workflow_id',
+            'water_consumer_active_requests.apply_date',
             'wco.applicant_name',
             'wco.mobile_no',
             'water_consumers.consumer_no',
@@ -156,6 +158,7 @@ trait WaterTrait
                 'wco.mobile_no',
                 'water_consumers.consumer_no',
                 'uwm.ward_name',
+                'water_consumer_active_requests.apply_date',
             );
     }
 
