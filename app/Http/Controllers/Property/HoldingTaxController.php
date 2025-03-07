@@ -2366,84 +2366,88 @@ class HoldingTaxController extends Controller
 
             // Fetch multiple transactions
             $propTransList = $mTransaction->getPropByTranPropIdv1($req->tranNo);
-
-            if ($propTransList->isEmpty()) {
-                throw new Exception("Transaction Not Found");
-            }
-
             $receiptData = [];
+            if (!empty($propTransList) && is_array($propTransList)) {
+                foreach ($propTransList as $propTrans) {
+                    $reqPropId = new Request(['propertyId' => $propTrans->property_id]);
+                    $propProperty = $safController->getPropByHoldingNo($reqPropId)->original['data'];
+                    if (empty($propProperty)) continue;
 
-            foreach ($propTransList as $propTrans) {
-                $reqPropId = new Request(['propertyId' => $propTrans->property_id]);
-                $propProperty = $safController->getPropByHoldingNo($reqPropId)->original['data'];
-                if (empty($propProperty)) continue;
+                    $ownerDetails = $propProperty['owners']->first();
+                    $ulbDetails = $mUlbMasters->getUlbDetails($propProperty['ulb_id']);
+                    $penalRebates = $mPropPenalties->getPropPenalRebateByTranId($propTrans->id);
 
-                $ownerDetails = $propProperty['owners']->first();
-                $ulbDetails = $mUlbMasters->getUlbDetails($propProperty['ulb_id']);
-                $penalRebates = $mPropPenalties->getPropPenalRebateByTranId($propTrans->id);
+                    $onePercPenalty = collect($penalRebates)->where('head_name', $onePercKey)->first()->amount ?? 0;
+                    $rebate = collect($penalRebates)->where('head_name', 'Rebate')->first()->amount ?? "";
+                    $specialRebate = collect($penalRebates)->where('head_name', $specialRebateKey)->first()->amount ?? 0;
+                    $firstQtrRebate = collect($penalRebates)->where('head_name', $firstQtrKey)->first()->amount ?? 0;
+                    $jskOrOnlineRebate = collect($penalRebates)->where('head_name', $onlineRebate)->first()->amount ?? 0;
 
-                $onePercPenalty = collect($penalRebates)->where('head_name', $onePercKey)->first()->amount ?? 0;
-                $rebate = collect($penalRebates)->where('head_name', 'Rebate')->first()->amount ?? "";
-                $specialRebate = collect($penalRebates)->where('head_name', $specialRebateKey)->first()->amount ?? 0;
-                $firstQtrRebate = collect($penalRebates)->where('head_name', $firstQtrKey)->first()->amount ?? 0;
-                $jskOrOnlineRebate = collect($penalRebates)->where('head_name', $onlineRebate)->first()->amount ?? 0;
+                    $lateAssessmentPenalty = 0;
+                    $taxDetails = $paymentReceiptHelper->readPenalyPmtAmts($lateAssessmentPenalty, $onePercPenalty, $rebate, $specialRebate, $firstQtrRebate, $propTrans->amount, $jskOrOnlineRebate);
+                    $totalRebatePenals = $paymentReceiptHelper->calculateTotalRebatePenals($taxDetails);
 
-                $lateAssessmentPenalty = 0;
-                $taxDetails = $paymentReceiptHelper->readPenalyPmtAmts($lateAssessmentPenalty, $onePercPenalty, $rebate, $specialRebate, $firstQtrRebate, $propTrans->amount, $jskOrOnlineRebate);
-                $totalRebatePenals = $paymentReceiptHelper->calculateTotalRebatePenals($taxDetails);
+                    $propReceiptData[] = [
+                        "departmentSection" => $mDepartmentSection,
+                        "accountDescription" => $mAccDescription,
+                        "transactionDate" => Carbon::parse($propTrans->tran_date)->format('d-m-Y'),
+                        "transactionNo" => $propTrans->tran_no,
+                        "transactionTime" => $propTrans->created_at->format('H:i:s'),
+                        "applicationNo" => !empty($propProperty['new_holding_no']) ? $propProperty['new_holding_no'] : $propProperty['holding_no'],
+                        "customerName" => !empty($propProperty['applicant_name']) ? $propProperty['applicant_name'] : $ownerDetails['owner_name'],
+                        "mobileNo" => $ownerDetails['mobile_no'],
+                        "receiptWard" => $propProperty['new_ward_no'],
+                        "address" => $propProperty['prop_address'],
+                        "paidFrom" => $propTrans->from_fyear,
+                        "paidFromQtr" => $propTrans->from_qtr,
+                        "paidUpto" => $propTrans->to_fyear,
+                        "paidUptoQtr" => $propTrans->to_qtr,
+                        "paymentMode" => $propTrans->payment_mode,
+                        "bankName" => $propTrans->bank_name,
+                        "branchName" => $propTrans->branch_name,
+                        "chequeNo" => $propTrans->cheque_no,
+                        "chequeDate" => ymdToDmyDate($propTrans->cheque_date),
+                        "demandAmount" => $propTrans->demand_amt,
+                        "taxDetails" => $taxDetails,
+                        "totalRebate" => $totalRebatePenals['totalRebate'],
+                        "totalPenalty" => $totalRebatePenals['totalPenalty'],
+                        "ulbId" => $propProperty['ulb_id'],
+                        "oldWardNo" => $propProperty['old_ward_no'],
+                        "newWardNo" => $propProperty['new_ward_no'],
+                        "towards" => $mTowards,
+                        "description" => ["keyString" => "Holding Tax"],
+                        "totalPaidAmount" => $propTrans->amount,
+                        "paidAmtInWords" => getIndianCurrency($propTrans->amount),
+                        "tcName" => $propTrans->tc_name,
+                        "tcMobile" => $propTrans->tc_mobile,
+                        "ulbDetails" => $ulbDetails
+                    ];
+                }
 
-                $propReceiptData[] = [
-                    "departmentSection" => $mDepartmentSection,
-                    "accountDescription" => $mAccDescription,
-                    "transactionDate" => Carbon::parse($propTrans->tran_date)->format('d-m-Y'),
-                    "transactionNo" => $propTrans->tran_no,
-                    "transactionTime" => $propTrans->created_at->format('H:i:s'),
-                    "applicationNo" => !empty($propProperty['new_holding_no']) ? $propProperty['new_holding_no'] : $propProperty['holding_no'],
-                    "customerName" => !empty($propProperty['applicant_name']) ? $propProperty['applicant_name'] : $ownerDetails['owner_name'],
-                    "mobileNo" => $ownerDetails['mobile_no'],
-                    "receiptWard" => $propProperty['new_ward_no'],
-                    "address" => $propProperty['prop_address'],
-                    "paidFrom" => $propTrans->from_fyear,
-                    "paidFromQtr" => $propTrans->from_qtr,
-                    "paidUpto" => $propTrans->to_fyear,
-                    "paidUptoQtr" => $propTrans->to_qtr,
-                    "paymentMode" => $propTrans->payment_mode,
-                    "bankName" => $propTrans->bank_name,
-                    "branchName" => $propTrans->branch_name,
-                    "chequeNo" => $propTrans->cheque_no,
-                    "chequeDate" => ymdToDmyDate($propTrans->cheque_date),
-                    "demandAmount" => $propTrans->demand_amt,
-                    "taxDetails" => $taxDetails,
-                    "totalRebate" => $totalRebatePenals['totalRebate'],
-                    "totalPenalty" => $totalRebatePenals['totalPenalty'],
-                    "ulbId" => $propProperty['ulb_id'],
-                    "oldWardNo" => $propProperty['old_ward_no'],
-                    "newWardNo" => $propProperty['new_ward_no'],
-                    "towards" => $mTowards,
-                    "description" => ["keyString" => "Holding Tax"],
-                    "totalPaidAmount" => $propTrans->amount,
-                    "paidAmtInWords" => getIndianCurrency($propTrans->amount),
-                    "tcName" => $propTrans->tc_name,
-                    "tcMobile" => $propTrans->tc_mobile,
-                    "ulbDetails" => $ulbDetails
-                ];
+                if (empty($propReceiptData)) {
+                    throw new Exception("No valid property data found for the given transaction number.");
+                }
             }
 
-            if (empty($propReceiptData)) {
-                throw new Exception("No valid property data found for the given transaction number.");
-            }
             // water payment receipts
             $waterReceiptData = $this->generateDemandPaymentReceipt($req);
-            $receiptData[] = $waterReceiptData->original['data'];
+            $waterReceipt = $waterReceiptData->original['data'] ?? [];
+
+            $propTrans = $propTransList[0] ?? null; // Get first transaction
+            $propReceiptData = [];
+
             $receiptData = [
-                'propertyReceipt' => $propReceiptData,
-                'waterReceipt' => $receiptData,
+                'propertyReceipt' => $propReceiptData ?? [],
+                'waterReceipt' => $waterReceipt,
                 'propSumAmount' => collect($propReceiptData)->sum('totalPaidAmount'),
                 'propSumAmountInWords' => getIndianCurrency(collect($propReceiptData)->sum('totalPaidAmount')),
-                'waterSumAmount' => collect($receiptData)->sum('totalPaidAmount'),
-                'waterSumAmountInWords' => getIndianCurrency(collect($receiptData)->sum('totalPaidAmount')),
-                'sumAmount' => collect($propReceiptData)->sum('totalPaidAmount') + collect($receiptData)->sum('totalPaidAmount'),
-                'sumAmountInWords' => getIndianCurrency(collect($propReceiptData)->sum('totalPaidAmount') + collect($receiptData)->sum('totalPaidAmount'))
+                'waterSumAmount' => collect($waterReceipt)->sum('totalPaidAmount'),
+                'waterSumAmountInWords' => getIndianCurrency(collect($waterReceipt)->sum('totalPaidAmount')),
+                'sumAmount' => collect($propReceiptData)->sum('totalPaidAmount') + collect($waterReceipt)->sum('totalPaidAmount'),
+                'sumAmountInWords' => getIndianCurrency(collect($propReceiptData)->sum('totalPaidAmount') + collect($waterReceipt)->sum('totalPaidAmount')),
+                'transactionNo' => $req->tranNo,
+                'transactionDate' => $propTrans ? Carbon::parse($propTrans->tran_date)->format('d-m-Y') : collect($waterReceipt)->first()['tranDate'] ?? '',
+                'ulbDetails' => $ulbDetails ?? collect($waterReceipt)->first()['ulbDetails'] ?? []
             ];
 
             return responseMsgs(true, "Payment Receipts", remove_null($receiptData), "011510", "1.0", "", "POST", $req->deviceId ?? "");
@@ -2594,6 +2598,7 @@ class HoldingTaxController extends Controller
                 "totalPaidAmount" => $totalPaidAmount,
                 "dueAmount" => $totalDueAmount,
                 "paymentMode" => $transactionDetails->first()->payment_mode,
+                "tranDate" => $transactionDetails->first()->tran_date,
                 "bankName" => optional($chequeDetails)->bank_name,
                 "branchName" => optional($chequeDetails)->branch_name,
                 "chequeNo" => optional($chequeDetails)->cheque_no,
