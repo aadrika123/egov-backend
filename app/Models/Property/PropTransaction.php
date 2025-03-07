@@ -59,6 +59,7 @@ class PropTransaction extends Model
             ->leftJoin("prop_cheque_dtls", "prop_cheque_dtls.transaction_id", "prop_transactions.id")
             ->leftJoin("users as u", "u.id", "prop_transactions.user_id")
             ->where('tran_no', $tranNo)
+            ->where('prop_transactions.direct_payment', 1)
             ->get();
     }
 
