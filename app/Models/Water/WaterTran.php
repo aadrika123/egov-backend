@@ -201,6 +201,39 @@ class WaterTran extends Model
             'id' => $waterTrans->id
         ];
     }
+    /**
+     * | Post Water Transaction
+        | Make the column for pg_response_id and pg_id
+     */
+    public function waterTransactionv1($req, $consumer)
+    {
+        $waterTrans = new WaterTran();
+        $waterTrans->related_id         = $req['id'];
+        $waterTrans->amount             = $req['amount'];
+        $waterTrans->tran_type          = $req['chargeCategory'];
+        $waterTrans->tran_date          = $req['todayDate'];
+        $waterTrans->tran_no            = $req['tranNo'];
+        $waterTrans->payment_mode       = $req['paymentMode'];
+        $waterTrans->emp_dtl_id         = $req['userId'] ?? null;
+        $waterTrans->citizen_id         = $req['citizenId'] ?? null;
+        $waterTrans->is_jsk             = $req['isJsk'] ?? false;
+        $waterTrans->user_type          = $req['userType'];
+        $waterTrans->ulb_id             = $req['ulbId'];
+        $waterTrans->ward_id            = $consumer['ward_mstr_id'];
+        $waterTrans->due_amount         = $req['leftDemandAmount'] ?? 0;
+        $waterTrans->adjustment_amount  = $req['adjustedAmount'] ?? 0;
+        $waterTrans->pg_response_id     = $req['pgResponseId'] ?? null;
+        $waterTrans->direct_payment     = $req['directPayment'] ?? false;
+        if (isset($req->penaltyIds)) {
+            $waterTrans->penalty_ids    = $req->penaltyIds;
+            $waterTrans->is_penalty     = $req->isPenalty;
+        }
+        $waterTrans->save();
+
+        return [
+            'id' => $waterTrans->id
+        ];
+    }
 
     /**
      * | Water Transaction Details by date

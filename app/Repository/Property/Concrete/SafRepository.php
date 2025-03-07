@@ -108,4 +108,6 @@ class SafRepository implements iSafRepository
         $result = DB::select($query);
         return $result;
     }
+
+  
 }

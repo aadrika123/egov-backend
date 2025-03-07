@@ -382,6 +382,16 @@ class PropTransaction extends Model
             'id' => $stored->id
         ];
     }
+    /**
+     * | Store Transaction
+     */
+    public function storeTransv1(array $req)
+    {
+        $stored = PropTransaction::create($req);
+        return [
+            'id' => $stored->id
+        ];
+    }
 
     /**
      * | Get Property Transaction by Transaction No

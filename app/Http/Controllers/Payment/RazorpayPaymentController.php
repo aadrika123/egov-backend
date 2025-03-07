@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use App\Repository\Payment\Interfaces\iPayment;
 use App\Traits\Payment\Razorpay;
 use Exception;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 
@@ -234,5 +235,133 @@ class RazorpayPaymentController extends Controller
         } catch (Exception $e) {
             return $e->getMessage();
         }
+    }
+
+    /**
+     * | Get Property Transactions
+     * | @param req requested parameters
+     * | @var userId authenticated user id
+     * | @var propTrans Property Transaction details of the Logged In User
+     * | @return responseMsg
+     * | Status-Closed
+     * | Run time Complexity-346ms
+     * | Rating - 3
+     */
+    public function getDirectTransactionsOnline(Request $req)
+    {
+        try {
+            $auth = authUser($req);
+            $userId = $auth->id;
+            if ($auth->user_type == 'Citizen')
+                $propTrans = $this->getPropTransByCitizenUserId($userId, 'citizen_id');
+            // else
+            //     $propTrans = $this->getPropTransByCitizenUserId($userId, 'user_id');
+
+            return responseMsgs(true, "Transactions History", remove_null($propTrans), "010118", "1.0", responseTime(), "POST", $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010118", "1.0", responseTime(), "POST", $req->deviceId);
+        }
+    }
+
+    /**
+     * | Get Property and Saf Transaction
+     */
+    public function getPropTransByCitizenUserId($userId, $userType)
+    {
+        // Fetch property transactions
+        $propertyQuery = "
+            SELECT 
+                prop_transactions.tran_no,
+                SUM(prop_transactions.amount) AS total_amount,
+                MIN(prop_transactions.tran_date) AS tran_date,
+                TO_CHAR(MIN(prop_transactions.tran_date), 'dd-mm-YYYY') AS formatted_tran_date,
+                STRING_AGG(DISTINCT p.holding_no, ', ') AS holding_no,
+                CASE 
+                    WHEN BOOL_OR(prop_transactions.saf_id IS NOT NULL) THEN 'SAF' 
+                    ELSE 'PROPERTY' 
+                END AS application_type
+            FROM 
+                prop_transactions 
+            LEFT JOIN prop_properties AS p ON p.id = prop_transactions.property_id
+            WHERE 
+                prop_transactions.$userType = :userId
+                AND prop_transactions.status <> 0
+                AND prop_transactions.direct_payment = true
+            GROUP BY 
+                prop_transactions.tran_no
+            ORDER BY 
+                MIN(prop_transactions.id) DESC
+        ";
+
+        $propertyTransactions = DB::select($propertyQuery, ['userId' => $userId]);
+
+        // Fetch water transactions
+        $waterQuery = "
+            SELECT 
+                water_trans.tran_no,
+                SUM(water_trans.amount) AS total_amount,
+                MIN(water_trans.tran_date) AS tran_date,
+                TO_CHAR(MIN(water_trans.tran_date), 'dd-mm-YYYY') AS formatted_tran_date,
+                NULL AS holding_no,
+                'WATER' AS application_type
+            FROM 
+                water_trans
+            LEFT JOIN water_consumers AS wc ON wc.id = water_trans.related_id
+            WHERE 
+                water_trans.$userType = :userId
+                AND water_trans.status <> 0
+                AND water_trans.direct_payment = true
+            GROUP BY 
+                water_trans.tran_no
+            ORDER BY 
+                MIN(water_trans.id) DESC
+        ";
+
+        $waterTransactions = DB::connection('pgsql_water')->select($waterQuery, ['userId' => $userId]);
+
+        // Merge and aggregate transactions in PHP
+        $transactions = [];
+
+        foreach (array_merge($propertyTransactions, $waterTransactions) as $transaction) {
+            $tranNo = $transaction->tran_no;
+
+            if (!isset($transactions[$tranNo])) {
+                // Initialize transaction entry
+                $transactions[$tranNo] = [
+                    'tran_no' => $tranNo,
+                    'total_amount' => 0,
+                    'tran_date' => $transaction->tran_date,
+                    'formatted_tran_date' => $transaction->formatted_tran_date,
+                    'holding_no' => $transaction->holding_no ?? '',
+                    'application_type' => []
+                ];
+            }
+
+            // Sum total amount
+            $transactions[$tranNo]['total_amount'] += $transaction->total_amount;
+
+            // Keep the earliest transaction date
+            if ($transaction->tran_date < $transactions[$tranNo]['tran_date']) {
+                $transactions[$tranNo]['tran_date'] = $transaction->tran_date;
+                $transactions[$tranNo]['formatted_tran_date'] = $transaction->formatted_tran_date;
+            }
+
+            // Merge holding numbers (avoid duplicates)
+            if (!empty($transaction->holding_no)) {
+                $transactions[$tranNo]['holding_no'] = implode(', ', array_unique(array_filter(explode(', ', $transactions[$tranNo]['holding_no'] . ', ' . $transaction->holding_no))));
+            }
+
+            // Merge application types (avoid duplicates)
+            if (!in_array($transaction->application_type, $transactions[$tranNo]['application_type'])) {
+                $transactions[$tranNo]['application_type'][] = $transaction->application_type;
+            }
+        }
+
+        // Convert application types to string
+        foreach ($transactions as &$transaction) {
+            $transaction['application_type'] = implode(', ', $transaction['application_type']);
+        }
+
+        return array_values($transactions); // Return re-indexed array
     }
 }

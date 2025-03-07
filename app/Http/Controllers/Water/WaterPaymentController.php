@@ -1861,8 +1861,8 @@ class WaterPaymentController extends Controller
         try {
             # ref var assigning
             $today          = Carbon::now();
-            $refUserId      = $webhookData["userId"];
-            $refUlbId       = $webhookData["ulbId"];
+            $refUserId      = $transfer["userId"];
+            $refUlbId       = $transfer["ulbId"];
             $mDemands       = (array)null;
 
             # model assigning
@@ -1892,7 +1892,7 @@ class WaterPaymentController extends Controller
 
             $this->begin();
             # save payment data in razorpay response table
-            $paymentResponseId = $mWaterRazorPayResponse->savePaymentResponsev1($RazorPayRequest, $webhookData,$transfer);
+            $paymentResponseId = $mWaterRazorPayResponse->savePaymentResponsev1($RazorPayRequest, $webhookData, $transfer);
 
             # save the razorpay request status as 1
             $RazorPayRequest->status = 1;                                       // Static
@@ -1912,10 +1912,11 @@ class WaterPaymentController extends Controller
                 'leftDemandAmount'  => $RazorPayRequest->due_amount,
                 'adjustedAmount'    => $RazorPayRequest->adjusted_amount,
                 'pgResponseId'      => $paymentResponseId['razorpayResponseId'],
-                'pgId'              => $webhookData['gatewayType']
+                'pgId'              => $webhookData['gatewayType'],
+                'directPayment'     => true
             ];
             $consumer['ward_mstr_id'] = $consumerDetails->ward_mstr_id;
-            $transactionId = $mWaterTran->waterTransaction($metaRequest, $consumer);
+            $transactionId = $mWaterTran->waterTransactionv1($metaRequest, $consumer);
 
             # adjustment data saving
             $refMetaReq = new Request([

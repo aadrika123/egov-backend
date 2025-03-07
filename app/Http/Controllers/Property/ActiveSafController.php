@@ -2486,6 +2486,7 @@ class ActiveSafController extends Controller
             return responseMsgs(false, $e->getMessage(), "", "010118", "1.0", responseTime(), "POST", $req->deviceId);
         }
     }
+   
 
     /**
      * | Get Transactions by Property id or SAF id
