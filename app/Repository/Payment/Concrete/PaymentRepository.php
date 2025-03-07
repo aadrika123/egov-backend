@@ -415,7 +415,7 @@ class PaymentRepository implements iPayment
     public function paymentHolding(ReqPayment $req, $transfer)
     {
         try {
-            $userId = $req['userId'];
+            $userId = $transfer['userId'];
             $tranBy = 'ONLINE';
             $mPropDemand = new PropDemand();
             $mPropTrans = new PropTransaction();
@@ -470,10 +470,11 @@ class PaymentRepository implements iPayment
                 'demand_amt' => $propRazorPayRequest->demand_amt,
                 'ulb_id' => $propRazorPayRequest->ulb_id,
                 'tran_type' => 'Property',
+                'direct_payment' => true,
 
             ];
 
-            $storedTransaction = $mPropTrans->storeTrans($tranReqs);
+            $storedTransaction = $mPropTrans->storeTransv1($tranReqs);
             $tranId = $storedTransaction['id'];
 
             $razorpayPenalRebates = $mPropRazorpayPenalRebates->getPenalRebatesByReqId($propRazorPayRequest->id);
@@ -584,11 +585,6 @@ class PaymentRepository implements iPayment
                 ->where("related_id", $args["related_id"])
                 ->where("status", 2)
                 ->first();
-            // $RazorPayRequest = WaterRazorPayRequest::select("*")
-            //     ->where("order_id", 'order_NzZevOU2QkTCbz')
-            //     ->where("related_id", 4147)
-            //     ->where("status", 2)
-            //     ->first();
             if (!$RazorPayRequest) {
                 throw new Exception("Data Not Found");
             }

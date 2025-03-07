@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\Route;
  * | Payment Master for Testing Payment Gateways
     | FLAG : removal of some function / use for testing
  */
-Route::group(['middleware' => ['json.response','request_logger']], function () {
+Route::group(['middleware' => ['json.response', 'request_logger']], function () {
     Route::controller(RazorpayPaymentController::class)->group(function () {
         Route::post('store-payment', 'storePayment');                                               // 01 Store Payment in payment Masters
         Route::get('get-payment-by-id/{id}', 'getPaymentByID');                                     // 02 Get Payment by Id
@@ -40,6 +40,7 @@ Route::group(['middleware' => ['json.response','request_logger']], function () {
         Route::get('get-reconcillation-details', 'getReconcillationDetails');                       // 11 
         Route::post('search-reconciliation-details', 'searchReconciliationDetails');                // 12
         Route::post('update-reconciliation-details', 'updateReconciliationDetails');                // 13
+        Route::post('direct-transaction-history', 'getDirectTransactionsOnline');                   // 14 
     });
 
 
@@ -70,4 +71,5 @@ Route::controller(RazorpayPaymentController::class)->group(function () {
     Route::post('razorpay-webhook-v1', 'gettingWebhookDetailsv1');                                       // 14 collecting the all data provided by the webhook and updating the related database
     Route::post('get-tran-by-orderid', 'getTranByOrderId');                                     // 15 Get Transaction by Order ID and payment ID
     Route::post('verify-payment-status', 'verifyPaymentStatus');                                // 08 verifiying the payment status and saving both success, fails, suspeciousdata  
+
 });

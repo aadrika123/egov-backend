@@ -3681,7 +3681,7 @@ class MasterReferenceController extends Controller
                 "Department" => $departmentDtl,
                 "Contact" => $contactDtl,
                 "citizenDesk" => $cDeskDtl,
-                "Assets" => $assetdtl,
+                " " => $assetdtl,
                 "Slider" => $sliderDtl,
                 "About Us" => $aboutUsDtl,
                 "Act Rule" => $actRuleDtl,

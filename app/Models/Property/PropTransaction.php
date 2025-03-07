@@ -42,6 +42,25 @@ class PropTransaction extends Model
             ->where('tran_no', $tranNo)
             ->firstorfail();
     }
+    /**
+     * | Get PropTran By tranno property id
+     */
+    public function getPropByTranPropIdv1($tranNo)
+    {
+        return PropTransaction::select(
+            'prop_transactions.*',
+            'prop_cheque_dtls.bank_name',
+            'prop_cheque_dtls.branch_name',
+            'prop_cheque_dtls.cheque_no',
+            'prop_cheque_dtls.cheque_date',
+            'u.name as tc_name',
+            'u.mobile as tc_mobile'
+        )
+            ->leftJoin("prop_cheque_dtls", "prop_cheque_dtls.transaction_id", "prop_transactions.id")
+            ->leftJoin("users as u", "u.id", "prop_transactions.user_id")
+            ->where('tran_no', $tranNo)
+            ->get();
+    }
 
 
     /**
@@ -357,6 +376,16 @@ class PropTransaction extends Model
      * | Store Transaction
      */
     public function storeTrans(array $req)
+    {
+        $stored = PropTransaction::create($req);
+        return [
+            'id' => $stored->id
+        ];
+    }
+    /**
+     * | Store Transaction
+     */
+    public function storeTransv1(array $req)
     {
         $stored = PropTransaction::create($req);
         return [

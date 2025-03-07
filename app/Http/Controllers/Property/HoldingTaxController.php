@@ -11,6 +11,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Property\ReqPayment;
 use App\MicroServices\DocUpload;
 use App\MicroServices\IdGeneration;
+use App\Models\Citizen\ActiveCitizenUndercare;
 use App\Models\Cluster\Cluster;
 use App\Models\Payment\TempTransaction;
 use App\Models\Payment\WebhookPaymentData;
@@ -32,13 +33,17 @@ use App\Models\Property\PropSaf;
 use App\Models\Property\PropSafsDemand;
 use App\Models\Property\PropTranDtl;
 use App\Models\Property\PropTransaction;
-use App\Models\Property\RazorPayRequest;
 use App\Models\UlbMaster;
 use App\Models\Water\WaterAdjustment;
 use App\Models\Water\WaterAdvance;
+use App\Models\Water\WaterChequeDtl;
 use App\Models\Water\WaterConsumer;
 use App\Models\Water\WaterConsumerDemand;
+use App\Models\Water\WaterConsumerMeter;
+use App\Models\Water\WaterConsumerTax;
 use App\Models\Water\WaterRazorPayRequest;
+use App\Models\Water\WaterTran;
+use App\Models\Water\WaterTranDetail;
 use App\Models\Workflows\WfActiveDocument;
 use App\Models\Workflows\WfRoleusermap;
 use App\Repository\Property\Interfaces\iSafRepository;
@@ -66,6 +71,9 @@ class HoldingTaxController extends Controller
     protected $_paramRentalRate;
     protected $_refParamRentalRate;
     protected $_carbon;
+    private $_accDescription;
+    private $_departmentSection;
+    private $_paymentModes;
     /**
      * | Created On-19/01/2023 
      * | Created By-Anshu Kumar
@@ -77,6 +85,9 @@ class HoldingTaxController extends Controller
     {
         $this->_safRepo = $safRepo;
         $this->_carbon = Carbon::now();
+        $this->_accDescription      = Config::get('waterConstaint.ACCOUNT_DESCRIPTION');
+        $this->_departmentSection   = Config::get('waterConstaint.DEPARTMENT_SECTION');
+        $this->_paymentModes        = Config::get('payment-constants.PAYMENT_OFFLINE_MODE');
     }
     /**
      * | Generate Holding Demand(1)
@@ -612,7 +623,6 @@ class HoldingTaxController extends Controller
             $departmentId = 1;
             $propProperties = new PropProperty();
             $ipAddress = getClientIpAddress();
-            $mrazorPayRequest = new RazorPayRequest();
             $mPropRazorPayRequest = new PropRazorpayRequest();
             $postRazorPayPenaltyRebate = new PostRazorPayPenaltyRebate;
             $mWaterRazorPayRequest = new WaterRazorPayRequest();
@@ -621,80 +631,83 @@ class HoldingTaxController extends Controller
             $endPoint = Config::get('razorpay.PAYMENT_GATEWAY_END_POINT');
 
             // $authUser = Auth()->user();
-            $demand = $this->getHoldingDuesv1($req, $req->propId);
-
-            if ($demand->original['status'] == false)
-                throw new Exception($demand->original['message']);
-
-            $demandData = $demand->original['data'];
-            if ($demandData)
-                if (!$demandData)
-                    throw new Exception("Demand Not Available");
-            $amount  = $demandData['duesList']['payableAmount'];
-            $demands = $demandData['duesList'];
-            $demandDetails = $demandData['demandList'];
-            $propDtls = $propProperties->getPropById($req->propId);
+            $amount = 0; // Initialize amount for properties
+            $consumerAmount = 0;
+            if ($req->propId) {
+                foreach ($req->propId as $propId) {
+                    $demand = $this->getHoldingDuesv1($req, $propId);
+                    if ($demand->original['status'] == false) {
+                        throw new Exception($demand->original['message']);
+                    }
 
 
+                    $demandData = $demand->original['data'];
+                    if (!$demandData) {
+                        throw new Exception("Demand Not Available");
+                    }
 
-            // return $refDetails;
+                    $amount += $demandData['duesList']['payableAmount']; // Summing payable amounts
+                }
+            }
+            // Check if consumerDetails exists and calculate total amount for consumer demands
+            if (!empty($req->consumerDetails)) {
+                $consumerAmount = array_sum(array_column($req->consumerDetails, 'amount')); // Sum consumer amounts
+            }
 
-            $refDetails['amount'] = $refDetails['amount'] ?? $amount;
-
-            // add amount of property and water consumer demand amount
-            $totalAmountdtl = $amount + $refDetails['amount'];
+            // Final total amount calculation
+            $totalAmountdtl = $amount + $consumerAmount;
 
             $req->request->add([
                 'amount' => $totalAmountdtl,
                 'workflowId' => '0',
                 'departmentId' => $departmentId,
-                'ulbId' => $propDtls->ulb_id,
-                'id' => $req->propId,
+                // 'ulbId' => $propDtls->ulb_id,
+                'id' => $req->propId ?? $req->consumerDetails['consumerId'],
                 'ghostUserId' => 0,
                 // 'auth' => $authUser
             ]);
             // DB::beginTransaction();
             $orderDetails = $this->saveGenerateOrderidv1($req);                                      //<---------- Generate Order ID Trait
-
-            // $demands = array_merge($demands->toArray(), [
-            //     'orderId' => $orderDetails['orderId']
-            // ]);
-            $demands = is_array($demands) ? $demands : [];
-            $demands = array_merge($demands, ['orderId' => $orderDetails['orderId']]);
+            // $demands = is_array($demands) ? $demands : [];
+            // $demands = array_merge($demands, ['orderId' => $orderDetails['orderId']]);
             // Store Razor pay Request for property Demand
-            foreach ($req->propId as $propId) {
-                $demand = $this->getHoldingDuesv1($req, $propId);
+            if ($req->propId) {
+                foreach ($req->propId as $propId) {
+                    $demand = $this->getHoldingDuesv1($req, $propId);
 
-                if ($demand->original['status'] == false)
-                    throw new Exception($demand->original['message']);
+                    if ($demand->original['status'] == false)
+                        throw new Exception($demand->original['message']);
 
-                $demandData = $demand->original['data'];
-                if ($demandData)
-                    if (!$demandData)
-                        throw new Exception("Demand Not Available");
-                $amount  = $demandData['duesList']['payableAmount'];
-                $demands = $demandData['duesList'];
-                $demandDetails = $demandData['demandList'];
-                $razorPayRequest = [
-                    'order_id' => $orderDetails['orderId'],
-                    'prop_id' => $propId,
-                    'from_fyear' => $demands['dueFromFyear'],
-                    'from_qtr' => $demands['dueFromQtr'],
-                    'to_fyear' => $demands['dueToFyear'],
-                    'to_qtr' => $demands['dueToQtr'],
-                    'demand_amt' => $demands['totalDues'],
-                    'ulb_id' => $propDtls->ulb_id,
-                    'ip_address' => $ipAddress,
-                    'demand_list' => json_encode($demandDetails, true),
-                    'amount' => $amount,
-                    'advance_amount' => $demands['advanceAmt']
-                ];
-                $storedRazorPayReqs = $mPropRazorPayRequest->store($razorPayRequest);
-                // Store Razor pay penalty Rebates
-                $postRazorPayPenaltyRebate->_propId = $propId;
-                $postRazorPayPenaltyRebate->_razorPayRequestId = $storedRazorPayReqs['razorPayReqId'];
-                $postRazorPayPenaltyRebate->postRazorPayPenaltyRebatesv1($demands, $propId);
+                    $demandData = $demand->original['data'];
+                    if ($demandData)
+                        if (!$demandData)
+                            throw new Exception("Demand Not Available");
+                    $amount  = $demandData['duesList']['payableAmount'];
+                    $demands = $demandData['duesList'];
+                    $propDtls = $propProperties->getPropById($req->propId);
+                    $demandDetails = $demandData['demandList'];
+                    $razorPayRequest = [
+                        'order_id' => $orderDetails['orderId'],
+                        'prop_id' => $propId,
+                        'from_fyear' => $demands['dueFromFyear'],
+                        'from_qtr' => $demands['dueFromQtr'],
+                        'to_fyear' => $demands['dueToFyear'],
+                        'to_qtr' => $demands['dueToQtr'],
+                        'demand_amt' => $demands['totalDues'],
+                        'ulb_id' => $propDtls->ulb_id,
+                        'ip_address' => $ipAddress,
+                        'demand_list' => json_encode($demandDetails, true),
+                        'amount' => $amount,
+                        'advance_amount' => $demands['advanceAmt']
+                    ];
+                    $storedRazorPayReqs = $mPropRazorPayRequest->store($razorPayRequest);
+                    // Store Razor pay penalty Rebates
+                    $postRazorPayPenaltyRebate->_propId = $propId;
+                    $postRazorPayPenaltyRebate->_razorPayRequestId = $storedRazorPayReqs['razorPayReqId'];
+                    $postRazorPayPenaltyRebate->postRazorPayPenaltyRebatesv1($demands, $propId);
+                }
             }
+
             // for water consumer demand payment
             if (!empty($req->consumerDetails)) {
                 $waterModuleId  = Config::get('module-constants.WATER_MODULE_ID');
@@ -708,6 +721,9 @@ class HoldingTaxController extends Controller
 
                     $consumerData = $this->preOfflinePaymentParams($consumer, $startingDate, $endDate);
                     $refDetails[] = $consumerData;
+                    $razorPayRequest = [
+                        'order_id' => $orderDetails['orderId'],
+                    ];
                     // store request
                     $mWaterRazorPayRequest->saveRequestDatav1($consumer, $req, $paymentFor['1'], $razorPayRequest, $consumerData);
                     // Sum up all consumer charges
@@ -2102,5 +2118,508 @@ class HoldingTaxController extends Controller
             'tableData' => [$dataRow]
         ];
         return responseMsgs(true, "Demand Dues", remove_null($data), "011507 ", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+    }
+
+    /**
+     * Get detail of citizen property details and water connection details with pending demands
+     */
+    public function citizenPropWaterDtls(Request $request)
+    {
+        try {
+            // Authenticate user
+            $user = authUser($request);
+            $userId = $user->id;
+            $ulbId = $request->ulbId;
+
+            // Property Details with Demand Join (Excluding 0 or NULL demand)
+            $propTransactionQuery = PropProperty::leftJoin('prop_demands', function ($join) {
+                $join->on('prop_demands.property_id', '=', 'prop_properties.id')
+                    ->whereIn('prop_demands.status', [1, 2])
+                    ->where('prop_demands.paid_status', 0);
+            })
+                ->leftJoin('prop_owners', 'prop_owners.property_id', '=', 'prop_properties.id')
+                ->select(
+                    'prop_properties.id as property_id',
+                    'prop_properties.holding_no',
+                    'prop_properties.new_holding_no',
+                    'prop_properties.pt_no',
+                    'prop_properties.zone_mstr_id',
+                    'prop_properties.new_ward_mstr_id',
+                    'prop_properties.village_mauja_name',
+                    'prop_properties.prop_address',
+                    'prop_properties.khata_no',
+                    'prop_properties.plot_no',
+                    'prop_properties.ulb_id',
+                    DB::raw("STRING_AGG(DISTINCT prop_owners.owner_name, ', ') as owners")
+                    // DB::raw("COALESCE(SUM(prop_demands.balance), 0) as total_demand_amount")
+                )
+                ->where("prop_properties.citizen_id", $userId)
+                ->groupBy(
+                    'prop_properties.id',
+                    'prop_properties.holding_no',
+                    'prop_properties.new_holding_no',
+                    'prop_properties.pt_no',
+                    'prop_properties.zone_mstr_id',
+                    'prop_properties.new_ward_mstr_id',
+                    'prop_properties.village_mauja_name',
+                    'prop_properties.prop_address',
+                    'prop_properties.khata_no',
+                    'prop_properties.plot_no',
+                    'prop_properties.ulb_id'
+                )
+                ->havingRaw("SUM(prop_demands.balance) > 0")  // Excludes 0 or NULL total demand
+                ->get();
+            // Retrieve dues for each property
+            foreach ($propTransactionQuery as $property) {
+                $request->merge(["propId" => $property->property_id]);
+                $demandDues = $this->getHoldingDues($request);
+
+                if (!$demandDues || !isset($demandDues->original['data'])) {
+                    throw new Exception("Demand Data Not Available");
+                }
+
+                $demandData = $demandDues->original['data'];
+                $property->total_demand_amount = $demandData['duesList']['payableAmount'] ?? 0;
+            }
+            // Water Consumer Details with Demand Join (Excluding 0 or NULL demand)
+            $waterConsumerDetails = WaterConsumer::leftJoin('water_consumer_demands', function ($join) {
+                $join->on('water_consumer_demands.consumer_id', '=', 'water_consumers.id')
+                    ->where('water_consumer_demands.status', true)
+                    ->where('water_consumer_demands.paid_status', 0);
+            })
+                ->leftJoin('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_consumers.id')
+                ->select(
+                    'water_consumers.id as consumer_id',
+                    'water_consumers.consumer_no',
+                    'water_consumers.holding_no',
+                    'water_consumers.area_sqft',
+                    'water_consumers.address',
+                    'water_consumers.ulb_id',
+                    DB::raw("STRING_AGG(DISTINCT water_consumer_owners.applicant_name, ', ') as owners"),
+                    DB::raw("COALESCE(SUM(water_consumer_demands.balance_amount), 0) as total_demand_amount"),
+                    DB::raw("min(water_consumer_demands.demand_from) as demand_from"),
+                    DB::raw("max(water_consumer_demands.demand_upto) as demand_upto")
+                )
+                ->where("water_consumers.user_id", $userId)
+                ->where("water_consumers.user_type", 'Citizen')
+                ->groupBy(
+                    'water_consumers.id',
+                    'water_consumers.consumer_no',
+                    'water_consumers.holding_no',
+                    'water_consumers.area_sqft',
+                    'water_consumers.address',
+                    'water_consumers.ulb_id'
+                )
+                ->havingRaw("SUM(water_consumer_demands.balance_amount) > 0") // Excludes 0 or NULL total demand
+                ->get();
+
+            $propUndercaredtls = collect($this->getCaretakerProperty($userId, $request));
+
+            $mergedProperties = $propTransactionQuery->merge($propUndercaredtls);
+
+            // water under care 
+            $waterUnderCare = $this->viewCaretakenConnection($request);
+
+            $mergedWater = collect($waterConsumerDetails)->merge(collect($waterUnderCare));
+
+            // Combine the results
+            $data = [
+                "propDetails" => $mergedProperties,
+                "waterDetails" => $mergedWater,
+            ];
+
+            return responseMsgs(true, "Data Fetch Successfully", $data, "", 01, responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (\Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "", 01, responseTime(), $request->getMethod(), $request->deviceId);
+        }
+    }
+
+    /**
+     * Get properties under caretaker for a given user
+     */
+    public function getCaretakerProperty($userId, Request $req)
+    {
+        $data = collect(); // Use collection instead of array
+        $mActiveCitizenCareTaker = new ActiveCitizenUndercare();
+        $propertiesByCitizen = $mActiveCitizenCareTaker->getTaggedPropsByCitizenId($userId);
+        $propIds = $propertiesByCitizen->pluck('property_id');
+
+        if ($propIds->isEmpty()) {
+            return $data;
+        }
+
+        $properties = PropProperty::whereIn('prop_properties.id', $propIds)
+            ->select(
+                'prop_properties.id',
+                'prop_properties.holding_no',
+                'prop_properties.new_holding_no',
+                DB::raw("TO_CHAR(application_date, 'DD-MM-YYYY') as application_date"),
+                'prop_owners.owner_name',
+                'prop_properties.balance',
+                'ulb_masters.ulb_name'
+            )
+            ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
+            ->join('ulb_masters', 'ulb_masters.id', 'prop_properties.ulb_id')
+            ->leftJoin('prop_demands', function ($join) {
+                $join->on('prop_demands.property_id', '=', 'prop_properties.id')
+                    ->where('prop_demands.paid_status', 0);
+            })
+            ->havingRaw("SUM(prop_demands.balance) > 0")
+            ->groupBy(
+                'prop_properties.id',
+                'prop_properties.holding_no',
+                'prop_properties.new_holding_no',
+                'prop_properties.application_date',
+                'prop_owners.owner_name',
+                'prop_properties.balance',
+                'ulb_masters.ulb_name',
+            )
+            ->get(); // Fetch initial data without demand amount
+
+        // Retrieve dues for each property
+        foreach ($properties as $property) {
+            $req->merge(["propId" => $property->id]);
+            $demandDues = $this->getHoldingDues($req);
+            $demandData = $demandDues->original['data'];
+            if ($demandData)
+                if (!$demandData)
+                    throw new Exception("Demand Not Available");
+            $property->total_demand_amount  = $demandData['duesList']['payableAmount'];
+        }
+        return $properties;
+    }
+
+
+    /**
+     * | View details of the caretaken water connection
+     * | using user id
+     * | @param request
+        | Working
+        | Serial No : 07
+     */
+    public function viewCaretakenConnection(Request $request)
+    {
+        try {
+            $mWaterWaterConsumer        = new WaterConsumer();
+            $mActiveCitizenUndercare    = new ActiveCitizenUndercare();
+
+            $connectionDetails = $mActiveCitizenUndercare->getDetailsByCitizenId();
+            $checkDemand = collect($connectionDetails)->first();
+            if (is_null($checkDemand))
+                throw new Exception("Under taken data not found!");
+
+            $consumerIds = collect($connectionDetails)->pluck('consumer_id');
+            $consumerDetails = $mWaterWaterConsumer->getConsumerByIds($consumerIds)->get();
+            $checkConsumer = collect($consumerDetails)->first();
+            if (is_null($checkConsumer)) {
+                throw new Exception("Consuemr Details Not Found!");
+            }
+            return $consumerDetails;
+            // return responseMsgs(true, 'List of undertaken water connections!', remove_null($consumerDetails), "", "01", ".ms", "POST", $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "", "01", ".ms", "POST", $request->deviceId);
+        }
+    }
+
+    /**
+     * | Generate Payment Receipt for Property and Water Connection
+     * | @param request
+     * | Working
+     * | Serial No : 08
+     * | @return json
+     * | @throws Exception
+     * | @version 1.0
+     * | @since 1.0
+     * | @date 2025-03-06
+     * | @made by Arshad Hussain
+     */
+    public function propPaymentReceiptv1(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            ['tranNo' => 'required']
+        );
+        if ($validated->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation error',
+                'errors' => $validated->errors()
+            ], 401);
+        }
+
+        try {
+            $mTransaction = new PropTransaction();
+            $mPropPenalties = new PropPenaltyrebate();
+            $safController = new ActiveSafController($this->_safRepo);
+            $paymentReceiptHelper = new PaymentReceiptHelper;
+            $mUlbMasters = new UlbMaster();
+
+            $mTowards = Config::get('PropertyConstaint.SAF_TOWARDS');
+            $mAccDescription = Config::get('PropertyConstaint.ACCOUNT_DESCRIPTION');
+            $mDepartmentSection = Config::get('PropertyConstaint.DEPARTMENT_SECTION');
+
+            $rebatePenalMstrs = collect(Config::get('PropertyConstaint.REBATE_PENAL_MASTERS'));
+            $onePercKey = $rebatePenalMstrs->where('id', 1)->first()['value'];
+            $specialRebateKey = $rebatePenalMstrs->where('id', 6)->first()['value'];
+            $firstQtrKey = $rebatePenalMstrs->where('id', 2)->first()['value'];
+            $onlineRebate = $rebatePenalMstrs->where('id', 3)->first()['value'];
+
+            // Fetch multiple transactions
+            $propTransList = $mTransaction->getPropByTranPropIdv1($req->tranNo);
+
+            if ($propTransList->isEmpty()) {
+                throw new Exception("Transaction Not Found");
+            }
+
+            $receiptData = [];
+
+            foreach ($propTransList as $propTrans) {
+                $reqPropId = new Request(['propertyId' => $propTrans->property_id]);
+                $propProperty = $safController->getPropByHoldingNo($reqPropId)->original['data'];
+                if (empty($propProperty)) continue;
+
+                $ownerDetails = $propProperty['owners']->first();
+                $ulbDetails = $mUlbMasters->getUlbDetails($propProperty['ulb_id']);
+                $penalRebates = $mPropPenalties->getPropPenalRebateByTranId($propTrans->id);
+
+                $onePercPenalty = collect($penalRebates)->where('head_name', $onePercKey)->first()->amount ?? 0;
+                $rebate = collect($penalRebates)->where('head_name', 'Rebate')->first()->amount ?? "";
+                $specialRebate = collect($penalRebates)->where('head_name', $specialRebateKey)->first()->amount ?? 0;
+                $firstQtrRebate = collect($penalRebates)->where('head_name', $firstQtrKey)->first()->amount ?? 0;
+                $jskOrOnlineRebate = collect($penalRebates)->where('head_name', $onlineRebate)->first()->amount ?? 0;
+
+                $lateAssessmentPenalty = 0;
+                $taxDetails = $paymentReceiptHelper->readPenalyPmtAmts($lateAssessmentPenalty, $onePercPenalty, $rebate, $specialRebate, $firstQtrRebate, $propTrans->amount, $jskOrOnlineRebate);
+                $totalRebatePenals = $paymentReceiptHelper->calculateTotalRebatePenals($taxDetails);
+
+                $propReceiptData[] = [
+                    "departmentSection" => $mDepartmentSection,
+                    "accountDescription" => $mAccDescription,
+                    "transactionDate" => Carbon::parse($propTrans->tran_date)->format('d-m-Y'),
+                    "transactionNo" => $propTrans->tran_no,
+                    "transactionTime" => $propTrans->created_at->format('H:i:s'),
+                    "applicationNo" => !empty($propProperty['new_holding_no']) ? $propProperty['new_holding_no'] : $propProperty['holding_no'],
+                    "customerName" => !empty($propProperty['applicant_name']) ? $propProperty['applicant_name'] : $ownerDetails['owner_name'],
+                    "mobileNo" => $ownerDetails['mobile_no'],
+                    "receiptWard" => $propProperty['new_ward_no'],
+                    "address" => $propProperty['prop_address'],
+                    "paidFrom" => $propTrans->from_fyear,
+                    "paidFromQtr" => $propTrans->from_qtr,
+                    "paidUpto" => $propTrans->to_fyear,
+                    "paidUptoQtr" => $propTrans->to_qtr,
+                    "paymentMode" => $propTrans->payment_mode,
+                    "bankName" => $propTrans->bank_name,
+                    "branchName" => $propTrans->branch_name,
+                    "chequeNo" => $propTrans->cheque_no,
+                    "chequeDate" => ymdToDmyDate($propTrans->cheque_date),
+                    "demandAmount" => $propTrans->demand_amt,
+                    "taxDetails" => $taxDetails,
+                    "totalRebate" => $totalRebatePenals['totalRebate'],
+                    "totalPenalty" => $totalRebatePenals['totalPenalty'],
+                    "ulbId" => $propProperty['ulb_id'],
+                    "oldWardNo" => $propProperty['old_ward_no'],
+                    "newWardNo" => $propProperty['new_ward_no'],
+                    "towards" => $mTowards,
+                    "description" => ["keyString" => "Holding Tax"],
+                    "totalPaidAmount" => $propTrans->amount,
+                    "paidAmtInWords" => getIndianCurrency($propTrans->amount),
+                    "tcName" => $propTrans->tc_name,
+                    "tcMobile" => $propTrans->tc_mobile,
+                    "ulbDetails" => $ulbDetails
+                ];
+            }
+
+            if (empty($propReceiptData)) {
+                throw new Exception("No valid property data found for the given transaction number.");
+            }
+            // water payment receipts
+            $waterReceiptData = $this->generateDemandPaymentReceipt($req);
+            $receiptData[] = $waterReceiptData->original['data'];
+            $receiptData = [
+                'propertyReceipt' => $propReceiptData,
+                'waterReceipt' => $receiptData,
+                'propSumAmount' => collect($propReceiptData)->sum('totalPaidAmount'),
+                'propSumAmountInWords' => getIndianCurrency(collect($propReceiptData)->sum('totalPaidAmount')),
+                'waterSumAmount' => collect($receiptData)->sum('totalPaidAmount'),
+                'waterSumAmountInWords' => getIndianCurrency(collect($receiptData)->sum('totalPaidAmount')),
+                'sumAmount' => collect($propReceiptData)->sum('totalPaidAmount') + collect($receiptData)->sum('totalPaidAmount'),
+                'sumAmountInWords' => getIndianCurrency(collect($propReceiptData)->sum('totalPaidAmount') + collect($receiptData)->sum('totalPaidAmount'))
+            ];
+
+            return responseMsgs(true, "Payment Receipts", remove_null($receiptData), "011510", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "011510", "1.0", "", "POST", $req->deviceId);
+        }
+    }
+
+    /**
+     * | Generate Demand Payment receipt
+     * | @param req
+        | Serial No : 09
+        | Working
+     */
+    public function generateDemandPaymentReceipt(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            ['tranNo' => 'required']
+        );
+
+        if ($validated->fails()) {
+            return validationError($validated);
+        }
+
+        try {
+            $refTransactionNo = $req->tranNo;
+            $mWaterConsumerDemand = new WaterConsumerDemand();
+            $mWaterConsumer = new WaterConsumer();
+            $mWaterTranDetail = new WaterTranDetail();
+            $mWaterChequeDtl = new WaterChequeDtl();
+            $mWaterTran = new WaterTran();
+            $mWaterConsumerMeter = new WaterConsumerMeter();
+            $mWaterConsumerTax = new WaterConsumerTax();
+            $mUlbDetails = new UlbMaster();
+
+            $mTowardsDemand = Config::get("waterConstaint.TOWARDS_DEMAND");
+            $mTranType = Config::get("waterConstaint.PAYMENT_FOR");
+            $mAccDescription = $this->_accDescription;
+            $mDepartmentSection = $this->_departmentSection;
+            $mPaymentModes = $this->_paymentModes;
+
+            # Fetch all transactions with the same transaction number
+            $transactionDetails = $mWaterTran->getTransactionByTransactionNov1($refTransactionNo)
+                ->where('tran_type', $mTranType['1'])
+                ->get();
+
+            if ($transactionDetails->isEmpty()) {
+                throw new Exception("Transaction not found!");
+            }
+
+            # Initialize variables for aggregation
+            $totalPaidAmount = 0;
+            $totalDueAmount = 0;
+            $penaltyAmount = 0;
+            $refDemandAmount = 0;
+            $chequeDetails = null;
+            $demandIds = [];
+            $consumerDetails = null;
+            $initialReading = null;
+            $finalReading = null;
+            $fixedFrom = null;
+            $fixedUpto = null;
+            $lastDemand = null;
+            $currentDemand = null;
+
+            foreach ($transactionDetails as $transaction) {
+                $totalPaidAmount += $transaction->amount;
+                $totalDueAmount += $transaction->due_amount;
+
+                # If non-cash payment, get cheque details
+                if (!in_array($transaction->payment_mode, [$mPaymentModes['1'], $mPaymentModes['5']])) {
+                    $chequeDetails = $mWaterChequeDtl->getChequeDtlsByTransId($transaction->id)->first();
+                }
+
+                # Get consumer details (same for all transactions)
+                if (!$consumerDetails) {
+                    $consumerDetails = $mWaterConsumer->getRefDetailByConsumerNo("id", $transaction->related_id)->first();
+                    if (!$consumerDetails) {
+                        throw new Exception("Application details not found!");
+                    }
+                }
+
+
+                # Fetch all transactions with the same transaction number
+                $transactionDetails = $mWaterTran->getTransactionByTransactionNov2($refTransactionNo)
+                    ->where('tran_type', $mTranType['1'])
+                    ->firstOrFail();
+                # Fetch demand details for this transaction
+                $detailsOfDemand = $mWaterTranDetail->getTransDemandByIds($transactionDetails->id)->get();
+                foreach ($detailsOfDemand as $demandDetail) {
+                    $demandIds[] = $demandDetail->demand_id;
+                }
+            }
+
+            # Get consumer demands collectively
+            $demandIds = array_unique($demandIds);
+            if (!empty($demandIds)) {
+                $consumerDemands = $mWaterConsumerDemand->getDemandCollectively($demandIds)
+                    ->orderBy('demand_from')
+                    ->get();
+
+                $penaltyAmount = $consumerDemands->sum('penalty');
+                $refDemandAmount = $consumerDemands->sum('balance_amount');
+
+                $taxids = $consumerDemands->pluck('consumer_tax_id')->filter();
+                if ($taxids->isNotEmpty()) {
+                    $meterReadings = $mWaterConsumerTax->getTaxById($taxids)
+                        ->orderByDesc('id')
+                        ->get();
+                    $lastDemand = optional($meterReadings->first())->initial_reading ?? null;
+                    $currentDemand = optional($meterReadings->first())->final_reading ?? null;
+                }
+
+                $fromDate = optional($consumerDemands->first())->demand_from;
+                $uptoDate = optional($consumerDemands->last())->demand_upto;
+
+                $startingDate = $fromDate ? Carbon::parse($fromDate)->startOfMonth() : null;
+                $endingDate = $uptoDate ? Carbon::parse($uptoDate)->endOfMonth() : null;
+            }
+
+            # Get consumer meter details
+            $consumerMeterDetails = $mWaterConsumerMeter->getMeterDetailsByConsumerId($consumerDetails->id)->first();
+
+            # Get ULB Details
+            $ulbDetails = $mUlbDetails->getUlbDetails($consumerDetails->ulb_id);
+
+            # Get consumer taxes
+            $consumerTaxes = $mWaterConsumerDemand->getConsumerTax($demandIds);
+            $initialReading = $consumerTaxes->whereIn("connection_type", ["Meter", "Metered"])->min("initial_reading");
+            $finalReading = $consumerTaxes->whereIn("connection_type", ["Meter", "Metered"])->max("final_reading");
+            $fixedFrom = $consumerTaxes->where("connection_type", "Fixed")->min("demand_from");
+            $fixedUpto = $consumerTaxes->where("connection_type", "Fixed")->max("demand_upto");
+
+            # Construct response data
+            $returnValues = [
+                "departmentSection" => $mDepartmentSection,
+                "accountDescription" => $mAccDescription,
+                "transactionNo" => $refTransactionNo,
+                "consumerNo" => $consumerDetails->consumer_no,
+                "customerName" => $consumerDetails->applicant_name,
+                "customerMobile" => $consumerDetails->mobile_no,
+                "address" => $consumerDetails->address,
+                "paidFrom" => $startingDate ? $startingDate->format('Y-m-d') : null,
+                "paidUpto" => $endingDate ? $endingDate->format('Y-m-d') : null,
+                "holdingNo" => $consumerDetails->holding_no,
+                "safNo" => $consumerDetails->saf_no,
+                "totalPaidAmount" => $totalPaidAmount,
+                "dueAmount" => $totalDueAmount,
+                "paymentMode" => $transactionDetails->first()->payment_mode,
+                "bankName" => optional($chequeDetails)->bank_name,
+                "branchName" => optional($chequeDetails)->branch_name,
+                "chequeNo" => optional($chequeDetails)->cheque_no,
+                "chequeDate" => optional($chequeDetails)->cheque_date,
+                "penaltyAmount" => $penaltyAmount,
+                "demandAmount" => $refDemandAmount,
+                "ulbId" => $consumerDetails->ulb_id,
+                "ulbName" => $consumerDetails->ulb_name,
+                "WardNo" => $consumerDetails->ward_name,
+                "logo" => $consumerDetails->logo,
+                "towards" => $mTowardsDemand,
+                "description" => $mAccDescription,
+                "rebate" => 0,
+                "meterNo" => optional($consumerMeterDetails)->meter_no,
+                "waterConsumed" => ($finalReading ?? 0) - ($initialReading ?? 0),
+                "initialReading" => $initialReading ?? null,
+                "finalReading" => $finalReading ?? null,
+                "fixedPaidFrom" => $fixedFrom ? Carbon::parse($fixedFrom)->startOfMonth() : null,
+                "fixedPaidUpto" => $fixedUpto ? Carbon::parse($fixedUpto)->endOfMonth() : null,
+                "paidAmtInWords" => getIndianCurrency($totalPaidAmount),
+                "ulbDetails" => $ulbDetails,
+            ];
+
+            return responseMsgs(true, "Payment Receipt", remove_null($returnValues), "", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "", "01", "ms", "POST", "");
+        }
     }
 }

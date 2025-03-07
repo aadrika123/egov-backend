@@ -75,6 +75,34 @@ class WaterTran extends Model
             ->where('water_trans.status', 1);
         // ->where('water_tran_details.status', 1);
     }
+    /**
+     * | Get Transaction Details According to TransactionId
+     * | @param 
+     */
+    public function getTransactionByTransactionNov1($transactionNo)
+    {
+        return WaterTran::select(
+            'water_trans.*',
+        )
+            ->where('tran_no', $transactionNo)
+            ->where('water_trans.status', 1);
+        // ->where('water_tran_details.status', 1);
+    }
+    /**
+     * | Get Transaction Details According to TransactionId
+     * | @param 
+     */
+    public function getTransactionByTransactionNov2($transactionNo)
+    {
+        return WaterTran::select(
+            'water_trans.*',
+            'water_tran_details.demand_id'
+        )
+            ->leftjoin('water_tran_details', 'water_tran_details.tran_id', '=', 'water_trans.id')
+            ->where('tran_no', $transactionNo)
+            ->where('water_trans.status', 1);
+        // ->where('water_tran_details.status', 1);
+    }
 
     /**
      * | Enter the default details of the transacton which have 0 Connection charges
@@ -163,6 +191,39 @@ class WaterTran extends Model
         $waterTrans->adjustment_amount  = $req['adjustedAmount'] ?? 0;
         $waterTrans->pg_response_id     = $req['pgResponseId'] ?? null;
         $waterTrans->pg_id              = $req['pgId'] ?? null;
+        if (isset($req->penaltyIds)) {
+            $waterTrans->penalty_ids    = $req->penaltyIds;
+            $waterTrans->is_penalty     = $req->isPenalty;
+        }
+        $waterTrans->save();
+
+        return [
+            'id' => $waterTrans->id
+        ];
+    }
+    /**
+     * | Post Water Transaction
+        | Make the column for pg_response_id and pg_id
+     */
+    public function waterTransactionv1($req, $consumer)
+    {
+        $waterTrans = new WaterTran();
+        $waterTrans->related_id         = $req['id'];
+        $waterTrans->amount             = $req['amount'];
+        $waterTrans->tran_type          = $req['chargeCategory'];
+        $waterTrans->tran_date          = $req['todayDate'];
+        $waterTrans->tran_no            = $req['tranNo'];
+        $waterTrans->payment_mode       = $req['paymentMode'];
+        $waterTrans->emp_dtl_id         = $req['userId'] ?? null;
+        $waterTrans->citizen_id         = $req['citizenId'] ?? null;
+        $waterTrans->is_jsk             = $req['isJsk'] ?? false;
+        $waterTrans->user_type          = $req['userType'];
+        $waterTrans->ulb_id             = $req['ulbId'];
+        $waterTrans->ward_id            = $consumer['ward_mstr_id'];
+        $waterTrans->due_amount         = $req['leftDemandAmount'] ?? 0;
+        $waterTrans->adjustment_amount  = $req['adjustedAmount'] ?? 0;
+        $waterTrans->pg_response_id     = $req['pgResponseId'] ?? null;
+        $waterTrans->direct_payment     = $req['directPayment'] ?? false;
         if (isset($req->penaltyIds)) {
             $waterTrans->penalty_ids    = $req->penaltyIds;
             $waterTrans->is_penalty     = $req->isPenalty;

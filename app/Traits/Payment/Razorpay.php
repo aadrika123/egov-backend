@@ -123,14 +123,14 @@ trait Razorpay
 
             $userId             = auth()->user()->id ?? $request->ghostUserId;
             // $workflowDetails    = $mWfWorkflow->listbyId($wfReq);
-            $ulbId              = $workflowDetails->ulb_id ?? $request->ulbId;                                           // ulbId
+            // $ulbId              = $workflowDetails->ulb_id ?? $request->ulbId;                                           // ulbId
             $refRazorpayId      = Config::get('razorpay.RAZORPAY_ID');
             $refRazorpayKey     = Config::get('razorpay.RAZORPAY_KEY');
             $mReciptId          = Str::random(15);                                                      // Static recipt ID
 
-            if (!$ulbId) {
-                throw new Exception("Ulb details not found!");
-            }
+            // if (!$ulbId) {
+            //     throw new Exception("Ulb details not found!");
+            // }
             $mApi = new Api($refRazorpayId, $refRazorpayKey);
             $mOrder = $mApi->order->create(array(
                 'receipt'           => $mReciptId,
@@ -144,7 +144,7 @@ trait Razorpay
                 'amount'        => $request->all()['amount'],
                 'currency'      => 'INR',                                                           // Static
                 'userId'        => $userId,
-                'ulbId'         => $ulbId,
+                'ulbId'         => 2,
                 'workflowId'    => $request->workflowId,
                 'applicationId' => $request->id,
                 'departmentId'  => $request->departmentId,
