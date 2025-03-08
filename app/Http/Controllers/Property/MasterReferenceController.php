@@ -3698,8 +3698,8 @@ class MasterReferenceController extends Controller
                 "About Us" => $aboutUsDtl,
                 "Act Rule" => $actRuleDtl,
                 "Administrative" => $admistrativeDtl,
-                "Total Hits" => $totalHits,
-                "Today's Hits" => $todayHits
+                "TotalHits" => $totalHits,
+                "TodayHits" => $todayHits
             ];
     
             return responseMsgs(true, "All Data", $list, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
