@@ -48,6 +48,7 @@ use App\Models\QuickLink;
 use App\Models\UsefulLink;
 use App\Models\UserManualHeading;
 use App\Models\UserManualHeadingDescription;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
 
 
@@ -3635,6 +3636,15 @@ class MasterReferenceController extends Controller
     public function dashboardData(Request $req)
     {
         try {
+            // Increment API hit count
+            $today = now()->toDateString();
+            $cacheKeyTotal = "dashboard_hits_total";
+            $cacheKeyToday = "dashboard_hits_" . $today;
+    
+            // Retrieve and update hit counts
+            $totalHits = Cache::increment($cacheKeyTotal, 1);
+            $todayHits = Cache::increment($cacheKeyToday, 1);
+    
             $whatsnew = new Mwhat();
             $notice = new ImportantNotice();
             $announcement = new Announcement();
@@ -3645,13 +3655,14 @@ class MasterReferenceController extends Controller
             $eService = new MEService();
             $impLink = new ImportantLink();
             $usefulLink = new UsefulLink();
-            $department =  new Department();
+            $department = new Department();
             $contact = new Contact();
             $citizenDesk = new CitizenDesk();
             $aboutUs = new AboutUsDetail();
+            
             $what = $whatsnew->listDash();
             $noticeDtl = $notice->listDash();
-            $announceDtl =  $announcement->listDash();
+            $announceDtl = $announcement->listDash();
             $quickDtl = $quickLink->listDash();
             $schemeDtl = $scheme->listDash();
             $mobileAppDtl = $mobileApp->listDash();
@@ -3667,6 +3678,7 @@ class MasterReferenceController extends Controller
             $aboutUsDtl = $aboutUs->listDash();
             $actRuleDtl = $this->listActRulev1($req);
             $admistrativeDtl = $this->listAdministrativev1($req);
+    
             $list = [
                 "Whats New" => $what,
                 "Important Notice" => $noticeDtl,
@@ -3685,14 +3697,17 @@ class MasterReferenceController extends Controller
                 "Slider" => $sliderDtl,
                 "About Us" => $aboutUsDtl,
                 "Act Rule" => $actRuleDtl,
-                "Administrative" => $admistrativeDtl
+                "Administrative" => $admistrativeDtl,
+                "Total Hits" => $totalHits,
+                "Today's Hits" => $todayHits
             ];
-
+    
             return responseMsgs(true, "All Data", $list, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
         }
     }
+    
 
     // added by alok 
     public function dashboardSliderData(Request $req)

@@ -309,6 +309,12 @@ class WaterConsumerActiveRequest extends Model
         return $this->belongsTo(WaterConsumer::class, "consumer_id", "id", "id")->first();
     }
 
+    public function waterConsumer()
+    {
+        return $this->hasOne(WaterConsumer::class, 'id', 'consumer_id');
+    }
+
+
     //eoc
 
 
@@ -599,4 +605,43 @@ class WaterConsumerActiveRequest extends Model
                 "emp_details_id" => $userId,
             ]);
     }
+
+    /* 
+    * | THis fun which is used to get the consumer details by application id
+    * | used in water disconnection workflow
+    * | creadted by : alok
+    */
+    public function getConsumerAllDetails($applicationId)
+    {
+        return WaterConsumerActiveRequest::select(
+                'water_consumer_active_requests.*', 
+                'water_consumers.holding_no',
+                'water_consumers.consumer_no',
+                'water_consumer_owners.applicant_name',
+                'water_owner_type_mstrs.owner_type',
+                'water_consumers.address',
+                'water_param_pipeline_types.pipeline_type',
+                'water_property_type_mstrs.property_type',
+                'water_connection_through_mstrs.connection_through',
+                'water_connection_type_mstrs.connection_type',
+                'water_consumers.area_sqft',
+                'water_consumers.category',
+                'water_consumers.flat_count',
+
+
+            )
+            ->join('water_consumers', 'water_consumers.id', '=', 'water_consumer_active_requests.consumer_id')
+            ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_consumers.id')
+            ->join('water_owner_type_mstrs', 'water_owner_type_mstrs.id', '=', 'water_consumers.owner_type_id')
+            ->join('water_param_pipeline_types', 'water_param_pipeline_types.id', '=', 'water_consumers.pipeline_type_id')
+            ->join('water_property_type_mstrs', 'water_property_type_mstrs.id', '=', 'water_consumers.property_type_id')
+            ->join('water_connection_through_mstrs', 'water_connection_through_mstrs.id', '=', 'water_consumers.connection_type_id')
+            ->join('water_connection_type_mstrs', 'water_connection_type_mstrs.id', '=', 'water_consumers.connection_type_id')
+            ->where('water_consumer_active_requests.id', $applicationId)
+            ->where('water_consumer_active_requests.status', true)
+            ->first();
+    }
+
+    
+    
 }

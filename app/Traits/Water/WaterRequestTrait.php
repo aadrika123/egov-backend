@@ -13,11 +13,11 @@ trait WaterRequestTrait
         $data = new Collection([
             ['displayString' => 'Ward No', 'key' => 'wardNo', 'value' => $req->ward_no],
             ['displayString' => 'Holding No', 'key' => 'holdingNo', 'value' => $req->holding_no],
-            ['displayString' => 'Owner Name', 'key' => 'ownerName', 'value' => $owners],
+            ['displayString' => 'Owner Name', 'key' => 'ownerName', 'value' => $req->applicant_name],
             ['displayString' => 'Consumer NO', 'key' => 'ownerName', 'value' => $req->consumer_no],
             ['displayString' => 'Application Type', 'key' => 'applicationType', 'value' => $req->application_type],
-            ['displayString' => 'Ownership Type', 'key' => 'ownershipType', 'value' => $req->ownership_type],
-            ['displayString' => 'Apply-Date', 'key' => 'applyDate', 'value' => $req->application_date],
+            ['displayString' => 'Ownership Type', 'key' => 'ownershipType', 'value' => $req->owner_type],
+            ['displayString' => 'Apply-Date', 'key' => 'applyDate', 'value' => $req->apply_date],
             ['displayString' => 'Reson', 'key' => 'area', 'value' => $req->reason],
         ]);
         if(trim($req->license_no))
@@ -32,26 +32,26 @@ trait WaterRequestTrait
     public function generateBasicDetails($data)
     {
         return new Collection([
-            ['displayString' => 'Application No', 'key' => 'applicationNo', 'value' => $data->application_no],
-            ['displayString' => 'Reason', 'key' => 'Reason', 'value' => $data->reason],
-            ['displayString' => 'Ward No', 'key' => 'wardNo', 'value' => $data->ward_no],
-            ['displayString' => 'Holding No', 'key' => 'state', 'value' => $data->consumerDetails->holding_no??""],
-            ['displayString' => 'Consumer No', 'key' => 'newWardNo', 'value' => $data->consumerDetails->consumer_no??""],
-            ['displayString' => 'Consumer Address', 'key' => 'ownershipType', 'value' => $data->consumerDetails->address??""],
-            ['displayString' => 'Property Type', 'key' => 'propertyType', 'value' => $data->property_type],
-            ['displayString' => 'Application Type', 'key' => 'applicationType', 'value' => $data->application_type],
-            ['displayString' => 'Firm Type', 'key' => 'firmType', 'value' => $data->firm_type],
-            ['displayString' => 'Nature Of Business', 'key' => 'natureofBusiness', 'value' => $data->nature_of_bussiness],
-            ['displayString' => 'K No.', 'key' => 'kNo', 'value' => $data->k_no],
-            ['displayString' => 'Area In Sqft.', 'key' => 'area', 'value' => $data->area_in_sqft],
-            ['displayString' => 'Account No', 'key' => 'accountNo', 'value' => $data->account_no],
-            ['displayString' => 'Firm Name', 'key' => 'firmName', 'value' => $data->firm_name],
-            ['displayString' => 'Cateogry Type', 'key' => 'categoryType', 'value' => $data->category_type],
-            ['displayString' => 'Firm Establishment Date', 'key' => 'establishmentDate', 'value' => $data->establishment_date],
-            ['displayString' => 'Address', 'key' => 'address', 'value' => $data->address],
-            ['displayString' => 'Landmark', 'key' => 'landmark', 'value' => $data->landmark],
-            ['displayString' => 'Applied Date', 'key' => 'applicationDate', 'value' => $data->apply_date],
-            ['displayString' => 'Valid Upto', 'key' => 'validUpto', 'value' => $data->valid_upto],
+            ['displayString' => 'Ward No',                  'key' => 'wardNo',              'value' => $data->ward_no],
+            ['displayString' => 'Connection Type',          'key' => 'connectionType',      'value' => $data->connection_type],
+            ['displayString' => 'Property Type',            'key' => 'propertyType',        'value' => $data->property_type],
+            ['displayString' => 'Connection Through',       'key' => 'connectionThrough',   'value' => $data->connection_through],
+            ['displayString' => 'Cateogry',                 'key' => 'Category',            'value' => $data->category],
+            ['displayString' => 'Flat Count',               'key' => 'flatCount',           'value' => $data->flat_count],
+            ['displayString' => 'Pipeline Type',            'key' => 'PipelineType',        'value' => $data->pipeline_type],
+            ['displayString' => 'Apply From',               'key' => 'applyFrom',           'value' => $data->apply_from],
+            ['displayString' => 'Applied Date',             'key' => 'applicationDate',     'value' => $data->apply_date],
+        ]);
+    }
+    public function generatePropertyDetails($data)
+    {
+        return new Collection([
+            ['displayString' => 'Holding No',               'key' => 'state',               'value' => $data->holding_no??""],
+            ['displayString' => 'Ward No',                  'key' => 'wardNo',              'value' => $data->ward_no],
+            ['displayString' => 'Area In Sqft.',            'key' => 'AreaInSqft',          'value' => $data->area_sqft],
+            ['displayString' => 'Consumer Address',         'key' => 'Address',             'value' => $data->address??""],
+            ['displayString' => 'Landmark',                 'key' => 'Landmark',            'value' => $data->landmark],
+            ['displayString' => 'Pin',                      'key' => 'Pin',                 'value' => $data->pin],
         ]);
     }
 
@@ -71,6 +71,7 @@ trait WaterRequestTrait
             ['displayString' => 'Approval Date', 'key' => 'firmName', 'value' => $data->approve_date?Carbon::parse($data->approve_date)->format("d-m-Y"):""],
         ]);
     }
+    
 
     public function generateConsumerOwnersDetails($data)
     {
@@ -94,7 +95,7 @@ trait WaterRequestTrait
         return collect($ownerDetails)->map(function ($ownerDetail, $key) {
             return [
                 $key + 1,
-                $ownerDetail['owner_name'],
+                $ownerDetail['applicant_name'],
                 // $ownerDetail['gender'],
                 // $ownerDetail['dob'],
                 $ownerDetail['guardian_name'],
