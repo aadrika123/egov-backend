@@ -85,7 +85,8 @@ class WaterTran extends Model
             'water_trans.*',
         )
             ->where('tran_no', $transactionNo)
-            ->where('water_trans.status', 1);
+            ->where('water_trans.status', 1)
+            ->where('direct_payment', 1);
         // ->where('water_tran_details.status', 1);
     }
     /**

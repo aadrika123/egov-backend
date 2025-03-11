@@ -2367,7 +2367,9 @@ class HoldingTaxController extends Controller
             // Fetch multiple transactions
             $propTransList = $mTransaction->getPropByTranPropIdv1($req->tranNo);
             $receiptData = [];
-            if (!empty($propTransList) && is_array($propTransList)) {
+            $propReceiptData = [];
+            if ($propTransList->isNotEmpty()) {
+
                 foreach ($propTransList as $propTrans) {
                     $reqPropId = new Request(['propertyId' => $propTrans->property_id]);
                     $propProperty = $safController->getPropByHoldingNo($reqPropId)->original['data'];
@@ -2429,25 +2431,27 @@ class HoldingTaxController extends Controller
                 }
             }
 
-            // water payment receipts
             $waterReceiptData = $this->generateDemandPaymentReceipt($req);
             $waterReceipt = $waterReceiptData->original['data'] ?? [];
 
+            // Ensure water receipt data exists, otherwise default to empty values
+            $waterTotalAmount = !empty($waterReceipt) ? ($waterReceiptData->original['data']['totalPaidAmount'] ?? 0) : 0;
+            $waterTotalAmountInWords = !empty($waterReceipt) ? getIndianCurrency($waterTotalAmount) : "Zero Rupees";
+
             $propTrans = $propTransList[0] ?? null; // Get first transaction
-            $propReceiptData = [];
 
             $receiptData = [
-                'propertyReceipt' => $propReceiptData ?? [],
+                'propertyReceipt' => $propReceiptData,
                 'waterReceipt' => $waterReceipt,
                 'propSumAmount' => collect($propReceiptData)->sum('totalPaidAmount'),
                 'propSumAmountInWords' => getIndianCurrency(collect($propReceiptData)->sum('totalPaidAmount')),
-                'waterSumAmount' => collect($waterReceipt)->sum('totalPaidAmount'),
-                'waterSumAmountInWords' => getIndianCurrency(collect($waterReceipt)->sum('totalPaidAmount')),
-                'sumAmount' => collect($propReceiptData)->sum('totalPaidAmount') + collect($waterReceipt)->sum('totalPaidAmount'),
-                'sumAmountInWords' => getIndianCurrency(collect($propReceiptData)->sum('totalPaidAmount') + collect($waterReceipt)->sum('totalPaidAmount')),
+                'waterSumAmount' => $waterTotalAmount,
+                'waterSumAmountInWords' => $waterTotalAmountInWords,
+                'sumAmount' => collect($propReceiptData)->sum('totalPaidAmount') + $waterTotalAmount,
+                'sumAmountInWords' => getIndianCurrency(collect($propReceiptData)->sum('totalPaidAmount') + $waterTotalAmount),
                 'transactionNo' => $req->tranNo,
-                'transactionDate' => $propTrans ? Carbon::parse($propTrans->tran_date)->format('d-m-Y') : collect($waterReceipt)->first()['tranDate'] ?? '',
-                'ulbDetails' => $ulbDetails ?? collect($waterReceipt)->first()['ulbDetails'] ?? []
+                'transactionDate' => $propTrans ? Carbon::parse($propTrans->tran_date)->format('d-m-Y') : ($waterReceiptData->original['data']['tranDate'] ?? ''),
+                'ulbDetails' => $ulbDetails ?? ($waterReceiptData->original['data']['ulbDetails'] ?? [])
             ];
 
             return responseMsgs(true, "Payment Receipts", remove_null($receiptData), "011510", "1.0", "", "POST", $req->deviceId ?? "");
@@ -2598,7 +2602,7 @@ class HoldingTaxController extends Controller
                 "totalPaidAmount" => $totalPaidAmount,
                 "dueAmount" => $totalDueAmount,
                 "paymentMode" => $transactionDetails->first()->payment_mode,
-                "tranDate" => $transactionDetails->first()->tran_date,
+                "tranDate" => $transactionDetails->tran_date,
                 "bankName" => optional($chequeDetails)->bank_name,
                 "branchName" => optional($chequeDetails)->branch_name,
                 "chequeNo" => optional($chequeDetails)->cheque_no,
