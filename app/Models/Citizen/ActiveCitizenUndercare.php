@@ -72,6 +72,17 @@ class ActiveCitizenUndercare extends Model
             ->where('deactive_status', false)
             ->get();
     }
+    /**
+     * | Get Details according to user Id
+     * | @param 
+     */
+    public function getDetailsByCitizenIdv1()
+    {
+        $user = auth()->user();
+        return ActiveCitizenUndercare::where('citizen_id', $user->id)
+            ->where('deactive_status', false)
+            ->get();
+    }
 
     /**
      * | Get Property By Citizen Id

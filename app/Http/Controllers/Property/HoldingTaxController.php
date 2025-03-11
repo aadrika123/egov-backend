@@ -2303,7 +2303,7 @@ class HoldingTaxController extends Controller
             $mWaterWaterConsumer        = new WaterConsumer();
             $mActiveCitizenUndercare    = new ActiveCitizenUndercare();
 
-            $connectionDetails = $mActiveCitizenUndercare->getDetailsByCitizenId();
+            $connectionDetails = $mActiveCitizenUndercare->getDetailsByCitizenIdv1();
             $checkDemand = collect($connectionDetails)->first();
             if (is_null($checkDemand))
                 throw new Exception("Under taken data not found!");
@@ -2311,9 +2311,6 @@ class HoldingTaxController extends Controller
             $consumerIds = collect($connectionDetails)->pluck('consumer_id');
             $consumerDetails = $mWaterWaterConsumer->getConsumerByIds($consumerIds)->get();
             $checkConsumer = collect($consumerDetails)->first();
-            if (is_null($checkConsumer)) {
-                throw new Exception("Consuemr Details Not Found!");
-            }
             return $consumerDetails;
             // return responseMsgs(true, 'List of undertaken water connections!', remove_null($consumerDetails), "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
@@ -2430,7 +2427,7 @@ class HoldingTaxController extends Controller
                     throw new Exception("No valid property data found for the given transaction number.");
                 }
             }
-
+            // for water payment reciept
             $waterReceiptData = $this->generateDemandPaymentReceipt($req);
             $waterReceipt = $waterReceiptData->original['data'] ?? [];
 
