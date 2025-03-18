@@ -88,7 +88,9 @@ return [
             'schema' => 'public',
             'sslmode' => 'prefer',
             'options'   => [
-                PDO::ATTR_PERSISTENT => true,
+                // PDO::ATTR_PERSISTENT => true,
+                PDO::ATTR_EMULATE_PREPARES => true, // :white_check_mark: Required for PgBouncer in transaction mode
+                
             ],
         ],
 
@@ -107,7 +109,8 @@ return [
             'schema' => 'public',
             'sslmode' => 'prefer',
             'options'   => [
-                PDO::ATTR_PERSISTENT => true,
+                // PDO::ATTR_PERSISTENT => true,
+                PDO::ATTR_EMULATE_PREPARES => true, // :white_check_mark: Required for PgBouncer in transaction mode
             ],
         ],
 
@@ -126,7 +129,8 @@ return [
             'schema' => 'public',
             'sslmode' => 'prefer',
             'options'   => [
-                PDO::ATTR_PERSISTENT => true,
+                // PDO::ATTR_PERSISTENT => true,
+                PDO::ATTR_EMULATE_PREPARES => true, // :white_check_mark: Required for PgBouncer in transaction mode
             ],
         ],
 
@@ -145,7 +149,8 @@ return [
             'schema' => 'public',
             'sslmode' => 'prefer',
             'options'   => [
-                PDO::ATTR_PERSISTENT => true,
+                // PDO::ATTR_PERSISTENT => true,
+                PDO::ATTR_EMULATE_PREPARES => true, // :white_check_mark: Required for PgBouncer in transaction mode
             ],
         ],
 
@@ -164,7 +169,8 @@ return [
             'schema' => 'public',
             'sslmode' => 'prefer',
             'options'   => [
-                PDO::ATTR_PERSISTENT => true,
+                // PDO::ATTR_PERSISTENT => true,
+                PDO::ATTR_EMULATE_PREPARES => true, // :white_check_mark: Required for PgBouncer in transaction mode
             ],
         ],
 
@@ -184,7 +190,8 @@ return [
             'schema' => 'public',
             'sslmode' => 'prefer',
             'options'   => [
-                PDO::ATTR_PERSISTENT => true,
+                // PDO::ATTR_PERSISTENT => true,
+                PDO::ATTR_EMULATE_PREPARES => true, // :white_check_mark: Required for PgBouncer in transaction mode
             ],
         ],
 
@@ -215,7 +222,8 @@ return [
             'schema' => 'public',
             'sslmode' => 'prefer',
             'options'   => [
-                PDO::ATTR_PERSISTENT => true,
+                // PDO::ATTR_PERSISTENT => true,
+                PDO::ATTR_EMULATE_PREPARES => true, // :white_check_mark: Required for PgBouncer in transaction mode
             ],
         ],
 
@@ -246,7 +254,8 @@ return [
             'schema' => 'public',
             'sslmode' => 'prefer',
             'options'   => [
-                PDO::ATTR_PERSISTENT => true,
+                // PDO::ATTR_PERSISTENT => true,
+                PDO::ATTR_EMULATE_PREPARES => true, // :white_check_mark: Required for PgBouncer in transaction mode
             ],
         ],
 
@@ -265,7 +274,8 @@ return [
             'schema' => 'public',
             'sslmode' => 'prefer',
             'options'   => [
-                PDO::ATTR_PERSISTENT => true,
+                // PDO::ATTR_PERSISTENT => true,
+                PDO::ATTR_EMULATE_PREPARES => true, // :white_check_mark: Required for PgBouncer in transaction mode
             ],
         ],
 
