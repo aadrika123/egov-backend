@@ -109,8 +109,7 @@ return [
             'schema' => 'public',
             'sslmode' => 'prefer',
             'options'   => [
-                // PDO::ATTR_PERSISTENT => true,
-                PDO::ATTR_EMULATE_PREPARES => true
+                PDO::ATTR_PERSISTENT => true,
             ],
         ],
 
@@ -129,8 +128,8 @@ return [
             'schema' => 'public',
             'sslmode' => 'prefer',
             'options'   => [
-                // PDO::ATTR_PERSISTENT => true,
-                PDO::ATTR_EMULATE_PREPARES => true
+                PDO::ATTR_PERSISTENT => true,
+                // PDO::ATTR_EMULATE_PREPARES => true
             ],
         ],
 
@@ -149,8 +148,8 @@ return [
             'schema' => 'public',
             'sslmode' => 'prefer',
             'options'   => [
-                // PDO::ATTR_PERSISTENT => true,
-                PDO::ATTR_EMULATE_PREPARES => true
+                PDO::ATTR_PERSISTENT => true,
+                // PDO::ATTR_EMULATE_PREPARES => true
             ],
         ],
 
@@ -169,8 +168,8 @@ return [
             'schema' => 'public',
             'sslmode' => 'prefer',
             'options'   => [
-                // PDO::ATTR_PERSISTENT => true,
-                PDO::ATTR_EMULATE_PREPARES => true
+                PDO::ATTR_PERSISTENT => true,
+                // PDO::ATTR_EMULATE_PREPARES => true
             ],
         ],
 
@@ -190,8 +189,8 @@ return [
             'schema' => 'public',
             'sslmode' => 'prefer',
             'options'   => [
-                // PDO::ATTR_PERSISTENT => true,
-                PDO::ATTR_EMULATE_PREPARES => true
+                PDO::ATTR_PERSISTENT => true,
+                // PDO::ATTR_EMULATE_PREPARES => true
             ],
         ],
 
@@ -222,8 +221,8 @@ return [
             'schema' => 'public',
             'sslmode' => 'prefer',
             'options'   => [
-                // PDO::ATTR_PERSISTENT => true,
-                PDO::ATTR_EMULATE_PREPARES => true
+                PDO::ATTR_PERSISTENT => true,
+                // PDO::ATTR_EMULATE_PREPARES => true
             ],
         ],
 
@@ -254,8 +253,8 @@ return [
             'schema' => 'public',
             'sslmode' => 'prefer',
             'options'   => [
-                // PDO::ATTR_PERSISTENT => true,
-                PDO::ATTR_EMULATE_PREPARES => true
+                PDO::ATTR_PERSISTENT => true,
+                // PDO::ATTR_EMULATE_PREPARES => true
             ],
         ],
 
@@ -274,8 +273,8 @@ return [
             'schema' => 'public',
             'sslmode' => 'prefer',
             'options'   => [
-                // PDO::ATTR_PERSISTENT => true,
-                PDO::ATTR_EMULATE_PREPARES => true
+                PDO::ATTR_PERSISTENT => true,
+                // PDO::ATTR_EMULATE_PREPARES => true
             ],
         ],
 
