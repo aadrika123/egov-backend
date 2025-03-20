@@ -2584,8 +2584,6 @@ class NewConnectionController extends Controller
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", "ms", "POST", "");
         }
     }
-
-
     /**
      * | Can View Site Details 
      * | Check if the provided date is matchin to the current date
