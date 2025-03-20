@@ -50,6 +50,7 @@ use App\Models\UserManualHeading;
 use App\Models\UserManualHeadingDescription;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Redis;
 
 
 
@@ -3633,18 +3634,23 @@ class MasterReferenceController extends Controller
             return responseMsgs(false, $e->getMessage(), "", "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
         }
     }
+
+
     public function dashboardData(Request $req)
     {
         try {
-            // Increment API hit count
+            // Increment API hit count using Redis
             $today = now()->toDateString();
+            
             $cacheKeyTotal = "dashboard_hits_total";
             $cacheKeyToday = "dashboard_hits_" . $today;
-    
-            // Retrieve and update hit counts
-            $totalHits = Cache::increment($cacheKeyTotal, 1);
-            $todayHits = Cache::increment($cacheKeyToday, 1);
-    
+
+            // Retrieve and update hit counts using Redis
+            $totalHits = Redis::incr($cacheKeyTotal);
+            $todayHits = Redis::incr($cacheKeyToday);
+
+            Redis::expire($cacheKeyToday, now()->endOfDay()->diffInSeconds());
+
             $whatsnew = new Mwhat();
             $notice = new ImportantNotice();
             $announcement = new Announcement();
@@ -3659,54 +3665,36 @@ class MasterReferenceController extends Controller
             $contact = new Contact();
             $citizenDesk = new CitizenDesk();
             $aboutUs = new AboutUsDetail();
-            
-            $what = $whatsnew->listDash();
-            $noticeDtl = $notice->listDash();
-            $announceDtl = $announcement->listDash();
-            $quickDtl = $quickLink->listDash();
-            $schemeDtl = $scheme->listDash();
-            $mobileAppDtl = $mobileApp->listDash();
-            $newsEventDtl = $newsEvent->listDash();
-            $eServiceDtl = $eService->listDash();
-            $impLinkDtl = $impLink->listDash();
-            $usefulLinkDtl = $usefulLink->listDash();
-            $departmentDtl = $department->listDash();
-            $contactDtl = $contact->listDash();
-            $cDeskDtl = $citizenDesk->listDash();
-            $sliderDtl = $this->allSliderListv1($req);
-            $assetdtl = $this->allListAssetesDash($req);
-            $aboutUsDtl = $aboutUs->listDash();
-            $actRuleDtl = $this->listActRulev1($req);
-            $admistrativeDtl = $this->listAdministrativev1($req);
-    
+
             $list = [
-                "Whats New" => $what,
-                "Important Notice" => $noticeDtl,
-                "Announcement" => $announceDtl,
-                "Quick Links" => $quickDtl,
-                "Scheme" => $schemeDtl,
-                "Mobile App" => $mobileAppDtl,
-                "News Event" => $newsEventDtl,
-                "E-Service" => $eServiceDtl,
-                "Important Link" => $impLinkDtl,
-                "Usefull Link" => $usefulLinkDtl,
-                "Department" => $departmentDtl,
-                "Contact" => $contactDtl,
-                "citizenDesk" => $cDeskDtl,
-                "Assets" => $assetdtl,
-                "Slider" => $sliderDtl,
-                "About Us" => $aboutUsDtl,
-                "Act Rule" => $actRuleDtl,
-                "Administrative" => $admistrativeDtl,
+                "Whats New" => $whatsnew->listDash(),
+                "Important Notice" => $notice->listDash(),
+                "Announcement" => $announcement->listDash(),
+                "Quick Links" => $quickLink->listDash(),
+                "Scheme" => $scheme->listDash(),
+                "Mobile App" => $mobileApp->listDash(),
+                "News Event" => $newsEvent->listDash(),
+                "E-Service" => $eService->listDash(),
+                "Important Link" => $impLink->listDash(),
+                "Usefull Link" => $usefulLink->listDash(),
+                "Department" => $department->listDash(),
+                "Contact" => $contact->listDash(),
+                "Citizen Desk" => $citizenDesk->listDash(),
+                "Assets" => $this->allListAssetesDash($req),
+                "Slider" => $this->allSliderListv1($req),
+                "About Us" => $aboutUs->listDash(),
+                "Act Rule" => $this->listActRulev1($req),
+                "Administrative" => $this->listAdministrativev1($req),
                 "TotalHits" => $totalHits,
                 "TodayHits" => $todayHits
             ];
-    
+
             return responseMsgs(true, "All Data", $list, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
         }
     }
+
     
 
     // added by alok 

@@ -180,9 +180,15 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
         Route::post('consumer/deactivation-upload-documents', 'uploadDocuments');
         Route::post('consumer/deactivation-upload-documents_view', 'getUploadDocuments');
         Route::post('consumer/deactivation-documents-verify', 'documentVerify');
-        Route::post('consumer/deactivation-approve-rejet', 'approveReject');
+        // Route::post('consumer/deactivation-approve-rejet', 'approveReject');
+        Route::post('consumer/deactivation-approve-rejet', 'approveRejectV1');
         Route::post('consumer/req/post-next-level', 'consumerPostNextLevel');
         //Route::post('consumer_doc-verify-reject', 'docVerifyRejects');
+        Route::post('get-rejected-documents-list', 'getRejectedDocumentsList');
+        Route::post('consumer/get-rejected-appl-details', 'getRejectedApplicationDetails');
+        Route::post('consumer/get-rejected-documents-only', 'getRejectedDocumentsOnly');
+        Route::post('consumers/reupload-water-doc', 'reuploadWaterDoc');
+        Route::post('consumers/post-next-level-appllication', 'postNextLevelApplication');
 
         //Route::post('consumer/req/approval-rejection', 'consumerDeactivationApprovalRejection');
     });

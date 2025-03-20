@@ -530,4 +530,32 @@ class WfActiveDocument extends Model
             ->where('status', 1)
             ->first();
     }
+    public function getConsumerDocs($consumerId)
+    {
+        $secondConnection = 'pgsql_water';
+        return DB::connection($secondConnection)
+            ->table('wf_active_documents as d')
+            ->select(
+                'd.id',
+                'd.document',
+                DB::raw("concat(d.relative_path, '/', d.document) as ref_doc_path"),
+                'd.remarks',
+                'd.verify_status',
+                'd.doc_code',
+                'd.doc_category',
+                'd.status',
+                'd.unique_id',
+                'd.reference_no'
+            )
+            ->join('water_consumer_active_requests as wcar', 'wcar.id', '=', 'd.active_id')   
+            ->whereIn('d.verify_status', [0, 2])
+
+            ->where('d.workflow_id', 193)
+            ->where('d.status', '!=', 0)
+            ->where('d.active_id', $consumerId)
+            ->get();
+    }
+
+
+
 }

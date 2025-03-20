@@ -166,6 +166,8 @@ class WaterConsumerActiveRequest extends Model
             'water_consumer_active_requests.ward_mstr_id',
             'water_consumer_active_requests.apply_date',
             'water_consumer_active_requests.payment_status',
+            'water_consumer_active_requests.doc_verify_status',
+            'water_consumer_active_requests.doc_upload_status',
             'ulb_ward_masters.ward_name',
             'ulb_masters.ulb_name',
             DB::raw('(
@@ -642,6 +644,74 @@ class WaterConsumerActiveRequest extends Model
             ->first();
     }
 
+    public static function rejectedDocuments()
+    {
+        return self::select(
+                'wf_active_documents.id AS doc_id',
+                'water_consumer_active_requests.id',
+                'water_consumer_active_requests.application_no',
+                'water_consumer_active_requests.ward_mstr_id',
+                'water_consumer_active_requests.apply_date as AppliedDate',
+                'water_consumer_active_requests.apply_from as applyBy',
+                'water_consumer_active_requests.current_role as btcBy',
+                'wf_roles.role_name as btcBy',
+                DB::raw('DATE(wf_active_documents.updated_at) as btcDate'),
+                'wf_active_documents.remarks as btcReason',
+                'water_consumers.consumer_no', 
+                'water_consumers.holding_no', 
+                'wccc.charge_category',
+                'water_consumer_owners.applicant_name',
+                'water_consumer_owners.mobile_no',
+                'water_consumer_owners.city As address'
+            )
+            ->join('water_consumers', 'water_consumers.id', '=', 'water_consumer_active_requests.consumer_id')
+            ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_consumers.id')
+            ->join('wf_active_documents', 'wf_active_documents.active_id', 'water_consumer_active_requests.id')    
+            ->join('water_consumer_charge_categories AS wccc', 'wccc.id', 'water_consumer_active_requests.charge_catagory_id') 
+            ->join('wf_roles', 'wf_roles.id', 'water_consumer_active_requests.current_role') 
+            ->where('wf_active_documents.verify_status', 2)
+            ->where('wf_active_documents.workflow_id', 193)
+            ->where('water_consumer_active_requests.parked', true);
+    }
     
+
+    public static function getRejectedAppDetails($consumerId)
+    {
+        return self::select(
+            
+            'wf_active_documents.id AS doc_id',
+            'water_consumer_active_requests.id',
+            'water_consumer_active_requests.application_no',
+            'water_consumers.consumer_no',            
+            'wf_active_documents.doc_code',
+            'wf_active_documents.remarks',
+            'wccc.charge_category',
+            'water_consumer_owners.applicant_name',
+            'water_consumers.address',
+            'water_consumers.area_sqft',
+            'water_consumers.category',
+            'water_owner_type_mstrs.owner_type',
+            'water_param_pipeline_types.pipeline_type',
+            'water_property_type_mstrs.property_type',
+            'water_connection_through_mstrs.connection_through',
+            'water_connection_type_mstrs.connection_type',
+            'water_consumers.area_sqft',
+        
+        )
+        ->join('water_consumers', 'water_consumers.id', '=', 'water_consumer_active_requests.consumer_id')
+        ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_consumers.id')
+        ->join('wf_active_documents', 'wf_active_documents.active_id', 'water_consumer_active_requests.id')    
+        ->join('water_consumer_charge_categories AS wccc', 'wccc.id', 'water_consumer_active_requests.charge_catagory_id')        
+        ->join('water_owner_type_mstrs', 'water_owner_type_mstrs.id', '=', 'water_consumers.owner_type_id')
+        ->join('water_param_pipeline_types', 'water_param_pipeline_types.id', '=', 'water_consumers.pipeline_type_id')
+        ->join('water_property_type_mstrs', 'water_property_type_mstrs.id', '=', 'water_consumers.property_type_id')
+        ->join('water_connection_through_mstrs', 'water_connection_through_mstrs.id', '=', 'water_consumers.connection_type_id')
+        ->join('water_connection_type_mstrs', 'water_connection_type_mstrs.id', '=', 'water_consumers.connection_type_id')
+        ->where('wf_active_documents.verify_status', 2)
+        ->where('wf_active_documents.workflow_id', 193)
+        ->where('wf_active_documents.active_id', $consumerId)
+        ->get();
+    }
+
     
 }

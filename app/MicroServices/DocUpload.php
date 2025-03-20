@@ -72,6 +72,44 @@ class DocUpload
     }
 
 
+
+    public function checkDoc1($request)
+    {
+        try {
+            // Validate if file is present
+            if (!$request->hasFile('image') || !$request->file('image')->isValid()) {
+                throw new Exception("Invalid or missing file.");
+            }
+
+            $file = $request->file('image');
+            $filePath = $file->getPathname();
+            $hashedFile = hash_file('sha256', $filePath);
+            $filename = $file->getClientOriginalName();
+
+            $dmsUrl = Config::get('module-constants.DMS_URL');
+            $api = "$dmsUrl/backend/document/upload";
+
+            $response = Http::withHeaders([
+                "x-digest"      => $hashedFile,
+                "token"         => "8Ufn6Jio6Obv9V7VXeP7gbzHSyRJcKluQOGorAD58qA1IQKYE0",
+                "folderPathId"  => 1
+            ])->attach('file', file_get_contents($filePath), $filename)
+            ->post($api, [
+                "tags" => $filename
+            ]);
+
+            if ($response->successful()) {
+                return json_decode($response->body(), true);
+            }
+
+            throw new Exception(json_decode($response->body(), true)["message"] ?? "Failed to upload document.");
+
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+
     public function severalDoc(Request $request)
     {
         if (!$request->metaData) {

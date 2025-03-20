@@ -136,10 +136,8 @@ trait WaterTrait
             'water_consumer_active_requests.application_no',
             'water_consumer_active_requests.workflow_id',
             'water_consumer_active_requests.apply_date',
-            'wco.applicant_name',
-            'wco.mobile_no',
             'water_consumers.consumer_no',
-            DB::raw("string_agg(wco.applicant_name,',') as applicantName"),
+            DB::raw("string_agg(wco.applicant_name,',') as ownerName"),
             DB::raw("string_agg(wco.mobile_no::VARCHAR,',') as mobileNo"),
             DB::raw("string_agg(wco.guardian_name,',') as guardianName"),
         )
@@ -148,6 +146,7 @@ trait WaterTrait
             ->leftjoin('ulb_ward_masters AS uwm', 'uwm.id', 'water_consumer_active_requests.ward_mstr_id')
             ->join('ulb_masters AS um', 'um.id', 'water_consumer_active_requests.ulb_id')
             ->where('water_consumer_active_requests.status', true)
+            ->where('water_consumer_active_requests.doc_upload_status', true)
             ->where('water_consumer_active_requests.payment_status', 1)
             ->where('water_consumer_active_requests.ulb_id', $ulbId)
             ->whereIn('water_consumer_active_requests.workflow_id', $workflowIds)

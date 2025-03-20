@@ -713,7 +713,7 @@ class WaterConsumerWfController extends Controller
 
             $inboxDetails = $this->getConsumerWfBaseQuerry($workflowIds, $ulbId)
                 ->whereNotIn('water_consumer_active_requests.current_role', $roleId)
-                ->whereIn('water_consumer_active_requests.ward_mstr_id', $occupiedWards)
+                // ->whereIn('water_consumer_active_requests.ward_mstr_id', $occupiedWards)
                 ->where('water_consumer_active_requests.is_escalate', false)
                 ->where('water_consumer_active_requests.parked', false)
                 ->orderByDesc('water_consumer_active_requests.id')
@@ -761,7 +761,7 @@ class WaterConsumerWfController extends Controller
 
             $inboxDetails = $this->getConsumerWfBaseQuerry($workflowIds, $ulbId)
                 ->whereIn('water_consumer_active_requests.current_role', $roleId)
-                ->whereIn('water_consumer_active_requests.ward_mstr_id', $occupiedWards)
+                // ->whereIn('water_consumer_active_requests.ward_mstr_id', $occupiedWards)
                 ->where('water_consumer_active_requests.is_escalate', true)
                 ->where('water_consumer_active_requests.parked', false)
                 ->orderByDesc('water_consumer_active_requests.id')
@@ -809,9 +809,9 @@ class WaterConsumerWfController extends Controller
 
             $inboxDetails = $this->getConsumerWfBaseQuerry($workflowIds, $ulbId)
                 ->whereIn('water_consumer_active_requests.current_role', $roleId)
-                ->whereIn('water_consumer_active_requests.ward_mstr_id', $occupiedWards)
+                // ->whereIn('water_consumer_active_requests.ward_mstr_id', $occupiedWards)
                 ->where('water_consumer_active_requests.is_escalate', false)
-                ->where('water_consumer_active_requests.parked', TRUE)
+                ->where('water_consumer_active_requests.parked', true)
                 ->orderByDesc('water_consumer_active_requests.id')
                 ->get();
             //->paginate($pages);
@@ -1708,9 +1708,10 @@ class WaterConsumerWfController extends Controller
 
         try {
             $req->validate([
-                'applicationId' => 'required|digits_between:1,9223372036854775807',
-                'currentRoleId' => 'required|integer',
-                'comment' => 'required|string'
+                'applicationId' => 'required|numeric',
+                'workflowId' => 'required|numeric',
+                'currentRoleId' => 'required|numeric',
+                'comment'       => 'required|string'
             ]);
 
             $waterConsumerActive = WaterConsumerActiveRequest::find($req->applicationId);
@@ -1733,9 +1734,9 @@ class WaterConsumerWfController extends Controller
             if (!$req->receiverRoleId) {
                 $req->merge(["receiverRoleId" => $role->backward_role_id ?? 0]);
             }
-            if ($waterConsumerActive->current_role != $req->senderRoleId) {
-                throw new Exception("Application Access Forbiden");
-            }
+            // if ($waterConsumerActive->current_role != $req->senderRoleId) {
+            //     throw new Exception("Application Access Forbiden");
+            // }
             $track = new WorkflowTrack();
             $lastworkflowtrack = $track->select("*")
                 ->where('ref_table_id_value', $req->applicationId)
@@ -1769,7 +1770,6 @@ class WaterConsumerWfController extends Controller
             return responseMsg(false, $e->getMessage(), "");
         }
     }
-
 
     public function checkWorckFlowForwardBackord(Request $request)
     {
@@ -1841,107 +1841,199 @@ class WaterConsumerWfController extends Controller
         return true;
     }
 
+    // public function approveRejectv1(Request $req)
+    // {
+    //     try {
+    //         $user = Auth()->user();
+    //         $user_id = $user->id;
+    //         $ulb_id = $user->ulb_id;
+    //         $_REF_TABLE = $mRefTable = "water_consumer_active_requests.id";
+    //         $_WF_MASTER_Id = Config::get('workflow-constants.WATER_DISCONNECTION');
+    //         $_MODULE_ID = Config::get('module-constants.WATER_MODULE_ID');
+
+    //         $refWorkflowId = $_WF_MASTER_Id;
+    //         $_COMMON_FUNCTION = new CommonFunction();
+    //         $_TRADE_CONSTAINT = Config::get("TradeConstant");
+    //         $role = $_COMMON_FUNCTION->getUserRoll($user_id, $ulb_id, $refWorkflowId);
+
+    //         $req->validate([
+    //             "applicationId" => "required",
+    //             "status" => "required",
+    //             "comment" => $req->status == 0 ? "required" : "nullable",
+    //         ]);
+    //         if (!$_COMMON_FUNCTION->checkUsersWithtocken("users")) {
+    //             throw new Exception("Citizen Not Allowed");
+    //         }
+
+
+    //         $refWorkflowId = $_WF_MASTER_Id;
+
+    //         $waterConsumerActive = WaterConsumerActiveRequest::find($req->applicationId);
+    //         ;
+    //         if (!$waterConsumerActive) {
+    //             throw new Exception("Data Not Found");
+    //         }
+    //         if ($waterConsumerActive->finisher != $role->role_id) {
+    //             throw new Exception("Forbidden Access");
+    //         }
+    //         if (!$req->senderRoleId) {
+    //             $req->merge(["senderRoleId" => $role->role_id ?? 0]);
+    //         }
+    //         if (!$req->receiverRoleId) {
+    //             if ($req->action == 'forward') {
+    //                 $req->merge(["receiverRoleId" => $role->forward_role_id ?? 0]);
+    //             }
+    //             if ($req->action == 'backward') {
+    //                 $req->merge(["receiverRoleId" => $role->backward_role_id ?? 0]);
+    //             }
+    //         }
+    //         $track = new WorkflowTrack();
+    //         $lastworkflowtrack = $track->select("*")
+    //             ->where('ref_table_id_value', $req->applicationId)
+    //             ->where('module_id', $_MODULE_ID)
+    //             ->where('ref_table_dot_id', "active_trade_licences")
+    //             ->whereNotNull('sender_role_id')
+    //             ->orderBy("track_date", 'DESC')
+    //             ->first();
+    //         $metaReqs['moduleId'] = $_MODULE_ID;
+    //         $metaReqs['workflowId'] = $waterConsumerActive->workflow_id;
+    //         $metaReqs['refTableDotId'] = 'active_trade_licences';
+    //         $metaReqs['refTableIdValue'] = $req->applicationId;
+    //         $metaReqs['user_id'] = $user_id;
+    //         $metaReqs['ulb_id'] = $ulb_id;
+    //         $metaReqs['trackDate'] = $lastworkflowtrack && $lastworkflowtrack->forward_date ? ($lastworkflowtrack->forward_date . " " . $lastworkflowtrack->forward_time) : Carbon::now()->format('Y-m-d H:i:s');
+    //         $metaReqs['forwardDate'] = Carbon::now()->format('Y-m-d');
+    //         $metaReqs['forwardTime'] = Carbon::now()->format('H:i:s');
+    //         $metaReqs['verificationStatus'] = ($req->status == 1) ? $_TRADE_CONSTAINT["VERIFICATION-STATUS"]["APROVE"] : $_TRADE_CONSTAINT["VERIFICATION-STATUS"]["REJECT"];
+    //         $req->merge($metaReqs);
+
+    //         $this->begin();
+
+    //         $track->saveTrack($req);
+    //         // Approval
+    //         if ($req->status == 1) {
+    //             $refUlbDtl = ModelsUlbMaster::find($waterConsumerActive->ulb_id);
+    //             // Objection Application replication
+    //             $approvedConsumerActive = $waterConsumerActive->replicate();
+    //             $approvedConsumerActive->setTable('water_consumer_approval_requests');
+    //             // $approvedLicence->pending_status = 5;
+    //             $approvedConsumerActive->id = $waterConsumerActive->id;
+    //             $approvedConsumerActive->save();
+    //             $waterConsumerActive->delete();
+    //             $msg = "Application Successfully Approved !!. Your License No Is ";
+    //         }
+
+    //         // Rejection
+    //         if ($req->status == 0) {
+    //             // Objection Application replication
+    //             $approvedConsumerActive = $waterConsumerActive->replicate();
+    //             $approvedConsumerActive->setTable('water_consumer_rejects_requests');
+    //             $approvedConsumerActive->id = $waterConsumerActive->id;
+    //             // $approvedLicence->pending_status = 4;
+    //             $approvedConsumerActive->save();
+    //             $waterConsumerActive->delete();
+    //             $msg = "Application Successfully Rejected !!";
+    //         }
+    //         $this->commit();
+
+    //         return responseMsgs(true, $msg, "", '010811', '01', '474ms-573', 'Post', '');
+    //     } catch (Exception $e) {
+    //         $this->rollBack();
+    //         return responseMsg(false, $e->getMessage(), "");
+    //     }
+    // }
+
+    /* 
+    * | this api is used to approve or reject the application
+    * |  
+    * | 
+    */
     public function approveRejectv1(Request $req)
     {
         try {
+
             $user = Auth()->user();
-            $user_id = $user->id;
-            $ulb_id = $user->ulb_id;
-            $_REF_TABLE = $mRefTable = "water_consumer_active_requests.id";
-            $_WF_MASTER_Id = Config::get('workflow-constants.WATER_DISCONNECTION');
-            $_MODULE_ID = Config::get('module-constants.WATER_MODULE_ID');
+            if (!$user) {
+                return responseMsgs(false, "Unauthorized access", "", '', '01', '', 'Post', '');
+            }
 
-            $refWorkflowId = $_WF_MASTER_Id;
-            $_COMMON_FUNCTION = new CommonFunction();
-            $_TRADE_CONSTAINT = Config::get("TradeConstant");
-            $role = $_COMMON_FUNCTION->getUserRoll($user_id, $ulb_id, $refWorkflowId);
-
+            // Validate the request
             $req->validate([
-                "applicationId" => "required",
-                "status" => "required",
-                "comment" => $req->status == 0 ? "required" : "nullable",
+                "applicationId" => "required|integer",
+                "workflowId" => "required|integer",
+                "roleId" => "required|integer",
+                "status" => "required|in:0,1",
+                "comment" => "required|string",
             ]);
-            if (!$_COMMON_FUNCTION->checkUsersWithtocken("users")) {
-                throw new Exception("Citizen Not Allowed");
+    
+            // Find the application
+            $application = WaterConsumerActiveRequest::find($req->applicationId);
+            if (!$application) {
+                return $this->rejectApplicationWithReason($application, "Application not found.");
             }
-
-
-            $refWorkflowId = $_WF_MASTER_Id;
-
-            $waterConsumerActive = WaterConsumerActiveRequest::find($req->applicationId);
-            ;
-            if (!$waterConsumerActive) {
-                throw new Exception("Data Not Found");
+    
+            // Ensure all conditions are met for approval
+            if ($application->current_role != $req->roleId) {
+                return $this->rejectApplicationWithReason($application, "Current role mismatch.");
             }
-            if ($waterConsumerActive->finisher != $role->role_id) {
-                throw new Exception("Forbidden Access");
+            if ($req->status !== true) {
+                return $this->rejectApplicationWithReason($application, "Status must be 1.");
             }
-            if (!$req->senderRoleId) {
-                $req->merge(["senderRoleId" => $role->role_id ?? 0]);
+            if ($application->workflow_id !== $req->workflowId) {
+                return $this->rejectApplicationWithReason($application, "Workflow ID mismatch.");
             }
-            if (!$req->receiverRoleId) {
-                if ($req->action == 'forward') {
-                    $req->merge(["receiverRoleId" => $role->forward_role_id ?? 0]);
-                }
-                if ($req->action == 'backward') {
-                    $req->merge(["receiverRoleId" => $role->backward_role_id ?? 0]);
-                }
+            if ($application->doc_verify_status != true) {
+                return $this->rejectApplicationWithReason($application, "Document verification is not completed.");
             }
-            $track = new WorkflowTrack();
-            $lastworkflowtrack = $track->select("*")
-                ->where('ref_table_id_value', $req->applicationId)
-                ->where('module_id', $_MODULE_ID)
-                ->where('ref_table_dot_id', "active_trade_licences")
-                ->whereNotNull('sender_role_id')
-                ->orderBy("track_date", 'DESC')
-                ->first();
-            $metaReqs['moduleId'] = $_MODULE_ID;
-            $metaReqs['workflowId'] = $waterConsumerActive->workflow_id;
-            $metaReqs['refTableDotId'] = 'active_trade_licences';
-            $metaReqs['refTableIdValue'] = $req->applicationId;
-            $metaReqs['user_id'] = $user_id;
-            $metaReqs['ulb_id'] = $ulb_id;
-            $metaReqs['trackDate'] = $lastworkflowtrack && $lastworkflowtrack->forward_date ? ($lastworkflowtrack->forward_date . " " . $lastworkflowtrack->forward_time) : Carbon::now()->format('Y-m-d H:i:s');
-            $metaReqs['forwardDate'] = Carbon::now()->format('Y-m-d');
-            $metaReqs['forwardTime'] = Carbon::now()->format('H:i:s');
-            $metaReqs['verificationStatus'] = ($req->status == 1) ? $_TRADE_CONSTAINT["VERIFICATION-STATUS"]["APROVE"] : $_TRADE_CONSTAINT["VERIFICATION-STATUS"]["REJECT"];
-            $req->merge($metaReqs);
+            if ($application->doc_upload_status != true) {
+                return $this->rejectApplicationWithReason($application, "Documents are not uploaded.");
+            }
+            if ($application->payment_status !== 1) {
+                return $this->rejectApplicationWithReason($application, "Payment is not completed.");
+            }
+            if ($application->charge_catagory_id !== 2) {
+                return $this->rejectApplicationWithReason($application, "Charge category is not 2.");
+            }
+            if ($application->je_doc_upload_status != true) {
+                return $this->rejectApplicationWithReason($application, "JE document upload is incomplete.");
+            }
+    
+            // If all conditions match, approve the application
+            $this->approveApplication($application);
+            return responseMsgs(true, "Application Successfully Approved!", "", '010811', '01', '200ms', 'Post', '');
 
-            $this->begin();
+        } 
+        catch (Exception $e) {
 
-            $track->saveTrack($req);
-            // Approval
-            if ($req->status == 1) {
-                $refUlbDtl = ModelsUlbMaster::find($waterConsumerActive->ulb_id);
-                // Objection Application replication
-                $approvedConsumerActive = $waterConsumerActive->replicate();
-                $approvedConsumerActive->setTable('water_consumer_approval_requests');
-                // $approvedLicence->pending_status = 5;
-                $approvedConsumerActive->id = $waterConsumerActive->id;
-                $approvedConsumerActive->save();
-                $waterConsumerActive->delete();
-                $msg = "Application Successfully Approved !!. Your License No Is ";
-            }
-
-            // Rejection
-            if ($req->status == 0) {
-                // Objection Application replication
-                $approvedConsumerActive = $waterConsumerActive->replicate();
-                $approvedConsumerActive->setTable('water_consumer_rejects_requests');
-                $approvedConsumerActive->id = $waterConsumerActive->id;
-                // $approvedLicence->pending_status = 4;
-                $approvedConsumerActive->save();
-                $waterConsumerActive->delete();
-                $msg = "Application Successfully Rejected !!";
-            }
-            $this->commit();
-
-            return responseMsgs(true, $msg, "", '010811', '01', '474ms-573', 'Post', '');
-        } catch (Exception $e) {
-            $this->rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+    
+    public function approveApplication($application)
+    {
+        DB::transaction(function () use ($application) {
+            $approvedApplication = $application->replicate();
+            $approvedApplication->setTable('water_consumer_approval_requests');
+            $approvedApplication->id = $application->id;
+            $approvedApplication->save();
+            $application->delete();
+        });
+    }
+    
+    public function rejectApplicationWithReason($application, $reason)
+    {
+        if ($application) {
+            DB::transaction(function () use ($application, $reason) {
+                $rejectedApplication = $application->replicate();
+                $rejectedApplication->setTable('water_consumer_rejects_requests');
+                $rejectedApplication->id = $application->id;
+                $rejectedApplication->rejection_reason = $reason;
+                $rejectedApplication->save();
+                $application->delete();
+            });
+        }
+        return responseMsgs(false, "Application Rejected: " . $reason, "", '010811', '01', '200ms', 'Post', '');
+    }   
 
     public function getDisApplicationsDetails($request)
     {
@@ -2451,5 +2543,208 @@ class WaterConsumerWfController extends Controller
         $mWaterConsumerActive->updateVerifyComplainRequest($request, $userId);
 
     }
+
+    /* 
+    * | This api is used to get the list of rejected documents
+    * | with consumers details as well 
+    */
+
+
+
+    public function getRejectedDocumentsList(Request $request)
+    {
+        try {
+            $mConsumerRequest = new WaterConsumerActiveRequest();
+            $perPage = $request->perPage ?? 10;
+    
+            // Paginate the result
+            $consumers = $mConsumerRequest->rejectedDocuments()->paginate($perPage);
+    
+            if ($consumers->isEmpty()) {
+                return response()->json(['status' => false, 'message' => 'No consumer documents found.'], 404);
+            }
+    
+            // Prepare custom pagination data
+            $paginationData = [
+                'per_page'    => $consumers->perPage(),
+                'total_pages' => $consumers->lastPage(),
+                'total_count' => $consumers->total(),
+                'data'        => $consumers->items(),
+            ];
+    
+            return response()->json([
+                'status'  => true,
+                'message' => 'Rejected consumers list retrieved successfully.',
+                'data'    => $paginationData
+            ], 200);
+    
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+
+    public function getRejectedDocumentsOnly(Request $request)
+    {
+        try {
+
+            $request->validate([
+                'consumerId' => 'required|integer',
+            ]);
+
+            $mwfActiveDocument = new WfActiveDocument();
+            $docUpload = new DocUpload();
+    
+            // Fetch rejected documents
+            $rejectedDocuments = $mwfActiveDocument->getConsumerDocs($request->consumerId);
+    
+            // Get document URLs
+            $documentsWithUrls = $docUpload->getDocUrl($rejectedDocuments);
+    
+            if ($documentsWithUrls->isEmpty()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'No rejected documents found.'
+                ], 404);
+            }
+    
+            return response()->json([
+                'status'  => true,
+                'message' => 'Rejected documents list retrieved successfully.',
+                'data'    => $documentsWithUrls
+            ], 200);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+    
+    public function reuploadWaterDoc(Request $req)
+    {
+        $validator = Validator::make($req->all(), [
+            "id" => "required|numeric",
+            "doc_code" => "required|string",
+            "image" => "required|mimes:pdf,jpeg,png,jpg|max:2048",
+        ]);
+
+        if ($validator->fails()) {
+            return validationError($validator);
+        }
+
+        try {
+            $user = authUser($req);
+            $wfDocId = $req->id;
+
+            // Fetch the document for the given ID and only those eligible for re-upload
+            $waterDetails = WfActiveDocument::where([
+                'id' => $wfDocId,
+                'status' => true
+            ])
+            ->whereIn('verify_status', [2, 0]) // Allow re-upload if verify_status is Rejected (2) or Pending (0)
+            ->first();
+
+            if (!$waterDetails) {
+                return responseMsgs(false, "Document not eligible for re-upload or not found.", "", "", "1.0", "", "POST", $req->deviceId ?? "");
+            }
+
+            // Upload new document to DMS
+            $docUpload = new DocUpload();
+            $docResponse = $docUpload->checkDoc1($req);
+
+            if (isset($docResponse['success']) && !$docResponse['success']) {
+                return $docResponse;
+            }
+
+            $docData = $docResponse['data'];
+
+            $metaReqs = [
+                'moduleId'      => Config::get('module-constants.WATER_MODULE_ID'),
+                'activeId'      => $waterDetails->active_id,
+                'workflowId'    => $waterDetails->workflow_id,
+                'ulbId'         => $waterDetails->ulb_id,
+                'relativePath'  => Config::get('waterConstaint.WATER_RELATIVE_PATH'),
+                'docCode'       => $req->doc_code,
+                'ownerDtlId'    => $req->ownerId,
+                'docCategory'   => $req->docCategory,
+                'auth'          => $user,
+                'uniqueId'      => $docData['uniqueId'] ?? '',
+                'referenceNo'   => $docData['ReferenceNo'] ?? '',
+            ];
+
+            $this->begin();
+
+            // Always update the same row; do not insert a new record
+            $waterDetails->editDocuments($waterDetails, new Request($metaReqs));
+
+            // Reset verify_status to 0 for re-verification
+            $waterDetails->verify_status = 0;
+            $waterDetails->save();
+
+            WaterConsumerActiveRequest::where('id', $waterDetails->active_id)
+            ->update(['doc_upload_status' => true]);
+
+            $this->commit();
+
+            return responseMsgs(true, "Document re-uploaded successfully and marked as Pending.", "", "", "1.0", "", "POST", $req->deviceId ?? "");
+
+        } catch (Exception $e) {
+            $this->rollback();
+            return responseMsgs(false, $e->getMessage(), "", "", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
+
+    public function postNextLevelApplication(Request $req)
+    {
+        $validator = Validator::make($req->all(), [
+            "applicationId" => "required|numeric",
+        ]);
+    
+        if ($validator->fails()) {
+            return validationError($validator);
+        }
+    
+        try {
+            $user = authUser($req);
+            $applicationId = $req->applicationId;
+    
+            // Check if application exists in water_consumer_active_requests
+            $application = WaterConsumerActiveRequest::find($applicationId);
+            if (!$application) {
+                return responseMsgs(false, "Application not found.", "", "", "1.0", "", "POST", $req->deviceId ?? "");
+            }
+    
+            // Optional: Check if any pending document exists (safe check)
+            $pendingDocsExist = WfActiveDocument::where([
+                'active_id' => $applicationId,
+                'status' => true,
+                'verify_status' => 0
+            ])->exists();
+    
+            if (!$pendingDocsExist) {
+                return responseMsgs(false, "No pending documents found for this application.", "", "", "1.0", "", "POST", $req->deviceId ?? "");
+            }
+    
+            $this->begin();
+    
+            // ✅ Update doc_upload_status = true and parked = false in water_consumer_active_requests
+            $application->doc_upload_status = true;
+            $application->parked = false;
+            $application->save();
+    
+            $this->commit();
+    
+            return responseMsgs(true, "Application updated successfully.", "", "", "1.0", "", "POST", $req->deviceId ?? "");
+    
+        } catch (Exception $e) {
+            $this->rollback();
+            return responseMsgs(false, $e->getMessage(), "", "", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+    
+
+
+
+
+    
 
 }
