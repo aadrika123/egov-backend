@@ -191,6 +191,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
         Route::post('consumers/post-next-level-appllication', 'postNextLevelApplication');
 
         //Route::post('consumer/req/approval-rejection', 'consumerDeactivationApprovalRejection');
+        //alok
     });
 
     /**
