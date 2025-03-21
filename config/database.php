@@ -89,7 +89,6 @@ return [
             'sslmode' => 'prefer',
             'options'   => [
                 PDO::ATTR_PERSISTENT => true,
-                // PDO::ATTR_EMULATE_PREPARES => true
                 
             ],
         ],
@@ -129,7 +128,6 @@ return [
             'sslmode' => 'prefer',
             'options'   => [
                 PDO::ATTR_PERSISTENT => true,
-                // PDO::ATTR_EMULATE_PREPARES => true
             ],
         ],
 
@@ -149,7 +147,6 @@ return [
             'sslmode' => 'prefer',
             'options'   => [
                 PDO::ATTR_PERSISTENT => true,
-                // PDO::ATTR_EMULATE_PREPARES => true
             ],
         ],
 
@@ -169,7 +166,6 @@ return [
             'sslmode' => 'prefer',
             'options'   => [
                 PDO::ATTR_PERSISTENT => true,
-                // PDO::ATTR_EMULATE_PREPARES => true
             ],
         ],
 
@@ -190,7 +186,6 @@ return [
             'sslmode' => 'prefer',
             'options'   => [
                 PDO::ATTR_PERSISTENT => true,
-                // PDO::ATTR_EMULATE_PREPARES => true
             ],
         ],
 
@@ -222,7 +217,6 @@ return [
             'sslmode' => 'prefer',
             'options'   => [
                 PDO::ATTR_PERSISTENT => true,
-                // PDO::ATTR_EMULATE_PREPARES => true
             ],
         ],
 
@@ -254,7 +248,6 @@ return [
             'sslmode' => 'prefer',
             'options'   => [
                 PDO::ATTR_PERSISTENT => true,
-                // PDO::ATTR_EMULATE_PREPARES => true
             ],
         ],
 
@@ -274,7 +267,6 @@ return [
             'sslmode' => 'prefer',
             'options'   => [
                 PDO::ATTR_PERSISTENT => true,
-                // PDO::ATTR_EMULATE_PREPARES => true
             ],
         ],
 
