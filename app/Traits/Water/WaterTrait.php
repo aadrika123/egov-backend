@@ -137,8 +137,8 @@ trait WaterTrait
             'water_consumer_active_requests.workflow_id',
             'water_consumer_active_requests.apply_date',
             'water_consumers.consumer_no',
-            DB::raw("string_agg(wco.applicant_name,',') as ownerName"),
-            DB::raw("string_agg(wco.mobile_no::VARCHAR,',') as mobileNo"),
+            DB::raw("string_agg(wco.applicant_name,',') as applicant_name"),
+            DB::raw("string_agg(wco.mobile_no::VARCHAR,',') as mobile_no"),
             DB::raw("string_agg(wco.guardian_name,',') as guardianName"),
         )
             ->join('water_consumers', 'water_consumers.id', 'water_consumer_active_requests.consumer_id')

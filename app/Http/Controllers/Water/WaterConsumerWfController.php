@@ -1976,8 +1976,8 @@ class WaterConsumerWfController extends Controller
             if ($application->current_role != $req->roleId) {
                 return $this->rejectApplicationWithReason($application, "Current role mismatch.");
             }
-            if ($req->status !== true) {
-                return $this->rejectApplicationWithReason($application, "Status must be 1.");
+            if ($application->status !== true) {
+                return $this->rejectApplicationWithReason($application, "Status must be true.");
             }
             if ($application->workflow_id !== $req->workflowId) {
                 return $this->rejectApplicationWithReason($application, "Workflow ID mismatch.");
@@ -2027,7 +2027,7 @@ class WaterConsumerWfController extends Controller
                 $rejectedApplication = $application->replicate();
                 $rejectedApplication->setTable('water_consumer_rejects_requests');
                 $rejectedApplication->id = $application->id;
-                $rejectedApplication->rejection_reason = $reason;
+                $rejectedApplication->reason = $reason;
                 $rejectedApplication->save();
                 $application->delete();
             });
@@ -2257,7 +2257,7 @@ class WaterConsumerWfController extends Controller
      */
     public function getWaterDocLists($application, $req)
     {
-        $user = authUser($req);
+        // $user = authUser($req);
         $mRefReqDocs = new RefRequiredDocument();
         $moduleId = Config::get('module-constants.WATER_MODULE_ID');
         $refUserType = Config::get('waterConstaint.REF_USER_TYPE');

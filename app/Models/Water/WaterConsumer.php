@@ -410,7 +410,7 @@ class WaterConsumer extends Model
     public function getConsumerByIds($consumerIds)
     {
         return WaterConsumer::select(
-            'water_consumers.id as consumer_id',
+            'water_consumers.id',
             'water_consumers.consumer_no',
             'water_consumers.ward_mstr_id',
             'water_consumers.address',
@@ -431,7 +431,7 @@ class WaterConsumer extends Model
             ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_consumers.ward_mstr_id')
             ->leftJoin('water_consumer_demands', function ($join) {
                 $join->on('water_consumer_demands.consumer_id', '=', 'water_consumers.id')
-                    ->where('water_consumer_demands.paid_status', 0);
+                    ->where('water_consumer_demands.paid_status', 1);
             })
             ->havingRaw("SUM(water_consumer_demands.balance_amount) > 0") // Excludes 0 or NULL total demand
             ->whereIn("water_consumers.id", $consumerIds)
