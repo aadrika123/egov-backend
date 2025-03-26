@@ -222,6 +222,7 @@ class WaterConsumer extends Model
         return WaterConsumer::select(
             'water_consumers.*',
             'water_consumers.id as consumer_id',
+            'water_consumers.consumer_no',
             'ulb_ward_masters.ward_name',
             'water_consumers.connection_through_id',
             'ulb_masters.ulb_name',
