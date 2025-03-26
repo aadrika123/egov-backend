@@ -146,25 +146,25 @@ class NewConnectionRepository implements iNewConnection
     public function store(Request $req)
     {
         # ref variables
-        $user       = authUser($req);
+        $user = authUser($req);
         $vacantLand = $this->_vacantLand;
         $workflowID = $this->_waterWorkflowId;
         $waterRoles = $this->_waterRoles;
-        $owner      = $req['owners'];
-        $tenant     = $req['tenant'];
-        $ulbId      = $req->ulbId;
-        $reftenant  = true;
-        $citizenId  = null;
+        $owner = $req['owners'];
+        $tenant = $req['tenant'];
+        $ulbId = $req->ulbId;
+        $reftenant = true;
+        $citizenId = null;
 
-        $ulbWorkflowObj             = new WfWorkflow();
-        $mWaterNewConnection        = new WaterNewConnection();
-        $objNewApplication          = new WaterApplication();
-        $mWaterApplicant            = new WaterApplicant();
-        $mWaterPenaltyInstallment   = new WaterPenaltyInstallment();
-        $mWaterConnectionCharge     = new WaterConnectionCharge();
-        $mWaterTran                 = new WaterTran();
-        $waterTrack                 = new WorkflowTrack();
-        $refParamId                 = Config::get('waterConstaint.PARAM_IDS');
+        $ulbWorkflowObj = new WfWorkflow();
+        $mWaterNewConnection = new WaterNewConnection();
+        $objNewApplication = new WaterApplication();
+        $mWaterApplicant = new WaterApplicant();
+        $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
+        $mWaterConnectionCharge = new WaterConnectionCharge();
+        $mWaterTran = new WaterTran();
+        $waterTrack = new WorkflowTrack();
+        $refParamId = Config::get('waterConstaint.PARAM_IDS');
 
         # Connection Type 
         switch ($req->connectionTypeId) {
@@ -189,9 +189,9 @@ class NewConnectionRepository implements iNewConnection
             throw new Exception("Respective Ulb is not maped to Water Workflow!");
         }
         $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);
-        $refFinisherRoleId  = $this->getFinisherId($ulbWorkflowId->id);
-        $finisherRoleId     = DB::select($refFinisherRoleId);
-        $initiatorRoleId    = DB::select($refInitiatorRoleId);
+        $refFinisherRoleId = $this->getFinisherId($ulbWorkflowId->id);
+        $finisherRoleId = DB::select($refFinisherRoleId);
+        $initiatorRoleId = DB::select($refInitiatorRoleId);
         if (!$finisherRoleId || !$initiatorRoleId) {
             throw new Exception("initiatorRoleId or finisherRoleId not found for respective Workflow!");
         }
@@ -203,15 +203,15 @@ class NewConnectionRepository implements iNewConnection
                 $newConnectionCharges['errors']
             );
         }
-        $installment            = $newConnectionCharges['installment_amount'];
-        $waterFeeId             = $newConnectionCharges['water_fee_mstr_id'];
+        $installment = $newConnectionCharges['installment_amount'];
+        $waterFeeId = $newConnectionCharges['water_fee_mstr_id'];
         $totalConnectionCharges = $newConnectionCharges['conn_fee_charge']['amount'];
 
         $this->begin();
         # Generating Application No
-        $idGeneration   = new PrefixIdGenerator($refParamId["WAPP"], $ulbId);
-        $applicationNo  = $idGeneration->generate();
-        $applicationNo  = str_replace('/', '-', $applicationNo);
+        $idGeneration = new PrefixIdGenerator($refParamId["WAPP"], $ulbId);
+        $applicationNo = $idGeneration->generate();
+        $applicationNo = str_replace('/', '-', $applicationNo);
 
         # water application
         $applicationId = $objNewApplication->saveWaterApplication($req, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId, $ulbId, $applicationNo, $waterFeeId, $newConnectionCharges);
@@ -250,15 +250,15 @@ class NewConnectionRepository implements iNewConnection
         }
         $metaReqs = new Request(
             [
-                'citizenId'         => $citizenId,
-                'moduleId'          => $this->_waterModulId,
-                'workflowId'        => $ulbWorkflowId['id'],
-                'refTableDotId'     => 'water_applications.id',                                     // Static
-                'refTableIdValue'   => $applicationId,
-                'user_id'           => $user->id,
-                'ulb_id'            => $ulbId,
-                'senderRoleId'      => $senderRoleId ?? null,
-                'receiverRoleId'    => $receiverRoleId ?? null
+                'citizenId' => $citizenId,
+                'moduleId' => $this->_waterModulId,
+                'workflowId' => $ulbWorkflowId['id'],
+                'refTableDotId' => 'water_applications.id',                                     // Static
+                'refTableIdValue' => $applicationId,
+                'user_id' => $user->id,
+                'ulb_id' => $ulbId,
+                'senderRoleId' => $senderRoleId ?? null,
+                'receiverRoleId' => $receiverRoleId ?? null
             ]
         );
         $waterTrack->saveTrack($metaReqs);
@@ -407,8 +407,8 @@ class NewConnectionRepository implements iNewConnection
         #====this code added by sandeep==================
         $user = Auth()->user();
         $user_id = $user->id;
-        $ulb_id = $user->ulb_id;        
-        $allRolse     = collect($this->_COMMON_FUNCTION->getAllRoles($user_id, $ulb_id, $this->_waterWorkflowId, 0, true));
+        $ulb_id = $user->ulb_id;
+        $allRolse = collect($this->_COMMON_FUNCTION->getAllRoles($user_id, $ulb_id, $this->_waterWorkflowId, 0, true));
         $role = $this->_COMMON_FUNCTION->getUserRoll($user_id, $ulb_id, $this->_waterWorkflowId);
 
         if (!$this->_COMMON_FUNCTION->checkUsersWithtocken("users")) {
@@ -427,17 +427,17 @@ class NewConnectionRepository implements iNewConnection
             }
         }
 
-        $initFinish   = $this->_COMMON_FUNCTION->iniatorFinisher($user_id, $ulb_id, $this->_waterWorkflowId);
+        $initFinish = $this->_COMMON_FUNCTION->iniatorFinisher($user_id, $ulb_id, $this->_waterWorkflowId);
         $receiverRole = array_values(objToArray($allRolse->where("id", $req->receiverRoleId)))[0] ?? [];
-        $senderRole   = array_values(objToArray($allRolse->where("id", $req->senderRoleId)))[0] ?? [];
+        $senderRole = array_values(objToArray($allRolse->where("id", $req->senderRoleId)))[0] ?? [];
         #====end this code added by sandeep==================
 
-        $mWfWorkflows       = new WfWorkflow();
-        $waterTrack         = new WorkflowTrack();
-        $mWfRoleMaps        = new WfWorkflowrolemap();
-        $current            = Carbon::now();
-        $wfLevels           = Config::get('waterConstaint.ROLE-LABEL');
-        $waterApplication   = WaterApplication::find($req->applicationId);
+        $mWfWorkflows = new WfWorkflow();
+        $waterTrack = new WorkflowTrack();
+        $mWfRoleMaps = new WfWorkflowrolemap();
+        $current = Carbon::now();
+        $wfLevels = Config::get('waterConstaint.ROLE-LABEL');
+        $waterApplication = WaterApplication::find($req->applicationId);
 
         #====this code added by sandeep==================
         if (!$waterApplication) {
@@ -501,13 +501,13 @@ class NewConnectionRepository implements iNewConnection
                 $waterApplication->is_field_verified = true;
             }
             $metaReqs['verificationStatus'] = 1;
-            $metaReqs['receiverRoleId']     = $forwardBackwardIds->forward_role_id;
+            $metaReqs['receiverRoleId'] = $forwardBackwardIds->forward_role_id;
             $waterApplication->current_role = $forwardBackwardIds->forward_role_id;
-            $waterApplication->last_role_id =  $forwardBackwardIds->forward_role_id;                                      // Update Last Role Id
+            $waterApplication->last_role_id = $forwardBackwardIds->forward_role_id;                                      // Update Last Role Id
 
         }
         if ($req->action == 'backward') {
-            $metaReqs['receiverRoleId']     = $forwardBackwardIds->backward_role_id;
+            $metaReqs['receiverRoleId'] = $forwardBackwardIds->backward_role_id;
             $waterApplication->current_role = $forwardBackwardIds->backward_role_id;
         }
 
@@ -534,7 +534,7 @@ class NewConnectionRepository implements iNewConnection
         $metaReqs['verificationStatus'] = ($req->action == 'forward') ? $this->_LEVEL_COMMENT_STATUS["VERIFY"] : $this->_LEVEL_COMMENT_STATUS["BACKWARD"];
         $req->merge($metaReqs);
         $track->saveTrack($req);
-            
+
         // $metaReqs['moduleId']           = $this->_waterModulId;
         // $metaReqs['workflowId']         = $waterApplication->workflow_id;
         // $metaReqs['refTableDotId']      = 'water_applications.id';                                                          // Static
@@ -571,9 +571,9 @@ class NewConnectionRepository implements iNewConnection
      */
     public function checkPostCondition($senderRoleId, $wfLevels, $application)
     {
-        $moduleId               = Config::get('module-constants.WATER_MODULE_ID');
-        $mWfActiveDocument      = new WfActiveDocument();
-        $mWaterSiteInspection   = new WaterSiteInspection();
+        $moduleId = Config::get('module-constants.WATER_MODULE_ID');
+        $mWfActiveDocument = new WfActiveDocument();
+        $mWaterSiteInspection = new WaterSiteInspection();
         $refRole = Config::get("waterConstaint.ROLE-LABEL");
         switch ($senderRoleId) {
             case $wfLevels['BO']:                                                                       // Back Office Condition
@@ -636,17 +636,15 @@ class NewConnectionRepository implements iNewConnection
         $ulb_id = $user->ulb_id ?? $request->ulb_id;
         $refWorkflowId = $this->_waterWorkflowId;
         $allRolse = collect($this->_COMMON_FUNCTION->getAllRoles($user_id, $ulb_id, $refWorkflowId, 0, true));
-        $mUserType      = $this->_COMMON_FUNCTION->userType($refWorkflowId, $ulb_id);
+        $mUserType = $this->_COMMON_FUNCTION->userType($refWorkflowId, $ulb_id);
         $fromRole = [];
         if (!empty($allRolse)) {
             $fromRole = array_values(objToArray($allRolse->where("id", $request->senderRoleId)))[0] ?? [];
         }
-        if ((!$this->_COMMON_FUNCTION->checkUsersWithtocken("users")) || ($fromRole["can_upload_document"] ?? false) ||  ($fromRole["can_verify_document"] ?? false)) 
-        {
-            $controller = App::makeWith(NewConnectionController::class,["iNewConnection"=>iNewConnection::class]);
+        if ((!$this->_COMMON_FUNCTION->checkUsersWithtocken("users")) || ($fromRole["can_upload_document"] ?? false) || ($fromRole["can_verify_document"] ?? false)) {
+            $controller = App::makeWith(NewConnectionController::class, ["iNewConnection" => iNewConnection::class]);
             $documents = $controller->getDocList($request);
-            if (!$documents->original["status"]) 
-            {
+            if (!$documents->original["status"]) {
                 return false;
             }
             $applicationDoc = $documents->original["data"]["listDocs"];
@@ -655,47 +653,44 @@ class NewConnectionRepository implements iNewConnection
             $appUploadedDoc = $applicationDoc->whereNotNull("uploadedDoc");
             $appUploadedDocVerified = collect();
             $appUploadedDocRejected = collect();
-            $appMadetoryDocRejected  = collect(); 
-            $appUploadedDoc->map(function ($val) use ($appUploadedDocVerified,$appUploadedDocRejected,$appMadetoryDocRejected) {
-                
-                $appUploadedDocVerified->push(["is_docVerify" => (!empty($val["uploadedDoc"]) ?  (((collect($val["uploadedDoc"])->all())["verifyStatus"]) ? true : false) : true)]);
-                $appUploadedDocRejected->push(["is_docRejected" => (!empty($val["uploadedDoc"]) ?  (((collect($val["uploadedDoc"])->all())["verifyStatus"]==2) ? true : false) : false)]);
-                if(in_array($val["docType"],["R", "OR"]))
-                {
-                    $appMadetoryDocRejected->push(["is_docRejected" => (!empty($val["uploadedDoc"]) ?  (((collect($val["uploadedDoc"])->all())["verifyStatus"]==2) ? true : false) : false)]);
+            $appMadetoryDocRejected = collect();
+            $appUploadedDoc->map(function ($val) use ($appUploadedDocVerified, $appUploadedDocRejected, $appMadetoryDocRejected) {
+
+                $appUploadedDocVerified->push(["is_docVerify" => (!empty($val["uploadedDoc"]) ? (((collect($val["uploadedDoc"])->all())["verifyStatus"]) ? true : false) : true)]);
+                $appUploadedDocRejected->push(["is_docRejected" => (!empty($val["uploadedDoc"]) ? (((collect($val["uploadedDoc"])->all())["verifyStatus"] == 2) ? true : false) : false)]);
+                if (in_array($val["docType"], ["R", "OR"])) {
+                    $appMadetoryDocRejected->push(["is_docRejected" => (!empty($val["uploadedDoc"]) ? (((collect($val["uploadedDoc"])->all())["verifyStatus"] == 2) ? true : false) : false)]);
                 }
             });
-            $is_appUploadedDocVerified          = $appUploadedDocVerified->where("is_docVerify", false);
-            $is_appUploadedDocRejected          = $appUploadedDocRejected->where("is_docRejected", true);
-            $is_appUploadedMadetoryDocRejected  = $appMadetoryDocRejected->where("is_docRejected", true);
+            $is_appUploadedDocVerified = $appUploadedDocVerified->where("is_docVerify", false);
+            $is_appUploadedDocRejected = $appUploadedDocRejected->where("is_docRejected", true);
+            $is_appUploadedMadetoryDocRejected = $appMadetoryDocRejected->where("is_docRejected", true);
             // $is_appMandUploadedDoc              = $appMandetoryDoc->whereNull("uploadedDoc");
-            $is_appMandUploadedDoc = $appMandetoryDoc->filter(function($val){
-                return ($val["uploadedDoc"]=="" || $val["uploadedDoc"]==null);
+            $is_appMandUploadedDoc = $appMandetoryDoc->filter(function ($val) {
+                return ($val["uploadedDoc"] == "" || $val["uploadedDoc"] == null);
             });
             $Wdocuments = collect();
             $ownerDoc->map(function ($val) use ($Wdocuments) {
                 $ownerId = $val["ownerDetails"]["ownerId"] ?? "";
                 $val["documents"]->map(function ($val1) use ($Wdocuments, $ownerId) {
                     $val1["ownerId"] = $ownerId;
-                    $val1["is_uploded"] = (in_array($val1["docType"], ["R", "OR"]))  ? ((!empty($val1["uploadedDoc"])) ? true : false) : true;
-                    $val1["is_docVerify"] = !empty($val1["uploadedDoc"]) ?  (((collect($val1["uploadedDoc"])->all())["verifyStatus"]) ? true : false) : true;
-                    $val1["is_docRejected"] = !empty($val1["uploadedDoc"]) ?  (((collect($val1["uploadedDoc"])->all())["verifyStatus"]==2) ? true : false) : false;
-                    $val1["is_madetory_docRejected"] = (!empty($val1["uploadedDoc"]) && in_array($val1["docType"],["R", "OR"]))?  (((collect($val1["uploadedDoc"])->all())["verifyStatus"]==2) ? true : false) : false;
+                    $val1["is_uploded"] = (in_array($val1["docType"], ["R", "OR"])) ? ((!empty($val1["uploadedDoc"])) ? true : false) : true;
+                    $val1["is_docVerify"] = !empty($val1["uploadedDoc"]) ? (((collect($val1["uploadedDoc"])->all())["verifyStatus"]) ? true : false) : true;
+                    $val1["is_docRejected"] = !empty($val1["uploadedDoc"]) ? (((collect($val1["uploadedDoc"])->all())["verifyStatus"] == 2) ? true : false) : false;
+                    $val1["is_madetory_docRejected"] = (!empty($val1["uploadedDoc"]) && in_array($val1["docType"], ["R", "OR"])) ? (((collect($val1["uploadedDoc"])->all())["verifyStatus"] == 2) ? true : false) : false;
                     $Wdocuments->push($val1);
                 });
             });
 
-            $ownerMandetoryDoc              = $Wdocuments->whereIn("docType", ["R", "OR"]);
-            $is_ownerUploadedDoc            = $Wdocuments->where("is_uploded", false);
-            $is_ownerDocVerify              = $Wdocuments->where("is_docVerify", false);
-            $is_ownerDocRejected            = $Wdocuments->where("is_docRejected", true);
-            $is_ownerMadetoryDocRejected    = $Wdocuments->where("is_madetory_docRejected", true);
-            if (($fromRole["can_upload_document"] ?? false) || (!$this->_COMMON_FUNCTION->checkUsersWithtocken("users"))) 
-            {
+            $ownerMandetoryDoc = $Wdocuments->whereIn("docType", ["R", "OR"]);
+            $is_ownerUploadedDoc = $Wdocuments->where("is_uploded", false);
+            $is_ownerDocVerify = $Wdocuments->where("is_docVerify", false);
+            $is_ownerDocRejected = $Wdocuments->where("is_docRejected", true);
+            $is_ownerMadetoryDocRejected = $Wdocuments->where("is_madetory_docRejected", true);
+            if (($fromRole["can_upload_document"] ?? false) || (!$this->_COMMON_FUNCTION->checkUsersWithtocken("users"))) {
                 return (empty($is_ownerUploadedDoc->all()) && empty($is_ownerDocRejected->all()) && empty($is_appMandUploadedDoc->all()) && empty($is_appUploadedDocRejected->all()));
             }
-            if ($fromRole["can_verify_document"] ?? false) 
-            {
+            if ($fromRole["can_verify_document"] ?? false) {
                 return (empty($is_ownerDocVerify->all()) && empty($is_appUploadedDocVerified->all()) && empty($is_ownerMadetoryDocRejected->all()) && empty($is_appUploadedMadetoryDocRejected->all()));
             }
         }
@@ -718,18 +713,18 @@ class NewConnectionRepository implements iNewConnection
     public function approvalRejectionWater($request, $roleId)
     {
         # Condition while the final Check
-        $mWaterApplication  = new WaterApplication();
-        $mWaterApplicant    = new WaterApplicant();
-        $refJe              = Config::get("waterConstaint.ROLE-LABEL.JE");
-        $consumerParamId    = Config::get("waterConstaint.PARAM_IDS.WCON");
-        $refWaterDetails    = $this->preApprovalConditionCheck($request, $roleId);
+        $mWaterApplication = new WaterApplication();
+        $mWaterApplicant = new WaterApplicant();
+        $refJe = Config::get("waterConstaint.ROLE-LABEL.JE");
+        $consumerParamId = Config::get("waterConstaint.PARAM_IDS.WCON");
+        $refWaterDetails = $this->preApprovalConditionCheck($request, $roleId);
 
         # Approval of water application 
         if ($request->status == 1) {
             # Consumer no generation
-            $idGeneration   = new PrefixIdGenerator($consumerParamId, $refWaterDetails['ulb_id']);
-            $consumerNo     = $idGeneration->generate();
-            $consumerNo     = str_replace('/', '-', $consumerNo);
+            $idGeneration = new PrefixIdGenerator($consumerParamId, $refWaterDetails['ulb_id']);
+            $consumerNo = $idGeneration->generate();
+            $consumerNo = str_replace('/', '-', $consumerNo);
 
             $this->saveWaterConnInProperty($refWaterDetails, $consumerNo);
             $consumerId = $mWaterApplication->finalApproval($request, $consumerNo, $refJe);
@@ -815,32 +810,32 @@ class NewConnectionRepository implements iNewConnection
      */
     public function saveWaterConnInProperty($refWaterDetails, $consumerNo)
     {
-        $appartmentsPropIds     = array();
-        $mPropProperty          = new PropProperty();
-        $mPropActiveSaf         = new PropActiveSaf();
-        $refPropType            = Config::get("waterConstaint.PROPERTY_TYPE");
-        $refConnectionThrough   = Config::get("waterConstaint.CONNECTION_THROUGH");
+        $appartmentsPropIds = array();
+        $mPropProperty = new PropProperty();
+        $mPropActiveSaf = new PropActiveSaf();
+        $refPropType = Config::get("waterConstaint.PROPERTY_TYPE");
+        $refConnectionThrough = Config::get("waterConstaint.CONNECTION_THROUGH");
 
         switch ($refWaterDetails) {
-                # For holding  
+            # For holding  
             case ($refWaterDetails->connection_through == $refConnectionThrough['HOLDING']):
                 $appartmentsPropIds = collect($refWaterDetails->prop_id);
                 if (in_array($refWaterDetails->property_type_id, [$refPropType['Apartment'], $refPropType['MultiStoredUnit']])) {
-                    $propDetails            = PropProperty::findOrFail($refWaterDetails->prop_id);
-                    $apartmentId            = $propDetails['apartment_details_id'];
-                    $appartmentsProperty    = $mPropProperty->getPropertyByApartmentId($apartmentId)->get();
-                    $appartmentsPropIds     = collect($appartmentsProperty)->pluck('id');
+                    $propDetails = PropProperty::findOrFail($refWaterDetails->prop_id);
+                    $apartmentId = $propDetails['apartment_details_id'];
+                    $appartmentsProperty = $mPropProperty->getPropertyByApartmentId($apartmentId)->get();
+                    $appartmentsPropIds = collect($appartmentsProperty)->pluck('id');
                 }
                 $mPropProperty->updateWaterConnection($appartmentsPropIds, $consumerNo);
                 break;
-                # For Saf
+            # For Saf
             case ($refWaterDetails->connection_through == $refConnectionThrough['SAF']):
                 $appartmentsSafIds = collect($refWaterDetails->saf_id);
                 if (in_array($refWaterDetails->property_type_id, [$refPropType['Apartment'], $refPropType['MultiStoredUnit']])) {
-                    $safDetails         = PropActiveSaf::findOrFail($refWaterDetails->saf_id);
-                    $apartmentId        = $safDetails['apartment_details_id'];
-                    $appartmentsSaf     = $mPropActiveSaf->getActiveSafByApartmentId($apartmentId)->get();
-                    $appartmentsSafIds  = collect($appartmentsSaf)->pluck('id');
+                    $safDetails = PropActiveSaf::findOrFail($refWaterDetails->saf_id);
+                    $apartmentId = $safDetails['apartment_details_id'];
+                    $appartmentsSaf = $mPropActiveSaf->getActiveSafByApartmentId($apartmentId)->get();
+                    $appartmentsSafIds = collect($appartmentsSaf)->pluck('id');
                 }
                 $mPropActiveSaf->updateWaterConnection($appartmentsSafIds, $consumerNo);
                 break;
@@ -863,12 +858,12 @@ class NewConnectionRepository implements iNewConnection
     public function getApplicationsDetails($request)
     {
         # object assigning
-        $waterObj               = new WaterApplication();
-        $ownerObj               = new WaterApplicant();
-        $forwardBackward        = new WorkflowMap;
-        $mWorkflowTracks        = new WorkflowTrack();
-        $mCustomDetails         = new CustomDetail();
-        $mUlbNewWardmap         = new UlbWardMaster();
+        $waterObj = new WaterApplication();
+        $ownerObj = new WaterApplicant();
+        $forwardBackward = new WorkflowMap;
+        $mWorkflowTracks = new WorkflowTrack();
+        $mCustomDetails = new CustomDetail();
+        $mUlbNewWardmap = new UlbWardMaster();
 
         # application details
         $applicationDetails = $waterObj->fullWaterDetails($request)->get();
@@ -928,9 +923,9 @@ class NewConnectionRepository implements iNewConnection
         # Level comment
         $mtableId = $applicationDetails->first()->id;
         $mRefTable = "water_applications.id";
-        $levelComment['levelComment'] = $mWorkflowTracks->getTracksByRefId($mRefTable, $mtableId)->map(function($val){  
-            $val->forward_date = $val->forward_date?Carbon::parse($val->forward_date)->format("d-m-Y"):"";
-            $val->track_date = $val->track_date?Carbon::parse($val->track_date)->format("d-m-Y"):"";
+        $levelComment['levelComment'] = $mWorkflowTracks->getTracksByRefId($mRefTable, $mtableId)->map(function ($val) {
+            $val->forward_date = $val->forward_date ? Carbon::parse($val->forward_date)->format("d-m-Y") : "";
+            $val->track_date = $val->track_date ? Carbon::parse($val->track_date)->format("d-m-Y") : "";
             $val->duration = (Carbon::parse($val->forward_date)->diffInDays(Carbon::parse($val->track_date))) . " Days";
             return $val;
         });
@@ -975,15 +970,15 @@ class NewConnectionRepository implements iNewConnection
     {
         $collectionApplications = collect($applicationDetails)->first();
         return new Collection([
-            ['displayString' => 'Ward No',            'key' => 'WardNo',              'value' => $wardDetails->ward_name],
-            ['displayString' => 'Type of Connection', 'key' => 'TypeOfConnection',    'value' => $collectionApplications->connection_type],
-            ['displayString' => 'Property Type',      'key' => 'PropertyType',        'value' => $collectionApplications->property_type],
-            ['displayString' => 'Connection Through', 'key' => 'ConnectionThrough',   'value' => $collectionApplications->connection_through],
-            ['displayString' => 'Category',           'key' => 'Category',            'value' => $collectionApplications->category],
-            ['displayString' => 'Flat Count',         'key' => 'FlatCount',           'value' => $collectionApplications->flat_count],
-            ['displayString' => 'Pipeline Type',      'key' => 'PipelineType',        'value' => $collectionApplications->pipeline_type],
-            ['displayString' => 'Apply From',         'key' => 'ApplyFrom',           'value' => $collectionApplications->apply_from],
-            ['displayString' => 'Apply Date',         'key' => 'ApplyDate',           'value' => $collectionApplications->apply_date]
+            ['displayString' => 'Ward No', 'key' => 'WardNo', 'value' => $wardDetails->ward_name],
+            ['displayString' => 'Type of Connection', 'key' => 'TypeOfConnection', 'value' => $collectionApplications->connection_type],
+            ['displayString' => 'Property Type', 'key' => 'PropertyType', 'value' => $collectionApplications->property_type],
+            ['displayString' => 'Connection Through', 'key' => 'ConnectionThrough', 'value' => $collectionApplications->connection_through],
+            ['displayString' => 'Category', 'key' => 'Category', 'value' => $collectionApplications->category],
+            ['displayString' => 'Flat Count', 'key' => 'FlatCount', 'value' => $collectionApplications->flat_count],
+            ['displayString' => 'Pipeline Type', 'key' => 'PipelineType', 'value' => $collectionApplications->pipeline_type],
+            ['displayString' => 'Apply From', 'key' => 'ApplyFrom', 'value' => $collectionApplications->apply_from],
+            ['displayString' => 'Apply Date', 'key' => 'ApplyDate', 'value' => $collectionApplications->apply_date]
         ]);
     }
 
@@ -1000,19 +995,19 @@ class NewConnectionRepository implements iNewConnection
         $propertyDetails = array();
         $collectionApplications = collect($applicationDetails)->first();
         if (!is_null($collectionApplications->holding_no)) {
-            array_push($propertyDetails, ['displayString' => 'Holding No',    'key' => 'AppliedBy',  'value' => $collectionApplications->holding_no]);
+            array_push($propertyDetails, ['displayString' => 'Holding No', 'key' => 'AppliedBy', 'value' => $collectionApplications->holding_no]);
         }
         if (!is_null($collectionApplications->saf_no)) {
-            array_push($propertyDetails, ['displayString' => 'Saf No',        'key' => 'AppliedBy',   'value' => $collectionApplications->saf_no]);
+            array_push($propertyDetails, ['displayString' => 'Saf No', 'key' => 'AppliedBy', 'value' => $collectionApplications->saf_no]);
         }
         if (is_null($collectionApplications->saf_no) && is_null($collectionApplications->holding_no)) {
-            array_push($propertyDetails, ['displayString' => 'Applied By',    'key' => 'AppliedBy',   'value' => 'Id Proof']);
+            array_push($propertyDetails, ['displayString' => 'Applied By', 'key' => 'AppliedBy', 'value' => 'Id Proof']);
         }
-        array_push($propertyDetails, ['displayString' => 'Ward No',       'key' => 'WardNo',      'value' => $wardDetails->ward_name]);
-        array_push($propertyDetails, ['displayString' => 'Area in Sqft',  'key' => 'AreaInSqft',  'value' => $collectionApplications->area_sqft]);
-        array_push($propertyDetails, ['displayString' => 'Address',       'key' => 'Address',     'value' => $collectionApplications->address]);
-        array_push($propertyDetails, ['displayString' => 'Landmark',      'key' => 'Landmark',    'value' => $collectionApplications->landmark]);
-        array_push($propertyDetails, ['displayString' => 'Pin',           'key' => 'Pin',         'value' => $collectionApplications->pin]);
+        array_push($propertyDetails, ['displayString' => 'Ward No', 'key' => 'WardNo', 'value' => $wardDetails->ward_name]);
+        array_push($propertyDetails, ['displayString' => 'Area in Sqft', 'key' => 'AreaInSqft', 'value' => $collectionApplications->area_sqft]);
+        array_push($propertyDetails, ['displayString' => 'Address', 'key' => 'Address', 'value' => $collectionApplications->address]);
+        array_push($propertyDetails, ['displayString' => 'Landmark', 'key' => 'Landmark', 'value' => $collectionApplications->landmark]);
+        array_push($propertyDetails, ['displayString' => 'Pin', 'key' => 'Pin', 'value' => $collectionApplications->pin]);
 
         return $propertyDetails;
     }
@@ -1029,10 +1024,10 @@ class NewConnectionRepository implements iNewConnection
     {
         $collectionApplications = collect($applicationDetails)->first();
         return new Collection([
-            ['displayString' => 'K.No',             'key' => 'KNo',             'value' => $collectionApplications->elec_k_no],
-            ['displayString' => 'Bind Book No',     'key' => 'BindBookNo',      'value' => $collectionApplications->elec_bind_book_no],
-            ['displayString' => 'Elec Account No',  'key' => 'ElecAccountNo',   'value' => $collectionApplications->elec_account_no],
-            ['displayString' => 'Elec Category',    'key' => 'ElecCategory',    'value' => $collectionApplications->elec_category]
+            ['displayString' => 'K.No', 'key' => 'KNo', 'value' => $collectionApplications->elec_k_no],
+            ['displayString' => 'Bind Book No', 'key' => 'BindBookNo', 'value' => $collectionApplications->elec_bind_book_no],
+            ['displayString' => 'Elec Account No', 'key' => 'ElecAccountNo', 'value' => $collectionApplications->elec_account_no],
+            ['displayString' => 'Elec Category', 'key' => 'ElecCategory', 'value' => $collectionApplications->elec_category]
         ]);
     }
 
@@ -1074,14 +1069,14 @@ class NewConnectionRepository implements iNewConnection
         $ownerDetail = $ownerName->implode(',');
         $collectionApplications = collect($applicationDetails)->first();
         return new Collection([
-            ['displayString' => 'Ward No.',             'key' => 'WardNo.',           'value' => $wardDetails->ward_name],
-            ['displayString' => 'Application No.',      'key' => 'ApplicationNo.',    'value' => $collectionApplications->application_no],
-            ['displayString' => 'Owner Name',           'key' => 'OwnerName',         'value' => $ownerDetail],
-            ['displayString' => 'Property Type',        'key' => 'PropertyType',      'value' => $collectionApplications->property_type],
-            ['displayString' => 'Connection Type',      'key' => 'ConnectionType',    'value' => $collectionApplications->connection_type],
-            ['displayString' => 'Connection Through',   'key' => 'ConnectionThrough', 'value' => $collectionApplications->connection_through],
-            ['displayString' => 'Apply-Date',           'key' => 'ApplyDate',         'value' => $collectionApplications->apply_date],
-            ['displayString' => 'Total Area (Sqft.)',     'key' => 'TotalArea',         'value' => $collectionApplications->area_sqft]
+            ['displayString' => 'Ward No.', 'key' => 'WardNo.', 'value' => $wardDetails->ward_name],
+            ['displayString' => 'Application No.', 'key' => 'ApplicationNo.', 'value' => $collectionApplications->application_no],
+            ['displayString' => 'Owner Name', 'key' => 'OwnerName', 'value' => $ownerDetail],
+            ['displayString' => 'Property Type', 'key' => 'PropertyType', 'value' => $collectionApplications->property_type],
+            ['displayString' => 'Connection Type', 'key' => 'ConnectionType', 'value' => $collectionApplications->connection_type],
+            ['displayString' => 'Connection Through', 'key' => 'ConnectionThrough', 'value' => $collectionApplications->connection_through],
+            ['displayString' => 'Apply-Date', 'key' => 'ApplyDate', 'value' => $collectionApplications->apply_date],
+            ['displayString' => 'Total Area (Sqft.)', 'key' => 'TotalArea', 'value' => $collectionApplications->area_sqft]
         ]);
     }
 
@@ -1097,26 +1092,65 @@ class NewConnectionRepository implements iNewConnection
         | Serial No :10
         | Working / Flag / Check / reused
      */
+
+    // public function getApprovedWater($request)
+    // {
+    //     $mWaterConsumer         = new WaterConsumer();
+    //     $mWaterConnectionCharge = new WaterConnectionCharge();
+    //     $mWaterConsumerOwner    = new WaterConsumerOwner();
+    //     $mWaterParamConnFee     = new WaterParamConnFee();
+
+    //     $key = collect($request)->map(function ($value, $key) {
+    //         return $key;
+    //     })->first();
+    //     $string         = preg_replace("/([A-Z])/", "_$1", $key);
+    //     $refstring      = strtolower($string);
+    //     $approvedWater  = $mWaterConsumer->getConsumerByConsumerNo($refstring, $request->id);
+    //     $connectionCharge['connectionCharg'] = $mWaterConnectionCharge->getWaterchargesById($approvedWater['apply_connection_id'])
+    //         ->where('charge_category', '!=', 'Site Inspection')                                     # Static
+    //         ->first();
+    //     $waterOwner['ownerDetails'] = $mWaterConsumerOwner->getConsumerOwner($approvedWater['consumer_id'])->get();
+    //     $water['calcullation']      = $mWaterParamConnFee->getCallParameter($approvedWater['property_type_id'], $approvedWater['area_sqft'])->first();
+
+    //     $consumerDetails = collect($approvedWater)->merge($connectionCharge)->merge($waterOwner)->merge($water);
+    //     return remove_null($consumerDetails);
+    // }
+
+
+    /* 
+    * | Get Approved Application Details According to Consumer No
+    * | update by Alok
+    */
     public function getApprovedWater($request)
     {
-        $mWaterConsumer         = new WaterConsumer();
+        $mWaterConsumer = new WaterConsumer();
         $mWaterConnectionCharge = new WaterConnectionCharge();
-        $mWaterConsumerOwner    = new WaterConsumerOwner();
-        $mWaterParamConnFee     = new WaterParamConnFee();
+        $mWaterConsumerOwner = new WaterConsumerOwner();
+        $mWaterParamConnFee = new WaterParamConnFee();
 
-        $key = collect($request)->map(function ($value, $key) {
-            return $key;
-        })->first();
-        $string         = preg_replace("/([A-Z])/", "_$1", $key);
-        $refstring      = strtolower($string);
-        $approvedWater  = $mWaterConsumer->getConsumerByConsumerNo($refstring, $request->id);
-        $connectionCharge['connectionCharg'] = $mWaterConnectionCharge->getWaterchargesById($approvedWater['apply_connection_id'])
-            ->where('charge_category', '!=', 'Site Inspection')                                     # Static
-            ->first();
-        $waterOwner['ownerDetails'] = $mWaterConsumerOwner->getConsumerOwner($approvedWater['consumer_id'])->get();
-        $water['calcullation']      = $mWaterParamConnFee->getCallParameter($approvedWater['property_type_id'], $approvedWater['area_sqft'])->first();
+        // Validate consumer_no directly instead of transforming keys
+        if (!isset($request->consumer_no)) {
+            throw new Exception("Consumer number is required!");
+        }
 
+        $approvedWater = $mWaterConsumer->getConsumerByConsumerNo('consumer_no', $request->consumer_no);
+
+        // Check if consumer data exists
+        if (!$approvedWater) {
+            throw new Exception("Consumer not found!");
+        }
+        // Fetch additional details safely
+        $connectionCharge = [
+            'connectionCharge' => $mWaterConnectionCharge->getWaterchargesById($approvedWater->apply_connection_id)
+                ->where('charge_category', '!=', 'Site Inspection')
+                ->first()
+        ];
+        $waterOwner = [ 'ownerDetails' => $mWaterConsumerOwner->getConsumerOwner($approvedWater->consumer_id)->get()];
+        $water = [ 'calculation' => $mWaterParamConnFee->getCallParameter($approvedWater->property_type_id, $approvedWater->area_sqft)->first()];
+        // Merge data safely
         $consumerDetails = collect($approvedWater)->merge($connectionCharge)->merge($waterOwner)->merge($water);
+
         return remove_null($consumerDetails);
     }
+
 }
