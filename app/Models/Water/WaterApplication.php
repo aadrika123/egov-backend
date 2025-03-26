@@ -522,7 +522,8 @@ class WaterApplication extends Model
     {
         WaterApplication::where('id', $applicationId)
             ->update([
-                'doc_upload_status' => true
+                'doc_upload_status' => true,
+                'parked' => false
             ]);
     }
 
