@@ -2672,6 +2672,7 @@ class Trade implements ITrade
             }
             $transaction->rate = $transaction->paid_amount - $pen;
             $application->ulb_logo = $application->ulb_logo ? ($this->_DOC_URL . "/" . $application->ulb_logo) : "";
+            $application->state_logo = ($this->_DOC_URL . "/" . "custom/jhk-govt-logo.png");
             $data["application"] = $application;
             $data["transaction"] = $transaction;
             $data["penalty"]    = $penalty;
