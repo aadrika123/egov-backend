@@ -582,11 +582,14 @@ class Trade implements ITrade
         $refActiveLicense->ward_id             = $refOldLicece->ward_id;
         $refActiveLicense->new_ward_id         = $refOldLicece->new_ward_id;
         $refActiveLicense->holding_no          = $request->firmDetails['holdingNo'];
-        $refActiveLicense->nature_of_bussiness = $refOldLicece->nature_of_bussiness;
-        $refActiveLicense->firm_name           = $refOldLicece->firm_name;
-        $refActiveLicense->premises_owner_name = $refOldLicece->premises_owner_name;
-        $refActiveLicense->brief_firm_desc     = $request->firmDetails['businessDescription']; //$refOldLicece->brife_desp_firm;
-        $refActiveLicense->area_in_sqft        = $request->firmDetails['areaSqft']; //$refOldLicece->area_in_sqft;
+        // $refActiveLicense->nature_of_bussiness = $refOldLicece->nature_of_bussiness;
+        // $refActiveLicense->firm_name           = $refOldLicece->firm_name;
+        // $refActiveLicense->premises_owner_name = $refOldLicece->premises_owner_name;
+        $refActiveLicense->nature_of_bussiness = $request->firmDetails['natureOfBusiness'] ?? null;     // modified;
+        $refActiveLicense->firm_name           = $request->firmDetails['firmName'] ?? null;             // modified
+        $refActiveLicense->premises_owner_name = $request->firmDetails['premisesOwnerName'] ?? null;    // modified
+        $refActiveLicense->brief_firm_desc     = $request->firmDetails['businessDescription'];          //$refOldLicece->brife_desp_firm;
+        $refActiveLicense->area_in_sqft        = $request->firmDetails['areaSqft'];                     //$refOldLicece->area_in_sqft;
 
         $refActiveLicense->k_no                = $refOldLicece->k_no;
         $refActiveLicense->bind_book_no        = $refOldLicece->bind_book_no;
@@ -597,9 +600,12 @@ class Trade implements ITrade
         $refActiveLicense->establishment_date  = $refOldLicece->establishment_date;
 
         $refActiveLicense->licence_for_years   = $request->licenseDetails['licenseFor'];
-        $refActiveLicense->address             = $refOldLicece->address;
-        $refActiveLicense->landmark            = $refOldLicece->landmark;
-        $refActiveLicense->pin_code            = $refOldLicece->pin_code;
+        // $refActiveLicense->address             = $refOldLicece->address;
+        
+        $refActiveLicense->address             = $request->firmDetails['businessAddress'] ?? null;      // modified
+        $refActiveLicense->landmark            = $request->firmDetails['landmark'] ?? null;             // modified
+        $refActiveLicense->pin_code            = $request->firmDetails['pincode'] ?? null;              // modified
+        
         $refActiveLicense->street_name         = $refOldLicece->street_name;
         $refActiveLicense->property_type       = $refOldLicece->property_type;
         $refActiveLicense->valid_from          = $refOldLicece->valid_upto;
@@ -3348,6 +3354,9 @@ class Trade implements ITrade
         }
         if (!$application) {
             $application = TradeRenewal::readConnection()->find($licenceId);
+        }
+        if(!$application){
+            throw new Exception("Application Not Found");
         }
         $status = "";
         if ($application->pending_status == 5) {

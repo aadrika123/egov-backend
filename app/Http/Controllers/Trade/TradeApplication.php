@@ -555,6 +555,15 @@ class TradeApplication extends Controller
                     $mWfActiveDocument->save();
                     // $mWfActiveDocument->postDocuments($metaReqs);
                 }
+
+                // added this code to update document upload status and parked status when reupload document
+                $activeTradeLicence = $this->_MODEL_ActiveTradeLicence->find($getLicenceDtls->id);
+
+                if ($activeTradeLicence && $activeTradeLicence->is_parked != false) {
+                    $activeTradeLicence->document_upload_status = 1;
+                    $activeTradeLicence->is_parked = false;
+                    $activeTradeLicence->save();
+                }
                 $sms = " Update Successful";
                 // return responseMsgs(true, $req->docName . " Update Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
             }
@@ -770,9 +779,9 @@ class TradeApplication extends Controller
     #====================[📝📖 BTC THE APPLICATION | S.L (16.0) 📖📝]========================================================
     public function backToCitizen(Request $req)
     {
-        $user = Auth()->user();
-        $user_id = $user->id;
-        $ulb_id = $user->ulb_id;
+        // $user = Auth()->user();
+        $user_id = $user->id ?? 72;
+        $ulb_id = $user->ulb_id ?? 2;
 
         $refWorkflowId = $this->_WF_MASTER_Id;
         $role = $this->_COMMON_FUNCTION->getUserRoll($user_id, $ulb_id, $refWorkflowId);
@@ -821,6 +830,7 @@ class TradeApplication extends Controller
             $initiatorRoleId = $activeLicence->initiator_role;
             // $activeLicence->current_role = $initiatorRoleId;
             $activeLicence->is_parked = true;
+            $activeLicence->document_upload_status = 0;
             $activeLicence->save();
 
             $metaReqs['moduleId'] = $this->_MODULE_ID;

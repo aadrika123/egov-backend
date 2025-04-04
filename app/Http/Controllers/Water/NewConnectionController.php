@@ -188,10 +188,8 @@ class NewConnectionController extends Controller
 
     /**
      * | Water Inbox
-     * | workflow
+     * | -- workflow --
      * | Display the data for water worflow
-        | Serial No :
-        | Working
      */
     public function waterInbox(Request $request)
     {
@@ -221,10 +219,8 @@ class NewConnectionController extends Controller
 
     /**
      * | Water Outbox
-     * | Workflow
+     * | -- Workflow --
      * | Display the data for water worflow
-        | Serial No :
-        | Working
      */
     public function waterOutbox(Request $req)
     {
@@ -261,22 +257,8 @@ class NewConnectionController extends Controller
 
     /**
      * | Back to citizen Inbox
-     * | Workflow
+     * | -- Workflow --
      * | Display the data for water worflow
-     * | @param req
-     * | @var mWfWardUser
-     * | @var userId
-     * | @var ulbId
-     * | @var mDeviceId
-     * | @var workflowRoles
-     * | @var roleId
-     * | @var refWard
-     * | @var wardId
-     * | @var waterList
-     * | @var filterWaterList
-     * | @return filterWaterList 
-        | Serial No : 
-        | Working / Use
      */
     public function btcInbox(Request $req)
     {
@@ -315,9 +297,7 @@ class NewConnectionController extends Controller
 
     /**
      * | Water Special Inbox
-     * | Display excalated applications
-        | Serial No :
-        | Working / Use
+     * | Display excalated applications for the water workflow
      */
     public function waterSpecialInbox(Request $request)
     {
@@ -327,15 +307,15 @@ class NewConnectionController extends Controller
             $userId                 = authUser($request)->id;
             $ulbId                  = authUser($request)->ulb_id;
 
-            $occupiedWard = $mWfWardUser->getWardsByUserId($userId);                        // Get All Occupied Ward By user id using trait
-            $wardId = $occupiedWard->map(function ($item, $key) {                           // Filter All ward_id in an array using laravel collections
+            $occupiedWard = $mWfWardUser->getWardsByUserId($userId);                        
+            $wardId = $occupiedWard->map(function ($item, $key) {                          // Filter All ward_id in an array using laravel collections
                 return $item->ward_id;
             });
 
             $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
 
-            $waterData = $this->getWaterApplicatioList($workflowIds, $ulbId)                              // Repository function to get SAF Details
+            $waterData = $this->getWaterApplicatioList($workflowIds, $ulbId)                              
                 ->where('water_applications.is_escalate', 1)
                 // ->whereIn('water_applications.ward_id', $wardId)
                 // ->orderByDesc('water_applications.id')
@@ -351,9 +331,6 @@ class NewConnectionController extends Controller
     /**
      * | Post next level 
      * | Post the application to the nest level of workflow
-        | Serial No : 
-        | Working
-        | Call Repository
      */
     public function postNextLevel(Request $request)
     {
@@ -383,9 +360,6 @@ class NewConnectionController extends Controller
     /**
      * | Water Application details for the view in workflow
      * | Get Active Application details for workflow
-        | Serial No :
-        | Working
-        | Call Repository
      */
     public function getApplicationsDetails(Request $request)
     {
@@ -408,8 +382,6 @@ class NewConnectionController extends Controller
     /**
      * | Application's Post Escalated
      * | Escalate the application for active applications
-        | Serial No :
-        | Working
      */
     public function postEscalate(Request $request)
     {
@@ -443,9 +415,7 @@ class NewConnectionController extends Controller
 
     /**
      * | final Approval or Rejection of the Application
-     * | Workflow final process for the active applications 
-        | Serial No :
-        | Working / Recheck
+     * | Workflow final process for the active applications
      */
     public function approvalRejectionWater(Request $request)
     {
@@ -488,8 +458,6 @@ class NewConnectionController extends Controller
 
     /**
      * | Indipendent Comment on the Water Applications
-        | Serial No :  
-        | Working / Recheck
      */
     public function commentIndependent(Request $request)
     {
@@ -554,9 +522,7 @@ class NewConnectionController extends Controller
 
     /**
      * | Get full details of approved water appliction
-     * | Get all the workflow details and the application related details   
-        | Serial No :  
-        | Working / Updated 
+     * | Get all the workflow details and the application related details 
      */
     /* public function approvedWaterApplications(Request $request)
     {
@@ -653,7 +619,6 @@ class NewConnectionController extends Controller
             return responseMsg(false, $e->getMessage(), "");
         }
     } */
-
 
     /* 
     * | UPDATE CODE TO FILTER THE DATA BY CONSUMER NO
@@ -767,8 +732,6 @@ class NewConnectionController extends Controller
     /**
      * | Get the Field fieldVerifiedInbox 
      * | Details for the workflow
-        | Serial No :
-        | Working 
      */
     public function fieldVerifiedInbox(Request $request)
     {
@@ -801,10 +764,7 @@ class NewConnectionController extends Controller
 
     /**
      * | Back to Citizen 
-     * | BTC process for document reuplodation 
-        | Serial No : 
-        | Check if the current role of the application will be changed for iniciater role 
-        | Working
+     * | BTC process for document reuplodation
      */
     public function backToCitizen(Request $req)
     {
@@ -875,10 +835,7 @@ class NewConnectionController extends Controller
 
     /**
      * | check the application for back to citizen case
-     * | check for the Doc status
-        | Serial No :
-        | Working
-        | Check who can use BTC operatio 
+     * | Check who can use BTC operatio 
      */
     public function btcParamcheck($role, $mWaterApplication)
     {
@@ -904,10 +861,8 @@ class NewConnectionController extends Controller
 
     /**
      * | Delete the Application
-     * | Process for citizen to delete there applications before payment 
-        | Serial No :
-        | Working
-        | Caution Dont Perform Delete Operation
+     * | Process for citizen to delete there applications before payment
+     * | Caution Dont Perform Delete Operation
      */
     public function deleteWaterApplication(Request $req)
     {
@@ -945,10 +900,6 @@ class NewConnectionController extends Controller
 
     /**
      * | Check the parameter for deleting Application 
-     * | @param applicationDetails
-     * | @param user
-        | Serial No :
-        | Working
      */
     public function checkParamsForApplicationDelete($applicationDetails, $user)
     {
@@ -974,9 +925,7 @@ class NewConnectionController extends Controller
 
     /**
      * | Edit the Water Application
-        | Serial No : NA
-        | Under Con 
-        | Not / validate the payment status / Check the use / Not used
+     * | Not / validate the payment status / Check the use / Not used
      */
     public function editWaterAppliction(Request $req)
     {
@@ -1044,10 +993,7 @@ class NewConnectionController extends Controller
     }
 
     /**
-     * | Check the Water parameter 
-     * | @param req
-        | Serial No : NA
-        | Under Con / Not used
+     * | Check the Water parameter for edit
      */
     public function checkEditParameters($request, $refApplication)
     {
@@ -1068,12 +1014,7 @@ class NewConnectionController extends Controller
     }
 
     /**
-     * | Edit the water aplication by Bo
-     * | @param req
-     * | @param refApplication
-     * | @param mWaterApplication
-        | Serial NO : NA
-        | Under Con / Not used
+     * | Edit the water aplication by BO (Back Office)
      */
     public function boApplicationEdit($req, $refApplication, $mWaterApplication)
     {
@@ -1088,9 +1029,6 @@ class NewConnectionController extends Controller
 
     /**
      * | Deactivate the Water Deatils
-     * | @param refWaterApplicationId
-        | Serial No : NA
-        | Under Con / Not used
      */
     public function deactivateAndUpdateWater($refWaterApplicationId)
     {
@@ -1109,8 +1047,6 @@ class NewConnectionController extends Controller
     /**
      * | Citizen view : Get Application Details 
      * | Get the active application details for citizen
-        | Serial No :
-        | Working 
      */
     public function getApplicationDetails(Request $request)
     {
@@ -1183,12 +1119,9 @@ class NewConnectionController extends Controller
 
 
     /**
-     * | Upload active application documents 
-     * | @param req
-        | Serial No :
-        | Working 
-        | Look on the concept of deactivation of the rejected documents 
-        | Put the static "verify status" 2 in config  
+      * | Upload the documents for the active application
+      * | Look on the concept of deactivation of the rejected documents 
+      * | Put the static "verify status" 2 in config  
      */
     public function uploadWaterDoc(Request $req)
     {
@@ -1296,12 +1229,7 @@ class NewConnectionController extends Controller
 
 
     /**
-     * | Check if the params for document upload
-     * | @param isCitizen
-     * | @param applicantDetals
-     * | @param user
-        | Serial No : 
-        | Working
+     * | Check if the params for document upload 
      */
     public function checkParamForDocUpload($isCitizen, $applicantDetals, $user)
     {
@@ -1335,9 +1263,6 @@ class NewConnectionController extends Controller
 
     /**
      * | Caheck the Document if Fully Upload or not
-     * | @param req
-        | Up
-        | Serial No :
      */
     public function checkFullDocUpload($req)
     {
@@ -1370,12 +1295,7 @@ class NewConnectionController extends Controller
 
 
     /**
-     * | Updating the water Application Status
-     * | @param req
-     * | @param application
-        | Serial No :  
-        | Up 
-        | Check the concept of auto forward
+     * | Updating the water Application Status 
      */
     public function updateWaterStatus($req, $application)
     {
@@ -1397,8 +1317,7 @@ class NewConnectionController extends Controller
 
 
     /**
-     * | Auto forward process 
-        | Serial No : 
+     * | Auto forward process for the application
      */
     public function autoForwardProcess($waterTransaction, $req, $application)
     {
@@ -1415,9 +1334,7 @@ class NewConnectionController extends Controller
 
 
     /**
-     * |Get the upoaded docunment
-        | Serial No : 
-        | Working
+     * |Get the upoaded docunment 
      */
     public function getUploadDocuments(Request $req)
     {
@@ -1453,8 +1370,6 @@ class NewConnectionController extends Controller
 
     /**
      * | Get the document to be upoaded with list of dock uploaded 
-        | Serial No :  
-        | Working / Citizen Upload
      */
     public function getDocToUpload(Request $request)
     {
@@ -1573,8 +1488,7 @@ class NewConnectionController extends Controller
     }
     /**
      * | Get the document to be upoaded with list of dock uploaded 
-        | Serial No :  
-        | Working / Citizen Upload
+     * | Working / Citizen Upload
      */
     public function getDocToUploadv1(Request $request)
     {
@@ -1704,9 +1618,6 @@ class NewConnectionController extends Controller
     /**
      * | Serch the holding and the saf details
      * | Serch the property details for filling the water Application Form
-     * | @param request
-     * | 01
-        | Serial No : 
      */
     public function getSafHoldingDetails(Request $request)
     {
@@ -1794,7 +1705,6 @@ class NewConnectionController extends Controller
     /**
      * | Get Usage type according to holding
      * | Calling function : for the search of the property usage type 01.02
-        | Serial No : 
      */
     public function getPropUsageType($request, $id)
     {
@@ -1857,9 +1767,6 @@ class NewConnectionController extends Controller
 
     /**
      * | Get appartment details 
-     * | @param propData
-     * | @param request
-        | Serial No : 
      */
     public function getAppartmentDetails($key, $propData)
     {
@@ -1908,24 +1815,8 @@ class NewConnectionController extends Controller
     }
 
     /**
-        |-------------------------------------------------------------------------------------------------------|
-     */
-
-    /**
-     * |---------------------------- Get Document Lists To Upload ----------------------------|
-     * | @param req "applicationId"
-     * | @var mWaterApplication "Model for WaterApplication"
-     * | @var mWaterApplicant "Model for WaterApplicant"
-     * | @var refWaterApplication "Contain the detail of water Application"
-     * | @var refWaterApplicant "Contain the list of owners"
-     * | @var waterTypeDocs "contain the list of Doc to Upload"
-     * | @var waterOwnerDocs "Contain the list of owner Doc to Upload"
-     * | @var totalDocLists "Application's Doc details"
-     * | @return totalDocLists "Collective Data of Doc is returned"
+     * | Get Document Lists To Upload 
      * | Doc Upload for the Workflow
-     * | 01
-        | RECHECK
-        | Serial No : 
      */
     public function getDocList(Request $req)
     {
@@ -1968,17 +1859,8 @@ class NewConnectionController extends Controller
 
 
     /**
-     * |---------------------------- Filter The Document For Viewing ----------------------------|
-     * | @param documentList
-     * | @param refWaterApplication
-     * | @param ownerId
-     * | @var mWfActiveDocument
-     * | @var applicationId
-     * | @var workflowId
-     * | @var moduleId
-     * | @var uploadedDocs
+     * | Filter The Document For Viewing 
      * | Calling Function 01.01.01/ 01.02.01
-        | Serial No : 
      */
     public function filterDocument($documentList, $refWaterApplication, $ownerId = null)
     {
@@ -2046,10 +1928,9 @@ class NewConnectionController extends Controller
     }
 
     /**
-     * |---------------------------- List of the doc to upload ----------------------------|
+     * | List of the doc to upload 
      * | Calling function
      * | 01.01
-        | Serial No :  
      */
     public function getWaterDocLists($application)
     {
@@ -2086,10 +1967,9 @@ class NewConnectionController extends Controller
 
 
     /**
-     * |---------------------------- Get owner Doc list ----------------------------|
+     * | Get owner Doc list 
      * | Calling Function
      * | 01.02
-        | Serial No :
      */
     public function getOwnerDocLists($refOwners, $application)
     {
@@ -2123,8 +2003,7 @@ class NewConnectionController extends Controller
     }
 
     /**
-     * |----------------------------- Read the server url ------------------------------|
-        | Serial No : 
+     * | Read the server url 
      */
     public function readDocumentPath($path)
     {
@@ -2134,9 +2013,8 @@ class NewConnectionController extends Controller
 
 
     /**
-     * |---------------------------- Search Application ----------------------------|
-     * | Search Application using provided condition For the Admin 
-        | Serial No : 
+     * | Search Application 
+     * | Search Application using provided condition For the Admin
      */
     public function searchWaterConsumer(Request $request)
     {
@@ -2216,8 +2094,6 @@ class NewConnectionController extends Controller
 
     /**
      * | Search the Active Application 
-     * | @param request
-        | Serial No :  
      */
     public function getActiveApplictaions(Request $request)
     {
@@ -2304,9 +2180,6 @@ class NewConnectionController extends Controller
 
     /**
      * | Document Verify Reject
-     * | @param req
-        | Serial No :  
-        | Discuss about the doc_upload_status should be 0 or not 
      */
     public function docVerifyRejects(Request $req)
     {
@@ -2390,12 +2263,7 @@ class NewConnectionController extends Controller
     }
 
     /**
-     * | Check if the Document is Fully Verified or Not (0.1) | up
-     * | @param
-     * | @var 
-     * | @return
-        | Serial No :  
-        | Working 
+     * | Check if the Document is Fully Verified or Not (0.1) 
      */
     public function ifFullDocVerified($applicationId)
     {
@@ -2422,11 +2290,7 @@ class NewConnectionController extends Controller
 
     /**
      * | Admin view : Get Application Details of viewind
-     * | @param 
-     * | @var 
-     * | @return 
-        | Serial No : 
-        | Used Only for new Connection or New Regulization
+     * | Used Only for new Connection or New Regulization
      */
     public function getApplicationDetailById(Request $request)
     {
@@ -2530,10 +2394,6 @@ class NewConnectionController extends Controller
     /**
      * | List application applied according to its user type
      * | Serch Application btw Dates
-     * | @param request
-     * | @var 
-     * | @return 
-        | Serial No:
      */
     public function listApplicationBydate(Request $request)
     {
@@ -2588,9 +2448,6 @@ class NewConnectionController extends Controller
     /**
      * | Get all the payment list and payment Status
      * | Checking the payment Satatus
-     * | @param 
-     * | @param
-        | Serial No :
      */
     public function getAllPaymentStatus($charges, $penalties)
     {
@@ -2625,10 +2482,6 @@ class NewConnectionController extends Controller
 
     /**
      * | Search Application for Site Inspection
-     * | @param request
-     * | @var 
-        | Serial No : 
-        | Recheck
      */
     public function searchApplicationByParameter(Request $request)
     {
@@ -2696,9 +2549,6 @@ class NewConnectionController extends Controller
     /**
      * | Can View Site Details 
      * | Check if the provided date is matchin to the current date
-     * | @param sitDetails 
-        | Serial No :   
-        | Recheck
      */
     public function canViewSiteDetails($sitDetails)
     {
@@ -2711,11 +2561,6 @@ class NewConnectionController extends Controller
     /**
      * | Cancel Site inspection 
      * | In case of date missmatch or changes
-     * | @param request
-     * | @var
-     * | @return  
-        | Serial No :
-        | Working
      */
     public function cancelSiteInspection(Request $request)
     {
@@ -2765,9 +2610,6 @@ class NewConnectionController extends Controller
 
     /**
      * | Check the param for cancel of site inspection date and corresponding data 
-     * | @param request
-        | Serial No :
-        | Recheck
      */
     public function checkforPaymentStatus($request)
     {
@@ -2784,11 +2626,6 @@ class NewConnectionController extends Controller
     /**
      * | Save the site Inspection Date and Time 
      * | Create record behalf of the date and time with respective to application no
-     * | @param request
-     * | @var 
-     * | @return 
-        | Serial No : 
-        | Working
      */
     public function saveInspectionDateTime(Request $request)
     {
@@ -2825,10 +2662,6 @@ class NewConnectionController extends Controller
 
     /**
      * | Check the validation for saving the site inspection 
-     * | @param request
-        | Serial No :
-        | Working
-        | Add more Validation 
      */
     public function checkForSaveDateTime($request)
     {
@@ -2854,10 +2687,7 @@ class NewConnectionController extends Controller
 
     /**
      * | Get the Date/Time alog with site details 
-     * | Site Details  
-        | Serial No :
-        | Working
-        | Recheck
+     * | Site Details 
      */
     public function getSiteInspectionDetails(Request $request)
     {
@@ -2893,10 +2723,6 @@ class NewConnectionController extends Controller
     /**
      * | Check if the current Application will be Inspected
      * | Checking the sheduled Date for inspection
-     * | @param
-     * | @var 
-        | Serial No : 
-        | Working
      */
     public function checkCanInspect($siteInspection)
     {
@@ -2913,13 +2739,8 @@ class NewConnectionController extends Controller
     /**
      * | Online site Inspection 
      * | Assistent Enginer site detail Entry
-     * | @param request
-     * | @var 
-     * | @return 
-        | Serial No :
-        | Working
-        | Check for deactivation of technical site inspection details 
-        | opration should be adding a new record
+     * | Check for deactivation of technical site inspection details 
+     * | opration should be adding a new record
      */
     public function onlineSiteInspection(Request $request)
     {
@@ -2973,10 +2794,6 @@ class NewConnectionController extends Controller
     /**
      * | Check the Pre Site inspection Details 
      * | pre conditional Check for the AE online Site inspection
-     * | @param
-     * | @var mWfRoleUser
-        | Serial No :
-        | Working 
      */
     public function onlineSitePreConditionCheck($request)
     {
@@ -3011,11 +2828,6 @@ class NewConnectionController extends Controller
     /**
      * | Get Site Inspection Details done by Je
      * | Details Filled by JE
-     * | @param request
-     * | @var 
-     * | @return 
-        | Serial No : 
-        | Working
      */
     public function getJeSiteDetails(Request $request)
     {
@@ -3062,11 +2874,6 @@ class NewConnectionController extends Controller
     /**
      * | Get AE technical Inspection
      * | Pick the first details for the respective application 
-     * | @param request
-     * | @var 
-     * | @return 
-        | Serial No :
-        | Working
      */
     public function getTechnicalInsDetails(Request $request)
     {
@@ -3097,9 +2904,6 @@ class NewConnectionController extends Controller
 
     /**
      * | Check and get the je site inspection details
-     * | @param request
-        | Serial No :
-        | Working
      */
     public function jeSiteInspectDetails($request, $refRole)
     {
@@ -3137,8 +2941,6 @@ class NewConnectionController extends Controller
     /**
      * | Citizen view : Get Application Details 
      * | Get the active application details for citizen
-        | Serial No :
-        | Working 
      */
     public function getApplicationDetailsv1(Request $request)
     {
@@ -3219,39 +3021,5 @@ class NewConnectionController extends Controller
         }
     }
 
-
-    /**
-        | May be used recheck
-        | Not used
-     */
-    // public function btcDocUpload(Request $req)
-    // {
-    //     $req->validate([
-    //         "applicationId" => "required|numeric",
-    //     ]);
-    //     try {
-    //         $response = true;
-    //         $applicationId = $req->applicationId;
-    //         $mWaterApplication = new WaterApplication();
-
-    //         $mWaterApplication->getWaterApplicationsDetails($applicationId);
-    //         $this->begin();
-    //         #check full doc upload
-    //         $refCheckDocument = $this->checkFullDocUpload($req);
-    //         # Update the Doc Upload Satus in Application Table
-    //         if ($refCheckDocument->contains(false)) {
-    //             $mWaterApplication->deactivateUploadStatus($applicationId);
-    //             $response = false;
-    //         } else {
-    //             $status = true;
-    //             $mWaterApplication->updateParkedstatus($status, $applicationId);
-    //         }
-    //         $this->commit();
-    //         if ($response == false)
-    //             throw new Exception("Full document not uploaded!");
-    //         return responseMsgs(true, "Document Uploadation Successful", "", "", "1.0", "", "POST", $req->deviceId ?? "");
-    //     } catch (Exception $e) {
-    //         return responseMsgs(false, $e->getMessage(), "", "", "01", ".ms", "POST", $req->deviceId);
-    //     }
-    // }
 }
+                             

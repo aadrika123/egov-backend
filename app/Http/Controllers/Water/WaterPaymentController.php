@@ -134,19 +134,6 @@ class WaterPaymentController extends Controller
     /**
      * | Get The Master Data Related to Water 
      * | Fetch all master Data At Once
-     * | @var redisConn
-     * | @var returnValues
-     * | @var mWaterParamPipelineType
-     * | @var mWaterConnectionTypeMstr
-     * | @var mWaterConnectionThroughMstr
-     * | @var mWaterPropertyTypeMstr
-     * | @var mWaterOwnerTypeMstr
-     * | @var masterValues
-     * | @var refMasterData
-     * | @var configMasterValues
-     * | @return returnValues
-        | Serial No : 00 
-        | Working
      */
     public function getWaterMasterData()
     {
@@ -223,20 +210,7 @@ class WaterPaymentController extends Controller
 
     /**
      * | Get Consumer Payment History 
-     * | Collect All the transaction relate to the respective Consumer 
-     * | @param request
-     * | @var mWaterTran
-     * | @var mWaterConsumer
-     * | @var mWaterConsumerDemand
-     * | @var mWaterTranDetail
-     * | @var transactions
-     * | @var waterDtls
-     * | @var waterTrans
-     * | @var applicationId
-     * | @var connectionTran
-     * | @return transactions  Consumer / Connection Data 
-        | Serial No : 01
-        | Working
+     * | Collect All the transaction relate to the respective Consumer
      */
     public function getConsumerPaymentHistory(Request $request)
     {
@@ -292,26 +266,6 @@ class WaterPaymentController extends Controller
 
     /**
      * | Generate the payment Receipt for Demand / In Bulk amd Indipendent
-     * | @param request
-     * | @var refTransactionNo
-     * | @var mWaterConnectionCharge
-     * | @var mWaterPenaltyInstallment
-     * | @var mWaterApplication
-     * | @var mWaterChequeDtl
-     * | @var mWaterTran
-     * | @var mTowards
-     * | @var mAccDescription
-     * | @var mDepartmentSection
-     * | @var mPaymentModes
-     * | @var transactionDetails
-     * | @var applicationDetails
-     * | @var connectionCharges
-     * | @var individulePenaltyCharges
-     * | @var refDate
-     * | @return 
-        | Serial No : 03
-        | Working
-        | Recheck
      */
     public function generateOfflinePaymentReceipt(Request $req)
     {
@@ -426,22 +380,6 @@ class WaterPaymentController extends Controller
     /**
      * | Site Inspection Details Entry
      * | Save the adjusted Data
-     * | @param request
-     * | @var mWaterSiteInspection
-     * | @var mWaterNewConnection
-     * | @var mWaterConnectionCharge
-     * | @var connectionCatagory
-     * | @var waterDetails
-     * | @var applicationCharge
-     * | @var oldChargeAmount
-     * | @var newConnectionCharges
-     * | @var installment
-     * | @var waterFeeId
-     * | @var newChargeAmount
-     * | @return
-        | Serial No : 04
-        | Working
-        | Check the Adjustment
      */
     public function saveSitedetails(siteAdjustment $request)
     {
@@ -490,19 +428,7 @@ class WaterPaymentController extends Controller
 
     /**
      * | Check the Inspection related Details
-     * | Check Conditions
-     * | @param request
-     * | @var waterDetails
-     * | @var mWfRoleUsermap
-     * | @var waterRoles
-     * | @var userId
-     * | @var workflowId
-     * | @var getRoleReq
-     * | @var readRoleDtls
-     * | @var roleId
-        | Serial No : 04.01
-        | Working
-        | Common function
+     * | Check Conditions for the Inspection
      */
     public function CheckInspectionCondition($request, $waterDetails)
     {
@@ -535,14 +461,7 @@ class WaterPaymentController extends Controller
 
     /**
      * | Changes in the Site Inspection Adjustment
-     * | Updating the Connection Charges And the Related Deatils
-     * | @param request
-     * | @param newConnectionCharges
-     * | @param waterApplicationDetails
-     * | @param applicationCharge
-        | Serial No : 04.02
-        | Working
-        | Common function
+     * | Updating the Connection Charges And the Related Deatil
      */
     public function adjustmentInConnection($request, $newConnectionCharges, $waterApplicationDetails, $applicationCharge)
     {
@@ -642,15 +561,7 @@ class WaterPaymentController extends Controller
 
 
     /**
-     * | Check for the old penalty 
-     * | @param applicationID
-     * | @param chargeCatagory
-     * | @var mWaterPenaltyInstallment
-     * | @var oldPenalty
-     * | @var unpaidPenalty
-        | Serial No : 04.02.01
-        | Working
-        | Common function
+     * | Check for the old penalty
      */
     public function checkOldPenalty($applicationId, $chargeCatagory)
     {
@@ -670,14 +581,6 @@ class WaterPaymentController extends Controller
     /**
      * | Iniciate demand payment / In Case Of Online
      * | Online Payment Of Consumer Demand
-     * | @param request
-     * | @var user
-     * | @var midGeneration
-     * | @var mwaterTran
-     * | @return 
-        | Serial No : 05
-        | Working
-        | Check for Advance adjustment
      */
     public function offlineDemandPayment(reqDemandPayment $request)
     {
@@ -755,14 +658,8 @@ class WaterPaymentController extends Controller
     }
 
     /**
-     * | Check the Condition before payment
-     * | @param request
-     * | @param startingDate
-     * | @param endDate
-        | Serial No : 05:01
-        | Working
-        | Common function
-        | Check for the rounding of amount 
+     * | Check the Condition before paymen
+     * | Check for the rounding of amount 
      */
     public function preOfflinePaymentParams($request, $startingDate, $endDate)
     {
@@ -813,13 +710,6 @@ class WaterPaymentController extends Controller
 
     /**
      * | Save the consumer demand payment status
-     * | @param request
-     * | @param offlinePaymentModes
-     * | @param charges
-     * | @param waterTrans
-        | Serial No : 05:02
-        | Working
-        | Common function
      */
     public function saveConsumerPaymentStatus($request, $offlinePaymentModes, $charges, $waterTrans)
     {
@@ -843,12 +733,7 @@ class WaterPaymentController extends Controller
 
 
     /**
-     * | Save the penalty in the fine rebate table 
-     * | @param waterTrans
-     * | @param penaltyAmount
-        | Not tested
-        | Serial No : 05:03
-        | Common function
+     * | Save the penalty in the fine rebate table
      */
     public function savePenaltyDetails($waterTrans, $penaltyAmount)
     {
@@ -867,12 +752,6 @@ class WaterPaymentController extends Controller
 
     /**
      * | Calculate the Demand for the respective Consumer
-     * | @param request
-     * | @var collectiveCharges
-     * | @var returnData
-        | Working
-        | Serial No : 06
-        | Check the advance concept
      */
     public function callDemandByMonth(Request $request)
     {
@@ -924,15 +803,6 @@ class WaterPaymentController extends Controller
 
     /**
      * | calling functon for checking params for callculating demand according to month
-     * | @param request
-     * | @var consumerDetails
-     * | @var mWaterConsumerDemand
-     * | @var allCharges
-     * | @var checkDemand
-     * | @return allCharges
-        | Serial No : 06.01
-        | Working  
-        | Common function
      */
     public function checkCallParams($request, $startingDate, $endDate)
     {
@@ -961,10 +831,6 @@ class WaterPaymentController extends Controller
     /**
      * | Check the Advance and its existence
      * | Advance and Adjustment calcullation 
-     * | @param request contain consumerId
-        | Serial No : 06:02 / 05:01:01
-        | Not Working
-        | Common function
      */
     public function checkAdvance($request)
     {
@@ -996,20 +862,6 @@ class WaterPaymentController extends Controller
     /**
      * | Consumer Demand Payment 
      * | Offline Payment for the Monthely Payment
-     * | @param req
-     * | @var offlinePaymentModes
-     * | @var todayDate
-     * | @var mWaterApplication
-     * | @var idGeneration
-     * | @var waterTran
-     * | @var userId
-     * | @var refWaterApplication
-     * | @var tranNo
-     * | @var charges
-     * | @var wardId
-     * | @var waterTrans
-        | Serial No : 07
-        | Working
      */
     public function offlineConnectionPayment(ReqWaterPayment $req)
     {
@@ -1107,7 +959,6 @@ class WaterPaymentController extends Controller
     /**
      * | Save the regulization second payament details 
      * | if the payment for the regularization is done in installment
-        | Serial No : 07:06
      */
     public function saveRegulaizePaymentStatus($req, $offlinePaymentModes, $waterTrans)
     {
@@ -1135,10 +986,7 @@ class WaterPaymentController extends Controller
 
 
     /**
-     * | Check for the payment done 
-     * | @param req
-        | Check if the charges id not present 
-        | Serial No : 07:05
+     * | Check for the payment done for the penalty
      */
     public function checkForCharges($req)
     {
@@ -1170,8 +1018,7 @@ class WaterPaymentController extends Controller
      * | @param refWaterApplication
      * | @param waterTrans
         | Serial No : 07.04
-        | Working
-        | Common function
+        | Work
         | $charges is for the water charges 
         | Write the code to send data in the track table (1146,1149)
      */
@@ -1233,8 +1080,7 @@ class WaterPaymentController extends Controller
      * | @var actualAmount
      * | @var actualPenaltyAmount
      * | @var chargeAmount
-        | Serial No : 07.01
-        | Common function
+        | Serial No : 07
         | Not tested
      */
     public function verifyPaymentRules($req, $refApplication)
@@ -1373,8 +1219,7 @@ class WaterPaymentController extends Controller
      * | Post Other Payment Modes for Cheque,DD,Neft
      * | @param req
         | Serial No : 07.02
-        | Working
-        | Common function
+        | Work
      */
     public function postOtherPaymentModes($req)
     {
@@ -1431,8 +1276,7 @@ class WaterPaymentController extends Controller
      * | Update the penalty Status 
      * | @param req
      * | @var mWaterPenaltyInstallment
-        | Serial No : 07.03
-        | Common function
+        | Serial No : 07
         | Not tested
      */
     public function updatePenaltyPaymentStatus($req)
