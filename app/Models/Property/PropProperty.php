@@ -339,6 +339,7 @@ class PropProperty extends Model
             'gb_usage_types' => $fieldVerifiedSaf->gb_usage_types,
             'gb_prop_usage_types' => $fieldVerifiedSaf->gb_prop_usage_types,
             'rwh_date_from' => $fieldVerifiedSaf->rwh_date_from,
+            'status'  => 1,
             //road_width muissing
         ];
         $property->update($reqs);
@@ -806,8 +807,7 @@ class PropProperty extends Model
             ->join("ref_prop_occupancy_types", "ref_prop_occupancy_types.id", "prop_floors.occupancy_type_mstr_id")
             ->join("ref_prop_usage_types", "ref_prop_usage_types.id", "prop_floors.usage_type_mstr_id")
             ->where("prop_floors.status", 1)
-            ->orderBy("prop_floors.id", "ASC");
-        ;
+            ->orderBy("prop_floors.id", "ASC");;
     }
 
     /** 
@@ -876,10 +876,10 @@ class PropProperty extends Model
             'prop_owners.owner_name',
             DB::raw("CASE WHEN prop_properties.status = 1 THEN 'Active' ELSE 'Inactive' END AS status"),
         )
-        ->join('prop_owners', 'prop_owners.property_id', '=', 'prop_properties.id')
-        ->join('prop_safs', 'prop_safs.id', '=', 'prop_properties.saf_id')
-        ->leftJoin('ulb_masters', 'ulb_masters.id', '=', 'prop_properties.ulb_id')
-        ->where('prop_properties.holding_no', $parameter);
+            ->join('prop_owners', 'prop_owners.property_id', '=', 'prop_properties.id')
+            ->join('prop_safs', 'prop_safs.id', '=', 'prop_properties.saf_id')
+            ->leftJoin('ulb_masters', 'ulb_masters.id', '=', 'prop_properties.ulb_id')
+            ->where('prop_properties.holding_no', $parameter);
     }
 
     /**

@@ -398,17 +398,17 @@ class WaterNewConnection implements IWaterNewConnection
             #--------------------water Consumer----------------------
             else {
             }
-            $whatsapp2 = (Whatsapp_Send(
-                "",
-                "payment_status",
-                [
-                    "conten_type" => "text",
-                    [
-                        $totalAmount,
-                        $application->application_no,
-                    ]
-                ]
-            ));
+            // $whatsapp2 = (Whatsapp_Send(
+            //     "",
+            //     "payment_status",
+            //     [
+            //         "conten_type" => "text",
+            //         [
+            //             $totalAmount,
+            //             $application->application_no,
+            //         ]
+            //     ]
+            // ));
             $this->commit();
             $temp['name']       = $refUser->user_name;
             $temp['mobile']     = $refUser->mobile;
