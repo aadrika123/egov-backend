@@ -578,8 +578,8 @@ class PropertyController extends Controller
             $holdingTaxController = new HoldingTaxController($this->_safRepo);
             $holdingDtls = $mPropProperties->searchCollectiveHolding($request->holdingNo);
             foreach ($request->holdingNo as $holdingNo) {
-                $holdingDtls = $mPropProperties->searchByHoldingNo($holdingNo);
-                if (collect($holdingDtls)->isEmpty())
+                $holdingDtlsV1 = $mPropProperties->searchByHoldingNo($holdingNo);
+                if (collect($holdingDtlsV1)->isEmpty())
                     throw new Exception("No Property found for the respective holding no." . $holdingNo);
             }
             if (collect($holdingDtls)->isEmpty())
