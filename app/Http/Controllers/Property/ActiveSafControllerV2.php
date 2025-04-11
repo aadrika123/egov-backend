@@ -104,7 +104,7 @@ class ActiveSafControllerV2 extends Controller
                 }
                 // Add New Floors
                 foreach ($newFloors as $newFloor) {
-                    $mPropSafFloors->addfloor($newFloor, $id, $citizenId);
+                    $mPropSafFloors->addfloor($newFloor, $id, $citizenId ,$req->assessmentType);
                 }
 
                 // Delete No Existing Owners

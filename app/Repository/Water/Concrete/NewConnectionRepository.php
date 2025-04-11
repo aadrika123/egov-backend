@@ -1093,64 +1093,64 @@ class NewConnectionRepository implements iNewConnection
         | Working / Flag / Check / reused
      */
 
-    // public function getApprovedWater($request)
-    // {
-    //     $mWaterConsumer         = new WaterConsumer();
-    //     $mWaterConnectionCharge = new WaterConnectionCharge();
-    //     $mWaterConsumerOwner    = new WaterConsumerOwner();
-    //     $mWaterParamConnFee     = new WaterParamConnFee();
+    public function getApprovedWater($request)
+    {
+        $mWaterConsumer         = new WaterConsumer();
+        $mWaterConnectionCharge = new WaterConnectionCharge();
+        $mWaterConsumerOwner    = new WaterConsumerOwner();
+        $mWaterParamConnFee     = new WaterParamConnFee();
 
-    //     $key = collect($request)->map(function ($value, $key) {
-    //         return $key;
-    //     })->first();
-    //     $string         = preg_replace("/([A-Z])/", "_$1", $key);
-    //     $refstring      = strtolower($string);
-    //     $approvedWater  = $mWaterConsumer->getConsumerByConsumerNo($refstring, $request->id);
-    //     $connectionCharge['connectionCharg'] = $mWaterConnectionCharge->getWaterchargesById($approvedWater['apply_connection_id'])
-    //         ->where('charge_category', '!=', 'Site Inspection')                                     # Static
-    //         ->first();
-    //     $waterOwner['ownerDetails'] = $mWaterConsumerOwner->getConsumerOwner($approvedWater['consumer_id'])->get();
-    //     $water['calcullation']      = $mWaterParamConnFee->getCallParameter($approvedWater['property_type_id'], $approvedWater['area_sqft'])->first();
+        $key = collect($request)->map(function ($value, $key) {
+            return $key;
+        })->first();
+        $string         = preg_replace("/([A-Z])/", "_$1", $key);
+        $refstring      = strtolower($string);
+        $approvedWater  = $mWaterConsumer->getConsumerByConsumerNo($refstring, $request->id);
+        $connectionCharge['connectionCharg'] = $mWaterConnectionCharge->getWaterchargesById($approvedWater['apply_connection_id'])
+            ->where('charge_category', '!=', 'Site Inspection')                                     # Static
+            ->first();
+        $waterOwner['ownerDetails'] = $mWaterConsumerOwner->getConsumerOwner($approvedWater['consumer_id'])->get();
+        $water['calcullation']      = $mWaterParamConnFee->getCallParameter($approvedWater['property_type_id'], $approvedWater['area_sqft'])->first();
 
-    //     $consumerDetails = collect($approvedWater)->merge($connectionCharge)->merge($waterOwner)->merge($water);
-    //     return remove_null($consumerDetails);
-    // }
+        $consumerDetails = collect($approvedWater)->merge($connectionCharge)->merge($waterOwner)->merge($water);
+        return remove_null($consumerDetails);
+    }
 
 
     /* 
     * | Get Approved Application Details According to Consumer No
     * | update by Alok
     */
-    public function getApprovedWater($request)
-    {
-        $mWaterConsumer = new WaterConsumer();
-        $mWaterConnectionCharge = new WaterConnectionCharge();
-        $mWaterConsumerOwner = new WaterConsumerOwner();
-        $mWaterParamConnFee = new WaterParamConnFee();
+    // public function getApprovedWater($request)
+    // {
+    //     $mWaterConsumer = new WaterConsumer();
+    //     $mWaterConnectionCharge = new WaterConnectionCharge();
+    //     $mWaterConsumerOwner = new WaterConsumerOwner();
+    //     $mWaterParamConnFee = new WaterParamConnFee();
 
-        // Validate consumer_no directly instead of transforming keys
-        if (!isset($request->consumer_no)) {
-            throw new Exception("Consumer number is required!");
-        }
+    //     // Validate consumer_no directly instead of transforming keys
+    //     if (!isset($request->consumer_no)) {
+    //         throw new Exception("Consumer number is required!");
+    //     }
 
-        $approvedWater = $mWaterConsumer->getConsumerByConsumerNo('consumer_no', $request->consumer_no);
+    //     $approvedWater = $mWaterConsumer->getConsumerByConsumerNo('consumer_no', $request->consumer_no);
 
-        // Check if consumer data exists
-        if (!$approvedWater) {
-            throw new Exception("Consumer not found!");
-        }
-        // Fetch additional details safely
-        $connectionCharge = [
-            'connectionCharge' => $mWaterConnectionCharge->getWaterchargesById($approvedWater->apply_connection_id)
-                ->where('charge_category', '!=', 'Site Inspection')
-                ->first()
-        ];
-        $waterOwner = [ 'ownerDetails' => $mWaterConsumerOwner->getConsumerOwner($approvedWater->consumer_id)->get()];
-        $water = [ 'calculation' => $mWaterParamConnFee->getCallParameter($approvedWater->property_type_id, $approvedWater->area_sqft)->first()];
-        // Merge data safely
-        $consumerDetails = collect($approvedWater)->merge($connectionCharge)->merge($waterOwner)->merge($water);
+    //     // Check if consumer data exists
+    //     if (!$approvedWater) {
+    //         throw new Exception("Consumer not found!");
+    //     }
+    //     // Fetch additional details safely
+    //     $connectionCharge = [
+    //         'connectionCharge' => $mWaterConnectionCharge->getWaterchargesById($approvedWater->apply_connection_id)
+    //             ->where('charge_category', '!=', 'Site Inspection')
+    //             ->first()
+    //     ];
+    //     $waterOwner = [ 'ownerDetails' => $mWaterConsumerOwner->getConsumerOwner($approvedWater->consumer_id)->get()];
+    //     $water = [ 'calculation' => $mWaterParamConnFee->getCallParameter($approvedWater->property_type_id, $approvedWater->area_sqft)->first()];
+    //     // Merge data safely
+    //     $consumerDetails = collect($approvedWater)->merge($connectionCharge)->merge($waterOwner)->merge($water);
 
-        return remove_null($consumerDetails);
-    }
+    //     return remove_null($consumerDetails);
+    // }
 
 }

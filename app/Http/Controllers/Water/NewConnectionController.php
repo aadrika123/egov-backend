@@ -520,11 +520,8 @@ class NewConnectionController extends Controller
     }
 
 
-    /**
-     * | Get full details of approved water appliction
-     * | Get all the workflow details and the application related details 
-     */
-    /* public function approvedWaterApplications(Request $request)
+  
+    public function approvedWaterApplications(Request $request)
     {
         try {
             if ($request->id) {
@@ -618,7 +615,7 @@ class NewConnectionController extends Controller
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
-    } */
+    }
 
     /* 
     * | UPDATE CODE TO FILTER THE DATA BY CONSUMER NO
@@ -627,106 +624,106 @@ class NewConnectionController extends Controller
     * | UPDATED ON : 2025-03-26
     * | UPDATED BY : ALOK
     */
-    public function approvedWaterApplications(Request $request)
-    {
-        try {
-            if ($request->consumer_no) {
-                $validated = Validator::make(
-                    $request->all(),
-                    [
-                        "consumer_no" => "required|string",
-                    ]
-                );
-                if ($validated->fails())
-                    return validationError($validated);
+    // public function approvedWaterApplications(Request $request)
+    // {
+    //     try {
+    //         if ($request->consumer_no) {
+    //             $validated = Validator::make(
+    //                 $request->all(),
+    //                 [
+    //                     "consumer_no" => "required|string",
+    //                 ]
+    //             );
+    //             if ($validated->fails())
+    //                 return validationError($validated);
 
-                $mWaterConsumer = new WaterConsumer();
-                $consumerDetails = $mWaterConsumer->where('consumer_no', $request->consumer_no)->first();
+    //             $mWaterConsumer = new WaterConsumer();
+    //             $consumerDetails = $mWaterConsumer->where('consumer_no', $request->consumer_no)->first();
 
-                if (!$consumerDetails) {
-                    throw new Exception("Consumer not found!");
-                }
+    //             if (!$consumerDetails) {
+    //                 throw new Exception("Consumer not found!");
+    //             }
 
-                // Get consumer_id from the fetched details
-                $refConsumerId = $consumerDetails->id;
+    //             // Get consumer_id from the fetched details
+    //             $refConsumerId = $consumerDetails->id;
 
-                $mWaterConsumerMeter        = new WaterConsumerMeter();
-                $mWaterConsumerInitialMeter = new WaterConsumerInitialMeter();
-                $mWaterConsumerDemand       = new WaterConsumerDemand();
-                $refConnectionName          = Config::get('waterConstaint.METER_CONN_TYPE');
-                $flipConnection             = collect($refConnectionName)->flip();
+    //             $mWaterConsumerMeter        = new WaterConsumerMeter();
+    //             $mWaterConsumerInitialMeter = new WaterConsumerInitialMeter();
+    //             $mWaterConsumerDemand       = new WaterConsumerDemand();
+    //             $refConnectionName          = Config::get('waterConstaint.METER_CONN_TYPE');
+    //             $flipConnection             = collect($refConnectionName)->flip();
 
-                $consumerDetails = $this->newConnection->getApprovedWater($request);
-                $refApplicationId['applicationId'] = $consumerDetails['consumer_id'];
+    //             $consumerDetails = $this->newConnection->getApprovedWater($request);
+    //             $refApplicationId['applicationId'] = $consumerDetails['consumer_id'];
 
-                // Fetch meter details by consumer_id
-                $refMeterData = $mWaterConsumerMeter->getMeterDetailsByConsumerId($refConsumerId)->first();
+    //             // Fetch meter details by consumer_id
+    //             $refMeterData = $mWaterConsumerMeter->getMeterDetailsByConsumerId($refConsumerId)->first();
 
-                if ($refMeterData) {
-                    switch ($refMeterData['connection_type']) {
-                        case (1):
-                            if ($refMeterData['meter_status'] == 1) {
-                                $connectionName = $refConnectionName['1'];
-                                $consumerDemand['connectionId'] = $flipConnection['Meter'];
-                                $fialMeterReading = $mWaterConsumerInitialMeter->getmeterReadingAndDetails($refConsumerId)
-                                    ->orderByDesc('id')
-                                    ->first();
-                                $consumerDemand['lastMeterReading'] = $fialMeterReading->initial_reading ?? 0;
-                                break;
-                            }
-                            $connectionName = $refConnectionName['4'];
-                            $consumerDemand['connectionId'] = $flipConnection['Meter/Fixed'];
-                            $refConsumerDemand = $mWaterConsumerDemand->consumerDemandByConsumerId($refConsumerId);
-                            $fialMeterReading = $mWaterConsumerInitialMeter->getmeterReadingAndDetails($refConsumerId)
-                                ->orderByDesc('id')
-                                ->first();
-                            $finalSecondLastReading = $mWaterConsumerInitialMeter->getSecondLastReading($refConsumerId, $fialMeterReading->id);
-                            if (is_null($refConsumerDemand)) {
-                                throw new Exception("There should be demand for the previous meter entry!");
-                            }
-                            $consumerDemand['demandFrom'] = collect($refConsumerDemand)['demand_from'];
-                            $consumerDemand['demandUpto'] = collect($refConsumerDemand)['demand_upto'];
-                            $startDate  = Carbon::parse($consumerDemand['demandFrom']);
-                            $endDate    = Carbon::parse($consumerDemand['demandUpto']);
-                            $diffInDays = $endDate->diffInDays($startDate);
-                            $refTaxUnitConsumed = ($fialMeterReading['initial_reading'] ?? 0) - ($finalSecondLastReading['initial_reading'] ?? 0);
+    //             if ($refMeterData) {
+    //                 switch ($refMeterData['connection_type']) {
+    //                     case (1):
+    //                         if ($refMeterData['meter_status'] == 1) {
+    //                             $connectionName = $refConnectionName['1'];
+    //                             $consumerDemand['connectionId'] = $flipConnection['Meter'];
+    //                             $fialMeterReading = $mWaterConsumerInitialMeter->getmeterReadingAndDetails($refConsumerId)
+    //                                 ->orderByDesc('id')
+    //                                 ->first();
+    //                             $consumerDemand['lastMeterReading'] = $fialMeterReading->initial_reading ?? 0;
+    //                             break;
+    //                         }
+    //                         $connectionName = $refConnectionName['4'];
+    //                         $consumerDemand['connectionId'] = $flipConnection['Meter/Fixed'];
+    //                         $refConsumerDemand = $mWaterConsumerDemand->consumerDemandByConsumerId($refConsumerId);
+    //                         $fialMeterReading = $mWaterConsumerInitialMeter->getmeterReadingAndDetails($refConsumerId)
+    //                             ->orderByDesc('id')
+    //                             ->first();
+    //                         $finalSecondLastReading = $mWaterConsumerInitialMeter->getSecondLastReading($refConsumerId, $fialMeterReading->id);
+    //                         if (is_null($refConsumerDemand)) {
+    //                             throw new Exception("There should be demand for the previous meter entry!");
+    //                         }
+    //                         $consumerDemand['demandFrom'] = collect($refConsumerDemand)['demand_from'];
+    //                         $consumerDemand['demandUpto'] = collect($refConsumerDemand)['demand_upto'];
+    //                         $startDate  = Carbon::parse($consumerDemand['demandFrom']);
+    //                         $endDate    = Carbon::parse($consumerDemand['demandUpto']);
+    //                         $diffInDays = $endDate->diffInDays($startDate);
+    //                         $refTaxUnitConsumed = ($fialMeterReading['initial_reading'] ?? 0) - ($finalSecondLastReading['initial_reading'] ?? 0);
 
-                            $consumerDemand['lastConsumedUnit'] = round($refTaxUnitConsumed, 2);
-                            $consumerDemand['avgReading'] = round(($refTaxUnitConsumed / $diffInDays), 2);
-                            $consumerDemand['lastMeterReading'] = $fialMeterReading->initial_reading ?? 0;
-                            break;
-                        case (2):
-                            $connectionName = $refConnectionName['2'];
-                            $consumerDemand['connectionId'] = $flipConnection['Gallon'];
-                            $fialMeterReading = $mWaterConsumerInitialMeter->getmeterReadingAndDetails($refConsumerId)
-                                ->orderByDesc('id')
-                                ->first();
-                            $consumerDemand['lastMeterReading'] = $fialMeterReading->initial_reading ?? 0;
-                            break;
-                        case (3):
-                            $connectionName = $refConnectionName['3'];
-                            $consumerDemand['connectionId'] = $flipConnection['Fixed'];
-                            break;
-                    }
-                    $consumerDemand['meterDetails'] = $refMeterData;
-                    $consumerDemand['connectionName'] = $connectionName;
-                    $consumerDetails = collect($consumerDetails)->merge($consumerDemand);
-                }
-                return responseMsgs(true, "Consumer Details!", remove_null($consumerDetails), "", "01", ".ms", "POST", $request->deviceId);
-            }
+    //                         $consumerDemand['lastConsumedUnit'] = round($refTaxUnitConsumed, 2);
+    //                         $consumerDemand['avgReading'] = round(($refTaxUnitConsumed / $diffInDays), 2);
+    //                         $consumerDemand['lastMeterReading'] = $fialMeterReading->initial_reading ?? 0;
+    //                         break;
+    //                     case (2):
+    //                         $connectionName = $refConnectionName['2'];
+    //                         $consumerDemand['connectionId'] = $flipConnection['Gallon'];
+    //                         $fialMeterReading = $mWaterConsumerInitialMeter->getmeterReadingAndDetails($refConsumerId)
+    //                             ->orderByDesc('id')
+    //                             ->first();
+    //                         $consumerDemand['lastMeterReading'] = $fialMeterReading->initial_reading ?? 0;
+    //                         break;
+    //                     case (3):
+    //                         $connectionName = $refConnectionName['3'];
+    //                         $consumerDemand['connectionId'] = $flipConnection['Fixed'];
+    //                         break;
+    //                 }
+    //                 $consumerDemand['meterDetails'] = $refMeterData;
+    //                 $consumerDemand['connectionName'] = $connectionName;
+    //                 $consumerDetails = collect($consumerDetails)->merge($consumerDemand);
+    //             }
+    //             return responseMsgs(true, "Consumer Details!", remove_null($consumerDetails), "", "01", ".ms", "POST", $request->deviceId);
+    //         }
 
-            // Get all consumer details if consumer_no is not provided
-            $mWaterConsumer = new WaterConsumer();
-            $approvedWater = $mWaterConsumer->getConsumerDetails($request);
-            $checkExist = $approvedWater->first();
-            if ($checkExist) {
-                return responseMsgs(true, "Approved Application Details!", $approvedWater, "", "03", "ms", "POST", "");
-            }
-            throw new Exception("Data Not Found!");
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }  
+    //         // Get all consumer details if consumer_no is not provided
+    //         $mWaterConsumer = new WaterConsumer();
+    //         $approvedWater = $mWaterConsumer->getConsumerDetails($request);
+    //         $checkExist = $approvedWater->first();
+    //         if ($checkExist) {
+    //             return responseMsgs(true, "Approved Application Details!", $approvedWater, "", "03", "ms", "POST", "");
+    //         }
+    //         throw new Exception("Data Not Found!");
+    //     } catch (Exception $e) {
+    //         return responseMsg(false, $e->getMessage(), "");
+    //     }
+    // }  
     
 
     /**
