@@ -607,6 +607,9 @@ class  PropActiveSaf extends Model
         return $application;
     }
 
+    /**
+     * | Recent Applications for citizen
+     */
     public function recentApplication($workflowIds, $roleIds, $ulbId)
     {
         $data = PropActiveSaf::on('pgsql::read')
@@ -636,6 +639,9 @@ class  PropActiveSaf extends Model
         return $application;
     }
 
+    /**
+     * | Today Applied Applications
+     */
     public function todayAppliedApplications($userId)
     {
         $date = Carbon::now();
@@ -713,7 +719,7 @@ class  PropActiveSaf extends Model
 
 
     /**
-     * | 
+     * |  Get Lat Long Details of Prop Active Safs
      */
     public function getpropLatLongDetails($wardId)
     {
@@ -888,7 +894,7 @@ class  PropActiveSaf extends Model
     }
 
     /**
-     * | 
+     * |  Get SAF by Apartment ID
      */
     public function getSafByApartmentId($apartmentId)
     {
@@ -936,7 +942,7 @@ class  PropActiveSaf extends Model
     }
 
     /**
-     * |
+     * | Get Property Details by SAF ID
      */
     public function toBePropertyBySafId($safId)
     {

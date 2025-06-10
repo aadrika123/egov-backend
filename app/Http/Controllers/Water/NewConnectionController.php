@@ -1226,7 +1226,7 @@ class NewConnectionController extends Controller
 
 
     /**
-     * | Check if the params for document upload 
+     * | Check if user (citizen or official) has permission to upload documents based on role and status
      */
     public function checkParamForDocUpload($isCitizen, $applicantDetals, $user)
     {

@@ -91,6 +91,9 @@ class WaiverController extends Controller
         }
     }
 
+    /* 
+    * | Uploads document metadata for a workflow-linked property request
+    */
     public function saveDoc($request, $data)
     {
         $docUpload = new DocUpload;
@@ -121,6 +124,8 @@ class WaiverController extends Controller
 
     /**
      * | Final Approval
+     * | Handles approval or rejection of a waiver application and logs the workflow tracking accordingly.
+     * | Validates input, updates application status, and records action in the workflow tracking system.
      */
     public function approvalRejection(Request $req)
     {
@@ -187,6 +192,8 @@ class WaiverController extends Controller
 
     /**
      * | Aprroved List
+     * | Retrieves a paginated list of all approved waiver applications.
+     * | Returns the list with a success message or an error if something goes wrong.
      */
     public function approvedApplication(Request $req)
     {
@@ -204,7 +211,7 @@ class WaiverController extends Controller
     }
 
     /**
-     * |
+     * | Fetches detailed information about a waiver application including property, waiver, workflow, and comments.
      */
     public function applicationDetails(Request $req)
     {
@@ -415,7 +422,7 @@ class WaiverController extends Controller
     }
 
     /**
-     * | 
+     * | Inbox List
      */
     public function inbox(Request $req)
     {
@@ -637,7 +644,7 @@ class WaiverController extends Controller
     }
 
     /**
-     * | 
+     * | Final Waived Amount
      */
     public function finalWaivedAmount(Request $req)
     {

@@ -70,6 +70,10 @@ class PropertyDeactivateController extends Controller
     {
         return $this->_REPOSITORY->readHoldigbyNo($request);
     }
+
+    /**
+     * | Fetches property details by holding number and checks deactivation status.
+     */
     public function readPorertyById(reqReadProperty $request)
     {
         try {
@@ -95,6 +99,10 @@ class PropertyDeactivateController extends Controller
             return responseMsgs(false, $e->getMessage(), $request->all(), "010402", "1.0", "", "POST", $request->deviceId);
         }
     }
+
+    /**
+     * | Submits a property-deactivation request, blocking duplicates.
+     */
     public function deactivatProperty(reqDeactivatProperty $request)
     {
         try {
@@ -111,20 +119,35 @@ class PropertyDeactivateController extends Controller
             return responseMsgs(false, $e->getMessage(), $request->all(), "010403", "1.0", "", "POST", $request->deviceId);
         }
     }
+
+    /**
+     * | Fetches the list of deactivation requests based on the user role.
+     */
     public function inbox(Request $request)
     {
         return $this->_REPOSITORY->inbox($request);
     }
 
+    /**
+     * | Fetches the outbox of deactivation requests.
+     */
     public function outbox(Request $request)
     {
         return $this->_REPOSITORY->outbox($request);
     }
 
+    /**
+     * | Fetches the special inbox for deactivation requests.
+     */
     public function specialInbox(Request $request)
     {
         return $this->_REPOSITORY->specialInbox($request);
     }
+
+    /**
+     * | Forwards or redirects the property deactivation application to the next workflow level.
+     * | Validates user role, ensures workflow integrity, and updates the current role in the process.
+     */
 
     public function postNextLevel(reqPostNext $request)
     {
@@ -193,6 +216,11 @@ class PropertyDeactivateController extends Controller
         }
     }
 
+    /**
+     * | Approves or rejects a property deactivation application based on user role and status.
+     * | Updates property status on approval or logs the rejection, and removes the active request.
+     */
+
     public function approvalRejection(Request $request)
     {
         $request->validate([
@@ -247,6 +275,12 @@ class PropertyDeactivateController extends Controller
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+
+    /**
+     * | Transfers property deactivation request data from the source model to the target model.
+     * | Used during approval or rejection to preserve request details in the appropriate table.
+     */
+
     private function transeferData($targerModel, $sorseModel)
     {
         $targerModel->id             = $sorseModel->id;
@@ -267,10 +301,20 @@ class PropertyDeactivateController extends Controller
         $targerModel->create_at      = $sorseModel->create_at;
         $targerModel->create_at      = $sorseModel->create_at;
     }
+
+    /**
+     * | Reads the deactivation request details based on the provided request.
+     * | Validates the request and fetches the deactivation request data.
+     */
     public function readDeactivationReq(Request $request)
     {
         return $this->_REPOSITORY->readDeactivationReq($request);
     }
+
+    /**
+     * | Adds an independent comment to a property deactivation application.
+     * | Saves the comment in the workflow track without affecting the workflow level.
+     */
     public function commentIndependent(Request $request)
     {
         $request->validate([
@@ -308,6 +352,10 @@ class PropertyDeactivateController extends Controller
         }
     }
 
+    /**
+     * | Escalates or removes escalation from a property deactivation request.
+     * | Updates the escalation status and escalated-by user.
+     */
     public function postEscalate(Request $request)
     {
         $request->validate([
@@ -325,6 +373,10 @@ class PropertyDeactivateController extends Controller
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
+
+    /**
+     * | Fetches uploaded document paths for a given deactivation application.
+     */
 
     public function getUplodedDocuments(Request $request)
     {

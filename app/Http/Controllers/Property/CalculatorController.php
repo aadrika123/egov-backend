@@ -32,6 +32,9 @@ class CalculatorController extends Controller
         $this->_effectiveRuleset3 = Config::get('PropertyConstaint.EFFECTIVE_DATE_RULE3');
     }
 
+    /* 
+    * | calculate SAF tax by invoking reviewCalculation and returning its result
+    */
     public function calculator(reqApplySaf $request)
     {
         try {
@@ -44,6 +47,8 @@ class CalculatorController extends Controller
 
     /**
      * | Review for the Calculation
+     * | Processes SAF tax review by preparing floors data, calculating tax, grouping details by floors and rulesets,
+     * | generating quarterly tax summaries, and formatting a detailed response for frontend review.
      */
     public function reviewCalculation(reqApplySaf $req)
     {
@@ -265,7 +270,9 @@ class CalculatorController extends Controller
     }
 
 
-
+    /*
+    * | get dashboard data by delegating to Repository
+    */
     public function dashboardDate(Request $request)
     {
         return $this->Repository->getDashboardData($request);

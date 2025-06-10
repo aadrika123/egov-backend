@@ -1068,20 +1068,8 @@ class WaterPaymentController extends Controller
     /**
      * | Verify the requirements for the Offline payment
      * | Check the valid condition on application and req
-     * | @param req
-     * | @param refApplication
-     * | @var mWaterPenaltyInstallment
-     * | @var mWaterConnectionCharge
-     * | @var penaltyIds
-     * | @var refPenallty
-     * | @var refPenaltySumAmount
-     * | @var refAmount
-     * | @var actualCharge
-     * | @var actualAmount
-     * | @var actualPenaltyAmount
-     * | @var chargeAmount
-        | Serial No : 07
-        | Not tested
+     * | Serial No : 07
+     * | Not tested
      */
     public function verifyPaymentRules($req, $refApplication)
     {
@@ -1217,7 +1205,6 @@ class WaterPaymentController extends Controller
 
     /**
      * | Post Other Payment Modes for Cheque,DD,Neft
-     * | @param req
         | Serial No : 07.02
         | Work
      */
@@ -1274,8 +1261,6 @@ class WaterPaymentController extends Controller
 
     /**
      * | Update the penalty Status 
-     * | @param req
-     * | @var mWaterPenaltyInstallment
         | Serial No : 07
         | Not tested
      */
@@ -1305,7 +1290,6 @@ class WaterPaymentController extends Controller
 
     /**
      * | Get the payment history for the Application
-     * | @param request
         | Serial No : 08
         | Working
      */
@@ -1395,7 +1379,6 @@ class WaterPaymentController extends Controller
 
     /**
      * | Generate Demand Payment receipt
-     * | @param req
         | Serial No : 09
         | Working
      */
@@ -1537,7 +1520,6 @@ class WaterPaymentController extends Controller
      * | Initiate the online Demand payment Online
      * | Get the details for order id 
      * | Check the amount for the orderId
-     * | @param request
         | Working
         | Serial No : 10
         | Collect the error occure while order id is generated
@@ -1590,8 +1572,6 @@ class WaterPaymentController extends Controller
     /**
      * | Online Payment for the consumer Demand
      * | Data After the Webhook Payment / Called by the Webhook
-     * | @param webhookData
-     * | @param RazorPayRequest
         | Serial No : 11
         | Recheck / Not Working
         | Clear the concept
@@ -1692,8 +1672,6 @@ class WaterPaymentController extends Controller
     /**
      * | Online Payment for the consumer Demand
      * | Data After the Webhook Payment / Called by the Webhook
-     * | @param webhookData
-     * | @param RazorPayRequest
         | Serial No : 11
         | Recheck / Not Working
         | Clear the concept
@@ -1797,7 +1775,6 @@ class WaterPaymentController extends Controller
     /**
      * | Get citizen payment history to show 
      * | Using user Id for displaying data
-     * | @param request 
         | Selail No : 12
         | Use 
         | Show the payment from jsk also
@@ -2338,7 +2315,7 @@ class WaterPaymentController extends Controller
                 "propertyType"          => $applicationDetails['property_type'],
                 "meterNo"               => $applicationDetails['meter_no'],
                 "safNo"                 => $applicationDetails['saf_no'],
-                "consumerNo"            => $applicationDetails['consumer_no'],
+                // "consumerNo"            => $applicationDetails['consumer_no'],
                 "paidUpto"              => "",
                 "paymentMode"           => $transactionDetails['payment_mode'],
                 "bankName"              => $chequeDetails['bank_name'] ?? null,                                  // in case of cheque,dd,nfts
@@ -2379,7 +2356,6 @@ class WaterPaymentController extends Controller
 
     /**
      * | Get the payment history for the Application
-     * | @param request
         | Serial No : 08
         | Working
      */

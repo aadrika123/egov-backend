@@ -52,7 +52,6 @@ class ActiveSafControllerV2 extends Controller
     use SAF;
     /**
      * | Edit Applied Saf by SAF Id for BackOffice
-     * | @param request $req
      * | Serial 01
      */
     public function editCitizenSaf(reqApplySaf $req)
@@ -128,7 +127,7 @@ class ActiveSafControllerV2 extends Controller
     }
 
     /**
-     * | Delete Citizen Saf
+     * | Deletes a SAF record if payment not done; marks related owners and floors as inactive.
      * | Serial 02
      */
     public function deleteCitizenSaf(Request $req)
@@ -164,6 +163,7 @@ class ActiveSafControllerV2 extends Controller
 
     /**
      * | Generate memo receipt
+     * | Generates and returns memo receipt details including tax calculations and ULB info.
      * | Serial 03
      */
     public function memoReceipt(Request $req)
@@ -323,6 +323,7 @@ class ActiveSafControllerV2 extends Controller
     }
 
     /**
+     * | Verify if a holding number exists in the property records.
      * | Serial 05
      */
     public function verifyHoldingNo(Request $req)
@@ -392,6 +393,7 @@ class ActiveSafControllerV2 extends Controller
 
     /**
      * | Get Pending GeoTaggings
+     * | Fetch paginated list of pending geo-tagging SAF records for the authenticated user.
      */
     public function pendingGeoTaggingList(Request $req, iSafRepository $iSafRepo)
     {
@@ -438,6 +440,7 @@ class ActiveSafControllerV2 extends Controller
 
     /**
      * | Cluster Demand for Saf
+     * | Get cluster-wise SAF dues summary with penalty and rebate calculations.
      */
     public function getClusterSafDues(Request $req, iSafRepository $iSafRepository)
     {
@@ -548,6 +551,7 @@ class ActiveSafControllerV2 extends Controller
 
     /**
      * | Cluster Payment
+     * | Process cluster SAF payment and record transactions.
      */
     public function clusterSafPayment(ReqPayment $req, iSafRepository $iSafRepository)
     {

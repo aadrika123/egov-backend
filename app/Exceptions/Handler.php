@@ -3,6 +3,7 @@
 namespace App\Exceptions;
 
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -37,5 +38,19 @@ class Handler extends ExceptionHandler
         $this->reportable(function (Throwable $e) {
             //
         });
+    }
+
+    public function unauthenticated($request, \Illuminate\Auth\AuthenticationException $exception)
+    {
+        Log::channel('apilogs')->error('🔐 Unauthenticated request', [
+            'url' => $request->fullUrl(),
+            'ip' => $request->ip(),
+            'method' => $request->method(),
+        ]);
+
+        return response()->json([
+            'status' => true,
+            'authenticated' => false
+        ], 200);
     }
 }

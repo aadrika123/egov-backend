@@ -58,7 +58,7 @@ Route::post('api-test', function () {
 
 // Inside Middleware Routes with API Authenticate 
 // Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger', 'expireBearerToken']], function () {
-Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
+Route::group(['middleware' => ['json.response', 'auth_maker', 'apilogger']], function () {
 
   /**
    * | SAF
@@ -399,7 +399,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
  * | SAF
      | Serial No : 01
  */
-Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
+Route::group(['middleware' => ['json.response', 'auth_maker', 'apilogger']], function () {
   Route::controller(ActiveSafController::class)->group(function () {
     Route::post('saf/master-saf', 'masterSaf');                                 // Get all master data in Saf                                  #API_ID = 010103
     Route::post('saf/saf-payment',  'paymentSaf');                              // SAF Payment                                                 #API_ID = 010128

@@ -43,7 +43,10 @@ class CalculatorRepository implements iCalculatorRepository
         $this->calculation = new SafCalculation();
     }
 
-
+    /* 
+    * | Prepares input data for SAF tax calculation, invokes calculation 
+    * | service, and formats the detailed response.
+    */
     public function safCalculator($request)
     {
         try {
@@ -83,6 +86,10 @@ class CalculatorRepository implements iCalculatorRepository
         }
     }
 
+    /* 
+    * | Retrieves dashboard application summary data filtered by date range, 
+    * | returning counts and categorized application stats.
+    */
     public function getDashboardData($request)
     {
         try {

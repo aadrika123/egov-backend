@@ -36,7 +36,10 @@ class ClusterController extends Controller
         $this->cluster = $cluster;
     }
 
-    // get all list of the cluster
+    /* 
+    * | get all list of the cluster
+    * | Query cost : 1.7 seconds approx
+    */
     public function getAllClusters()
     {
         try {
@@ -48,7 +51,9 @@ class ClusterController extends Controller
         }
     }
 
-    // get all details of the cluster accordin to the id
+    /* 
+    * | get all details of the cluster according to the id
+    */
     public function getClusterById(Request $request)
     {
         $request->validate([
@@ -109,6 +114,7 @@ class ClusterController extends Controller
 
     /**
      * | Get Cluster basic Details
+     * | Query cost : 1.7 s approx
      */
     public function clusterBasicDtls(Request $req)
     {
@@ -125,7 +131,9 @@ class ClusterController extends Controller
         }
     }
 
-    //updating the cluster details to the respective id
+    /* 
+    * | updating the cluster details to the respective id
+    */
     public function editClusterDetails(Request $request)
     {
         try {
@@ -155,7 +163,9 @@ class ClusterController extends Controller
         }
     }
 
-    //saving the cluster details 
+    /* 
+    * | saving the cluster details 
+    */
     public function saveClusterDetails(Request $request)
     {
         try {
@@ -198,6 +208,7 @@ class ClusterController extends Controller
     /**
      * |----------------------------------- Cluster Maping ----------------------------------------|
      * | Date : 24-11-22
+     * | Query cost : 2s approx
      */
 
     // selecting details according to holding no // Change the repositery
@@ -225,7 +236,12 @@ class ClusterController extends Controller
         }
     }
 
-    // selecting details according to clusterID
+    
+    /* 
+    * | selecting details according to clusterID
+    * | Validates and associates multiple holdings with a specified active cluster, 
+    * | updating related property and demand records.
+    */
     public function saveHoldingInCluster(Request $request)
     {
         $request->validate([
@@ -269,6 +285,7 @@ class ClusterController extends Controller
 
     /**
      * | Search Saf by by Saf no
+     * | Query cost : 1.78s approx
      */
     public function getSafBySafNo(Request $request)
     {
@@ -289,7 +306,11 @@ class ClusterController extends Controller
         }
     }
 
-    // selecting details according to clusterID // Route
+    /* 
+    * | selecting details according to clusterID
+    * | Validates and associates multiple SAF numbers with a specified active 
+    * | cluster, updating related SAF and demand records.
+    */
     public function saveSafInCluster(Request $request)
     {
         $request->validate([
@@ -330,8 +351,6 @@ class ClusterController extends Controller
 
     /**
      * | ----------------- Common funtion for the return component in failer ------------------------------- |
-     * | @param req
-     * | @var return
      * | Operation : returning the messge using (responseMsg)
      */
     public function validation($req)

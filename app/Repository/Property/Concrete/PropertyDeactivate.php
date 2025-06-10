@@ -61,15 +61,6 @@ class PropertyDeactivate implements IPropertyDeactivate
     }
     /**
      * | Searching the valide Property With New Holding No
-         query cost(**)
-     * |
-     * |-----------------------------------------------------------------------
-     * | @var refUser    = Auth()->user()       | loging user Data
-     * | @var refUserId  = refUser->id          | loging user Id
-     * | @var refUlbId   = refUser->ulb_id      | loging user Ulb Id
-     * |
-     * | @var mHoldingNo = strtoupper(request->holdingNo) | request data
-     * | @var property   
      */
     public function readHoldigbyNo(Request $request)
     {

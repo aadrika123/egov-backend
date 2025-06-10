@@ -93,6 +93,7 @@ class ApplySafController extends Controller
      * | Status-Closed
      * | Query Costing-500 ms
      * | Rating-5
+     * | Main Function A1
      */
     public function applySaf(reqApplySaf $request)
     {
@@ -223,6 +224,8 @@ class ApplySafController extends Controller
 
     /**
      * | Read Assessment Type and Ulb Workflow Id
+     * | 
+     * | A1.1
      */
     public function readAssessUlbWfId($request, $ulb_id)
     {
@@ -258,6 +261,8 @@ class ApplySafController extends Controller
 
     /**
      * | Merge Extra Fields in request for Reassessment,Mutation,Etc
+     * | 
+     * | A1.2
      */
     public function mergeAssessedExtraFields()
     {
@@ -313,6 +318,8 @@ class ApplySafController extends Controller
 
     /**
      * | Check Bifurcation Condition
+     * | 
+     * | A1.2.1
      */
     public function checkBifurcationCondition($propDtls, $activeSafReqs)
     {
@@ -332,6 +339,8 @@ class ApplySafController extends Controller
 
     /**
      * | Check Bifurcation Floor Condition
+     * | 
+     * | A1.3
      */
     public function checkBifurcationFloorCondition($floorDetail)
     {
@@ -356,42 +365,10 @@ class ApplySafController extends Controller
     }
 
     /**
-     * | Demand Adjustment In Case of Reassessment
-     */
-    public function adjustDemand()
-    {
-        $propDemandList = array();
-        $mSafDemand = $this->_safDemand;
-        $generatedDemand = $this->_generatedDemand;
-        $propProperty = $this->_propProperty;
-        $holdingNo = $this->_holdingNo;
-        $mPropDemands = new PropDemand();
-        $propDtls = $propProperty->getSafIdByHoldingNo($holdingNo);
-        $propertyId = $propDtls->id;
-        $safDemandList = $mSafDemand->getFullDemandsBySafId($propDtls->saf_id);
-        if ($safDemandList->isEmpty())
-            throw new Exception("Previous Saf Demand is Not Available");
-
-        $propDemandList = $mPropDemands->getPaidDemandByPropId($propertyId);
-        $fullDemandList = $safDemandList->merge($propDemandList);
-        $generatedDemand = $generatedDemand->sortBy('due_date');
-
-        // Demand Adjustment
-        foreach ($generatedDemand as $item) {
-            $demand = $fullDemandList->where('due_date', $item['dueDate'])->first();
-            if (collect($demand)->isEmpty())
-                $item['adjustAmount'] = 0;
-            else
-                $item['adjustAmount'] = $demand->amount - $demand->balance;
-            $item['balance'] = roundFigure($item['totalTax'] - $item['adjustAmount']);
-            if ($item['balance'] == 0)
-                $item['onePercPenaltyTax'] = 0;
-        }
-        return $generatedDemand;
-    }
-
-    /**
-     * | Apply GB Saf
+     * | This API handles the submission of GB SAF (Government Building Self Assessment Form) applications.
+     * | It calculates property tax, saves building and officer details, and initiates the workflow process.
+     * | 
+     * | Main Function M1
      */
     public function applyGbSaf(ReqGBSaf $req)
     {
@@ -539,6 +516,8 @@ class ApplySafController extends Controller
 
     /**
      * | Read GB Assessment Type and Ulb Workflow Id
+     * | 
+     * | M1.1
      */
     public function readGbAssessUlbWfId($request, $ulb_id)
     {
@@ -559,6 +538,8 @@ class ApplySafController extends Controller
 
     /**
      * | Send to Workflow Level
+     * | 
+     * | M1.2
      */
     public function sendToWorkflow($activeSaf, $userId)
     {
@@ -576,5 +557,44 @@ class ApplySafController extends Controller
             'ulb_id' => $activeSaf->original['ulb_id'],
         ];
         $mWorkflowTrack->store($reqWorkflow);
+    }
+
+    #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
+    /**
+     * | Demand Adjustment In Case of Reassessment
+     * | 
+       | Note: This function is not in use currently (No Route is assigned to this function)
+       | Date: 09-06-2025
+     */
+    public function adjustDemand()
+    {
+        $propDemandList = array();
+        $mSafDemand = $this->_safDemand;
+        $generatedDemand = $this->_generatedDemand;
+        $propProperty = $this->_propProperty;
+        $holdingNo = $this->_holdingNo;
+        $mPropDemands = new PropDemand();
+        $propDtls = $propProperty->getSafIdByHoldingNo($holdingNo);
+        $propertyId = $propDtls->id;
+        $safDemandList = $mSafDemand->getFullDemandsBySafId($propDtls->saf_id);
+        if ($safDemandList->isEmpty())
+            throw new Exception("Previous Saf Demand is Not Available");
+
+        $propDemandList = $mPropDemands->getPaidDemandByPropId($propertyId);
+        $fullDemandList = $safDemandList->merge($propDemandList);
+        $generatedDemand = $generatedDemand->sortBy('due_date');
+
+        // Demand Adjustment
+        foreach ($generatedDemand as $item) {
+            $demand = $fullDemandList->where('due_date', $item['dueDate'])->first();
+            if (collect($demand)->isEmpty())
+                $item['adjustAmount'] = 0;
+            else
+                $item['adjustAmount'] = $demand->amount - $demand->balance;
+            $item['balance'] = roundFigure($item['totalTax'] - $item['adjustAmount']);
+            if ($item['balance'] == 0)
+                $item['onePercPenaltyTax'] = 0;
+        }
+        return $generatedDemand;
     }
 }

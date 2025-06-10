@@ -57,6 +57,7 @@ class GbSafController extends Controller
 
     /**
      * | Inbox for GB Saf
+     * | Query Cost: 358.83ms
      */
     public function inbox(Request $req)
     {
@@ -102,6 +103,7 @@ class GbSafController extends Controller
 
     /**
      * | Outbox for GB Saf
+     * | Query Cost: 454.93ms
      */
     public function outbox(Request $req)
     {
@@ -474,6 +476,7 @@ class GbSafController extends Controller
 
     /**
      * | Site Verification
+     * | Handle site verification for a SAF (Site Approval Form) based on user role.
      */
     public function siteVerification(ReqGbSiteVerification $req)
     {
@@ -553,6 +556,7 @@ class GbSafController extends Controller
 
     /**
      * | Geo tagging
+     * | Handle geo-tagging of images for a given SAF (Site Approval Form).
      */
     public function geoTagging(Request $req)
     {
@@ -697,6 +701,8 @@ class GbSafController extends Controller
 
     /**
      * | BTC Inbox
+     * | Query Cost: 215.56ms
+     * | This function is used to get the BTC Inbox list for the user.
      */
     public function btcInbox(Request $req)
     {
@@ -747,6 +753,7 @@ class GbSafController extends Controller
 
     /**
      * | Post Escalate
+     * | Update the escalation status of a SAF (Site Approval Form) application.
      */
     public function postEscalate(Request $request)
     {
@@ -769,6 +776,7 @@ class GbSafController extends Controller
 
     /**
      * | Escalatee Inbox
+     * | Query Cost: 371.94ms
      */
     public function specialInbox(Request $req)
     {
@@ -849,6 +857,7 @@ class GbSafController extends Controller
 
     /**
      * | Final Approval Rejection
+     * | Handles approval or rejection of a GB SAF (Self Assessment Form) application.
      */
     public function approvalRejectionGbSaf(Request $req)
     {
@@ -1035,6 +1044,7 @@ class GbSafController extends Controller
 
     /**
      * | Get uploaded documents
+     * | Fetch uploaded documents for a given application.
      */
     public function getUploadedDocuments(Request $req)
     {
@@ -1063,6 +1073,7 @@ class GbSafController extends Controller
 
     /**
      * | To upload document
+     * | Upload a document for a given SAF application.
      */
     public function uploadDocument(Request $req)
     {
@@ -1111,7 +1122,8 @@ class GbSafController extends Controller
     }
 
     /**
-     * | Get Doc List
+     * | Get Doc List for 
+     * | Retrieve the list of documents uploaded for a given SAF application.
      */
     public function getDocList(Request $req)
     {
@@ -1130,7 +1142,7 @@ class GbSafController extends Controller
     }
 
     /**
-     * 
+     * | Get GB SAF Document Lists
      */
     public function getGbSafDocLists($refSafs)
     {
@@ -1302,6 +1314,7 @@ class GbSafController extends Controller
 
     /**
      * | Independent Comment
+     * | Save an independent comment on a SAF application, either by a citizen or internal user. 
      */
     public function commentIndependent(Request $request)
     {
@@ -1360,6 +1373,7 @@ class GbSafController extends Controller
 
     /**
      * | GBSaf Details
+     * | Get full GB SAF details by application ID or SAF number.
      */
     public function gbSafDetails(Request $req)
     {

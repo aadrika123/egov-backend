@@ -242,7 +242,7 @@ class PropProperty extends Model
             ->join('ref_prop_types', 'ref_prop_types.id', '=', 'prop_properties.prop_type_mstr_id')
             ->where('prop_properties.status', 1)
             ->where('ulb_id', $ulbId)
-            ->groupBy('prop_properties.id', 'ref_prop_types.property_type');
+            ->groupBy('prop_properties.id', 'ref_prop_types.property_type', 'prop_properties.new_ward_mstr_id', 'prop_properties.prop_address', 'prop_properties.new_holding_no', 'prop_properties.holding_no');
     }
 
     /**
@@ -268,7 +268,7 @@ class PropProperty extends Model
             ->where('prop_properties.cluster_id', $clusterId)
             ->where('prop_properties.status', 1)
             ->where('ref_prop_types.status', 1)
-            ->groupBy('prop_properties.id', 'ref_prop_types.property_type')
+            ->groupBy('prop_properties.id', 'ref_prop_types.property_type', 'prop_properties.new_ward_mstr_id','prop_properties.prop_address', 'prop_properties.cluster_id', 'prop_properties.holding_no', 'prop_properties.ulb_id', 'prop_properties.ward_mstr_id')
             ->get();
     }
 

@@ -39,6 +39,8 @@ class Report implements IReport
     }
     /**
      * | Property Collection
+     * | This generates a collection report of property tax transactions based on filters like date, ward, user, and payment mode.
+     * | It returns paginated transaction details along with total collection amount and holding count.
      */
     public function collectionReport(Request $request)
     {
@@ -167,6 +169,8 @@ class Report implements IReport
 
     /**
      * | Saf collection
+     * | This fetches SAF collection details including active, rejected, and regular SAFs
+     * | based on optional filters like date range, ward, user, ULB, and payment mode.
      */
     public function safCollection(Request $request)
     {
@@ -418,105 +422,12 @@ class Report implements IReport
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
         }
-    }
-  /*   public function safCollection(Request $request)
-    {
-        $metaData = collect($request->metaData)->all();
-        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
-    
-        try {
-            $refUser = authUser($request);
-            $refUserId = $refUser->id;
-            $ulbId = $refUser->ulb_id;
-            $wardId = $request->wardId ?? null;
-            $userId = $request->userId ?? null;
-            $paymentMode = $request->paymentMode ?? null;
-            $fromDate = $request->fromDate ?? Carbon::now()->format("Y-m-d");
-            $uptoDate = $request->uptoDate ?? Carbon::now()->format("Y-m-d");
-            $perPage = $request->perPage ?? 5;
-    
-            // 🛠 Define the function to fetch data from any table dynamically
-            $fetchSafData = function ($safTable, $ownersTable) use ($ulbId, $wardId, $userId, $paymentMode, $fromDate, $uptoDate) {
-                
-                $safIds = DB::table('prop_transactions')
-                    ->join($safTable, "$safTable.id", '=', "prop_transactions.saf_id")
-                    ->whereBetween('prop_transactions.tran_date', [$fromDate, $uptoDate])
-                    ->when($userId, fn($query) => $query->where('prop_transactions.user_id', $userId))
-                    ->when($paymentMode, fn($query) => $query->where('prop_transactions.payment_mode', strtoupper($paymentMode)))
-                    ->when($ulbId, fn($query) => $query->where('prop_transactions.ulb_id', $ulbId))
-                    ->when($wardId, fn($query) => $query->where("$safTable.ward_mstr_id", $wardId))
-                ->pluck("prop_transactions.saf_id");
-    
-                if ($safIds->isEmpty()) return collect();
-    
-                $owners = DB::table($ownersTable)
-                    ->whereIn("saf_id", $safIds)
-                    ->selectRaw("saf_id, STRING_AGG(owner_name, ', ') AS owner_name, STRING_AGG(mobile_no::TEXT, ', ') AS mobile_no")
-                    ->groupBy('saf_id')
-                    ->get()
-                    ->keyBy("saf_id"); // Optimize lookup
-    
-                
-                return DB::table('prop_transactions')
-              ->join($safTable, "$safTable.id", '=', "prop_transactions.saf_id")
-                    ->leftJoin("ulb_ward_masters", "ulb_ward_masters.id", "=", "$safTable.ward_mstr_id")
-                   ->leftJoin("users", "users.id", "=", "prop_transactions.user_id")
-                    ->leftJoin("prop_cheque_dtls", "prop_cheque_dtls.transaction_id", "=", "prop_transactions.id")
-                    ->whereIn("prop_transactions.saf_id", $safIds)
-                    ->selectRaw("
-                        ulb_ward_masters.ward_name AS ward_no,
-                        prop_transactions.id AS tran_id,
-                        $safTable.holding_no AS holding_no,
-                        COALESCE($safTable.saf_no, 'N/A') AS saf_no,
-                        prop_transactions.saf_id,
-                        CONCAT(prop_transactions.from_fyear, '(', prop_transactions.from_qtr, ')', ' / ', 
-                            prop_transactions.to_fyear, '(', prop_transactions.to_qtr, ')') AS from_upto_fy_qtr,
-                        prop_transactions.tran_date,
-                        prop_transactions.payment_mode AS transaction_mode,
-                        prop_transactions.amount,
-                        users.user_name AS emp_name,
-                        users.id AS user_id,
-                        prop_transactions.tran_no,
-                        prop_cheque_dtls.cheque_no,
-                        prop_cheque_dtls.bank_name,
-                        prop_cheque_dtls.branch_name
-                    ")
-                    ->get()
-                    ->map(function ($row) use ($owners) {
-                        // Merge owner details
-                        $owner = $owners[$row->saf_id] ?? (object) ['owner_name' => null, 'mobile_no' => null];
-                        $row->owner_name = $owner->owner_name;
-                        $row->mobile_no = $owner->mobile_no;
-                        return $row;
-                    });
-            };
-    
-            // Fetch Active, Rejected, and General SAF data separately
-            $activSaf = $fetchSafData("prop_active_safs", "prop_active_safs_owners");
-            $rejectedSaf = $fetchSafData("prop_rejected_safs", "prop_rejected_safs_owners");
-            $saf = $fetchSafData("prop_safs", "prop_safs_owners");
-    
-            // Merge and paginate results
-            $allData = $activSaf->merge($rejectedSaf)->merge($saf);
-            $totalAmount = $allData->sum("amount");
-            $pagedData = $allData->forPage($request->page ?? 1, $perPage);
-    
-            return responseMsgs(true, "", [
-                "current_page" => $request->page ?? 1,
-                "last_page" => ceil($allData->count() / $perPage),
-                "totalAmount" => $totalAmount,
-   "data" => $pagedData->values(),
-                "total" => $allData->count(),
-            ], $apiId, $version, $queryRunTime, $action, $deviceId);
-        } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
-        }
-    }
-     */
-    
+    }  
 
     /**
      * | saf prop Individual demand collection
+     * | Get individual property-wise demand and collection summary.
+     * | Returns details like total demand, collection, penalty, rebate, and dues.
      */
     public function safPropIndividualDemandAndCollection(Request $request)
     {
@@ -754,6 +665,8 @@ class Report implements IReport
 
     /**
      * | level wise pending form
+     * | fetch level-wise pending SAF application count for each workflow role.
+     * | Includes JSK count separately and considers role-based workflow mapping and payment status.
      */
     public function levelwisependingform(Request $request)
     {
@@ -814,6 +727,8 @@ class Report implements IReport
 
     /**
      * | level form details
+     * | Fetches a list of SAF applications based on user role, ward permissions, and ULB ID.
+     * | Validates role consistency and applies role-specific filters for data visibility and access control.
      */
     public function levelformdetail(Request $request)
     {
@@ -904,6 +819,11 @@ class Report implements IReport
         }
     }
 
+    /**
+     * | level user pending
+     * | Fetches pending SAF applications grouped by user role, including JSK roles.
+     * | Returns a list of users with their pending application counts and role details.
+     */
     public function levelUserPending(Request $request)
     {
         $metaData = collect($request->metaData)->all();
@@ -988,6 +908,12 @@ class Report implements IReport
             return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
         }
     }
+
+    /**
+     * | user wise ward wire level pending
+     * | Fetches pending SAF applications grouped by ward and user, including JSK roles.
+     * | Returns a list of wards with their pending application counts and role details.
+     */
     public function userWiseWardWireLevelPending(Request $request)
     {
         $metaData = collect($request->metaData)->all();
@@ -1068,7 +994,11 @@ class Report implements IReport
         }
     }
 
-
+    /**
+     * | saf sam fam geotagging
+     * | Fetches SAF statistics including SAM, FAM, BTC, and geotagging counts by ward.
+     * | Returns a summary of SAF applications with various status counts.
+     */
     public function safSamFamGeotagging(Request $request)
     {
         $metaData = collect($request->metaData)->all();
@@ -1170,6 +1100,11 @@ class Report implements IReport
         }
     }
 
+    /**
+     * | prop payment mode wise summary
+     * | Fetches a summary of property transactions grouped by payment mode.
+     * | Returns transaction counts, holding counts, and total amounts for each payment mode.
+     */
     public function PropPaymentModeWiseSummery(Request $request)
     {
         $metaData = collect($request->metaData)->all();
@@ -1419,6 +1354,12 @@ class Report implements IReport
             return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
         }
     }
+
+    /**
+     * | saf payment mode wise summary
+     * | Fetches a summary of SAF transactions grouped by payment mode.
+     * | Returns SAF counts, transaction counts, and total amounts for each payment mode.
+     */
     public function PaymentModeWiseSummery(Request $request)
     {
         $metaData = collect($request->metaData)->all();
@@ -1451,6 +1392,11 @@ class Report implements IReport
         }
     }
 
+    /**
+     * | saf payment mode wise summary
+     * | Fetches a summary of SAF transactions grouped by payment mode.
+     * | Returns SAF counts, transaction counts, and total amounts for each payment mode.
+     */
     public function SafPaymentModeWiseSummery(Request $request)
     {
         $metaData = collect($request->metaData)->all();
@@ -1812,6 +1758,12 @@ class Report implements IReport
         }
     }
 
+    /**
+     * | Property Demand Collection Balance
+     * | Fetches the demand and collection balance for properties in a specific ULB and ward.
+     * | Returns details like property ID, owner name, mobile number, current demand, arrear demand, total demand,
+     * | current collection, arrear collection, total collection, and total previous collection.
+     */
     public function PropDCB(Request $request)
     {
         $metaData = collect($request->metaData)->all();
@@ -2146,6 +2098,12 @@ class Report implements IReport
         }
     }
 
+    /**
+     * | Property Ward Wise Demand Collection Balance
+     * | Fetches the demand and collection balance for properties in a specific ward.
+     * | Returns details like property ID, owner name, mobile number, current demand, arrear demand, total demand,
+     * | current collection, arrear collection, total collection, and total previous collection.
+     */
     public function PropWardWiseDCB(Request $request)
     {
         $metaData = collect($request->metaData)->all();
@@ -2347,6 +2305,11 @@ class Report implements IReport
         }
     }
 
+    /**
+     * | Property Fine Rebate
+     * | Fetches fine rebate details for properties in a specific ULB and ward.
+     * | Returns details like property ID, owner name, mobile number, and rebate amounts.
+     */
     public function PropFineRebate(Request $request)
     {
         $metaData = collect($request->metaData)->all();
@@ -2527,6 +2490,11 @@ class Report implements IReport
         }
     }
 
+    /**
+     * | Property Deactivated List
+     * | Fetches a list of deactivated properties along with their details such as ward number, holding number,
+     * | owner name, mobile number, address, remarks, and documents.
+     */
     public function PropDeactedList(Request $request)
     {
         $metaData = collect($request->metaData)->all();
@@ -2709,6 +2677,8 @@ class Report implements IReport
 
     /**
      * | GBSAF Individual Demand Collection
+     * | Fetches GBSAF individual demand collection details for a specific ULB and ward.
+     * | Returns details like SAF number, property address, GB office name, total demand, collection amount, and balance amount.
      */
     public function gbsafIndividualDemandCollection($request)
     {
@@ -2785,6 +2755,8 @@ class Report implements IReport
 
     /**
      * | Not paid from 2019-2017
+     * | Fetches properties with demands not paid since 2016.
+     * | Returns details like property ID, ward number, holding number, owner name, mobile number, address,
      */
     public function notPaidFrom2016($request)
     {
@@ -2866,6 +2838,8 @@ class Report implements IReport
 
     /**
      * | Paid Previous Year but not Current Year
+     * | Fetches properties that have paid demands in the previous financial year but not in the current year.
+     * | Returns details like property ID, holding number, address, owner name, mobile number, and demand amounts.
      */
     public function previousYearPaidButnotCurrentYear($request)
     {
@@ -2969,6 +2943,8 @@ class Report implements IReport
 
     /**
      * | DCB Pie Chart
+     * | Fetches the Demand Collection Balance (DCB) for the current, previous, and pre-previous financial years.
+     * | Returns total demand, total collection, and total balance for each financial year.
      */
     public function dcbPieChart($request)
     {
@@ -3030,6 +3006,8 @@ class Report implements IReport
 
     /**
      * | Rebate and Penalty
+     * | Fetches rebate and penalty details for properties based on various criteria such as date range, ward, property type, and payment mode.
+     * | Returns details like property ID, ward number, holding number, demand amount, paid amount, penalty amount, and various rebate amounts.
      */
     public function rebateNpenalty($request)
     {

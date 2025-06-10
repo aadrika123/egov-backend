@@ -114,7 +114,11 @@ class JskController extends Controller
         }
     }
 
-
+    /* 
+     * | Get property dashboard details
+     * | Returns today's summary of applications and payment collections based on user role and type for the property dashboard.
+     * | Supports JSK, TC, TL, Back Office, Section Incharge, Dealing Assistant, and Executive Officer views.
+    */
     public function propDashboard(Request $request)
     {
         try {
