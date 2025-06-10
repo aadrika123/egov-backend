@@ -54,6 +54,10 @@ class PropActiveHarvesting extends Model
             );
     }
 
+    /**
+     * | Saves the Harvesting Details
+     * | function to save the harvesting details
+     */
     public function saves($request, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId,  $userId, $ulbId)
     {
 
@@ -139,7 +143,7 @@ class PropActiveHarvesting extends Model
     }
 
     /**
-     * 
+     * | Get Harvesting No By Id
      */
     public function getHarvestingNo($appId)
     {
@@ -175,9 +179,9 @@ class PropActiveHarvesting extends Model
     }
 
     /**
-     * | REcent Applications for jsk
+     * | Recent Applications for jsk
      */
-       public function recentApplicationJsk($userId)
+    public function recentApplicationJsk($userId)
     {
         $data = PropActiveHarvesting::on('pgsql::read')
             ->select(
@@ -203,6 +207,9 @@ class PropActiveHarvesting extends Model
         return $application;
     }
 
+    /**
+     * | Recent Application for all
+     */
     public function recentApplication($workflowIds,$roleId,$ulbId)
     {
         $data = PropActiveHarvesting::on('pgsql::read')

@@ -10,6 +10,9 @@ class MPropVacantRentalrate extends Model
     use HasFactory;
     //written by prity pandey
 
+    /**
+     * | Get MPropVacantRentalrate By ID
+     */
     public function getById($req)
     {
         $list = MPropVacantRentalrate::select(
@@ -25,6 +28,9 @@ class MPropVacantRentalrate extends Model
         return $list;
     }
 
+    /**
+     * | Get MPropVacantRentalrate List
+     */
     public function listMPropVacantRetlRate()
     {
         $list = MPropVacantRentalrate::select(

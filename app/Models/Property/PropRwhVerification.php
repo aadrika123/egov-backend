@@ -23,7 +23,7 @@ class PropRwhVerification extends Model
     ];
 
     /**
-     * 
+     * | Get RWH Verifications Data by Application ID
      */
     public function getVerificationsData($applicationId)
     {
@@ -39,7 +39,7 @@ class PropRwhVerification extends Model
     }
 
     /**
-     * |
+     * | Store RWH Verification Data
      */
     public function store($req)
     {

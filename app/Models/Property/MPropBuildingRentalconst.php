@@ -10,6 +10,9 @@ class MPropBuildingRentalconst extends Model
     use HasFactory;
     //written by prity pandey
 
+    /* 
+     * | Get MPropBuildingRentalconst By ID
+     */
     public function getById($req)
     {
         $list = MPropBuildingRentalconst::select(
@@ -24,7 +27,9 @@ class MPropBuildingRentalconst extends Model
         return $list;
     }
 
-
+    /**
+     * | Get MPropBuildingRentalconst By ULB ID
+     */
     public function listMPropBuildingRenConst()
     {
         $list = MPropBuildingRentalconst::select(

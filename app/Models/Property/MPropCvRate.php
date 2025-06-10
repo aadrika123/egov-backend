@@ -10,6 +10,9 @@ class MPropCvRate extends Model
     use HasFactory;
     //written by prity pandey
 
+    /**
+     * | Get MPropCvRate By ID
+     */
     public function getById($req)
     {
         $list = MPropCvRate::select(
@@ -36,7 +39,9 @@ class MPropCvRate extends Model
         return $list;
     }
 
-
+    /**
+     * | Get MPropCvRate By ULB ID
+     */
     public function listMPropCvRate()
     {
         $list = MPropCvRate::select(

@@ -19,6 +19,9 @@ class PropAdjustment extends Model
         PropAdjustment::create($req);
     }
 
+    /**
+     * | Get Adjustment by ID
+     */
     public function deactivateAdjustmentAmtByTrId($tranId)
     {
         return self::where("tran_id", $tranId)->update([

@@ -10,6 +10,9 @@ class RefPropOccupancyType extends Model
 {
     use HasFactory;
 
+    /* 
+     * | Get Property Occupancy Types
+     */
     public function propOccupancyType()
     {
         return RefPropOccupancyType::on('pgsql::read')->select(

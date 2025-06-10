@@ -11,7 +11,7 @@ class PropSaf extends Model
     use HasFactory;
 
     /**
-     * | 
+     * | Get Saf details by saf No 
      */
     public function getSafDtlsBySafNo($safNo)
     {

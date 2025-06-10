@@ -87,6 +87,9 @@ class PropActiveConcession extends Model
     }
 
 
+    /**
+     * | Escalate Concession
+     */
     public function escalate($req)
     {
         $userId = authUser($req)->id;
@@ -106,7 +109,9 @@ class PropActiveConcession extends Model
         }
     }
 
-
+    /**
+     * | Get Concession No
+     */
     public function getConcessionNo($conId)
     {
         return PropActiveConcession::select('*')
@@ -132,7 +137,7 @@ class PropActiveConcession extends Model
      * | REcent Applications for jsk
      */
 
-       public function recentApplicationJsk($userId)
+    public function recentApplicationJsk($userId)
     {
         $data = PropActiveConcession::on('pgsql::read')
             ->select(
@@ -154,6 +159,9 @@ class PropActiveConcession extends Model
         return $application;
     }
 
+    /**
+     * | Recent Application for all
+     */ 
     public function recentApplication($workflowIds,$roleIds,$ulbId)
     {
         $data = PropActiveConcession::on('pgsql::read')

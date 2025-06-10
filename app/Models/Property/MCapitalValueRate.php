@@ -68,6 +68,9 @@ class MCapitalValueRate extends Model
     }
 
 
+    /**
+     * | List Capital Value Rate
+     */
     public function listCapitalValueRate()
     {
         $list = MCapitalValueRate::select(
