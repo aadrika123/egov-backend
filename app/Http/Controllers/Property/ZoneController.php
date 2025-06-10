@@ -15,6 +15,9 @@ use Illuminate\Http\Request;
 class ZoneController extends Controller
 {
 
+    /**
+     * | Retrieve list of zones for a given ULB (Urban Local Body) ID.
+    */
     public function getZoneByUlb(Request $req)
     {
         try {

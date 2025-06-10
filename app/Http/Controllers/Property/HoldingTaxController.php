@@ -91,6 +91,7 @@ class HoldingTaxController extends Controller
     }
     /**
      * | Generate Holding Demand(1)
+     * | Generate yearly demand for a property based on given property ID.
      */
     public function generateHoldingDemand(Request $req)
     {
@@ -108,6 +109,8 @@ class HoldingTaxController extends Controller
 
     /**
      * | Read the Calculation From Date (1.1)
+     * | Prepare calculation parameters by fetching last demand date and setting payment start date.
+     * | Throws exception if no demand found or if there are no dues.
      */
     public function generateCalculationParams($propertyId, $propDetails)
     {
@@ -328,8 +331,11 @@ class HoldingTaxController extends Controller
             return responseMsgs(false, $e->getMessage(), ['basicDetails' => $basicDtls ?? []], "011502", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
+
     /**
      * | Get Holding Dues(2)
+     * | Validates the input property ID, then calculates and returns
+     * | the dues associated with the given property.
      */
     public function getHoldingDuesv1($req, $propId)
     {
@@ -536,8 +542,10 @@ class HoldingTaxController extends Controller
     }
 
     /**
-     * | Generate Order ID(3)
-     */
+     * | Validate propId, generate an order ID for the property dues,
+     * | store Razorpay request and penalty rebate details within a transaction.
+     * | Returns success response with order details or error on failure.
+    */
     public function generateOrderId(Request $req)
     {
         $req->validate([
@@ -606,7 +614,6 @@ class HoldingTaxController extends Controller
             return responseMsgs(false, $e->getMessage(), "", "011503", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
-
 
     /**
      * | Generate Order ID(3) for multiple proeprties demand payment 
@@ -747,9 +754,9 @@ class HoldingTaxController extends Controller
 
     /**
      * | Check the Condition before payment
-     * | @param request
-     * | @param startingDate
-     * | @param endDate
+     * | Validate dates and consumer, fetch demand charges within date range,
+     * | verify payment amount matches, calculate penalties and advance adjustments,
+     * | then return detailed payment parameters for offline processing.
         | Serial No : 05:01
         | Working
         | Common function
@@ -804,7 +811,6 @@ class HoldingTaxController extends Controller
     /**
      * | Check the Advance and its existence
      * | Advance and Adjustment calcullation 
-     * | @param request contain consumerId
         | Serial No : 06:02 / 05:01:01
         | Not Working
         | Common function
@@ -836,6 +842,8 @@ class HoldingTaxController extends Controller
 
     /**
      * | Post Payment Penalty Rebates(3.1)
+     * | Process and save penalty and rebate amounts for a property transaction,
+     * | storing each non-zero value with relevant details in the penalties table.
      */
     public function postPaymentPenaltyRebate($dueList, $propId = null, $tranId, $clusterId = null)
     {
@@ -879,7 +887,7 @@ class HoldingTaxController extends Controller
     }
 
     /**
-     * | Payment Holding (Case for Online Payment)
+     * | Handles online payment processing for property holding dues.
      */
     public function paymentHolding(ReqPayment $req)
     {
@@ -924,7 +932,7 @@ class HoldingTaxController extends Controller
             // Replication of Prop Transactions
             $tranReqs = [
                 'property_id' => $req['id'],
-                'tran_date' => $this->_carbon->format('Y-m-d'),
+                // 'tran_date' => $this->_carbon->format('Y-m-d'),
                 'tran_no' => $tranNo,
                 'payment_mode' => 'ONLINE',
                 'amount' => $amount,
@@ -1211,6 +1219,7 @@ class HoldingTaxController extends Controller
 
     /**
      * | Legacy Payment Holding
+     * | Processes legacy payment holding with document upload and demand adjustment.
      */
     public function legacyPaymentHolding(ReqPayment $req)
     {
@@ -1272,6 +1281,7 @@ class HoldingTaxController extends Controller
 
     /**
      * | Generate Payment Receipt(9.1)
+     * | Generates a property payment receipt based on a transaction number.
      */
     public function propPaymentReceipt(Request $req)
     {
@@ -1447,6 +1457,7 @@ class HoldingTaxController extends Controller
 
     /**
      * | Get Holding Tax Details On RMC Receipt (9.2)
+     * | Prepare detailed holding tax breakdown including arrears and current period taxes.
      */
     public function holdingTaxDetails($propTrans, $totalRebate)
     {
@@ -1534,6 +1545,7 @@ class HoldingTaxController extends Controller
 
     /**
      * | Property Comparative Demand(16)
+     * | Generate and return a comparative demand report for a given property ID.
      */
     public function comparativeDemand(Request $req)
     {
@@ -1638,6 +1650,7 @@ class HoldingTaxController extends Controller
 
     /**
      * | Generate Comparative Demand(16.1)
+     * | Generate comparative demand for a specific floor based on given rules.
      */
     public function generateFloorComparativeDemand($floorFromDate, $floorTypes, $floorMstrId, $safCalculation, $onePercPenalty = 0)
     {
@@ -1701,6 +1714,8 @@ class HoldingTaxController extends Controller
 
     /**
      * | Get Floor Demand (16.2)
+     * | Generate other demands such as Mobile Tower, Hoarding Board, and Petrol Pump demands
+     * | based on basic property details and SAF calculation rules.
      */
     public function generateOtherDemands($basicDetails, $safCalculation)
     {
@@ -1767,6 +1782,8 @@ class HoldingTaxController extends Controller
 
     /**
      * | Cluster Holding Dues
+     * | Retrieves and calculates total holding dues with penalties and rebates 
+     * | for all properties in a given cluster.
      */
     public function getClusterHoldingDues(Request $req)
     {
@@ -1883,9 +1900,10 @@ class HoldingTaxController extends Controller
         }
     }
 
-
     /**
      * | Cluster Property Payments
+     * | Processes payment for all holding dues in a cluster, updates demands as paid,
+     * | records transactions, handles offline payment modes, and adjusts advance amounts.
      */
     public function clusterPayment(ReqPayment $req)
     {
@@ -1983,6 +2001,7 @@ class HoldingTaxController extends Controller
 
     /**
      * | Cluster Payment History
+     * | Retrieves and groups the payment transaction history for a given cluster.
      */
     public function clusterPaymentHistory(Request $req)
     {
@@ -2091,6 +2110,7 @@ class HoldingTaxController extends Controller
 
     /**
      * | Get Property Dues
+     * | Validates request and fetches dues details for a specified property.
      */
     public function propertyDues(Request $req)
     {
@@ -2293,7 +2313,6 @@ class HoldingTaxController extends Controller
     /**
      * | View details of the caretaken water connection
      * | using user id
-     * | @param request
         | Working
         | Serial No : 07
      */
@@ -2320,11 +2339,8 @@ class HoldingTaxController extends Controller
 
     /**
      * | Generate Payment Receipt for Property and Water Connection
-     * | @param request
      * | Working
      * | Serial No : 08
-     * | @return json
-     * | @throws Exception
      * | @version 1.0
      * | @since 1.0
      * | @date 2025-03-06
@@ -2459,7 +2475,6 @@ class HoldingTaxController extends Controller
 
     /**
      * | Generate Demand Payment receipt
-     * | @param req
         | Serial No : 09
         | Working
      */

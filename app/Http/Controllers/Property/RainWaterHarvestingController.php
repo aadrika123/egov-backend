@@ -69,10 +69,8 @@ class RainWaterHarvestingController extends Controller
 
     /**
      * |----------------------- getWardMasterData --------------------------
-     * |Query cost => 400-438 ms 
-     * |@param request
-     * |@var ulbId
-     * |@var wardList
+     * | Fetches the list of wards for the authenticated user's ULB (Urban Local Body).
+     * | Query cost => 400-438 ms 
      * | Rating : 1
      */
     public function getWardMasterData(Request $request)
@@ -88,11 +86,9 @@ class RainWaterHarvestingController extends Controller
 
     /**
      * |----------------------- postWaterHarvestingApplication 1 --------------------------
-     * |  Query cost => 350 - 490 ms 
-     * | @param request
-     * | @var ulbId
-     * | @var wardList
-     * | request : propertyId, isWaterHarvestingBefore , dateOfCompletion
+     * | Handles submission of water harvesting application, validates input, initiates workflow, 
+     * | saves application data, and manages document uploads and workflow tracking.
+     * | Query cost => 350 - 490 ms 
      * | Rating :2
      */
     public function waterHarvestingApplication(Request $request)
@@ -203,11 +199,9 @@ class RainWaterHarvestingController extends Controller
 
     /**
      * |----------------------- function for the Inbox  --------------------------
-     * |@param ulbId
-     * |@param userId
-     * |@var applicationId
      * | Rating : 2
-     * |status :closed
+     * | status :closed
+     * | Query Cost : 1.75 - 2.5 seconds
      */
     public function harvestingInbox(Request $req)
     {
@@ -249,9 +243,9 @@ class RainWaterHarvestingController extends Controller
     }
 
     /**
-     * |----------------------- function for the Special Inbox (Escalated Applications) for harvesting --------------------------
-     * |@param ulbId
+     * |----------------------- function for the Special Inbox (Escalated Applications) for harvesting -------------------
      * | Rating : 2
+     * | Query Cost : 1.6 - 1.7 seconds
      */
     public function specialInbox(Request $req)
     {
@@ -292,6 +286,7 @@ class RainWaterHarvestingController extends Controller
 
     /**
      * | Fields Verified Inbox
+     * | Query Cost : 1.61 - 1.78 seconds
      */
     public function fieldVerifiedInbox(Request $req)
     {
@@ -321,16 +316,11 @@ class RainWaterHarvestingController extends Controller
         }
     }
 
-
-
-
     /**
      * |----------------------- function for the Outbox --------------------------
-     * |@param ulbId
-     * |@param userId
-     * |@var applicationId
      * | Rating : 2
      * | status :closed
+     * | status : 1.6 - 1.89 seconds
      */
     public function harvestingOutbox(Request $req)
     {
@@ -371,10 +361,7 @@ class RainWaterHarvestingController extends Controller
 
 
     /**
-     * |----------------------- function for the escalate Application for harvesting --------------------------
-     * |@param ulbId
-     * |@param userId
-     * |@var applicationId
+     * |----------------------- function for the escalate Application for harvesting ---------------------
      * | Rating : 2
      */
     public function postEscalate(Request $req)
@@ -404,9 +391,9 @@ class RainWaterHarvestingController extends Controller
         }
     }
 
-
     /**
-     * | Static details
+     * | Fetches static details of a water harvesting application including applicant info, location, and document data.
+     * | Query Cost : 1.63 - 1.79 seconds
      */
     public function staticDetails(Request $req)
     {
@@ -437,7 +424,7 @@ class RainWaterHarvestingController extends Controller
                 'propertyAddress' => $details->prop_address,
                 'mobileNo' => $details->mobile_no,
                 'dateOfCompletion' => $details->date_of_completion,
-                'harvestingImage' => $docs['doc_path'],
+                'harvestingImage' => $docs['doc_path'] ?? null, // Error in code due to doc_path thats why #added  ?? null
                 'latitude' => $geotagDtl->latitude ?? null,
                 'longitude' => $geotagDtl->longitude ?? null,
             ];
@@ -449,7 +436,9 @@ class RainWaterHarvestingController extends Controller
     }
 
     /**
-     * | Harvesting Details
+     * | Retrieves complete application details for a given water harvesting application,
+     * | including property, owner, workflow, and custom metadata.
+     * | Query Cost : 3 seconds
      */
     public function getDetailsById(Request $req)
     {
@@ -531,7 +520,7 @@ class RainWaterHarvestingController extends Controller
     }
 
     /**
-     * |--------------------------- Post Next Level Application(forward or backward application) ------------------------------------------------|
+     * |---------------------- Post Next Level Application(forward or backward application) ---------------
      * | Rating-
      * | Status - Closed
      * | Query Cost - 446ms
@@ -603,7 +592,7 @@ class RainWaterHarvestingController extends Controller
     }
 
     /**
-     * |-------------------------------------Final Approval and Rejection of the Application ------------------------------------------------|
+     * |-------------------Final Approval and Rejection of the Application ------------------------
      * | Rating-
      * | Status- Closed
      */
@@ -740,7 +729,7 @@ class RainWaterHarvestingController extends Controller
     }
 
     /**
-     * |-------------------------------------  Rejection of the Harvesting ------------------------------------------------|
+     * |------------------ Rejection of the Harvesting -------------|
      * | Rating- 
      */
     public function rejectionOfHarvesting(Request $req)
@@ -835,7 +824,8 @@ class RainWaterHarvestingController extends Controller
     }
 
     /**
-     *  get uploaded documents
+     * | get uploaded documents
+     * | Query Cost : 1.6 - 1.71 seconds
      */
     public function getUploadedDocuments(Request $req)
     {
@@ -864,7 +854,8 @@ class RainWaterHarvestingController extends Controller
 
 
     /**
-     * to upload documenr
+     * | Handles uploading of a document for a water harvesting application, 
+     * | validates file type/size, and updates document metadata in the workflow.
      */
     public function uploadDocument(Request $req)
     {
@@ -910,9 +901,8 @@ class RainWaterHarvestingController extends Controller
         }
     }
 
-
     /**
-     *  send back to citizen
+     * | send back to citizen
      */
     public function backToCitizen(Request $req)
     {
@@ -960,6 +950,7 @@ class RainWaterHarvestingController extends Controller
 
     /**
      * | Back To Citizen Inbox
+     * | Query Cost : 1.58 - 1.71 seconds
      */
     public function btcInboxList(Request $req)
     {
@@ -990,7 +981,8 @@ class RainWaterHarvestingController extends Controller
     }
 
     /**
-     * 
+     * | Get Document List for WATER HARVESTING
+     * | Query Cost : 1.61 - 1.68 seconds
      */
     public function getDocList(Request $req)
     {
@@ -1009,7 +1001,10 @@ class RainWaterHarvestingController extends Controller
         }
     }
 
-
+    /* 
+    * | Retrieves and structures required and uploaded document details for a given water 
+    * | harvesting application, including file paths and verification status.
+    */
     public function getHarvestingDoc($refApplication)
     {
         $mRefReqDocs = new RefRequiredDocument();
@@ -1066,7 +1061,8 @@ class RainWaterHarvestingController extends Controller
     }
 
     /**
-     * citizen document list
+     * | citizen document list
+     * | Query Cost : 1.61 - 1.68 seconds
      */
     public function citizenDocList()
     {
@@ -1185,7 +1181,8 @@ class RainWaterHarvestingController extends Controller
 
     /**
      * | Site Verification
-     * | @param req requested parameter
+     * | Handles site verification for rainwater harvesting applications, 
+     * | performs role-based actions, geotag image upload, and logs verification data.
      */
     public function siteVerification(Request $req)
     {
@@ -1306,8 +1303,11 @@ class RainWaterHarvestingController extends Controller
         }
     }
 
-
-    // Get TC Verifications
+    /**
+     * | Get TC Verifications
+     * | Retrieves TC verification details including document and geotag info for a rainwater harvesting application.
+     * | Query Cost : 1.7 - 1.88 seconds
+     */
     public function getTcVerifications(Request $req)
     {
         try {
@@ -1353,6 +1353,7 @@ class RainWaterHarvestingController extends Controller
 
     /**
      * | Get Req Docs
+     * | Parses and formats document requirement data into structured document metadata.
      */
     public function getReqDoc($data)
     {

@@ -72,7 +72,7 @@ class WaterReportController extends Controller
     }
 
     /**
-     * | Water DCB
+     * | Water DCB : Not in use , no references, no route is defined for this function
         | Serial No : 02
         | Not Working
      */
@@ -422,6 +422,7 @@ class WaterReportController extends Controller
         | Working
         | Not Verified
      */
+
     public function wardWiseDCB(Request $request)
     {
         $validated = Validator::make(

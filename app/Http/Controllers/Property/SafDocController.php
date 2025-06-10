@@ -28,6 +28,8 @@ class SafDocController extends Controller
 
     /**
      * | Get Document Lists
+     * | Fetches document lists for a given application ID, including SAF and owner-specific 
+     * | documents, along with document upload, verification, and payment statuses.
      */
     public function getDocList(Request $req)
     {
@@ -105,6 +107,8 @@ class SafDocController extends Controller
 
     /**
      * | Filter Document(1.2)
+     * | Filters and processes a list of documents for a given SAF, retrieving document 
+     * | paths from DMS and including verification status and remarks.
      */
     public function filterDocument($documentList, $refSafs, $ownerId = null)
     {
@@ -178,7 +182,9 @@ class SafDocController extends Controller
 
     /**
      * | Created for Document Upload for SAFs(2)
-     */
+     * | Handles document upload for property SAF applications
+     * | Validates, stores and manages document lifecycle with duplicate handling and status tracking
+    */
     public function docUpload(Request $req)
     {
         $req->validate([
@@ -264,7 +270,8 @@ class SafDocController extends Controller
     }
 
     /**
-     * | View Saf Uploaded Documents 
+     * | Retrieves all uploaded documents for a specific SAF application
+     * | Returns document URLs and verification status for frontend display
      */
     public function getUploadDocuments(Request $req)
     {
@@ -315,6 +322,8 @@ class SafDocController extends Controller
 
     /**
      * | Document Verify Reject (04)
+     * | Verifies or rejects a document for a given application ID, updates document 
+     * | and SAF statuses, and enforces authorization for Dealing Assistant role.
      */
     public function docVerifyReject(Request $req)
     {
@@ -421,9 +430,6 @@ class SafDocController extends Controller
 
     /**
      * | Checks the Document Upload Or Verify Status
-     * | @param activeApplicationId
-     * | @param refDocList list of Verified and Uploaded Documents
-     * | @param refSafs saf Details
      */
     public function isAllDocs($applicationId, $refDocList, $refSafs)
     {

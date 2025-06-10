@@ -46,6 +46,9 @@ class ReportController extends Controller
         $this->_common = new CommonFunction();
     }
 
+    /**
+     * | Get the collection report for a specific date range.
+     */
     public function collectionReport(Request $request)
     {
         $request->validate(
@@ -63,6 +66,9 @@ class ReportController extends Controller
         return $this->Repository->collectionReport($request);
     }
 
+    /**
+     * | Get the SAF collection report for a specific date range.
+     */
     public function safCollection(Request $request)
     {
         $request->validate(
@@ -80,6 +86,9 @@ class ReportController extends Controller
         return $this->Repository->safCollection($request);
     }
 
+    /**
+     * | Get the individual demand and collection for SAF properties.
+     */
     public function safPropIndividualDemandAndCollection(Request $request)
     {
         $request->validate(
@@ -95,12 +104,18 @@ class ReportController extends Controller
         return $this->Repository->safPropIndividualDemandAndCollection($request);
     }
 
+    /**
+     * | Get the level-wise pending forms.
+     */
     public function levelwisependingform(Request $request)
     {
         $request->request->add(["metaData" => ["012404", 1.1, null, $request->getMethod(), null,]]);
         return $this->Repository->levelwisependingform($request);
     }
 
+    /**
+     * | Get the level form details.
+     */
     public function levelformdetail(Request $request)
     {
         $request->validate(
@@ -116,6 +131,9 @@ class ReportController extends Controller
         return $this->Repository->levelformdetail($request);
     }
 
+    /**
+     * | Get the pending forms for a specific user and level.
+     */
     public function levelUserPending(Request $request)
     {
         $request->validate(
@@ -130,6 +148,9 @@ class ReportController extends Controller
         return $this->Repository->levelUserPending($request);
     }
 
+    /**
+     * | Get the pending forms for a specific user and level.
+     */
     public function userWiseLevelPending(Request $request)
     {
         $request->validate(
@@ -166,6 +187,9 @@ class ReportController extends Controller
         return responseMsgs($respons["original"]["status"], $respons["original"]["message"], $respons["original"]["data"], $apiId, $version, $queryRunTime, $action, $deviceId);
     }
 
+    /**
+     * | Get the pending forms for a specific user and ward wire level.
+     */
     public function userWiseWardWireLevelPending(Request $request)
     {
         $request->validate(
@@ -180,6 +204,9 @@ class ReportController extends Controller
         return $this->Repository->userWiseWardWireLevelPending($request);
     }
 
+    /**
+     * | Get the SAF SAMFAM geotagging data.
+     */
     public function safSamFamGeotagging(Request $request)
     {
         $request->validate(
@@ -194,6 +221,9 @@ class ReportController extends Controller
         return $this->Repository->safSamFamGeotagging($request);
     }
 
+    /**
+     * | Get the property payment mode wise summary.
+     */
     public function PropPaymentModeWiseSummery(Request $request)
     {
         $request->validate(
@@ -210,6 +240,9 @@ class ReportController extends Controller
         return $this->Repository->PropPaymentModeWiseSummery($request);
     }
 
+    /**
+     * | Get the SAF payment mode wise summary.
+     */
     public function PaymentModeWiseSummery(Request $request)
     {
         $request->merge(["metaData" => ["012422", 1.1, null, $request->getMethod(), null,]]);
@@ -229,6 +262,9 @@ class ReportController extends Controller
         return $this->Repository->PropPaymentModeWiseSummery($request);
     }
 
+    /**
+     * | Get the SAF payment mode wise summary.
+     */
     public function SafPaymentModeWiseSummery(Request $request)
     {
         $request->validate(
@@ -245,6 +281,9 @@ class ReportController extends Controller
         return $this->Repository->SafPaymentModeWiseSummery($request);
     }
 
+    /**
+     * | Get the property demand collection balance (DCB).
+     */
     public function PropDCB(Request $request)
     {
         $request->validate(
@@ -260,6 +299,9 @@ class ReportController extends Controller
         return $this->Repository->PropDCB($request);
     }
 
+    /**
+     * | Get the property ward-wise demand collection balance (DCB).
+     */
     public function PropWardWiseDCB(Request $request)
     {
         $request->validate(
@@ -273,6 +315,9 @@ class ReportController extends Controller
         return $this->Repository->PropWardWiseDCB($request);
     }
 
+    /**
+     * | Get the property fine rebate.
+     */
     public function PropFineRebate(Request $request)
     {
         $request->validate(
@@ -288,6 +333,9 @@ class ReportController extends Controller
         return $this->Repository->PropFineRebate($request);
     }
 
+    /**
+     * | Get the property deactivated list.
+     */
     public function PropDeactedList(Request $request)
     {
         $request->validate(
@@ -418,6 +466,7 @@ class ReportController extends Controller
 
     /**
      * | GbSafCollection
+     * | Get the GB SAF collection report for a specific date range.
      */
     public function gbSafCollection(Request $req)
     {
@@ -528,7 +577,8 @@ class ReportController extends Controller
     }
 
     /**
-     * | 
+     * |  Property, SAF and GBSAF Collection
+     * | This method aggregates the collection data for properties, SAF, and GBSAF based on the request parameters.
      */
     public function propSafCollection(Request $request)
     {
@@ -596,6 +646,7 @@ class ReportController extends Controller
 
     /**
      * | Mpl Report
+     * | This method generates the MPL report for a specific date range.
      */
 
     public function mplReport(Request $request)
@@ -915,7 +966,7 @@ class ReportController extends Controller
 
 
     /**
-     * | 
+     * | Get locality based on latitude and longitude using Google Maps API
      */
     public function getLocality(Request $req)
     {
@@ -952,7 +1003,9 @@ class ReportController extends Controller
     }
 
 
-
+    /* 
+     * | Get the MPL report for a specific date range.
+     */
     public function mplReportCollectionNew(Request $request)
     {
         try {
@@ -1038,7 +1091,10 @@ class ReportController extends Controller
         }
     }
 
-    // written by prity
+    // written by prity\
+    /**
+     * | Get the list of ULBs.
+     */
     public function ulbList(Request $request)
     {
         try {
@@ -1058,6 +1114,9 @@ class ReportController extends Controller
 
 
     // written by prity pandey
+    /**
+     * | Get the live dashboard update for a specific ULB.
+     */
     public function liveDashboardUpdate(Request $request)
     {
         $todayDate = Carbon::now();
@@ -1835,6 +1894,10 @@ class ReportController extends Controller
         DB::connection("pgsql_reports")->commit();
         return ("ok");
     }
+
+    /* 
+     * | Get the trade details.
+     */
     public function tradedetails()
     {
         $sql = "
@@ -1993,6 +2056,9 @@ class ReportController extends Controller
         return (object)$respons;
     }
 
+    /* 
+     * | Get the water details.
+     */
     public function waterdetails()
     {
         $sql = "                                
@@ -2144,6 +2210,9 @@ class ReportController extends Controller
     }
 
 
+    /* 
+     * | Get the old holding details.
+     */
     public function oldHolding(Request $request)
     {
         try {

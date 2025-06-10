@@ -74,6 +74,7 @@ class Kernel extends HttpKernel
         'XssSanitizer' => \App\Http\Middleware\XssSanitizer::class,
         'expireBearerToken' => ExpireBearerToken::class,
         'handleDateFormat' => HandleDateFormatMiddleware::class,
-        'auth_maker' => \App\Http\Middleware\AuthMaker::class
+        'auth_maker' => \App\Http\Middleware\AuthMaker::class,
+         'apilogger' => \App\Http\Middleware\ApiLogger::class,
     ];
 }

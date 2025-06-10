@@ -66,7 +66,7 @@ use Sabberworm\CSS\Property\Import;
 class MasterReferenceController extends Controller
 {
     /**
-     * |Construction Type Crud
+     * | Adds a new construction type to the reference data.
      */
     public function createConstructionType(Request $req)
     {
@@ -100,6 +100,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Updates an existing construction type in the reference data.
+     */
     public function constructiontypebyId(Request $req)
     {
         try {
@@ -117,6 +120,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a list of all construction types from the reference data.
+    */
     public function allConstructiontypelist(Request $req)
     {
         try {
@@ -129,6 +135,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+    * | Deletes or updates the status of a construction type based on the provided ID and status.
+    */
     public function deleteConstructionType(Request $req)
     {
         try {
@@ -145,7 +154,7 @@ class MasterReferenceController extends Controller
     }
 
     /**
-     * |Floor Type Crud
+     * | Creates a new floor type with the provided name.
      */
 
     public function createFloorType(Request $req)
@@ -164,6 +173,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+     /**
+     * | Updates an existing floor type based on the given ID and new name.
+     */
     public function updateFloorType(Request $req)
     {
         try {
@@ -180,6 +192,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+    * | Retrieves floor type details by the specified ID.
+     */
     public function floortypebyId(Request $req)
     {
         try {
@@ -197,6 +212,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+     /**
+     * | Returns a list of all available floor types.
+     */
     public function allFloortypelist(Request $req)
     {
         try {
@@ -209,6 +227,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Deletes or updates the status of a floor type based on the provided ID and status.
+     */
     public function deleteFloorType(Request $req)
     {
         try {
@@ -225,7 +246,7 @@ class MasterReferenceController extends Controller
     }
 
     /**
-     * |Gb Building Usage Type Crud
+     * | Creates a new GB building usage type with the provided building type name.
      */
 
     public function createGbBuildingType(Request $req)
@@ -244,6 +265,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+    * | Updates an existing GB building usage type by ID with the new building type name.
+    */
     public function updateGbBuildingType(Request $req)
     {
         try {
@@ -260,6 +284,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+    * | Retrieves details of a GB building usage type by its ID.
+     */
     public function GbBuildingtypebyId(Request $req)
     {
         try {
@@ -277,6 +304,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+    * | Retrieves the list of all GB building usage types.
+     */
     public function allGbBuildingtypelist(Request $req)
     {
         try {
@@ -289,6 +319,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+    * | Soft deletes or updates the status of a GB building usage type by ID. 
+     */
     public function deleteGbBuildingType(Request $req)
     {
         try {
@@ -305,7 +338,7 @@ class MasterReferenceController extends Controller
     }
 
     /**
-     * |Gb Prop Usage Type Crud
+     * | create a new GB Property Usage Type.
      */
 
     public function createGbPropUsageType(Request $req)
@@ -323,6 +356,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+     /**
+     * | update an existing GB Property Usage Type by ID.   
+     */
     public function updateGbPropUsageType(Request $req)
     {
         try {
@@ -339,6 +375,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a GB Property Usage Type by its ID.
+     */
     public function GbPropUsagetypebyId(Request $req)
     {
         try {
@@ -356,6 +395,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a list of all GB Property Usage Types.
+     */
     public function allGbPropUsagetypelist(Request $req)
     {
         try {
@@ -368,6 +410,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | delete or deactivate a GB Property Usage Type by ID.
+     */
     public function deleteGbPropUsageType(Request $req)
     {
         try {
@@ -402,6 +447,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /**
+     * | update an existing GB Objection Type by ID.
+     */
     public function updateObjectionType(Request $req)
     {
         try {
@@ -418,6 +466,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a GB Objection Type by its ID.
+     */
     public function ObjectiontypebyId(Request $req)
     {
         try {
@@ -435,6 +486,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a list of all GB Objection Types.
+     */
     public function allObjectiontypelist(Request $req)
     {
         try {
@@ -447,6 +501,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Deletes or updates the status of a GB Objection Type by ID.
+     */
     public function deleteObjectionType(Request $req)
     {
         try {
@@ -482,6 +539,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /**
+     * | update an existing occupancy factor by ID.
+     */
     public function updateOccupancyFactor(Request $req)
     {
         try {
@@ -499,6 +559,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves an occupancy factor by its ID.
+     */
     public function OccupancyFactorbyId(Request $req)
     {
         try {
@@ -516,6 +579,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a list of all occupancy factors.
+     */
     public function allOccupancyFactorlist(Request $req)
     {
         try {
@@ -528,6 +594,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Deletes or updates the status of an occupancy factor by ID.
+     */
     public function deleteOccupancyFactor(Request $req)
     {
         try {
@@ -563,6 +632,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /**
+     * | update an existing occupancy type by ID.
+     */
     public function updateOccupancyType(Request $req)
     {
         try {
@@ -579,6 +651,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves an occupancy type by its ID.
+     */
     public function OccupancyTypebyId(Request $req)
     {
         try {
@@ -596,6 +671,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a list of all occupancy types.
+     */
     public function allOccupancyTypelist(Request $req)
     {
         try {
@@ -608,6 +686,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Deletes or updates the status of an occupancy type by ID.
+     */
     public function deleteOccupancyType(Request $req)
     {
         try {
@@ -643,6 +724,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /**
+     * | update an existing ownership type by ID.
+     */
     public function updateOwnershipType(Request $req)
     {
         try {
@@ -659,6 +743,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves an ownership type by its ID.
+     */
     public function OwnershipTypebyId(Request $req)
     {
         try {
@@ -676,6 +763,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a list of all ownership types.
+     */
     public function allOwnershipTypelist(Request $req)
     {
         try {
@@ -688,6 +778,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Deletes or updates the status of an ownership type by ID.
+     */
     public function deleteOwnershipType(Request $req)
     {
         try {
@@ -723,6 +816,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /**
+     * | update an existing road type by ID.
+     */
     public function updateroadType(Request $req)
     {
         try {
@@ -739,6 +835,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a road type by its ID.
+     */
     public function roadTypebyId(Request $req)
     {
         try {
@@ -756,6 +855,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a list of all road types.
+     */
     public function allroadTypelist(Request $req)
     {
         try {
@@ -768,6 +870,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Deletes or updates the status of a road type by ID.
+     */
     public function deleteroadType(Request $req)
     {
         try {
@@ -803,6 +908,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /**
+     * | update an existing property type by ID.
+     */
     public function updatePropertyType(Request $req)
     {
         try {
@@ -819,6 +927,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a property type by its ID.
+     */
     public function propertyTypebyId(Request $req)
     {
         try {
@@ -836,6 +947,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a list of all property types.
+     */
     public function allpropertyTypelist(Request $req)
     {
         try {
@@ -848,6 +962,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Deletes or updates the status of a property type by ID.
+     */
     public function deletepropertyType(Request $req)
     {
         try {
@@ -883,6 +1000,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /**
+     * | update an existing property transfer mode by ID.
+     */
     public function updateTransferMode(Request $req)
     {
         try {
@@ -899,6 +1019,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a property transfer mode by its ID.
+     */
     public function TransferModebyId(Request $req)
     {
         try {
@@ -916,6 +1039,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a list of all property transfer modes.
+     */
     public function allTransferModelist(Request $req)
     {
         try {
@@ -928,6 +1054,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Deletes or updates the status of a property transfer mode by ID.
+     */
     public function deleteTransferMode(Request $req)
     {
         try {
@@ -964,6 +1093,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /**
+     * | update an existing property usage type by ID.
+     */
     public function updateUsageType(Request $req)
     {
         try {
@@ -982,6 +1114,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a property usage type by its ID.
+     */
     public function PropUsageTypebyId(Request $req)
     {
         try {
@@ -999,6 +1134,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a list of all property usage types.
+     */
     public function allPropUsageTypelist(Request $req)
     {
         try {
@@ -1011,6 +1149,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Deletes or updates the status of a property usage type by ID.
+     */
     public function deletePropUsageType(Request $req)
     {
         try {
@@ -1046,6 +1187,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /**
+     * | update an existing rebate type by ID.
+     */
     public function updateRebateType(Request $req)
     {
         try {
@@ -1062,6 +1206,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a rebate type by its ID.
+     */
     public function RebateTypebyId(Request $req)
     {
         try {
@@ -1080,6 +1227,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a list of all rebate types.
+     */
     public function allRebateTypelist(Request $req)
     {
         try {
@@ -1092,6 +1242,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Deletes or updates the status of a rebate type by ID.
+     */
     public function deleteRebateType(Request $req)
     {
         try {
@@ -1126,6 +1279,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /**
+     * | update an existing penalty type by ID.
+     */
     public function updatePenaltyType(Request $req)
     {
         try {
@@ -1142,6 +1298,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a penalty type by its ID.
+     */
     public function PenaltyTypebyId(Request $req)
     {
         try {
@@ -1160,6 +1319,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a list of all penalty types.
+     */
     public function allPenaltyTypelist(Request $req)
     {
         try {
@@ -1172,6 +1334,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Deletes or updates the status of a penalty type by ID.
+     */
     public function deletePenaltyType(Request $req)
     {
         try {
@@ -1207,6 +1372,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /**
+     * | update an existing forgery type by ID.
+     */
     public function updateForgeryType(Request $req)
     {
         try {
@@ -1223,6 +1391,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a forgery type by its ID.
+     */
     public function ForgeryTypebyId(Request $req)
     {
         try {
@@ -1240,6 +1411,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a list of all forgery types.
+     */
     public function allForgeryTypelist(Request $req)
     {
         try {
@@ -1252,6 +1426,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Deletes or updates the status of a forgery type by ID.
+     */
     public function deleteForgeryType(Request $req)
     {
         try {
@@ -1287,6 +1464,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /**
+     * | Retrieves a list of all capital value rates.
+     */
     public function allMCapitalValurRateList(Request $req)
     {
         try {
@@ -1319,6 +1499,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /**
+     * | Retrieves a list of all building rental constants.
+     */
     public function allMPropBuildingRentalconstsList(Request $req)
     {
         try {
@@ -1351,6 +1534,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /**
+     * | Retrieves a list of all building rental rates.
+     */
     public function allMPropBuildingRentalRatesList(Request $req)
     {
         try {
@@ -1364,7 +1550,8 @@ class MasterReferenceController extends Controller
     }
 
     /**
-     * |M-Prop-Cv-Rates
+     * | M-Prop-Capital-Value-Rates
+     * | Retrieves a property capital value rate by its ID.
      */
     public function MPropCvRatesById(Request $req)
     {
@@ -1383,6 +1570,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /**
+     * | Retrieves a list of all property capital value rates.
+     */
     public function allMPropCvRatesList(Request $req)
     {
         try {
@@ -1396,7 +1586,8 @@ class MasterReferenceController extends Controller
     }
 
     /**
-     * |M-Prop-Multi-Factors
+     * |M-Prop-Multi-Factors 
+     * | Retrieves a property multi-factor by its ID.
      */
     public function MPropMultiFactorById(Request $req)
     {
@@ -1415,6 +1606,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /**
+     * | Retrieves a list of all property multi-factors.
+     */
     public function allMPropMultiFactorList(Request $req)
     {
         try {
@@ -1447,6 +1641,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /**
+     * | Retrieves a list of all property rental values.
+     */
     public function allMPropRentalValueList(Request $req)
     {
         try {
@@ -1480,6 +1677,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /**
+     * | Retrieves a list of all property road types.
+     */
     public function allMPropRoadTypeList(Request $req)
     {
         try {
@@ -1512,6 +1712,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /**
+     * | Retrieves a list of all property vacant rental rates.
+     */
     public function allMPropVacantRentalrateList(Request $req)
     {
         try {
@@ -1553,6 +1756,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /**
+     * | update an existing slider by ID.
+     */
     public function updateSlider(Request $req)
     {
         try {
@@ -1577,6 +1783,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a slider by its ID.
+     */
     public function allSliderList(Request $req)
     {
         try {
@@ -1595,6 +1804,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /**
+     * | Retrieves a list of all sliders for version 1.
+     */
     public function allSliderListv1(Request $req)
     {
         $list = new MSlider();
@@ -1608,6 +1820,9 @@ class MasterReferenceController extends Controller
         return $masters;
     }
 
+    /* 
+     * | Deletes or updates the status of a slider by ID.
+     */
     public function deleteSlider(Request $req)
     {
         try {
@@ -1623,6 +1838,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a slider by its ID.
+     */
     public function sliderById(Request $req)
     {
         try {
@@ -1672,7 +1890,9 @@ class MasterReferenceController extends Controller
         }
     }
 
-
+    /* 
+     * | Updates an existing asset by ID.
+     */
     public function editAssetesv3(Request $req)
     {
         $req->validate([
@@ -1700,6 +1920,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a list of all assets.
+     */
     public function allListAssetesv3(Request $req)
     {
         try {
@@ -1718,6 +1941,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a list of all assets for the dashboard.
+     */
 
     public function allListAssetesDash(Request $req)
     {
@@ -1748,6 +1974,9 @@ class MasterReferenceController extends Controller
         return $assets;
     }
 
+    /* 
+     * | Deletes or updates the status of an asset by ID.
+     */
     public function deleteAssetesv3(Request $req)
     {
         try {
@@ -1763,6 +1992,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves an asset by its ID.
+     */
     public function Assetesv3ById(Request $req)
     {
         try {
@@ -1821,6 +2053,9 @@ class MasterReferenceController extends Controller
     }
 
 
+    /* 
+     * | Updates an existing asset by ID.
+     */
     public function editAssetesv2(Request $req)
     {
         $req->validate([
@@ -1859,6 +2094,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a list of all assets.
+     */
     public function allListAssetesv2(Request $req)
     {
         try {
@@ -1877,6 +2115,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a list of all assets for the dashboard.
+     */
     public function allListAssetesv1(Request $req)
     {
         $create = new MAsset();
@@ -1906,6 +2147,9 @@ class MasterReferenceController extends Controller
         return $assets;
     }
 
+    /* 
+     * | Deletes or updates the status of an asset by ID.
+     */
 
     public function deleteAssetesv2(Request $req)
     {
@@ -1922,6 +2166,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves an asset by its ID.
+     */
     public function Assetesv2ById(Request $req)
     {
         try {
@@ -2044,6 +2291,9 @@ class MasterReferenceController extends Controller
     // }
 
 
+    /* 
+     * | Adds a new notice.
+     */
     public function addNotice(Request $req)
     {
         try {
@@ -2059,6 +2309,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a list of all notices.
+     */
     public function noticeList(Request $req)
     {
         try {
@@ -2072,6 +2325,9 @@ class MasterReferenceController extends Controller
     }
 
 
+    /* 
+     * | Updates an existing notice by ID.
+     */
     public function updateNoticeType(Request $req)
     {
         try {
@@ -2088,6 +2344,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a notice by its ID.
+     */
     public function noticeTypebyId(Request $req)
     {
         try {
@@ -2105,7 +2364,9 @@ class MasterReferenceController extends Controller
         }
     }
 
-
+    /* 
+     * | Deletes or updates the status of a notice by ID.
+     */
     public function deleteNoticeType(Request $req)
     {
         try {
@@ -2121,6 +2382,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Adds a new announcement.
+     */
     public function addAnnouncement(Request $req)
     {
         try {
@@ -2136,6 +2400,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a list of all announcements.
+     */
     public function announcementList(Request $req)
     {
         try {
@@ -2149,6 +2416,9 @@ class MasterReferenceController extends Controller
     }
 
 
+    /* 
+     * | Updates an existing announcement by ID.
+     */
     public function updateAnnouncementType(Request $req)
     {
         try {
@@ -2165,6 +2435,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves an announcement by its ID.
+     */
     public function announcementTypebyId(Request $req)
     {
         try {
@@ -2183,6 +2456,9 @@ class MasterReferenceController extends Controller
     }
 
 
+    /* 
+     * | Deletes or updates the status of an announcement by ID.
+     */
     public function deleteAnnouncementType(Request $req)
     {
         try {
@@ -2198,7 +2474,9 @@ class MasterReferenceController extends Controller
         }
     }
 
-
+    /* 
+     * | Adds a new user manual heading.
+     */
     public function addUserManualHeading(Request $req)
     {
         try {
@@ -2214,6 +2492,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a list of all user manual headings.
+     */
     public function userManualHeadingList(Request $req)
     {
         try {
@@ -2226,6 +2507,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a list of all user manual headings.
+     */
     public function userManualHeadingListMaster(Request $req)
     {
         try {
@@ -2238,6 +2522,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a list of user manual headings by ID in descending order.
+     */
     public function userManualHeadingListMasterDesc(Request $req)
     {
         try {
@@ -2254,6 +2541,9 @@ class MasterReferenceController extends Controller
     }
 
 
+    /* 
+     * | Updates an existing user manual heading by ID.
+     */
     public function updateUserManualHeading(Request $req)
     {
         try {
@@ -2270,6 +2560,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a user manual heading by its ID.
+     */
     public function userManualHeadingbyId(Request $req)
     {
         try {
@@ -2287,7 +2580,9 @@ class MasterReferenceController extends Controller
         }
     }
 
-
+    /* 
+     * | Deletes or updates the status of a user manual heading by ID.
+     */
     public function deleteUserManualHeading(Request $req)
     {
         try {
@@ -2303,6 +2598,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Adds a new user manual heading description.
+     */
     public function addHeadingDescription(Request $req)
     {
         try {
@@ -2321,6 +2619,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a list of all user manual heading descriptions.
+     */
     public function userHeadingList(Request $req)
     {
         try {
@@ -2333,6 +2634,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Updates an existing user manual heading description by ID.
+     */
     public function updateHeading(Request $req)
     {
         try {
@@ -2352,6 +2656,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a user manual heading description by its ID.
+     */
     public function userHeadingbyId(Request $req)
     {
         try {
@@ -2369,6 +2676,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Deletes or updates the status of a user manual heading description by ID.
+     */
     public function deleteHeading(Request $req)
     {
         try {
@@ -2384,6 +2694,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Adds a new mobile app link.
+     */
 
     public function addapp(Request $req)
     {
@@ -2401,6 +2714,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a list of all mobile app links.
+     */
     public function appList(Request $req)
     {
         try {
@@ -2414,6 +2730,9 @@ class MasterReferenceController extends Controller
     }
 
 
+    /* 
+     * | Updates an existing mobile app link by ID.
+     */
     public function updateapp(Request $req)
     {
         try {
@@ -2431,6 +2750,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a mobile app link by its ID.
+     */
     public function appbyId(Request $req)
     {
         try {
@@ -2448,7 +2770,9 @@ class MasterReferenceController extends Controller
         }
     }
 
-
+    /* 
+     * | Deletes or updates the status of a mobile app link by ID.
+     */
     public function deleteapp(Request $req)
     {
         try {
@@ -2464,6 +2788,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Adds a new scheme.
+     */
     public function addscheme(Request $req)
     {
         try {
@@ -2480,6 +2807,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a list of all schemes.
+     */
     public function schemeList(Request $req)
     {
         try {
@@ -2492,7 +2822,9 @@ class MasterReferenceController extends Controller
         }
     }
 
-
+    /* 
+     * | Updates an existing scheme by ID.
+     */
     public function updatescheme(Request $req)
     {
         try {
@@ -2510,6 +2842,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a scheme by its ID.
+     */
     public function schemebyId(Request $req)
     {
         try {
@@ -2527,7 +2862,9 @@ class MasterReferenceController extends Controller
         }
     }
 
-
+    /* 
+     * | Deletes or updates the status of a scheme by ID.
+     */
     public function deletescheme(Request $req)
     {
         try {
@@ -2543,6 +2880,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Adds a new news article.
+     */
     public function addnews(Request $req)
     {
         try {
@@ -2559,6 +2899,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a list of all news articles.
+     */
     public function newsList(Request $req)
     {
         try {
@@ -2572,6 +2915,9 @@ class MasterReferenceController extends Controller
     }
 
 
+    /* 
+     * | Updates an existing news article by ID.
+     */
     public function updatenews(Request $req)
     {
         try {
@@ -2589,6 +2935,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a news article by its ID.
+     */
     public function newsbyId(Request $req)
     {
         try {
@@ -2607,6 +2956,9 @@ class MasterReferenceController extends Controller
     }
 
 
+    /* 
+     * | Deletes or updates the status of a news article by ID.
+     */
     public function deletenews(Request $req)
     {
         try {
@@ -2622,6 +2974,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Adds a new service.
+     */
     public function addService(Request $req)
     {
         try {
@@ -2638,6 +2993,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a list of all services.
+     */
     public function ServiceList(Request $req)
     {
         try {
@@ -2650,7 +3008,9 @@ class MasterReferenceController extends Controller
         }
     }
 
-
+    /* 
+     * | Updates an existing service by ID.
+     */
     public function updateService(Request $req)
     {
         try {
@@ -2668,6 +3028,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a service by its ID.
+     */
     public function ServicebyId(Request $req)
     {
         try {
@@ -2685,7 +3048,9 @@ class MasterReferenceController extends Controller
         }
     }
 
-
+    /* 
+     * | Deletes or updates the status of a service by ID.
+     */
     public function deleteService(Request $req)
     {
         try {
@@ -2701,6 +3066,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Adds a new "What's New" item.
+     */
     public function addWhatsNew(Request $req)
     {
         try {
@@ -2716,6 +3084,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Updates an existing "What's New" item by ID.
+     */
     public function updateWhatsNew(Request $req)
     {
         try {
@@ -2732,6 +3103,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /**
+     * | Retrieves a list of all "What's New" items.
+     */
     public function WhatsNewList(Request $req)
     {
         try {
@@ -2744,6 +3118,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /**
+     * | Retrieves a "What's New" item by its ID.
+     */
     public function WhatsNewbyId(Request $req)
     {
         try {
@@ -2761,6 +3138,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /**
+     * | Deletes or updates the status of a "What's New" item by ID.
+     */
     public function deleteWhatsNew(Request $req)
     {
         try {
@@ -2777,6 +3157,9 @@ class MasterReferenceController extends Controller
     }
 
 
+    /* 
+     * | Adds a new quick link.
+     */
     public function addQuickLink(Request $req)
     {
         try {
@@ -2793,6 +3176,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Updates an existing quick link by ID.
+     */
     public function updateQuickLink(Request $req)
     {
         try {
@@ -2810,6 +3196,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a list of all quick links.
+     */
     public function quickLinkList(Request $req)
     {
         try {
@@ -2822,6 +3211,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a quick link by its ID.
+     */
     public function quickLinkbyId(Request $req)
     {
         try {
@@ -2839,6 +3231,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Deletes or updates the status of a quick link by ID.
+     */
     public function deleteQuickLink(Request $req)
     {
         try {
@@ -2855,6 +3250,9 @@ class MasterReferenceController extends Controller
     }
 
 
+    /* 
+     * | Adds a new important link.
+     */
     public function addImportantLink(Request $req)
     {
         try {
@@ -2871,6 +3269,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Updates an existing important link by ID.
+     */
     public function updateImportantLink(Request $req)
     {
         try {
@@ -2888,6 +3289,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a list of all important links.
+     */
     public function importantLinkList(Request $req)
     {
         try {
@@ -2900,6 +3304,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves an important link by its ID.
+     */
     public function importantLinkbyId(Request $req)
     {
         try {
@@ -2917,6 +3324,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Deletes or updates the status of an important link by ID.
+     */
     public function deleteImportantLink(Request $req)
     {
         try {
@@ -2932,6 +3342,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Adds a new useful link.
+     */
     public function addUsefulLink(Request $req)
     {
         try {
@@ -2948,6 +3361,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Updates an existing useful link by ID.
+     */
     public function updateUsefulLink(Request $req)
     {
         try {
@@ -2965,6 +3381,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a list of all useful links.
+     */
     public function usefulLinkList(Request $req)
     {
         try {
@@ -2977,6 +3396,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a useful link by its ID.
+     */
     public function usefulLinkbyId(Request $req)
     {
         try {
@@ -2994,6 +3416,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Deletes or updates the status of a useful link by ID.
+     */
     public function deleteUsefulLink(Request $req)
     {
         try {
@@ -3010,6 +3435,9 @@ class MasterReferenceController extends Controller
     }
 
 
+    /* 
+     * | Adds a new department.
+     */
     public function addDepartment(Request $req)
     {
         try {
@@ -3026,6 +3454,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Updates an existing department by ID.
+     */
     public function updateDepartment(Request $req)
     {
         try {
@@ -3043,6 +3474,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a list of all departments.
+     */
     public function departmentList(Request $req)
     {
         try {
@@ -3055,6 +3489,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a department by its ID.
+     */
     public function departmentbyId(Request $req)
     {
         try {
@@ -3072,6 +3509,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Deletes or updates the status of a department by ID.
+     */
     public function deleteDepartment(Request $req)
     {
         try {
@@ -3087,6 +3527,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Adds a new contact.
+     */
     public function addContact(Request $req)
     {
         try {
@@ -3106,6 +3549,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Updates an existing contact by ID.
+     */
     public function updateContact(Request $req)
     {
         try {
@@ -3126,6 +3572,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a list of all contacts.
+     */
     public function ContactList(Request $req)
     {
         try {
@@ -3138,6 +3587,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a contact by its ID.
+     */
     public function ContactbyId(Request $req)
     {
         try {
@@ -3155,6 +3607,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Deletes or updates the status of a contact by ID.
+     */
     public function deleteContact(Request $req)
     {
         try {
@@ -3170,7 +3625,9 @@ class MasterReferenceController extends Controller
         }
     }
 
-
+    /* 
+     * | Adds a new citizen desk.
+     */
     public function addCDesk(Request $req)
     {
         try {
@@ -3186,6 +3643,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Updates an existing citizen desk by ID.
+     */
     public function updateCDesk(Request $req)
     {
         try {
@@ -3202,6 +3662,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a list of all citizen desks.
+     */
     public function CDeskList(Request $req)
     {
         try {
@@ -3214,7 +3677,9 @@ class MasterReferenceController extends Controller
         }
     }
 
-
+    /* 
+     * | Retrieves a citizen desk by its ID.
+     */
     public function CDeskbyId(Request $req)
     {
         try {
@@ -3232,6 +3697,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Deletes or updates the status of a citizen desk by ID.
+     */
     public function deleteCDesk(Request $req)
     {
         try {
@@ -3247,6 +3715,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Adds a new citizen desk description.
+     */
     public function addCDeskDesc(Request $req)
     {
         try {
@@ -3264,6 +3735,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Updates an existing citizen desk description by ID.
+     */
     public function updateCDeskDesc(Request $req)
     {
         try {
@@ -3282,6 +3756,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a list of all citizen desk descriptions.
+     */
     public function CDeskDescbyId(Request $req)
     {
         try {
@@ -3299,6 +3776,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Deletes or updates the status of a citizen desk description by ID.
+     */
     public function deleteCDeskDesc(Request $req)
     {
         try {
@@ -3314,6 +3794,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Adds a new about us section.
+     */
     public function addAboutUs(Request $req)
     {
         try {
@@ -3333,6 +3816,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Updates an existing about us section by ID.
+     */
     public function updateAboutUs(Request $req)
     {
         try {
@@ -3353,6 +3839,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a list of all about us sections.
+     */
     public function listAboutUs(Request $req)
     {
         try {
@@ -3365,6 +3854,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves an about us section by its ID.
+     */
     public function aboutUsbyId(Request $req)
     {
         try {
@@ -3382,6 +3874,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Deletes or updates the status of an about us section by ID.
+     */
     public function deleteAboutUs(Request $req)
     {
         try {
@@ -3397,6 +3892,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Adds a new act rule.
+     */
     public function addActRule(Request $req)
     {
         try {
@@ -3422,6 +3920,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Updates an existing act rule by ID.
+     */
     public function updateActRule(Request $req)
     {
         try {
@@ -3446,6 +3947,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a list of all act rules.
+     */
     public function listActRule(Request $req)
     {
         try {
@@ -3464,6 +3968,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a list of all act rules.
+     */
     public function listActRulev1(Request $req)
     {
         $list = new ActRule();
@@ -3478,6 +3985,9 @@ class MasterReferenceController extends Controller
         return  $masters;
     }
 
+    /* 
+     * | Retrieves an act rule by its ID.
+     */
     public function deleteActRule(Request $req)
     {
         try {
@@ -3493,6 +4003,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves an act rule by its ID.
+     */
     public function actRulebyId(Request $req)
     {
         try {
@@ -3511,6 +4024,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Adds a new administrative entry.
+     */
     public function addAdministrative(Request $req)
     {
         try {
@@ -3540,6 +4056,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Updates an existing administrative entry by ID.
+     */
     public function updateAdministrative(Request $req)
     {
         try {
@@ -3571,6 +4090,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a list of all administrative entries.
+     */
     public function listAdministrative(Request $req)
     {
         try {
@@ -3589,6 +4111,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves a list of all administrative entries for the dashboard.
+     */
     public function listAdministrativev1(Request $req)
     {
         $list = new Administrative();
@@ -3602,6 +4127,9 @@ class MasterReferenceController extends Controller
         return $masters;
     }
 
+    /* 
+     * | Retrieves an administrative entry by its ID.
+     */
     public function deleteAdministrative(Request $req)
     {
         try {
@@ -3617,6 +4145,9 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | Retrieves an administrative entry by its ID.
+     */
     public function administrativebyId(Request $req)
     {
         try {
@@ -3635,7 +4166,9 @@ class MasterReferenceController extends Controller
         }
     }
 
-
+    /* 
+     * | Retrieves a list of all administrative entries.
+     */
     public function dashboardData(Request $req)
     {
         try {
@@ -3695,9 +4228,10 @@ class MasterReferenceController extends Controller
         }
     }
 
-    
-
-    // added by alok 
+    /* 
+     * | Retrieves a list of all assets for the dashboard.
+     * | added by alok 
+     */
     public function dashboardSliderData(Request $req)
     {
         try {

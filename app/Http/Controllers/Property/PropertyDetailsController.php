@@ -50,7 +50,10 @@ class PropertyDetailsController extends Controller
         $this->propertyDetails = $propertyDetails;
     }
 
-    // get details of the property filtering with the provided details
+    /* 
+    * | Retrieves application records (approved and active) based on a dynamic search key like 
+    * | application no, name, mobile no, or PTN across different modules.
+    */
     public function applicationsListByKey(Request $request)
     {
         $request->validate([
@@ -353,7 +356,10 @@ class PropertyDetailsController extends Controller
     }
 
 
-    // get details of the diff operation in property
+    /* 
+    * | Fetch paginated property list filtered by various keys like holdingNo, ptn, 
+    * | ownerName, etc., with optional zone, ward, and legacy filters.
+    */
     public function propertyListByKey(Request $request)
     {
         $request->validate([
@@ -492,15 +498,19 @@ class PropertyDetailsController extends Controller
         return $getSaf->allNonHoldingSaf();
     }
 
-    // All the listing of the Details of Applications According to the respective Id
+    /* 
+    * | All the listing of the Details of Applications According to the respective Id
+    */
     public function getUserDetails(Request $request)
     {
         return $this->propertyDetails->getUserDetails($request);
     }
 
     /**
-     * |this function for grievance to search property holding details
+     * | Fetch paginated property list filtered by keys like holdingNo, ptn, ownerName, address, mobileNo, or khata/plot/mauja combinations.
+     * | Supports zone, ward filters, legacy flag, and pagination.
      */
+
     public function propertyListByKeyGrv(Request $request)
     {
         $request->validate([
@@ -624,8 +634,6 @@ class PropertyDetailsController extends Controller
 
     /* 
     * || Get Owner Details According to Holding No or Saf No
-    * || @param filterBy 
-    * || @param filterValue
     * || # Added By Alok
     */
     public function getOwnerDetailsInfo(Request $request)

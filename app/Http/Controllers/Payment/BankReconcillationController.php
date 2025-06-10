@@ -43,7 +43,8 @@ use Illuminate\Support\Facades\Validator;
 class BankReconcillationController extends Controller
 {
     /**
-     * |tranDeactivatedList
+     * | Searches transactions by module, date range, cheque number, payment mode, and verification status,
+     * | returning filtered transaction data or an error message if no data found.
      */
     public function searchTransaction(Request $request)
     {
@@ -156,9 +157,9 @@ class BankReconcillationController extends Controller
     }
 
 
-    /**
-     * |
-     */
+    /* 
+    * | Fetches cheque details by ID based on the selected module (Property, Water, or Trade)
+    */
     public function chequeDtlById(Request $request)
     {
         try {
@@ -207,7 +208,7 @@ class BankReconcillationController extends Controller
     }
 
     /**
-     * |
+     * | Processes cheque clearance or bounce for Property, Water, or Trade modules and updates related payment records
      */
     public function chequeClearance(Request $request)
     {
@@ -498,6 +499,7 @@ class BankReconcillationController extends Controller
 
     /**
      * | tran deactive search
+     * | Searches for a transaction by its transaction number and type (Property, Water, Trade, Advertisements).
      */
     public function searchTransactionNo(Request $req)
     {
@@ -530,8 +532,9 @@ class BankReconcillationController extends Controller
     }
 
     /**
-     * | Required @param Request
-     * | Required @return 
+     * | Deactivates a transaction based on the given module ID (Property, Water, etc.).
+     * | Validates input, handles document upload, logs deactivation details,
+     * | and commits changes across relevant databases.
      */
     public function deactivateTransaction(Request $req)
     {
@@ -677,6 +680,9 @@ class BankReconcillationController extends Controller
         }
     }
 
+    /* 
+     * | Fetches a list of deactivated transactions based on specified filters by date range and module.
+     */
     public function tranDeactivatedList(Request $request)
     {
         $validator = Validator::make($request->all(), [
