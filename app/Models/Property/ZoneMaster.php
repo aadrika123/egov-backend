@@ -9,6 +9,9 @@ class ZoneMaster extends Model
 {
     use HasFactory;
 
+    /**
+     * The table associated with the model.
+     */
     public function getZone($ulbId)
     {
         return ZoneMaster::on('pgsql::read')->select('id', 'zone')

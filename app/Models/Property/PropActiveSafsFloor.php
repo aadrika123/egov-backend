@@ -109,6 +109,9 @@ class PropActiveSafsFloor extends Model
         $floor->update($reqs);
     }
 
+    /**
+     * | Add Saf Floor
+     */
     public function addfloor($req, $safId, $userId, $assessmentType, $biDateOfPurchase = null)
     {
         // if ($req['useType'] == 1)
@@ -139,7 +142,7 @@ class PropActiveSafsFloor extends Model
     }
 
     /**
-     * | 
+     * | Get Saf Appartment Floor
      */
     public function getSafAppartmentFloor($safIds)
     {
@@ -161,7 +164,9 @@ class PropActiveSafsFloor extends Model
             ->get();
     }
 
-    
+    /**
+     * | Get Saf Floors as Field Vrf Dtl
+     */    
     public function getSafFloorsAsFieldVrfDtl($safId)
     {
         return self::select(DB::raw("

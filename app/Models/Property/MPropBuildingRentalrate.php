@@ -21,6 +21,9 @@ class MPropBuildingRentalrate extends Model
 
     //written by prity pandey
 
+    /**
+     * | Get Rental Rate by ID
+     */
     public function getById($req)
     {
         $list = MPropBuildingRentalrate::select(
@@ -36,7 +39,9 @@ class MPropBuildingRentalrate extends Model
         return $list;
     }
 
-
+    /**
+     * | Get Rental Rate by Property Road Type ID
+     */
     public function listMPropBuildingRentRate()
     {
         $list = MPropBuildingRentalrate::select(

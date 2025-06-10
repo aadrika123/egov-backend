@@ -19,6 +19,9 @@ class PropChequeDtl extends Model
         $mPropChequeDtl->create($req);
     }
 
+    /**
+     * | Get Cheque Details by ID
+     */
     public function chequeDtlById($request)
     {
         return PropChequeDtl::select('*')

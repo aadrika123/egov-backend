@@ -31,7 +31,9 @@ class PropSafsDemand extends Model
             ->first();
     }
 
-    // Get Saf First Demand by saf id and financial year
+    /**
+     * | Get First Demand by SAF ID and Financial Year
+     */
     public function getFirstDemandByFyearSafId($safId, $fyear)
     {
         return PropSafsDemand::where('saf_id', $safId)
@@ -40,7 +42,9 @@ class PropSafsDemand extends Model
             ->first();
     }
 
-    // Get Demand by Saf Id
+    /**
+     * | Get Demands by SAF ID
+     */
     public function getDemandsBySafId($safId)
     {
         return PropSafsDemand::on('pgsql::read')
@@ -49,13 +53,17 @@ class PropSafsDemand extends Model
             ->get();
     }
 
-    // Get Demand By ID
+    /* 
+    * | Get Demand By ID
+    */
     public function getDemandById($id)
     {
         return PropSafsDemand::find($id);
     }
 
-    // Get Existing Prop SAF Demand by financial quarter and safid
+    /* 
+    * | Get Existing Prop SAF Demand by financial quarter and safid
+    */
     public function getPropSafDemands($quarterYear, $qtr, $safId)
     {
         return PropSafsDemand::where('fyear', $quarterYear)

@@ -9,6 +9,9 @@ class MPropForgeryType extends Model
 {
     use HasFactory;
 
+    /**
+     * | Get Forgery Type by ID
+     */
     public function forgeryType()
     {
         return MPropForgeryType::select('id', 'type')
@@ -18,6 +21,10 @@ class MPropForgeryType extends Model
     }
 
     //written by prity pandey
+
+    /**
+     * | Get Forgery Type by ID
+     */
     public function addForgeryType($req)
     {
         $data = new MPropForgeryType();
@@ -25,7 +32,9 @@ class MPropForgeryType extends Model
         $data->save();
     }
 
-
+    /**
+     * | Update Forgery Type by ID
+     */
     public function updateForgeryType($req)
     {
         $data = MPropForgeryType::where('id', $req->id)
@@ -35,6 +44,9 @@ class MPropForgeryType extends Model
         $data->save();
     }
 
+    /**
+     * | Get Forgery Type by ID
+     */
     public function getById($req)
     {
         $list = MPropForgeryType::select(
@@ -47,7 +59,9 @@ class MPropForgeryType extends Model
         return $list;
     }
 
-
+    /**
+     * | Get Forgery Type by ULB ID
+     */
     public function listForgeryType()
     {
         $list = MPropForgeryType::select(
@@ -60,7 +74,9 @@ class MPropForgeryType extends Model
         return $list;
     }
 
-
+    /**
+     * | Delete Forgery Type by ID
+     */
     public function deleteForgeryType($req)
     {
         $constructionType = MPropForgeryType::find($req->id);

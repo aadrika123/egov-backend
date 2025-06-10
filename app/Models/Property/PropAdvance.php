@@ -65,7 +65,9 @@ class PropAdvance extends Model
             ->first();
     }
 
-
+    /**
+     * | Get Property Advance by ID
+     */
     public function deactivateAdvanceByTrId($tranId)
     {
         return self::where("tran_id", $tranId)->update([

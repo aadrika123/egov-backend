@@ -30,6 +30,9 @@ class MPropMultiFactor extends Model
 
     //written by prity pandey
 
+    /**
+     * | Get Multi Factor by ID
+     */
     public function getById($req)
     {
         $list = MPropMultiFactor::select(
@@ -44,7 +47,9 @@ class MPropMultiFactor extends Model
         return $list;
     }
 
-
+    /**
+     * | Get Multi Factors
+     */
     public function listMPropMultiFactor()
     {
         $list = MPropMultiFactor::select(

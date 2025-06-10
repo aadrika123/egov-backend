@@ -11,6 +11,9 @@ class RefPropUsageType extends Model
 {
     use HasFactory;
 
+    /**
+     * Get Property Usage Types
+     */
     public function propUsageType()
     {
         return RefPropUsageType::on('pgsql::read')->select(
@@ -22,7 +25,9 @@ class RefPropUsageType extends Model
             ->get();
     }
 
-
+    /**
+     * Get All Property Usage Types
+     */
     public function propAllUsageType()
     {
         return RefPropUsageType::on('pgsql::read')->select(

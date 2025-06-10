@@ -9,6 +9,10 @@ class PropActiveObjectionOwner extends Model
 {
     use HasFactory;
 
+    
+    /* 
+    * |  Get Owner Detail by Objection ID
+    */
     public function getOwnerDetail($objId)
     {
         return PropActiveObjectionOwner::select('*')
@@ -16,6 +20,9 @@ class PropActiveObjectionOwner extends Model
             ->get();
     }
 
+    /* 
+    * |  Get Owner Edit Detail by Objection ID
+    */
     public function getOwnerEditDetail($objId)
     {
         return PropActiveObjectionOwner::select('*')

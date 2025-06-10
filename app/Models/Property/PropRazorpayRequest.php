@@ -21,7 +21,6 @@ class PropRazorpayRequest extends Model
 
     /**
      * | Get Razor pay request by order id and saf id
-     * | @param Request $req
      */
     public function getRazorPayRequests($req)
     {
@@ -32,7 +31,6 @@ class PropRazorpayRequest extends Model
     }
     /**
      * | Get Razor pay request by order id and saf id
-     * | @param Request $req
      */
     public function getRazorPayRequestsv1($req)
     {

@@ -11,6 +11,9 @@ class RefPropConstructionType extends Model
 {
     use HasFactory;
 
+    /* 
+    * | get property construction type where status is 1
+    */
     public function propConstructionType()
     {
         return RefPropConstructionType::on('pgsql::read')->select(

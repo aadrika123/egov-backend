@@ -11,8 +11,6 @@ class PropPenalty extends Model
 
     /**
      * | Get Penalties by tran id
-     * | @param key key to get id
-     * | @param id saf id or property id
      */
     public function getPenalties($key, $id)
     {
