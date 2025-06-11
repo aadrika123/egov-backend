@@ -2018,8 +2018,8 @@ class ActiveSafController extends Controller
             $demands = json_decode($propRazorPayRequest['demand_list']);
             $amount = $propRazorPayRequest['amount'];
 
-            if (!$demands || collect($demands)->isEmpty())
-                throw new Exception("Demand Not Available for Payment");
+            // if (!$demands || collect($demands)->isEmpty())
+            //     throw new Exception("Demand Not Available for Payment");
             // Property Transactions
             $activeSaf->payment_status = 1;             // Paid for Online
 
