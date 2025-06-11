@@ -129,12 +129,6 @@ class WaterConsumer extends Controller
     /**
      * | List Consumer Active Demand
      * | Show the Demand With payed-status false
-     * | @param request consumerId
-     * | @var WaterConsumerDemand  model
-     * | @var consumerDemand  
-     * | @var refConsumerId
-     * | @var refMeterData
-     * | @var connectionName
      * | @return consumerDemand  Consumer Demand List
         | Serial no : 02
         | Working
@@ -196,15 +190,6 @@ class WaterConsumer extends Controller
     /**
      * | Save the consumer demand 
      * | Also generate demand 
-     * | @param request
-     * | @var mWaterConsumerInitialMeter
-     * | @var mWaterConsumerMeter
-     * | @var refMeterConnectionType
-     * | @var consumerDetails
-     * | @var calculatedDemand
-     * | @var demandDetails
-     * | @var meterId
-     * | @return 
         | Serial No : 03
         | Not Tested
         | Work on the valuidation and the saving of the meter details document
@@ -323,13 +308,6 @@ class WaterConsumer extends Controller
     /**
      * | Save the Details for the Connection Type Meter 
      * | In Case Of Connection Type is meter OR Gallon 
-     * | @param Request  
-     * | @var mWaterConsumerDemand
-     * | @var mWaterConsumerTax
-     * | @var generatedDemand
-     * | @var taxId
-     * | @var meterDetails
-     * | @var refDemands
         | Serial No : 03.01
         | Not Tested
      */
@@ -413,7 +391,6 @@ class WaterConsumer extends Controller
 
     /**
      * | Validate the user and other criteria for the Genereating demand
-     * | @param request
         | Serial No : 03.02
         | Not Used 
      */
@@ -447,7 +424,6 @@ class WaterConsumer extends Controller
 
     /**
      * | Save the Meter details 
-     * | @param request
         | Serial No : 04
         | Working  
         | Check the parameter for the autherised person
@@ -484,7 +460,6 @@ class WaterConsumer extends Controller
     /**
      * | Chech the parameter before Meter entry
      * | Validate the Admin For entring the meter details
-     * | @param request
         | Serial No : 04.01
         | Working
         | Look for the meter status true condition while returning data
@@ -618,8 +593,6 @@ class WaterConsumer extends Controller
 
     /**
      * | Check for the Meter/Fixed 
-     * | @param request
-     * | @param consumerMeterDetails
         | Serial No : 04.01.01
         | Not Working
      */
@@ -639,7 +612,6 @@ class WaterConsumer extends Controller
     /**
      * | Save the Document for the Meter Entry 
      * | Return the Document Path
-     * | @param request
         | Serial No : 04.02 / 06.02
         | Working
         | Common function
@@ -665,9 +637,6 @@ class WaterConsumer extends Controller
 
     /**
      * | Get all the meter details According to the consumer Id
-     * | @param request
-     * | @var 
-     * | @return 
         | Serial No : 05
         | Not Working
      */
@@ -719,8 +688,6 @@ class WaterConsumer extends Controller
 
     /**
      * | Check the condition before appling for deactivation
-     * | @param
-     * | @var 
         | Not Working
         | Serial No : 06.01
         | Recheck the amount and the order from weaver committee 
@@ -758,7 +725,6 @@ class WaterConsumer extends Controller
 
     /**
      * | Post Other Payment Modes for Cheque,DD,Neft
-     * | @param req
         | Serial No : 06.03.01
         | Not Working
      */
@@ -807,9 +773,6 @@ class WaterConsumer extends Controller
 
     /**
      * | Demand deactivation process
-     * | @param 
-     * | @var 
-     * | @return 
         | Not Working
         | Serial No :
         | Not Build
@@ -843,9 +806,6 @@ class WaterConsumer extends Controller
     /**
      * | check if the following conditon if fullfilled for demand deactivation
      * | check for valid user
-     * | @param request
-     * | @var 
-     * | @return 
         | Not Working
         | Serial No: 
         | Not Build
@@ -858,9 +818,6 @@ class WaterConsumer extends Controller
 
     /**
      * | Check the concept for payment and amount
-     * | @param request
-     * | @var 
-     * | @return 
         | Not Working
         | Serial No:
         | Get Concept Notes for demand deactivation 
@@ -876,7 +833,6 @@ class WaterConsumer extends Controller
     /**
      * | View details of the caretaken water connection
      * | using user id
-     * | @param request
         | Working
         | Serial No : 07
      */
@@ -955,7 +911,6 @@ class WaterConsumer extends Controller
 
     /**
      * | Check the parameter for Fixed meter entry
-     * | @param consumerId
         | Seriel No : 08.01
         | Not used
      */
@@ -985,7 +940,6 @@ class WaterConsumer extends Controller
 
     /**
      * | Calculate Final meter reading according to demand upto date and previous upto data 
-     * | @param request
         | Serial No : 09
         | Working
      */
@@ -1052,7 +1006,6 @@ class WaterConsumer extends Controller
     /**
      * | Get Details for memo
      * | Get all details for the consumer application and consumer both details 
-     * | @param request
         | Serial No 
         | Use
         | Not Finished
@@ -1141,7 +1094,7 @@ class WaterConsumer extends Controller
         }
     }
 
-    //Start///////////////////////////////////////////////////////////////////////
+    
     /**
      * | Search the governmental prop water commention 
      * | Search only the Gov water connections 
@@ -1833,7 +1786,11 @@ class WaterConsumer extends Controller
     }
 
 
-    //written by prity pandey
+  
+    /**
+     * | Apply for water connection deactivation with charges, workflow mapping, and document upload
+     * | written by prity pandey
+     */
     public function applyDeactivation(Request $request)
     {
         $validated = Validator::make(
@@ -1972,9 +1929,7 @@ class WaterConsumer extends Controller
     }
 
     /**
-     * upload Document By Citizen At the time of Registration
-     * @param Request $req
-     * @return \Illuminate\Http\JsonResponse
+     * | upload Document By Citizen At the time of Registration
      */
     public function uploadDocument($tempId, $documents, $auth)
     {
@@ -2017,7 +1972,9 @@ class WaterConsumer extends Controller
         });
     }
 
-
+    /**
+     * | Search water applications by name, mobile number, or application number with pagination
+     */
     public function searchApplication(Request $request)
     {
         $validated = Validator::make(
@@ -2115,6 +2072,9 @@ class WaterConsumer extends Controller
     //     }
     // }
 
+    /**
+     * | Fetch consumer application details (active/approval) by application ID
+     */
     public function getByApplicationId(ReqApplicationId $request)
     {
         try {
@@ -2141,6 +2101,9 @@ class WaterConsumer extends Controller
         }
     }
 
+    /**
+     * | Fetch uploaded document list and statuses for a given application ID
+     */
     public function getDocList(Request $req)
     {
         $validated = Validator::make(
@@ -2169,6 +2132,10 @@ class WaterConsumer extends Controller
             return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", "", 'POST', "");
         }
     }
+
+    /**
+     * | Filter and format the document list based on uploaded documents and application details
+     */
     public function filterDocument($documentList, $refWaterApplication, $ownerId = null)
     {
         $mWfActiveDocument  = new WfActiveDocument();
@@ -2248,6 +2215,9 @@ class WaterConsumer extends Controller
         return $filteredDocs;
     }
 
+    /**
+     * | Get the list of required documents for water application deactivation
+     */
     public function getRequestDocLists($application)
     {
         $mRefReqDocs    = new RefRequiredDocument();
@@ -2264,6 +2234,9 @@ class WaterConsumer extends Controller
         return $documentList;
     }
 
+    /**
+     * | Handles document upload for water connection deactivation, with validation, and status updates
+     */
     public function uploadWaterDocForDeactivation(Request $req)
     {
         $validated = Validator::make(
@@ -2369,8 +2342,12 @@ class WaterConsumer extends Controller
         }
     }
 
+    /**
+     * | Validates whether the current user (citizen or user) has permission 
+     * | to upload documents for the given application
+     
+     */
     public function checkParamForDocUpload($isCitizen, $applicantDetals, $user)
-
     {
         $refWorkFlowMaster = Config::get('workflow-constants.WATER_MASTER_ID');
         switch ($isCitizen) {
@@ -2398,6 +2375,10 @@ class WaterConsumer extends Controller
         }
     }
 
+    /**
+     * | Retrieves the user's role and permissions for a specific ULB 
+     * | and workflow from the workflow-role mapping system
+     */
     public function getUserRoll($user_id, $ulb_id, $workflow_id)
     {
         try {
@@ -2451,6 +2432,9 @@ class WaterConsumer extends Controller
         }
     }
 
+    /**
+     * | Retrieves and returns all uploaded documents for a given water application ID along with their URLs
+     */
     public function getUploadDocuments(Request $req)
     {
         $validated = Validator::make(
@@ -2482,6 +2466,7 @@ class WaterConsumer extends Controller
         }
     }
 
+    // Checks if all required documents have been uploaded for the given application ID
     public function checkFullDocUpload($applicationId)
     {
         $mWaterApplication  = new WaterConsumerActiveRequest();
@@ -2497,6 +2482,10 @@ class WaterConsumer extends Controller
         return $this->isAllDocs($applicationId, $refDocList, $waterDetails);
     }
 
+    /**
+     * | Checks if all required documents have been uploaded for the water application
+     * | Returns 1 if all documents are uploaded, otherwise returns 0
+     */
     public function isAllDocs($applicationId, $refDocList, $refSafs)
     {
         $docList = array();

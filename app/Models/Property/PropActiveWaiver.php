@@ -10,6 +10,9 @@ class PropActiveWaiver extends Model
 {
     use HasFactory;
 
+    /* 
+    * | Add Waiver
+    */
     public function addWaiver($request)
     {
         $data = new PropActiveWaiver();
@@ -41,6 +44,9 @@ class PropActiveWaiver extends Model
         return $data;
     }
 
+    /**
+     * | Get Waiver Details by Id
+     */
     public function waiverList()
     {
         return PropActiveWaiver::select(

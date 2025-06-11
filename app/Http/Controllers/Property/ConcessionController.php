@@ -68,6 +68,8 @@ class ConcessionController extends Controller
 
 
     /**
+     * | Applly a concession for a property, saves specific concession data (e.g., Gender, Senior Citizen), 
+     * | assigns workflow roles, and generates a unique concession number.
      * | Rating-3
      * | Status-Closed
      */
@@ -173,7 +175,7 @@ class ConcessionController extends Controller
     }
 
     /**
-     * |
+     * | Updates the gender field for a concession record and saves associated document if provided.
      */
     public function saveGenderData($req, $concession)
     {
@@ -185,7 +187,7 @@ class ConcessionController extends Controller
     }
 
     /**
-     * |
+     * | Updates the date of birth for a senior citizen concession and saves associated document if provided.
      */
     public function saveSeniorCitizenData($req, $concession)
     {
@@ -197,7 +199,7 @@ class ConcessionController extends Controller
     }
 
     /**
-     * |
+     * | Updates specially abled status and percentage for a concession record and saves associated document if provided.
      */
     public function saveSpeciallyAbledData($req, $concession)
     {
@@ -212,7 +214,7 @@ class ConcessionController extends Controller
     }
 
     /**
-     * |
+     * | Updates armed force status for a concession record and saves associated document if provided.
      */
     public function saveArmedForceData($req, $concession)
     {
@@ -225,6 +227,10 @@ class ConcessionController extends Controller
             $this->saveDoc($req, $concession);
     }
 
+    /**
+     * | Saves a document for a concession, uploads it to DMS, and records 
+     * | metadata including module, workflow, and document details.
+     */
     public function saveDoc($request, $concession)
     {
         $docUpload = new DocUpload;
@@ -251,7 +257,6 @@ class ConcessionController extends Controller
 
     /**
      * | Property Concession Inbox List
-     * | @var auth autheticated user data
      * | Query Costing-293ms 
      * | Rating-3
      * | Status-Closed
@@ -296,9 +301,6 @@ class ConcessionController extends Controller
 
     /**
      * | Outbox List
-     * | @var auth authenticated user list
-     * | @var ulbId authenticated user ulb
-     * | @var userid authenticated user id
      * | Query Costing-309 
      * | Rating-3
      * | Status-Closed
@@ -341,7 +343,13 @@ class ConcessionController extends Controller
         }
     }
 
-    // Get Concession Details by ID
+    /**
+     * | Retrieves comprehensive concession details by application ID, including basic, 
+     * | property, and owner information, along with workflow tracks, role details, and custom departmental data.
+     * | Query Costing-1.2s
+     * | Rating-3
+     * | Status-Closed
+     */
     public function getDetailsById(Request $req)
     {
         $req->validate([
@@ -422,7 +430,6 @@ class ConcessionController extends Controller
 
     /**
      * | Escalate application
-     * | @param req request parameters
      * | Query Costing-400ms
      * | Rating-2
      * | Status-Closed
@@ -610,7 +617,6 @@ class ConcessionController extends Controller
 
     /**
      * | Concession Application Approval or Rejected 
-     * | @param req
      * | Status-closed
      * | Query Costing-376 ms
      * | Rating-2
@@ -861,7 +867,8 @@ class ConcessionController extends Controller
     }
 
     /**
-     *  get document ttype
+     * | Retrieves document type details for a specified concession category 
+     * | (gender, senior citizen, specially abled, or armed force) and filters the data for citizen use.
      */
     public function getDocType(Request $req)
     {
@@ -903,7 +910,8 @@ class ConcessionController extends Controller
     }
 
     /**
-     * | Filter Doc
+     * | Filters citizen document data by extracting and formatting document requirements, 
+     * | including type, name, and a list of document codes with readable labels.
      */
     public function filterCitizenDoc($data)
     {
@@ -931,7 +939,7 @@ class ConcessionController extends Controller
 
 
     /**
-     *  get uploaded documents
+     * | Get uploaded documents for a specific concession application.
      */
     public function getUploadedDocuments(Request $req)
     {
@@ -959,7 +967,8 @@ class ConcessionController extends Controller
     }
 
     /**
-     * |
+     * | Uploads a document (PDF, JPEG, PNG, JPG) for a concession application, validates 
+     * |file type and size, saves metadata, and updates document upload status.
      */
     public function uploadDocument(Request $req)
     {
@@ -1097,7 +1106,8 @@ class ConcessionController extends Controller
     }
 
     /**
-     * | Get Doc List
+     * | Retrieves a list of required document types for a concession application based on 
+     * | conditions like specially abled status, armed force status, gender, and date of birth.
      */
     public function getDocList($refApplication)
     {
@@ -1132,7 +1142,8 @@ class ConcessionController extends Controller
     }
 
     /**
-     *  | Filtering
+     * | Filters and formats a list of documents for a concession application, retrieving document 
+     * | paths from DMS and including details like document code, verification status, and remarks.
      */
     public function filterDocument($documentList, $refApplication)
     {

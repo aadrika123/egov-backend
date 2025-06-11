@@ -92,6 +92,7 @@ class PropertyController extends Controller
 
     /**
      * | Care taker property tag
+     * | Tag a property to the caretaker (active citizen) based on holding number or PT number.
      */
     public function caretakerPropertyTag(Request $req)
     {
@@ -200,7 +201,7 @@ class PropertyController extends Controller
     }
 
     /**
-     * | Property Basic Edit
+     * |  Edit basic property and owner details.
      */
     public function basicPropertyEdit(Request $req)
     {
@@ -392,7 +393,6 @@ class PropertyController extends Controller
     /**
      * | Get the Property LatLong for Heat map
      * | Using wardId used in dashboard data 
-     * | @param req
         | For MVP testing
      */
     public function getpropLatLong(Request $req)
@@ -472,7 +472,7 @@ class PropertyController extends Controller
 
     /**
      * | Get citizen details with property_id and activate in case of deactive
-     * written by prity pandey
+     * | written by prity pandey
      */
     public function citizenStatusUpdate(Request $request)
     {
@@ -613,6 +613,7 @@ class PropertyController extends Controller
 
     /**
      * | Master Holding Data
+     * | Fetch master holding data including amalgamated properties and floors.
      */
     public function masterHoldingData(Request $request)
     {

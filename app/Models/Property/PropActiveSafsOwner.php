@@ -121,6 +121,9 @@ class PropActiveSafsOwner extends Model
         $owner->update($reqs);
     }
 
+    /**
+     * | Add Owner
+     */
     public function addOwner($req, $safId, $citizenId)
     {
 

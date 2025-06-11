@@ -60,7 +60,9 @@ class PropActiveDeactivationRequest extends Model
         return $application;
     }
 
-
+    /**
+     * | Recent Application for all
+     */
     public function recentApplication($workflowIds,$roleIds,$ulbId)
     {
         $data = PropActiveDeactivationRequest::select(
@@ -87,7 +89,7 @@ class PropActiveDeactivationRequest extends Model
     }
 
     /**
-     * | 
+     * | Get Today Applied Applications
      */
     public function todayAppliedApplications($userId)
     {

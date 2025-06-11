@@ -446,6 +446,10 @@ class CitizenController extends Controller
 
     //written by prity pandey
     //function for property count
+
+    /**
+     * | Get count of various services registered by the logged-in citizen.
+     */
     public function propertyCount(Request $request)
     {
         try {

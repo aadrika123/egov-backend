@@ -10,6 +10,9 @@ class MPropRentalValue extends Model
     use HasFactory;
     //written by prity pandey
 
+    /**
+     * | Get Rental Value by usage type
+     */
     public function getById($req)
     {
         $list = MPropRentalValue::select(
@@ -26,6 +29,9 @@ class MPropRentalValue extends Model
         return $list;
     }
 
+    /**
+     * | Get Rental Value by usage type
+     */
     public function listMPropRentalValue()
     {
         $list = MPropRentalValue::select(

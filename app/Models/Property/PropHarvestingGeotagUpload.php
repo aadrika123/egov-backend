@@ -11,13 +11,16 @@ class PropHarvestingGeotagUpload extends Model
     protected $guarded = [''];
 
     /**
-     * |
+     * | Get the latest geotag upload for a specific application ID
      */
     public function add($req)
     {
         PropHarvestingGeotagUpload::create($req);
     }
 
+    /**
+     * | Get the latest geotag upload for a specific application ID
+     */
     public function getLatLong($applicationId)
     {
         return PropHarvestingGeotagUpload::on('pgsql::read')

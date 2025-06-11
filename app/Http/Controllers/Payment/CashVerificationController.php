@@ -174,6 +174,7 @@ class CashVerificationController extends Controller
 
     /**
      * | Verified tc collection
+     * | Retrieves and summarizes verified collection details for a given collector on a specified date.
      * | Serial : 4
      */
     public function verifiedTcCollectionDtl(Request $request)
@@ -225,6 +226,7 @@ class CashVerificationController extends Controller
 
     /**
      * | For Verification of cash
+     * | Verifies and processes cash transactions for property, water, and trade modules in a transactional manner.
      * | serial : 5
      */
     public function cashVerify(Request $request)
@@ -343,8 +345,8 @@ class CashVerificationController extends Controller
         }
     }
 
-
     /**
+     * | Stores detailed daily collection information for a given transaction under a specific collection ID.
      * | serial : 5.1
      */
     public function dailyCollectionDtl($tranDtl, $collectionId)
@@ -366,6 +368,8 @@ class CashVerificationController extends Controller
 
     /**
      * | Cash Verification Receipt
+     * | Retrieves and returns detailed cash receipt information by receipt number, 
+     * | including payment breakdown and collector/verifier details.
      */
     public function cashReceipt(Request $request)
     {
@@ -415,6 +419,7 @@ class CashVerificationController extends Controller
 
     /**
      * | Edit Cheque No
+     * | Updates the cheque number for a transaction across multiple modules with validation and transactional safety.
        | Currently not in use
      */
     public function editChequeNo(Request $request)

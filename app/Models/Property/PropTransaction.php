@@ -84,7 +84,9 @@ class PropTransaction extends Model
             ->where('prop_transactions.tran_no', $tranNo);
     }
 
-    // getPropTrans as trait function on current object
+    /* 
+    * | getPropTrans as trait function on current object
+    */
     public function getPropTransTrait()
     {
         return DB::table('prop_transactions')
@@ -105,7 +107,9 @@ class PropTransaction extends Model
             ->where('prop_transactions.status', 1);
     }
 
-    // Get Property Transaction by citizen id
+     /* 
+    * | Get Property Transaction by citizen id
+    */
     public function getPropTransByCitizenId($citizenId)
     {
         return $this->getPropTransTrait()
@@ -114,7 +118,9 @@ class PropTransaction extends Model
             ->first();
     }
 
-    // Get Property Transaction by User Id
+    /* 
+    * | Get Property Transaction by User Id
+    */
     public function getPropTransByUserId($userId)
     {
         return $this->getPropTransTrait()
@@ -123,7 +129,9 @@ class PropTransaction extends Model
             ->get();
     }
 
-    // Get Property Transaction by SAF Id
+    /* 
+    * | Get Property Transaction by SAF Id
+    */
     public function getPropTransBySafId($safId)
     {
         return $this->getPropTransTrait()
@@ -132,7 +140,9 @@ class PropTransaction extends Model
             ->first();
     }
 
-    // Get Property Transaction by Property ID
+    /* 
+    * | Get Property Transaction by Property ID
+    */
     public function getPropTransByPropId($propId)
     {
         return $this->getPropTransTrait()
@@ -141,7 +151,9 @@ class PropTransaction extends Model
             ->first();
     }
 
-    // Save Property Transactions
+    /* 
+    * | Save Property Transactions   
+    */
     public function store($req)
     {
         $tranDate = Carbon::now()->format('Y-m-d');
@@ -156,6 +168,9 @@ class PropTransaction extends Model
         return PropTransaction::insertGetId($metaReqs);
     }
 
+    /* 
+    * | get all Prop Transaction data where pyament mode is not Online
+    */
     public function getAllData()
     {
         return PropTransaction::select('*')
@@ -328,8 +343,8 @@ class PropTransaction extends Model
             ->groupBy(['users.id', 'users.user_name']);
     }
 
-    /**
-     * | 
+    /* 
+     * | Get Recent Property Payments
      */
     public function recentPayment($userId)
     {
@@ -353,8 +368,8 @@ class PropTransaction extends Model
             ->get();
     }
 
-    /**
-     * | 
+    /* 
+    * | Get Property Transaction Details
      */
     public function tranDtl($userId, $fromDate, $toDate)
     {

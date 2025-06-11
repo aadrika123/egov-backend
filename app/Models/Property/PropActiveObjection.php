@@ -31,6 +31,9 @@ class PropActiveObjection extends Model
         return $objection;
     }
 
+    /**
+     * | Get Objection List
+     */
     public function objectionList()
     {
         return DB::table('prop_active_objections')
@@ -119,7 +122,7 @@ class PropActiveObjection extends Model
     }
 
     /**
-     * 
+     * | Get Objection No by Id
      */
     public function getObjectionNo($objId)
     {
@@ -170,6 +173,9 @@ class PropActiveObjection extends Model
         return $application;
     }
 
+    /**
+     * | Recent Application for all
+     */
     public function recentApplication($workflowIds, $roleIds, $ulbId)
     {
         $data = PropActiveObjection::on('pgsql::read')

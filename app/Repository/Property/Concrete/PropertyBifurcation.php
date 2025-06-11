@@ -57,6 +57,13 @@ class PropertyBifurcation implements IPropertyBifurcation
         $this->_Saf = new SafRepository();
         $this->_property = new PropertyDeactivate();
     }
+
+    /**
+     * | Handles the bifurcation of an existing property by validating initiator,
+     * | checking existing assessments, and inserting new SAF records for each sub-property.
+     * | Returns property, owner, and floor details on GET request,
+     * | and processes SAF creation on POST with rollback handling.
+     */
     public function addRecord(Request $request)
     {
         try {
@@ -132,6 +139,12 @@ class PropertyBifurcation implements IPropertyBifurcation
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
+
+    /**
+     * | Fetches the inbox of SAF applications for the authenticated user,
+     * | filtering by ward, date range, and search key.
+     * | Returns user type, ward list, and applications data.
+     */
     public function inbox(Request $request)
     {
         try {
@@ -249,6 +262,12 @@ class PropertyBifurcation implements IPropertyBifurcation
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
+
+    /**
+     * | Fetches the outbox of SAF applications for the authenticated user,
+     * | filtering by ward, date range, and search key.
+     * | Returns user type, ward list, and applications data.
+     */
     public function outbox(Request $request)
     {
         try {
@@ -364,6 +383,12 @@ class PropertyBifurcation implements IPropertyBifurcation
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
+
+    /**
+     * | Handles the next level processing of a SAF application,
+     * | including validation, role checks, and status updates.
+     * | Returns success or error messages based on the operation outcome.
+     */
     public function postNextLevel(Request $request)
     {
         try {
@@ -630,6 +655,12 @@ class PropertyBifurcation implements IPropertyBifurcation
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
+
+    /**
+     * | Reads the details of a SAF application by its ID,
+     * | including user roles, pending status, and related properties.
+     * | Returns the SAF details along with owner and transaction information.
+     */
     public function readSafDtls($id)
     {
         try {
@@ -683,6 +714,11 @@ class PropertyBifurcation implements IPropertyBifurcation
         }
     }
 
+    /**
+     * | Handles the document upload for a SAF application,
+     * | validating the request, checking existing documents,
+     * | and returning the list of required and uploaded documents.
+     */
     public function documentUpload(Request $request)
     {
         $refUser = Auth()->user();
@@ -1379,6 +1415,10 @@ class PropertyBifurcation implements IPropertyBifurcation
         }
     }
     #------------------------------CORE Function ---------------------------------------------
+
+    /* 
+     * | Retrieves floor details for a specific property.
+     */
     public function getFlooreDtl($propertyId)
     {
         try {
@@ -1392,6 +1432,10 @@ class PropertyBifurcation implements IPropertyBifurcation
         }
     }
 
+    /* 
+     * | Inserts new data for a SAF application,
+     * | including property, owner, and floor details.
+     */
     public function insertData(Request $req)
     {
         try {
@@ -1468,6 +1512,10 @@ class PropertyBifurcation implements IPropertyBifurcation
             echo $e->getMessage();
         }
     }
+
+    /**
+     * | Get the level data for a specific SAF ID.
+     */
     public function getLevelData(int $safId)
     {
         try {
@@ -1482,6 +1530,11 @@ class PropertyBifurcation implements IPropertyBifurcation
             echo $e->getMessage();
         }
     }
+
+    /**
+     * | Get all related SAFs for a specific property ID.
+       | Common Function
+     */
     public function getAllReletedSaf($propertyId)
     {
         try {
@@ -1494,6 +1547,11 @@ class PropertyBifurcation implements IPropertyBifurcation
             return [];
         }
     }
+
+    /**
+     * | Get the list of document types required for a specific SAF application. 
+       | Common Function
+     */
     public function getDocumentTypeList(PropActiveSaf $application)
     {
         try {
@@ -1520,6 +1578,11 @@ class PropertyBifurcation implements IPropertyBifurcation
             return [];
         }
     }
+
+    /**
+     * | Get the list of documents required for a specific document type.
+       | Common Function
+     */
     public function getDocumentList($doc_type)
     {
         try {
@@ -1533,6 +1596,11 @@ class PropertyBifurcation implements IPropertyBifurcation
             return $e->getMessage();
         }
     }
+
+    /**
+     * | Check if a document exists for a specific SAF number and document type.
+       | Common Function
+     */
     public function check_doc_exist($safNo, $doc_for, $doc_mstr_id = null, $woner_id = null)
     {
         try {
@@ -1563,6 +1631,11 @@ class PropertyBifurcation implements IPropertyBifurcation
             echo $e->getMessage();
         }
     }
+
+    /**
+     * | Check if a document exists for a specific SAF number, owner ID, and document type.
+       | Common Function
+     */
     public function check_doc_exist_owner($safNo, $owner_id, $doc_for, $document_id = null)
     {
         try {
@@ -1601,6 +1674,11 @@ class PropertyBifurcation implements IPropertyBifurcation
             return $e->getMessage();
         }
     }
+
+    /**
+     * | Get owner details by SAF ID.
+       | Common Function
+     */
     public function getOwnereDtlBySId($id)
     {
         try {
@@ -1613,6 +1691,11 @@ class PropertyBifurcation implements IPropertyBifurcation
             echo $e->getMessage();
         }
     }
+
+    /**
+     * | Get documents related to a specific SAF ID.
+       | Common Function
+     */
     public function getSafDocuments($id)
     {
         try {
@@ -1639,6 +1722,10 @@ class PropertyBifurcation implements IPropertyBifurcation
             echo $e->getMessage();
         }
     }
+
+    /* 
+     * | Get all related SAFs for a specific property ID.
+     */
     public function getAllReletedSafId($propertyId)
     {
         try {
@@ -1664,6 +1751,10 @@ class PropertyBifurcation implements IPropertyBifurcation
             return [];
         }
     }
+
+    /**
+     * | Read transaction details for a specific SAF ID.
+     */
     public function readTranDtl($id)
     {
         try {
@@ -1676,6 +1767,10 @@ class PropertyBifurcation implements IPropertyBifurcation
             echo $e->getMessage();
         }
     }
+
+    /**
+     * | Get the timeline of actions for a specific SAF ID.
+     */
     public function getTimelin($id)
     {
         try {
@@ -1718,16 +1813,31 @@ class PropertyBifurcation implements IPropertyBifurcation
             echo $e->getMessage();
         }
     }
+
+    /**
+     * | Read the document path for a specific document.
+       | Common Function
+     */
     public function readDocumentPath($path)
     {
         $path = (config('app.url') . '/api/getImageLink?path=' . $path);
         return $path;
     }
+
+    /**
+     * | Upload a file to the specified path.
+       | Common Function
+     */
     public function uplodeFile($file, $custumFileName)
     {
         $filePath = $file->storeAs('uploads/Property', $custumFileName, 'public');
         return  $filePath;
     }
+
+    /**
+     * | Get SAF details by SAF ID.
+       | Common Function
+     */
     public function getSafDtlById($safId)
     {
         try {
@@ -1751,6 +1861,9 @@ class PropertyBifurcation implements IPropertyBifurcation
     }
 
     #-------------------------saf-----------------------
+    /**
+     * | Get the list of required and uploaded documents for a SAF application.
+     */
     public function getDocList($request)
     {
         try {
@@ -1850,6 +1963,9 @@ class PropertyBifurcation implements IPropertyBifurcation
         }
     }
 
+    /**
+     * | Upload documents for a SAF application.
+     */
     public function safDocumentUpload(Request $request)
     {
         try {
@@ -2514,6 +2630,9 @@ class PropertyBifurcation implements IPropertyBifurcation
         }
     }
 
+    /* 
+     * | Get the list of uploaded documents for a specific SAF application.
+     */
     public function getUploadDocuments($request)
     {
         try {
@@ -2549,6 +2668,10 @@ class PropertyBifurcation implements IPropertyBifurcation
     }
     #-------------------------End saf-----------------------
     #-------------------------Citize------------------------
+
+    /**
+     * | Get the payment history for a citizen.
+     */
     public function CitizenPymentHistory(Request $request)
     {
         try {

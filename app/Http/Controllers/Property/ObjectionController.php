@@ -114,6 +114,7 @@ class ObjectionController extends Controller
 
     /**
      * | Get Inbox List of Objection Workflow
+     * | Query cost: 335.52ms
      */
     public function inbox(Request $req)
     {
@@ -152,6 +153,7 @@ class ObjectionController extends Controller
 
     /**
      * | Get the Objection Outbox
+     * | Query cost: 254.79ms
      */
     public function outbox(Request $req)
     {
@@ -188,7 +190,11 @@ class ObjectionController extends Controller
         }
     }
 
-    // Get Details by id
+    /**
+     * | Retrieves detailed objection data by application ID, including basic, owner, 
+     * | and objection-specific details (clerical mistake, assessment error, or forgery),
+     * | along with workflow tracks and role information.
+     */
     public function getDetailsById(Request $req)
     {
         $req->validate([
@@ -387,7 +393,6 @@ class ObjectionController extends Controller
 
     /**
      * | Post Escalate the Applications
-     * | @param req $req
      */
     public function postEscalate(Request $req)
     {
@@ -408,7 +413,10 @@ class ObjectionController extends Controller
         }
     }
 
-    // List of the Escalated Application
+    /**
+     * | Get Special Inbox List of Objection Workflow
+     * | Query cost : 250.04ms
+     */
     public function specialInbox(Request $req)
     {
         try {
@@ -446,6 +454,7 @@ class ObjectionController extends Controller
 
     /**
      * | Back to Citizen List
+     * | query cost: 150.04ms
      */
     public function btcInboxList(Request $req)
     {
@@ -481,7 +490,12 @@ class ObjectionController extends Controller
         }
     }
 
-    // Post Next Level Application
+    /**
+     * | Post Next Level of Objection Application
+     * | Advances or reverts an objection application to the next or previous workflow level, 
+     * | updating roles and saving workflow tracking with validation and transaction support.
+     */
+    
     public function postNextLevel(Request $req)
     {
         $wfLevels = Config::get('PropertyConstaint.OBJECTION-LABEL');
@@ -551,7 +565,9 @@ class ObjectionController extends Controller
 
     /**
      * | Objection Application approval Rejection
-     * | @param request $req
+     * | Approves or rejects an objection application, updating owner, property, or floor details 
+     * | based on objection type (clerical mistake, assessment error, or forgery), 
+     * | recalculates taxes if needed, and logs workflow tracking.
      */
     public function approvalRejection(Request $req)
     {
@@ -806,7 +822,10 @@ class ObjectionController extends Controller
         }
     }
 
-    // Application back To citizen
+    /**
+     * | Back to Citizen
+     * | Moves an objection application back to the citizen, updating its status and saving workflow tracking.
+     */
     public function backToCitizen(Request $req)
     {
         $req->validate([
@@ -848,7 +867,8 @@ class ObjectionController extends Controller
     }
 
     /**
-     * | Independent Comment
+     * | Independent Comment on an objection application, allowing to add comments 
+     * | without being tied to a specific workflow level.
      */
     public function commentIndependent(Request $req)
     {
@@ -894,7 +914,7 @@ class ObjectionController extends Controller
     }
 
     /**
-     *  get uploaded documents
+     *  get uploaded documents for objection application
      */
     public function getUploadedDocuments(Request $req)
     {
@@ -923,7 +943,9 @@ class ObjectionController extends Controller
     }
 
     /**
-     * | For Document Uploadation
+     * | For Document Uploadation 
+     * | Uploads a document (PDF, JPEG, PNG, JPG) for an objection application, validates file 
+     * | type and size, saves metadata, and updates document upload status with transaction support.
      */
     public function uploadDocument(Request $req)
     {
@@ -1042,7 +1064,10 @@ class ObjectionController extends Controller
             return 1;
     }
 
-    //get document status by id
+    /**
+     * | Get Objection Document List
+     * | Returns a list of documents required for an objection application based on its type and owner details.
+     */
     public function objectionDocList(Request $req)
     {
         try {
@@ -1068,7 +1093,8 @@ class ObjectionController extends Controller
     }
 
     /**
-     * | Get Doc List
+     * | Get Doc List 
+     * | Returns the required documents list based on the objection type and application/owner details.
      */
     public function getDocList($refApplication, $ownerDetails, $objectionType)
     {
@@ -1138,9 +1164,9 @@ class ObjectionController extends Controller
     }
 
     /**
-     *  filterring
+     * | Filters and organizes the given document list by matching uploaded documents for the application, 
+     * | returning structured details including upload status and verification info.
      */
-
     public function filterDocument($documentList, $refApplication)
     {
         $mWfActiveDocument = new WfActiveDocument();
@@ -1200,7 +1226,8 @@ class ObjectionController extends Controller
     }
 
     /**
-     * | Add members for clerical mistake
+     * | Handles adding objection members by creating objection records with workflow roles, 
+     * | saving related uploaded documents, and storing owner details within a transaction.
      */
     public function addMembers(Request $request)
     {
@@ -1353,7 +1380,7 @@ class ObjectionController extends Controller
     }
 
     /**
-     * | 
+     * | Citizen Forgery Document Filter
      */
     public function citizenForgeryfilterDoc($documentList)
     {
@@ -1381,6 +1408,10 @@ class ObjectionController extends Controller
         return $filteredDocs;
     }
 
+    /**
+     * | Citizen Document List
+     * | Returns the filtered list of required documents for citizens based on the requested document type.
+     */
     public function citizenDocList(Request $req)
     {
         switch ($req->doc) {
@@ -1409,7 +1440,8 @@ class ObjectionController extends Controller
     }
 
     /**
-     * 
+     * | Citizen Document Filter
+     * | Parses and formats the citizen document requirements into a structured array with document codes and labels.
      */
     public function filterCitizenDoc($data)
     {
@@ -1436,7 +1468,8 @@ class ObjectionController extends Controller
     }
 
     /**
-     * | Document Verify Reject
+     * | Validates and processes document verification or rejection, updates objection status, 
+     * | manages transactions, and handles workflow roles.
      */
     public function docVerifyReject(Request $req)
     {

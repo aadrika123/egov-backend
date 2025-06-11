@@ -23,6 +23,9 @@ class MPropRoadType extends Model
 
     //written by prity pandey
 
+    /**
+     * | Get MPropRoadType By ID
+     */
     public function getById($req)
     {
         $list = MPropRoadType::select(
@@ -38,6 +41,9 @@ class MPropRoadType extends Model
         return $list;
     }
 
+    /**
+     * | Get MPropRoadType
+     */
     public function listMPropRoadType()
     {
         $list = MPropRoadType::select(

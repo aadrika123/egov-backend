@@ -29,7 +29,9 @@ class PropSafsOwner extends Model
             ->first();
     }
 
-
+    /* 
+    * | Get Owner by Saf No
+    */
     public function getOwnersBySafId($safId)
     {
         return PropSafsOwner::on('pgsql::read')

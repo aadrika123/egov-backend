@@ -110,7 +110,6 @@ class PropProperty extends Model
     /**
      * | Get Property Full Details
      * | Used for Calculation Parameter
-     * | @param propId Property Id
      */
     public function getPropFullDtls($propId)
     {
@@ -242,7 +241,7 @@ class PropProperty extends Model
             ->join('ref_prop_types', 'ref_prop_types.id', '=', 'prop_properties.prop_type_mstr_id')
             ->where('prop_properties.status', 1)
             ->where('ulb_id', $ulbId)
-            ->groupBy('prop_properties.id', 'ref_prop_types.property_type');
+            ->groupBy('prop_properties.id', 'ref_prop_types.property_type', 'prop_properties.new_ward_mstr_id', 'prop_properties.prop_address', 'prop_properties.new_holding_no', 'prop_properties.holding_no');
     }
 
     /**
@@ -268,7 +267,7 @@ class PropProperty extends Model
             ->where('prop_properties.cluster_id', $clusterId)
             ->where('prop_properties.status', 1)
             ->where('ref_prop_types.status', 1)
-            ->groupBy('prop_properties.id', 'ref_prop_types.property_type')
+            ->groupBy('prop_properties.id', 'ref_prop_types.property_type', 'prop_properties.new_ward_mstr_id','prop_properties.prop_address', 'prop_properties.cluster_id', 'prop_properties.holding_no', 'prop_properties.ulb_id', 'prop_properties.ward_mstr_id')
             ->get();
     }
 
@@ -647,7 +646,6 @@ class PropProperty extends Model
 
     /**
      * | Get property details under the respective appartment id
-     * | @param apartmentId
      */
     public function getPropByApartmentId($apartmentId)
     {
@@ -665,7 +663,6 @@ class PropProperty extends Model
 
     /**
      * | Get property list by apartmentid
-     * | @param apartmentId
      */
     public function getPropertyByApartmentId($apartmentId)
     {
@@ -699,7 +696,6 @@ class PropProperty extends Model
     }
     /**
      * | Get Property id by Ptn or HoldingNo
-     * | @param reference Application No
      */
     public function getPropByPtnOrHolding($refrenceNo)
     {
@@ -819,6 +815,10 @@ class PropProperty extends Model
             ->where("prop_saf_geotag_uploads.status", 1)
             ->orderBy("prop_saf_geotag_uploads.saf_id", "ASC");
     }
+
+    /**
+     * | get demands details of property
+     */
     public function demands()
     {
         return $this->hasMany(PropDemand::class, "property_id", "id")
@@ -826,6 +826,9 @@ class PropProperty extends Model
             ->where("prop_demands.paid_status", 0);
     }
 
+    /**
+     * | get transection details of property
+     */
     public function lastTransection()
     {
         return $this->hasMany(PropTransaction::class, "property_id", "id")
@@ -833,6 +836,9 @@ class PropProperty extends Model
             ->orderBy("id", "DESC");
     }
 
+    /**
+     * | get water consumer details of property
+     */
     public function waterConsumer()
     {
         return $this->hasMany(WaterConsumer::class, "prop_dtl_id", "id")
@@ -841,6 +847,10 @@ class PropProperty extends Model
             ->select("consumer_no", "id");
     }
 
+    /**
+     * | get trade licence details of property
+     * | ActiveTradeLicence and TradeLicence are used to get the active trade licence details
+     */
     public function tradeConnection()
     {
         $ativeTrade = $this->hasMany(ActiveTradeLicence::class, "property_id", "id")

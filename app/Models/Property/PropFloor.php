@@ -176,7 +176,7 @@ class PropFloor extends Model
     }
 
     /**
-     * | Get details of 
+     * | Get Appartment Floor
      */
     public function getAppartmentFloor($propIds)
     {

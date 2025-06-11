@@ -10,7 +10,7 @@ class PropApartmentDtl extends Model
     use HasFactory;
 
     /**
-     * |
+     * | Get Apartment List by Ward and ULB
      */
     public function apartmentList($req)
     {
@@ -35,7 +35,6 @@ class PropApartmentDtl extends Model
 
     /**
      * | Get apartment details by id
-     * | @param
      */
     public function getApartmentById($apartmentId)
     {

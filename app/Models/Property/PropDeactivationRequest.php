@@ -12,6 +12,9 @@ class PropDeactivationRequest extends Model
     public $timestamps = false;
 
 
+    /* 
+     * | Get Deactivation Application
+     */
     public function getDeactivationApplication()
     {
         return PropDeactivationRequest::on('pgsql::read')

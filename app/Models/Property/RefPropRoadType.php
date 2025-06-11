@@ -11,6 +11,9 @@ class RefPropRoadType extends Model
 {
     use HasFactory;
 
+    /**
+     * Get Property Road Types
+     */
     public function propRoadType()
     {
 

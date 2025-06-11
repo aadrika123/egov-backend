@@ -67,7 +67,9 @@ class ConsumerActionRequest extends Controller
             $this->_DB->commit();
     }
 
-
+    /**
+     * | Set Disconnection Site Inspection
+     */
     public function setDisconnectionSitInspection(Request $request)
     {
         $ModelWaterDisconnectionSiteInspections = new WaterDisconnectionSiteInspections();
@@ -100,6 +102,9 @@ class ConsumerActionRequest extends Controller
         }
     }
 
+    /**
+     * | Get Site Inspection Details for Deactivation
+     */
     public function getSiteInspectionCompar(Request $request)
     {
         $ModelWaterDisconnectionSiteInspections = new WaterDisconnectionSiteInspections();
@@ -152,6 +157,9 @@ class ConsumerActionRequest extends Controller
 
     }
 
+    /**
+     * | Cancel Disconnection Site Inspection
+     */
     public function cancelDisconnectionSitInspection(Request $request)
     {
         $ModelWaterDisconnectionSiteInspections = new WaterDisconnectionSiteInspections();
@@ -184,6 +192,9 @@ class ConsumerActionRequest extends Controller
         }
     }
 
+    /**
+     * | Update Site Inspection
+     */
     public function updateSiteInspection(WaterDisconnectionSiteInspection $request)
     {
         try{
@@ -217,6 +228,9 @@ class ConsumerActionRequest extends Controller
         }
     }
 
+    /**
+     * | Get Inspection Data for Deactivation
+     */
     public function getInspectionData(Request $request)
     {
         $ModelWaterDisconnectionSiteInspections = new WaterDisconnectionSiteInspections();

@@ -248,7 +248,7 @@ class WaterConsumerWfController extends Controller
     // }
 
     /**
-     * postnext level water Disconnection
+     * post next level water Disconnection
      * 
      */
     public function consumerPostNextLevel(Request $request)
@@ -337,6 +337,10 @@ class WaterConsumerWfController extends Controller
         return responseMsgs(true, "Successfully Forwarded The Application!!", "", "", "", '01', '.ms', 'Post', '');
     }
 
+    /**
+     * | Validates preconditions for workflow transitions based on the sender’s role
+     * | and application status, throwing exceptions if requirements are not met
+     */
     public function checkPostCondition($senderRoleId, $wfLevels, $application)
     {
         $mWaterSiteInspection = new WaterSiteInspection();
@@ -383,7 +387,7 @@ class WaterConsumerWfController extends Controller
         }
     }
 
-
+    // No route defined for this api : not in use for now (till : 26-05-025)
     public function checkRequestPostCondition($senderRoleId, $wfLevels, $application)
     {
         $mWaterSiteInspection = new WaterSiteInspection();
@@ -426,9 +430,11 @@ class WaterConsumerWfController extends Controller
                 break;
         }
     }
+
     /**
      * water disconnection approval or reject 
      */
+    
     // public function consumerApprovalRejection(Request $request)
     // {
     //     $request->validate([
@@ -502,6 +508,11 @@ class WaterConsumerWfController extends Controller
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+
+    /**
+     * | Retrieves and assembles detailed application data including basic info, ward, owner, 
+     * | workflow roles, comments, timeline, departmental posts, and payment details for response
+     */
     public function getApplicationsDetails($request)
     {
 
@@ -585,6 +596,7 @@ class WaterConsumerWfController extends Controller
         $returnValues = array_merge($aplictionList, $fullDetailsData, $levelComment, $citizenComment, $roleDetails, $timelineData, $departmentPost);
         return responseMsgs(true, "listed Data!", remove_null($returnValues), "", "02", ".ms", "POST", "");
     }
+
     /**
      * function for return data of basic details
      */
@@ -598,6 +610,7 @@ class WaterConsumerWfController extends Controller
             ['displayString' => 'ApplyDate', 'key' => 'applyDate', 'value' => $collectionApplications->apply_date],
         ]);
     }
+
     /**
      * return data fro card details 
      */
@@ -617,6 +630,7 @@ class WaterConsumerWfController extends Controller
 
         ]);
     }
+
     /**
      * return data of consumer owner data on behalf of disconnection 
      */
@@ -635,7 +649,10 @@ class WaterConsumerWfController extends Controller
         });
     }
 
-    //written by prity pandey
+    /**
+     * | Retrieves the water consumer inbox requests
+     * | written by prity pandey
+     */
 
     public function consumerInbox(Request $req)
     {
@@ -685,7 +702,9 @@ class WaterConsumerWfController extends Controller
         }
     }
 
-
+    /**
+     * | Retrieves the water consumer outbox requests
+     */
     public function consumerOutbox(Request $req)
     {
         // $validated = Validator::make(
@@ -734,6 +753,9 @@ class WaterConsumerWfController extends Controller
         }
     }
 
+     /**
+     * | Retrieves the water consumer special Inbox requests
+     */
     public function specialInbox(Request $req)
     {
         // $validated = Validator::make(
@@ -782,6 +804,9 @@ class WaterConsumerWfController extends Controller
         }
     }
 
+    /**
+     * | Retrieves the water consumer inbox requests for BTC if parked status is true
+     */
     public function btcInbox(Request $req)
     {
         // $validated = Validator::make(
@@ -830,6 +855,10 @@ class WaterConsumerWfController extends Controller
         }
     }
 
+    /**
+     * | Retrieves detailed information for a specific water disconnection application using the application ID.
+    *  | Includes consumer, property, owner, workflow timeline, and role metadata for frontend display and workflow processing.
+     */
     public function getConsumerDetails(ReqApplicationId $request)
     {
         try {
@@ -952,6 +981,9 @@ class WaterConsumerWfController extends Controller
         }
     }
 
+    /**
+     * Retrieves the list of required documents for a water disconnection application.
+     */
     public function getRequestDocLists($application)
     {
         $mRefReqDocs = new RefRequiredDocument();
@@ -969,6 +1001,9 @@ class WaterConsumerWfController extends Controller
         return $documentList;
     }
 
+    /**
+     * Filters the document list based on the uploaded documents for a specific application.
+     */
     public function filterDocument($documentList, $refApplication, $ownerId = null)
     {
         $mWfActiveDocument = new WfActiveDocument();
@@ -1030,6 +1065,9 @@ class WaterConsumerWfController extends Controller
         return collect($filteredDocs)->values() ?? [];
     }
 
+    /**
+     * Retrieves the list of documents for a specific water disconnection application.
+     */
     public function getDocList(Request $req)
     {
         $validated = Validator::make(
@@ -1058,6 +1096,11 @@ class WaterConsumerWfController extends Controller
             return responseMsgs(false, [$e->getMessage(), $e->getFile(), $e->getLine()], "", "010203", "1.0", "", 'POST', "");
         }
     }
+
+    /**
+     * Checks the parameters for document upload based on the user type (citizen or user).
+     * Throws exceptions if the user is not allowed to upload documents.
+     */
     public function checkParamForDocUpload($isCitizen, $applicantDetals, $user)
     {
         $refWorkFlowMaster = Config::get('workflow-constants.WATER_MASTER_ID');
@@ -1113,6 +1156,11 @@ class WaterConsumerWfController extends Controller
         // }
     }
 
+    /**
+     * Uploads documents for a water disconnection application.
+     * Validates the request, checks if the user is allowed to upload documents,
+     * and saves the uploaded document details in the database.
+     */
     public function uploadDocuments(Request $req)
     {
         $validated = Validator::make(
@@ -1216,6 +1264,9 @@ class WaterConsumerWfController extends Controller
         }
     }
 
+    /**
+     * Retrieves the user role for a specific user in a given ULB and workflow.
+     */
     public function getUserRoll($user_id, $ulb_id, $workflow_id)
     {
         try {
@@ -1269,6 +1320,10 @@ class WaterConsumerWfController extends Controller
         }
     }
 
+    /**
+     * Retrieves the uploaded documents for a specific water disconnection application.
+     * Validates the request and returns the document URLs.
+     */
     public function getUploadDocuments(Request $req)
     {
         $validated = Validator::make(
@@ -1300,6 +1355,11 @@ class WaterConsumerWfController extends Controller
         }
     }
 
+    /**
+     * | Handles the verification or rejection of a specific document for a given application by authorized users.
+     * | Updates verification status with remarks and returns updated document verification status for UI feedback.
+
+     */
     public function documentVerifyOld(Request $request)
     {
         $request->validate([
@@ -1357,6 +1417,10 @@ class WaterConsumerWfController extends Controller
         }
     }
 
+    /**
+     * | Verifies or rejects a specific uploaded document after validating user role, application, and document state.
+     * | Ensures only authorized users can take action, updates document and application status accordingly.
+     */
     public function documentVerify(Request $req)
     {
         $validated = Validator::make(
@@ -1443,9 +1507,6 @@ class WaterConsumerWfController extends Controller
 
     /**
      * | Check if the Document is Fully Verified or Not (0.1) | up
-     * | @param
-     * | @var 
-     * | @return
         | Serial No :  
         | Working 
      */
@@ -1471,6 +1532,9 @@ class WaterConsumerWfController extends Controller
             return 1;
     }
 
+    /**
+     * Checks if all required documents for a water disconnection application have been uploaded.
+     */
     public function checkFullDocUpload($applicationId)
     {
         $mWaterApplication = new WaterConsumerActiveRequest();
@@ -1486,6 +1550,10 @@ class WaterConsumerWfController extends Controller
         return $this->isAllDocs($applicationId, $refDocList, $waterDetails);
     }
 
+    /**
+     * Checks if all required documents from the water module are present in the verified document list.
+     * Returns 0 if any document is missing, otherwise returns 1.
+     */
     public function isAllDocs($applicationId, $refDocList, $refSafs)
     {
         $docList = array();
@@ -1520,6 +1588,10 @@ class WaterConsumerWfController extends Controller
             return 0;
     }
 
+    /**
+     * Handles the next level request for a water disconnection application.
+     * Validates the request, checks user roles, and processes the action (forward or backward).
+     */
     public function postNextLevelRequestV1(Request $request)
     {
 
@@ -1691,6 +1763,11 @@ class WaterConsumerWfController extends Controller
 
 
     #====================[📝📖 BTC THE APPLICATION | S.L (16.0) 📖📝]========================================================
+
+    /**
+     * Handles the Back to Citizen (BTC) action for a water disconnection application.
+     * Validates the request, checks user permissions, and updates the application status.
+     */
     public function backToCitizen(Request $req)
     {
         $user = Auth()->user();
@@ -1771,6 +1848,10 @@ class WaterConsumerWfController extends Controller
         }
     }
 
+    /**
+     * Checks the workflow for forward and backward actions in a water disconnection application.
+     * Validates document upload and verification status before allowing the action to proceed.
+     */
     public function checkWorckFlowForwardBackord(Request $request)
     {
         $_COMMON_FUNCTION = new CommonFunction();
@@ -1943,11 +2024,10 @@ class WaterConsumerWfController extends Controller
     //     }
     // }
 
-    /* 
-    * | this api is used to approve or reject the application
-    * |  
-    * | 
-    */
+    /**
+     * Approves or rejects a water disconnection application based on the provided request.
+     * Validates the request, checks application conditions, and processes approval or rejection.
+     */
     public function approveRejectv1(Request $req)
     {
         try {
@@ -2009,6 +2089,10 @@ class WaterConsumerWfController extends Controller
         }
     }
     
+    /**
+     * Approves a water disconnection application by replicating it to the approval requests table
+     * and deleting the original application.
+     */
     public function approveApplication($application)
     {
         DB::transaction(function () use ($application) {
@@ -2020,6 +2104,10 @@ class WaterConsumerWfController extends Controller
         });
     }
     
+    /**
+     * Rejects a water disconnection application with a specified reason.
+     * Replicates the application to the rejects requests table and deletes the original application.
+     */
     public function rejectApplicationWithReason($application, $reason)
     {
         if ($application) {
@@ -2035,6 +2123,12 @@ class WaterConsumerWfController extends Controller
         return responseMsgs(false, "Application Rejected: " . $reason, "", '010811', '01', '200ms', 'Post', '');
     }   
 
+
+    /**
+     * Retrieves detailed information about a water disconnection application.
+     * This includes basic details, property details, electricity details, owner details,
+     * workflow tracks, citizen comments, role details, timeline data, and departmental posts.
+     */
     public function getDisApplicationsDetails($request)
     {
         # object assigning
@@ -2138,7 +2232,10 @@ class WaterConsumerWfController extends Controller
         return responseMsgs(true, "listed Data!", remove_null($returnValues), "", "02", ".ms", "POST", "");
     }
 
-
+    /**
+     * Retrieves detailed information about a water disconnection application.
+     * Validates the request and returns application details, owner details, payment details, and site inspection schedule.
+     */
     public function getApplicationDetails(Request $request)
     {
         $validated = Validator::make(
@@ -2212,6 +2309,10 @@ class WaterConsumerWfController extends Controller
         }
     }
 
+    /**
+     * Retrieves the list of documents to be uploaded for a water disconnection application by JE.
+     * Validates the request and returns the document list along with upload and verification statuses.
+     */
     public function getDocListForJe(Request $req)
     {
         $validated = Validator::make(
@@ -2583,7 +2684,10 @@ class WaterConsumerWfController extends Controller
         }
     }
 
-
+    /**
+     * Retrieves only the rejected documents for a specific consumer.
+     * Validates the request and returns the list of rejected documents with their URLs.
+     */
     public function getRejectedDocumentsOnly(Request $request)
     {
         try {
@@ -2618,6 +2722,11 @@ class WaterConsumerWfController extends Controller
         }
     }
     
+    /**
+     * Re-uploads a water document for a specific application.
+     * Validates the request, checks if the document is eligible for re-upload,
+     * uploads the new document, and updates the status accordingly.
+     */
     public function reuploadWaterDoc(Request $req)
     {
         $validator = Validator::make($req->all(), [
@@ -2692,7 +2801,10 @@ class WaterConsumerWfController extends Controller
         }
     }
 
-
+    /**
+     * Updates the application status to the next level after document upload.
+     * Validates the request and updates the application in water_consumer_active_requests.
+     */
     public function postNextLevelApplication(Request $req)
     {
         $validator = Validator::make($req->all(), [
@@ -2740,11 +2852,5 @@ class WaterConsumerWfController extends Controller
             return responseMsgs(false, $e->getMessage(), "", "", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
-    
-
-
-
-
-    
 
 }
