@@ -1806,7 +1806,6 @@ class ActiveSafController extends Controller
             return responseMsgs(false, $e->getMessage(), "");
         }
     }
-
     /**
      * | One Percent Penalty Calculation(13.1)
      * | -------------------------------------------------------------------------------
@@ -3456,8 +3455,8 @@ class ActiveSafController extends Controller
             $demands = $safCalculation->original['data']['details'];
             $amount = $safCalculation->original['data']['demand']['payableAmount'];
 
-            // if (!$demands || collect($demands)->isEmpty())
-            //     throw new Exception("Demand Not Available for Payment");
+            if (!$demands || collect($demands)->isEmpty())
+                throw new Exception("Demand Not Available for Payment");
 
             // Property Transactions
             $req->merge([
