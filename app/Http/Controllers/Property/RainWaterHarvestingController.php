@@ -201,7 +201,7 @@ class RainWaterHarvestingController extends Controller
      * |----------------------- function for the Inbox  --------------------------
      * | Rating : 2
      * | status :closed
-     * | Query Cost : 1.75 - 2.5 seconds
+     * | Query Cost : 364ms
      */
     public function harvestingInbox(Request $req)
     {
@@ -236,7 +236,7 @@ class RainWaterHarvestingController extends Controller
                 ->thenReturn()
                 ->paginate($perPage);
 
-            return responseMsgs(true, "Inbox List", remove_null($inboxList), '010903', 01, '364ms', 'Post', '');
+            return responseMsgs(true, "Inbox List", remove_null($inboxList), '010903', 01, responseTime().'ms', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -278,7 +278,7 @@ class RainWaterHarvestingController extends Controller
                 ->thenReturn()
                 ->paginate($perPage);
 
-            return responseMsg(true, "Inbox List", remove_null($specialList), "010911", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true, "Inbox List", remove_null($specialList), "010911", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -320,7 +320,7 @@ class RainWaterHarvestingController extends Controller
      * |----------------------- function for the Outbox --------------------------
      * | Rating : 2
      * | status :closed
-     * | status : 1.6 - 1.89 seconds
+     * | status : 548.51ms
      */
     public function harvestingOutbox(Request $req)
     {
@@ -353,7 +353,7 @@ class RainWaterHarvestingController extends Controller
                 ->thenReturn()
                 ->paginate($perPage);
 
-            return responseMsg(true, "Outbox List", remove_null($outboxList), '010904', 01, '446ms', 'Post', '');
+            return responseMsgs(true, "Outbox List", remove_null($outboxList), '010904', 01, responseTime().'ms', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -384,7 +384,7 @@ class RainWaterHarvestingController extends Controller
                 $harvesting->is_escalated = 0;
                 $harvesting->escalated_by = null;
                 $harvesting->save();
-                return responseMsg(true, "Successfully De-Escalated the application", "", "010910", "1.0", "", "POST", $req->deviceId ?? "");
+                return responseMsgs(true, "Successfully De-Escalated the application", "", "010910", "1.0", responseTime().'ms', "POST", $req->deviceId ?? "");
             }
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
@@ -429,9 +429,9 @@ class RainWaterHarvestingController extends Controller
                 'longitude' => $geotagDtl->longitude ?? null,
             ];
 
-            return responseMsgs(true, "Static Details!", remove_null($data), "010909", 1.0, "", "POST", $req->deviceId);
+            return responseMsgs(true, "Static Details!", remove_null($data), "010909", 1.0, responseTime().'ms', "POST", $req->deviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "010909", 1.0, "", "POST", $req->deviceId);
+            return responseMsgs(false, $e->getMessage(), "", "010909", 1.0, responseTime().'ms', "POST", $req->deviceId);
         }
     }
 
@@ -513,7 +513,7 @@ class RainWaterHarvestingController extends Controller
             $custom = $mCustomDetails->getCustomDetails($req);
             $fullDetailsData['departmentalPost'] = collect($custom)['original']['data'];
 
-            return responseMsg(true, "", remove_null($fullDetailsData), "010908", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true, "", remove_null($fullDetailsData), "010908", "1.0", responseTime().'ms', "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -583,7 +583,7 @@ class RainWaterHarvestingController extends Controller
 
             DB::commit();
             DB::connection('pgsql_master')->commit();
-            return responseMsgs(true, "Successfully Forwarded The Application!!", "", '010905', 01, '446ms', 'Post', $req->deviceId);
+            return responseMsgs(true, "Successfully Forwarded The Application!!", "", '010905', 01, responseTime().'ms', 'Post', $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
@@ -720,7 +720,7 @@ class RainWaterHarvestingController extends Controller
             ]);
             DB::commit();
             DB::connection('pgsql_master')->commit();
-            return responseMsgs(true, $msg, "", '010906', 01, '391ms', 'Post', $req->deviceId);
+            return responseMsgs(true, $msg, "", '010906', 01, responseTime().'ms', 'Post', $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
@@ -758,7 +758,7 @@ class RainWaterHarvestingController extends Controller
             $rejectedHarvesting->save();
             $activeHarvesting->delete();
 
-            return responseMsgs(true, "Application Rejected !!", "", '010907', 01, '348ms', 'Post', $req->deviceId);
+            return responseMsgs(true, "Application Rejected !!", "", '010907', 01, responseTime().'ms', 'Post', $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
@@ -815,7 +815,7 @@ class RainWaterHarvestingController extends Controller
 
             DB::commit();
             DB::connection('pgsql_master')->commit();
-            return responseMsgs(true, "You Have Commented Successfully!!", ['Comment' => $request->comment], "010912", "1.0", "", "POST", "");
+            return responseMsgs(true, "You Have Commented Successfully!!", ['Comment' => $request->comment], "010912", "1.0", responseTime(), "POST", "");
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
@@ -846,9 +846,9 @@ class RainWaterHarvestingController extends Controller
             $documents = $mWfActiveDocument->getDocsByAppId($req->applicationId, $workflowId, $moduleId);
             $data = $docUpload->getDocUrl($documents);           #_Calling BLL for Document Path from DMS
 
-            return responseMsgs(true, "Uploaded Documents", remove_null($data), "010915", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true, "Uploaded Documents", remove_null($data), "010915", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "010915", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "010915", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         }
     }
 
@@ -895,14 +895,15 @@ class RainWaterHarvestingController extends Controller
             $getHarvestingDtls->doc_upload_status = 1;
             $getHarvestingDtls->save();
 
-            return responseMsgs(true, "Document Uploadation Successful", "", "010914", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true, "Document Uploadation Successful", "", "010914", "1.0", responseTime().'ms', "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "010914", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "010914", "1.0", responseTime().'ms', "POST", $req->deviceId ?? "");
         }
     }
 
     /**
      * | send back to citizen
+     * | Query Cost : 358ms
      */
     public function backToCitizen(Request $req)
     {
@@ -940,7 +941,7 @@ class RainWaterHarvestingController extends Controller
             $track->saveTrack($req);
             DB::commit();
             DB::connection('pgsql_master')->commit();
-            return responseMsgs(true, "Successfully Done", "", "", '010919', '01', '358ms', 'Post', '');
+            return responseMsgs(true, "Successfully Done", "", "010919", '01',  responseTime().'ms', 'Post', '');
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
@@ -950,7 +951,7 @@ class RainWaterHarvestingController extends Controller
 
     /**
      * | Back To Citizen Inbox
-     * | Query Cost : 1.58 - 1.71 seconds
+     * | Query Cost :270ms
      */
     public function btcInboxList(Request $req)
     {
@@ -974,15 +975,15 @@ class RainWaterHarvestingController extends Controller
                 ->orderByDesc('prop_active_harvestings.id')
                 ->paginate($perPage);
 
-            return responseMsgs(true, "BTC Inbox List", remove_null($harvesting), "010920", 1.0, "271ms", "POST", "", "");
+            return responseMsgs(true, "BTC Inbox List", remove_null($harvesting), "010920", 1.0, responseTime().'ms', "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "010920", 1.0, "271ms", "POST", "", "");
+            return responseMsgs(false, $e->getMessage(), "", "010920", 1.0, responseTime().'ms', "POST", $req->deviceId ?? "");
         }
     }
 
     /**
      * | Get Document List for WATER HARVESTING
-     * | Query Cost : 1.61 - 1.68 seconds
+     * | Query Cost : 271ms
      */
     public function getDocList(Request $req)
     {
@@ -995,9 +996,9 @@ class RainWaterHarvestingController extends Controller
 
             $harvestingDoc['listDocs'] = $this->getHarvestingDoc($refApplication);
 
-            return responseMsgs(true, "Doc List", remove_null($harvestingDoc), "010913", 1.0, "271ms", "POST", "", "");
+            return responseMsgs(true, "Doc List", remove_null($harvestingDoc), "010913", 1.0, responseTime().'ms', "POST", "", "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "010913", "1.0", "", 'POST', "");
+            return responseMsgs(false, $e->getMessage(), "", "010913", "1.0", responseTime().'ms', 'POST', "");
         }
     }
 
@@ -1062,7 +1063,7 @@ class RainWaterHarvestingController extends Controller
 
     /**
      * | citizen document list
-     * | Query Cost : 1.61 - 1.68 seconds
+     * | Query Cost :413ms
      */
     public function citizenDocList()
     {
@@ -1071,7 +1072,7 @@ class RainWaterHarvestingController extends Controller
 
         $reqDoc = $this->getReqDoc($data);
 
-        return responseMsgs(true, "Citizen Doc List", remove_null($reqDoc), "010916", 1.0, "413ms", "POST", "", "");
+        return responseMsgs(true, "Citizen Doc List", remove_null($reqDoc), "010916", 1.0, responseTime().'ms', "POST", "");
     }
 
     /**
@@ -1147,11 +1148,11 @@ class RainWaterHarvestingController extends Controller
 
             DB::commit();
             DB::connection('pgsql_master')->commit();
-            return responseMsgs(true, $req->docStatus . " Successfully", "", "010917", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true, $req->docStatus . " Successfully", "", "010917", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
-            return responseMsgs(false, $e->getMessage(), "", "010917", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "010917", "1.0", responseTime().'ms', "POST", $req->deviceId ?? "");
         }
     }
 
@@ -1183,6 +1184,7 @@ class RainWaterHarvestingController extends Controller
      * | Site Verification
      * | Handles site verification for rainwater harvesting applications, 
      * | performs role-based actions, geotag image upload, and logs verification data.
+     * | Query Cost : 310ms
      */
     public function siteVerification(Request $req)
     {
@@ -1295,7 +1297,7 @@ class RainWaterHarvestingController extends Controller
 
             DB::commit();
             DB::connection('pgsql_master')->commit();
-            return responseMsgs(true, $msg, "", "010921", "1.0", "310ms", "POST", $req->deviceId);
+            return responseMsgs(true, $msg, "", "010921", "1.0", responseTime().'ms', "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
@@ -1306,7 +1308,7 @@ class RainWaterHarvestingController extends Controller
     /**
      * | Get TC Verifications
      * | Retrieves TC verification details including document and geotag info for a rainwater harvesting application.
-     * | Query Cost : 1.7 - 1.88 seconds
+     * | Query Cost : 258ms
      */
     public function getTcVerifications(Request $req)
     {
@@ -1332,7 +1334,7 @@ class RainWaterHarvestingController extends Controller
             $data->latitude = $geotagDtl->latitude;
             $data->longitude = $geotagDtl->longitude;
 
-            return responseMsgs(true, "TC Verification Details", remove_null($data), "010922", "1.0", "258ms", "POST", $req->deviceId);
+            return responseMsgs(true, "TC Verification Details", remove_null($data), "010922", "1.0", responseTime().'ms', "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }

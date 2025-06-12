@@ -217,6 +217,9 @@ class PropertyDeactivate implements IPropertyDeactivate
         }
     }
 
+    /* 
+    * | Get All Inbox Property Deactivation Request
+    */
     public function inbox(Request $request)
     {
         try {
@@ -304,11 +307,16 @@ class PropertyDeactivate implements IPropertyDeactivate
                 ->get();
             // dd(DB::getQueryLog());
             $data = $mProperty;
-            return responseMsg(true, "", remove_null($data), "010404", "1.0", "", "POST", $request->deviceId);
+            return responseMsgs(true, "", remove_null($data), "010404", "1.0", responseTime(), "POST", $request->deviceId);
+            
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
+
+    /**
+     * | Get All Outbox Property Deactivation Request
+     */
     public function outbox(Request $request)
     {
         try {
@@ -392,11 +400,15 @@ class PropertyDeactivate implements IPropertyDeactivate
                 ->get();
             // dd(DB::getQueryLog());
             $data = $mProperty;
-            return responseMsgs(true, "", remove_null($data),"010405", "1.0", "", "POST", $request->deviceId);
+            return responseMsgs(true, "", remove_null($data),"010405", "1.0", responseTime(), "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
+
+    /**
+     * | Read The Property Deactivation Request Details
+     */
     public function readDeactivationReq(Request $request)
     {
         try {
@@ -496,12 +508,15 @@ class PropertyDeactivate implements IPropertyDeactivate
             //     "roles"      => $mileSton,
             //     "pendingAt"  => $pendingAt,
             // ];
-            return responseMsg(true, "", remove_null($fullDetailsData), "010407", "1.0", "", "POST", $request->deviceId);
+            return responseMsgs(true, "", remove_null($fullDetailsData), "010407", "1.0", responseTime(), "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
 
+    /**
+     * | Get Special Inbox Property Deactivation Request
+     */
     public function specialInbox(Request $request)
     {
         try {
@@ -589,7 +604,7 @@ class PropertyDeactivate implements IPropertyDeactivate
                 ->get();
             // dd(DB::getQueryLog());
             $data = $mProperty;
-            return responseMsgs(true, "Data Fetched", remove_null($data), "010406", "1.0", "251ms", "POST", $request->deviceId);
+            return responseMsgs(true, "Data Fetched", remove_null($data), "010406", "1.0", responseTime(), "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -610,6 +625,10 @@ class PropertyDeactivate implements IPropertyDeactivate
             return null;
         }
     }
+
+    /**
+     * | Get Property Details By Id
+     */
     public function getPropertyById($id)
     {
         try {
@@ -636,6 +655,10 @@ class PropertyDeactivate implements IPropertyDeactivate
             echo $e->getMessage();
         }
     }
+
+    /**
+     * | Get Property Owner By Property Id
+     */
     public function getPropOwnerByProId($propId)
     {
         try {
@@ -649,17 +672,28 @@ class PropertyDeactivate implements IPropertyDeactivate
             return null;
         }
     }
+
+    /**
+     * | Upload File
+     */
     public function uplodeFile($file, $custumFileName)
     {
         $filePath = $file->storeAs('uploads/Property', $custumFileName, 'public');
         return  $filePath;
     }
+
+    /**
+     * | Read Document Path
+     */
     public function readDocumentPath($path)
     {
         $path = (config('app.url') . '/api/getImageLink?path=' . $path);
         return $path;
     }
 
+    /**
+     * | Get Citizen Comments
+     */
     public function citizenComments($mRefTable, $tableId)
     {
         try {

@@ -84,9 +84,7 @@ class ObjectionController extends Controller
         }
     }
 
-    /**
-     * | forgery types
-     */
+    // forgery types    
     public function forgeryType()
     {
         try {
@@ -114,7 +112,7 @@ class ObjectionController extends Controller
 
     /**
      * | Get Inbox List of Objection Workflow
-     * | Query cost: 335.52ms
+     * | Query cost: 490.52ms
      */
     public function inbox(Request $req)
     {
@@ -153,7 +151,7 @@ class ObjectionController extends Controller
 
     /**
      * | Get the Objection Outbox
-     * | Query cost: 254.79ms
+     * | Query cost: 517.79ms
      */
     public function outbox(Request $req)
     {
@@ -194,6 +192,7 @@ class ObjectionController extends Controller
      * | Retrieves detailed objection data by application ID, including basic, owner, 
      * | and objection-specific details (clerical mistake, assessment error, or forgery),
      * | along with workflow tracks and role information.
+     * | Query Cost : 529.77ms
      */
     public function getDetailsById(Request $req)
     {
@@ -415,7 +414,7 @@ class ObjectionController extends Controller
 
     /**
      * | Get Special Inbox List of Objection Workflow
-     * | Query cost : 250.04ms
+     * | Query cost : 326.04ms
      */
     public function specialInbox(Request $req)
     {
@@ -454,7 +453,7 @@ class ObjectionController extends Controller
 
     /**
      * | Back to Citizen List
-     * | query cost: 150.04ms
+     * | query cost: 367.04ms
      */
     public function btcInboxList(Request $req)
     {
@@ -1067,6 +1066,7 @@ class ObjectionController extends Controller
     /**
      * | Get Objection Document List
      * | Returns a list of documents required for an objection application based on its type and owner details.
+     * | Query cost: 621ms
      */
     public function objectionDocList(Request $req)
     {

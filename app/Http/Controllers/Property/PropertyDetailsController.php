@@ -53,6 +53,7 @@ class PropertyDetailsController extends Controller
     /* 
     * | Retrieves application records (approved and active) based on a dynamic search key like 
     * | application no, name, mobile no, or PTN across different modules.
+    * | Query Cost: 612.09ms
     */
     public function applicationsListByKey(Request $request)
     {
@@ -349,9 +350,9 @@ class PropertyDetailsController extends Controller
 
             $details = $approved->union($active)->paginate($perPage);
 
-            return responseMsgs(true, "Application Details", remove_null($details), "011301", "1.0", "", "POST", $request->deviceId ?? "");
+            return responseMsgs(true, "Application Details", remove_null($details), "011301", "1.0", responseTime(), "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "011301", "1.0", "", "POST", $request->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "011301", "1.0", responseTime(), "POST", $request->deviceId ?? "");
         }
     }
 
