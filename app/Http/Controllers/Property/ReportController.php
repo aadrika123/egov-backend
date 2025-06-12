@@ -48,6 +48,7 @@ class ReportController extends Controller
 
     /**
      * | Get the collection report for a specific date range.
+     * | Query Cost: 4401.87ms
      */
     public function collectionReport(Request $request)
     {
@@ -68,6 +69,7 @@ class ReportController extends Controller
 
     /**
      * | Get the SAF collection report for a specific date range.
+     * | Query Cost: 7571.45ms
      */
     public function safCollection(Request $request)
     {

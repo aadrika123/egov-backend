@@ -335,7 +335,7 @@ class ActiveSafController extends Controller
      * | Query Cost- 520ms 
      * | Max Record- 2589
      * | Rating-3 
-     * | Query Cost- 2.11 to 2.47 s
+     * | Query Cost- 437.79 ms
      * ---------------------------------------------------------------
      */
     #Inbox
@@ -384,7 +384,6 @@ class ActiveSafController extends Controller
      * | Inbox for the Back To Citizen parked true
      * | Query Cost- 276ms 
      * | Max Record- 3
-     * | Query Cost- 2.05 to 2.55 s
      */
     public function btcInbox(Request $req)
     {
@@ -439,7 +438,7 @@ class ActiveSafController extends Controller
      * | This method fetches the SAF records that are field verified and belong to the user's wards and roles.
      * | It uses pagination to limit the number of records returned per page.
      * ------------------------------------------------------------------------
-     * | Query Cost- 1.08 to 2.4 s
+     * | Query Cost- 269.2 ms
      */
     public function fieldVerifiedInbox(Request $req)
     {
@@ -467,7 +466,7 @@ class ActiveSafController extends Controller
                 ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name')
                 ->paginate($perPage);
 
-            return responseMsgs(true, "field Verified Inbox!", remove_null($safInbox), "010107", 1.0, "", "POST", $mDeviceId);
+            return responseMsgs(true, "field Verified Inbox!", remove_null($safInbox), "010107", 1.0, responseTime(), "POST", $mDeviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010107", 1.0, "", "POST", $mDeviceId);
         }
@@ -479,7 +478,7 @@ class ActiveSafController extends Controller
      * | Applies various filters and pagination to the results.
      * -------------------------------------------------------
      * | Status-Closed
-     * | Query Cost- 1.9 to 2.4 s
+     * | Query Cost- 278ms
      */
     public function outbox(Request $req)
     {
@@ -892,7 +891,7 @@ class ActiveSafController extends Controller
 
             DB::commit();
             DB::connection('pgsql_master')->commit();
-            return responseMsgs(true, "You Have Commented Successfully!!", ['Comment' => $request->comment], "010112", "1.0", "", "POST", "");
+            return responseMsgs(true, "You Have Commented Successfully!!", ['Comment' => $request->comment], "010112", "1.0", responseTime(), "POST", "");
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
@@ -1025,7 +1024,7 @@ class ActiveSafController extends Controller
             }
             DB::commit();
             DB::connection('pgsql_master')->commit();
-            return responseMsgs(true, "Successfully Forwarded The Application!!", $samHoldingDtls, "010113", "1.0", "", "POST", $request->deviceId);
+            return responseMsgs(true, "Successfully Forwarded The Application!!", $samHoldingDtls, "010113", "1.0", responseTime(), "POST", $request->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
@@ -1833,7 +1832,7 @@ class ActiveSafController extends Controller
      * |---------------------------------------------------------------
      * | Status-closed
      * | Rating - 5 
-     * | Query Cost: 1.41 - 2 s
+     * | Query Cost: 384.58ms
      * */
     public function generateOrderId(Request $req)
     {
@@ -1950,8 +1949,6 @@ class ActiveSafController extends Controller
 
     /**
      * | SAF Payment
-     * | @param req  
-     * | @var workflowId SAF workflow ID
      * | Status-Closed
      * | Query Consting-374ms
      * | Rating-3
@@ -2282,15 +2279,15 @@ class ActiveSafController extends Controller
             ];
             return responseMsgs(true, "Payment Receipt", remove_null($responseData), "010130", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "", "010130", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "010130", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         }
     }
 
     /**
      * | Get Property Transactions
      * | Status-Closed
-     * | Run time Complexity-346ms
      * | Rating - 3
+     * | Query Cost: 346ms
      */
     public function getPropTransactions(Request $req)
     {
@@ -2311,7 +2308,7 @@ class ActiveSafController extends Controller
     /**
      * | Get Property Details by Property Holding No
      * | Rating - 2
-     * | Run Time Complexity-500 ms
+     * | Query Cost: 500 ms
      */
     public function getPropByHoldingNo1(Request $req)
     {
@@ -2353,7 +2350,7 @@ class ActiveSafController extends Controller
     /* 
      | modified by prity pandey : Get Property Details by Property Holding No
      | added water consumer details and trade license details of property 
-     | Query Costing: 2.2 - 2.55 s
+     | Query Costing: 299.45ms
     */
     public function getPropByHoldingNo(Request $req)
     {

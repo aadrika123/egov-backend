@@ -66,6 +66,11 @@ class PropertyDeactivateController extends Controller
         $this->_REF_TABLE = null;
         $this->_DOC_PATH = null;
     }
+
+    /* 
+    * | Get Property Holding by Number
+    * | Query cost :  875.86ms
+    */
     public function readHoldigbyNo(Request $request)
     {
         return $this->_REPOSITORY->readHoldigbyNo($request);
@@ -122,6 +127,7 @@ class PropertyDeactivateController extends Controller
 
     /**
      * | Fetches the list of deactivation requests based on the user role.
+     * | Query Cost: 386.12ms
      */
     public function inbox(Request $request)
     {
@@ -130,6 +136,7 @@ class PropertyDeactivateController extends Controller
 
     /**
      * | Fetches the outbox of deactivation requests.
+     * | Query Cost: 253.02ms
      */
     public function outbox(Request $request)
     {
@@ -138,6 +145,7 @@ class PropertyDeactivateController extends Controller
 
     /**
      * | Fetches the special inbox for deactivation requests.
+     * | Query Cost: 254ms
      */
     public function specialInbox(Request $request)
     {
@@ -376,6 +384,7 @@ class PropertyDeactivateController extends Controller
 
     /**
      * | Fetches uploaded document paths for a given deactivation application.
+     * | Query Cost: 401.8ms
      */
 
     public function getUplodedDocuments(Request $request)
@@ -390,7 +399,7 @@ class PropertyDeactivateController extends Controller
             }
             $docpath = !empty(trim($refDeactivationReq->documents)) ? $this->_REPOSITORY->readDocumentPath($refDeactivationReq->documents) : "";
 
-            return responseMsgs(true, "Document Fetched", $docpath, "010410", "1.0", "", "POST", $request->deviceId);
+            return responseMsgs(true, "Document Fetched", $docpath, "010410", "1.0", responseTime(), "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }

@@ -257,7 +257,7 @@ class ConcessionController extends Controller
 
     /**
      * | Property Concession Inbox List
-     * | Query Costing-293ms 
+     * | Query Costing-320ms 
      * | Rating-3
      * | Status-Closed
      */
@@ -337,7 +337,7 @@ class ConcessionController extends Controller
                 ->thenReturn()
                 ->paginate($perPage);
 
-            return responseMsgs(true, "Outbox List", remove_null($inboxList), '010603', '01', '355ms-419ms', 'Post', '');
+            return responseMsgs(true, "Outbox List", remove_null($inboxList), '010603', '01', responseTime().'ms', 'Post', '');
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", '010603', '01', responseTime(),  $req->getMethod(), $req->deviceId);
         }
@@ -346,7 +346,7 @@ class ConcessionController extends Controller
     /**
      * | Retrieves comprehensive concession details by application ID, including basic, 
      * | property, and owner information, along with workflow tracks, role details, and custom departmental data.
-     * | Query Costing-1.2s
+     * | Query Costing-309.56s
      * | Rating-3
      * | Status-Closed
      */
@@ -447,7 +447,7 @@ class ConcessionController extends Controller
 
             return responseMsgs(true, $msg, "", '010605', '01', responseTime(),  $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "", '010605', '01', responseTime(),  $req->getMethod(), $req->deviceId);
+            return responseMsgs(false, $e->getMessage(), "", '010605', '01', responseTime(),  $req->getMethod(), $req->deviceId);
         }
     }
 
@@ -489,14 +489,15 @@ class ConcessionController extends Controller
                 ->thenReturn()
                 ->paginate($perPage);
 
-            return responseMsg(true, "Inbox List", remove_null($inboxList), "", '010606', '01', responseTime(),  $req->getMethod(), $req->deviceId);
+            return responseMsgs(true, "Inbox List", remove_null($inboxList), "010606", '01', responseTime(),$req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "", '010606', '01', responseTime(),  $req->getMethod(), $req->deviceId);
+            return responseMsgs(false, $e->getMessage(), "", '010606', '01', responseTime(), $req->getMethod(), $req->deviceId);
         }
     }
 
     /**
      * | Back To Citizen Inbox
+     * | Query Costing-296.41 ms
      */
     public function btcInbox(Request $req)
     {
@@ -537,7 +538,9 @@ class ConcessionController extends Controller
         }
     }
 
-    // Post Next Level Application
+    /* 
+    * | Post Next Level Application
+     */
     public function postNextLevel(Request $req)
     {
         $wfLevels = Config::get('PropertyConstaint.CONCESSION-LABEL');
@@ -607,7 +610,7 @@ class ConcessionController extends Controller
 
             DB::commit();
             DB::connection('pgsql_master')->commit();
-            return responseMsgs(true, "Successfully Forwarded The Application!!", "", "", '010608', '01', '', 'Post', '');
+            return responseMsgs(true, "Successfully Forwarded The Application!!", "", "010608", '01', responseTime(), 'POST', "");
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
@@ -749,7 +752,6 @@ class ConcessionController extends Controller
 
     /**
      * | Back to Citizen
-     * | @param req
      * | Status-Closed
      * | Query Costing-358 ms 
      * | Rating-2
@@ -796,7 +798,10 @@ class ConcessionController extends Controller
         }
     }
 
-    // get owner details by propId
+    /**
+     * | Get Owner Details by Property Id
+     * | Query Costing-300ms
+     */
     public function getOwnerDetails(Request $request)
     {
         try {
@@ -813,9 +818,9 @@ class ConcessionController extends Controller
                 ->orderBy('prop_owners.id')
                 ->first();
 
-            return responseMsgs(true, "Property 1st Owner Detail", remove_null($ownerDetails), "", '010611', '01', responseTime(), $request->getMethod(), $request->deviceId);
+            return responseMsgs(true, "Property 1st Owner Detail", remove_null($ownerDetails), "010611", '01', responseTime(),  $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), [], "", '010611', '01', responseTime(), $request->getMethod(), $request->deviceId);
+            return responseMsgs(false, $e->getMessage(), [], "010611", '01', responseTime(),  $request->getMethod(), $request->deviceId);
         }
     }
 
@@ -906,7 +911,7 @@ class ConcessionController extends Controller
                 break;
         }
 
-        return responseMsgs(true, "Citizen Doc List", remove_null($code), "010613", 1.0, "413ms", "POST", "", "");
+        return responseMsgs(true, "Citizen Doc List", remove_null($code), "010613", 1.0, responseTime(), "POST", "");
     }
 
     /**
@@ -960,9 +965,9 @@ class ConcessionController extends Controller
             $documents = $mWfActiveDocument->getDocsByAppId($req->applicationId, $workflowId, $moduleId);
             $data = $docUpload->getDocUrl($documents);           #_Calling BLL for Document Path from DMS
 
-            return responseMsgs(true, "Uploaded Documents", remove_null($data), "010616", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true, "Uploaded Documents", remove_null($data), "010616", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "010616", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "010616", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         }
     }
 
@@ -1021,11 +1026,11 @@ class ConcessionController extends Controller
             }
             DB::commit();
             DB::connection('pgsql_master')->commit();
-            return responseMsgs(true, "Document Uploadation Successful", "", "010615", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true, "Document Uploadation Successful", "", "010615", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
-            return responseMsgs(false, $e->getMessage(), "", "010615", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "010615", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         }
     }
 
@@ -1084,6 +1089,7 @@ class ConcessionController extends Controller
 
     /**
      * | Concession Document List
+     * | Query Cost: 386.88ms
      */
     public function concessionDocList(Request $req)
     {
@@ -1099,15 +1105,16 @@ class ConcessionController extends Controller
             else
                 $concessionDoc['listDocs'] = [];
 
-            return responseMsgs(true, "Successfully Done", remove_null($concessionDoc), "", '010614', '01', responseTime(), $req->getMethod(), '');
+            return responseMsgs(true, "Successfully Done", remove_null($concessionDoc), "010614", '01', responseTime(),  $req->getMethod(), '');
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), '', "", '010614', '01', responseTime(), $req->getMethod(), '');
+            return responseMsgs(false, $e->getMessage(), '', "010614", '01',  responseTime(), $req->getMethod(), '');
         }
     }
 
     /**
      * | Retrieves a list of required document types for a concession application based on 
      * | conditions like specially abled status, armed force status, gender, and date of birth.
+     * | Query Cost: 422.71ms
      */
     public function getDocList($refApplication)
     {
@@ -1138,7 +1145,8 @@ class ConcessionController extends Controller
             $documentList->push($document);
         }
 
-        return $documentList;
+        // return $documentList;
+        return responseMsgs(true, "Successfully Done", remove_null($documentList), "", '01', responseTime(),  "POST", '');
     }
 
     /**

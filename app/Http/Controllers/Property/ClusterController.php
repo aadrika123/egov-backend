@@ -38,14 +38,14 @@ class ClusterController extends Controller
 
     /* 
     * | get all list of the cluster
-    * | Query cost : 1.7 seconds approx
+    * | Query cost : 278ms
     */
     public function getAllClusters()
     {
         try {
             $mCluster = new Cluster();
             $clusterList = $mCluster->allClusters();
-            return responseMsgs(true, "Fetched all Cluster!", remove_null($clusterList), "011001", "02", "320.ms", "GET", "");
+            return responseMsgs(true, "Fetched all Cluster!", remove_null($clusterList), "011001", "02", responseTime().'ms', "GET", "");
         } catch (Exception $error) {
             return responseMsg(false, $error->getMessage(), "");
         }
@@ -53,6 +53,7 @@ class ClusterController extends Controller
 
     /* 
     * | get all details of the cluster according to the id
+    * | Query cost : 729ms
     */
     public function getClusterById(Request $request)
     {
@@ -106,7 +107,7 @@ class ClusterController extends Controller
                 return $value;
             });
             $returnValues = collect($clusterList)->merge($returnData);
-            return responseMsgs(true, "List Of Data!", $returnValues, "", "011005", "", "POST", "");
+            return responseMsgs(true, "List Of Data!", $returnValues, "", "011005", responseTime(), "POST", "");
         } catch (Exception $error) {
             return responseMsg(false, $error->getMessage(), "");
         }
@@ -114,7 +115,7 @@ class ClusterController extends Controller
 
     /**
      * | Get Cluster basic Details
-     * | Query cost : 1.7 s approx
+     * | Query cost : 287ms
      */
     public function clusterBasicDtls(Request $req)
     {
@@ -125,7 +126,7 @@ class ClusterController extends Controller
             $mCluster = new Cluster();
             $clusterId = $req->clusterId;
             $detail = $mCluster::findOrFail($clusterId);
-            return responseMsgs(true, "Cluster Details", remove_null($detail), "011006", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true, "Cluster Details", remove_null($detail), "011006", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011006", "1.0", "", "POST", $req->deviceId ?? "");
         }
@@ -208,7 +209,7 @@ class ClusterController extends Controller
     /**
      * |----------------------------------- Cluster Maping ----------------------------------------|
      * | Date : 24-11-22
-     * | Query cost : 2s approx
+     * | Query cost : 1693.25ms
      */
 
     // selecting details according to holding no // Change the repositery
@@ -230,7 +231,7 @@ class ClusterController extends Controller
             $holdingDetails = $holdingDtls->union($newHoldingDtls)
                 ->paginate($perPage);
 
-            return responseMsgs(true, "List of holding!", $holdingDetails, "011007", "02", "", "POST", "");
+            return responseMsgs(true, "List of holding!", $holdingDetails, "011007", "02", responseTime(), "POST", "");
         } catch (Exception $error) {
             return responseMsg(false, $error->getMessage(), "");
         }
@@ -285,7 +286,7 @@ class ClusterController extends Controller
 
     /**
      * | Search Saf by by Saf no
-     * | Query cost : 1.78s approx
+     * | Query cost : 449ms
      */
     public function getSafBySafNo(Request $request)
     {
@@ -300,7 +301,7 @@ class ClusterController extends Controller
                 ->where('s.saf_no', 'LIKE', '%' . $request->safNo)
                 ->paginate($perPage);
 
-            return responseMsgs(true, "Listed Saf!", $application, "011010", "02", "", "POST", "");
+            return responseMsgs(true, "Listed Saf!", $application, "011010", "02", responseTime(), "POST", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
