@@ -46,7 +46,10 @@ trait Ward
             ->first();
     }
 
-    // get all ward master data
+    /** 
+     * | get all ward master data
+       | getWardMasterData:1.1
+    */
     public function getAllWard($ulbId)
     {
         return UlbWardMaster::select(

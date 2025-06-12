@@ -11,7 +11,10 @@ class PropOwner extends Model
     use HasFactory;
     protected $guarded = [];
 
-    //owner details by ownerId
+    /**
+     * | Get Owner Detail by Owner Id
+       | ownerDetailById:1.1
+     */
     public function getOwnerDetail($request)
     {
         return PropOwner::select(

@@ -72,6 +72,7 @@ class ConcessionController extends Controller
      * | assigns workflow roles, and generates a unique concession number.
      * | Rating-3
      * | Status-Closed
+       | applyConcession:1
      */
     public function applyConcession(Request $request)
     {
@@ -176,6 +177,7 @@ class ConcessionController extends Controller
 
     /**
      * | Updates the gender field for a concession record and saves associated document if provided.
+       | applyConcession:1.1
      */
     public function saveGenderData($req, $concession)
     {
@@ -188,6 +190,7 @@ class ConcessionController extends Controller
 
     /**
      * | Updates the date of birth for a senior citizen concession and saves associated document if provided.
+       | applyConcession:1.2
      */
     public function saveSeniorCitizenData($req, $concession)
     {
@@ -200,6 +203,7 @@ class ConcessionController extends Controller
 
     /**
      * | Updates specially abled status and percentage for a concession record and saves associated document if provided.
+       | applyConcession:1.3
      */
     public function saveSpeciallyAbledData($req, $concession)
     {
@@ -215,6 +219,7 @@ class ConcessionController extends Controller
 
     /**
      * | Updates armed force status for a concession record and saves associated document if provided.
+       | applyConcession:1.4
      */
     public function saveArmedForceData($req, $concession)
     {
@@ -230,6 +235,7 @@ class ConcessionController extends Controller
     /**
      * | Saves a document for a concession, uploads it to DMS, and records 
      * | metadata including module, workflow, and document details.
+       | Common Function
      */
     public function saveDoc($request, $concession)
     {
@@ -624,6 +630,7 @@ class ConcessionController extends Controller
      * | Query Costing-376 ms
      * | Rating-2
      * | Status-Closed
+       | approvalRejection:1
      */
     public function approvalRejection(Request $req)
     {
@@ -729,6 +736,7 @@ class ConcessionController extends Controller
 
     /**
      * | Update Owner Details after approval
+       | approvalRejection:1.1
      */
     public function updateOwner($propOwners, $activeConcession)
     {
@@ -824,8 +832,6 @@ class ConcessionController extends Controller
         }
     }
 
-
-
     /**
      * | Citizen and Level Pendings Independent Comments
      */
@@ -917,6 +923,7 @@ class ConcessionController extends Controller
     /**
      * | Filters citizen document data by extracting and formatting document requirements, 
      * | including type, name, and a list of document codes with readable labels.
+       | Common Function
      */
     public function filterCitizenDoc($data)
     {
@@ -941,7 +948,6 @@ class ConcessionController extends Controller
         });
         return $reqDoc;
     }
-
 
     /**
      * | Get uploaded documents for a specific concession application.
@@ -974,6 +980,7 @@ class ConcessionController extends Controller
     /**
      * | Uploads a document (PDF, JPEG, PNG, JPG) for a concession application, validates 
      * |file type and size, saves metadata, and updates document upload status.
+       | uploadDocument:1
      */
     public function uploadDocument(Request $req)
     {
@@ -1036,6 +1043,7 @@ class ConcessionController extends Controller
 
     /**
      * | Check Full Upload Doc Status
+       | uploadDocument:1.1
      */
     public function checkFullDocUpload($applicationId)
     {
@@ -1052,6 +1060,10 @@ class ConcessionController extends Controller
         return $this->isAllDocs($applicationId, $refDocList, $getConcessionDtls);
     }
 
+    /** 
+     * | Checks if all required concession documents for an application are uploaded and verified.
+       | uploadDocument:1.1.1
+    */
     public function isAllDocs($applicationId, $refDocList, $getConcessionDtls)
     {
         $docList = array();
@@ -1090,6 +1102,7 @@ class ConcessionController extends Controller
     /**
      * | Concession Document List
      * | Query Cost: 386.88ms
+       | concessionDocList:1
      */
     public function concessionDocList(Request $req)
     {
@@ -1115,6 +1128,7 @@ class ConcessionController extends Controller
      * | Retrieves a list of required document types for a concession application based on 
      * | conditions like specially abled status, armed force status, gender, and date of birth.
      * | Query Cost: 422.71ms
+       | Common Function
      */
     public function getDocList($refApplication)
     {
@@ -1152,6 +1166,7 @@ class ConcessionController extends Controller
     /**
      * | Filters and formats a list of documents for a concession application, retrieving document 
      * | paths from DMS and including details like document code, verification status, and remarks.
+       | concessionDocList:1.1
      */
     public function filterDocument($documentList, $refApplication)
     {
@@ -1213,6 +1228,7 @@ class ConcessionController extends Controller
 
     /**
      * | Document Verify Reject
+       | docVerifyReject:1
      */
     public function docVerifyReject(Request $req)
     {
@@ -1293,6 +1309,7 @@ class ConcessionController extends Controller
 
     /**
      * | Check if the Document is Fully Verified or Not (4.1)
+       | docVerifyReject:1.1
      */
     public function ifFullDocVerified($applicationId)
     {

@@ -12,7 +12,8 @@ class RefPropUsageType extends Model
     use HasFactory;
 
     /**
-     * Get Property Usage Types
+     * | Get Property Usage Types
+       | Common Function
      */
     public function propUsageType()
     {

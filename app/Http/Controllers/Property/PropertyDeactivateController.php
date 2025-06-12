@@ -227,6 +227,7 @@ class PropertyDeactivateController extends Controller
     /**
      * | Approves or rejects a property deactivation application based on user role and status.
      * | Updates property status on approval or logs the rejection, and removes the active request.
+       | approvalRejection:1
      */
 
     public function approvalRejection(Request $request)
@@ -287,6 +288,7 @@ class PropertyDeactivateController extends Controller
     /**
      * | Transfers property deactivation request data from the source model to the target model.
      * | Used during approval or rejection to preserve request details in the appropriate table.
+       | approvalRejection:1.1
      */
 
     private function transeferData($targerModel, $sorseModel)

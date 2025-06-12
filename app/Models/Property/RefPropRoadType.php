@@ -13,6 +13,7 @@ class RefPropRoadType extends Model
 
     /**
      * Get Property Road Types
+       | Common Function
      */
     public function propRoadType()
     {

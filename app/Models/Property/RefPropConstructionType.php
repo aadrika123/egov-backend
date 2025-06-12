@@ -11,8 +11,9 @@ class RefPropConstructionType extends Model
 {
     use HasFactory;
 
-    /* 
-    * | get property construction type where status is 1
+    /** 
+     * | get property construction type where status is 1
+       | Common Function
     */
     public function propConstructionType()
     {

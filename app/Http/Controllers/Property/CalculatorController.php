@@ -32,8 +32,9 @@ class CalculatorController extends Controller
         $this->_effectiveRuleset3 = Config::get('PropertyConstaint.EFFECTIVE_DATE_RULE3');
     }
 
-    /* 
-    * | calculate SAF tax by invoking reviewCalculation and returning its result
+    /** 
+     * | calculate SAF tax by invoking reviewCalculation and returning its result
+       | calculator:1
     */
     public function calculator(reqApplySaf $request)
     {
@@ -49,6 +50,7 @@ class CalculatorController extends Controller
      * | Review for the Calculation
      * | Processes SAF tax review by preparing floors data, calculating tax, grouping details by floors and rulesets,
      * | generating quarterly tax summaries, and formatting a detailed response for frontend review.
+       | calculator:1.1
      */
     public function reviewCalculation(reqApplySaf $req)
     {
@@ -195,9 +197,9 @@ class CalculatorController extends Controller
         }
     }
 
-
     /**
      * | Renta Rate Generation
+       | calculator:1.1.1
      */
     public function generateRentalValues($rentalRates)
     {
@@ -210,6 +212,7 @@ class CalculatorController extends Controller
 
     /**
      * | Generate Multi Factors
+       | calculator:1.1.2
      */
     public function generateMultiFactors($multiFactors)
     {
@@ -222,6 +225,7 @@ class CalculatorController extends Controller
 
     /**
      * | Generate Rental Rates
+       | calculator:1.1.3
      */
     public function generateRentalRates($rentalRates, $param)
     {
@@ -235,6 +239,7 @@ class CalculatorController extends Controller
 
     /**
      * | Generate Matrix Factors
+       | calculator:1.1.4
      */
     public function generateMatrixFactor($rentalRates)
     {
@@ -252,6 +257,7 @@ class CalculatorController extends Controller
 
     /**
      * | Read Capital Value Rates
+       | calculator:1.1.5
      */
     public function readCapitalValueRates($wardNo)
     {
@@ -260,6 +266,7 @@ class CalculatorController extends Controller
 
     /**
      * | Generate Vacant Rental Rates
+       | calculator:1.1.6
      */
     public function generateVacantRentalRates($rentalRates)
     {
