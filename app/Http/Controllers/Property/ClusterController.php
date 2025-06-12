@@ -208,11 +208,10 @@ class ClusterController extends Controller
 
     /**
      * |----------------------------------- Cluster Maping ----------------------------------------|
+     * | selecting details according to holding no // Change the repositery
      * | Date : 24-11-22
      * | Query cost : 1693.25ms
      */
-
-    // selecting details according to holding no // Change the repositery
     public function detailsByHolding(Request $request)
     {
         $request->validate([
@@ -353,6 +352,7 @@ class ClusterController extends Controller
     /**
      * | ----------------- Common funtion for the return component in failer ------------------------------- |
      * | Operation : returning the messge using (responseMsg)
+       | Common Function
      */
     public function validation($req)
     {

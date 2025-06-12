@@ -1774,7 +1774,7 @@ class ActiveSafController extends Controller
      * | Status-Closed
      * | Query Costing-417ms
      * | Rating-3
-     * | Related to many functions in the class
+       | Common Function
      */
     public function calculateSafBySafId(Request $req)
     {
@@ -1901,7 +1901,7 @@ class ActiveSafController extends Controller
      * | Posts penalty and rebate details for a SAF (Some Application Form) transaction.
      * | Processes the calculated rebates and penalties, and saves them to the database.
      * | ------------------------------------------------------------------------------
-     * | related to two functions
+       | Common Function
      */
     public function postPenaltyRebates($calculateSafById, $safId, $tranId, $clusterId = null)
     {
@@ -1953,8 +1953,8 @@ class ActiveSafController extends Controller
      * | Status-Closed
      * | Query Consting-374ms
      * | Rating-3
-     * | Also Related to collectWebhookDetails function (PaymentRepository)
-     * | paymentSaf:1
+       | Also Related to collectWebhookDetails function (PaymentRepository)
+       | paymentSaf:1
      */
     public function paymentSaf(ReqPayment $req)
     {
@@ -2104,8 +2104,8 @@ class ActiveSafController extends Controller
      * | Post Other Payment Modes for Cheque,DD,Neft
      * | Handles non-cash payment modes and records transaction details.
      * | ---------------------------------------------------
-     * | offlinePaymentSaf:1.1 
-     * | Also Used in clusterSafPayment function (ActiveSafControllerV2)
+       | offlinePaymentSaf:1.1 
+       | Also Used in clusterSafPayment function (ActiveSafControllerV2)
      */
     public function postOtherPaymentModes($req, $clusterId = null)
     {
@@ -2149,7 +2149,7 @@ class ActiveSafController extends Controller
 
     /**
      * | Sends the active SAF to the workflow tracking system.
-     * | ------------------------------------------------------------
+       | Common Function
      */
     public function sendToWorkflow($activeSaf)
     {
@@ -2173,6 +2173,8 @@ class ActiveSafController extends Controller
      * | Generate Payment Receipt(1)
      * | Status-Closed
      * | Query Cost-3
+     * | 
+       | This is an API and also realated to bulkReceipt Function (ReportController)
      */
     public function generatePaymentReceipt(Request $req)
     {
@@ -2348,10 +2350,11 @@ class ActiveSafController extends Controller
         }
     }
 
-    /* 
-     | modified by prity pandey : Get Property Details by Property Holding No
-     | added water consumer details and trade license details of property 
-     | Query Costing: 299.45ms
+    /** 
+     * | modified by prity pandey : Get Property Details by Property Holding No
+     * | added water consumer details and trade license details of property 
+     * | Query Costing: 299.45ms
+       | Common Function
     */
     public function getPropByHoldingNo(Request $req)
     {
@@ -2841,6 +2844,7 @@ class ActiveSafController extends Controller
     /**
      * | Retrieves and compares property verification data with original SAF application data
      * | Used for property tax verification process - compares ULB/TC verification against submitted application
+       | getVerifications:1
      */
     public function getVerifications(Request $request)
     {
@@ -3156,11 +3160,10 @@ class ActiveSafController extends Controller
     /**
      *   Reviews and processes tax calculation details from the given response.
      * | -------------------------------------------------------------
-     * | Extracts demand details from the response.
      * | Calculates aggregated tax amounts for each quarter, including holding tax, water tax, latrine tax, education tax, 
      * | health tax, rainwater harvesting penalty, and total quarterly tax.
      * | Returns a structured response with processed tax calculation details.
-     * | --------------------------------------------------------------    
+       | getVerifications:1.1
      */
     private function reviewTaxCalculation(object $response)
     {
@@ -3246,12 +3249,10 @@ class ActiveSafController extends Controller
     /**
      *    Compares and reviews tax calculations from two different response objects.
      * | ----------------------------------------------------------------------
-     * |  Extracts demand details from both responses.
      * |  Compares the two sets of tax calculations based on rules and quarters.
      * |  Computes the difference in tax values between the two responses.
-     * |  Calculates the net change in tax components.
      * |  Returns a structured response with the calculated tax differences.
-     * | ----------------------------------------------------------------------
+       | getVerifications:1.2
      */
 
     private function reviewTaxCalculationCom(object $response, object $response2)

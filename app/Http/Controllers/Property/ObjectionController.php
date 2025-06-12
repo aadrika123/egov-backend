@@ -97,7 +97,10 @@ class ObjectionController extends Controller
         }
     }
 
-    // get owner Details
+    /**
+     * | Retrieves owner details by ID
+       | ownerDetailById:1
+    */
     public function ownerDetailById(Request $request)
     {
         try {
@@ -945,6 +948,7 @@ class ObjectionController extends Controller
      * | For Document Uploadation 
      * | Uploads a document (PDF, JPEG, PNG, JPG) for an objection application, validates file 
      * | type and size, saves metadata, and updates document upload status with transaction support.
+       | uploadDocument:1
      */
     public function uploadDocument(Request $req)
     {
@@ -1006,6 +1010,7 @@ class ObjectionController extends Controller
 
     /**
      * | Check Full Upload Doc Status
+       | uploadDocument:1.1
      */
     public function checkFullDocUpload($objectionDtls)
     {
@@ -1023,6 +1028,10 @@ class ObjectionController extends Controller
         return $this->isAllDocs($applicationId, $refDocList, $objectionDtls);
     }
 
+    /**
+     * | Checks if all required objection documents for an application are uploaded and verified.
+       | uploadDocument:1.1.1
+     */
     public function isAllDocs($applicationId, $refDocList, $objectionDtls)
     {
         $docList = array();
@@ -1095,6 +1104,7 @@ class ObjectionController extends Controller
     /**
      * | Get Doc List 
      * | Returns the required documents list based on the objection type and application/owner details.
+       | Common Function
      */
     public function getDocList($refApplication, $ownerDetails, $objectionType)
     {
@@ -1166,6 +1176,7 @@ class ObjectionController extends Controller
     /**
      * | Filters and organizes the given document list by matching uploaded documents for the application, 
      * | returning structured details including upload status and verification info.
+       | Common Function
      */
     public function filterDocument($documentList, $refApplication)
     {
@@ -1344,6 +1355,7 @@ class ObjectionController extends Controller
 
     /**
      * | forgery Doc list for citizen
+       | citizenForgeryDocList:1
      */
     public function citizenForgeryDocList(Request $req)
     {
@@ -1381,6 +1393,7 @@ class ObjectionController extends Controller
 
     /**
      * | Citizen Forgery Document Filter
+       | citizenForgeryDocList:1.1
      */
     public function citizenForgeryfilterDoc($documentList)
     {
@@ -1411,6 +1424,7 @@ class ObjectionController extends Controller
     /**
      * | Citizen Document List
      * | Returns the filtered list of required documents for citizens based on the requested document type.
+       | citizenDocList:1
      */
     public function citizenDocList(Request $req)
     {
@@ -1442,6 +1456,7 @@ class ObjectionController extends Controller
     /**
      * | Citizen Document Filter
      * | Parses and formats the citizen document requirements into a structured array with document codes and labels.
+       | citizenDocList:1.1
      */
     public function filterCitizenDoc($data)
     {
@@ -1470,6 +1485,7 @@ class ObjectionController extends Controller
     /**
      * | Validates and processes document verification or rejection, updates objection status, 
      * | manages transactions, and handles workflow roles.
+       | docVerifyReject:1
      */
     public function docVerifyReject(Request $req)
     {
@@ -1547,6 +1563,7 @@ class ObjectionController extends Controller
 
     /**
      * | Check if the Document is Fully Verified or Not (4.1)
+       | docVerifyReject:1.1
      */
     public function ifFullDocVerified($applicationId)
     {

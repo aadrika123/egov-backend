@@ -29,6 +29,7 @@ class MCapitalValueRate extends Model
 
     /**
      * | Get CV Rate By Ward No 
+       | calculator:1.1.5
      */
     public function readCvRatesByWardNo($wardNo)
     {

@@ -30,6 +30,7 @@ class SafDocController extends Controller
      * | Get Document Lists
      * | Fetches document lists for a given application ID, including SAF and owner-specific 
      * | documents, along with document upload, verification, and payment statuses.
+       | getDocList:1
      */
     public function getDocList(Request $req)
     {
@@ -65,6 +66,7 @@ class SafDocController extends Controller
     /**
      * | Gettting Document List (1)
      * | Transer type initial mode 0 for other Case
+       | getDocList:1.1
      */
     public function getSafDocLists($refSafs)
     {
@@ -75,6 +77,7 @@ class SafDocController extends Controller
 
     /**
      * | Get Owner Document Lists
+       | getDocList:1.2
      */
     public function getOwnerDocLists($refOwners, $refSafs)
     {
@@ -109,6 +112,7 @@ class SafDocController extends Controller
      * | Filter Document(1.2)
      * | Filters and processes a list of documents for a given SAF, retrieving document 
      * | paths from DMS and including verification status and remarks.
+       | Common Function
      */
     public function filterDocument($documentList, $refSafs, $ownerId = null)
     {
@@ -184,6 +188,7 @@ class SafDocController extends Controller
      * | Created for Document Upload for SAFs(2)
      * | Handles document upload for property SAF applications
      * | Validates, stores and manages document lifecycle with duplicate handling and status tracking
+       | docUpload:1
     */
     public function docUpload(Request $req)
     {
@@ -304,6 +309,7 @@ class SafDocController extends Controller
 
     /**
      * | Check Full Upload Doc Status
+       | docUpload:1.1
      */
     public function checkFullDocUpload($applicationId)
     {
@@ -324,6 +330,7 @@ class SafDocController extends Controller
      * | Document Verify Reject (04)
      * | Verifies or rejects a document for a given application ID, updates document 
      * | and SAF statuses, and enforces authorization for Dealing Assistant role.
+       | docVerifyReject:1
      */
     public function docVerifyReject(Request $req)
     {
@@ -413,6 +420,8 @@ class SafDocController extends Controller
 
     /**
      * | Check if the Document is Fully Verified or Not (4.1)
+       | 
+       | docVerifyReject:1.1
      */
     public function ifFullDocVerified($applicationId)
     {
@@ -430,6 +439,7 @@ class SafDocController extends Controller
 
     /**
      * | Checks the Document Upload Or Verify Status
+       | Common Function
      */
     public function isAllDocs($applicationId, $refDocList, $refSafs)
     {

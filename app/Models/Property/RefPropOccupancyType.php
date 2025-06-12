@@ -10,8 +10,9 @@ class RefPropOccupancyType extends Model
 {
     use HasFactory;
 
-    /* 
+    /** 
      * | Get Property Occupancy Types
+       | Common Function
      */
     public function propOccupancyType()
     {

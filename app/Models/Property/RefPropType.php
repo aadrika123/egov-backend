@@ -13,6 +13,7 @@ class RefPropType extends Model
 
     /**
      * | Get All Property Types
+       | Common Function
      */
     public function propPropertyType()
     {

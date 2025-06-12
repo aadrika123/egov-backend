@@ -72,13 +72,14 @@ class RainWaterHarvestingController extends Controller
      * | Fetches the list of wards for the authenticated user's ULB (Urban Local Body).
      * | Query cost => 400-438 ms 
      * | Rating : 1
+       | getWardMasterData:1
      */
     public function getWardMasterData(Request $request)
     {
         try {
             $ulbId = authUser($request)->ulb_id;
             $wardList = $this->getAllWard($ulbId);
-            return responseMsg(true, "List of wards", $wardList, "010901", "1.0", "", "GET", $request->deviceId ?? "");
+            return responseMsgs(true, "List of wards", $wardList, "010901", "1.0", responseTime(), "GET", $request->deviceId ?? "");
         } catch (Exception $error) {
             return responseMsg(false, "Error!", $error->getMessage());
         }
@@ -524,6 +525,7 @@ class RainWaterHarvestingController extends Controller
      * | Rating-
      * | Status - Closed
      * | Query Cost - 446ms
+       | postNextLevel:1
      */
     public function postNextLevel(Request $req)
     {
@@ -984,6 +986,7 @@ class RainWaterHarvestingController extends Controller
     /**
      * | Get Document List for WATER HARVESTING
      * | Query Cost : 271ms
+       | getDocList:1
      */
     public function getDocList(Request $req)
     {
@@ -1002,9 +1005,10 @@ class RainWaterHarvestingController extends Controller
         }
     }
 
-    /* 
-    * | Retrieves and structures required and uploaded document details for a given water 
-    * | harvesting application, including file paths and verification status.
+    /** 
+     * | Retrieves and structures required and uploaded document details for a given water 
+     * | harvesting application, including file paths and verification status.
+       | getDocList:1.1
     */
     public function getHarvestingDoc($refApplication)
     {
@@ -1077,6 +1081,7 @@ class RainWaterHarvestingController extends Controller
 
     /**
      * | Document Verify Reject
+       | docVerifyReject:1
      */
     public function docVerifyReject(Request $req)
     {
@@ -1158,6 +1163,7 @@ class RainWaterHarvestingController extends Controller
 
     /**
      * | Check if the Document is Fully Verified or Not (4.1)
+       | docVerifyReject:1.1
      */
     public function ifFullDocVerified($applicationId)
     {
@@ -1342,6 +1348,7 @@ class RainWaterHarvestingController extends Controller
 
     /**
      * | check Post Condition for backward forward
+       | postNextLevel:1.1
      */
     public function checkPostCondition($senderRoleId, $wfLevels, $harvesting)
     {
@@ -1356,6 +1363,7 @@ class RainWaterHarvestingController extends Controller
     /**
      * | Get Req Docs
      * | Parses and formats document requirement data into structured document metadata.
+       | Common Function
      */
     public function getReqDoc($data)
     {
