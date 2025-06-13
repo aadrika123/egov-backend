@@ -483,7 +483,7 @@ class PropertyDetailsController extends Controller
                 "total" => $paginator->total(),
             ];
 
-            return responseMsgs(true, "Application Details", remove_null($list), "011302", "1.0", "", "POST", $request->deviceId ?? "");
+            return responseMsgs(true, "Application Details", remove_null($list), "011302", "1.0", responseTime(), "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011302", "1.0", "", "POST", $request->deviceId ?? "");
         }
