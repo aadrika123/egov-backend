@@ -181,6 +181,7 @@ class GbSafController extends Controller
 
     /**
      * | Post next level
+       | postNextLevel:1
      */
     public function postNextLevel(Request $request)
     {
@@ -255,6 +256,7 @@ class GbSafController extends Controller
 
     /**
      * | check Post Condition for backward forward(9.1)
+       | postNextLevel:1.1
      */
     public function checkPostCondition($senderRoleId, $wfLevels, $saf, $userId)
     {
@@ -321,6 +323,7 @@ class GbSafController extends Controller
 
     /**
      * | Replicate Tables of saf to property
+       | postNextLevel:1.1.1
      */
     public function replicateSaf($safId)
     {
@@ -858,6 +861,7 @@ class GbSafController extends Controller
     /**
      * | Final Approval Rejection
      * | Handles approval or rejection of a GB SAF (Self Assessment Form) application.
+       | approvalRejectionGbSaf:1
      */
     public function approvalRejectionGbSaf(Request $req)
     {
@@ -962,6 +966,7 @@ class GbSafController extends Controller
 
     /**
      * | Replication of Final Approval SAf(10.1)
+       | approvalRejectionGbSaf:1.1
      */
     public function finalApprovalSafReplica($mPropProperties, $propId, $fieldVerifiedSaf, $activeSaf, $officerDetails, $floorDetails, $mPropFloors, $safId)
     {
@@ -1015,6 +1020,7 @@ class GbSafController extends Controller
 
     /**
      * | Replication of Final Rejection Saf(10.2)
+       | approvalRejectionGbSaf:1.2
      */
     public function finalRejectionSafReplica($activeSaf, $officerDetails, $floorDetails)
     {
@@ -1124,6 +1130,7 @@ class GbSafController extends Controller
     /**
      * | Get Doc List for 
      * | Retrieve the list of documents uploaded for a given SAF application.
+       | getDocList:1
      */
     public function getDocList(Request $req)
     {
@@ -1143,6 +1150,7 @@ class GbSafController extends Controller
 
     /**
      * | Get GB SAF Document Lists
+       | getDocList:1.1
      */
     public function getGbSafDocLists($refSafs)
     {
@@ -1210,6 +1218,7 @@ class GbSafController extends Controller
 
     /**
      * | Document Verify Reject
+       | docVerifyReject:1
      */
     public function docVerifyReject(Request $req)
     {
@@ -1291,6 +1300,7 @@ class GbSafController extends Controller
 
     /**
      * | Check if the Document is Fully Verified or Not (4.1)
+       | docVerifyReject:1.1
      */
     public function ifFullDocVerified($applicationId)
     {

@@ -601,6 +601,11 @@ class PaymentRepository implements iPayment
             return responseMsg(false, $e->getMessage(), $args);
         }
     }
+
+    /**
+     * | Collecting the webhook details and storing in the database
+       | collectWebhookDetails:1
+     */
     public function collectWebhookDetails($webhookData)
     {
         $request = $webhookData->toArray();

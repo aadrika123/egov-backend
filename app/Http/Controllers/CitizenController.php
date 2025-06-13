@@ -83,6 +83,7 @@ class CitizenController extends Controller
 
     /**
      * | Doc upload
+       | Common Function
      */
     public function docUpload($request, $id)
     {
@@ -208,7 +209,9 @@ class CitizenController extends Controller
         ]);
     }
 
-
+    /**
+     * | Citizen Edit Profile
+     */
     public function citizenEditProfile(Request $request)
     {
         $validator = Validator::make(request()->all(), [
@@ -302,8 +305,6 @@ class CitizenController extends Controller
             return $message;
         }
     }
-
-
 
     // Get Citizen By ID
     public function getCitizenByID($id)

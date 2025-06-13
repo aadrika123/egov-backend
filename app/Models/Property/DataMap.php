@@ -10,6 +10,10 @@ class DataMap extends Model
     use HasFactory;
     protected $guarded = [];
 
+    /**
+     * | Create a new DataMap instance.
+       | Reference Function : mapLevel1
+     */
     public function store($req)
     {
         $data = DataMap::create($req);

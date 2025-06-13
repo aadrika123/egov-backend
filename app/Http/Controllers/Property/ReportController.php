@@ -49,6 +49,7 @@ class ReportController extends Controller
     /**
      * | Get the collection report for a specific date range.
      * | Query Cost: 4401.87ms
+       | propSafCollection:1.1
      */
     public function collectionReport(Request $request)
     {
@@ -70,6 +71,7 @@ class ReportController extends Controller
     /**
      * | Get the SAF collection report for a specific date range.
      * | Query Cost: 7571.45ms
+       | propSafCollection:1.2
      */
     public function safCollection(Request $request)
     {
@@ -117,6 +119,7 @@ class ReportController extends Controller
 
     /**
      * | Get the level form details.
+       | userWiseLevelPending:1.1
      */
     public function levelformdetail(Request $request)
     {
@@ -152,6 +155,7 @@ class ReportController extends Controller
 
     /**
      * | Get the pending forms for a specific user and level.
+       | userWiseLevelPending:1
      */
     public function userWiseLevelPending(Request $request)
     {
@@ -469,6 +473,7 @@ class ReportController extends Controller
     /**
      * | GbSafCollection
      * | Get the GB SAF collection report for a specific date range.
+       | propSafCollection:1.3
      */
     public function gbSafCollection(Request $req)
     {
@@ -579,8 +584,9 @@ class ReportController extends Controller
     }
 
     /**
-     * |  Property, SAF and GBSAF Collection
+     * | Property, SAF and GBSAF Collection
      * | This method aggregates the collection data for properties, SAF, and GBSAF based on the request parameters.
+       | propSafCollection:1
      */
     public function propSafCollection(Request $request)
     {
@@ -1118,6 +1124,7 @@ class ReportController extends Controller
     // written by prity pandey
     /**
      * | Get the live dashboard update for a specific ULB.
+       | liveDashboardUpdate:1
      */
     public function liveDashboardUpdate(Request $request)
     {
@@ -1897,8 +1904,9 @@ class ReportController extends Controller
         return ("ok");
     }
 
-    /* 
-     * | Get the trade details.
+    /** 
+      * | Get the trade details.
+        | liveDashboardUpdate:1.1
      */
     public function tradedetails()
     {
@@ -2058,8 +2066,9 @@ class ReportController extends Controller
         return (object)$respons;
     }
 
-    /* 
+    /** 
      * | Get the water details.
+       | liveDashboardUpdate:1.2
      */
     public function waterdetails()
     {
@@ -2212,8 +2221,8 @@ class ReportController extends Controller
     }
 
 
-    /* 
-     * | Get the old holding details.
+    /** 
+      * | Get the old holding details.
      */
     public function oldHolding(Request $request)
     {

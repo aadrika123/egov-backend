@@ -61,6 +61,7 @@ class PropertyDeactivate implements IPropertyDeactivate
     }
     /**
      * | Searching the valide Property With New Holding No
+       | Common Function
      */
     public function readHoldigbyNo(Request $request)
     {
@@ -628,6 +629,7 @@ class PropertyDeactivate implements IPropertyDeactivate
 
     /**
      * | Get Property Details By Id
+       | Common Function
      */
     public function getPropertyById($id)
     {
@@ -658,6 +660,7 @@ class PropertyDeactivate implements IPropertyDeactivate
 
     /**
      * | Get Property Owner By Property Id
+       | Common Function
      */
     public function getPropOwnerByProId($propId)
     {
@@ -684,6 +687,7 @@ class PropertyDeactivate implements IPropertyDeactivate
 
     /**
      * | Read Document Path
+       | Common Function
      */
     public function readDocumentPath($path)
     {
