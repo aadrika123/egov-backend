@@ -23,6 +23,7 @@ class PropPenaltyrebate extends Model
 
     /**
      * | Get Penalty Rebates
+       | Common Function
      */
     public function getPropPenalRebateByTranId($tranId)
     {
@@ -33,6 +34,7 @@ class PropPenaltyrebate extends Model
 
     /**
      * | Post Rebate Penalties
+       | Common Function
      */
     public function postRebatePenalty($reqs)
     {

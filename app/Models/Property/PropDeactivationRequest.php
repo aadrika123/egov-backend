@@ -12,8 +12,9 @@ class PropDeactivationRequest extends Model
     public $timestamps = false;
 
 
-    /* 
+    /**
      * | Get Deactivation Application
+       | Reference Function : applicationsListByKey
      */
     public function getDeactivationApplication()
     {

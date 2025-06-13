@@ -11,6 +11,7 @@ class PropApartmentDtl extends Model
 
     /**
      * | Get Apartment List by Ward and ULB
+       | Reference Function : getAptList
      */
     public function apartmentList($req)
     {
@@ -24,6 +25,7 @@ class PropApartmentDtl extends Model
 
     /**
      * | Get Apartment Road Type by ApartmentId
+       | Reference Function : getAptRoadType()
      */
     public function getAptRoadTypeById($id, $ulbId)
     {

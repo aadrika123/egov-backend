@@ -12,6 +12,7 @@ class PropRazorpayPenalrebate extends Model
 
     /**
      * | Store New Penalty Rebates
+       | Common Function
      */
     public function store(array $req)
     {
@@ -20,6 +21,7 @@ class PropRazorpayPenalrebate extends Model
 
     /**
      * | Get Penalty Rebates by Request Id
+       | Common Function
      */
     public function getPenalRebatesByReqId($razorPayReqId)
     {

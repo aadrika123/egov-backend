@@ -13,6 +13,7 @@ class PropAdvance extends Model
 
     /**
      * | Store Function
+       | Common Function
      */
     public function store($req)
     {
@@ -21,6 +22,7 @@ class PropAdvance extends Model
 
     /**
      * | Get Property Advances and Adjust Amount
+       | Common Function
      */
     public function getPropAdvanceAdjustAmt($propId)
     {
@@ -52,6 +54,7 @@ class PropAdvance extends Model
 
     /**
      * | Get Cluster Advances and Adjust Amt
+       | Reference Function : getClusterHoldingDues
      */
     public function getClusterAdvanceAdjustAmt($clusterId)
     {
@@ -67,6 +70,7 @@ class PropAdvance extends Model
 
     /**
      * | Get Property Advance by ID
+       | Reference Function : deactivate()
      */
     public function deactivateAdvanceByTrId($tranId)
     {

@@ -13,6 +13,7 @@ class PropAdjustment extends Model
 
     /**
      * | Store new Adjustment
+       | Common Function
      */
     public function store($req)
     {
@@ -21,6 +22,7 @@ class PropAdjustment extends Model
 
     /**
      * | Get Adjustment by ID
+       | Reference Function : deactivate()
      */
     public function deactivateAdjustmentAmtByTrId($tranId)
     {

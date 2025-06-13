@@ -13,6 +13,7 @@ class PropDemand extends Model
 
     /**
      * | Create Demands
+       | Common Function
      */
     public function store($req)
     {
@@ -21,6 +22,7 @@ class PropDemand extends Model
 
     /**
      * | Get the Last Demand Date by Property Id
+       | Common Function
      */
     public function readLastDemandDateByPropId($propId)
     {
@@ -32,6 +34,7 @@ class PropDemand extends Model
 
     /**
      * | Get Property Dues Demand by Property Id
+       | Common Function
      */
     public function getDueDemandByPropId($propId)
     {
@@ -96,6 +99,7 @@ class PropDemand extends Model
 
     /**
      * | Get Property Dues Demand by Property Id
+       | Reference Function : getpropLatLong
      */
     public function getDueDemandByPropIdV2($propIds)
     {
@@ -134,6 +138,7 @@ class PropDemand extends Model
 
     /**
      * | Get Property Demand by Property ID
+       | Reference Function : deactivateHoldingDemands
      */
     public function getDemandByPropId($propId)
     {
@@ -158,6 +163,7 @@ class PropDemand extends Model
 
     /**
      * | Get Demands by Financial year
+       | Common Function
      */
     public function getDemandByFyear($fYear, $propId)
     {
@@ -172,6 +178,7 @@ class PropDemand extends Model
     /**
      * | Get Full Demands By Property ID
      * | Used in Generating Fam Receipt
+       | Common Function
      */
     public function getFullDemandsByPropId($propId)
     {
@@ -184,6 +191,7 @@ class PropDemand extends Model
 
     /**
      * | Get Paid Demand By PropId
+       | Common Function
      */
     public function getPaidDemandByPropId($propId)
     {
@@ -195,7 +203,10 @@ class PropDemand extends Model
         return $propDemand;
     }
 
-    // Get Saf First Demand
+    /**
+     * | Get Saf First Demand
+       | Common Function
+     */
     public function getFirstDemandByFyearPropId($propId, $fyear)
     {
         return PropDemand::where('property_id', $propId)
@@ -206,6 +217,7 @@ class PropDemand extends Model
 
     /**
      * Get Demand By Demand Id
+       | Common Function
      */
     public function getDemandById($id)
     {
@@ -215,6 +227,7 @@ class PropDemand extends Model
 
     /**
      * | Get Demands By Cluster Id
+       | Reference Function : clusterPayment
      */
     public function getDemandsByClusterId($clusterId)
     {
@@ -224,7 +237,8 @@ class PropDemand extends Model
     }
 
     /**
-     * | 
+     * | Get Ward Wise Holding
+       | Reference Function : wardWiseHoldingReport
      */
     public function wardWiseHolding($req)
     {
@@ -267,6 +281,7 @@ class PropDemand extends Model
 
     /**
      * | Save cluster Id in prop Demand
+       | Reference Function : saveHoldingInCluster
      */
     public function saveClusterInDemand($refPropId, $clusterId)
     {
@@ -278,6 +293,7 @@ class PropDemand extends Model
 
     /**
      * | Demand Deactivation
+       | Reference Function : deactivateHoldingDemands
      */
     public function deactivateDemand($propId)
     {
