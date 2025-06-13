@@ -520,7 +520,9 @@ class NewConnectionController extends Controller
     }
 
 
-  
+  /* 
+  * | Get Approved Water Applications
+  */
     public function approvedWaterApplications(Request $request)
     {
         try {

@@ -93,6 +93,7 @@ class PropertyController extends Controller
     /**
      * | Care taker property tag
      * | Tag a property to the caretaker (active citizen) based on holding number or PT number.
+       | caretakerPropertyTag:1
      */
     public function caretakerPropertyTag(Request $req)
     {
@@ -128,6 +129,7 @@ class PropertyController extends Controller
 
     /**
      * | Function if Property Exists
+       | caretakerPropertyTag:1.1
      */
     public function ifPropertyExists($propId, $activeCitizen)
     {
@@ -254,6 +256,7 @@ class PropertyController extends Controller
 
     /**
      * | Check if the property id exist in the workflow
+       | CheckProperty:1
      */
     public function CheckProperty(Request $req)
     {
@@ -371,12 +374,13 @@ class PropertyController extends Controller
 
             return responseMsgs(true, 'Data Checked', $msg, '011705', '01', responseTime(), 'Post', '');
         } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "", '011705', '01', responseTime(), 'Post', '');
+            return responseMsgs(false, $e->getMessage(), "", '011705', '01', responseTime(), 'Post', '');
         }
     }
 
     /**
      * | Check if th property is occupied 
+       | CheckProperty:1.1
      */
     public function checkOccupiedProperty($req)
     {
@@ -393,7 +397,8 @@ class PropertyController extends Controller
     /**
      * | Get the Property LatLong for Heat map
      * | Using wardId used in dashboard data 
-        | For MVP testing
+       | For MVP testing
+       | getpropLatLong:1
      */
     public function getpropLatLong(Request $req)
     {
@@ -459,11 +464,21 @@ class PropertyController extends Controller
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "011707", "01", responseTime(), "POST", $req->deviceId);
         }
     }
+
+    /**
+     * | Read the document path for the reference document
+       | getpropLatLong:1.1
+     */
     public function readRefDocumentPath($path)
     {
         $path = ("https://smartulb.co.in/RMCDMC/getImageLink.php?path=" . "/" . $path);                      // Static
         return $path;
     }
+
+    /**
+     * | Read the document path for the document
+       | getpropLatLong:1.2
+     */
     public function readDocumentPath($path)
     {
         $path = (config('app.url') . "/" . $path);
