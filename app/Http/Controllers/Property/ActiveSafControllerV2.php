@@ -165,6 +165,7 @@ class ActiveSafControllerV2 extends Controller
      * | Generate memo receipt
      * | Generates and returns memo receipt details including tax calculations and ULB info.
      * | Serial 03
+       | memoReceipt:1
      */
     public function memoReceipt(Request $req)
     {
@@ -254,6 +255,7 @@ class ActiveSafControllerV2 extends Controller
 
     /**
      * | Generate Tax Table
+       | memoReceipt:1
      */
     public function generateTaxTable($taxDetails)
     {
@@ -441,6 +443,8 @@ class ActiveSafControllerV2 extends Controller
     /**
      * | Cluster Demand for Saf
      * | Get cluster-wise SAF dues summary with penalty and rebate calculations.
+       | clusterSafPayment:1.1
+       | This is Also use as API
      */
     public function getClusterSafDues(Request $req, iSafRepository $iSafRepository)
     {
@@ -552,6 +556,7 @@ class ActiveSafControllerV2 extends Controller
     /**
      * | Cluster Payment
      * | Process cluster SAF payment and record transactions.
+       | clusterSafPayment:1
      */
     public function clusterSafPayment(ReqPayment $req, iSafRepository $iSafRepository)
     {
@@ -639,6 +644,7 @@ class ActiveSafControllerV2 extends Controller
 
     /**
      * | Edit Active Saf
+       | Currently no in use  | 13-06-2025
      */
     public function editActiveSaf(reqApplySaf $req)
     {

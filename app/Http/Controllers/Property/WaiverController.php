@@ -34,6 +34,7 @@ class WaiverController extends Controller
 
     /**
      * | For apply waiver application
+       | apply:1
      */
     public function apply(Request $request)
     {
@@ -91,8 +92,9 @@ class WaiverController extends Controller
         }
     }
 
-    /* 
-    * | Uploads document metadata for a workflow-linked property request
+    /** 
+     * | Uploads document metadata for a workflow-linked property request
+       | apply:1.1
     */
     public function saveDoc($request, $data)
     {
@@ -480,6 +482,7 @@ class WaiverController extends Controller
 
     /**
      * | Document Verify Reject
+       | docVerifyReject:1
      */
     public function docVerifyReject(Request $req)
     {
@@ -557,6 +560,7 @@ class WaiverController extends Controller
 
     /**
      * | Check if the Document is Fully Verified or Not (4.1)
+       | docVerifyReject:1.1
      */
     public function ifFullDocVerified($applicationId)
     {

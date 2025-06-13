@@ -357,9 +357,10 @@ class PropertyDetailsController extends Controller
     }
 
 
-    /* 
-    * | Fetch paginated property list filtered by various keys like holdingNo, ptn, 
-    * | ownerName, etc., with optional zone, ward, and legacy filters.
+    /** 
+     * | Fetch paginated property list filtered by various keys like holdingNo, ptn, 
+     * | ownerName, etc., with optional zone, ward, and legacy filters.
+       | This API is also connected with serApplication function(NoticeController)
     */
     public function propertyListByKey(Request $request)
     {
