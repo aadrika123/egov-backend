@@ -12,9 +12,10 @@ class PropTransaction extends Model
     use HasFactory;
     protected $guarded = [];
 
-    /***
+    /**
      * | @param id 
      * | @param key saf id or property id
+       | Common Function
      */
     public function getPropTransactions($id, $key)
     {
@@ -25,6 +26,7 @@ class PropTransaction extends Model
 
     /**
      * | Get PropTran By tranno property id
+       | Common Function
      */
     public function getPropByTranPropId($tranNo)
     {
@@ -44,6 +46,7 @@ class PropTransaction extends Model
     }
     /**
      * | Get PropTran By tranno property id
+       | Reference Function : propPaymentReceiptv1
      */
     public function getPropByTranPropIdv1($tranNo)
     {
@@ -66,6 +69,7 @@ class PropTransaction extends Model
 
     /**
      * | Get transaction detials with handling transaction status 
+       | Reference Function : generatePaymentReceipt
      */
     public function getPropByTranPropIdV2($tranNo)
     {
@@ -84,8 +88,9 @@ class PropTransaction extends Model
             ->where('prop_transactions.tran_no', $tranNo);
     }
 
-    /* 
-    * | getPropTrans as trait function on current object
+    /** 
+     * | getPropTrans as trait function on current object
+       | Common Function
     */
     public function getPropTransTrait()
     {
@@ -129,8 +134,9 @@ class PropTransaction extends Model
             ->get();
     }
 
-    /* 
-    * | Get Property Transaction by SAF Id
+    /** 
+     * | Get Property Transaction by SAF Id
+       | Reference Function : getTransactionBySafPropId
     */
     public function getPropTransBySafId($safId)
     {
@@ -140,8 +146,9 @@ class PropTransaction extends Model
             ->first();
     }
 
-    /* 
-    * | Get Property Transaction by Property ID
+    /**
+     * | Get Property Transaction by Property ID
+       | Reference Function : getTransactionBySafPropId
     */
     public function getPropTransByPropId($propId)
     {
@@ -180,6 +187,7 @@ class PropTransaction extends Model
 
     /**
      * | Property Transaction
+       | Reference Function : offlinePaymentHolding
      */
     public function postPropTransactions($req, $demands)
     {
@@ -208,6 +216,7 @@ class PropTransaction extends Model
 
     /**
      * | Property Cluster Demand
+       | Common Function
      */
     public function postClusterTransactions($req, $demands, $tranType = 'Property')
     {
@@ -236,6 +245,7 @@ class PropTransaction extends Model
 
     /**
      * | Post Saf Transaction
+       | Reference Function : offlinePaymentSaf
      */
     public function postSafTransaction($req, $demands)
     {
@@ -264,6 +274,7 @@ class PropTransaction extends Model
 
     /**
      * | public function Get Transaction Full Details by TranNo
+       | Reference Function : proUlbReceipt
      */
     public function getPropTransFullDtlsByTranNo($tranNo)
     {
@@ -295,6 +306,7 @@ class PropTransaction extends Model
 
     /**
      * | Cheque Dtl And Transaction Dtl
+       | Reference Function : searchTransaction
      */
     public function chequeTranDtl($ulbId)
     {
@@ -343,8 +355,9 @@ class PropTransaction extends Model
             ->groupBy(['users.id', 'users.user_name']);
     }
 
-    /* 
+    /** 
      * | Get Recent Property Payments
+       | Reference Function : propDashboardDtl
      */
     public function recentPayment($userId)
     {
@@ -368,8 +381,9 @@ class PropTransaction extends Model
             ->get();
     }
 
-    /* 
-    * | Get Property Transaction Details
+    /**
+     * | Get Property Transaction Details
+       | Reference Function : bulkReceipt
      */
     public function tranDtl($userId, $fromDate, $toDate)
     {
@@ -379,6 +393,7 @@ class PropTransaction extends Model
 
     /**
      * | Get Last Tranid by Prop or Saf Id
+       | Common Function
      */
     public function getLastTranByKeyId($key, $appId)
     {
@@ -390,6 +405,7 @@ class PropTransaction extends Model
 
     /**
      * | Store Transaction
+       | Common Function
      */
     public function storeTrans(array $req)
     {
@@ -400,6 +416,7 @@ class PropTransaction extends Model
     }
     /**
      * | Store Transaction
+       | Reference Function : paymentHolding
      */
     public function storeTransv1(array $req)
     {
@@ -411,6 +428,7 @@ class PropTransaction extends Model
 
     /**
      * | Get Property Transaction by Transaction No
+       | Reference Function : searchTransactionNo
      */
     public function getTransByTranNo($tranNo, $ulbId)
     {

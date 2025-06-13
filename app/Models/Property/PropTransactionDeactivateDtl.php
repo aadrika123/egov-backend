@@ -12,8 +12,9 @@ class PropTransactionDeactivateDtl extends Model
     protected $guarded = [];
     public $timestamps = false;
 
-    /* 
+    /** 
      * | Get Deactivated Transaction Details
+       | Reference Function : tranDeactivatedList
      */
     public function getDetails($fromDate, $uptoDate, $ulbId)
     {

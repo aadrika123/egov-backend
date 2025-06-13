@@ -12,6 +12,7 @@ class RefPropGbpropusagetype extends Model
 
     /**
      * | Get GB prop usage types
+       | Reference Function : masterSaf
      */
     public function getGbpropusagetypes()
     {

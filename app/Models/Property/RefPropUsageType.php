@@ -27,7 +27,8 @@ class RefPropUsageType extends Model
     }
 
     /**
-     * Get All Property Usage Types
+     * | Get All Property Usage Types
+       | Reference Function : read14Digit()
      */
     public function propAllUsageType()
     {

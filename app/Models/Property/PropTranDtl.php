@@ -10,7 +10,10 @@ class PropTranDtl extends Model
     use HasFactory;
     protected $guarded = [];
 
-    // Store Prop Tran Dtls
+    /** 
+     * | Store Prop Tran Dtls
+       | Common Function
+    */
     public function store(array $req)
     {
         PropTranDtl::create($req);
@@ -18,6 +21,7 @@ class PropTranDtl extends Model
 
     /**
      * | Get Tran Demands by TranId
+       | Reference Function : deactivate()
      */
     public function getTranDemandsByTranId($tranId)
     {
