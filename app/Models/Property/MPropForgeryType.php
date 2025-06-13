@@ -11,6 +11,7 @@ class MPropForgeryType extends Model
 
     /**
      * | Get Forgery Type by ID
+       | Reference Function : forgeryType()
      */
     public function forgeryType()
     {
@@ -24,6 +25,7 @@ class MPropForgeryType extends Model
 
     /**
      * | Get Forgery Type by ID
+       | Reference Function : createForgeryType
      */
     public function addForgeryType($req)
     {
@@ -34,6 +36,7 @@ class MPropForgeryType extends Model
 
     /**
      * | Update Forgery Type by ID
+       | Reference Function : updateForgeryType
      */
     public function updateForgeryType($req)
     {
@@ -46,6 +49,7 @@ class MPropForgeryType extends Model
 
     /**
      * | Get Forgery Type by ID
+       | Reference Function : ForgeryTypebyId
      */
     public function getById($req)
     {
@@ -61,6 +65,7 @@ class MPropForgeryType extends Model
 
     /**
      * | Get Forgery Type by ULB ID
+       | Reference Function : allForgeryTypelist
      */
     public function listForgeryType()
     {
@@ -76,6 +81,7 @@ class MPropForgeryType extends Model
 
     /**
      * | Delete Forgery Type by ID
+       | Reference Function : deleteForgeryType
      */
     public function deleteForgeryType($req)
     {

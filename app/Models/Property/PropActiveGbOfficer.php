@@ -15,6 +15,7 @@ class PropActiveGbOfficer extends Model
      * | Created By-Anshu Kumar
      * | Created for-13/03/2023 
      * | Model for The Officers Details for GB Saf
+       | Reference Function : applyGbSaf
      */
     public function store($req)
     {
@@ -23,6 +24,7 @@ class PropActiveGbOfficer extends Model
 
     /**
      * | Get Officer by SAF Id
+       | Common Function
      */
     public function getOfficerBySafId($safId)
     {

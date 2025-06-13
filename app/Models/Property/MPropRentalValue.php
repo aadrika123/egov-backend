@@ -12,6 +12,7 @@ class MPropRentalValue extends Model
 
     /**
      * | Get Rental Value by usage type
+       | Reference Function : MPropRentalValueById
      */
     public function getById($req)
     {
@@ -31,6 +32,7 @@ class MPropRentalValue extends Model
 
     /**
      * | Get Rental Value by usage type
+       | Reference Function : allMPropRentalValueList
      */
     public function listMPropRentalValue()
     {

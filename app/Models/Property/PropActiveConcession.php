@@ -14,6 +14,7 @@ class PropActiveConcession extends Model
 
     /**
      * | Get Concession Details
+       | Reference Function : getDetailsById
      */
     public function getDetailsById($id)
     {
@@ -41,6 +42,7 @@ class PropActiveConcession extends Model
 
     /**
      * | Get Concession by Id
+       | Reference Function : approvalRejection
      */
     public function getConcessionById($id)
     {
@@ -78,6 +80,7 @@ class PropActiveConcession extends Model
     /**
      * |-------------------------- details of all concession according id -----------------------------------------------
      * | @param request
+       | Reference Function : getUserDetails
      */
     public function allConcession($request)
     {
@@ -89,6 +92,7 @@ class PropActiveConcession extends Model
 
     /**
      * | Escalate Concession
+       | Reference Function : escalateApplication
      */
     public function escalate($req)
     {
@@ -111,6 +115,7 @@ class PropActiveConcession extends Model
 
     /**
      * | Get Concession No
+       | Common Function
      */
     public function getConcessionNo($conId)
     {
@@ -121,6 +126,7 @@ class PropActiveConcession extends Model
 
     /**
      * | today applied application
+       | Reference Function : propDashboard
      */
     public function todayAppliedApplications($userId)
     {
@@ -135,6 +141,7 @@ class PropActiveConcession extends Model
 
     /**
      * | REcent Applications for jsk
+       | Reference Function : propDashboardDtl
      */
 
     public function recentApplicationJsk($userId)
@@ -161,6 +168,7 @@ class PropActiveConcession extends Model
 
     /**
      * | Recent Application for all
+       | Reference Function : propDashboardDtl
      */ 
     public function recentApplication($workflowIds,$roleIds,$ulbId)
     {
@@ -188,6 +196,7 @@ class PropActiveConcession extends Model
     }
     /**
      * | Today Received Appklication
+       | Reference Function : propDashboard
      */
     public function todayReceivedApplication($currentRole, $ulbId)
     {
@@ -208,6 +217,7 @@ class PropActiveConcession extends Model
 
     /**
      * | Search Concessions
+       | Reference Function : applicationsListByKey
      */
     public function searchConcessions()
     {

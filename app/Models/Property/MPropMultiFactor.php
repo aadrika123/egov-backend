@@ -32,6 +32,7 @@ class MPropMultiFactor extends Model
 
     /**
      * | Get Multi Factor by ID
+       | Reference Function : MPropMultiFactorById
      */
     public function getById($req)
     {
@@ -49,6 +50,7 @@ class MPropMultiFactor extends Model
 
     /**
      * | Get Multi Factors
+       | Reference Function : allMPropMultiFactorList
      */
     public function listMPropMultiFactor()
     {

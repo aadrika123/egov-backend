@@ -15,7 +15,10 @@ class  PropActiveSaf extends Model
     use HasFactory;
 
     protected $guarded = [];
-    // Store
+    /** 
+     * | Store a new SAF record
+       | Reference Function : applySaf
+     */
     public function store($req)
     {
         $reqs = [
@@ -111,6 +114,7 @@ class  PropActiveSaf extends Model
 
     /**
      * | Store GB Saf
+       | Reference Function : applyGbSaf
      */
     public function storeGBSaf($req)
     {
@@ -124,7 +128,10 @@ class  PropActiveSaf extends Model
         ]);
     }
 
-    // Update
+    /** 
+     * | Update an existing SAF record
+       | Reference Function : editSaf
+     */
     public function edit($req)
     {
         $saf = PropActiveSaf::findOrFail($req->id);
@@ -165,7 +172,10 @@ class  PropActiveSaf extends Model
         return $saf->update($reqs);
     }
 
-    // Get Active SAF Details
+    /**
+     * | Get SAF Details by ID
+       | Common Function
+     */
     public function getActiveSafDtls()
     {
         return PropActiveSaf::on('pgsql::read')
@@ -209,6 +219,7 @@ class  PropActiveSaf extends Model
     /**
      * |-------------------------- safs list whose Holding are not craeted -----------------------------------------------|
      * | @var safDetails
+       | Reference Function : getListOfSaf
      */
     public function allNonHoldingSaf()
     {
@@ -226,8 +237,8 @@ class  PropActiveSaf extends Model
 
     /**
      * |-------------------------- Details of the Mutation accordind to ID -----------------------------------------------|
-     * | @param request
-     * | @var mutation
+     * | 
+       | Reference Function : getUserDetails
      */
     public function allMutation($request)
     {
@@ -240,8 +251,8 @@ class  PropActiveSaf extends Model
 
     /**
      * |-------------------------- Details of the ReAssisments according to ID  -----------------------------------------------|
-     * | @param request
-     * | @var reAssisment
+     * |
+       | Reference Function : getUserDetails
      */
     public function allReAssisment($request)
     {
@@ -254,7 +265,8 @@ class  PropActiveSaf extends Model
 
     /**
      * |-------------------------- Details of the NewAssisment according to ID  -----------------------------------------------|
-     * | @var safDetails
+     * | 
+       | Reference Function : getUserDetails
      */
     public function allNewAssisment($request)
     {
@@ -267,6 +279,7 @@ class  PropActiveSaf extends Model
 
     /**
      * |-------------------------- safId According to saf no -----------------------------------------------|
+       | Reference Function : saveWaterApplication
      */
     public function getSafId($safNo)
     {
@@ -333,7 +346,11 @@ class  PropActiveSaf extends Model
      * 
      */
 
-    // Get SAF No
+
+    /**
+     * | Get SAF No by ID
+       | Common Function
+     */
     public function getSafNo($safId)
     {
         return PropActiveSaf::select('*')
@@ -343,6 +360,7 @@ class  PropActiveSaf extends Model
 
     /**
      * | Enable Field Verification Status
+       | Common Function
      */
     public function verifyFieldStatus($safId)
     {
@@ -355,6 +373,7 @@ class  PropActiveSaf extends Model
 
     /**
      * | Enable Agency Field Verification Status
+       | Reference Function : siteVerification
      */
     public function verifyAgencyFieldStatus($safId)
     {
@@ -367,7 +386,8 @@ class  PropActiveSaf extends Model
 
     /**
      * | Get Saf Details by Saf No
-     * | @param SafNo
+     * | 
+       | Reference Function : getSafHoldingDetails
      */
     public function getSafDtlBySafUlbNo($safNo, $ulbId)
     {
@@ -413,7 +433,8 @@ class  PropActiveSaf extends Model
     }
 
     /**
-     * | Serch Saf 
+     * | Serch Saf Details By ULB ID
+       | Reference Function : getSafBySafNo
      */
     public function searchSafDtlsBySafNo($ulbId)
     {
@@ -439,6 +460,7 @@ class  PropActiveSaf extends Model
 
     /**
      * | Saerch collective saf
+       | Reference Function : saveSafInCluster
      */
     public function searchCollectiveSaf($safList)
     {
@@ -473,6 +495,7 @@ class  PropActiveSaf extends Model
 
     /**
      * | Get Saf Details
+       | Reference Function : getClusterById
      */
     public function safByCluster($clusterId)
     {
@@ -501,6 +524,7 @@ class  PropActiveSaf extends Model
 
     /**
      * | get Safs By Cluster Id
+       | Reference Function : getClusterSafDues
      */
     public function getSafsByClusterId($clusterId)
     {
@@ -511,6 +535,7 @@ class  PropActiveSaf extends Model
 
     /**
      * | Edit citizen safs
+       | Reference Function : editCitizenSaf
      */
     public function safEdit($req, $mPropActiveSaf, $citizenId)
     {
@@ -581,8 +606,8 @@ class  PropActiveSaf extends Model
 
     /**
      * | Recent Applications for jsk 
+       | Reference Function : propDashboardDtl
      */
-
     public function recentApplicationJsk($userId)
     {
         $data = PropActiveSaf::on('pgsql::read')
@@ -608,7 +633,8 @@ class  PropActiveSaf extends Model
     }
 
     /**
-     * | Recent Applications for citizen
+     * | Recent Applications for citizen 
+       | Reference Function : propDashboardDtl
      */
     public function recentApplication($workflowIds, $roleIds, $ulbId)
     {
@@ -640,7 +666,8 @@ class  PropActiveSaf extends Model
     }
 
     /**
-     * | Today Applied Applications
+     * | Today Applied Applications 
+       | Reference Function : propDashboard
      */
     public function todayAppliedApplications($userId)
     {
@@ -653,7 +680,8 @@ class  PropActiveSaf extends Model
     }
 
     /**
-     * | Today Received Appklication
+     * | Today Received Application
+       | Reference Function : propDashboard
      */
     public function todayReceivedApplication($currentRole, $ulbId)
     {
@@ -680,6 +708,7 @@ class  PropActiveSaf extends Model
 
     /**
      * | GB SAF Details
+       | Common Function
      */
     public function getGbSaf($workflowIds)
     {
@@ -744,6 +773,7 @@ class  PropActiveSaf extends Model
 
     /**
      * | Get citizen safs
+       | Reference Function : citizenHoldingSaf
      */
     public function getCitizenSafs($citizenId, $ulbId)
     {
@@ -805,6 +835,7 @@ class  PropActiveSaf extends Model
 
     /**
      * | Save Cluster in saf
+       | Reference Function : saveSafInCluster
      */
     public function saveClusterInSaf($safNoList, $clusterId)
     {
@@ -816,6 +847,7 @@ class  PropActiveSaf extends Model
 
     /**
      * | Search safs
+       | Reference Function : applicationsListByKey
      */
     public function searchSafs()
     {
@@ -852,6 +884,7 @@ class  PropActiveSaf extends Model
 
     /**
      * | Search Gb Saf
+       | Reference Function : applicationsListByKey
      */
     public function searchGbSafs()
     {
@@ -882,6 +915,7 @@ class  PropActiveSaf extends Model
 
     /**
      * | saf Basic Edit the water connection
+       | Reference Function : saveWaterConnInProperty
      */
     public function updateWaterConnection($safIds, $consumerNo)
     {
@@ -895,6 +929,7 @@ class  PropActiveSaf extends Model
 
     /**
      * |  Get SAF by Apartment ID
+       | Reference Function : getDocList
      */
     public function getSafByApartmentId($apartmentId)
     {
@@ -913,6 +948,7 @@ class  PropActiveSaf extends Model
     /**
      * | Get Appartment Details 
      * | @param 
+       | Reference Function : saveWaterConnInProperty
      */
     public function getActiveSafByApartmentId($apartmentId)
     {
@@ -923,6 +959,7 @@ class  PropActiveSaf extends Model
 
     /**
      * | Count Previous Holdings
+       | Reference Function : countSubHoldings
      */
     public function countPreviousHoldings($previousHoldingId)
     {
@@ -933,6 +970,7 @@ class  PropActiveSaf extends Model
 
     /**
      * | Get Query Active Saf by id
+       | Reference Function : readParams
      */
     public function getQuerySafById($applicationId)
     {
@@ -943,6 +981,7 @@ class  PropActiveSaf extends Model
 
     /**
      * | Get Property Details by SAF ID
+       | Reference Function : readParams
      */
     public function toBePropertyBySafId($safId)
     {

@@ -25,6 +25,7 @@ class MPropRoadType extends Model
 
     /**
      * | Get MPropRoadType By ID
+       | Reference Function : MPropRoadTypeById
      */
     public function getById($req)
     {
@@ -43,6 +44,7 @@ class MPropRoadType extends Model
 
     /**
      * | Get MPropRoadType
+       | Reference Function : allMPropRoadTypeList
      */
     public function listMPropRoadType()
     {

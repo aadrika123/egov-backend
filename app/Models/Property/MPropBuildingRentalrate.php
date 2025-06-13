@@ -23,6 +23,7 @@ class MPropBuildingRentalrate extends Model
 
     /**
      * | Get Rental Rate by ID
+       | Reference Function : MPropBuildingRentalRatesById
      */
     public function getById($req)
     {
@@ -41,6 +42,7 @@ class MPropBuildingRentalrate extends Model
 
     /**
      * | Get Rental Rate by Property Road Type ID
+       | Reference Function : allMPropBuildingRentalRatesList
      */
     public function listMPropBuildingRentRate()
     {
