@@ -12,6 +12,7 @@ class MPropVacantRentalrate extends Model
 
     /**
      * | Get MPropVacantRentalrate By ID
+       | Reference Function : MPropVacantRentalrateById
      */
     public function getById($req)
     {
@@ -30,6 +31,7 @@ class MPropVacantRentalrate extends Model
 
     /**
      * | Get MPropVacantRentalrate List
+       | Reference Function : allMPropVacantRentalrateList
      */
     public function listMPropVacantRetlRate()
     {

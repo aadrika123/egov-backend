@@ -10,8 +10,9 @@ class MPropBuildingRentalconst extends Model
     use HasFactory;
     //written by prity pandey
 
-    /* 
+    /** 
      * | Get MPropBuildingRentalconst By ID
+       | Reference Function : MPropBuildingRentalconstsById
      */
     public function getById($req)
     {
@@ -29,6 +30,7 @@ class MPropBuildingRentalconst extends Model
 
     /**
      * | Get MPropBuildingRentalconst By ULB ID
+       | Reference Function : allMPropBuildingRentalconstsList
      */
     public function listMPropBuildingRenConst()
     {

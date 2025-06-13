@@ -15,6 +15,7 @@ class PropActiveHarvesting extends Model
     /**
      * | Get Harvesting List
      * | function for the harvesting list according to ulb/user details
+       | Common Function
      */
     public function getHarvestingList($workflowIds)
     {
@@ -57,6 +58,7 @@ class PropActiveHarvesting extends Model
     /**
      * | Saves the Harvesting Details
      * | function to save the harvesting details
+       | Reference Function : waterHarvestingApplication
      */
     public function saves($request, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId,  $userId, $ulbId)
     {
@@ -78,6 +80,7 @@ class PropActiveHarvesting extends Model
 
     /**
      * | Get Harvesting Details By Id
+       | Common Function
      */
     public function getDetailsById($id)
     {
@@ -144,6 +147,7 @@ class PropActiveHarvesting extends Model
 
     /**
      * | Get Harvesting No By Id
+       | Common Function
      */
     public function getHarvestingNo($appId)
     {
@@ -154,6 +158,7 @@ class PropActiveHarvesting extends Model
 
     /**
      * | Enable Field Verification Status
+       | Reference Function : siteVerification
      */
     public function verifyFieldStatus($applicationId)
     {
@@ -166,6 +171,7 @@ class PropActiveHarvesting extends Model
 
     /**
      * | today applied application
+       | Reference Function : propDashboard
      */
     public function todayAppliedApplications($userId)
     {
@@ -180,6 +186,7 @@ class PropActiveHarvesting extends Model
 
     /**
      * | Recent Applications for jsk
+       | Reference Function : propDashboardDtl
      */
     public function recentApplicationJsk($userId)
     {
@@ -209,6 +216,7 @@ class PropActiveHarvesting extends Model
 
     /**
      * | Recent Application for all
+       | Reference Function : propDashboardDtl
      */
     public function recentApplication($workflowIds,$roleId,$ulbId)
     {
@@ -241,6 +249,7 @@ class PropActiveHarvesting extends Model
 
     /**
      * | Today Received Appklication
+       | Reference Function : propDashboard
      */
     public function todayReceivedApplication($currentRole, $ulbId)
     {
@@ -261,6 +270,7 @@ class PropActiveHarvesting extends Model
 
     /**
      * | Search Harvesting Applications
+       | Reference Function : applicationsListByKey
      */
     public function searchHarvesting()
     {
