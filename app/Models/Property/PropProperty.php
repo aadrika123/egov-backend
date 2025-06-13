@@ -24,7 +24,11 @@ class PropProperty extends Model
             ->get();
     }
 
-    // get Prpoperty id
+
+    /**
+     * | Get Property Id by Holding No
+       | Common Function
+     */
     public function getPropertyId($holdingNo)
     {
         return PropProperty::where('holding_no', $holdingNo)
@@ -33,7 +37,10 @@ class PropProperty extends Model
             ->first();
     }
 
-    // Get Property by propID
+    /**
+     * | Get Property by propID
+       | Common Function
+     */
     public function getPropById($id)
     {
         return PropProperty::where('id', $id)
@@ -41,7 +48,10 @@ class PropProperty extends Model
             ->first();
     }
 
-    // Get SAf id by Prop Id
+    /**
+     * | Get Saf Id by Prop Id
+       | Reference Function : propPaymentHistory
+     */
     public function getSafByPropId($propId)
     {
         return PropProperty::on('pgsql::read')
@@ -50,7 +60,10 @@ class PropProperty extends Model
             ->first();
     }
 
-    // Get SAf Id by Holding No
+    /**
+     * | Get Saf Id by Holding No
+       | Reference Function : adjustDemand()
+     */
     public function getSafIdByHoldingNo($holdingNo)
     {
         return PropProperty::select('saf_id', 'id')
@@ -61,6 +74,7 @@ class PropProperty extends Model
 
     /**
      * | Get Property Details
+       | Common Function
      */
     public function getPropDtls()
     {
@@ -90,6 +104,7 @@ class PropProperty extends Model
 
     /**
      * | Get Property Basic Dtls
+       | Common Function
      */
     public function getPropBasicDtls($propId)
     {
@@ -110,6 +125,7 @@ class PropProperty extends Model
     /**
      * | Get Property Full Details
      * | Used for Calculation Parameter
+       | Reference Function : generateHoldingDemand
      */
     public function getPropFullDtls($propId)
     {
@@ -143,6 +159,7 @@ class PropProperty extends Model
 
     /**
      * | Get Proprty Details By Holding No
+       | Common Function
      */
     public function getPropByHolding($holdingNo, $ulbId)
     {
@@ -223,6 +240,7 @@ class PropProperty extends Model
 
     /**
      * | Search holding
+       | Reference Function : detailsByHolding
      */
     public function searchHolding($ulbId)
     {
@@ -246,6 +264,7 @@ class PropProperty extends Model
 
     /**
      * | Search prop Details by Cluster Id
+       | Reference Function : getClusterById
      */
     public function searchPropByCluster($clusterId)
     {
@@ -273,6 +292,7 @@ class PropProperty extends Model
 
     /**
      * | Collective holding search
+       | Common Function
      */
     public function searchCollectiveHolding($holdingArray)
     {
@@ -282,6 +302,7 @@ class PropProperty extends Model
     }
     /**
      * | holding search
+       | Reference Function : checkAmalgamationProperty
      */
     public function searchByHoldingNo($holdingNo)
     {
@@ -293,6 +314,7 @@ class PropProperty extends Model
     /**
      * | Get Property id by saf id
      * | Function Used On Approval Rejection Saf
+       | Common Function
      */
     public function getPropIdBySafId($safId)
     {
@@ -304,6 +326,7 @@ class PropProperty extends Model
 
     /**
      * | Get Property By Saf id
+       | Reference Function : updateSafTbl()
      */
     public function readPropBySafId($safId)
     {
@@ -347,6 +370,7 @@ class PropProperty extends Model
 
     /**
      * | Request made to save or replicate property
+       | Reference Function : editPropBySaf
      */
     public function reqProp($req)
     {
@@ -430,6 +454,7 @@ class PropProperty extends Model
      * | Edit Property By Saf
      * | Used To Edit Prop Dtls While Reassessment and Mutation Case
      * | Functions Used replicateSaf()
+       | Common Function
      */
     public function editPropBySaf($propId, $safDtls)
     {
@@ -440,6 +465,7 @@ class PropProperty extends Model
 
     /**
      * | verify holding No
+       | Reference Function : verifyHoldingNo
      */
     public function verifyHolding($req)
     {
@@ -451,6 +477,7 @@ class PropProperty extends Model
 
     /**
      * | Get Comparative Demand Details
+       | Reference Function : comparativeDemand
      */
     public function getComparativeBasicDtls($propId)
     {
@@ -497,6 +524,7 @@ class PropProperty extends Model
 
     /**
      * | Get citizen holdings
+       | Reference Function : citizenHoldingSaf
      */
     public function getCitizenHoldings($citizenId, $ulbId)
     {
@@ -510,6 +538,7 @@ class PropProperty extends Model
 
     /**
      * | Get citizen Ptn
+       | Reference Function : citizenHoldingSaf
      */
     public function getCitizenPtn($citizenId, $ulbId)
     {
@@ -523,6 +552,7 @@ class PropProperty extends Model
 
     /**
      * | Get Properties By Cluster Id
+       | Reference Function : getClusterHoldingDues
      */
     public function getPropsByClusterId($clusterId)
     {
@@ -533,6 +563,7 @@ class PropProperty extends Model
 
     /**
      * | Property Basic Edit
+       | Reference Function : basicPropertyEdit
      */
     public function editProp($propId, $propDtl)
     {
@@ -556,6 +587,7 @@ class PropProperty extends Model
 
     /**
      * | Save Cluster in property
+       | Reference Function : saveHoldingInCluster
      */
     public function saveClusterInProperty($holdingList, $clusterId)
     {
@@ -576,6 +608,7 @@ class PropProperty extends Model
 
     /**
      * | Search Property
+       | Reference Function : propertyListByKey
      */
     public function searchProperty($ulbId)
     {
@@ -612,6 +645,7 @@ class PropProperty extends Model
 
     /**
      * | Property Basic Edit the water connection
+       | Reference Function : saveWaterConnInProperty
      */
     public function updateWaterConnection($propIds, $consumerNo)
     {
@@ -625,6 +659,7 @@ class PropProperty extends Model
 
     /**
      * | deactivate holding by ids
+       | Reference Function : deactivatePreviousHoldings
      */
     public function deactivateHoldingByIds($propertyIds)
     {
@@ -635,6 +670,7 @@ class PropProperty extends Model
     }
     /**
      * | deactivate holding by ids
+       | Common Function
      */
     public function activateNewHoldingByIds($propertyIds)
     {
@@ -646,6 +682,7 @@ class PropProperty extends Model
 
     /**
      * | Get property details under the respective appartment id
+       | Reference Function : getAppartmentDetails
      */
     public function getPropByApartmentId($apartmentId)
     {
@@ -663,6 +700,7 @@ class PropProperty extends Model
 
     /**
      * | Get property list by apartmentid
+       | Reference Function : saveWaterConnInProperty
      */
     public function getPropertyByApartmentId($apartmentId)
     {
@@ -675,6 +713,7 @@ class PropProperty extends Model
 
     /**
      * | Search with holding No for first owner
+       | Reference Function : searchHolding
      */
     public function searchHoldingNo($ulbId)
     {
@@ -696,6 +735,7 @@ class PropProperty extends Model
     }
     /**
      * | Get Property id by Ptn or HoldingNo
+       | Common Function
      */
     public function getPropByPtnOrHolding($refrenceNo)
     {
@@ -710,6 +750,7 @@ class PropProperty extends Model
 
     /**
      * | Get details according to ward for heat map
+       | Reference Function : getpropLatLong
      */
     public function getPropLatlong($wardId, $ulbId)
     {
@@ -746,6 +787,7 @@ class PropProperty extends Model
 
     /**
      * | get New Holding
+       | Reference Function : citizenHoldingSaf
      */
     public function getNewholding($propertyId)
     {
@@ -758,6 +800,7 @@ class PropProperty extends Model
 
     /**
      * | get New Holding
+       | Reference Function : citizenHoldingSaf
      */
     public function getPtn($propertyId)
     {
@@ -770,6 +813,7 @@ class PropProperty extends Model
 
     /**
      * | get New Holding
+       | Common Function
      */
     public function getMultipleProperty($propertyId)
     {
@@ -868,6 +912,7 @@ class PropProperty extends Model
     /** 
      * | get owner details of property
      * | created by: Alok 
+       | Reference Function : getOwnerDetailsInfo
      */
     public static function getOwnerDetails($parameter)
     {
@@ -894,6 +939,7 @@ class PropProperty extends Model
 
     /**
      * | Activate New Holdings
+       | Reference Function : approvalRejectionSaf
      */
     public function activateNewHoldings($safDetails)
     {

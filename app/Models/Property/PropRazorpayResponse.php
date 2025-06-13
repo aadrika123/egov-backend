@@ -10,7 +10,10 @@ class PropRazorpayResponse extends Model
     use HasFactory;
     protected $guarded = [];
 
-    // Save Razorpay Response
+    /**
+     * | Store New Razorpay Response
+       | Common Function
+     */
     public function store(array $req)
     {
         PropRazorpayResponse::create($req);

@@ -32,7 +32,10 @@ class PropOwner extends Model
             ->first();
     }
 
-    // Get Owners by Property Id
+    /**
+     * | Get Owners by Property Id
+       | Common Function
+     */
     public function getOwnersByPropId($propertyId)
     {
         return DB::table('prop_owners')
@@ -44,6 +47,7 @@ class PropOwner extends Model
 
     /**
      * | Get The Owner by Property Id
+       | Common Function
      */
     public function getOwnerByPropId($propId)
     {
@@ -65,6 +69,7 @@ class PropOwner extends Model
 
     /**
      * | Get The first Owner by Property Id
+       | Reference Function : getStaticSafDetails
      */
     public function getOwnerByPropIds($propIds)
     {
@@ -77,6 +82,7 @@ class PropOwner extends Model
 
     /**
      * | 1st owner by property Id
+       | Common Function
      */
     public function getfirstOwner($propertyId)
     {
@@ -91,6 +97,7 @@ class PropOwner extends Model
 
     /**
      * | Get Owner Details by Property Owner Id
+       | Reference Function : replicateSaf
      */
     public function getOwnerByPropOwnerId($propOwnerId)
     {
@@ -111,6 +118,7 @@ class PropOwner extends Model
 
     /**
      * | Request for Post Owner Details or Edit
+       | Common Function
      */
     public function reqOwner($req)
     {
@@ -145,6 +153,7 @@ class PropOwner extends Model
 
     /**
      * | Post New Owner
+       | Common Function
      */
     public function postOwner($safOwner)
     {
@@ -155,6 +164,7 @@ class PropOwner extends Model
 
     /**
      * | Edit Prop Owner
+       | Reference Function : basicPropertyEdit
      */
     public function editPropOwner($safOwner)
     {
@@ -173,6 +183,7 @@ class PropOwner extends Model
 
     /**
      * | 1st owner by property Id
+       | Common Function
      */
     public function firstOwner($propertyId)
     {

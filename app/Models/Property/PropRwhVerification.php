@@ -24,6 +24,7 @@ class PropRwhVerification extends Model
 
     /**
      * | Get RWH Verifications Data by Application ID
+       | Reference Function : getTcVerifications
      */
     public function getVerificationsData($applicationId)
     {
@@ -40,6 +41,7 @@ class PropRwhVerification extends Model
 
     /**
      * | Store RWH Verification Data
+       | Reference Function : siteVerification
      */
     public function store($req)
     {

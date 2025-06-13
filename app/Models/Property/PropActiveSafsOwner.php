@@ -14,6 +14,7 @@ class PropActiveSafsOwner extends Model
 
     /**
      * | Update Owner Basic Details
+       | Common Function
      */
     public function edit($req)
     {
@@ -36,6 +37,7 @@ class PropActiveSafsOwner extends Model
     /**
      * | Get Owners by SAF Id
      * | read / write
+       | Common Function
      */
     public function getOwnersBySafId($safId)
     {
@@ -49,6 +51,7 @@ class PropActiveSafsOwner extends Model
 
     /**
      * | Get Owner Dtls by Saf Id
+       | Common Function
      */
     public function getOwnerDtlsBySafId($safId)
     {
@@ -67,8 +70,9 @@ class PropActiveSafsOwner extends Model
             ->get();
     }
 
-    /***
+    /**
      * | Get First Saf Owner By SafId
+       | Reference Function : readOwnerDetails()
      */
     public function getOwnerDtlsBySafId1($safId)
     {
@@ -123,6 +127,7 @@ class PropActiveSafsOwner extends Model
 
     /**
      * | Add Owner
+       | Common Function
      */
     public function addOwner($req, $safId, $citizenId)
     {
@@ -165,6 +170,7 @@ class PropActiveSafsOwner extends Model
 
     /**
      * | Get Query Saf Owners by Saf id
+       | Reference Function : readParams()
      */
     public function getQueSafOwnersBySafId($applicationId)
     {
