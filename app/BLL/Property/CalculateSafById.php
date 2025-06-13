@@ -156,8 +156,8 @@ class CalculateSafById
         if ($this->_safDetails['prop_type_mstr_id'] != 4) {
             $floors = $this->_mPropActiveSafFloors->getSafFloorsBySafId($this->_safId);
 
-            if (in_array($this->_safDetails['assessment_type'], ['Bifurcation', 'Amalgamation']))
-                $floors = collect($floors)->whereNull('prop_floor_details_id');
+            // if (in_array($this->_safDetails['assessment_type'], ['Bifurcation', 'Amalgamation']))
+            //     $floors = collect($floors)->whereNull('prop_floor_details_id');                      // arshad check for anil sir not understand why this condition is here
 
             foreach ($floors as $floor) {
                 $floorReq = [
@@ -299,8 +299,20 @@ class CalculateSafById
         $collection = $this->_calculatedDemand['details'];
         $filtered = collect($collection)->map(function ($value) {
             return collect($value)->only([
-                'qtr', 'holdingTax', 'waterTax', 'educationTax',
-                'healthTax', 'latrineTax', 'quarterYear', 'dueDate', 'totalTax', 'arv', 'rwhPenalty', 'onePercPenalty', 'onePercPenaltyTax', 'ruleSet'
+                'qtr',
+                'holdingTax',
+                'waterTax',
+                'educationTax',
+                'healthTax',
+                'latrineTax',
+                'quarterYear',
+                'dueDate',
+                'totalTax',
+                'arv',
+                'rwhPenalty',
+                'onePercPenalty',
+                'onePercPenaltyTax',
+                'ruleSet'
             ]);
         });
 
