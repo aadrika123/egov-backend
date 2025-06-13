@@ -10,7 +10,10 @@ class RefPropObjectionType extends Model
 {
     use HasFactory;
 
-    //objection type master data
+    /** 
+     * | objection type master data
+       | Reference Function : objectionType()
+    */
     public function objectionType()
     {
         $objectionType = RefPropObjectionType::on('pgsql::read')->where('status', 1)

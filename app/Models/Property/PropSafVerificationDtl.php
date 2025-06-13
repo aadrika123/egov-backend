@@ -17,7 +17,10 @@ class PropSafVerificationDtl extends Model
         return PropSafVerificationDtl::where('verification_id', $verificationId)->get();
     }
 
-    // Get Full Verification Details
+    /** 
+     * | Get Full Verification Details
+       | Common Function
+    */
     public function getFullVerificationDtls($verifyId)
     {
         return DB::connection('pgsql::read')
@@ -57,6 +60,7 @@ class PropSafVerificationDtl extends Model
 
     /**
      * | Deactivate Verifications
+       | Common Function
      */
     public function deactivateVerifications($safId)
     {
@@ -71,6 +75,7 @@ class PropSafVerificationDtl extends Model
 
     /**
      * | Store Verification Details
+       | Common Function
      */
     public function store($req)
     {

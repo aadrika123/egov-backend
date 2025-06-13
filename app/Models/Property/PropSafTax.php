@@ -12,6 +12,7 @@ class PropSafTax extends Model
 
     /**
      * | Read Saf Taxes by SafId
+       | Common Function
      */
     public function getSafTaxesBySafId($safId)
     {
@@ -23,6 +24,7 @@ class PropSafTax extends Model
 
     /**
      * | Post Taxes
+       | Reference Function : postSafTaxes
      */
     public function postTaxes(array $tax)
     {
@@ -31,6 +33,7 @@ class PropSafTax extends Model
 
     /**
      * | Deactivate Saf 
+       | Reference Function : postSafTaxes
      */
     public function deactivateTaxes($safId)
     {

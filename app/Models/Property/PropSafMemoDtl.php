@@ -13,6 +13,7 @@ class PropSafMemoDtl extends Model
 
     /**
      * | Post SAF Memo Dtls
+       | Common Function
      */
     public function postSafMemoDtls($req)
     {
@@ -35,6 +36,7 @@ class PropSafMemoDtl extends Model
 
     /**
      * | Get memo list by Safid
+       | Common Function
      */
     public function memoLists($safId)
     {
@@ -64,6 +66,7 @@ class PropSafMemoDtl extends Model
 
     /**
      * | Memo Details by memo id
+       | Reference Function : memoReceipt
      */
     public function getMemoDtlsByMemoId($memoId)
     {
@@ -95,6 +98,7 @@ class PropSafMemoDtl extends Model
 
     /**
      * | Memo Details by memo id
+       | Reference Function : memoReceipt
      */
     public function getPropMemoDtlsByMemoId($memoId)
     {

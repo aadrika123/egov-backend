@@ -11,8 +11,9 @@ class PropSafVerification extends Model
     use HasFactory;
     protected $guarded = [];
 
-    /* 
-    * | This method retrieves the verification details for a specific SAF ID.
+    /** 
+     * | This method retrieves the verification details for a specific SAF ID.
+       | Common Function
     */
     public function getVerificationsData($safId)
     {
@@ -66,7 +67,10 @@ class PropSafVerification extends Model
             ->first();
     }
 
-    // Store 
+    /** 
+     * | Store data in prop_saf_verification table
+       | Common Function
+    */
     public function store($req)
     {
         $metaReqs = [
@@ -101,6 +105,7 @@ class PropSafVerification extends Model
 
     /**
      * | Deactivate Verifications
+       | Common Function
      */
     public function deactivateVerifications($safId)
     {
@@ -115,6 +120,7 @@ class PropSafVerification extends Model
 
     /**
      * | Get Ulb Field Verification by SafId
+       | Common Function
      */
     public function getVerificationsBySafId($safId)
     {
@@ -126,6 +132,7 @@ class PropSafVerification extends Model
 
     /**
      * | Get Verifications
+       | Common Function
      */
     public function getVerifications($safId)
     {
@@ -133,8 +140,9 @@ class PropSafVerification extends Model
         return DB::connection('pgsql::read')->select($query);
     }
 
-    /* 
-    * | Get Verifications
+    /**
+     * | Get Verifications
+       | Reference Function : readParams()
     */
     public function getVerifications2($safId)
     {

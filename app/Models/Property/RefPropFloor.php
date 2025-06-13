@@ -12,6 +12,7 @@ class RefPropFloor extends Model
 
     /**
      * | Get All Property Types
+       | Reference Function : masterSaf
      */
     public function getPropTypes()
     {

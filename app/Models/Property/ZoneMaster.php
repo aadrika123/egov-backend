@@ -10,7 +10,8 @@ class ZoneMaster extends Model
     use HasFactory;
 
     /**
-     * The table associated with the model.
+     * | The table associated with the model.
+       | Common Function
      */
     public function getZone($ulbId)
     {

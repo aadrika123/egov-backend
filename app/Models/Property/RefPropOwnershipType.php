@@ -12,6 +12,7 @@ class RefPropOwnershipType extends Model
 
     /**
      * | Get Property Ownership Types
+       | Reference Function : masterSaf
      */
     public function getPropOwnerTypes()
     {
