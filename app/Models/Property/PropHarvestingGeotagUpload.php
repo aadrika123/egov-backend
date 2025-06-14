@@ -12,6 +12,7 @@ class PropHarvestingGeotagUpload extends Model
 
     /**
      * | Get the latest geotag upload for a specific application ID
+       | Reference Function : siteVerification
      */
     public function add($req)
     {
@@ -20,6 +21,7 @@ class PropHarvestingGeotagUpload extends Model
 
     /**
      * | Get the latest geotag upload for a specific application ID
+       | Common Function
      */
     public function getLatLong($applicationId)
     {

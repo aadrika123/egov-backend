@@ -13,6 +13,7 @@ class PropGbofficer extends Model
     /**
      * | Get Officer by officer Id
      * | function used in replicate saf function
+       | Reference Function : replicateSaf
      */
     public function getPropOfficerByOfficerId($officerId)
     {
@@ -22,6 +23,7 @@ class PropGbofficer extends Model
 
     /**
      * | Edit Owner
+       | Reference Function : replicateSaf
      */
     public function editOfficer($safOfficer)
     {
@@ -32,6 +34,7 @@ class PropGbofficer extends Model
 
     /**
      * | Post New Owner
+       | Reference Function : replicateSaf
      */
     public function postOfficer($safOfficer)
     {
@@ -42,6 +45,7 @@ class PropGbofficer extends Model
 
     /**
      * | Request for Post Owner Details or Edit
+       | Common Function
      */
     public function reqOfficer($req)
     {

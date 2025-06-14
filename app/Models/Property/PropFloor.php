@@ -13,6 +13,7 @@ class PropFloor extends Model
 
     /**
      * | Get Property Floors
+       | Common Function
      */
     public function getPropFloors($propertyId)
     {
@@ -37,6 +38,7 @@ class PropFloor extends Model
     /**
      * | Used for Calculation Parameter
      * | Get Property Details
+       | Common Function
      */
     public function getFloorsByPropId($propertyId)
     {
@@ -47,6 +49,7 @@ class PropFloor extends Model
 
     /**
      * | Deactivate Floors By Prop ID
+       | Reference Function : finalApprovalSafReplica
      */
     public function deactivateFloorsByPropId($propId)
     {
@@ -59,6 +62,7 @@ class PropFloor extends Model
 
     /**
      * | Get occupancy type according to holding id
+       | Reference Function : getSafHoldingDetails
      */
     public function getOccupancyType($propertyId, $refTenanted)
     {
@@ -81,6 +85,7 @@ class PropFloor extends Model
 
     /**
      * | Get usage type according to holding
+       | Reference Function : getPropUsageType
      */
     public function getPropUsageCatagory($propertyId)
     {
@@ -106,6 +111,7 @@ class PropFloor extends Model
 
     /**
      * | Get Floor by Saf Floor Id
+       | Reference Function : replicateSaf
      */
     public function getFloorBySafFloorId($safId, $safFloorId)
     {
@@ -114,8 +120,9 @@ class PropFloor extends Model
             ->first();
     }
 
-    /***
+    /**
      * | Get Floor By Floor Id
+       | Common Function
      */
     public function getFloorByFloorId($floorId)
     {
@@ -124,6 +131,7 @@ class PropFloor extends Model
 
     /**
      * | Meta Floor Requests
+       | Common Function
      */
     public function metaFloorReqs($req)
     {
@@ -145,6 +153,7 @@ class PropFloor extends Model
 
     /**
      * | Edit Existing Floor
+       | Common Function
      */
     public function editFloor($floor, $req)
     {
@@ -154,6 +163,7 @@ class PropFloor extends Model
 
     /**
      * | Add new Floor
+       | Common Function
      */
     public function postFloor($req)
     {
@@ -163,6 +173,7 @@ class PropFloor extends Model
 
     /**
      * |get flloor by floor mstr id
+       | Reference Function : getDetailsById
      */
     public function getFloorByFloorMstrId($floorId)
     {
@@ -177,6 +188,7 @@ class PropFloor extends Model
 
     /**
      * | Get Appartment Floor
+       | Common Function
      */
     public function getAppartmentFloor($propIds)
     {

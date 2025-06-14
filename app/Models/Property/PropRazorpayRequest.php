@@ -10,7 +10,10 @@ class PropRazorpayRequest extends Model
     use HasFactory;
     protected $guarded = [];
 
-    // Store 
+    /**
+     * | Store New Razorpay Request
+       | Common Function
+    */ 
     public function store($req)
     {
         $stored = PropRazorpayRequest::create($req);
@@ -21,6 +24,7 @@ class PropRazorpayRequest extends Model
 
     /**
      * | Get Razor pay request by order id and saf id
+       | Common Function
      */
     public function getRazorPayRequests($req)
     {
@@ -31,6 +35,7 @@ class PropRazorpayRequest extends Model
     }
     /**
      * | Get Razor pay request by order id and saf id
+       | Reference Function : collectWebhookDetailsv1
      */
     public function getRazorPayRequestsv1($req)
     {

@@ -12,6 +12,7 @@ class PropChequeDtl extends Model
 
     /**
      * | Post Cheque Details
+       | Common Function
      */
     public function postChequeDtl($req)
     {
@@ -21,6 +22,7 @@ class PropChequeDtl extends Model
 
     /**
      * | Get Cheque Details by ID
+       | Reference Function : chequeDtlById
      */
     public function chequeDtlById($request)
     {

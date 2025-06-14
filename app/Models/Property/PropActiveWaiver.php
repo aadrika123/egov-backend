@@ -10,8 +10,9 @@ class PropActiveWaiver extends Model
 {
     use HasFactory;
 
-    /* 
-    * | Add Waiver
+    /** 
+     * | Add Waiver
+       | Reference Function : apply
     */
     public function addWaiver($request)
     {
@@ -46,6 +47,7 @@ class PropActiveWaiver extends Model
 
     /**
      * | Get Waiver Details by Id
+       | Common Function
      */
     public function waiverList()
     {

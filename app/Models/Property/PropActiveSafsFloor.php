@@ -15,6 +15,7 @@ class PropActiveSafsFloor extends Model
 
     /**
      * | Get Safs Floors By Saf Id
+       | Common Function
      */
     public function getSafFloorsBySafId($safId)
     {
@@ -25,6 +26,7 @@ class PropActiveSafsFloor extends Model
 
     /**
      * | Get Saf Floor Details by SAF id
+       | Common Function
      */
     public function getFloorsBySafId($safId)
     {
@@ -47,6 +49,7 @@ class PropActiveSafsFloor extends Model
 
     /**
      * | Get occupancy type according to Saf id
+       | Reference Function : getSafHoldingDetails
      */
     public function getOccupancyType($safId, $refTenanted)
     {
@@ -68,6 +71,7 @@ class PropActiveSafsFloor extends Model
 
     /**
      * | Get usage type according to Saf NO
+       | Reference Function : getPropUsageType
      */
     public function getSafUsageCatagory($safId)
     {
@@ -83,6 +87,7 @@ class PropActiveSafsFloor extends Model
 
     /**
      * | Floor Edit
+       | Reference Function : editCitizenSaf
      */
     public function editFloor($req, $citizenId)
     {
@@ -111,6 +116,7 @@ class PropActiveSafsFloor extends Model
 
     /**
      * | Add Saf Floor
+       | Common Function
      */
     public function addfloor($req, $safId, $userId, $assessmentType, $biDateOfPurchase = null)
     {
@@ -143,6 +149,7 @@ class PropActiveSafsFloor extends Model
 
     /**
      * | Get Saf Appartment Floor
+       | Reference Function : getAppartmentDetails
      */
     public function getSafAppartmentFloor($safIds)
     {
@@ -155,6 +162,7 @@ class PropActiveSafsFloor extends Model
 
      /**
      * | Get Saf floors by Saf Id
+       | Reference Function : readParams()
      */
     public function getQSafFloorsBySafId($applicationId)
     {
@@ -166,6 +174,7 @@ class PropActiveSafsFloor extends Model
 
     /**
      * | Get Saf Floors as Field Vrf Dtl
+       | Reference Function : readParams()
      */    
     public function getSafFloorsAsFieldVrfDtl($safId)
     {

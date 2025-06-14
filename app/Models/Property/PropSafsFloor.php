@@ -13,6 +13,7 @@ class PropSafsFloor extends Model
 
     /**
      * | Get Safs Floors By Saf Id
+       | Reference Function : generateFloorCalcReq()
      */
     public function getSafFloorsBySafId($safId)
     {
@@ -23,6 +24,7 @@ class PropSafsFloor extends Model
 
     /**
      * | Get Saf Floors
+       | Common Function
      */
     public function getFloorsBySafId($safId)
     {

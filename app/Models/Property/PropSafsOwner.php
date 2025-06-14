@@ -12,6 +12,7 @@ class PropSafsOwner extends Model
 
     /**
      * | Get Owner by Saf No
+       | Reference Function : readOwnerDetails()
      */
     public function getOwnerDtlsBySafId1($safId)
     {
@@ -29,8 +30,9 @@ class PropSafsOwner extends Model
             ->first();
     }
 
-    /* 
-    * | Get Owner by Saf No
+    /** 
+     * | Get Owner by Saf No
+       | Common Function
     */
     public function getOwnersBySafId($safId)
     {

@@ -22,6 +22,7 @@ class PropSafsDemand extends Model
 
     /**
      * | 1.Used on Saf Payment Receipt
+       | Reference Function : generatePaymentReceipt
      */
     public function getFirstDemandBySafId($safId)
     {
@@ -33,6 +34,7 @@ class PropSafsDemand extends Model
 
     /**
      * | Get First Demand by SAF ID and Financial Year
+       | Common Function
      */
     public function getFirstDemandByFyearSafId($safId, $fyear)
     {
@@ -44,6 +46,7 @@ class PropSafsDemand extends Model
 
     /**
      * | Get Demands by SAF ID
+       | Reference Function : checkPostCondition
      */
     public function getDemandsBySafId($safId)
     {
@@ -74,6 +77,7 @@ class PropSafsDemand extends Model
 
     /**
      * | Save SAF Demand
+       | Common Function
      */
     public function postDemands(array $req)
     {
@@ -94,6 +98,7 @@ class PropSafsDemand extends Model
 
     /**
      * | Get Last Demand Date by Saf Id
+       | Common Function
      */
     public function readLastDemandDateBySafId($safId)
     {
@@ -118,6 +123,7 @@ class PropSafsDemand extends Model
 
     /**
      * | Get Full Demands By Property ID
+       | Common Function
      */
     public function getFullDemandsBySafId($safId)
     {
@@ -130,6 +136,7 @@ class PropSafsDemand extends Model
 
     /**
      * | Get Paid Demand by Saf Id
+       | Reference Function : adjustVerifiedDemand()
      */
     public function getPaidDemandBySafId($safId)
     {
@@ -153,6 +160,7 @@ class PropSafsDemand extends Model
 
     /**
      * | Save cluster in Saf demand
+       | Reference Function : saveSafInCluster
      */
     public function saveClusterinSafDemand($safIds, $clusterId)
     {

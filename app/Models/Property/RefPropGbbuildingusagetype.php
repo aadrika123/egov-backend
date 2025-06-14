@@ -12,6 +12,7 @@ class RefPropGbbuildingusagetype extends Model
 
     /**
      * | Get GB building usage types
+       | Reference Function : masterSaf
      */
     public function getGbbuildingusagetypes()
     {

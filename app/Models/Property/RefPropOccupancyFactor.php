@@ -17,6 +17,7 @@ class RefPropOccupancyFactor extends Model
     }
     /**
      * | Get Occupancy Factors
+       | Reference Function : reviewCalculation
      */
     public function getOccupancyFactors()
     {

@@ -23,6 +23,7 @@ class PropActiveObjection extends Model
     /**
      * |-------------------------- details of all concession according id -----------------------------------------------
      * | @param request
+       | Reference Function : getUserDetails
      */
     public function allObjection($request)
     {
@@ -56,6 +57,7 @@ class PropActiveObjection extends Model
 
     /**
      * | Get Objection Detail by id
+       | Reference Function : getDetailsById
      */
     public function getObjectionById($objId)
     {
@@ -123,6 +125,7 @@ class PropActiveObjection extends Model
 
     /**
      * | Get Objection No by Id
+       | Common Function
      */
     public function getObjectionNo($objId)
     {
@@ -133,6 +136,7 @@ class PropActiveObjection extends Model
 
     /**
      * | applied application Today
+       | Reference Function : propDashboard
      */
     public function todayAppliedApplications($userId)
     {
@@ -147,6 +151,7 @@ class PropActiveObjection extends Model
 
     /**
      * | REcent Applications for jsk
+       | Reference Function : propDashboardDtl
      */
    
     public function recentApplicationJsk($userId)
@@ -175,6 +180,7 @@ class PropActiveObjection extends Model
 
     /**
      * | Recent Application for all
+       | Reference Function : propDashboardDtl
      */
     public function recentApplication($workflowIds, $roleIds, $ulbId)
     {
@@ -206,6 +212,7 @@ class PropActiveObjection extends Model
 
     /**
      * | Today Received Appklication
+       | Reference Function : propDashboard
      */
     public function todayReceivedApplication($currentRole, $ulbId)
     {
@@ -228,6 +235,7 @@ class PropActiveObjection extends Model
 
     /**
      * | Search Objection
+       | Reference Function : applicationsListByKey
      */
     public function searchObjections()
     {

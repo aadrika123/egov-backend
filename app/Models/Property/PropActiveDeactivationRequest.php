@@ -14,6 +14,7 @@ class PropActiveDeactivationRequest extends Model
 
     /**
      * | Get details of deactivation list by holding no
+       | Reference Function : applicationsListByKey
      */
     public function getDeactivationApplication()
     {
@@ -37,6 +38,7 @@ class PropActiveDeactivationRequest extends Model
 
     /**
      * | REcent Applications for jsk
+       | Reference Function : propDashboardDtl
      */
     public function recentApplicationJsk($userId)
     {
@@ -62,6 +64,7 @@ class PropActiveDeactivationRequest extends Model
 
     /**
      * | Recent Application for all
+       | Reference Function : propDashboardDtl
      */
     public function recentApplication($workflowIds,$roleIds,$ulbId)
     {
@@ -90,6 +93,7 @@ class PropActiveDeactivationRequest extends Model
 
     /**
      * | Get Today Applied Applications
+       | Reference Function : propDashboard
      */
     public function todayAppliedApplications($userId)
     {
@@ -101,6 +105,7 @@ class PropActiveDeactivationRequest extends Model
 
     /**
      * | Today Received Appklication
+       | Reference Function : propDashboard
      */
     public function todayReceivedApplication($currentRole, $ulbId)
     {

@@ -12,6 +12,7 @@ class PropTax extends Model
 
     /**
      * | Add Taxes
+       | Common Function
      */
     public function postTaxes(array $req)
     {
@@ -20,6 +21,7 @@ class PropTax extends Model
 
     /**
      * | Get Prop Taxes by PropID
+       | Common Function
      */
     public function getPropTaxesByPropId($propId)
     {
@@ -30,6 +32,7 @@ class PropTax extends Model
 
     /**
      * | Deactivate Property Taxes
+       | Common Function
      */
     public function deactivatePropTax($propId)
     {
@@ -39,6 +42,7 @@ class PropTax extends Model
     }
     /**
      * | Replicate Saf Taxes On prop Taxes
+       | Reference Function : checkPostCondition
      */
     public function replicateSafTaxes($propId, array $taxes)
     {

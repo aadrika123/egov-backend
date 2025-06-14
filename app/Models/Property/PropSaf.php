@@ -115,6 +115,7 @@ class PropSaf extends Model
 
     /**
      * | Search safs
+       | Reference Function : applicationsListByKey
      */
     public function searchSafs()
     {
@@ -150,6 +151,7 @@ class PropSaf extends Model
 
     /**
      * | Search Gb Saf
+       | Reference Function : applicationsListByKey
      */
     public function searchGbSafs()
     {
@@ -180,6 +182,7 @@ class PropSaf extends Model
 
     /**
      * | Get Saf Details
+       | Common Function
      */
     public function getSafDtls()
     {
@@ -229,6 +232,7 @@ class PropSaf extends Model
 
     /**
      * | Count Previous Holdings
+       | Reference Function : countSubHoldings()
      */
     public function countPreviousHoldings($previousHoldingId)
     {
@@ -239,6 +243,7 @@ class PropSaf extends Model
     /** 
      * | get owner details of property
      * | created by: Alok 
+       | Reference Function : getOwnerDetailsInfo
      */
     public static function getOwnerDetails($parameter)
     {

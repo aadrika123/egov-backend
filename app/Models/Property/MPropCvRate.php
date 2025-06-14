@@ -12,6 +12,7 @@ class MPropCvRate extends Model
 
     /**
      * | Get MPropCvRate By ID
+       | Reference Function : MPropCvRatesById
      */
     public function getById($req)
     {
@@ -41,6 +42,7 @@ class MPropCvRate extends Model
 
     /**
      * | Get MPropCvRate By ULB ID
+       | Reference Function : allMPropCvRatesList
      */
     public function listMPropCvRate()
     {

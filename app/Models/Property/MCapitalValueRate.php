@@ -13,7 +13,8 @@ class MCapitalValueRate extends Model
 
 
     /**
-     * | Get Capital Value Rate 
+     * | Get Capital Value Rate  
+       | Common Function
      */
     public function getCVRate($req)
     {
@@ -48,7 +49,10 @@ class MCapitalValueRate extends Model
     }
 
     //written by prity pandey
-
+    /** 
+      * | Get Capital Value Rate By ID
+        | Reference Function : MCapitalValurRateById
+     */
     public function getById($req)
     {
         $list = MCapitalValueRate::select(
@@ -71,6 +75,7 @@ class MCapitalValueRate extends Model
 
     /**
      * | List Capital Value Rate
+       | Reference Function : allMCapitalValurRateList
      */
     public function listCapitalValueRate()
     {

@@ -14,6 +14,7 @@ class PropSafGeotagUpload extends Model
 
     /**
      * | Get GeoTag Uploaded Images by Saf id
+       | Common Function
      */
     public function getGeoTags($safId)
     {
@@ -35,6 +36,7 @@ class PropSafGeotagUpload extends Model
 
     /**
      * | Get Geo Tag Done By Saf id and Direction Type
+       | Common Function
      */
     public function getGeoTagBySafIdDirectionType($req)
     {
@@ -46,6 +48,7 @@ class PropSafGeotagUpload extends Model
 
     /**
      * | Store New Images
+       | Common Function
      */
     public function store($req)
     {
@@ -54,6 +57,7 @@ class PropSafGeotagUpload extends Model
 
     /**
      * | Edit Existing Image
+       | Common Function
      */
     public function edit($geoTags, $req)
     {
