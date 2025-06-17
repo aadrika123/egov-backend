@@ -868,6 +868,11 @@ Route::controller(MasterReferenceController::class)->group(function () {
 
   //alok
   Route::post('m-dashboard-slider-data', 'dashboardSliderData');
+
+   //blog post
+  Route::post('m-store-blog-post', 'storeBlogPost');
+  Route::post('m-list-of-all-blog', 'allBlogs');
+  Route::post('m-update-blog', 'editBlog');
 });
 
 

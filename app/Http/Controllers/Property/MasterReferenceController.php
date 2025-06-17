@@ -8,6 +8,7 @@ use App\Models\AboutUsDetail;
 use App\Models\ActRule;
 use App\Models\Administrative;
 use App\Models\Announcement;
+use App\Models\BlogPost;
 use App\Models\CitizenDesk;
 use App\Models\CitizenDeskDescription;
 use App\Models\Contact;
@@ -92,7 +93,7 @@ class MasterReferenceController extends Controller
                 'constructionType' => 'required',
             ]);
             $update = new RefPropConstructionType();
-            $list  = $update->updateConstructionType($req);
+            $list = $update->updateConstructionType($req);
 
             return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
@@ -110,7 +111,7 @@ class MasterReferenceController extends Controller
                 'id' => 'required'
             ]);
             $listById = new RefPropConstructionType();
-            $list  = $listById->getById($req);
+            $list = $listById->getById($req);
             if (!$list)
                 return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
             else
@@ -122,7 +123,7 @@ class MasterReferenceController extends Controller
 
     /* 
      * | Retrieves a list of all construction types from the reference data.
-    */
+     */
     public function allConstructiontypelist(Request $req)
     {
         try {
@@ -136,8 +137,8 @@ class MasterReferenceController extends Controller
     }
 
     /* 
-    * | Deletes or updates the status of a construction type based on the provided ID and status.
-    */
+     * | Deletes or updates the status of a construction type based on the provided ID and status.
+     */
     public function deleteConstructionType(Request $req)
     {
         try {
@@ -173,7 +174,7 @@ class MasterReferenceController extends Controller
         }
     }
 
-     /**
+    /**
      * | Updates an existing floor type based on the given ID and new name.
      */
     public function updateFloorType(Request $req)
@@ -184,7 +185,7 @@ class MasterReferenceController extends Controller
                 'floorName' => 'required',
             ]);
             $update = new RefPropFloor();
-            $list  = $update->updatefloorType($req);
+            $list = $update->updatefloorType($req);
 
             return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
@@ -193,7 +194,7 @@ class MasterReferenceController extends Controller
     }
 
     /* 
-    * | Retrieves floor type details by the specified ID.
+     * | Retrieves floor type details by the specified ID.
      */
     public function floortypebyId(Request $req)
     {
@@ -202,7 +203,7 @@ class MasterReferenceController extends Controller
                 'id' => 'required'
             ]);
             $listById = new RefPropFloor();
-            $list  = $listById->getById($req);
+            $list = $listById->getById($req);
             if (!$list)
                 return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
             else
@@ -212,7 +213,7 @@ class MasterReferenceController extends Controller
         }
     }
 
-     /**
+    /**
      * | Returns a list of all available floor types.
      */
     public function allFloortypelist(Request $req)
@@ -266,8 +267,8 @@ class MasterReferenceController extends Controller
     }
 
     /* 
-    * | Updates an existing GB building usage type by ID with the new building type name.
-    */
+     * | Updates an existing GB building usage type by ID with the new building type name.
+     */
     public function updateGbBuildingType(Request $req)
     {
         try {
@@ -276,7 +277,7 @@ class MasterReferenceController extends Controller
                 'buildingType' => 'required',
             ]);
             $update = new RefPropGbbuildingusagetype();
-            $list  = $update->updateGbBuildingType($req);
+            $list = $update->updateGbBuildingType($req);
 
             return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
@@ -285,7 +286,7 @@ class MasterReferenceController extends Controller
     }
 
     /* 
-    * | Retrieves details of a GB building usage type by its ID.
+     * | Retrieves details of a GB building usage type by its ID.
      */
     public function GbBuildingtypebyId(Request $req)
     {
@@ -294,7 +295,7 @@ class MasterReferenceController extends Controller
                 'id' => 'required'
             ]);
             $listById = new RefPropGbbuildingusagetype();
-            $list  = $listById->getById($req);
+            $list = $listById->getById($req);
             if (!$list)
                 return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
             else
@@ -305,7 +306,7 @@ class MasterReferenceController extends Controller
     }
 
     /* 
-    * | Retrieves the list of all GB building usage types.
+     * | Retrieves the list of all GB building usage types.
      */
     public function allGbBuildingtypelist(Request $req)
     {
@@ -320,7 +321,7 @@ class MasterReferenceController extends Controller
     }
 
     /* 
-    * | Soft deletes or updates the status of a GB building usage type by ID. 
+     * | Soft deletes or updates the status of a GB building usage type by ID. 
      */
     public function deleteGbBuildingType(Request $req)
     {
@@ -356,7 +357,7 @@ class MasterReferenceController extends Controller
         }
     }
 
-     /**
+    /**
      * | update an existing GB Property Usage Type by ID.   
      */
     public function updateGbPropUsageType(Request $req)
@@ -367,7 +368,7 @@ class MasterReferenceController extends Controller
                 'propUsageType' => 'required',
             ]);
             $update = new RefPropGbpropusagetype();
-            $list  = $update->updateGbPropUsageType($req);
+            $list = $update->updateGbPropUsageType($req);
 
             return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
@@ -385,7 +386,7 @@ class MasterReferenceController extends Controller
                 'id' => 'required'
             ]);
             $listById = new RefPropGbpropusagetype();
-            $list  = $listById->getById($req);
+            $list = $listById->getById($req);
             if (!$list)
                 return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
             else
@@ -458,7 +459,7 @@ class MasterReferenceController extends Controller
                 'Type' => 'required',
             ]);
             $update = new RefPropObjectionType();
-            $list  = $update->updateObjectionType($req);
+            $list = $update->updateObjectionType($req);
 
             return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
@@ -476,7 +477,7 @@ class MasterReferenceController extends Controller
                 'id' => 'required'
             ]);
             $listById = new RefPropObjectionType();
-            $list  = $listById->getById($req);
+            $list = $listById->getById($req);
             if (!$list)
                 return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
             else
@@ -551,7 +552,7 @@ class MasterReferenceController extends Controller
                 'occupancyName' => 'required'
             ]);
             $update = new RefPropOccupancyFactor();
-            $list  = $update->updateOccupancyFactor($req);
+            $list = $update->updateOccupancyFactor($req);
 
             return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
@@ -569,7 +570,7 @@ class MasterReferenceController extends Controller
                 'id' => 'required'
             ]);
             $listById = new RefPropOccupancyFactor();
-            $list  = $listById->getById($req);
+            $list = $listById->getById($req);
             if (!$list)
                 return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
             else
@@ -643,7 +644,7 @@ class MasterReferenceController extends Controller
                 'occupancyType' => 'required'
             ]);
             $update = new RefPropOccupancyType();
-            $list  = $update->updateOccupancytype($req);
+            $list = $update->updateOccupancytype($req);
 
             return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
@@ -661,7 +662,7 @@ class MasterReferenceController extends Controller
                 'id' => 'required'
             ]);
             $listById = new RefPropOccupancyType();
-            $list  = $listById->getById($req);
+            $list = $listById->getById($req);
             if (!$list)
                 return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
             else
@@ -735,7 +736,7 @@ class MasterReferenceController extends Controller
                 'ownershipType' => 'required'
             ]);
             $update = new RefPropOwnershipType();
-            $list  = $update->updateOwnershiptype($req);
+            $list = $update->updateOwnershiptype($req);
 
             return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
@@ -753,7 +754,7 @@ class MasterReferenceController extends Controller
                 'id' => 'required'
             ]);
             $listById = new RefPropOwnershipType();
-            $list  = $listById->getById($req);
+            $list = $listById->getById($req);
             if (!$list)
                 return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
             else
@@ -827,7 +828,7 @@ class MasterReferenceController extends Controller
                 'roadType' => 'required'
             ]);
             $update = new RefPropRoadType();
-            $list  = $update->updateroadtype($req);
+            $list = $update->updateroadtype($req);
 
             return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
@@ -845,7 +846,7 @@ class MasterReferenceController extends Controller
                 'id' => 'required'
             ]);
             $listById = new RefPropRoadType();
-            $list  = $listById->getById($req);
+            $list = $listById->getById($req);
             if (!$list)
                 return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
             else
@@ -919,7 +920,7 @@ class MasterReferenceController extends Controller
                 'propertyType' => 'required'
             ]);
             $update = new RefPropType();
-            $list  = $update->updatepropertytype($req);
+            $list = $update->updatepropertytype($req);
 
             return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
@@ -937,7 +938,7 @@ class MasterReferenceController extends Controller
                 'id' => 'required'
             ]);
             $listById = new RefPropType();
-            $list  = $listById->getById($req);
+            $list = $listById->getById($req);
             if (!$list)
                 return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
             else
@@ -1011,7 +1012,7 @@ class MasterReferenceController extends Controller
                 'transferMode' => 'required'
             ]);
             $update = new RefPropTransferMode();
-            $list  = $update->updateproptransfermode($req);
+            $list = $update->updateproptransfermode($req);
 
             return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
@@ -1029,7 +1030,7 @@ class MasterReferenceController extends Controller
                 'id' => 'required'
             ]);
             $listById = new RefPropTransferMode();
-            $list  = $listById->getById($req);
+            $list = $listById->getById($req);
             if (!$list)
                 return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
             else
@@ -1106,7 +1107,7 @@ class MasterReferenceController extends Controller
 
             ]);
             $update = new RefPropUsageType();
-            $list  = $update->updatepropusagetype($req);
+            $list = $update->updatepropusagetype($req);
 
             return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
@@ -1124,7 +1125,7 @@ class MasterReferenceController extends Controller
                 'id' => 'required'
             ]);
             $listById = new RefPropUsageType();
-            $list  = $listById->getById($req);
+            $list = $listById->getById($req);
             if (!$list)
                 return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
             else
@@ -1198,7 +1199,7 @@ class MasterReferenceController extends Controller
                 'rebateType' => 'required'
             ]);
             $update = new RefPropRebateType();
-            $list  = $update->updaterebatetype($req);
+            $list = $update->updaterebatetype($req);
 
             return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
@@ -1216,7 +1217,7 @@ class MasterReferenceController extends Controller
                 'id' => 'required'
             ]);
             $listById = new RefPropRebateType();
-            $list  = $listById->getById($req);
+            $list = $listById->getById($req);
             if (!$list)
                 return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
             else
@@ -1290,7 +1291,7 @@ class MasterReferenceController extends Controller
                 'penaltyType' => 'required'
             ]);
             $update = new RefPropPenaltyType();
-            $list  = $update->updatepenaltytype($req);
+            $list = $update->updatepenaltytype($req);
 
             return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
@@ -1308,7 +1309,7 @@ class MasterReferenceController extends Controller
                 'id' => 'required'
             ]);
             $listById = new RefPropPenaltyType();
-            $list  = $listById->getById($req);
+            $list = $listById->getById($req);
             if (!$list)
                 return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
             else
@@ -1383,7 +1384,7 @@ class MasterReferenceController extends Controller
                 'Forgerytype' => 'required'
             ]);
             $update = new MPropForgeryType();
-            $list  = $update->updateForgeryType($req);
+            $list = $update->updateForgeryType($req);
 
             return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
@@ -1401,7 +1402,7 @@ class MasterReferenceController extends Controller
                 'id' => 'required'
             ]);
             $listById = new MPropForgeryType();
-            $list  = $listById->getById($req);
+            $list = $listById->getById($req);
             if (!$list)
                 return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
             else
@@ -1454,7 +1455,7 @@ class MasterReferenceController extends Controller
                 'id' => 'required'
             ]);
             $listById = new MCapitalValueRate();
-            $list  = $listById->getById($req);
+            $list = $listById->getById($req);
             if (!$list)
                 return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
             else
@@ -1489,7 +1490,7 @@ class MasterReferenceController extends Controller
                 'id' => 'required'
             ]);
             $listById = new MPropBuildingRentalconst();
-            $list  = $listById->getById($req);
+            $list = $listById->getById($req);
             if (!$list)
                 return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
             else
@@ -1524,7 +1525,7 @@ class MasterReferenceController extends Controller
                 'id' => 'required'
             ]);
             $listById = new MPropBuildingRentalrate();
-            $list  = $listById->getById($req);
+            $list = $listById->getById($req);
             if (!$list)
                 return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
             else
@@ -1560,7 +1561,7 @@ class MasterReferenceController extends Controller
                 'id' => 'required'
             ]);
             $listById = new MPropCvRate();
-            $list  = $listById->getById($req);
+            $list = $listById->getById($req);
             if (!$list)
                 return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
             else
@@ -1596,7 +1597,7 @@ class MasterReferenceController extends Controller
                 'id' => 'required'
             ]);
             $listById = new MPropMultiFactor();
-            $list  = $listById->getById($req);
+            $list = $listById->getById($req);
             if (!$list)
                 return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
             else
@@ -1631,7 +1632,7 @@ class MasterReferenceController extends Controller
                 'id' => 'required'
             ]);
             $listById = new MPropRentalValue();
-            $list  = $listById->getById($req);
+            $list = $listById->getById($req);
             if (!$list)
                 return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
             else
@@ -1667,7 +1668,7 @@ class MasterReferenceController extends Controller
                 'id' => 'required'
             ]);
             $listById = new MPropRoadType();
-            $list  = $listById->getById($req);
+            $list = $listById->getById($req);
             if (!$list)
                 return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
             else
@@ -1702,7 +1703,7 @@ class MasterReferenceController extends Controller
                 'id' => 'required'
             ]);
             $listById = new MPropVacantRentalrate();
-            $list  = $listById->getById($req);
+            $list = $listById->getById($req);
             if (!$list)
                 return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
             else
@@ -1775,7 +1776,7 @@ class MasterReferenceController extends Controller
             }
             $req->merge($data["data"]);
             $update = new MSlider();
-            $list  = $update->updateSlider($req);
+            $list = $update->updateSlider($req);
 
             return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
@@ -2336,7 +2337,7 @@ class MasterReferenceController extends Controller
                 'notice' => 'required'
             ]);
             $update = new ImportantNotice();
-            $list  = $update->updateNoticeType($req);
+            $list = $update->updateNoticeType($req);
 
             return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
@@ -2354,7 +2355,7 @@ class MasterReferenceController extends Controller
                 'id' => 'required'
             ]);
             $listById = new ImportantNotice();
-            $list  = $listById->getById($req);
+            $list = $listById->getById($req);
             if (!$list)
                 return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
             else
@@ -2427,7 +2428,7 @@ class MasterReferenceController extends Controller
                 'announcement' => 'required'
             ]);
             $update = new Announcement();
-            $list  = $update->updateAnnouncementType($req);
+            $list = $update->updateAnnouncementType($req);
 
             return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
@@ -2445,7 +2446,7 @@ class MasterReferenceController extends Controller
                 'id' => 'required'
             ]);
             $listById = new Announcement();
-            $list  = $listById->getById($req);
+            $list = $listById->getById($req);
             if (!$list)
                 return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
             else
@@ -2552,7 +2553,7 @@ class MasterReferenceController extends Controller
                 'heading' => 'required'
             ]);
             $heading = new UserManualHeading();
-            $list  = $heading->updateUserManualHeading($req);
+            $list = $heading->updateUserManualHeading($req);
 
             return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
@@ -2570,7 +2571,7 @@ class MasterReferenceController extends Controller
                 'id' => 'required'
             ]);
             $listById = new UserManualHeading();
-            $list  = $listById->getById($req);
+            $list = $listById->getById($req);
             if (!$list)
                 return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
             else
@@ -2648,7 +2649,7 @@ class MasterReferenceController extends Controller
                 'userManualLink' => 'nullable',
             ]);
             $heading = new UserManualHeadingDescription();
-            $list  = $heading->updateUserManualHeading($req);
+            $list = $heading->updateUserManualHeading($req);
 
             return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
@@ -2666,7 +2667,7 @@ class MasterReferenceController extends Controller
                 'id' => 'required'
             ]);
             $listById = new UserManualHeadingDescription();
-            $list  = $listById->getById($req);
+            $list = $listById->getById($req);
             if (!$list)
                 return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
             else
@@ -2742,7 +2743,7 @@ class MasterReferenceController extends Controller
                 'appLink' => 'nullable',
             ]);
             $heading = new MMobileAppLink();
-            $list  = $heading->updateMApp($req);
+            $list = $heading->updateMApp($req);
 
             return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
@@ -2760,7 +2761,7 @@ class MasterReferenceController extends Controller
                 'id' => 'required'
             ]);
             $listById = new MMobileAppLink();
-            $list  = $listById->getById($req);
+            $list = $listById->getById($req);
             if (!$list)
                 return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
             else
@@ -2834,7 +2835,7 @@ class MasterReferenceController extends Controller
                 'schemeLink' => 'nullable',
             ]);
             $heading = new MScheme();
-            $list  = $heading->updateScheme($req);
+            $list = $heading->updateScheme($req);
 
             return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
@@ -2852,7 +2853,7 @@ class MasterReferenceController extends Controller
                 'id' => 'required'
             ]);
             $listById = new MScheme();
-            $list  = $listById->getById($req);
+            $list = $listById->getById($req);
             if (!$list)
                 return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
             else
@@ -2927,7 +2928,7 @@ class MasterReferenceController extends Controller
                 'newsLink' => 'nullable',
             ]);
             $heading = new MNewsEvent();
-            $list  = $heading->updateNews($req);
+            $list = $heading->updateNews($req);
 
             return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
@@ -2945,7 +2946,7 @@ class MasterReferenceController extends Controller
                 'id' => 'required'
             ]);
             $listById = new MNewsEvent();
-            $list  = $listById->getById($req);
+            $list = $listById->getById($req);
             if (!$list)
                 return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
             else
@@ -3020,7 +3021,7 @@ class MasterReferenceController extends Controller
                 'serviceLink' => 'nullable'
             ]);
             $heading = new MEService();
-            $list  = $heading->updateServices($req);
+            $list = $heading->updateServices($req);
 
             return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
@@ -3038,7 +3039,7 @@ class MasterReferenceController extends Controller
                 'id' => 'required'
             ]);
             $listById = new MEService();
-            $list  = $listById->getById($req);
+            $list = $listById->getById($req);
             if (!$list)
                 return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
             else
@@ -3095,7 +3096,7 @@ class MasterReferenceController extends Controller
                 'whatsNew' => 'required',
             ]);
             $heading = new MWhat();
-            $list  = $heading->updateWhatNew($req);
+            $list = $heading->updateWhatNew($req);
 
             return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
@@ -3128,7 +3129,7 @@ class MasterReferenceController extends Controller
                 'id' => 'required'
             ]);
             $listById = new MWhat();
-            $list  = $listById->getById($req);
+            $list = $listById->getById($req);
             if (!$list)
                 return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
             else
@@ -3188,7 +3189,7 @@ class MasterReferenceController extends Controller
                 'quickLink' => 'nullable',
             ]);
             $heading = new QuickLink();
-            $list  = $heading->updateLink($req);
+            $list = $heading->updateLink($req);
 
             return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
@@ -3221,7 +3222,7 @@ class MasterReferenceController extends Controller
                 'id' => 'required'
             ]);
             $listById = new QuickLink();
-            $list  = $listById->getById($req);
+            $list = $listById->getById($req);
             if (!$list)
                 return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
             else
@@ -3281,7 +3282,7 @@ class MasterReferenceController extends Controller
                 'importantLink' => 'nullable',
             ]);
             $heading = new ImportantLink();
-            $list  = $heading->updateLink($req);
+            $list = $heading->updateLink($req);
 
             return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
@@ -3314,7 +3315,7 @@ class MasterReferenceController extends Controller
                 'id' => 'required'
             ]);
             $listById = new ImportantLink();
-            $list  = $listById->getById($req);
+            $list = $listById->getById($req);
             if (!$list)
                 return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
             else
@@ -3373,7 +3374,7 @@ class MasterReferenceController extends Controller
                 'usefulLink' => 'nullable',
             ]);
             $heading = new UsefulLink();
-            $list  = $heading->updateLink($req);
+            $list = $heading->updateLink($req);
 
             return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
@@ -3406,7 +3407,7 @@ class MasterReferenceController extends Controller
                 'id' => 'required'
             ]);
             $listById = new UsefulLink();
-            $list  = $listById->getById($req);
+            $list = $listById->getById($req);
             if (!$list)
                 return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
             else
@@ -3466,7 +3467,7 @@ class MasterReferenceController extends Controller
                 'link' => 'nullable',
             ]);
             $heading = new Department();
-            $list  = $heading->updateDepartment($req);
+            $list = $heading->updateDepartment($req);
 
             return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
@@ -3499,7 +3500,7 @@ class MasterReferenceController extends Controller
                 'id' => 'required'
             ]);
             $listById = new Department();
-            $list  = $listById->getById($req);
+            $list = $listById->getById($req);
             if (!$list)
                 return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
             else
@@ -3564,7 +3565,7 @@ class MasterReferenceController extends Controller
                 'fax' => 'nullable'
             ]);
             $heading = new Contact();
-            $list  = $heading->updateContact($req);
+            $list = $heading->updateContact($req);
 
             return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
@@ -3597,7 +3598,7 @@ class MasterReferenceController extends Controller
                 'id' => 'required'
             ]);
             $listById = new Contact();
-            $list  = $listById->getById($req);
+            $list = $listById->getById($req);
             if (!$list)
                 return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
             else
@@ -3654,7 +3655,7 @@ class MasterReferenceController extends Controller
                 'heading' => 'nullable'
             ]);
             $heading = new CitizenDesk();
-            $list  = $heading->updateCDesk($req);
+            $list = $heading->updateCDesk($req);
 
             return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
@@ -3687,7 +3688,7 @@ class MasterReferenceController extends Controller
                 'id' => 'required'
             ]);
             $listById = new CitizenDesk();
-            $list  = $listById->getById($req);
+            $list = $listById->getById($req);
             if (!$list)
                 return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
             else
@@ -3748,7 +3749,7 @@ class MasterReferenceController extends Controller
                 'deskId' => 'nullable'
             ]);
             $heading = new CitizenDeskDescription();
-            $list  = $heading->updateCDeskDesc($req);
+            $list = $heading->updateCDeskDesc($req);
 
             return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
@@ -3766,7 +3767,7 @@ class MasterReferenceController extends Controller
                 'id' => 'required'
             ]);
             $listById = new CitizenDeskDescription();
-            $list  = $listById->getById($req);
+            $list = $listById->getById($req);
             if (!$list)
                 return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
             else
@@ -3831,7 +3832,7 @@ class MasterReferenceController extends Controller
                 'function' => 'nullable|string',
             ]);
             $heading = new AboutUsDetail();
-            $list  = $heading->updateAboutUs($req);
+            $list = $heading->updateAboutUs($req);
 
             return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
@@ -3864,7 +3865,7 @@ class MasterReferenceController extends Controller
                 'id' => 'required'
             ]);
             $listById = new AboutUsDetail();
-            $list  = $listById->getById($req);
+            $list = $listById->getById($req);
             if (!$list)
                 return responseMsgs(true, "data not found", '', "120104", "01", responseTime(), $req->getMethod(), $req->deviceId);
             else
@@ -3939,7 +3940,7 @@ class MasterReferenceController extends Controller
             }
             $req->merge($data["data"]);
             $update = new ActRule();
-            $list  = $update->updateRule($req);
+            $list = $update->updateRule($req);
 
             return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
@@ -3982,7 +3983,7 @@ class MasterReferenceController extends Controller
             return $val;
         });
 
-        return  $masters;
+        return $masters;
     }
 
     /* 
@@ -4082,7 +4083,7 @@ class MasterReferenceController extends Controller
             }
             $req->merge($data["data"]);
             $update = new Administrative();
-            $list  = $update->updateAdministrative($req);
+            $list = $update->updateAdministrative($req);
 
             return responseMsgs(true, "Successfully Updated", $list, "120102", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
@@ -4174,7 +4175,7 @@ class MasterReferenceController extends Controller
         try {
             // Increment API hit count using Redis
             $today = now()->toDateString();
-            
+
             $cacheKeyTotal = "dashboard_hits_total";
             $cacheKeyToday = "dashboard_hits_" . $today;
 
@@ -4247,4 +4248,103 @@ class MasterReferenceController extends Controller
             return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
         }
     }
+
+    # ------------------- Add Blog CRUD Operation -------------------------- #
+    /* 
+     * | store blog 
+     */
+    public function storeBlogPost(Request $req)
+    {
+        $req->validate([
+            'title' => 'required',
+            'blogFile' => 'required|mimes:pdf,jpeg,png,jpg',
+            'shortDescription' => 'required|nullable',
+            'longDescription' => 'required|nullable',
+            'officerName' => 'nullable',
+        ]);
+
+        try {
+            $req->merge(["document" => $req->blogFile]);
+            $docUpload = new DocUpload();
+            $data = $docUpload->checkDoc($req);
+
+            if (!$data["status"]) {
+                throw new Exception("Document not uploaded");
+            }
+            $req->merge($data["data"]);
+
+            // Use model's custom store() method
+            $create = new BlogPost();
+            $stored = $create->store($req);
+
+            if (!$stored) {
+                throw new Exception("Blog post not stored");
+            }
+
+            return responseMsgs(true, "Blog created successfully", $stored, "BLOG001", "01", responseTime(), $req->getMethod(), $req->deviceId);
+
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "BLOG001", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    /* 
+     * | get all blog post list
+     */
+    public function allBlogs(Request $req)
+    {
+        try {
+            $blogModel = new BlogPost();
+            $docUpload = new DocUpload();
+
+            $data = $blogModel->allList()->map(function ($val) use ($docUpload) {
+                $val->document = $val->blogFile;
+                $url = $docUpload->getSingleDocUrl($val);
+                $val->is_suspended = $val->status;
+                $val->blogFile = $url["doc_path"] ?? null;
+
+                return $val;
+            });
+
+            return responseMsgs(true, "All Blog List", $data, "BLOG002", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "BLOG002", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+
+    public function editBlog(Request $req)
+    {
+        $req->validate([
+            "id" => "required|numeric",
+            "title" => "required|string",
+            "blogFile" => "required|mimes:pdf,jpeg,png,jpg",
+            "shortDescription" => "required|string",
+            "longDescription" => "required|string",
+            "officerName" => "required|string"
+        ]);
+
+        try {
+            $req->merge(["document" => $req->blogFile]);
+            $docUpload = new DocUpload;
+            $data = $docUpload->checkDoc($req);
+            if (!$data["status"]) {
+                throw new Exception("Document Not uploaded");
+            }
+
+            $req->merge($data["data"]);
+
+            $blog = new BlogPost();
+            if (!$blog->edit($req)) {
+                throw new Exception("Data not updated");
+            }
+
+            return responseMsgs(true, "Blog updated", "", "BLOG003", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "BLOG003", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+
+
 }
