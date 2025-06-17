@@ -62,6 +62,7 @@ use Illuminate\Support\Facades\Redis;
 use Illuminate\Http\Request;
 use Exception;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 use Sabberworm\CSS\Property\Import;
 
 class MasterReferenceController extends Controller
@@ -4255,13 +4256,20 @@ class MasterReferenceController extends Controller
      */
     public function storeBlogPost(Request $req)
     {
-        $req->validate([
-            'title' => 'required',
-            'blogFile' => 'required|mimes:pdf,jpeg,png,jpg',
-            'shortDescription' => 'required|nullable',
-            'longDescription' => 'required|nullable',
-            'officerName' => 'nullable',
-        ]);
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'title' => 'required',
+                'blogFile' => 'required|mimes:pdf,jpeg,png,jpg',
+                'shortDescription' => 'required|nullable',
+                'longDescription' => 'required|nullable',
+                'officerName' => 'nullable',
+            ]
+        );
+
+        if ($validated->fails()) {
+            return validationError($validated);
+        }
 
         try {
             $req->merge(["document" => $req->blogFile]);
@@ -4298,11 +4306,10 @@ class MasterReferenceController extends Controller
             $docUpload = new DocUpload();
 
             $data = $blogModel->allList()->map(function ($val) use ($docUpload) {
-                $val->document = $val->blogFile;
                 $url = $docUpload->getSingleDocUrl($val);
                 $val->is_suspended = $val->status;
                 $val->blogFile = $url["doc_path"] ?? null;
-
+                unset($val->blog_file);
                 return $val;
             });
 
@@ -4312,17 +4319,26 @@ class MasterReferenceController extends Controller
         }
     }
 
-
+    /* 
+     * | update blog 
+     */
     public function editBlog(Request $req)
     {
-        $req->validate([
-            "id" => "required|numeric",
-            "title" => "required|string",
-            "blogFile" => "required|mimes:pdf,jpeg,png,jpg",
-            "shortDescription" => "required|string",
-            "longDescription" => "required|string",
-            "officerName" => "required|string"
-        ]);
+        $validated = Validator::make(
+            $req->all(),
+            [
+                "id" => "required|numeric",
+                "title" => "required|string",
+                "blogFile" => "required|mimes:pdf,jpeg,png,jpg",
+                "shortDescription" => "required|string",
+                "longDescription" => "required|string",
+                "officerName" => "required|string"
+            ]
+        );
+
+        if ($validated->fails()) {
+            return validationError($validated);
+        }
 
         try {
             $req->merge(["document" => $req->blogFile]);
@@ -4345,6 +4361,51 @@ class MasterReferenceController extends Controller
         }
     }
 
+    /* 
+     * | delete blog post
+     */
+    public function deleteBlog(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required',
+                'status' => 'required'
+            ]);
+
+            $delete = new BlogPost();
+            $message = $delete->deleteBlog($req);
+
+            return responseMsgs(true, "", $message, "BLOG004", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "BLOG004", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    /* 
+     * | get blog by id
+     */
+    public function blogById(Request $req)
+    {
+        try {
+            $req->validate([
+                'id' => 'required'
+            ]);
+
+            $blog = new BlogPost();
+            $message = $blog->getById($req);
+            $docUpload = new DocUpload();
+            $url = $docUpload->getSingleDocUrl($message);
+
+            $message->is_suspended = $message->status;
+            $message->blogFile = $url["doc_path"] ?? null;
+
+            unset($message->document);
+            return responseMsgs(true, "Blog Details", $message, "BLOG004", "01", responseTime(), $req->getMethod(), $req->deviceId);
+
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "BLOG004", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
 
 
 }
