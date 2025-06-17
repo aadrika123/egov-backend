@@ -22,6 +22,11 @@ class CustomDetail extends Model
         $this->_bifuraction = new PropertyBifurcation();
     }
 
+    /** 
+     * | Retrieves and returns custom details for a given application along with 
+     * | document URLs by mapping each record with its associated file path.
+       | Common Function
+    */
     public function getCustomDetails($request)
     {
         $docUpload = new DocUpload;

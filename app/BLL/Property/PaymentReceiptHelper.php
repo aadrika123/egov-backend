@@ -21,6 +21,7 @@ class PaymentReceiptHelper
     /**
      * | Read Taxes Descriptions(1.1)
      * | @param checkOtherTaxes first collection from the details
+       | Reference Function : generatePaymentReceipt
      */
     public function readDescriptions($checkOtherTaxes)
     {
@@ -53,6 +54,7 @@ class PaymentReceiptHelper
 
     /**
      * | Read Penalty Tax Details with Penalties and final payable amount(1.2)
+       | Common Function
      */
     public function readPenalyPmtAmts($lateAssessPenalty = 0, $onePercPenalty = 0, $rebate = 0, $specialRebate = 0, $firstQtrRebate = 0, $amount, $onlineRebate = 0)
     {
@@ -102,6 +104,7 @@ class PaymentReceiptHelper
     /**
      * | Calculate Total Rebate Penalties 
      * | @param taxDetails containing all types of Penalty and Rebates
+       | Common Function
      */
     public function calculateTotalRebatePenals($taxDetails)
     {

@@ -12,6 +12,7 @@ class WfRoleusermap extends Model
 
     /**
      * | get Role By User Id
+       | Common Function
      */
     public function getRoleIdByUserId($userId)
     {
@@ -24,6 +25,7 @@ class WfRoleusermap extends Model
 
     /**
      * | Get Role details by User Id
+       | Common Function
      */
     public function getRoleDetailsByUserId($userId)
     {
@@ -41,6 +43,7 @@ class WfRoleusermap extends Model
 
     /**
      * | Get role by User and Workflow Id
+       | Common Function
      */
     public function getRoleByUserWfId($req)
     {
@@ -61,6 +64,7 @@ class WfRoleusermap extends Model
     /**
      * | Get role by User Id
         to be checked
+       | Common Function
      * 
      */
     public function getRoleByUserId($req)
@@ -78,6 +82,7 @@ class WfRoleusermap extends Model
 
     /**
      * | Get Tc list
+       | Regerence Function: tcList
      */
     public function getTcList($ulbId)
     {

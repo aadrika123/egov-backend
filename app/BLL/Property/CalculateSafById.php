@@ -223,6 +223,7 @@ class CalculateSafById
     /**
      * | Generated SAF Demand to push the value in propSafsDemand Table // (1.2)
      * | Used in Apply Saf , Review Calculation
+       | Common Function
      */
     public function generateSafDemand()
     {
@@ -274,6 +275,7 @@ class CalculateSafById
 
     /**
      * | Calculation of Total Payable amount
+       | Common Function
      */
     public function calculatePayableAmt()
     {
@@ -292,6 +294,7 @@ class CalculateSafById
 
     /**
      * | Generate Demand
+       | Common Function
      */
 
     public function generateDemand()
@@ -348,6 +351,7 @@ class CalculateSafById
 
     /**
      * | Adjust Amount In Case of Reassessment (1.2.1)
+       | Common Function
      */
     public function adjustAmount()
     {
@@ -399,6 +403,7 @@ class CalculateSafById
 
     /**
      * | One Percent Penalty Calculation (1.2.2)
+       | Common Function
      */
     public function calculateOnePercPenalty()
     {
@@ -416,6 +421,7 @@ class CalculateSafById
 
     /**
      * | Calculation for Read Rebates (1.2.3)
+       | Common Function
      */
     public function readRebates()
     {
@@ -482,6 +488,7 @@ class CalculateSafById
 
     /**
      * | ========================= Functions calculating Paid Demands ==================
+       | Common Function
      */
     public function readGeneratedDemand()
     {

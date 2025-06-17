@@ -41,6 +41,7 @@ class UlbMaster extends Model
 
     /**
      * | Get Ulbs by district code
+       | Common Function
      */
     public function getUlbsByDistrictCode($districtCode)
     {
@@ -50,6 +51,7 @@ class UlbMaster extends Model
 
     /**
      * | Get Ulb Details
+       | Common Function
      */
     public function getUlbDetails($ulbId): array
     {

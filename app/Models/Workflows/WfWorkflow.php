@@ -12,10 +12,8 @@ class WfWorkflow extends Model
 
 
     /**
-     * |---------------------------- Get workflow id by workflowId and ulbId -----------------------|
-     * | @param workflowID
-     * | @param ulbId
-     * | @return  
+     * | Get workflow id by workflowId and ulbId   
+       | Common Function
      */
     public function getulbWorkflowId($wfMstId, $ulbId)
     {
@@ -26,7 +24,10 @@ class WfWorkflow extends Model
             ->first();
     }
 
-    //create workflow
+    /** 
+     * | create workflow
+       | Reference Function: createWorkflow
+    */
     public function addWorkflow($req)
     {
         $createdBy = Auth()->user()->id;
@@ -43,7 +44,10 @@ class WfWorkflow extends Model
         $mWfMaster->save();
     }
 
-    //update workflow
+    /** 
+     * | update workflow
+       | Reference Function: updateWorkflow
+    */
     public function updateWorkflow($req)
     {
         $mWfMaster = WfWorkflow::find($req->id);
@@ -56,7 +60,10 @@ class WfWorkflow extends Model
         $mWfMaster->save();
     }
 
-    //list workflow by id
+    /** 
+     * | list workflow by id
+       | Common Function
+    */
     public function listWfbyId($req)
     {
         $mWfMaster = WfWorkflow::where('id', $req->id)
@@ -65,7 +72,10 @@ class WfWorkflow extends Model
         return $mWfMaster;
     }
 
-    //All workflow list
+    /** 
+     * | All workflow list
+       | Common Function
+    */
     public function listAllWorkflow()
     {
         $mWfMaster = WfWorkflow::select(
@@ -86,7 +96,8 @@ class WfWorkflow extends Model
     }
 
     /**
-     * Delete workflow
+     * | Delete workflow
+       | Reference Function: deleteWorkflow
      */
     public function deleteWorkflow($req)
     {
@@ -97,6 +108,7 @@ class WfWorkflow extends Model
 
     /**
      * | Get Wf master id by Workflow id
+       | Common Function
      */
     public function getWfMstrByWorkflowId($workflowId)
     {
@@ -108,6 +120,7 @@ class WfWorkflow extends Model
 
     /**
      * | Get Wf Dtls
+       | Common Function
      */
     public function getWfDetails($ulbWorkflowId)
     {

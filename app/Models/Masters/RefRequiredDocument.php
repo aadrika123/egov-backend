@@ -11,6 +11,7 @@ class RefRequiredDocument extends Model
 
     /**
      * | Get All Documents by Document Code
+       | Common Function
      */
     public function getDocsByDocCode($moduldId, $docCode)
     {
@@ -22,6 +23,7 @@ class RefRequiredDocument extends Model
 
     /**
      * | Get Documents where module Id
+       | Reference Function : __construct()
      */
     public function getDocsByModuleId($moduleId)
     {
@@ -32,6 +34,7 @@ class RefRequiredDocument extends Model
 
     /**
      * | Get  All Document Collictively For Array Of DocCode
+       | Common Function
      */
     public function getCollectiveDocByCode($moduldId, $docCodes)
     {

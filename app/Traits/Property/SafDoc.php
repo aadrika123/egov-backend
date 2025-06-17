@@ -29,6 +29,11 @@ trait SafDoc
         $this->_propDocList = $this->_mRefReqDocs->getDocsByModuleId($this->_moduleId);
     }
 
+    /** 
+     * | Determines and returns the required document list based on the property type, 
+     * | assessment type (like Mutation), and trust status from the provided SAF reference.
+       | Common Function
+    */
     public function getPropTypeDocList($refSafs)
     {
         $propTypes = Config::get('PropertyConstaint.PROPERTY-TYPE');
@@ -63,6 +68,7 @@ trait SafDoc
 
     /**
      * | Mutation Required Documents
+       | Reference Function : getPropTypeDocList
      */
     public function mutationReqDocuments()
     {
@@ -91,6 +97,7 @@ trait SafDoc
 
     /**
      * | Get Owner Document Lists
+       | Common Function
      */
     public function getOwnerDocs($refOwners)
     {

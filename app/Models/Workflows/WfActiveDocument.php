@@ -23,6 +23,7 @@ class WfActiveDocument extends Model
 
     /**
      * | Edit Wf Active Documents
+       | Reference Function : docUpload
      */
     public function edit($wfActiveDocument, array $req)
     {
@@ -31,6 +32,7 @@ class WfActiveDocument extends Model
 
     /**
      * | Meta Request function for updation and post the request
+       | Common Function
      */
     public function metaReqs($req)
     {
@@ -57,6 +59,7 @@ class WfActiveDocument extends Model
 
     /**
      * | Meta Request function for updation and post the request
+       | Reference Function : uploadDocument
      */
     public function metaReq($req)
     {
@@ -94,6 +97,7 @@ class WfActiveDocument extends Model
 
     /**
      * | Post Workflow Document
+       | Common Function
      */
     public function postDocuments($req)
     {
@@ -109,6 +113,7 @@ class WfActiveDocument extends Model
 
     /**
      * | Edit Existing Document
+       | Common Function
      */
     public function editDocuments($wfActiveDocument, $req)
     {
@@ -133,6 +138,7 @@ class WfActiveDocument extends Model
 
     /**
      * | Check if the Doc Category already Existing or not
+       | Common Function
      */
     public function isDocCategoryExists($activeId, $workflowId, $moduleId, $docCategory, $ownerId = null)
     {
@@ -147,6 +153,7 @@ class WfActiveDocument extends Model
 
     /**
      * | Get Application Details by Application No
+       | Common Function
      */
     public function getDocsByAppId($applicationId, $workflowId, $moduleId)
     {
@@ -173,6 +180,7 @@ class WfActiveDocument extends Model
 
     /**
      * | Get Owner PhotoGraph By applicationId
+       | Common Function
      */
     public function getOwnerPhotograph($applicationId, $workflowId, $moduleId, $ownerId)
     {
@@ -198,6 +206,7 @@ class WfActiveDocument extends Model
 
     /**
      * | Get Owner PhotoGraph By applicationId Water Module
+       | Reference Function : getOwnerDocLists
      */
     public function getWaterOwnerPhotograph($applicationId, $workflowId, $moduleId, $ownerId, $docCode = null)
     {
@@ -217,7 +226,10 @@ class WfActiveDocument extends Model
             ->first();
     }
 
-    # water document View
+    /** 
+     * | water document View
+       | Reference Function : getUploadDocuments
+    */
     public function getWaterDocsByAppNo($applicationId, $workflowId, $moduleId)
     {
         $secondConnection = 'pgsql_water';
@@ -243,7 +255,10 @@ class WfActiveDocument extends Model
             ->where('d.status', '!=', 0)
             ->get();
     }
-    # water document View
+
+    /** 
+     * | water document View
+    */
     public function getWaterDocsByAppNov1($applicationId, $workflowId, $moduleId)
     {
         $secondConnection = 'pgsql_master';
@@ -269,6 +284,11 @@ class WfActiveDocument extends Model
     }
 
     //prity pandey
+    /** 
+     * | Fetches and returns consumer documents for a specific application from the pgsql_water 
+     * | database based on application, workflow, and module IDs
+       | Common Function
+    */
     public function getConsumerDocsByAppNo($applicationId, $workflowId, $moduleId)
     {
         $secondConnection = 'pgsql_water';
@@ -293,7 +313,11 @@ class WfActiveDocument extends Model
             ->get();
     }
 
-
+    /** 
+     * | Retrieves trade-related document details for a given application from the 
+     * | pgsql_trade database, including DMS file paths and owner information
+       | Common Function
+    */
     public function getTradeDocByAppNo($applicationId, $workflowId, $moduleId)
     {
         $dms = Config::get('module-constants.DMS_URL');
@@ -318,9 +342,9 @@ class WfActiveDocument extends Model
             ->get();
     }
 
-
     /**
      * | Document Verify Reject
+       | Common Function
      */
     public function docVerifyReject($id, $req)
     {
@@ -369,7 +393,9 @@ class WfActiveDocument extends Model
     }
 
     /**
-     * | trade
+     * | Fetches a specific trade document by application ID and document code from the 
+     * | pgsql_trade database, including its verification status and full document path
+       | Reference Function : uploadDocument
      */
     public function getTradeAppByAppNoDocId($appid, $ulb_id, $doc_code, $workflowId = null, $owner_id = null)
     {
@@ -400,6 +426,7 @@ class WfActiveDocument extends Model
 
     /**
      * | Get Workflow Active Documents By Active Id
+       | Common Function
      */
     public function getDocByRefIds($activeId, $workflowId, $moduleId)
     {
@@ -419,6 +446,7 @@ class WfActiveDocument extends Model
 
     /**
      * | Get Workflow Active Documents By Active Id
+       | Common Function
      */
     public function getDocByRefIdsDocCode($activeId, $workflowId, $moduleId, $docCode)
     {
@@ -435,6 +463,12 @@ class WfActiveDocument extends Model
             ->whereIn('doc_code', $docCode)
             ->get();
     }
+
+    /**
+     * | Retrieves active owner-specific documents with full file paths based on 
+     * | application, workflow, module, document code(s), and owner ID filters
+       | Common Function
+     */
     public function getOwnerDocByRefIdsDocCode($activeId, $workflowId, $moduleId, $docCode, $ownerId)
     {
         return WfActiveDocument::select(
@@ -449,8 +483,10 @@ class WfActiveDocument extends Model
             ->whereIn('doc_code', $docCode)
             ->get();
     }
+    
     /**
      * | Get Uploaded documents
+       | Common Function
      */
     public function getDocsByActiveId($req)
     {
@@ -469,6 +505,7 @@ class WfActiveDocument extends Model
 
     /**
      * | Get Verified Documents
+       | Reference Function : ifFullDocVerified
      */
     public function getVerifiedDocsByActiveId(array $req)
     {
@@ -488,7 +525,8 @@ class WfActiveDocument extends Model
     /**
      * | Deactivate the Rejected Document 
      * | @param metaReqs
-        | Use for deactivate the rejected document
+       | Use for deactivate the rejected document
+       | Common Function
      */
     public function deactivateRejectedDoc($metaReqs)
     {
@@ -505,6 +543,7 @@ class WfActiveDocument extends Model
 
     /**
      * | Get all Rejected Documents
+       | Reference Function : backToCitizen
      */
     public function readRejectedDocuments(array $metaReqs)
     {
@@ -519,6 +558,7 @@ class WfActiveDocument extends Model
 
     /**
      * | Get the document using moduleId,applicaionId,workflowId
+       | Reference Function : checkPostCondition
      */
     public function getApplicatonDoc($relatedId, $workfloId, $moduleId)
     {
@@ -530,6 +570,8 @@ class WfActiveDocument extends Model
             ->where('status', 1)
             ->first();
     }
+
+
     public function getConsumerDocs($consumerId)
     {
         $secondConnection = 'pgsql_water';
@@ -555,7 +597,5 @@ class WfActiveDocument extends Model
             ->where('d.active_id', $consumerId)
             ->get();
     }
-
-
 
 }
