@@ -28,9 +28,11 @@ use Illuminate\Support\Facades\DB;
 
 trait SAF
 {
-    /**
+
+    /** 
      * | Apply SAF Trait
-     */
+       | Reference Function : insertData
+    */
     public function tApplySaf($saf, $req, $safNo, $roadWidthType)
     {
         $saf->has_previous_holding_no = $req->hasPreviousHoldingNo;
@@ -107,7 +109,10 @@ trait SAF
         $saf->road_width = $req->roadType;
     }
 
-    // Trait SAF Owner
+    /** 
+     * | Trait SAF Owner
+       | Reference Function : insertData
+    */
     public function tApplySafOwner($owner, $safId, $owner_details)
     {
         $owner->saf_id = $safId;
@@ -124,7 +129,10 @@ trait SAF
         $owner->is_specially_abled = $owner_details['isSpeciallyAbled'] ?? null;
     }
 
-    // Trait SAF Floors
+   /** 
+     * | Trait SAF Floors
+       | Reference Function : insertData
+    */
     public function tApplySafFloor($floor, $safId, $floor_details)
     {
         // Calculate Carpet Area
@@ -186,6 +194,7 @@ trait SAF
      * #ward_no <- ward_matrs.ward_no
      * #safNo <- "SAF/".str_pad($assessment_type,2,'0',STR_PAD_LEFT)."/".str_pad($word_no,3,'0',STR_PAD_LEFT)."/".str_pad($count,5,'0',STR_PAD_LEFT)
      * Status-Closed
+       | Reference Function : insertData
      */
     public function safNo($ward_id, $assessment_type, $ulb_id)
     {
@@ -198,6 +207,7 @@ trait SAF
 
     /**
      * | Get SAF Request Details for SAF Calculation by SAF ID
+       | Common Function
      */
 
     public function generateSafRequest($req)
@@ -265,6 +275,7 @@ trait SAF
 
     /**
      * | Read Assessment Types
+       | Reference Function : readReferences()
      */
     public function readAssessmentType($assessmentType)
     {
@@ -292,6 +303,7 @@ trait SAF
     /**
      * | Generated SAF Demand to push the value in propSafsDemand Table 
      * | @param collection
+       | Common Function
      */
     public function generateSafDemand($collection)
     {
@@ -418,6 +430,7 @@ trait SAF
 
     /**
      * | Read Road Width Types
+       | Common Function
      */
     public function readRoadWidthType($roadWidth)
     {
@@ -435,6 +448,7 @@ trait SAF
 
     /**
      * | Get Saf Details
+       | Common Function
      */
     public function details($req)
     {
@@ -488,6 +502,7 @@ trait SAF
     /**
      * | Read if the Floor is Trust or Not
      * | @param floors
+       | Common Function
      */
     public function isPropTrust($floors)
     {
@@ -500,6 +515,7 @@ trait SAF
 
     /**
      * | read holding type
+       | Reference Function : applySaf
      */
     public function holdingType($req)
     {
@@ -524,6 +540,7 @@ trait SAF
 
     /**
      * | Read Assessment Type and Ulb Workflow Id(2.1)
+       | Common Function
      */
     public function readAssessUlbWfId($assessmentType, $ulb_id)
     {

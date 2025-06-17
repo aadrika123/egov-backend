@@ -13,6 +13,7 @@ class GenerateSafApplyDemandResponse
     /**
      * | @param CalculatedDemand Response
      * | @param isResidential Property Residential Status
+       | Common Function
      */
     public function generateResponse($calculatedDemand, $isResidential)
     {

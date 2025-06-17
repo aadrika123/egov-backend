@@ -22,7 +22,8 @@ use Illuminate\Support\Facades\DB;
 trait Workflow
 {
     /**
-     * Function for storing or saving the workflows 
+     * | Function for storing or saving the workflows 
+       | Common Function
      */
 
     public function savingWorkflow($workflow, $request)
@@ -34,7 +35,8 @@ trait Workflow
     }
 
     /**
-     * Check workflow Candidate already existing
+     * | Check workflow Candidate already existing
+       | Common Function
      */
     public function checkExisting($request)
     {
@@ -44,7 +46,8 @@ trait Workflow
     }
 
     /**
-     * Function for Saving and Editing Workflow Candidates
+     * | Function for Saving and Editing Workflow Candidates
+       | Common Function
      */
     public function savingWorkflowCandidates($wc, $request)
     {
@@ -57,8 +60,11 @@ trait Workflow
         $wc->save();
         return response()->json('Successfully Saved the Workflow Candidates', 200);
     }
-
-    // Fetching workflows as array
+ 
+    /** 
+     * | Fetching workflows as array
+       | Common Function
+    */
     public function fetchWorkflow($workflow, $arr)
     {
         foreach ($workflow as $workflows) {
@@ -74,7 +80,10 @@ trait Workflow
         return response()->json($arr, 200);
     }
 
-    // Fetching Workflow Candidates
+    /**  
+     * | Fetching Workflow Candidates
+       | Common Function
+    */
     public function fetchWorkflowCandidates($wc, $arr)
     {
         foreach ($wc as $wcs) {
@@ -98,8 +107,9 @@ trait Workflow
     /**
      * | Created On - 11/10/2022 
      * | Created By - Anshu Kumar
-       | ----------- Function used to determine the current user while applying to any module -------- |
+     * | ----------- Function used to determine the current user while applying to any module -------- |
      * | @param workflowId > workflow id applied module
+       | Common Function
      */
     public function getWorkflowCurrentUser($workflowId)
     {
@@ -124,6 +134,7 @@ trait Workflow
      * | get Workflow Data for Initiator
      * | @param userId > Logged In user ID
      * | @param workflowId > Workflow ID
+       | Reference Function: workflowInitiatorData
      */
     public function getWorkflowInitiatorData($userId, $workflowId)
     {
@@ -146,8 +157,9 @@ trait Workflow
 
     /**
      * | get workflow role Id by logged in User Id
-     * -------------------------------------------
-     * @param userId > current Logged in User
+     * | -------------------------------------------
+     * | @param userId > current Logged in User
+       | Common Function
      */
     public function getRoleIdByUserId($userId)
     {
@@ -160,8 +172,9 @@ trait Workflow
 
     /**
      * | get Ward By Logged in User Id
-     * -------------------------------------------
+     * | ------------------------------------------
      * | @param userId > Current Logged In User Id
+       | Common Function
      */
     public function getWardByUserId($userId)
     {
@@ -171,7 +184,10 @@ trait Workflow
         return $occupiedWard;
     }
 
-    //logged in user role 
+    /** 
+     * | logged in user role 
+       | Common Function
+    */
     public function getRole($request)
     {
         $userId = auth()->user()->id;
@@ -189,6 +205,10 @@ trait Workflow
         return remove_null($role);
     }
 
+    /**  
+     * | Get Role by UserId
+       | Reference Function: propDashboard
+    */
     public function getRoleByUserUlbId($ulbId, $userId)
     {
         // try {
@@ -208,6 +228,7 @@ trait Workflow
      * | Get Initiator Id While Sending to level Pending For the First Time
      * | @param mixed $wfWorkflowId > Workflow Id of Modules
      * | @var string $query
+       | Common Function
      */
     public function getInitiatorId(int $wfWorkflowId)
     {
@@ -226,6 +247,7 @@ trait Workflow
     /**
      * | Get Finisher Id while approve or reject application
      * | @param wfWorkflowId ulb workflow id 
+       | Common Function
      */
     public function getFinisherId(int $wfWorkflowId)
     {
@@ -242,6 +264,7 @@ trait Workflow
      * | Workflow Track Trait
      * | @param workflowTrack new model object
      * | @param req requested parameters to be saved in workflow track
+       | Reference Function: commentIndependent
      */
     public function workflowTrack($workflowTrack, $req)
     {

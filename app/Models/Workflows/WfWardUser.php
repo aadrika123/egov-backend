@@ -13,6 +13,7 @@ class WfWardUser extends Model
     /**
      * | Get Wards by user id
      * | @var userId
+       | Common Function
      */
     public function getWardsByUserId($userId)
     {

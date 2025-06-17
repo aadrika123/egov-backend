@@ -23,6 +23,7 @@ class UlbWardMaster extends Model
     /**
      * | Get Ward By Ulb ID
      * | @param ulbId
+       | Common Function
      */
     public function getWardByUlbId($ulbId)
     {
@@ -35,6 +36,7 @@ class UlbWardMaster extends Model
     /**
      * | get the ward by Id
      * | @param id
+       | Common Function
      */
     public function getWard($id)
     {
@@ -45,6 +47,7 @@ class UlbWardMaster extends Model
     /**
      * | get the ward by Id
      * | @param id
+       | Reference Function: getClusterById
      */
     public function getExistWard($id)
     {

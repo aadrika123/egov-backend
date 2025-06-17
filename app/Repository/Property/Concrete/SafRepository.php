@@ -12,6 +12,7 @@ class SafRepository implements iSafRepository
 {
     /**
      * | Meta Saf Details To Be Used in Various Common Functions
+       | Reference Function :  getSaf
      */
     public function metaSafDtls($workflowIds)
     {
@@ -54,6 +55,7 @@ class SafRepository implements iSafRepository
 
     /**
      * | Get Saf Details
+       | Common Function
      */
     public function getSaf($workflowIds)
     {
@@ -64,6 +66,7 @@ class SafRepository implements iSafRepository
 
     /**
      * | Get Property and Saf Transaction
+       | Reference Function: getPropTransactions
      */
     public function getPropTransByCitizenUserId($userId, $userType)
     {

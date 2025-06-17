@@ -2715,7 +2715,7 @@ class ActiveSafController extends Controller
             return responseMsgs(true, "Geo Tagging Done Successfully", "", "010120", "1.0", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
-            return responseMsg(false, $e->getMessage(), "", "010120", "1.0", responseTime(), $req->getMethod(), $req->deviceId);
+            return responseMsgs(false, $e->getMessage(), "", "010120", "1.0", responseTime(), $req->getMethod(), $req->deviceId);
         }
     }
 
@@ -2833,7 +2833,7 @@ class ActiveSafController extends Controller
             $demand['taxDetails'] = collect($safTaxes->original['data']['taxDetails']) ?? [];
             $demand['paymentStatus'] = $safDetails['payment_status'];
             $demand['applicationNo'] = $safDetails['saf_no'];
-            return responseMsgs(true, "Demand Details", remove_null($demand), "010123", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true, "Demand Details", remove_null($demand), "010123", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), []);
         }
@@ -2844,6 +2844,7 @@ class ActiveSafController extends Controller
     /**
      * | Retrieves and compares property verification data with original SAF application data
      * | Used for property tax verification process - compares ULB/TC verification against submitted application
+       | Query Cost: 258ms
        | getVerifications:1
      */
     public function getVerifications(Request $request)
@@ -3151,7 +3152,7 @@ class ActiveSafController extends Controller
             $data["employee_details"] = ["user_name" => $verifications->user_name, "date" => ymdToDmyDate($verifications->created_at)];
             $data["property_comparison"] = $prop_compairs;
             $data["floor_comparison"] = $floors_compais;
-            return responseMsgs(true, $message, remove_null($data), "010124", "1.0", "258ms", "POST", $request->deviceId);
+            return responseMsgs(true, $message, remove_null($data), "010124", "1.0", responseTime(), "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -3417,7 +3418,7 @@ class ActiveSafController extends Controller
      * | and updating SAF payment records. 
      * | It includes transaction handling, demand verification, and updates property transaction details accordingly. 
      * | ------------------------------------------------------------
-     * | offlinePaymentSaf:1
+       | offlinePaymentSaf:1
      */
     public function offlinePaymentSaf(ReqPayment $req)
     {

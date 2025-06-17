@@ -12,6 +12,7 @@ trait SafDetailsTrait
 {
     /**
      * | Get Basic Details
+       | Common Function
      */
     public function generateBasicDetails($data)
     {
@@ -29,6 +30,7 @@ trait SafDetailsTrait
 
     /**
      * | Generating Property Details
+       | Common Function
      */
     public function generatePropertyDetails($data)
     {
@@ -52,6 +54,7 @@ trait SafDetailsTrait
 
     /**
      * | Generate Corresponding Details
+       | Common Function
      */
     public function generateCorrDtls($data)
     {
@@ -66,6 +69,7 @@ trait SafDetailsTrait
 
     /**
      * | Generate Electricity Details
+       | Common Function
      */
     public function generateElectDtls($data)
     {
@@ -83,6 +87,7 @@ trait SafDetailsTrait
 
     /**
      * | Generate Owner Details
+       | Common Function
      */
     public function generateOwnerDetails($ownerDetails)
     {
@@ -107,6 +112,7 @@ trait SafDetailsTrait
 
     /**
      * | Generate Floor Details
+       | Common Function
      */
     public function generateFloorDetails($floorDetails)
     {
@@ -148,6 +154,7 @@ trait SafDetailsTrait
 
     /**
      * | Generate Card Details
+       | Common Function
      */
     public function generateCardDetails($req, $ownerDetails)
     {
@@ -168,6 +175,7 @@ trait SafDetailsTrait
 
     /**
      * | Generate Bifurcated Card Details
+       | Reference Function: safDetails
      */
     public function generateBiCardDetails($req, $ownerDetails)
     {
@@ -188,6 +196,7 @@ trait SafDetailsTrait
 
     /**
      * | Generate Card Details for Concession
+       | Reference Function: getDetailsById (ConcessionController)
      */
     public function generateConcessionCardDtls($req, $ownerDetails)
     {
@@ -214,6 +223,7 @@ trait SafDetailsTrait
 
     /**
      * | Generate Card Details for Objections
+       | Reference Function: getDetailsById (ObjectionController)
      */
     public function generateObjCardDtls($req, $ownerDetails)
     {
@@ -241,6 +251,7 @@ trait SafDetailsTrait
 
     /**
      * | Generate Card Details for Harvesting
+       | Reference Function: getDetailsById (RainWaterHarvestingController)
      */
     public function generateHarvestingCardDtls($req, $ownerDetails)
     {
@@ -270,6 +281,7 @@ trait SafDetailsTrait
 
     /**
      * | Objection Owner Details
+       | Reference Function: getDetailsById (ObjectionController)
      */
     public function objectionOwnerDetails($ownerDetails)
     {
@@ -294,6 +306,7 @@ trait SafDetailsTrait
 
     /**
      * | Objection Details
+       | Reference Function: getDetailsById (ObjectionController)
      */
     public function objectionDetails($objectionLists)
     {
@@ -309,6 +322,7 @@ trait SafDetailsTrait
 
     /**
      * | Objection floor details
+       | Reference Function: getDetailsById (ObjectionController)
      */
 
     public function generateObjectionFloorDetails($objectionFlooorDtl)
@@ -327,6 +341,7 @@ trait SafDetailsTrait
 
     /**
      * | Get GB Basic Details
+       | Reference Function: gbSafDetails
      */
     public function generateGbBasicDetails($data)
     {
@@ -344,6 +359,7 @@ trait SafDetailsTrait
 
     /**
      * | Generating GB Property Details
+       | Reference Function: gbSafDetails
      */
     public function generateGbPropertyDetails($data)
     {
@@ -363,6 +379,7 @@ trait SafDetailsTrait
 
     /**
      * | Officer Details
+       | Reference Function: gbSafDetails
      */
     public function generateOfficerDetails($officerDetails)
     {
@@ -378,6 +395,7 @@ trait SafDetailsTrait
 
     /**
      * | Generate Card Details
+       | Reference Function: gbSafDetails
      */
     public function generateGbCardDetails($req, $officerDetails)
     {
@@ -397,6 +415,7 @@ trait SafDetailsTrait
 
     /**
      * | Get Basic Details
+       | Reference Function: getDetailsById (ObjectionController)
      */
     public function generateForgeryType($data)
     {
@@ -410,6 +429,7 @@ trait SafDetailsTrait
 
     /**
      * | Generate Demand Detail
+       | Reference Function: propertyDues
      */
     public function generateDemandDues($demandDues)
     {

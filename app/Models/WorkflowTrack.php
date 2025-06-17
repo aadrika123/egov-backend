@@ -18,12 +18,17 @@ class WorkflowTrack extends Model
 
     /**
      * | Store Track
+       | Common Function
      */
     public function store($req)
     {
         WorkflowTrack::create($req);
     }
 
+    /** 
+     * | Saves a new workflow tracking record
+       | Common Function
+    */
     public function saveTrack($request)
     {
         $track      = new WorkflowTrack;
@@ -48,6 +53,10 @@ class WorkflowTrack extends Model
         return  $track->save();
     }
 
+    /** 
+     * | Get detailed workflow track records
+       | Common Function
+    */
     public function details()
     {
         return  DB::table('workflow_tracks')
@@ -69,6 +78,7 @@ class WorkflowTrack extends Model
 
     /**
      * | Get Tracks by Ref Table Id
+       | Common Function
      */
     public function getTracksByRefId($mRefTable, $tableId)
     {
@@ -97,6 +107,7 @@ class WorkflowTrack extends Model
 
     /**
      * | Get Citizen Comment
+       | Common Function
      */
     public function getCitizenTracks($mRefTable, $tableId, $citizenId)
     {
@@ -119,6 +130,7 @@ class WorkflowTrack extends Model
 
     /**
      * |total forwaded application
+       | Reference Function: propDashboard
      */
     public function todayForwadedApplication($currentRole, $ulbId, $propertyWorflows)
     {
@@ -133,6 +145,7 @@ class WorkflowTrack extends Model
 
     /**
      * |Total Approved application
+       | Reference Function: propDashboard
      */
     public function todayApprovedApplication($currentRole, $ulbId, $propertyWorflows)
     {
@@ -147,6 +160,7 @@ class WorkflowTrack extends Model
 
     /**
      * |Total Rejected application
+       | Reference Function: propDashboard
      */
     public function todayRejectedApplication($currentRole, $ulbId, $propertyWorflows)
     {
@@ -162,6 +176,7 @@ class WorkflowTrack extends Model
 
     /**
      * | Get workflow track
+       | Common Function
      */
     public function getWfDashbordData($request)
     {
@@ -174,6 +189,7 @@ class WorkflowTrack extends Model
 
     /**
      * | Get Workflow Track by Ref Table, Workflow, and ref table Value and Receiver RoleId
+       | Common Function
      */
     public function getWfTrackByRefId(array $req)
     {

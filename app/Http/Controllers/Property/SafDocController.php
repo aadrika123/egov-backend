@@ -57,9 +57,9 @@ class SafDocController extends Controller
             $totalDocLists['paymentStatus'] = $refSafs->payment_status;
             $totalDocLists['isCitizen'] = ($refSafs->citizen_id == null) ? false : true;
 
-            return responseMsgs(true, "", remove_null($totalDocLists), "010203", "", "", 'POST', "");
+            return responseMsgs(true, "", remove_null($totalDocLists), "010203", "", responseTime(), 'POST', "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", "", 'POST', "");
+            return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", responseTime(), 'POST', "");
         }
     }
 

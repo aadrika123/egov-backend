@@ -93,6 +93,7 @@ class SafCalculation
      * | @var floorDateFrom > Installation Date for particular floor
      * | @var refRuleSet > get the Rule Set by the current object method readRuleSet()
      * | Query Run Time - 5
+       | Common Function
      */
     public function calculateTax(Request $req)
     {
@@ -121,6 +122,7 @@ class SafCalculation
 
     /**
      * | Make All Master Data in a Global Variable (1.1)
+       | Reference Function: calculateTax
      */
 
     public function readPropertyMasterData()
@@ -366,6 +368,7 @@ class SafCalculation
 
     /**
      * | Check if Property Late Assessed Or Not
+       | Common Function
      */
     public function ifPropLateAssessed()
     {
@@ -404,6 +407,7 @@ class SafCalculation
 
     /**
      * | MultiFactor Calculation (1.1.2)
+       | Common Function
      */
     public function readMultiFactor()
     {
@@ -419,6 +423,7 @@ class SafCalculation
 
     /**
      *  Read Rental Rate (1.1.3)
+       | Common Function
      */
     public function readParamRentalRate()
     {
@@ -435,6 +440,7 @@ class SafCalculation
      * | Read Road Type
      * | @param effectiveDate according to the RuleSet
      * | @return roadTypeId
+       | Common Function
      */
     public function readRoadType($effectiveDate)
     {
@@ -479,6 +485,7 @@ class SafCalculation
      * | Calculation Rental Rate (1.1.3)
      * | @var refParamRentalRate Rental Rate Parameter to calculate rentalRate for the Property
      * | @return readRentalRate final Calculated Rental Rate
+       | Common Function
      */
     public function calculateRentalRates()
     {
@@ -494,6 +501,7 @@ class SafCalculation
 
     /**
      * | Read Capital Value Rate for the calculation of Building RuleSet 3
+       | Common Function
      */
     public function readCapitalValueRate()
     {
@@ -708,6 +716,7 @@ class SafCalculation
      * | @var collectRuleSets is the Collection of all the arrayRuleSets in laravel Collection
      * | @var uniqueRuleSets make our collection unique by due date and quater
      * | Query Run Time - 4
+       | Common Function
      * 
      */
     public function calculateQuaterlyRulesets($key)

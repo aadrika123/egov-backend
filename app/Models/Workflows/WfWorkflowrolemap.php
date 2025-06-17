@@ -12,7 +12,8 @@ class WfWorkflowrolemap extends Model
     use HasFactory;
 
     /**
-     * Create Role Map
+     * | Create Role Map
+       | Reference Function: createRoleMap
      */
     public function addRoleMap($req)
     {
@@ -44,7 +45,8 @@ class WfWorkflowrolemap extends Model
     }
 
     /**
-     * Update Role Map
+     * | Update Role Map
+       | Reference Function: updateRoleMap
      */
     public function updateRoleMap($req)
     {
@@ -72,7 +74,8 @@ class WfWorkflowrolemap extends Model
     }
 
     /**
-     * Role Map List by id
+     * | Role Map List by id
+       | Reference Function: roleMapbyId
      */
     public function listbyId($req)
     {
@@ -87,7 +90,8 @@ class WfWorkflowrolemap extends Model
     }
 
     /**
-     * All Role Map list
+     * | All Role Map list
+       | Reference Function: getAllRoleMap
      */
     public function roleMaps()
     {
@@ -113,7 +117,8 @@ class WfWorkflowrolemap extends Model
     }
 
     /**
-     * Delete Role Map
+     * | Delete Role Map
+       | Reference Function: deleteRoleMap
      */
     public function deleteRoleMap($req)
     {
@@ -124,6 +129,7 @@ class WfWorkflowrolemap extends Model
 
     /**
      * | Get Workflow Forward and Backward Ids
+       | Common Function
      */
     public function getWfBackForwardIds($req)
     {
@@ -137,6 +143,7 @@ class WfWorkflowrolemap extends Model
 
     /**
      * | Get Ulb Workflows By Role Ids
+       | Common Function
      */
     public function getWfByRoleId($roleIds)
     {

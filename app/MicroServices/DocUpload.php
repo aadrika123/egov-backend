@@ -22,6 +22,7 @@ class DocUpload
      * | @param requested image (pass your request image here)
      * | @param relativePath Image Relative Path (pass your relative path of the image to be save here)
      * | @return imageName imagename to save (Final Image Name with time and extension)
+       | Common Function
      */
     public function upload($refImageName, $image, $relativePath,$isTimeAttached = true)
     {
@@ -35,6 +36,7 @@ class DocUpload
 
     /**
      * | New DMS Code
+       | Common Function
      */
     public function checkDoc($request)
     {
@@ -72,7 +74,11 @@ class DocUpload
     }
 
 
-
+    /** 
+     * | Handles document upload by validating the input file, generating a hash, 
+     * | and sending it to an external DMS API, returning the response or error message
+       | Reference Function : generatePaymentReceipt
+    */
     public function checkDoc1($request)
     {
         try {
@@ -109,7 +115,10 @@ class DocUpload
         }
     }
 
-
+    /* 
+     * | Processes multiple document uploads by ensuring metadata, delegating to a multipart handler, 
+     * | and returning a standardized API response with metadata context
+    */
     public function severalDoc(Request $request)
     {
         if (!$request->metaData) {
@@ -125,6 +134,11 @@ class DocUpload
         }
     }
 
+    /** 
+     * | Handles multiple file uploads by iterating through nested input files, computing file hashes, 
+     * | sending each to the DMS API, and reconstructing the response data structure based on input hierarchy
+       | Reference Function : severalDoc
+    */
     public function MultipartHandle(Request $request)
     {
         $dmsUrl = Config::get('module-constants.DMS_URL');
@@ -199,6 +213,11 @@ class DocUpload
         return $data;
     }
 
+    /** 
+     * | Retrieves a nested value from a multi-dimensional array using dot notation keys,
+     * | returning null if any key segment is missing
+       | Reference Function : MultipartHandle
+    */
     public function getArrayValueByDotNotation(array $array, string $key)
     {
         $keys = explode('.', $key);
@@ -214,6 +233,11 @@ class DocUpload
         return $array;
     }
 
+    /** 
+     * | Recursively generates a flat list of all keys in a nested array using 
+     * | dot notation to represent the hierarchy
+       | Common Function
+    */
     public function generateDotIndexes(array $array, $prefix = '', $result = [])
     {
 
@@ -230,6 +254,7 @@ class DocUpload
 
     /**
      * | This function is to get the document url from the DMS for multiple documents
+       | Common Function
      */
     public function getDocUrl($documents)
     {
@@ -267,6 +292,7 @@ class DocUpload
 
     /**
      * | This function is to get the document url from the DMS for single documents
+       | Common Function
      */
     public function getSingleDocUrl($document)
     {
