@@ -873,6 +873,8 @@ Route::controller(MasterReferenceController::class)->group(function () {
   Route::post('m-store-blog-post', 'storeBlogPost');
   Route::post('m-list-of-all-blog', 'allBlogs');
   Route::post('m-update-blog', 'editBlog');
+  Route::post('m-delete-blog', 'deleteBlog');
+  Route::post('m-get-blog-by-Id', 'blogById');
 });
 
 
