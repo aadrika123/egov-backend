@@ -125,145 +125,7 @@ class SafCalculation
        | Reference Function: calculateTax
      */
 
-    public function readPropertyMasterData()
-    {
-        $this->_religiousPlaceUsageType = Config::get('PropertyConstaint.RELIGIOUS_PLACE_USAGE_TYPE_ID');
-        $this->_redis = Redis::connection();
-        $propertyDetails = $this->_propertyDetails;
-
-        $this->_effectiveDateRule2 = Config::get("PropertyConstaint.EFFECTIVE_DATE_RULE2");
-        $this->_effectiveDateRule3 = Config::get("PropertyConstaint.EFFECTIVE_DATE_RULE3");
-        $this->_effectiveDateRule3v2 = Config::get("PropertyConstaint.EFFECTIVE_DATE_RULE3_V2");
-        $this->_rwhAreaOfPlot = Config::get('PropertyConstaint.RWH_AREA_OF_PLOT');
-
-        $this->_virtualDate = Carbon::now()->subYears(12)->format('Y-m-d');
-
-        $safFloors = [];
-
-        // Handle SAF floors for Bifurcation (AssessmentType == 4)
-       $floors = collect($propertyDetails['floor'] ?? []);
-
-        if (($propertyDetails['assessmentType'] ?? null) == 4 || ($propertyDetails['assessmentType'] ?? '') === "Bifurcation") {
-
-            $isNewFloorAdded = false;
-
-            foreach ($floors as $floor) {
-                if (empty($floor['propFloorDetailId'])) {
-                    $isNewFloorAdded = true;
-                    break;
-                }
-            }
-
-            // If no new floor is added and no details are changed, skip further demand calculation
-            if (!$isNewFloorAdded) {
-                $this->_floors = [];
-            } else {
-                foreach ($floors as $floor) {
-                    $safFloors[] = [
-                        "floorNo"           => $floor['floorNo'],
-                        "useType"           => $floor['useType'],
-                        "constructionType"  => $floor['constructionType'],
-                        "occupancyType"     => $floor['occupancyType'],
-                        "buildupArea"       => $floor['buildupArea'],
-                        "dateFrom"          => $floor['dateFrom'],
-                        "dateUpto"          => $floor['dateUpto'],
-                        "carpetArea"        => $floor['carpetArea'] ?? null,
-                        "propFloorDetailId" => $floor['propFloorDetailId'] ?? null,
-                    ];
-                }
-
-                $this->_floors = $safFloors;
-            }
-
-            $this->_floors = $safFloors ?? [];
-            $this->_ulbId = $propertyDetails['ulbId'] ?? ($propertyDetails['auth']['ulb_id'] ?? null);
-
-            $ulbMstrs = UlbMaster::findOrFail($this->_ulbId);
-            $this->_ulbType = $ulbMstrs->category;
-
-            $this->_vacantPropertyTypeId = Config::get("PropertyConstaint.VACANT_PROPERTY_TYPE");
-
-            $this->_wardNo = Redis::get('ulbWardMaster:' . $propertyDetails['ward']);
-            if (!$this->_wardNo) {
-                $this->_wardNo = UlbWardMaster::find($propertyDetails['ward'])->ward_name ?? '';
-                $this->_redis->set('ulbWardMaster:' . $propertyDetails['ward'], $this->_wardNo);
-            }
-
-            $readAreaOfPlot = decimalToSqFt($propertyDetails['bifurcatedPlot'] ?? $propertyDetails['areaOfPlot']);
-            $this->_areaOfPlotInSqft = $readAreaOfPlot;
-
-            if (
-                $propertyDetails['propertyType'] != $this->_vacantPropertyTypeId &&
-                $propertyDetails['isWaterHarvesting'] == 0 &&
-                $readAreaOfPlot > $this->_rwhAreaOfPlot
-            ) {
-                $this->_rwhPenaltyStatus = true;
-            }
-
-            $this->readParamRentalRate();
-            $this->ifPropLateAssessed();
-            $this->_rentalValue = $this->readRentalValue();
-            $this->_multiFactors = $this->readMultiFactor();
-
-            if ($propertyDetails['propertyType'] == 3) {
-                $this->getAptRoadType();
-            } else {
-                $this->_readRoadType[$this->_effectiveDateRule2] = $this->readRoadType($this->_effectiveDateRule2);
-                $this->_readRoadType[$this->_effectiveDateRule3] = $this->readRoadType($this->_effectiveDateRule3);
-            }
-
-            $this->_rentalRates = $this->calculateRentalRates();
-
-            if ($propertyDetails['propertyType'] != 4 && collect($this->_floors)->isNotEmpty()) {
-                $this->_capitalValueRate = $this->readCapitalvalueRate();
-                if (!$this->_capitalValueRate) {
-                    throw new \Exception("CV Rate Not Available for this ward");
-                }
-            }
-
-            if (
-                $propertyDetails['isMobileTower'] == 1 ||
-                $propertyDetails['isHoardingBoard'] == 1 ||
-                $propertyDetails['isPetrolPump'] == 1
-            ) {
-                $this->_capitalValueRateMPH = $this->readCapitalValueRateMHP();
-            }
-
-            $this->_individualPropTypeId = Config::get('PropertyConstaint.INDEPENDENT_PROP_TYPE_ID');
-            if (in_array($propertyDetails['propertyType'], [$this->_vacantPropertyTypeId, $this->_individualPropTypeId])) {
-                $this->_vacantRentalRates = $this->readVacantRentalRates();
-            }
-
-            $this->_penaltyRebateCalc = new PenaltyRebateCalculation();
-
-            $current = Carbon::now()->format('Y-m-d');
-            $this->_currentQuarterDueDate = Carbon::parse(calculateQuaterDueDate($current))->floorMonth();
-            $this->_currentQuarterDate = Carbon::parse($current)->floorMonth();
-            $this->_loggedInUserType = auth()->user()->user_type ?? 'Citizen';
-
-            $rebates = Config::get('PropertyConstaint.REBATES');
-            $this->_citizenRebatePerc         = $rebates['CITIZEN']['PERC'];
-            $this->_jskRebatePerc             = $rebates['JSK']['PERC'];
-            $this->_speciallyAbledRebatePerc  = $rebates['SPECIALLY_ABLED']['PERC'];
-            $this->_seniorCitizenRebatePerc   = $rebates['SERIOR_CITIZEN']['PERC'];
-
-            $this->_citizenRebateID         = $rebates['CITIZEN']['ID'];
-            $this->_jskRebateID             = $rebates['JSK']['ID'];
-            $this->_speciallyAbledRebateID  = $rebates['SPECIALLY_ABLED']['ID'];
-            $this->_seniorCitizenRebateID   = $rebates['SERIOR_CITIZEN']['ID'];
-
-            $this->_point20TaxedUsageTypes = Config::get('PropertyConstaint.POINT20-TAXED-COMM-USAGE-TYPES');
-
-            $this->isPropertyTrust();
-
-            $this->_isTrustVerified = $propertyDetails['isTrustVerified'] ?? 1;
-            $this->_propertyDetails['isTrustVerified'] = $this->_isTrustVerified;
-
-            $this->ifPropPoint20Taxed();
-        }
-    }
-
-    //  public function readPropertyMasterData()
+    // public function readPropertyMasterData()
     // {
     //     $this->_religiousPlaceUsageType = Config::get('PropertyConstaint.RELIGIOUS_PLACE_USAGE_TYPE_ID');
     //     $this->_redis = Redis::connection();
@@ -274,97 +136,235 @@ class SafCalculation
     //     $this->_effectiveDateRule3v2 = Config::get("PropertyConstaint.EFFECTIVE_DATE_RULE3_V2");
     //     $this->_rwhAreaOfPlot = Config::get('PropertyConstaint.RWH_AREA_OF_PLOT');
 
-    //     $todayDate = Carbon::now();
-    //     $this->_virtualDate = $todayDate->subYears(12)->format('Y-m-d');
-    //     $this->_floors = $propertyDetails['floor'] ?? [];
-    //     $this->_ulbId = ($propertyDetails['ulbId']) ?? ($this->_propertyDetails['auth']['ulb_id']);
+    //     $this->_virtualDate = Carbon::now()->subYears(12)->format('Y-m-d');
 
-    //     $ulbMstrs = UlbMaster::findOrFail($this->_ulbId);
-    //     $this->_ulbType = $ulbMstrs->category;
+    //     $safFloors = [];
 
-    //     $this->_vacantPropertyTypeId = Config::get("PropertyConstaint.VACANT_PROPERTY_TYPE");               // Vacant Property Type Id
+    //     // Handle SAF floors for Bifurcation (AssessmentType == 4)
+    //    $floors = collect($propertyDetails['floor'] ?? []);
 
-    //     // Ward No
-    //     $this->_wardNo = Redis::get('ulbWardMaster:' . $propertyDetails['ward']);                           // Ward No Value from Redis
-    //     if (!$this->_wardNo) {
-    //         $this->_wardNo = UlbWardMaster::find($propertyDetails['ward'])->ward_name;
-    //         $this->_redis->set('ulbWardMaster:' . $propertyDetails['ward'], $this->_wardNo);
-    //     }
+    //     if (($propertyDetails['assessmentType'] ?? null) == 4 || ($propertyDetails['assessmentType'] ?? '') === "Bifurcation") {
 
-    //     // Rain Water Harvesting Penalty If The Plot Area is Greater than 3228 sqft. and Rain Water Harvesting is none
-    //     $readAreaOfPlot =  decimalToSqFt(isset($this->_propertyDetails['bifurcatedPlot']) ? $this->_propertyDetails['bifurcatedPlot'] : $this->_propertyDetails['areaOfPlot']);                              // (In Dismil To SqFt)
-    //     $this->_areaOfPlotInSqft = $readAreaOfPlot;
-    //     // Check Rain Water Harvesting Status
-    //     if ($propertyDetails['propertyType'] != $this->_vacantPropertyTypeId && $propertyDetails['isWaterHarvesting'] == 0 && $readAreaOfPlot > $this->_rwhAreaOfPlot) {
-    //         $this->_rwhPenaltyStatus = true;
-    //     }
+    //         $isNewFloorAdded = false;
 
-    //     $this->readParamRentalRate();                                                           // Read Rental Rate (1.1.3)
-
-    //     $this->ifPropLateAssessed();
-
-    //     $this->_rentalValue = $this->readRentalValue();
-    //     $this->_multiFactors = $this->readMultiFactor();                                                            // Calculation of Rental rate and Storing in Global Variable (function 1.1.1)
-    //     if ($this->_propertyDetails['propertyType'] == 3) {                                                         // Means the Property is Apartment or Flat
-    //         $this->getAptRoadType();                                                                                // Function (1.1.5)
-    //     }
-
-    //     if ($this->_propertyDetails['propertyType'] != 3) {
-    //         $this->_readRoadType[$this->_effectiveDateRule2] = $this->readRoadType($this->_effectiveDateRule2);         // Road Type ID According to ruleset2 effective Date
-    //         $this->_readRoadType[$this->_effectiveDateRule3] = $this->readRoadType($this->_effectiveDateRule3);         // Road Type id according to ruleset3 effective Date
-    //     }
-
-    //     $this->_rentalRates = $this->calculateRentalRates();
-
-    //     if ($this->_propertyDetails['propertyType'] != 4)                     // Property Should not be Vacant Land for Reading Capital Value Rate
-    //     {
-    //         if (collect($this->_floors)->isNotEmpty()) {
-    //             $this->_capitalValueRate = $this->readCapitalvalueRate();        // Calculate Capital Value Rate 
-    //             if (!$this->_capitalValueRate)
-    //                 throw new Exception("CV Rate Not Available for this ward");
+    //         foreach ($floors as $floor) {
+    //             if (empty($floor['propFloorDetailId'])) {
+    //                 $isNewFloorAdded = true;
+    //                 break;
+    //             }
     //         }
+
+    //         // If no new floor is added and no details are changed, skip further demand calculation
+    //         if (!$isNewFloorAdded) {
+    //             $this->_floors = [];
+    //         } else {
+    //             foreach ($floors as $floor) {
+    //                 $safFloors[] = [
+    //                     "floorNo"           => $floor['floorNo'],
+    //                     "useType"           => $floor['useType'],
+    //                     "constructionType"  => $floor['constructionType'],
+    //                     "occupancyType"     => $floor['occupancyType'],
+    //                     "buildupArea"       => $floor['buildupArea'],
+    //                     "dateFrom"          => $floor['dateFrom'],
+    //                     "dateUpto"          => $floor['dateUpto'],
+    //                     "carpetArea"        => $floor['carpetArea'] ?? null,
+    //                     "propFloorDetailId" => $floor['propFloorDetailId'] ?? null,
+    //                 ];
+    //             }
+
+    //             $this->_floors = $safFloors;
+    //         }
+
+    //         $this->_floors = $safFloors ?? [];
+    //         $this->_ulbId = $propertyDetails['ulbId'] ?? ($propertyDetails['auth']['ulb_id'] ?? null);
+
+    //         $ulbMstrs = UlbMaster::findOrFail($this->_ulbId);
+    //         $this->_ulbType = $ulbMstrs->category;
+
+    //         $this->_vacantPropertyTypeId = Config::get("PropertyConstaint.VACANT_PROPERTY_TYPE");
+
+    //         $this->_wardNo = Redis::get('ulbWardMaster:' . $propertyDetails['ward']);
+    //         if (!$this->_wardNo) {
+    //             $this->_wardNo = UlbWardMaster::find($propertyDetails['ward'])->ward_name ?? '';
+    //             $this->_redis->set('ulbWardMaster:' . $propertyDetails['ward'], $this->_wardNo);
+    //         }
+
+    //         $readAreaOfPlot = decimalToSqFt($propertyDetails['bifurcatedPlot'] ?? $propertyDetails['areaOfPlot']);
+    //         $this->_areaOfPlotInSqft = $readAreaOfPlot;
+
+    //         if (
+    //             $propertyDetails['propertyType'] != $this->_vacantPropertyTypeId &&
+    //             $propertyDetails['isWaterHarvesting'] == 0 &&
+    //             $readAreaOfPlot > $this->_rwhAreaOfPlot
+    //         ) {
+    //             $this->_rwhPenaltyStatus = true;
+    //         }
+
+    //         $this->readParamRentalRate();
+    //         $this->ifPropLateAssessed();
+    //         $this->_rentalValue = $this->readRentalValue();
+    //         $this->_multiFactors = $this->readMultiFactor();
+
+    //         if ($propertyDetails['propertyType'] == 3) {
+    //             $this->getAptRoadType();
+    //         } else {
+    //             $this->_readRoadType[$this->_effectiveDateRule2] = $this->readRoadType($this->_effectiveDateRule2);
+    //             $this->_readRoadType[$this->_effectiveDateRule3] = $this->readRoadType($this->_effectiveDateRule3);
+    //         }
+
+    //         $this->_rentalRates = $this->calculateRentalRates();
+
+    //         if ($propertyDetails['propertyType'] != 4 && collect($this->_floors)->isNotEmpty()) {
+    //             $this->_capitalValueRate = $this->readCapitalvalueRate();
+    //             if (!$this->_capitalValueRate) {
+    //                 throw new \Exception("CV Rate Not Available for this ward");
+    //             }
+    //         }
+
+    //         if (
+    //             $propertyDetails['isMobileTower'] == 1 ||
+    //             $propertyDetails['isHoardingBoard'] == 1 ||
+    //             $propertyDetails['isPetrolPump'] == 1
+    //         ) {
+    //             $this->_capitalValueRateMPH = $this->readCapitalValueRateMHP();
+    //         }
+
+    //         $this->_individualPropTypeId = Config::get('PropertyConstaint.INDEPENDENT_PROP_TYPE_ID');
+    //         if (in_array($propertyDetails['propertyType'], [$this->_vacantPropertyTypeId, $this->_individualPropTypeId])) {
+    //             $this->_vacantRentalRates = $this->readVacantRentalRates();
+    //         }
+
+    //         $this->_penaltyRebateCalc = new PenaltyRebateCalculation();
+
+    //         $current = Carbon::now()->format('Y-m-d');
+    //         $this->_currentQuarterDueDate = Carbon::parse(calculateQuaterDueDate($current))->floorMonth();
+    //         $this->_currentQuarterDate = Carbon::parse($current)->floorMonth();
+    //         $this->_loggedInUserType = auth()->user()->user_type ?? 'Citizen';
+
+    //         $rebates = Config::get('PropertyConstaint.REBATES');
+    //         $this->_citizenRebatePerc         = $rebates['CITIZEN']['PERC'];
+    //         $this->_jskRebatePerc             = $rebates['JSK']['PERC'];
+    //         $this->_speciallyAbledRebatePerc  = $rebates['SPECIALLY_ABLED']['PERC'];
+    //         $this->_seniorCitizenRebatePerc   = $rebates['SERIOR_CITIZEN']['PERC'];
+
+    //         $this->_citizenRebateID         = $rebates['CITIZEN']['ID'];
+    //         $this->_jskRebateID             = $rebates['JSK']['ID'];
+    //         $this->_speciallyAbledRebateID  = $rebates['SPECIALLY_ABLED']['ID'];
+    //         $this->_seniorCitizenRebateID   = $rebates['SERIOR_CITIZEN']['ID'];
+
+    //         $this->_point20TaxedUsageTypes = Config::get('PropertyConstaint.POINT20-TAXED-COMM-USAGE-TYPES');
+
+    //         $this->isPropertyTrust();
+
+    //         $this->_isTrustVerified = $propertyDetails['isTrustVerified'] ?? 1;
+    //         $this->_propertyDetails['isTrustVerified'] = $this->_isTrustVerified;
+
+    //         $this->ifPropPoint20Taxed();
     //     }
-
-    //     if ($propertyDetails['isMobileTower'] == 1 || $propertyDetails['isHoardingBoard'] == 1 || $propertyDetails['isPetrolPump'] == 1)
-    //         $this->_capitalValueRateMPH = $this->readCapitalValueRateMHP();                                         // Capital Value Rate for MobileTower, PetrolPump,HoardingBoard
-
-
-    //     $this->_individualPropTypeId = Config::get('PropertyConstaint.INDEPENDENT_PROP_TYPE_ID');
-
-    //     if (in_array($this->_propertyDetails['propertyType'], [$this->_vacantPropertyTypeId, $this->_individualPropTypeId]))     // i.e for Vacant Land and Independent Building
-    //         $this->_vacantRentalRates = $this->readVacantRentalRates();
-
-    //     $this->_penaltyRebateCalc = new PenaltyRebateCalculation();
-    //     // Current Quarter End Date and Start Date for 1% Penalty
-    //     $current = Carbon::now()->format('Y-m-d');
-    //     $currentQuarterDueDate = Carbon::parse(calculateQuaterDueDate($current))->floorMonth();
-    //     $this->_currentQuarterDueDate = $currentQuarterDueDate;                                                     // Quarter Due Date
-    //     $currentQuarterDate = Carbon::parse($current)->floorMonth();
-    //     $this->_currentQuarterDate = $currentQuarterDate;                                                           // Quarter Current Date
-    //     $this->_loggedInUserType = auth()->user()->user_type ?? 'Citizen';                                            // User Type of current Logged In User
-
-    //     // Types of Rebates and Rebate Percentages
-    //     $this->_citizenRebatePerc = Config::get('PropertyConstaint.REBATES.CITIZEN.PERC');                  // 5%
-    //     $this->_jskRebatePerc = Config::get('PropertyConstaint.REBATES.JSK.PERC');                          // 2.5%
-    //     $this->_speciallyAbledRebatePerc = Config::get('PropertyConstaint.REBATES.SPECIALLY_ABLED.PERC');   // 5%
-    //     $this->_seniorCitizenRebatePerc = Config::get('PropertyConstaint.REBATES.SERIOR_CITIZEN.PERC');     // 5%
-
-    //     $this->_citizenRebateID = Config::get('PropertyConstaint.REBATES.CITIZEN.ID');                  // 5
-    //     $this->_jskRebateID = Config::get('PropertyConstaint.REBATES.JSK.ID');                          // 2.5
-    //     $this->_speciallyAbledRebateID = Config::get('PropertyConstaint.REBATES.SPECIALLY_ABLED.ID');   // 5
-    //     $this->_seniorCitizenRebateID = Config::get('PropertyConstaint.REBATES.SERIOR_CITIZEN.ID');     // 5
-    //     $this->_point20TaxedUsageTypes = Config::get('PropertyConstaint.POINT20-TAXED-COMM-USAGE-TYPES'); // The Type of Commercial Usage Types which have taxes 0.20 Perc
-
-    //     $this->isPropertyTrust();            // Check If the Property is Religious or Educational Trust(1.1.6)
-
-    //     if (isset($this->_propertyDetails['isTrustVerified']))
-    //         $this->_isTrustVerified = ($this->_propertyDetails['isTrustVerified'] == 0) ? 0 : 1;
-    //     else
-    //         $this->_isTrustVerified = $this->_propertyDetails['isTrustVerified'] = 1;
-
-    //     $this->ifPropPoint20Taxed();   // Check if the Property consists 0.20 % Tax Percentage or Not      // (1.1.7)
-
     // }
+
+     public function readPropertyMasterData()
+    {
+        $this->_religiousPlaceUsageType = Config::get('PropertyConstaint.RELIGIOUS_PLACE_USAGE_TYPE_ID');
+        $this->_redis = Redis::connection();
+        $propertyDetails = $this->_propertyDetails;
+
+        $this->_effectiveDateRule2 = Config::get("PropertyConstaint.EFFECTIVE_DATE_RULE2");
+        $this->_effectiveDateRule3 = Config::get("PropertyConstaint.EFFECTIVE_DATE_RULE3");
+        $this->_effectiveDateRule3v2 = Config::get("PropertyConstaint.EFFECTIVE_DATE_RULE3_V2");
+        $this->_rwhAreaOfPlot = Config::get('PropertyConstaint.RWH_AREA_OF_PLOT');
+
+        $todayDate = Carbon::now();
+        $this->_virtualDate = $todayDate->subYears(12)->format('Y-m-d');
+        $this->_floors = $propertyDetails['floor'] ?? [];
+        $this->_ulbId = ($propertyDetails['ulbId']) ?? ($this->_propertyDetails['auth']['ulb_id']);
+
+        $ulbMstrs = UlbMaster::findOrFail($this->_ulbId);
+        $this->_ulbType = $ulbMstrs->category;
+
+        $this->_vacantPropertyTypeId = Config::get("PropertyConstaint.VACANT_PROPERTY_TYPE");               // Vacant Property Type Id
+
+        // Ward No
+        $this->_wardNo = Redis::get('ulbWardMaster:' . $propertyDetails['ward']);                           // Ward No Value from Redis
+        if (!$this->_wardNo) {
+            $this->_wardNo = UlbWardMaster::find($propertyDetails['ward'])->ward_name;
+            $this->_redis->set('ulbWardMaster:' . $propertyDetails['ward'], $this->_wardNo);
+        }
+
+        // Rain Water Harvesting Penalty If The Plot Area is Greater than 3228 sqft. and Rain Water Harvesting is none
+        $readAreaOfPlot =  decimalToSqFt(isset($this->_propertyDetails['bifurcatedPlot']) ? $this->_propertyDetails['bifurcatedPlot'] : $this->_propertyDetails['areaOfPlot']);                              // (In Dismil To SqFt)
+        $this->_areaOfPlotInSqft = $readAreaOfPlot;
+        // Check Rain Water Harvesting Status
+        if ($propertyDetails['propertyType'] != $this->_vacantPropertyTypeId && $propertyDetails['isWaterHarvesting'] == 0 && $readAreaOfPlot > $this->_rwhAreaOfPlot) {
+            $this->_rwhPenaltyStatus = true;
+        }
+
+        $this->readParamRentalRate();                                                           // Read Rental Rate (1.1.3)
+
+        $this->ifPropLateAssessed();
+
+        $this->_rentalValue = $this->readRentalValue();
+        $this->_multiFactors = $this->readMultiFactor();                                                            // Calculation of Rental rate and Storing in Global Variable (function 1.1.1)
+        if ($this->_propertyDetails['propertyType'] == 3) {                                                         // Means the Property is Apartment or Flat
+            $this->getAptRoadType();                                                                                // Function (1.1.5)
+        }
+
+        if ($this->_propertyDetails['propertyType'] != 3) {
+            $this->_readRoadType[$this->_effectiveDateRule2] = $this->readRoadType($this->_effectiveDateRule2);         // Road Type ID According to ruleset2 effective Date
+            $this->_readRoadType[$this->_effectiveDateRule3] = $this->readRoadType($this->_effectiveDateRule3);         // Road Type id according to ruleset3 effective Date
+        }
+
+        $this->_rentalRates = $this->calculateRentalRates();
+
+        if ($this->_propertyDetails['propertyType'] != 4)                     // Property Should not be Vacant Land for Reading Capital Value Rate
+        {
+            if (collect($this->_floors)->isNotEmpty()) {
+                $this->_capitalValueRate = $this->readCapitalvalueRate();        // Calculate Capital Value Rate 
+                if (!$this->_capitalValueRate)
+                    throw new Exception("CV Rate Not Available for this ward");
+            }
+        }
+
+        if ($propertyDetails['isMobileTower'] == 1 || $propertyDetails['isHoardingBoard'] == 1 || $propertyDetails['isPetrolPump'] == 1)
+            $this->_capitalValueRateMPH = $this->readCapitalValueRateMHP();                                         // Capital Value Rate for MobileTower, PetrolPump,HoardingBoard
+
+
+        $this->_individualPropTypeId = Config::get('PropertyConstaint.INDEPENDENT_PROP_TYPE_ID');
+
+        if (in_array($this->_propertyDetails['propertyType'], [$this->_vacantPropertyTypeId, $this->_individualPropTypeId]))     // i.e for Vacant Land and Independent Building
+            $this->_vacantRentalRates = $this->readVacantRentalRates();
+
+        $this->_penaltyRebateCalc = new PenaltyRebateCalculation();
+        // Current Quarter End Date and Start Date for 1% Penalty
+        $current = Carbon::now()->format('Y-m-d');
+        $currentQuarterDueDate = Carbon::parse(calculateQuaterDueDate($current))->floorMonth();
+        $this->_currentQuarterDueDate = $currentQuarterDueDate;                                                     // Quarter Due Date
+        $currentQuarterDate = Carbon::parse($current)->floorMonth();
+        $this->_currentQuarterDate = $currentQuarterDate;                                                           // Quarter Current Date
+        $this->_loggedInUserType = auth()->user()->user_type ?? 'Citizen';                                            // User Type of current Logged In User
+
+        // Types of Rebates and Rebate Percentages
+        $this->_citizenRebatePerc = Config::get('PropertyConstaint.REBATES.CITIZEN.PERC');                  // 5%
+        $this->_jskRebatePerc = Config::get('PropertyConstaint.REBATES.JSK.PERC');                          // 2.5%
+        $this->_speciallyAbledRebatePerc = Config::get('PropertyConstaint.REBATES.SPECIALLY_ABLED.PERC');   // 5%
+        $this->_seniorCitizenRebatePerc = Config::get('PropertyConstaint.REBATES.SERIOR_CITIZEN.PERC');     // 5%
+
+        $this->_citizenRebateID = Config::get('PropertyConstaint.REBATES.CITIZEN.ID');                  // 5
+        $this->_jskRebateID = Config::get('PropertyConstaint.REBATES.JSK.ID');                          // 2.5
+        $this->_speciallyAbledRebateID = Config::get('PropertyConstaint.REBATES.SPECIALLY_ABLED.ID');   // 5
+        $this->_seniorCitizenRebateID = Config::get('PropertyConstaint.REBATES.SERIOR_CITIZEN.ID');     // 5
+        $this->_point20TaxedUsageTypes = Config::get('PropertyConstaint.POINT20-TAXED-COMM-USAGE-TYPES'); // The Type of Commercial Usage Types which have taxes 0.20 Perc
+
+        $this->isPropertyTrust();            // Check If the Property is Religious or Educational Trust(1.1.6)
+
+        if (isset($this->_propertyDetails['isTrustVerified']))
+            $this->_isTrustVerified = ($this->_propertyDetails['isTrustVerified'] == 0) ? 0 : 1;
+        else
+            $this->_isTrustVerified = $this->_propertyDetails['isTrustVerified'] = 1;
+
+        $this->ifPropPoint20Taxed();   // Check if the Property consists 0.20 % Tax Percentage or Not      // (1.1.7)
+
+    }
 
     /**
      * | Check if Property Late Assessed Or Not
