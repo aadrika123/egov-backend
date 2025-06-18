@@ -125,7 +125,145 @@ class SafCalculation
        | Reference Function: calculateTax
      */
 
-    public function readPropertyMasterData()
+    // public function readPropertyMasterData()
+    // {
+    //     $this->_religiousPlaceUsageType = Config::get('PropertyConstaint.RELIGIOUS_PLACE_USAGE_TYPE_ID');
+    //     $this->_redis = Redis::connection();
+    //     $propertyDetails = $this->_propertyDetails;
+
+    //     $this->_effectiveDateRule2 = Config::get("PropertyConstaint.EFFECTIVE_DATE_RULE2");
+    //     $this->_effectiveDateRule3 = Config::get("PropertyConstaint.EFFECTIVE_DATE_RULE3");
+    //     $this->_effectiveDateRule3v2 = Config::get("PropertyConstaint.EFFECTIVE_DATE_RULE3_V2");
+    //     $this->_rwhAreaOfPlot = Config::get('PropertyConstaint.RWH_AREA_OF_PLOT');
+
+    //     $this->_virtualDate = Carbon::now()->subYears(12)->format('Y-m-d');
+
+    //     $safFloors = [];
+
+    //     // Handle SAF floors for Bifurcation (AssessmentType == 4)
+    //    $floors = collect($propertyDetails['floor'] ?? []);
+
+    //     if (($propertyDetails['assessmentType'] ?? null) == 4 || ($propertyDetails['assessmentType'] ?? '') === "Bifurcation") {
+
+    //         $isNewFloorAdded = false;
+
+    //         foreach ($floors as $floor) {
+    //             if (empty($floor['propFloorDetailId'])) {
+    //                 $isNewFloorAdded = true;
+    //                 break;
+    //             }
+    //         }
+
+    //         // If no new floor is added and no details are changed, skip further demand calculation
+    //         if (!$isNewFloorAdded) {
+    //             $this->_floors = [];
+    //         } else {
+    //             foreach ($floors as $floor) {
+    //                 $safFloors[] = [
+    //                     "floorNo"           => $floor['floorNo'],
+    //                     "useType"           => $floor['useType'],
+    //                     "constructionType"  => $floor['constructionType'],
+    //                     "occupancyType"     => $floor['occupancyType'],
+    //                     "buildupArea"       => $floor['buildupArea'],
+    //                     "dateFrom"          => $floor['dateFrom'],
+    //                     "dateUpto"          => $floor['dateUpto'],
+    //                     "carpetArea"        => $floor['carpetArea'] ?? null,
+    //                     "propFloorDetailId" => $floor['propFloorDetailId'] ?? null,
+    //                 ];
+    //             }
+
+    //             $this->_floors = $safFloors;
+    //         }
+
+    //         $this->_floors = $safFloors ?? [];
+    //         $this->_ulbId = $propertyDetails['ulbId'] ?? ($propertyDetails['auth']['ulb_id'] ?? null);
+
+    //         $ulbMstrs = UlbMaster::findOrFail($this->_ulbId);
+    //         $this->_ulbType = $ulbMstrs->category;
+
+    //         $this->_vacantPropertyTypeId = Config::get("PropertyConstaint.VACANT_PROPERTY_TYPE");
+
+    //         $this->_wardNo = Redis::get('ulbWardMaster:' . $propertyDetails['ward']);
+    //         if (!$this->_wardNo) {
+    //             $this->_wardNo = UlbWardMaster::find($propertyDetails['ward'])->ward_name ?? '';
+    //             $this->_redis->set('ulbWardMaster:' . $propertyDetails['ward'], $this->_wardNo);
+    //         }
+
+    //         $readAreaOfPlot = decimalToSqFt($propertyDetails['bifurcatedPlot'] ?? $propertyDetails['areaOfPlot']);
+    //         $this->_areaOfPlotInSqft = $readAreaOfPlot;
+
+    //         if (
+    //             $propertyDetails['propertyType'] != $this->_vacantPropertyTypeId &&
+    //             $propertyDetails['isWaterHarvesting'] == 0 &&
+    //             $readAreaOfPlot > $this->_rwhAreaOfPlot
+    //         ) {
+    //             $this->_rwhPenaltyStatus = true;
+    //         }
+
+    //         $this->readParamRentalRate();
+    //         $this->ifPropLateAssessed();
+    //         $this->_rentalValue = $this->readRentalValue();
+    //         $this->_multiFactors = $this->readMultiFactor();
+
+    //         if ($propertyDetails['propertyType'] == 3) {
+    //             $this->getAptRoadType();
+    //         } else {
+    //             $this->_readRoadType[$this->_effectiveDateRule2] = $this->readRoadType($this->_effectiveDateRule2);
+    //             $this->_readRoadType[$this->_effectiveDateRule3] = $this->readRoadType($this->_effectiveDateRule3);
+    //         }
+
+    //         $this->_rentalRates = $this->calculateRentalRates();
+
+    //         if ($propertyDetails['propertyType'] != 4 && collect($this->_floors)->isNotEmpty()) {
+    //             $this->_capitalValueRate = $this->readCapitalvalueRate();
+    //             if (!$this->_capitalValueRate) {
+    //                 throw new \Exception("CV Rate Not Available for this ward");
+    //             }
+    //         }
+
+    //         if (
+    //             $propertyDetails['isMobileTower'] == 1 ||
+    //             $propertyDetails['isHoardingBoard'] == 1 ||
+    //             $propertyDetails['isPetrolPump'] == 1
+    //         ) {
+    //             $this->_capitalValueRateMPH = $this->readCapitalValueRateMHP();
+    //         }
+
+    //         $this->_individualPropTypeId = Config::get('PropertyConstaint.INDEPENDENT_PROP_TYPE_ID');
+    //         if (in_array($propertyDetails['propertyType'], [$this->_vacantPropertyTypeId, $this->_individualPropTypeId])) {
+    //             $this->_vacantRentalRates = $this->readVacantRentalRates();
+    //         }
+
+    //         $this->_penaltyRebateCalc = new PenaltyRebateCalculation();
+
+    //         $current = Carbon::now()->format('Y-m-d');
+    //         $this->_currentQuarterDueDate = Carbon::parse(calculateQuaterDueDate($current))->floorMonth();
+    //         $this->_currentQuarterDate = Carbon::parse($current)->floorMonth();
+    //         $this->_loggedInUserType = auth()->user()->user_type ?? 'Citizen';
+
+    //         $rebates = Config::get('PropertyConstaint.REBATES');
+    //         $this->_citizenRebatePerc         = $rebates['CITIZEN']['PERC'];
+    //         $this->_jskRebatePerc             = $rebates['JSK']['PERC'];
+    //         $this->_speciallyAbledRebatePerc  = $rebates['SPECIALLY_ABLED']['PERC'];
+    //         $this->_seniorCitizenRebatePerc   = $rebates['SERIOR_CITIZEN']['PERC'];
+
+    //         $this->_citizenRebateID         = $rebates['CITIZEN']['ID'];
+    //         $this->_jskRebateID             = $rebates['JSK']['ID'];
+    //         $this->_speciallyAbledRebateID  = $rebates['SPECIALLY_ABLED']['ID'];
+    //         $this->_seniorCitizenRebateID   = $rebates['SERIOR_CITIZEN']['ID'];
+
+    //         $this->_point20TaxedUsageTypes = Config::get('PropertyConstaint.POINT20-TAXED-COMM-USAGE-TYPES');
+
+    //         $this->isPropertyTrust();
+
+    //         $this->_isTrustVerified = $propertyDetails['isTrustVerified'] ?? 1;
+    //         $this->_propertyDetails['isTrustVerified'] = $this->_isTrustVerified;
+
+    //         $this->ifPropPoint20Taxed();
+    //     }
+    // }
+
+     public function readPropertyMasterData()
     {
         $this->_religiousPlaceUsageType = Config::get('PropertyConstaint.RELIGIOUS_PLACE_USAGE_TYPE_ID');
         $this->_redis = Redis::connection();
@@ -523,6 +661,7 @@ class SafCalculation
      */
     public function calculateBuildingTax()
     {
+        $floors = [];
         $readPropertyType = $this->_propertyDetails['propertyType'];
 
         if ($readPropertyType != $this->_vacantPropertyTypeId) {
@@ -532,7 +671,7 @@ class SafCalculation
                 $this->_petrolPumpQuaterlyRuleSets = $this->calculateQuaterlyRulesets("petrolPump");
             }
 
-            $floors = $this->_floors;
+            $floors = $this->_floors ?? $this->_propertyDetails['floor'] ?? [];                                       // Get the Floors from the Property Details
             // readTaxCalculation Floor Wise
             $calculateFloorTaxQuaterly = collect($floors)->map(function ($floor, $key) {
                 $calculateQuaterlyRuleSets = $this->calculateQuaterlyRulesets($key);
@@ -1399,11 +1538,11 @@ class SafCalculation
 
         $this->_GRID['demand']['totalQuarters'] = $this->_GRID['details']->count();
         // From Quarter Year and Quarter Month
-        $this->_GRID['demand']['fromQuarterYear'] = $this->_GRID['details']->first()['quarterYear']??null;
-        $this->_GRID['demand']['fromQuarter'] = $this->_GRID['details']->first()['qtr']??null;
+        $this->_GRID['demand']['fromQuarterYear'] = $this->_GRID['details']->first()['quarterYear'] ?? null;
+        $this->_GRID['demand']['fromQuarter'] = $this->_GRID['details']->first()['qtr'] ?? null;
         // To Quarter Year and Quarter Month
-        $this->_GRID['demand']['toQuarterYear'] = $this->_GRID['details']->last()['quarterYear']??null;
-        $this->_GRID['demand']['toQuarter'] = $this->_GRID['details']->last()['qtr']??null;
+        $this->_GRID['demand']['toQuarterYear'] = $this->_GRID['details']->last()['quarterYear'] ?? null;
+        $this->_GRID['demand']['toQuarter'] = $this->_GRID['details']->last()['qtr'] ?? null;
 
         $this->_GRID['demand']['isResidential'] = $this->_isResidential;
 
