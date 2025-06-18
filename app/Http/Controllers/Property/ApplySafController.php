@@ -136,9 +136,25 @@ class ApplySafController extends Controller
                 $metaReqs['citizenId'] = $user_id;
             }
             $metaReqs['finisherRoleId'] = collect($finisherRoleId)['role_id'];
-            $safTaxes = $safCalculation->calculateTax($request);
-            if ($safTaxes->original['status'] == false)
-                throw new Exception($safTaxes->original['message']);
+
+            if ($request['assessmentType'] != 4) {
+                $safTaxes = $safCalculation->calculateTax($request);
+
+                if ($safTaxes->original['status'] == false)
+                    throw new Exception($safTaxes->original['message']);
+            } else {
+                $safTaxes = (object)[
+                    'original' => [
+                        'status' => true,
+                        'data' => [
+                            'demand' => [
+                                'isResidential' => true
+                            ]
+                        ]
+                    ]
+                ];
+            }
+
 
             $metaReqs['isTrust'] = $this->isPropTrust($request['floor']);
             $metaReqs['holdingType'] = $this->holdingType($request['floor']);
@@ -160,10 +176,14 @@ class ApplySafController extends Controller
                 'is_armed_force' => $firstOwner['isArmedForce'],
                 'is_specially_abled' => $firstOwner['isSpeciallyAbled'],
             ];
-            $calculateSafById->generateSafDemand();
-            $generatedDemand = $calculateSafById->_generatedDemand;
-            $isResidential = $safTaxes->original['data']['demand']['isResidential'];
-            $demandResponse = $generateSafApplyDemandResponse->generateResponse($generatedDemand, $isResidential);
+            $demandResponse = null;
+            if ($request['assessmentType'] != 4) {
+                $calculateSafById->generateSafDemand();
+
+                $generatedDemand = $calculateSafById->_generatedDemand;
+                $isResidential = $safTaxes->original['data']['demand']['isResidential'];
+                $demandResponse = $generateSafApplyDemandResponse->generateResponse($generatedDemand, $isResidential);
+            }
 
             DB::beginTransaction();
             DB::connection('pgsql_master')->beginTransaction();
@@ -359,7 +379,7 @@ class ApplySafController extends Controller
                 $newAreaOfPlot  = $propFloorArea - $safFloorArea;
 
                 if (($safFloorArea + $currentFloorArea) > $propFloorArea)
-                    throw new Exception("You have excedeed the floor area. Please insert floor area below " . $newAreaOfPlot . " of floor " . $index+1);
+                    throw new Exception("You have excedeed the floor area. Please insert floor area below " . $newAreaOfPlot . " of floor " . $index + 1);
             }
         }
     }
