@@ -531,4 +531,33 @@ class WaterConsumer extends Model
             ->leftJoin('ulb_masters', 'ulb_masters.id', '=', 'water_consumers.ulb_id')
             ->where('water_consumers.consumer_no', $parameter);
     }
+
+    /* 
+     * | Get Owner Details According to propId
+    */
+    public function getWaterConnectionDtl($propId){
+
+        return WaterConsumer::where('prop_dtl_id', $propId)
+            ->select(
+                'water_consumers.id',
+                'consumer_no as consumerNo',
+                'connection_type as connectionType',
+                'pipeline_type  as pipelineType',
+                    DB::raw("
+                        CASE water_consumers.status
+                            WHEN 1 THEN 'Active'
+                            WHEN 0 THEN 'Deactive'
+                            WHEN 2 THEN 'Disconnect'
+                            WHEN 3 THEN 'Disconnect (via Deactivation Process)'
+                            ELSE 'Unknown'
+                        END AS status
+                    "),
+                'application_apply_date as applyDate'
+            )
+            ->join('water_connection_type_mstrs as wctm', 'wctm.id', 'water_consumers.connection_type_id')
+            ->join('water_param_pipeline_types as wppt', 'wppt.id', 'water_consumers.pipeline_type_id')
+            ->where('water_consumers.status', 1)
+            ->orderBy('water_consumers.id')
+            ->get();
+    }
 }
