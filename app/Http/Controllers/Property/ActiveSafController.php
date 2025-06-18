@@ -314,7 +314,7 @@ class ActiveSafController extends Controller
             DB::beginTransaction();
             $mPropSaf->edit($req); // Updation SAF Basic Details
 
-            collect($mOwners)->map(function ($owner) use ($mPropSafOwners) {            
+            collect($mOwners)->map(function ($owner) use ($mPropSafOwners) {
                 // Updation of Owner Basic Details
                 $mPropSafOwners->edit($owner);
             });
@@ -841,10 +841,10 @@ class ActiveSafController extends Controller
     }
 
     /** 
-    * | Adds an independent comment to a SAF based on the application ID.
-    * | Validates the request, saves the comment in the workflow track, and handles transactions. 
-    * | --------------------------------------------------------
-    */
+     * | Adds an independent comment to a SAF based on the application ID.
+     * | Validates the request, saves the comment in the workflow track, and handles transactions. 
+     * | --------------------------------------------------------
+     */
     public function commentIndependent(Request $request)
     {
         $request->validate([
@@ -1054,6 +1054,8 @@ class ActiveSafController extends Controller
         $ptParamId = Config::get('PropertyConstaint.PT_PARAM_ID');
         $holdingNoGenerator = new HoldingNoGenerator;
 
+        $propActiveSaf =  PropActiveSaf::find($saf->id);
+
         // Derivative Assignments
         switch ($senderRoleId) {
             case $wfLevels['BO']:                        // Back Office Condition
@@ -1062,12 +1064,14 @@ class ActiveSafController extends Controller
                 break;
 
             case $wfLevels['DA']:                       // DA Condition
-                $demand = $mPropSafDemand->getDemandsBySafId($saf->id)->groupBy('fyear')->first();
-                if (collect($demand)->isEmpty())
-                    throw new Exception("Demand Not Available");
-                $demand = $demand->last();
-                if (collect($demand)->isEmpty())
-                    throw new Exception("Demand Not Available for the to Generate SAM");
+                if ($propActiveSaf->assessment_type != 'Bifurcation') {
+                    $$demand = $mPropSafDemand->getDemandsBySafId($saf->id)->groupBy('fyear')->first();
+                    if (collect($demand)->isEmpty())
+                        throw new Exception("Demand Not Available");
+                    $demand = $demand->last();
+                    if (collect($demand)->isEmpty())
+                        throw new Exception("Demand Not Available for the to Generate SAM");
+                }
                 if ($saf->doc_verify_status == 0)
                     throw new Exception("Document Not Fully Verified");
 
@@ -1086,22 +1090,40 @@ class ActiveSafController extends Controller
                         $saf->save();
                     }
                     $ptNo = $saf->pt_no;
-                    // Sam No Generator
+                    if ($saf->assessment_type == 'Bifurcation') {
+                        $date = Carbon::parse($saf->application_date);
+                        $currentFinancialYear = getFinancialYear($date);
+                        $demand = (object)[
+                            'fyear' => $currentFinancialYear,
+                            'amount' => 0,
+                            'monthly' => 0,
+                            'payment_date' => null,
+                        ];
+                    }
                     $samNo = $propIdGenerator->generateMemoNo("SAM", $saf->ward_mstr_id, $demand->fyear);
                     $this->replicateSaf($saf->id);
                     $propId = $this->_replicatedPropId;
 
-                    $mergedDemand = array_merge($demand->toArray(), [       // SAM Memo Generation
-                        'holding_no' => $saf->holding_no,
-                        'memo_type' => 'SAM',
-                        'memo_no' => $samNo,
-                        'pt_no' => $ptNo,
-                        'ward_id' => $saf->ward_mstr_id,
-                        'prop_id' => $propId,
-                        'userId'  => $userId
-                    ]);
+                    $mergedDemand = array_merge(
+                        is_object($demand) && method_exists($demand, 'toArray') ? $demand->toArray() : (array) $demand,
+                        [
+                            'holding_no' => $saf->holding_no,
+                            'memo_type' => 'SAM',
+                            'memo_no' => $samNo,
+                            'pt_no' => $ptNo,
+                            'ward_id' => $saf->ward_mstr_id,
+                            'prop_id' => $propId,
+                            'userId'  => $userId
+                        ]
+                    );
+
                     $memoReqs = new Request($mergedDemand);
-                    $mPropMemoDtl->postSafMemoDtls($memoReqs);
+                    if ($saf->assessment_type == 'Bifurcation') {
+                        $mPropMemoDtl->postSafMemoDtlsBi($memoReqs, $saf->id);
+                    } else {
+                        $mPropMemoDtl->postSafMemoDtls($memoReqs);
+                    }
+
 
                     $ifPropTaxExists = $mPropTax->getPropTaxesByPropId($propId);
                     if ($ifPropTaxExists->isNotEmpty())
@@ -1409,8 +1431,7 @@ class ActiveSafController extends Controller
             $famParamId = Config::get('PropertyConstaint.FAM_PARAM_ID');
             $previousHoldingDeactivation = new PreviousHoldingDeactivation;
             $propIdGenerator = new PropIdGenerator;
-            $safApprovalBll = new SafApprovalBll();
-            ;
+            $safApprovalBll = new SafApprovalBll();;
 
             $userId = authUser($req)->id;
             $safId = $req->applicationId;
@@ -2355,7 +2376,7 @@ class ActiveSafController extends Controller
      * | added water consumer details and trade license details of property 
      * | Query Costing: 299.45ms
        | Common Function
-    */
+     */
     public function getPropByHoldingNo(Request $req)
     {
         $req->validate(
@@ -3600,5 +3621,4 @@ class ActiveSafController extends Controller
             return responseMsg(false, $e->getMessage(), "");
         }
     }
-
 }

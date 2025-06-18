@@ -8,69 +8,91 @@ use Illuminate\Support\Facades\DB;
 
 class PropSafMemoDtl extends Model
 {
-    use HasFactory;
-    protected $guarded = [];
+  use HasFactory;
+  protected $guarded = [];
 
-    /**
-     * | Post SAF Memo Dtls
+  /**
+   * | Post SAF Memo Dtls
        | Common Function
-     */
-    public function postSafMemoDtls($req)
-    {
-        $metaReqs = [
-            'saf_id' => $req->saf_id,
-            'from_qtr' => $req->qtr,
-            'from_fyear' => $req->fyear,
-            'arv' => $req->arv,
-            'quarterly_tax' => $req->amount,
-            'user_id' => $req->userId,
-            'memo_no' => $req->memo_no,
-            'memo_type' => $req->memo_type,
-            'holding_no' => $req->holding_no,
-            'prop_id' => $req->prop_id ?? null,
-            'ward_mstr_id' => $req->ward_id,
-            'pt_no' => $req->pt_no ?? null
-        ];
-        PropSafMemoDtl::create($metaReqs);
-    }
-
-    /**
-     * | Get memo list by Safid
+   */
+  public function postSafMemoDtls($req)
+  {
+    $metaReqs = [
+      'saf_id' => $req->saf_id,
+      'from_qtr' => $req->qtr,
+      'from_fyear' => $req->fyear,
+      'arv' => $req->arv,
+      'quarterly_tax' => $req->amount,
+      'user_id' => $req->userId,
+      'memo_no' => $req->memo_no,
+      'memo_type' => $req->memo_type,
+      'holding_no' => $req->holding_no,
+      'prop_id' => $req->prop_id ?? null,
+      'ward_mstr_id' => $req->ward_id,
+      'pt_no' => $req->pt_no ?? null
+    ];
+    PropSafMemoDtl::create($metaReqs);
+  }
+  /**
+   * for Bifurcation of SAF Memo Dtls
        | Common Function
-     */
-    public function memoLists($safId)
-    {
-        return DB::connection('pgsql::read')
-            ->table('prop_saf_memo_dtls as m')
-            ->select(
-                'm.id',
-                'm.saf_id',
-                'm.from_qtr',
-                'm.from_fyear',
-                'm.arv',
-                'm.quarterly_tax',
-                'm.user_id',
-                'm.memo_no',
-                'm.memo_type',
-                'm.holding_no',
-                'm.prop_id',
-                'm.pt_no',
-                DB::raw("(to_char(m.created_at::timestamp,'dd-mm-yyyy HH:MI')) as memo_date"),
-                'u.name as generated_by'
-            )
-            ->where('saf_id', $safId)
-            ->leftJoin('users as u', 'u.id', '=', 'm.user_id')
-            ->where('status', 1)
-            ->get();
-    }
+   */
+  public function postSafMemoDtlsBi($req, $safId)
+  {
+    $metaReqs = [
+      'saf_id' => $req->saf_id ?? $safId,
+      'from_qtr' => $req->qtr ?? 0,
+      'from_fyear' => $req->fyear,
+      'arv' => $req->arv ?? null,
+      'quarterly_tax' => $req->amount,
+      'user_id' => $req->userId,
+      'memo_no' => $req->memo_no,
+      'memo_type' => $req->memo_type,
+      'holding_no' => $req->holding_no,
+      'prop_id' => $req->prop_id ?? null,
+      'ward_mstr_id' => $req->ward_id,
+      'pt_no' => $req->pt_no ?? null
+    ];
+    PropSafMemoDtl::create($metaReqs);
+  }
 
-    /**
-     * | Memo Details by memo id
+  /**
+   * | Get memo list by Safid
+       | Common Function
+   */
+  public function memoLists($safId)
+  {
+    return DB::connection('pgsql::read')
+      ->table('prop_saf_memo_dtls as m')
+      ->select(
+        'm.id',
+        'm.saf_id',
+        'm.from_qtr',
+        'm.from_fyear',
+        'm.arv',
+        'm.quarterly_tax',
+        'm.user_id',
+        'm.memo_no',
+        'm.memo_type',
+        'm.holding_no',
+        'm.prop_id',
+        'm.pt_no',
+        DB::raw("(to_char(m.created_at::timestamp,'dd-mm-yyyy HH:MI')) as memo_date"),
+        'u.name as generated_by'
+      )
+      ->where('saf_id', $safId)
+      ->leftJoin('users as u', 'u.id', '=', 'm.user_id')
+      ->where('status', 1)
+      ->get();
+  }
+
+  /**
+   * | Memo Details by memo id
        | Reference Function : memoReceipt
-     */
-    public function getMemoDtlsByMemoId($memoId)
-    {
-        $query = "SELECT d.*,
+   */
+  public function getMemoDtlsByMemoId($memoId)
+  {
+    $query = "SELECT d.*,
                     TO_CHAR(d.created_at,'DD-MM-YYYY') AS memo_date,
                                 pd.holding_tax,
                                 pd.water_tax,
@@ -93,16 +115,16 @@ class PropSafMemoDtl extends Model
                             LEFT JOIN ulb_ward_masters AS nw ON nw.id=s.new_ward_mstr_id
                             WHERE d.id=$memoId AND d.status=1
                     LIMIT 1";
-        return DB::connection('pgsql::read')->select($query);
-    }
+    return DB::connection('pgsql::read')->select($query);
+  }
 
-    /**
-     * | Memo Details by memo id
+  /**
+   * | Memo Details by memo id
        | Reference Function : memoReceipt
-     */
-    public function getPropMemoDtlsByMemoId($memoId)
-    {
-        $query = "SELECT d.*,
+   */
+  public function getPropMemoDtlsByMemoId($memoId)
+  {
+    $query = "SELECT d.*,
                     TO_CHAR(d.created_at,'DD-MM-YYYY') AS memo_date,
                                 pd.holding_tax,
                                 pd.water_tax,
@@ -125,6 +147,6 @@ class PropSafMemoDtl extends Model
                             LEFT JOIN ulb_ward_masters AS nw ON nw.id=s.new_ward_mstr_id
                             WHERE d.id=$memoId AND d.status=1
                     LIMIT 1";
-        return DB::connection('pgsql::read')->select($query);
-    }
+    return DB::connection('pgsql::read')->select($query);
+  }
 }
