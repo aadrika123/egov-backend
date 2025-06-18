@@ -1433,7 +1433,8 @@ class ActiveSafController extends Controller
             $propIdGenerator = new PropIdGenerator;
             $safApprovalBll = new SafApprovalBll();;
 
-            $userId = authUser($req)->id;
+            // $userId = authUser($req)->id;
+            $userId = 77;
             $safId = $req->applicationId;
             // Derivative Assignments
             $safDetails = PropActiveSaf::findOrFail($req->applicationId);
@@ -1485,26 +1486,47 @@ class ActiveSafController extends Controller
                 // for bifurction, amalgamation, mutation, new assessment
                 // $safApprovalBll->approvalProcess($safId);
 
-                $demand = $mPropDemand->getFirstDemandByFyearPropId($propId, $currentFinYear);
-                if (collect($demand)->isEmpty())
-                    $demand = $mPropSafDemand->getFirstDemandByFyearSafId($safId, $currentFinYear);
-                if (collect($demand)->isEmpty())
-                    throw new Exception("Demand Not Available for the Current Year to Generate FAM");
+                if ($safDetails->assessment_type != 'Bifurcation') {
+                    $demand = $mPropDemand->getFirstDemandByFyearPropId($propId, $currentFinYear);
+                    if (collect($demand)->isEmpty())
+                        $demand = $mPropSafDemand->getFirstDemandByFyearSafId($safId, $currentFinYear);
+                    if (collect($demand)->isEmpty())
+                        throw new Exception("Demand Not Available for the Current Year to Generate FAM");
+                }
 
+                if ($safDetails->assessment_type == 'Bifurcation') {
+                    $date = Carbon::parse($safDetails->application_date);
+                    $currentFinancialYear = getFinancialYear($date);
+                    $demand = (object)[
+                        'fyear' => $currentFinancialYear,
+                        'amount' => 0,
+                        'monthly' => 0,
+                        'payment_date' => null,
+                    ];
+                }
                 // SAF Application replication
                 $famNo = $propIdGenerator->generateMemoNo("FAM", $safDetails->ward_mstr_id, $demand->fyear);
-                $mergedDemand = array_merge($demand->toArray(), [
-                    'memo_type' => 'FAM',
-                    'memo_no' => $famNo,
-                    'holding_no' => $activeSaf->new_holding_no ?? $activeSaf->holding_no,
-                    'pt_no' => $activeSaf->pt_no,
-                    'ward_id' => $activeSaf->ward_mstr_id,
-                    'prop_id' => $propId,
-                    'saf_id' => $safId,
-                    'userId' => $userId
-                ]);
+                $mergedDemand = array_merge(
+                    is_object($demand) && method_exists($demand, 'toArray') ? $demand->toArray() : (array) $demand,
+                    [
+                        'memo_type' => 'FAM',
+                        'memo_no' => $famNo,
+                        'holding_no' => $activeSaf->new_holding_no ?? $activeSaf->holding_no,
+                        'pt_no' => $activeSaf->pt_no,
+                        'ward_id' => $activeSaf->ward_mstr_id,
+                        'prop_id' => $propId,
+                        'saf_id' => $safId,
+                        'userId' => $userId
+                    ]
+                );
                 $memoReqs = new Request($mergedDemand);
-                $mPropSafMemoDtl->postSafMemoDtls($memoReqs);
+                // $mPropSafMemoDtl->postSafMemoDtls($memoReqs);
+
+                if ($safDetails->assessment_type == 'Bifurcation') {
+                    $mPropSafMemoDtl->postSafMemoDtlsBi($memoReqs, $safId);
+                } else {
+                    $mPropSafMemoDtl->postSafMemoDtls($memoReqs);
+                }
                 $this->finalApprovalSafReplica($mPropProperties, $propId, $fieldVerifiedSaf, $activeSaf, $ownerDetails, $floorDetails, $safId);
                 $tcVerifyParams = [
                     'safId' => $safId,
