@@ -1440,8 +1440,7 @@ class ActiveSafController extends Controller
             $propIdGenerator = new PropIdGenerator;
             $safApprovalBll = new SafApprovalBll();;
 
-            // $userId = authUser($req)->id;
-            $userId = 77;
+            $userId = authUser($req)->id;
             $safId = $req->applicationId;
             // Derivative Assignments
             $safDetails = PropActiveSaf::findOrFail($req->applicationId);
@@ -1706,7 +1705,7 @@ class ActiveSafController extends Controller
                 throw new Exception("Old Property Not Found");
 
             // Update Old Property Area of Plot
-            $newPropProperties = PropProperty::where('saf_id', $activeSaf->id)->where('status', 1)->first();
+            $newPropProperties = PropProperty::where('saf_id', $activeSaf->id)->where('status',2)->first();
             $propProperties->update(["area_of_plot" => $propProperties->area_of_plot + $newPropProperties->area_of_plot]);
 
             // Update Floors
@@ -1734,7 +1733,7 @@ class ActiveSafController extends Controller
 
         // Property Deactivation
         if (in_array($activeSaf->assessment_type, ['New Assessment', 'Mutation', 'Bifurcation'])) {
-            $approvedProperty = PropProperty::where('saf_id', $activeSaf->id)->where('status', 1)->first();
+            $approvedProperty = PropProperty::where('saf_id', $activeSaf->id)->where('status', 2)->first();
             if (!$approvedProperty)
                 throw new Exception("Approved Property Not Found");
 
