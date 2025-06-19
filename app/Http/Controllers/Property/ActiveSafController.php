@@ -2829,65 +2829,75 @@ class ActiveSafController extends Controller
         $req->validate([
             'id' => 'required|numeric'
         ]);
+
         try {
             $mWfRoleusermap = new WfRoleusermap();
             $mPropTransactions = new PropTransaction();
             $jskRole = Config::get('PropertyConstaint.JSK_ROLE');
             $tcRole = 5;
-            $user = authUser($req);
+
+            $user = authUser($req); // Use this if authentication is active
             $userId = $user->id;
+
             $safDetails = $this->details($req);
-            if ($safDetails['payment_status'] == 1) {       // Get Transaction no if the payment is done
+            $demand = [];
+
+            if ($safDetails['payment_status'] == 1) {
                 $transaction = $mPropTransactions->getLastTranByKeyId('saf_id', $req->id);
-                $demand['tran_no'] = $transaction->tran_no;
+                $demand['tran_no'] = $transaction->tran_no ?? null;
             }
+
             $workflowId = $safDetails['workflow_id'];
             $mreqs = new Request([
                 "workflowId" => $workflowId,
                 "userId" => $userId
             ]);
-            // $role = $mWfRoleusermap->getRoleByUserWfId($mreqs);
+
             $role = $mWfRoleusermap->getRoleByUserId($mreqs);
 
-            if (isset($role) && in_array($role->wf_role_id, [$jskRole, $tcRole]))
-                $demand['can_pay'] = true;
-            else
-                $demand['can_pay'] = false;
+            $demand['can_pay'] = (isset($role) && in_array($role->wf_role_id, [$jskRole, $tcRole]));
 
             if (in_array($safDetails['payment_status'], [1, 2]))
                 $demand['can_pay'] = false;
 
-            $safTaxes = $this->calculateSafBySafId($req);
-            if ($safTaxes->original['status'] == false)
-                throw new Exception($safTaxes->original['message']);
-            $req = $safDetails;
+            $safTaxes = null;
+            if ($safDetails['assessment_type'] != 'Bifurcation') {
+                $safTaxes = $this->calculateSafBySafId($req);
+                if ($safTaxes->original['status'] == false)
+                    throw new Exception($safTaxes->original['message']);
+            }
+
+            // Prepare basic details
             $demand['basicDetails'] = [
-                "ulb_id" => $req['ulb_id'],
-                "saf_no" => $req['saf_no'],
-                "prop_address" => $req['prop_address'],
-                "is_mobile_tower" => $req['is_mobile_tower'],
-                "is_hoarding_board" => $req['is_hoarding_board'],
-                "is_petrol_pump" => $req['is_petrol_pump'],
-                "is_water_harvesting" => $req['is_water_harvesting'],
-                "zone_mstr_id" => $req['zone_mstr_id'],
-                "holding_no" => $req['new_holding_no'] ?? $req['holding_no'],
-                "old_ward_no" => $req['old_ward_no'],
-                "new_ward_no" => $req['new_ward_no'],
-                "property_type" => $req['property_type'],
-                "holding_type" => $req['holding_type'],
-                "doc_upload_status" => $req['doc_upload_status'],
-                "ownership_type" => $req['ownership_type']
+                "ulb_id" => $safDetails['ulb_id'],
+                "saf_no" => $safDetails['saf_no'],
+                "prop_address" => $safDetails['prop_address'],
+                "is_mobile_tower" => $safDetails['is_mobile_tower'],
+                "is_hoarding_board" => $safDetails['is_hoarding_board'],
+                "is_petrol_pump" => $safDetails['is_petrol_pump'],
+                "is_water_harvesting" => $safDetails['is_water_harvesting'],
+                "zone_mstr_id" => $safDetails['zone_mstr_id'],
+                "holding_no" => $safDetails['new_holding_no'] ?? $safDetails['holding_no'],
+                "old_ward_no" => $safDetails['old_ward_no'],
+                "new_ward_no" => $safDetails['new_ward_no'],
+                "property_type" => $safDetails['property_type'],
+                "holding_type" => $safDetails['holding_type'],
+                "doc_upload_status" => $safDetails['doc_upload_status'],
+                "ownership_type" => $safDetails['ownership_type']
             ];
+
             $demand['amounts'] = $safTaxes->original['data']['demand'] ?? [];
-            $demand['details'] = collect($safTaxes->original['data']['details'])->values();
-            $demand['taxDetails'] = collect($safTaxes->original['data']['taxDetails']) ?? [];
+            $demand['details'] = collect($safTaxes->original['data']['details'] ?? [])->values();
+            $demand['taxDetails'] = collect($safTaxes->original['data']['taxDetails'] ?? [])->values();
             $demand['paymentStatus'] = $safDetails['payment_status'];
             $demand['applicationNo'] = $safDetails['saf_no'];
+
             return responseMsgs(true, "Demand Details", remove_null($demand), "010123", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), []);
         }
     }
+
 
     # code by sandeep bara 
     # date 31-01-2023
