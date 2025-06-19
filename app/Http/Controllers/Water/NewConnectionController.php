@@ -1637,6 +1637,7 @@ class NewConnectionController extends Controller
             $mPropActiveSafOwners   = new PropActiveSafsOwner();
             $mPropActiveSafsFloor   = new PropActiveSafsFloor();
             $mPropActiveSaf         = new PropActiveSaf();
+            $mWaterCunsumer         = new WaterConsumer();
             $key                    = $request->connectionThrough;
             $refTenanted            = Config::get('PropertyConstaint.OCCUPANCY-TYPE.TENANTED');
             $refPropertyTypes       = Config::get('PropertyConstaint.PROPERTY-TYPE');
@@ -1664,9 +1665,10 @@ class NewConnectionController extends Controller
                     $propUsageType              = $this->getPropUsageType($request, $application['id']);
                     $occupancyOwnerType         = collect($mPropFloor->getOccupancyType($application['id'], $refTenanted));
                     $owners['owners']           = collect($mPropOwner->getOwnerByPropId($application['id']));
+                    $waterDtls['waterDetails']  = collect($mWaterCunsumer->getWaterConnectionDtl($application['id']));
 
                     # merge all data for return 
-                    $details = $application->merge($areaInSqft)->merge($owners)->merge($occupancyOwnerType)->merge($propUsageType);
+                    $details = $application->merge($areaInSqft)->merge($owners)->merge($waterDtls)->merge($occupancyOwnerType)->merge($propUsageType);
                     return responseMsgs(true, "related Details!", $details, "", "", "", "POST", "");
                     break;
 
@@ -1690,9 +1692,10 @@ class NewConnectionController extends Controller
                     $safUsageType               = $this->getPropUsageType($request, $application['id']);
                     $occupancyOwnerType         = collect($mPropActiveSafsFloor->getOccupancyType($application['id'], $refTenanted));
                     $owners['owners']           = collect($mPropActiveSafOwners->getOwnerDtlsBySafId($application['id']));
+                    $waterDtls['waterDetails']  = collect($mWaterCunsumer->getWaterConnectionDtl($application['id']));
 
                     # merge all data for return 
-                    $details = $application->merge($areaInSqft)->merge($owners)->merge($occupancyOwnerType)->merge($safUsageType);
+                    $details = $application->merge($areaInSqft)->merge($owners)->merge($waterDtls)->merge($occupancyOwnerType)->merge($safUsageType);
                     return responseMsgs(true, "related Details!", $details, "", "", "", "POST", "");
                     break;
             }
