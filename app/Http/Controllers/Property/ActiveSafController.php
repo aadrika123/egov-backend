@@ -1044,7 +1044,7 @@ class ActiveSafController extends Controller
      */
     public function checkPostCondition($senderRoleId, $wfLevels, $saf, $wfMstrId, $userId)
     {
-        // Variable Assigments
+        // Variable Assignments
         $mPropSafDemand = new PropSafsDemand();
         $mPropMemoDtl = new PropSafMemoDtl();
         $mPropSafTax = new PropSafTax();
@@ -1054,56 +1054,62 @@ class ActiveSafController extends Controller
         $ptParamId = Config::get('PropertyConstaint.PT_PARAM_ID');
         $holdingNoGenerator = new HoldingNoGenerator;
 
-        $propActiveSaf =  PropActiveSaf::find($saf->id);
+        $propActiveSaf = PropActiveSaf::find($saf->id);
+        $demand = null; // Initialize here to avoid undefined variable issue
 
         // Derivative Assignments
         switch ($senderRoleId) {
-            case $wfLevels['BO']:                        // Back Office Condition
+            case $wfLevels['BO']: // Back Office Condition
                 if ($saf->doc_upload_status == 0)
                     throw new Exception("Document Not Fully Uploaded");
                 break;
 
-            case $wfLevels['DA']:                       // DA Condition
+            case $wfLevels['DA']: // DA Condition
                 if ($propActiveSaf->assessment_type != 'Bifurcation') {
-                    $$demand = $mPropSafDemand->getDemandsBySafId($saf->id)->groupBy('fyear')->first();
-                    if (collect($demand)->isEmpty())
+                    $demandData = $mPropSafDemand->getDemandsBySafId($saf->id)->groupBy('fyear')->first();
+                    if (collect($demandData)->isEmpty())
                         throw new Exception("Demand Not Available");
-                    $demand = $demand->last();
+                    $demand = $demandData->last();
                     if (collect($demand)->isEmpty())
-                        throw new Exception("Demand Not Available for the to Generate SAM");
+                        throw new Exception("Demand Not Available to Generate SAM");
+                } else {
+                    $date = Carbon::parse($saf->application_date);
+                    $currentFinancialYear = getFinancialYear($date);
+                    $demand = (object)[
+                        'fyear' => $currentFinancialYear,
+                        'amount' => 0,
+                        'monthly' => 0,
+                        'payment_date' => null,
+                    ];
                 }
+
                 if ($saf->doc_verify_status == 0)
                     throw new Exception("Document Not Fully Verified");
 
-                $propertyExist = $mPropProperty->where('saf_id', $saf->id)
-                    ->first();
+                $propertyExist = $mPropProperty->where('saf_id', $saf->id)->first();
 
                 if (!$propertyExist) {
                     $idGeneration = new PrefixIdGenerator($ptParamId, $saf->ulb_id);
 
-                    if (in_array($saf->assessment_type, ['New Assessment', 'Bifurcation', 'Amalgamation', 'Mutation'])) { // Make New Property For New Assessment,Bifurcation and Amalgamation & Mutation
-                        // Holding No Generation
+                    if (in_array($saf->assessment_type, ['New Assessment', 'Bifurcation', 'Amalgamation', 'Mutation'])) {
+                        // Generate Holding No and PT No
                         $holdingNo = $holdingNoGenerator->generateHoldingNo($saf);
                         $ptNo = $idGeneration->generate();
-                        $saf->pt_no = $ptNo;                        // Generate New Property Tax No for All Conditions
+                        $saf->pt_no = $ptNo;
                         $saf->holding_no = $holdingNo;
                         $saf->save();
                     }
+
                     $ptNo = $saf->pt_no;
-                    if ($saf->assessment_type == 'Bifurcation') {
-                        $date = Carbon::parse($saf->application_date);
-                        $currentFinancialYear = getFinancialYear($date);
-                        $demand = (object)[
-                            'fyear' => $currentFinancialYear,
-                            'amount' => 0,
-                            'monthly' => 0,
-                            'payment_date' => null,
-                        ];
-                    }
+
+                    // Generate SAM No
                     $samNo = $propIdGenerator->generateMemoNo("SAM", $saf->ward_mstr_id, $demand->fyear);
+
+                    // Replicate SAF to property
                     $this->replicateSaf($saf->id);
                     $propId = $this->_replicatedPropId;
 
+                    // Merge Demand for SAM Memo
                     $mergedDemand = array_merge(
                         is_object($demand) && method_exists($demand, 'toArray') ? $demand->toArray() : (array) $demand,
                         [
@@ -1124,7 +1130,7 @@ class ActiveSafController extends Controller
                         $mPropMemoDtl->postSafMemoDtls($memoReqs);
                     }
 
-
+                    // Replicate tax
                     $ifPropTaxExists = $mPropTax->getPropTaxesByPropId($propId);
                     if ($ifPropTaxExists->isNotEmpty())
                         $mPropTax->deactivatePropTax($propId);
@@ -1145,8 +1151,9 @@ class ActiveSafController extends Controller
                     throw new Exception("Field Verification Not Done");
                 break;
         }
+
         return [
-            'holdingNo' =>  $saf->holding_no ?? "",
+            'holdingNo' => $saf->holding_no ?? "",
             'samNo' => $samNo ?? "",
             'ptNo' => $ptNo ?? "",
         ];
