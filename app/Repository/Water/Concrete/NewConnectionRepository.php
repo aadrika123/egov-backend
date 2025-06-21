@@ -77,12 +77,12 @@ class NewConnectionRepository implements iNewConnection
         $this->_vacantLand = Config::get('PropertyConstaint.VACANT_LAND');
         $this->_waterWorkflowId = Config::get('workflow-constants.WATER_MASTER_ID');
         $this->_waterModulId = Config::get('module-constants.WATER_MODULE_ID');
-        $this->_juniorEngRoleId  = Config::get('workflow-constants.WATER_JE_ROLE_ID');
+        $this->_juniorEngRoleId = Config::get('workflow-constants.WATER_JE_ROLE_ID');
         $this->_waterRoles = Config::get('waterConstaint.ROLE-LABEL');
-        $this->_DB_NAME             = "pgsql_water";
-        $this->_DB                  = DB::connection($this->_DB_NAME);
+        $this->_DB_NAME = "pgsql_water";
+        $this->_DB = DB::connection($this->_DB_NAME);
 
-        $this->_COMMON_FUNCTION =  new CommonFunction();
+        $this->_COMMON_FUNCTION = new CommonFunction();
         $this->_REF_TABLE = 'water_applications.id';
         $this->_LEVEL_COMMENT_STATUS = Config::get('workflow-constants.VERIFICATION-STATUS');
     }
@@ -343,30 +343,30 @@ class NewConnectionRepository implements iNewConnection
     {
         switch ($req) {
             case (!is_null($req->safNo) && $req->connection_through == 2): {
-                    $safCheck = PropActiveSaf::select(
-                        'id',
-                        'saf_no'
-                    )
-                        ->where('saf_no', $req->safNo)
-                        ->where('ulb_id', $req->ulbId)
-                        ->first();
-                    if ($safCheck) {
-                        return true;
-                    }
+                $safCheck = PropActiveSaf::select(
+                    'id',
+                    'saf_no'
+                )
+                    ->where('saf_no', $req->safNo)
+                    ->where('ulb_id', $req->ulbId)
+                    ->first();
+                if ($safCheck) {
+                    return true;
                 }
+            }
             case (!is_null($req->holdingNo) && $req->connection_through == 1): {
-                    $holdingCheck = PropProperty::select(
-                        'id',
-                        'new_holding_no'
-                    )
-                        ->where('new_holding_no', $req->holdingNo)
-                        ->orwhere('holding_no', $req->holdingNo)
-                        ->where('ulb_id', $req->ulbId)
-                        ->first();
-                    if ($holdingCheck) {
-                        return true;
-                    }
+                $holdingCheck = PropProperty::select(
+                    'id',
+                    'new_holding_no'
+                )
+                    ->where('new_holding_no', $req->holdingNo)
+                    ->orwhere('holding_no', $req->holdingNo)
+                    ->where('ulb_id', $req->ulbId)
+                    ->first();
+                if ($holdingCheck) {
+                    return true;
                 }
+            }
         }
     }
 
@@ -488,7 +488,7 @@ class NewConnectionRepository implements iNewConnection
             if (($role->serial_no < $receiverRole["serial_no"] ?? 0)) {
                 $waterApplication->doc_status = true;
             }
-            if (($role->serial_no > $receiverRole["serial_no"] ?? 0)) {
+            if (($role->serial_no < $receiverRole["serial_no"] ?? 0)) {
                 $waterApplication->doc_status = false;
             }
         }
@@ -670,17 +670,32 @@ class NewConnectionRepository implements iNewConnection
                 return ($val["uploadedDoc"] == "" || $val["uploadedDoc"] == null);
             });
             $Wdocuments = collect();
-            $ownerDoc->map(function ($val) use ($Wdocuments) {
+
+            $ownerDoc->each(function ($val) use (&$Wdocuments) {
                 $ownerId = $val["ownerDetails"]["ownerId"] ?? "";
-                $val["documents"]->map(function ($val1) use ($Wdocuments, $ownerId) {
+
+                collect($val["documents"])->each(function ($val1) use (&$Wdocuments, $ownerId) {
                     $val1["ownerId"] = $ownerId;
-                    $val1["is_uploded"] = (in_array($val1["docType"], ["R", "OR"])) ? ((!empty($val1["uploadedDoc"])) ? true : false) : true;
-                    $val1["is_docVerify"] = !empty($val1["uploadedDoc"]) ? (((collect($val1["uploadedDoc"])->all())["verifyStatus"]) ? true : false) : true;
-                    $val1["is_docRejected"] = !empty($val1["uploadedDoc"]) ? (((collect($val1["uploadedDoc"])->all())["verifyStatus"] == 2) ? true : false) : false;
-                    $val1["is_madetory_docRejected"] = (!empty($val1["uploadedDoc"]) && in_array($val1["docType"], ["R", "OR"])) ? (((collect($val1["uploadedDoc"])->all())["verifyStatus"] == 2) ? true : false) : false;
+                    $val1["is_uploded"] = in_array($val1["docType"], ["R", "OR"])
+                        ? (!empty($val1["uploadedDoc"]) ? true : false)
+                        : true;
+
+                    $val1["is_docVerify"] = !empty($val1["uploadedDoc"])
+                        ? ((collect($val1["uploadedDoc"])->get("verifyStatus")) ? true : false)
+                        : true;
+
+                    $val1["is_docRejected"] = !empty($val1["uploadedDoc"])
+                        ? ((collect($val1["uploadedDoc"])->get("verifyStatus") == 2) ? true : false)
+                        : false;
+
+                    $val1["is_madetory_docRejected"] = (!empty($val1["uploadedDoc"]) && in_array($val1["docType"], ["R", "OR"]))
+                        ? ((collect($val1["uploadedDoc"])->get("verifyStatus") == 2) ? true : false)
+                        : false;
+
                     $Wdocuments->push($val1);
                 });
             });
+
 
             $ownerMandetoryDoc = $Wdocuments->whereIn("docType", ["R", "OR"]);
             $is_ownerUploadedDoc = $Wdocuments->where("is_uploded", false);
@@ -1095,22 +1110,22 @@ class NewConnectionRepository implements iNewConnection
 
     public function getApprovedWater($request)
     {
-        $mWaterConsumer         = new WaterConsumer();
+        $mWaterConsumer = new WaterConsumer();
         $mWaterConnectionCharge = new WaterConnectionCharge();
-        $mWaterConsumerOwner    = new WaterConsumerOwner();
-        $mWaterParamConnFee     = new WaterParamConnFee();
+        $mWaterConsumerOwner = new WaterConsumerOwner();
+        $mWaterParamConnFee = new WaterParamConnFee();
 
         $key = collect($request)->map(function ($value, $key) {
             return $key;
         })->first();
-        $string         = preg_replace("/([A-Z])/", "_$1", $key);
-        $refstring      = strtolower($string);
-        $approvedWater  = $mWaterConsumer->getConsumerByConsumerNo($refstring, $request->id);
+        $string = preg_replace("/([A-Z])/", "_$1", $key);
+        $refstring = strtolower($string);
+        $approvedWater = $mWaterConsumer->getConsumerByConsumerNo($refstring, $request->id);
         $connectionCharge['connectionCharg'] = $mWaterConnectionCharge->getWaterchargesById($approvedWater['apply_connection_id'])
             ->where('charge_category', '!=', 'Site Inspection')                                     # Static
             ->first();
         $waterOwner['ownerDetails'] = $mWaterConsumerOwner->getConsumerOwner($approvedWater['consumer_id'])->get();
-        $water['calcullation']      = $mWaterParamConnFee->getCallParameter($approvedWater['property_type_id'], $approvedWater['area_sqft'])->first();
+        $water['calcullation'] = $mWaterParamConnFee->getCallParameter($approvedWater['property_type_id'], $approvedWater['area_sqft'])->first();
 
         $consumerDetails = collect($approvedWater)->merge($connectionCharge)->merge($waterOwner)->merge($water);
         return remove_null($consumerDetails);
@@ -1118,9 +1133,9 @@ class NewConnectionRepository implements iNewConnection
 
 
     /* 
-    * | Get Approved Application Details According to Consumer No
-    * | update by Alok
-    */
+     * | Get Approved Application Details According to Consumer No
+     * | update by Alok
+     */
     // public function getApprovedWater($request)
     // {
     //     $mWaterConsumer = new WaterConsumer();
