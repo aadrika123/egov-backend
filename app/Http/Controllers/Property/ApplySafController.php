@@ -188,6 +188,11 @@ class ApplySafController extends Controller
             DB::beginTransaction();
             DB::connection('pgsql_master')->beginTransaction();
 
+            if ($request->assessmentType == 'Bifurcation') {
+                $request->merge(['paymentStatus' => '1']);
+            } else {
+                $request->merge(['paymentStatus' => '0']);
+            }
             $createSaf = $saf->store($request);                                         // Store SAF Using Model function 
             $safId = $createSaf->original['safId'];
             $safNo = $createSaf->original['safNo'];

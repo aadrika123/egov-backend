@@ -1044,7 +1044,7 @@ class ActiveSafController extends Controller
      */
     public function checkPostCondition($senderRoleId, $wfLevels, $saf, $wfMstrId, $userId)
     {
-        // Variable Assigments
+        // Variable Assignments
         $mPropSafDemand = new PropSafsDemand();
         $mPropMemoDtl = new PropSafMemoDtl();
         $mPropSafTax = new PropSafTax();
@@ -1054,56 +1054,62 @@ class ActiveSafController extends Controller
         $ptParamId = Config::get('PropertyConstaint.PT_PARAM_ID');
         $holdingNoGenerator = new HoldingNoGenerator;
 
-        $propActiveSaf =  PropActiveSaf::find($saf->id);
+        $propActiveSaf = PropActiveSaf::find($saf->id);
+        $demand = null; // Initialize here to avoid undefined variable issue
 
         // Derivative Assignments
         switch ($senderRoleId) {
-            case $wfLevels['BO']:                        // Back Office Condition
+            case $wfLevels['BO']: // Back Office Condition
                 if ($saf->doc_upload_status == 0)
                     throw new Exception("Document Not Fully Uploaded");
                 break;
 
-            case $wfLevels['DA']:                       // DA Condition
+            case $wfLevels['DA']: // DA Condition
                 if ($propActiveSaf->assessment_type != 'Bifurcation') {
-                    $$demand = $mPropSafDemand->getDemandsBySafId($saf->id)->groupBy('fyear')->first();
-                    if (collect($demand)->isEmpty())
+                    $demandData = $mPropSafDemand->getDemandsBySafId($saf->id)->groupBy('fyear')->first();
+                    if (collect($demandData)->isEmpty())
                         throw new Exception("Demand Not Available");
-                    $demand = $demand->last();
+                    $demand = $demandData->last();
                     if (collect($demand)->isEmpty())
-                        throw new Exception("Demand Not Available for the to Generate SAM");
+                        throw new Exception("Demand Not Available to Generate SAM");
+                } else {
+                    $date = Carbon::parse($saf->application_date);
+                    $currentFinancialYear = getFinancialYear($date);
+                    $demand = (object)[
+                        'fyear' => $currentFinancialYear,
+                        'amount' => 0,
+                        'monthly' => 0,
+                        'payment_date' => null,
+                    ];
                 }
+
                 if ($saf->doc_verify_status == 0)
                     throw new Exception("Document Not Fully Verified");
 
-                $propertyExist = $mPropProperty->where('saf_id', $saf->id)
-                    ->first();
+                $propertyExist = $mPropProperty->where('saf_id', $saf->id)->first();
 
                 if (!$propertyExist) {
                     $idGeneration = new PrefixIdGenerator($ptParamId, $saf->ulb_id);
 
-                    if (in_array($saf->assessment_type, ['New Assessment', 'Bifurcation', 'Amalgamation', 'Mutation'])) { // Make New Property For New Assessment,Bifurcation and Amalgamation & Mutation
-                        // Holding No Generation
+                    if (in_array($saf->assessment_type, ['New Assessment', 'Bifurcation', 'Amalgamation', 'Mutation'])) {
+                        // Generate Holding No and PT No
                         $holdingNo = $holdingNoGenerator->generateHoldingNo($saf);
                         $ptNo = $idGeneration->generate();
-                        $saf->pt_no = $ptNo;                        // Generate New Property Tax No for All Conditions
+                        $saf->pt_no = $ptNo;
                         $saf->holding_no = $holdingNo;
                         $saf->save();
                     }
+
                     $ptNo = $saf->pt_no;
-                    if ($saf->assessment_type == 'Bifurcation') {
-                        $date = Carbon::parse($saf->application_date);
-                        $currentFinancialYear = getFinancialYear($date);
-                        $demand = (object)[
-                            'fyear' => $currentFinancialYear,
-                            'amount' => 0,
-                            'monthly' => 0,
-                            'payment_date' => null,
-                        ];
-                    }
+
+                    // Generate SAM No
                     $samNo = $propIdGenerator->generateMemoNo("SAM", $saf->ward_mstr_id, $demand->fyear);
+
+                    // Replicate SAF to property
                     $this->replicateSaf($saf->id);
                     $propId = $this->_replicatedPropId;
 
+                    // Merge Demand for SAM Memo
                     $mergedDemand = array_merge(
                         is_object($demand) && method_exists($demand, 'toArray') ? $demand->toArray() : (array) $demand,
                         [
@@ -1124,7 +1130,7 @@ class ActiveSafController extends Controller
                         $mPropMemoDtl->postSafMemoDtls($memoReqs);
                     }
 
-
+                    // Replicate tax
                     $ifPropTaxExists = $mPropTax->getPropTaxesByPropId($propId);
                     if ($ifPropTaxExists->isNotEmpty())
                         $mPropTax->deactivatePropTax($propId);
@@ -1145,8 +1151,9 @@ class ActiveSafController extends Controller
                     throw new Exception("Field Verification Not Done");
                 break;
         }
+
         return [
-            'holdingNo' =>  $saf->holding_no ?? "",
+            'holdingNo' => $saf->holding_no ?? "",
             'samNo' => $samNo ?? "",
             'ptNo' => $ptNo ?? "",
         ];
@@ -1433,8 +1440,7 @@ class ActiveSafController extends Controller
             $propIdGenerator = new PropIdGenerator;
             $safApprovalBll = new SafApprovalBll();;
 
-            // $userId = authUser($req)->id;
-            $userId = 77;
+            $userId = authUser($req)->id;
             $safId = $req->applicationId;
             // Derivative Assignments
             $safDetails = PropActiveSaf::findOrFail($req->applicationId);
@@ -1603,53 +1609,147 @@ class ActiveSafController extends Controller
      * --------------------------------------------------------------------------
        | approvalRejectionSaf:1.1
      */
-    public function finalApprovalSafReplica($mPropProperties, $propId, $fieldVerifiedSaf, $activeSaf, $ownerDetails, $floorDetails, $safId)
+    // public function finalApprovalSafReplica($mPropProperties, $propId, $fieldVerifiedSaf, $activeSaf, $ownerDetails, $floorDetails, $safId)
+    // {
+    //     $mPropFloors = new PropFloor();
+    //     $mPropProperties->replicateVerifiedSaf($propId, collect($fieldVerifiedSaf)->first());             // Replicate to Prop Property Table
+    //     $approvedSaf = $activeSaf->replicate();
+    //     $approvedSaf->setTable('prop_safs');
+    //     $approvedSaf->id = $activeSaf->id;
+    //     $approvedSaf->property_id = $propId;
+    //     $approvedSaf->save();
+    //     $activeSaf->delete();
+
+    //     // Saf Owners Replication
+    //     foreach ($ownerDetails as $ownerDetail) {
+    //         $approvedOwner = $ownerDetail->replicate();
+    //         $approvedOwner->setTable('prop_safs_owners');
+    //         $approvedOwner->id = $ownerDetail->id;
+    //         $approvedOwner->save();
+    //         $ownerDetail->delete();
+    //     }
+    //     if ($activeSaf->prop_type_mstr_id != 4) {               // Applicable Not for Vacant Land
+    //         $propProperties = PropProperty::find($activeSaf->previous_holding_id);
+    //         if (!$propProperties)
+    //             throw new Exception("Old Property Not Found");
+    //         // Saf Floors Replication
+    //         foreach ($floorDetails as $floorDetail) {
+    //             $approvedFloor = $floorDetail->replicate();
+    //             $approvedFloor->setTable('prop_safs_floors');
+    //             $approvedFloor->id = $floorDetail->id;
+    //             $approvedFloor->save();
+    //             $floorDetail->delete();
+    //         }
+
+    //         // Deactivate Existing Prop Floors by Saf Id
+    //         $existingFloors = $mPropFloors->getFloorsByPropId($propId);
+    //         if ($existingFloors)
+    //             $mPropFloors->deactivateFloorsByPropId($propId);
+    //         foreach ($fieldVerifiedSaf as $key) {
+    //             $floorReqs = new Request([
+    //                 'floor_mstr_id' => $key->floor_mstr_id,
+    //                 'usage_type_mstr_id' => $key->usage_type_id,
+    //                 'const_type_mstr_id' => $key->construction_type_id,
+    //                 'occupancy_type_mstr_id' => $key->occupancy_type_id,
+    //                 'builtup_area' => $key->builtup_area,
+    //                 'date_from' => $key->date_from,
+    //                 'date_upto' => $key->date_to,
+    //                 'carpet_area' => $key->carpet_area,
+    //                 'property_id' => $propId,
+    //                 'saf_id' => $safId
+    //             ]);
+    //             $mPropFloors->postFloor($floorReqs);
+    //         }
+    //     }
+    // }
+
+     public function finalApprovalSafReplica($mPropProperties, $propId, $fieldVerifiedSaf, $activeSaf, $ownerDetails, $floorDetails, $safId)
     {
         $mPropFloors = new PropFloor();
-        $mPropProperties->replicateVerifiedSaf($propId, collect($fieldVerifiedSaf)->first());             // Replicate to Prop Property Table
+
+        // Step 1: Replicate verified SAF into prop_properties table
+        $mPropProperties->replicateVerifiedSaf($propId, collect($fieldVerifiedSaf)->first());
+
+        // Step 2: Replicate and approve the active SAF
         $approvedSaf = $activeSaf->replicate();
         $approvedSaf->setTable('prop_safs');
         $approvedSaf->id = $activeSaf->id;
         $approvedSaf->property_id = $propId;
         $approvedSaf->save();
+
+        // Delete the active SAF after replication
         $activeSaf->delete();
 
-        // Saf Owners Replication
+        // Step 3: Replicate SAF owner details
         foreach ($ownerDetails as $ownerDetail) {
             $approvedOwner = $ownerDetail->replicate();
             $approvedOwner->setTable('prop_safs_owners');
             $approvedOwner->id = $ownerDetail->id;
             $approvedOwner->save();
+
             $ownerDetail->delete();
         }
-        if ($activeSaf->prop_type_mstr_id != 4) {               // Applicable Not for Vacant Land
-            // Saf Floors Replication
+
+        // Step 4: Handle floors only if property is not vacant land
+        if ($activeSaf->prop_type_mstr_id != 4) {
+            $oldProperty = PropProperty::find($activeSaf->previous_holding_id);
+
+            if (!$oldProperty) {
+                throw new Exception("Old Property Not Found");
+            }
+
+            // Step 5: Replicate SAF floors
             foreach ($floorDetails as $floorDetail) {
                 $approvedFloor = $floorDetail->replicate();
                 $approvedFloor->setTable('prop_safs_floors');
                 $approvedFloor->id = $floorDetail->id;
                 $approvedFloor->save();
+
                 $floorDetail->delete();
             }
 
-            // Deactivate Existing Prop Floors by Saf Id
+            // Step 6: Update old property floor's builtup_area and carpet_area
+            if ($activeSaf->assesement_type == 'Bifurcation') {
+                $oldPropFloors = $mPropFloors->getFloorsByPropId($activeSaf->previous_holding_id);
+                if ($oldPropFloors) {
+                    foreach ($oldPropFloors as $oldFloor) {
+                        foreach ($floorDetails as $originalFloor) {
+                            if ($originalFloor->floor_mstr_id == $oldFloor->floor_mstr_id) {
+                                foreach ($fieldVerifiedSaf as $verifiedFloor) {
+                                    if ($verifiedFloor->floor_mstr_id == $oldFloor->floor_mstr_id) {
+                                        $oldFloor->builtup_area = max(0, $originalFloor->bifurcated_from_buildup_area - $verifiedFloor->builtup_area);
+                                        $oldFloor->carpet_area = max(0, $originalFloor->carpet_area - $verifiedFloor->carpet_area);
+                                        $oldFloor->save();
+                                        break 2; // Break out of both inner loops
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            // Step 7: Deactivate existing floors for the current property
             $existingFloors = $mPropFloors->getFloorsByPropId($propId);
-            if ($existingFloors)
+            if ($existingFloors) {
                 $mPropFloors->deactivateFloorsByPropId($propId);
-            foreach ($fieldVerifiedSaf as $key) {
-                $floorReqs = new Request([
-                    'floor_mstr_id' => $key->floor_mstr_id,
-                    'usage_type_mstr_id' => $key->usage_type_id,
-                    'const_type_mstr_id' => $key->construction_type_id,
-                    'occupancy_type_mstr_id' => $key->occupancy_type_id,
-                    'builtup_area' => $key->builtup_area,
-                    'date_from' => $key->date_from,
-                    'date_upto' => $key->date_to,
-                    'carpet_area' => $key->carpet_area,
+            }
+
+            // Step 8: Add new floors from fieldVerifiedSaf
+            foreach ($fieldVerifiedSaf as $verifiedFloor) {
+                $floorRequest = new Request([
+                    'floor_mstr_id' => $verifiedFloor->floor_mstr_id,
+                    'usage_type_mstr_id' => $verifiedFloor->usage_type_id,
+                    'const_type_mstr_id' => $verifiedFloor->construction_type_id,
+                    'occupancy_type_mstr_id' => $verifiedFloor->occupancy_type_id,
+                    'builtup_area' => $verifiedFloor->builtup_area,
+                    'date_from' => $verifiedFloor->date_from,
+                    'date_upto' => $verifiedFloor->date_to,
+                    'carpet_area' => $verifiedFloor->carpet_area,
                     'property_id' => $propId,
                     'saf_id' => $safId
                 ]);
-                $mPropFloors->postFloor($floorReqs);
+
+                $mPropFloors->postFloor($floorRequest);
             }
         }
     }
@@ -1699,7 +1799,7 @@ class ActiveSafController extends Controller
                 throw new Exception("Old Property Not Found");
 
             // Update Old Property Area of Plot
-            $newPropProperties = PropProperty::where('saf_id', $activeSaf->id)->where('status', 1)->first();
+            $newPropProperties = PropProperty::where('saf_id', $activeSaf->id)->where('status', 2)->first();
             $propProperties->update(["area_of_plot" => $propProperties->area_of_plot + $newPropProperties->area_of_plot]);
 
             // Update Floors
@@ -1727,7 +1827,7 @@ class ActiveSafController extends Controller
 
         // Property Deactivation
         if (in_array($activeSaf->assessment_type, ['New Assessment', 'Mutation', 'Bifurcation'])) {
-            $approvedProperty = PropProperty::where('saf_id', $activeSaf->id)->where('status', 1)->first();
+            $approvedProperty = PropProperty::where('saf_id', $activeSaf->id)->where('status', 2)->first();
             if (!$approvedProperty)
                 throw new Exception("Approved Property Not Found");
 
@@ -2822,65 +2922,75 @@ class ActiveSafController extends Controller
         $req->validate([
             'id' => 'required|numeric'
         ]);
+
         try {
             $mWfRoleusermap = new WfRoleusermap();
             $mPropTransactions = new PropTransaction();
             $jskRole = Config::get('PropertyConstaint.JSK_ROLE');
             $tcRole = 5;
-            $user = authUser($req);
+
+            $user = authUser($req); // Use this if authentication is active
             $userId = $user->id;
+
             $safDetails = $this->details($req);
-            if ($safDetails['payment_status'] == 1) {       // Get Transaction no if the payment is done
+            $demand = [];
+
+            if ($safDetails['payment_status'] == 1) {
                 $transaction = $mPropTransactions->getLastTranByKeyId('saf_id', $req->id);
-                $demand['tran_no'] = $transaction->tran_no;
+                $demand['tran_no'] = $transaction->tran_no ?? null;
             }
+
             $workflowId = $safDetails['workflow_id'];
             $mreqs = new Request([
                 "workflowId" => $workflowId,
                 "userId" => $userId
             ]);
-            // $role = $mWfRoleusermap->getRoleByUserWfId($mreqs);
+
             $role = $mWfRoleusermap->getRoleByUserId($mreqs);
 
-            if (isset($role) && in_array($role->wf_role_id, [$jskRole, $tcRole]))
-                $demand['can_pay'] = true;
-            else
-                $demand['can_pay'] = false;
+            $demand['can_pay'] = (isset($role) && in_array($role->wf_role_id, [$jskRole, $tcRole]));
 
             if (in_array($safDetails['payment_status'], [1, 2]))
                 $demand['can_pay'] = false;
 
-            $safTaxes = $this->calculateSafBySafId($req);
-            if ($safTaxes->original['status'] == false)
-                throw new Exception($safTaxes->original['message']);
-            $req = $safDetails;
+            $safTaxes = null;
+            if ($safDetails['assessment_type'] != 'Bifurcation') {
+                $safTaxes = $this->calculateSafBySafId($req);
+                if ($safTaxes->original['status'] == false)
+                    throw new Exception($safTaxes->original['message']);
+            }
+
+            // Prepare basic details
             $demand['basicDetails'] = [
-                "ulb_id" => $req['ulb_id'],
-                "saf_no" => $req['saf_no'],
-                "prop_address" => $req['prop_address'],
-                "is_mobile_tower" => $req['is_mobile_tower'],
-                "is_hoarding_board" => $req['is_hoarding_board'],
-                "is_petrol_pump" => $req['is_petrol_pump'],
-                "is_water_harvesting" => $req['is_water_harvesting'],
-                "zone_mstr_id" => $req['zone_mstr_id'],
-                "holding_no" => $req['new_holding_no'] ?? $req['holding_no'],
-                "old_ward_no" => $req['old_ward_no'],
-                "new_ward_no" => $req['new_ward_no'],
-                "property_type" => $req['property_type'],
-                "holding_type" => $req['holding_type'],
-                "doc_upload_status" => $req['doc_upload_status'],
-                "ownership_type" => $req['ownership_type']
+                "ulb_id" => $safDetails['ulb_id'],
+                "saf_no" => $safDetails['saf_no'],
+                "prop_address" => $safDetails['prop_address'],
+                "is_mobile_tower" => $safDetails['is_mobile_tower'],
+                "is_hoarding_board" => $safDetails['is_hoarding_board'],
+                "is_petrol_pump" => $safDetails['is_petrol_pump'],
+                "is_water_harvesting" => $safDetails['is_water_harvesting'],
+                "zone_mstr_id" => $safDetails['zone_mstr_id'],
+                "holding_no" => $safDetails['new_holding_no'] ?? $safDetails['holding_no'],
+                "old_ward_no" => $safDetails['old_ward_no'],
+                "new_ward_no" => $safDetails['new_ward_no'],
+                "property_type" => $safDetails['property_type'],
+                "holding_type" => $safDetails['holding_type'],
+                "doc_upload_status" => $safDetails['doc_upload_status'],
+                "ownership_type" => $safDetails['ownership_type']
             ];
+
             $demand['amounts'] = $safTaxes->original['data']['demand'] ?? [];
-            $demand['details'] = collect($safTaxes->original['data']['details'])->values();
-            $demand['taxDetails'] = collect($safTaxes->original['data']['taxDetails']) ?? [];
+            $demand['details'] = collect($safTaxes->original['data']['details'] ?? [])->values();
+            $demand['taxDetails'] = collect($safTaxes->original['data']['taxDetails'] ?? [])->values();
             $demand['paymentStatus'] = $safDetails['payment_status'];
             $demand['applicationNo'] = $safDetails['saf_no'];
+
             return responseMsgs(true, "Demand Details", remove_null($demand), "010123", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), []);
         }
     }
+
 
     # code by sandeep bara 
     # date 31-01-2023
