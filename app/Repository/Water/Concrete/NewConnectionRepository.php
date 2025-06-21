@@ -443,12 +443,14 @@ class NewConnectionRepository implements iNewConnection
         if (!$waterApplication) {
             throw new Exception("Data Not Found");
         }
-        if ($waterApplication->current_role != $role->role_id && !$role->is_initiator && (!$waterApplication->parked)) {
-            throw new Exception("You Have Not Pending This Application");
-        }
+
+        /* comment because issue ad BO side ( Backend Test) when forward without doc upload  : reverve it if furter*/
+        // if ($waterApplication->current_role != $role->role_id && !$role->is_initiator && (!$waterApplication->parked)) {
+        //     throw new Exception("You Have Not Pending This Application");
+        // }
         if ($waterApplication->parked && !$role->is_initiator) {
             throw new Exception("You are not the authorized user to forward BTC application");
-        }
+        }  
         #====end this code added by sandeep==================
 
         # Derivative Assignments
