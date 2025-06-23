@@ -1441,7 +1441,6 @@ class ActiveSafController extends Controller
             $safApprovalBll = new SafApprovalBll();;
 
             $userId = authUser($req)->id;
-            // $userId = 77;
             $safId = $req->applicationId;
             // Derivative Assignments
             $safDetails = PropActiveSaf::findOrFail($req->applicationId);
@@ -1744,21 +1743,23 @@ class ActiveSafController extends Controller
         }
 
         // Step 7: Add new floors from fieldVerifiedSaf
-        foreach ($fieldVerifiedSaf as $verifiedFloor) {
-            $floorRequest = new Request([
-                'floor_mstr_id' => $verifiedFloor->floor_mstr_id,
-                'usage_type_mstr_id' => $verifiedFloor->usage_type_id,
-                'const_type_mstr_id' => $verifiedFloor->construction_type_id,
-                'occupancy_type_mstr_id' => $verifiedFloor->occupancy_type_id,
-                'builtup_area' => $verifiedFloor->builtup_area,
-                'date_from' => $verifiedFloor->date_from,
-                'date_upto' => $verifiedFloor->date_to,
-                'carpet_area' => $verifiedFloor->carpet_area,
-                'property_id' => $propId,
-                'saf_id' => $safId
-            ]);
+        if ($activeSaf->prop_type_mstr_id != 4) { // Not Applicable for Vacant Land
+            foreach ($fieldVerifiedSaf as $verifiedFloor) {
+                $floorRequest = new Request([
+                    'floor_mstr_id' => $verifiedFloor->floor_mstr_id,
+                    'usage_type_mstr_id' => $verifiedFloor->usage_type_id,
+                    'const_type_mstr_id' => $verifiedFloor->construction_type_id,
+                    'occupancy_type_mstr_id' => $verifiedFloor->occupancy_type_id,
+                    'builtup_area' => $verifiedFloor->builtup_area,
+                    'date_from' => $verifiedFloor->date_from,
+                    'date_upto' => $verifiedFloor->date_to,
+                    'carpet_area' => $verifiedFloor->carpet_area,
+                    'property_id' => $propId,
+                    'saf_id' => $safId
+                ]);
 
-            $mPropFloors->postFloor($floorRequest);
+                $mPropFloors->postFloor($floorRequest);
+            }
         }
     }
 
