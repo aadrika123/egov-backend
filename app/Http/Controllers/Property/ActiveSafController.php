@@ -1691,12 +1691,12 @@ class ActiveSafController extends Controller
         }
 
         // Step 4: Handle floors only if property is not vacant land
-        if ($activeSaf->prop_type_mstr_id != 4) {
-            $oldProperty = PropProperty::find($activeSaf->previous_holding_id);
+        // if ($activeSaf->prop_type_mstr_id != 4) {
+        //     $oldProperty = PropProperty::find($activeSaf->previous_holding_id);
 
-            if (!$oldProperty) {
-                throw new Exception("Old Property Not Found");
-            }
+        //     if (!$oldProperty) {
+        //         throw new Exception("Old Property Not Found");
+        //     }
 
             // Step 5: Replicate SAF floors
             foreach ($floorDetails as $floorDetail) {
@@ -1752,7 +1752,7 @@ class ActiveSafController extends Controller
                 $mPropFloors->postFloor($floorRequest);
             }
         }
-    }
+    
 
     /**
      * * Handles the final rejection of a SAF (Self-Assessment Form).
