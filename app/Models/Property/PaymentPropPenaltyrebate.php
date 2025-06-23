@@ -53,7 +53,7 @@ class PaymentPropPenaltyrebate extends Model
      */
     public function getPenalRebatesByPropId($propId)
     {
-        return PaymentPropPenaltyrebate::where('prop_id', $propId)
+        return PaymentPropPenaltyrebate::where('property_id', $propId)
             ->get();
     }
 }

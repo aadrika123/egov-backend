@@ -185,13 +185,13 @@ class ActiveSafControllerV2 extends Controller
 
             if (collect($details)->isEmpty())
                 throw new Exception("Memo Details Not Available");
-            $properties = $mPropProperty::find($details[0]->prop_id);
+            $properties = $mPropProperty::find($details[0]->property_id);
             $details = collect($details)->first();
             $taxTable = collect($details)->only(['holding_tax', 'water_tax', 'latrine_tax', 'education_cess', 'health_cess', 'rwh_penalty']);
             $details->taxTable = $this->generateTaxTable($taxTable);
             // Fam Receipt
             if ($details->memo_type == 'FAM') {
-                $propId = $details->prop_id;
+                $propId = $details->property_id;
                 $safId = $details->saf_id;
 
                 $safTaxes = $propSafTax->getSafTaxesBySafId($safId);

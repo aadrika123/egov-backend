@@ -4260,7 +4260,7 @@ class MasterReferenceController extends Controller
             $req->all(),
             [
                 'title' => 'required',
-                'blogFile' => 'required|mimes:pdf,jpeg,png,jpg',
+                'assetFile' => 'required|mimes:pdf,jpeg,png,jpg',
                 'shortDescription' => 'required|nullable',
                 'longDescription' => 'required|nullable',
                 'officerName' => 'nullable',
@@ -4272,7 +4272,7 @@ class MasterReferenceController extends Controller
         }
 
         try {
-            $req->merge(["document" => $req->blogFile]);
+            $req->merge(["document" => $req->assetFile]);
             $docUpload = new DocUpload();
             $data = $docUpload->checkDoc($req);
 
@@ -4308,10 +4308,11 @@ class MasterReferenceController extends Controller
             $data = $blogModel->allList()->map(function ($val) use ($docUpload) {
                 $url = $docUpload->getSingleDocUrl($val);
                 $val->is_suspended = $val->status;
-                $val->blogFile = $url["doc_path"] ?? null;
-                unset($val->blog_file);
+                $val->asset_file = $url["doc_path"] ?? null;
+                // unset($val->asset_file);
                 return $val;
             });
+
 
             return responseMsgs(true, "All Blog List", $data, "BLOG002", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
@@ -4329,7 +4330,7 @@ class MasterReferenceController extends Controller
             [
                 "id" => "required|numeric",
                 "title" => "required|string",
-                "blogFile" => "required|mimes:pdf,jpeg,png,jpg",
+                "assetFile" => "required|mimes:pdf,jpeg,png,jpg",
                 "shortDescription" => "required|string",
                 "longDescription" => "required|string",
                 "officerName" => "required|string"
@@ -4341,7 +4342,7 @@ class MasterReferenceController extends Controller
         }
 
         try {
-            $req->merge(["document" => $req->blogFile]);
+            $req->merge(["document" => $req->assetFile]);
             $docUpload = new DocUpload;
             $data = $docUpload->checkDoc($req);
             if (!$data["status"]) {
@@ -4404,6 +4405,30 @@ class MasterReferenceController extends Controller
 
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "BLOG004", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    /* 
+     * | Get all blogs list whose status is active (1)
+    */
+    public function activeBlogsList(Request $req)
+    {
+        try {
+            $blogModel = new BlogPost();
+            $docUpload = new DocUpload();
+
+            $data = $blogModel->getActiveBlogsList()->map(function ($val) use ($docUpload) {
+                $url = $docUpload->getSingleDocUrl($val);
+                $val->is_suspended = $val->status;
+                $val->asset_file = $url["doc_path"] ?? null;
+                // unset($val->asset_file);
+                return $val;
+            });
+
+
+            return responseMsgs(true, "All Blog List", $data, "BLOG002", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "BLOG002", "01", responseTime(), $req->getMethod(), $req->deviceId);
         }
     }
 
