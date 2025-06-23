@@ -25,7 +25,7 @@ class PropTax extends Model
      */
     public function getPropTaxesByPropId($propId)
     {
-        return PropTax::where('property_id', $propId)
+        return PropTax::where('prop_id', $propId)
             ->where('status', 1)
             ->get();
     }
@@ -36,7 +36,7 @@ class PropTax extends Model
      */
     public function deactivatePropTax($propId)
     {
-        PropTax::where('property_id', $propId)
+        PropTax::where('prop_id', $propId)
             ->where('status', 1)
             ->update(['status' => 0]);
     }

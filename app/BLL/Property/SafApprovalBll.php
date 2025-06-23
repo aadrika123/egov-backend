@@ -550,7 +550,7 @@ class SafApprovalBll
                 "ulb_id" => (auth()->user() ? auth()->user()->ulb_id : null),
                 "remarks" => "Old Demand payment",
             ];
-            $newAdvance->where("property_id", $advArr["prop_id"])->where("remarks", $advArr["remarks"])->update(["status" => 0]);
+            $newAdvance->where("prop_id", $advArr["prop_id"])->where("remarks", $advArr["remarks"])->update(["status" => 0]);
             $advanceId = $newAdvance->store($advArr);
             // $history = new PropAssessmentHistory();
             // $history->where("id", $this->_assessmentHistoryId)->update(["advance_id" => $advanceId, "total_paid_demand_amount" => $oldPaidTax, "new_demand_log" => $new_demand_log]);

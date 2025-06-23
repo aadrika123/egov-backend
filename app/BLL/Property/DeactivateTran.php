@@ -211,7 +211,7 @@ class DeactivateTran
     public function AdjustArreaInterast()
     {
         if ($this->_transaction->tran_type == 'Property') {
-            $OldInterest = $this->_PropPendingArrear->where("property_id", $this->_transaction->property_id)->where("status", 1)->get();
+            $OldInterest = $this->_PropPendingArrear->where("prop_id", $this->_transaction->property_id)->where("status", 1)->get();
             foreach ($OldInterest as $interast) {
 
                 $paymentHistory = collect(json_decode($interast->due_total_interest_pay_json))->where("tran_id", $this->_transaction->id);

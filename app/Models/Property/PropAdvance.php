@@ -31,7 +31,7 @@ class PropAdvance extends Model
                 $join->on("p.tran_id", "=", "a.tran_id");
             })
             ->select(DB::raw("sum(coalesce(a.amount, 0)) as advance, sum(coalesce(p.amount, 0)) as adjustment_amt"))
-            ->where("a.property_id", "=", $propId)
+            ->where("a.prop_id", "=", $propId)
             ->where("a.status", 1)
             ->groupBy("a.amount")
             ->first();
@@ -46,7 +46,7 @@ class PropAdvance extends Model
                 $join->on("p.tran_id", "=", "a.tran_id");
             })
             ->select(DB::raw("sum(coalesce(a.amount, 0)) as advance, sum(coalesce(p.amount, 0)) as adjustment_amt"))
-            ->whereIn("a.property_id", $propId)
+            ->whereIn("a.prop_id", $propId)
             ->where("a.status", 1)
             ->groupBy("a.amount")
             ->get();
