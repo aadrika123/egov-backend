@@ -1663,7 +1663,7 @@ class ActiveSafController extends Controller
     //     }
     // }
 
-     public function finalApprovalSafReplica($mPropProperties, $propId, $fieldVerifiedSaf, $activeSaf, $ownerDetails, $floorDetails, $safId)
+    public function finalApprovalSafReplica($mPropProperties, $propId, $fieldVerifiedSaf, $activeSaf, $ownerDetails, $floorDetails, $safId)
     {
         $mPropFloors = new PropFloor();
 
@@ -1698,61 +1698,61 @@ class ActiveSafController extends Controller
         //         throw new Exception("Old Property Not Found");
         //     }
 
-            // Step 5: Replicate SAF floors
-            foreach ($floorDetails as $floorDetail) {
-                $approvedFloor = $floorDetail->replicate();
-                $approvedFloor->setTable('prop_safs_floors');
-                $approvedFloor->id = $floorDetail->id;
-                $approvedFloor->save();
+        // Step 5: Replicate SAF floors
+        foreach ($floorDetails as $floorDetail) {
+            $approvedFloor = $floorDetail->replicate();
+            $approvedFloor->setTable('prop_safs_floors');
+            $approvedFloor->id = $floorDetail->id;
+            $approvedFloor->save();
 
-                $floorDetail->delete();
-            }
+            $floorDetail->delete();
+        }
 
-            // Step 6: Update old property floor's builtup_area and carpet_area
-            if ($activeSaf->assesement_type == 'Bifurcation') {
-                $oldPropFloors = $mPropFloors->getFloorsByPropId($activeSaf->previous_holding_id);
-                if ($oldPropFloors) {
-                    foreach ($oldPropFloors as $oldFloor) {
-                        foreach ($floorDetails as $originalFloor) {
-                            if ($originalFloor->floor_mstr_id == $oldFloor->floor_mstr_id) {
-                                foreach ($fieldVerifiedSaf as $verifiedFloor) {
-                                    if ($verifiedFloor->floor_mstr_id == $oldFloor->floor_mstr_id) {
-                                        $oldFloor->builtup_area = max(0, $originalFloor->bifurcated_from_buildup_area - $verifiedFloor->builtup_area);
-                                        $oldFloor->carpet_area = max(0, $originalFloor->carpet_area - $verifiedFloor->carpet_area);
-                                        $oldFloor->save();
-                                        break 2; // Break out of both inner loops
-                                    }
+        // Step 6: Update old property floor's builtup_area and carpet_area
+        if ($activeSaf->assesement_type = 'Bifurcation') {
+            $oldPropFloors = $mPropFloors->getFloorsByPropId($activeSaf->previous_holding_id);
+            if ($oldPropFloors) {
+                foreach ($oldPropFloors as $oldFloor) {
+                    foreach ($floorDetails as $originalFloor) {
+                        if ($originalFloor->floor_mstr_id == $oldFloor->floor_mstr_id) {
+                            foreach ($fieldVerifiedSaf as $verifiedFloor) {
+                                if ($verifiedFloor->floor_mstr_id == $oldFloor->floor_mstr_id) {
+                                    $oldFloor->builtup_area = max(0, $originalFloor->bifurcated_from_buildup_area - $verifiedFloor->builtup_area);
+                                    $oldFloor->carpet_area = max(0, $originalFloor->carpet_area - $verifiedFloor->carpet_area);
+                                    $oldFloor->save();
+                                    break 2; // Break out of both inner loops
                                 }
                             }
                         }
                     }
                 }
             }
-            // Step 7: Deactivate existing floors for the current property
-            $existingFloors = $mPropFloors->getFloorsByPropId($propId);
-            if ($existingFloors) {
-                $mPropFloors->deactivateFloorsByPropId($propId);
-            }
-
-            // Step 8: Add new floors from fieldVerifiedSaf
-            foreach ($fieldVerifiedSaf as $verifiedFloor) {
-                $floorRequest = new Request([
-                    'floor_mstr_id' => $verifiedFloor->floor_mstr_id,
-                    'usage_type_mstr_id' => $verifiedFloor->usage_type_id,
-                    'const_type_mstr_id' => $verifiedFloor->construction_type_id,
-                    'occupancy_type_mstr_id' => $verifiedFloor->occupancy_type_id,
-                    'builtup_area' => $verifiedFloor->builtup_area,
-                    'date_from' => $verifiedFloor->date_from,
-                    'date_upto' => $verifiedFloor->date_to,
-                    'carpet_area' => $verifiedFloor->carpet_area,
-                    'property_id' => $propId,
-                    'saf_id' => $safId
-                ]);
-
-                $mPropFloors->postFloor($floorRequest);
-            }
         }
-    
+        // Step 7: Deactivate existing floors for the current property
+        $existingFloors = $mPropFloors->getFloorsByPropId($propId);
+        if ($existingFloors) {
+            $mPropFloors->deactivateFloorsByPropId($propId);
+        }
+
+        // Step 8: Add new floors from fieldVerifiedSaf
+        foreach ($fieldVerifiedSaf as $verifiedFloor) {
+            $floorRequest = new Request([
+                'floor_mstr_id' => $verifiedFloor->floor_mstr_id,
+                'usage_type_mstr_id' => $verifiedFloor->usage_type_id,
+                'const_type_mstr_id' => $verifiedFloor->construction_type_id,
+                'occupancy_type_mstr_id' => $verifiedFloor->occupancy_type_id,
+                'builtup_area' => $verifiedFloor->builtup_area,
+                'date_from' => $verifiedFloor->date_from,
+                'date_upto' => $verifiedFloor->date_to,
+                'carpet_area' => $verifiedFloor->carpet_area,
+                'property_id' => $propId,
+                'saf_id' => $safId
+            ]);
+
+            $mPropFloors->postFloor($floorRequest);
+        }
+    }
+
 
     /**
      * * Handles the final rejection of a SAF (Self-Assessment Form).
@@ -2727,6 +2727,7 @@ class ActiveSafController extends Controller
             $verificationDtl = new PropSafVerificationDtl();
             $userId = authUser($req)->id;
             $ulbId = authUser($req)->ulb_id;
+            $userType = authUser($req)->user_type;
             $vacantLand = $propertyType['VACANT LAND'];
 
             $safDtls = $propActiveSaf->getSafNo($req->safId);
@@ -2782,7 +2783,8 @@ class ActiveSafController extends Controller
                         'date_to' => $floorDetail['dateUpto'],
                         'carpet_area' => $carpetArea,
                         'user_id' => $userId,
-                        'ulb_id' => $ulbId
+                        'ulb_id' => $ulbId,
+                        'verified_by' => $userType,
                     ];
                     $status = $verificationDtl->store($floorReq);
                 }
