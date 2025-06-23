@@ -1441,6 +1441,7 @@ class ActiveSafController extends Controller
             $safApprovalBll = new SafApprovalBll();;
 
             $userId = authUser($req)->id;
+            // $userId = 77;
             $safId = $req->applicationId;
             // Derivative Assignments
             $safDetails = PropActiveSaf::findOrFail($req->applicationId);
@@ -1678,7 +1679,7 @@ class ActiveSafController extends Controller
         $approvedSaf->save();
 
         // Delete the active SAF after replication
-        $activeSaf->delete();
+        // $activeSaf->delete();
 
         // Step 3: Replicate SAF owner details
         foreach ($ownerDetails as $ownerDetail) {
@@ -1690,15 +1691,7 @@ class ActiveSafController extends Controller
             $ownerDetail->delete();
         }
 
-        // Step 4: Handle floors only if property is not vacant land
-        // if ($activeSaf->prop_type_mstr_id != 4) {
-        //     $oldProperty = PropProperty::find($activeSaf->previous_holding_id);
-
-        //     if (!$oldProperty) {
-        //         throw new Exception("Old Property Not Found");
-        //     }
-
-        // Step 5: Replicate SAF floors
+        // Step 4: Replicate SAF floors
         foreach ($floorDetails as $floorDetail) {
             $approvedFloor = $floorDetail->replicate();
             $approvedFloor->setTable('prop_safs_floors');
@@ -1708,9 +1701,13 @@ class ActiveSafController extends Controller
             $floorDetail->delete();
         }
 
-        // Step 6: Update old property floor's builtup_area and carpet_area
-        if ($activeSaf->assesement_type = 'Bifurcation') {
+        // Step 5: Update old property floor's builtup_area and carpet_area if bifurcation and not vacant land
+        if (
+            $activeSaf->assessment_type === 'Bifurcation' &&
+            $activeSaf->prop_type_mstr_id != 4
+        ) {
             $oldPropFloors = $mPropFloors->getFloorsByPropId($activeSaf->previous_holding_id);
+
             if ($oldPropFloors) {
                 foreach ($oldPropFloors as $oldFloor) {
                     foreach ($floorDetails as $originalFloor) {
@@ -1720,21 +1717,33 @@ class ActiveSafController extends Controller
                                     $oldFloor->builtup_area = max(0, $originalFloor->bifurcated_from_buildup_area - $verifiedFloor->builtup_area);
                                     $oldFloor->carpet_area = max(0, $originalFloor->carpet_area - $verifiedFloor->carpet_area);
                                     $oldFloor->save();
-                                    break 2; // Break out of both inner loops
+                                    break 2; // exit nested loops
                                 }
                             }
                         }
                     }
                 }
+                // Update old property plot area
+                $oldProperty = PropProperty::find($activeSaf->previous_holding_id);
+                if ($oldProperty) {
+                    $verifiedFloor = collect($fieldVerifiedSaf)->first();
+                    if ($verifiedFloor && isset($verifiedFloor->area_of_plot)) {
+                        $oldProperty->area_of_plot = max(0, $activeSaf->bifurcated_from_plot_area  - $verifiedFloor->area_of_plot);
+                        $oldProperty->save();
+                    }
+                }
             }
         }
-        // Step 7: Deactivate existing floors for the current property
+        // Delete the active SAF after replication
+        $activeSaf->delete();
+
+        // Step 6: Deactivate existing floors for the new property
         $existingFloors = $mPropFloors->getFloorsByPropId($propId);
         if ($existingFloors) {
             $mPropFloors->deactivateFloorsByPropId($propId);
         }
 
-        // Step 8: Add new floors from fieldVerifiedSaf
+        // Step 7: Add new floors from fieldVerifiedSaf
         foreach ($fieldVerifiedSaf as $verifiedFloor) {
             $floorRequest = new Request([
                 'floor_mstr_id' => $verifiedFloor->floor_mstr_id,
@@ -1752,6 +1761,7 @@ class ActiveSafController extends Controller
             $mPropFloors->postFloor($floorRequest);
         }
     }
+
 
 
     /**
