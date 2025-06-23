@@ -10,7 +10,7 @@ class BlogPost extends Model
 {
     protected $fillable = [
         'title',
-        'blog_file',
+        'asset_file',
         'short_description',
         'long_description',
         'by_officer_name',
@@ -24,7 +24,7 @@ class BlogPost extends Model
     {
         $obj = new self;
         $obj->title = $req->title;
-        $obj->blog_file = $req->asset_path;
+        $obj->asset_file = $req->asset_path;
         $obj->short_description = $req->shortDescription;
         $obj->long_description = $req->longDescription;
         $obj->by_officer_name = $req->officerName;
@@ -52,7 +52,7 @@ class BlogPost extends Model
         $data->short_description = $req->shortDescription ?? $data->short_description;
         $data->long_description = $req->longDescription ?? $data->long_description;
         $data->by_officer_name = $req->officerName ?? $data->by_officer_name;
-        $data->blog_file = $req->document ?? $data->blog_file;
+        $data->asset_file = $req->assetFile ?? $data->asset_file;
         $data->unique_id = $req->uniqueId ?? $data->unique_id;
         $data->reference_no = $req->ReferenceNo ?? $data->reference_no;
 
@@ -78,6 +78,12 @@ class BlogPost extends Model
         return self::where('id', $req->id)->first();
     }
 
+    public function getActiveBlogsList()
+    {
+        return self::where('status', 1)
+            ->orderBy('id', 'DESC')
+            ->get();
+    }
 
 
 }

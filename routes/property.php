@@ -875,6 +875,7 @@ Route::controller(MasterReferenceController::class)->group(function () {
   Route::post('m-update-blog', 'editBlog');
   Route::post('m-delete-blog', 'deleteBlog');
   Route::post('m-get-blog-by-Id', 'blogById');
+  Route::post('m-get-active-blog', 'activeBlogsList');
 });
 
 
