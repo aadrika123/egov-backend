@@ -1124,7 +1124,7 @@ class ActiveSafController extends Controller
                     );
 
                     $memoReqs = new Request($mergedDemand);
-                    if ($saf->assessment_type == 'Bifurcation') {
+                    if ($saf->assessment_type == 'Bifurcation' || $saf->assessment_type == 'Amalgamation') {
                         $mPropMemoDtl->postSafMemoDtlsBi($memoReqs, $saf->id);
                     } else {
                         $mPropMemoDtl->postSafMemoDtls($memoReqs);
