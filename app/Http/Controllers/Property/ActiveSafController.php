@@ -1065,7 +1065,7 @@ class ActiveSafController extends Controller
                 break;
 
             case $wfLevels['DA']: // DA Condition
-                if ($propActiveSaf->assessment_type != 'Bifurcation') {
+                if ($propActiveSaf->assessment_type != 'Bifurcation' && $propActiveSaf->assessment_type != 'Amalgamation') {
                     $demandData = $mPropSafDemand->getDemandsBySafId($saf->id)->groupBy('fyear')->first();
                     if (collect($demandData)->isEmpty())
                         throw new Exception("Demand Not Available");
