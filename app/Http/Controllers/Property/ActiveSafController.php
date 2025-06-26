@@ -1492,7 +1492,7 @@ class ActiveSafController extends Controller
                 // for bifurction, amalgamation, mutation, new assessment
                 // $safApprovalBll->approvalProcess($safId);
 
-                if ($safDetails->assessment_type != 'Bifurcation') {
+                if ($safDetails->assessment_type != 'Bifurcation' && $safDetails->assessment_type != 'Amalgamation') {
                     $demand = $mPropDemand->getFirstDemandByFyearPropId($propId, $currentFinYear);
                     if (collect($demand)->isEmpty())
                         $demand = $mPropSafDemand->getFirstDemandByFyearSafId($safId, $currentFinYear);
@@ -1500,7 +1500,7 @@ class ActiveSafController extends Controller
                         throw new Exception("Demand Not Available for the Current Year to Generate FAM");
                 }
 
-                if ($safDetails->assessment_type == 'Bifurcation') {
+                if ($safDetails->assessment_type == 'Bifurcation' || $safDetails->assessment_type == 'Amalgamation') {
                     $date = Carbon::parse($safDetails->application_date);
                     $currentFinancialYear = getFinancialYear($date);
                     $demand = (object)[
@@ -1528,7 +1528,7 @@ class ActiveSafController extends Controller
                 $memoReqs = new Request($mergedDemand);
                 // $mPropSafMemoDtl->postSafMemoDtls($memoReqs);
 
-                if ($safDetails->assessment_type == 'Bifurcation') {
+                if ($safDetails->assessment_type == 'Bifurcation' || $safDetails->assessment_type == 'Amalgamation') {
                     $mPropSafMemoDtl->postSafMemoDtlsBi($memoReqs, $safId);
                 } else {
                     $mPropSafMemoDtl->postSafMemoDtls($memoReqs);
