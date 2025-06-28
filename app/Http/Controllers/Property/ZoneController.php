@@ -15,6 +15,10 @@ use Illuminate\Http\Request;
 class ZoneController extends Controller
 {
 
+    # ---------------------------------------------------------#
+    # ----- APIs that are currently inactive or unused --------#
+    # ---------------------------------------------------------#
+
     /**
      * | Retrieve list of zones for a given ULB (Urban Local Body) ID.
     */

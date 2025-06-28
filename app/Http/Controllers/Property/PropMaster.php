@@ -19,13 +19,6 @@ class PropMaster extends Controller
         return $obj->propUsageType();
     }
 
-    //constrction type
-    public function propConstructionType()
-    {
-        $obj = new RefPropConstructionType();
-        return $obj->propConstructionType();
-    }
-
     //occupancy type
     public function propOccupancyType()
     {
@@ -33,17 +26,29 @@ class PropMaster extends Controller
         return $obj->propOccupancyType();
     }
 
-    //property type
-    public function propPropertyType()
-    {
-        $obj = new RefPropType();
-        return $obj->propPropertyType();
-    }
-
     //road type
     public function propRoadType()
     {
         $obj = new RefPropRoadType();
         return $obj->propRoadType();
+    }
+
+
+    # ---------------------------------------------------------#
+    # ----- APIs that are currently inactive or unused --------#
+    # ---------------------------------------------------------#
+
+    //constrction type
+    public function propConstructionType()
+    {
+        $obj = new RefPropConstructionType();
+        return $obj->propConstructionType();
+    }
+
+    //property type
+    public function propPropertyType()
+    {
+        $obj = new RefPropType();
+        return $obj->propPropertyType();
     }
 }

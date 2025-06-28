@@ -73,17 +73,6 @@ class ObjectionController extends Controller
         return $this->Repository->applyObjection($request);
     }
 
-    //objection type list
-    public function objectionType()
-    {
-        try {
-            $objType = new RefPropObjectionType();
-            return $objType->objectionType();
-        } catch (Exception $e) {
-            echo $e->getMessage();
-        }
-    }
-
     // forgery types    
     public function forgeryType()
     {
@@ -1583,5 +1572,20 @@ class ObjectionController extends Controller
             return 0;
         else
             return 1;
+    }
+
+    # ---------------------------------------------------------#
+    # ----- APIs that are currently inactive or unused --------#
+    # ---------------------------------------------------------#
+
+    //objection type list
+    public function objectionType()
+    {
+        try {
+            $objType = new RefPropObjectionType();
+            return $objType->objectionType();
+        } catch (Exception $e) {
+            echo $e->getMessage();
+        }
     }
 }

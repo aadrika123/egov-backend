@@ -45,6 +45,333 @@ class PropertyController extends Controller
         $this->_safRepo = $safRepo;
     }
 
+
+    /**
+     * | Check Amalgamation Property
+     */
+    public function checkAmalgamationProperty(Request $request)
+    {
+        try {
+            $validated = Validator::make(
+                $request->all(),
+                [
+                    'holdingNo' => 'required|array',
+                ]
+            );
+            if ($validated->fails()) {
+                return validationError($validated);
+            }
+            $mPropProperties = new PropProperty();
+            $mPropFloor = new PropFloor();
+            $holdingTaxController = new HoldingTaxController($this->_safRepo);
+            $holdingDtls = $mPropProperties->searchCollectiveHolding($request->holdingNo);
+            foreach ($request->holdingNo as $holdingNo) {
+                $holdingDtlsV1 = $mPropProperties->searchByHoldingNo($holdingNo);
+                if (collect($holdingDtlsV1)->isEmpty())
+                    throw new Exception("No Property found for the respective holding no." . $holdingNo);
+            }
+            if (collect($holdingDtls)->isEmpty())
+                throw new Exception("No Property found for the respective holding no.");
+
+            $plotArea = collect($holdingDtls)->sum('area_of_plot');
+            $propertyIds = collect($holdingDtls)->pluck('id');
+            $floorDtls = $mPropFloor->getAppartmentFloor($propertyIds)->get();
+            $demands = array();
+            foreach ($propertyIds as $propId) {
+                $request->merge(["propId" => $propId]);
+                $demand = $holdingTaxController->getHoldingDues($request);
+                $demand = $demand->original;
+                if ($demand['status'] == true) {
+                    throw new Exception("Previous Demand is not clear for the respective property." . $demand['data']['basicDetails']['holding_no'] ?? 'N/A'); // Return false immediately if any demand has status false
+                }
+                if ($demand['status'] == false) {
+                    $demand['data']['basicDetails']['property_id'] = $propId;
+                    array_push($demands, $demand['data']['basicDetails']);
+                }
+            }
+
+            if (collect($demands)->isEmpty())
+                throw new Exception("Previous Demand is not clear for the respective property.");
+
+            return responseMsgs(true, "Amalgamation Requirement Fulfilled", $demands, '011707', '01', responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], '011707', '01', responseTime(), $request->getMethod(), $request->deviceId);
+        }
+    }
+
+        /**
+     * | Check if the property id exist in the workflow
+       | CheckProperty:1
+     */
+    public function CheckProperty(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'type' => 'required|in:Reassesment,Mutation,Concession,Objection,Harvesting,Bifurcation',
+                'propertyId' => 'required|numeric',
+            ]
+        );
+        if ($validated->fails()) {
+            return validationError($validated);
+        }
+
+        try {
+            $holdingTaxController = new HoldingTaxController($this->_safRepo);
+            $type = $req->type;
+            $propertyId = $req->propertyId;
+            $sms = "";
+
+            switch ($type) {
+                case 'Reassesment':
+                    $data = PropActiveSaf::select('prop_active_safs.id', 'role_name', 'saf_no as application_no')
+                        ->join('wf_roles', 'wf_roles.id', 'prop_active_safs.current_role')
+                        ->where('previous_holding_id', $propertyId)
+                        ->where('prop_active_safs.status', 1)
+                        ->first();
+                    break;
+                case 'Mutation':
+                    $sms  = $this->checkOccupiedProperty($req);
+                    $data = PropActiveSaf::select('prop_active_safs.id', 'role_name', 'saf_no as application_no')
+                        ->join('wf_roles', 'wf_roles.id', 'prop_active_safs.current_role')
+                        ->where('previous_holding_id', $propertyId)
+                        ->where('prop_active_safs.status', 1)
+                        ->first();
+                    break;
+                case 'Bifurcation':
+                    $sms  = $this->checkOccupiedProperty($req);
+                    $data = PropActiveSaf::select('prop_active_safs.id', 'role_name', 'saf_no as application_no')
+                        ->join('wf_roles', 'wf_roles.id', 'prop_active_safs.current_role')
+                        ->where('assessment_type', 'Mutation')
+                        ->where('previous_holding_id', $propertyId)
+                        ->where('prop_active_safs.status', 1)
+                        ->first();
+
+                    if (!$data)
+                        $data = PropActiveSaf::select('prop_active_safs.id', 'role_name', 'saf_no as application_no')
+                            ->join('wf_roles', 'wf_roles.id', 'prop_active_safs.current_role')
+                            ->where('assessment_type', 'Reassessment')
+                            ->where('previous_holding_id', $propertyId)
+                            ->where('prop_active_safs.status', 1)
+                            ->first();
+                    break;
+                case 'Concession':
+                    $data = PropActiveConcession::select('prop_active_concessions.id', 'role_name', 'application_no')
+                        ->join('wf_roles', 'wf_roles.id', 'prop_active_concessions.current_role')
+                        ->where('property_id', $propertyId)
+                        ->where('prop_active_concessions.status', 1)
+                        ->first();
+                    break;
+                case 'Objection':
+                    $data = PropActiveObjection::select('prop_active_objections.id', 'role_name', 'objection_no as application_no')
+                        ->join('wf_roles', 'wf_roles.id', 'prop_active_objections.current_role')
+                        ->where('property_id', $propertyId)
+                        ->where('prop_active_objections.status', 1)
+                        ->first();
+                    break;
+                case 'Harvesting':
+                    $data = PropActiveHarvesting::select('prop_active_harvestings.id', 'role_name', 'application_no')
+                        ->join('wf_roles', 'wf_roles.id', 'prop_active_harvestings.current_role')
+                        ->where('property_id', $propertyId)
+                        ->where('prop_active_harvestings.status', 1)
+                        ->first();
+                    break;
+            }
+
+            // if ($data) {
+            //     $msg['id'] = $data->id;
+            //     $msg['inWorkflow'] = true;
+            //     $msg['currentRole'] = $data->role_name;
+            //     $msg['message'] = "The application is still in workflow and pending at " . $data->role_name . ". Please Track your application with " . $data->application_no;
+            // } else
+            //     $msg['inWorkflow'] = false;
+            if ($sms) {
+                $msg['inWorkflow'] = true;
+                $msg['message'] = $sms;
+                return responseMsgs(true, 'Data Checked', $msg, '011705', '01', responseTime(), 'Post', '');
+            }
+
+            if ($data) {
+                $msg['id'] = $data->id;
+                $msg['inWorkflow'] = true;
+                $msg['currentRole'] = $data->role_name;
+                $msg['message'] = "Your " . $data->assessment_type . " application is still in workflow and pending at " . $data->role_name . ". Please Track your application with " . $data->application_no;
+            } else {
+
+                $sms = "";
+                $req->merge(["propId" => $propertyId]);
+                $demand = $holdingTaxController->getHoldingDues($req);
+                if ($demand->original['status'] == true) {
+                    $demandDetails = $demand->original['data']['duesList'];
+                    //Temporary solution please comment next two lines
+                    if (in_array($type, ['Reassesment', 'Mutation', 'Bifurcation']))
+                        $sms = "Please Clear The Due Amount Of ₹" . $demandDetails['payableAmount'] . " Before Applying The Application.";
+                    if ($demandDetails['dueFromFyear'] < getFY())
+                        $sms = "Please Clear The Arrear Amount Of ₹" . $demandDetails['payableAmount'] . " Before Applying The Application.";
+                }
+                if ($sms) {
+                    $msg['inWorkflow'] = true;
+                    $msg['message'] = $sms;
+                } else {
+                    $msg['inWorkflow'] = false;
+                }
+            }
+
+            return responseMsgs(true, 'Data Checked', $msg, '011705', '01', responseTime(), 'Post', '');
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", '011705', '01', responseTime(), 'Post', '');
+        }
+    }
+
+    /**
+     * | Check if th property is occupied 
+       | CheckProperty:1.1
+     */
+    public function checkOccupiedProperty($req)
+    {
+        $propTypes = Config::get("PropertyConstaint.PROPERTY-TYPE");
+        $propTypes = collect($propTypes)->flip();
+        $propDtls = PropProperty::find($req->propertyId);
+        $propDtls->prop_type_mstr_id;
+        if (in_array($propDtls->prop_type_mstr_id, [$propTypes['SUPER STRUCTURE'], $propTypes['OCCUPIED PROPERTY']])) {
+            $msg = "SUPER STRUCTURE & OCCUPIED PROPERTY Cannot Apply For " . $req->type;
+            return $msg;
+        }
+    }
+    
+
+       /**
+     * | Master Holding Data
+     * | Fetch master holding data including amalgamated properties and floors.
+     */
+    public function masterHoldingData(Request $request)
+    {
+        try {
+            $mPropFloor = new PropFloor();
+            $mPropProperties = new PropProperty();
+            $holdingLists = array();
+            $safController = new ActiveSafController($this->_safRepo);
+            $propIds = collect($request->amalgamation)->pluck('propId')->unique();
+            $holdingDtls = $mPropProperties->getMultipleProperty($propIds);
+            $plotArea = collect($holdingDtls)->sum('area_of_plot');
+            $floorDtls = $mPropFloor->getAppartmentFloor($propIds)->get();
+            $masterHoldingId = collect($request->amalgamation)->where('isMasterHolding', true)->first();
+            $reqPropId = new Request(['propertyId' => $masterHoldingId['propId']]);
+            $masterData = $safController->getPropByHoldingNo($reqPropId)->original['data'];
+            $masterData['floors'] = $floorDtls;
+            $masterData['area_of_plot'] = $plotArea;
+            foreach ($holdingDtls as $property) {
+                $holdingList = $property->new_holding_no ?? $property->holding_no;
+                array_push($holdingLists, $holdingList);
+            }
+            $masterData['holdingNoLists'] = $holdingLists;
+
+            return responseMsgs(true, "Master Holding Data", $masterData, '011707', '01', responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], '011707', '01', responseTime(), $request->getMethod(), $request->deviceId);
+        }
+    }
+
+
+
+    /**
+     * | Get the Property LatLong for Heat map
+     * | Using wardId used in dashboard data 
+       | For MVP testing
+       | getpropLatLong:1
+     */
+    public function getpropLatLong(Request $req)
+    {
+        $req->validate([
+            'wardId' => 'required|integer',
+            'ulbId' =>  'nullable|integer',
+        ]);
+        try {
+            $mPropDemand    = new PropDemand();
+            $mPropProperty  = new PropProperty();
+            $propDetails    = $mPropProperty->getPropLatlong($req->wardId, $req->ulbId);
+            $propertyIds    = $propDetails->pluck('property_id');
+            $propDemand     = $mPropDemand->getDueDemandByPropIdV2($propertyIds);
+            $propDemand     = collect($propDemand);
+            $currentDate    = Carbon::now()->format('Y-04-01');
+            $refCurrentDate = Carbon::createFromFormat('Y-m-d', $currentDate);
+            $ref2023        = Carbon::createFromFormat('Y-m-d', "2023-01-01")->toDateString();
+
+            # Looping process for 
+            $propDetails = collect($propDetails)->map(function ($value)
+            use ($propDemand, $refCurrentDate, $ref2023) {
+
+                $geoDate    = strtotime($value['created_at']);
+                $geoDate    = date('Y-m-d', $geoDate);
+                $path       = $this->readDocumentPath($value['doc_path']);
+
+                # arrrer,current,paid
+                $refUnpaidPropDemands   = $propDemand->where('property_id', $value['property_id']);
+                $checkPropDemand        = collect($refUnpaidPropDemands)->last();
+                if (!$checkPropDemand) {
+                    $currentStatus  = 3;                                                             // Static
+                    $statusName     = "No Dues";                                                         // Static
+                }
+                if ($checkPropDemand) {
+                    if (is_null($checkPropDemand->due_date)) {
+                        $currentStatus  = 3;                                                         // Static
+                        $statusName     = "No Dues";                                                     // Static
+                    }
+                    $refDate = Carbon::createFromFormat('Y-m-d', $checkPropDemand->due_date);
+                    if ($refDate < $refCurrentDate) {
+                        $currentStatus  = 1;                                                         // Static
+                        $statusName     = "Arrear";                                                    // Static
+                    } else {
+                        $currentStatus  = 2;                                                         // Static
+                        $statusName     = "Current Dues";                                               // Static
+                    }
+                }
+                $value['statusName']    = $statusName;
+                $value['currentStatus'] = $currentStatus;
+
+                # For the document 
+                if ($geoDate < $ref2023) {
+                    $path = $this->readRefDocumentPath($value['doc_path']);
+                    $value['full_doc'] = !empty(trim($value['doc_path'])) ? $path : null;
+                    return $value;
+                }
+                $value['full_doc'] = !empty(trim($value['doc_path'])) ? $path : null;
+                return $value;
+            })->filter();
+
+            return responseMsgs(true, "latLong Details", remove_null($propDetails), "011707", "01", responseTime(), "POST", $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $e->getFile(), "011707", "01", responseTime(), "POST", $req->deviceId);
+        }
+    }
+
+    /**
+     * | Read the document path for the reference document
+       | getpropLatLong:1.1
+     */
+    public function readRefDocumentPath($path)
+    {
+        $path = ("https://smartulb.co.in/RMCDMC/getImageLink.php?path=" . "/" . $path);                      // Static
+        return $path;
+    }
+
+    /**
+     * | Read the document path for the document
+       | getpropLatLong:1.2
+     */
+    public function readDocumentPath($path)
+    {
+        $path = (config('app.url') . "/" . $path);
+        return $path;
+    }
+    
+
+    
+    # ---------------------------------------------------------#
+    # ----- APIs that are currently inactive or unused --------#
+    # ---------------------------------------------------------#
+
+
     /**
      * | Send otp for caretaker property
      */
@@ -255,237 +582,6 @@ class PropertyController extends Controller
     }
 
     /**
-     * | Check if the property id exist in the workflow
-       | CheckProperty:1
-     */
-    public function CheckProperty(Request $req)
-    {
-        $validated = Validator::make(
-            $req->all(),
-            [
-                'type' => 'required|in:Reassesment,Mutation,Concession,Objection,Harvesting,Bifurcation',
-                'propertyId' => 'required|numeric',
-            ]
-        );
-        if ($validated->fails()) {
-            return validationError($validated);
-        }
-
-        try {
-            $holdingTaxController = new HoldingTaxController($this->_safRepo);
-            $type = $req->type;
-            $propertyId = $req->propertyId;
-            $sms = "";
-
-            switch ($type) {
-                case 'Reassesment':
-                    $data = PropActiveSaf::select('prop_active_safs.id', 'role_name', 'saf_no as application_no')
-                        ->join('wf_roles', 'wf_roles.id', 'prop_active_safs.current_role')
-                        ->where('previous_holding_id', $propertyId)
-                        ->where('prop_active_safs.status', 1)
-                        ->first();
-                    break;
-                case 'Mutation':
-                    $sms  = $this->checkOccupiedProperty($req);
-                    $data = PropActiveSaf::select('prop_active_safs.id', 'role_name', 'saf_no as application_no')
-                        ->join('wf_roles', 'wf_roles.id', 'prop_active_safs.current_role')
-                        ->where('previous_holding_id', $propertyId)
-                        ->where('prop_active_safs.status', 1)
-                        ->first();
-                    break;
-                case 'Bifurcation':
-                    $sms  = $this->checkOccupiedProperty($req);
-                    $data = PropActiveSaf::select('prop_active_safs.id', 'role_name', 'saf_no as application_no')
-                        ->join('wf_roles', 'wf_roles.id', 'prop_active_safs.current_role')
-                        ->where('assessment_type', 'Mutation')
-                        ->where('previous_holding_id', $propertyId)
-                        ->where('prop_active_safs.status', 1)
-                        ->first();
-
-                    if (!$data)
-                        $data = PropActiveSaf::select('prop_active_safs.id', 'role_name', 'saf_no as application_no')
-                            ->join('wf_roles', 'wf_roles.id', 'prop_active_safs.current_role')
-                            ->where('assessment_type', 'Reassessment')
-                            ->where('previous_holding_id', $propertyId)
-                            ->where('prop_active_safs.status', 1)
-                            ->first();
-                    break;
-                case 'Concession':
-                    $data = PropActiveConcession::select('prop_active_concessions.id', 'role_name', 'application_no')
-                        ->join('wf_roles', 'wf_roles.id', 'prop_active_concessions.current_role')
-                        ->where('property_id', $propertyId)
-                        ->where('prop_active_concessions.status', 1)
-                        ->first();
-                    break;
-                case 'Objection':
-                    $data = PropActiveObjection::select('prop_active_objections.id', 'role_name', 'objection_no as application_no')
-                        ->join('wf_roles', 'wf_roles.id', 'prop_active_objections.current_role')
-                        ->where('property_id', $propertyId)
-                        ->where('prop_active_objections.status', 1)
-                        ->first();
-                    break;
-                case 'Harvesting':
-                    $data = PropActiveHarvesting::select('prop_active_harvestings.id', 'role_name', 'application_no')
-                        ->join('wf_roles', 'wf_roles.id', 'prop_active_harvestings.current_role')
-                        ->where('property_id', $propertyId)
-                        ->where('prop_active_harvestings.status', 1)
-                        ->first();
-                    break;
-            }
-
-            // if ($data) {
-            //     $msg['id'] = $data->id;
-            //     $msg['inWorkflow'] = true;
-            //     $msg['currentRole'] = $data->role_name;
-            //     $msg['message'] = "The application is still in workflow and pending at " . $data->role_name . ". Please Track your application with " . $data->application_no;
-            // } else
-            //     $msg['inWorkflow'] = false;
-            if ($sms) {
-                $msg['inWorkflow'] = true;
-                $msg['message'] = $sms;
-                return responseMsgs(true, 'Data Checked', $msg, '011705', '01', responseTime(), 'Post', '');
-            }
-
-            if ($data) {
-                $msg['id'] = $data->id;
-                $msg['inWorkflow'] = true;
-                $msg['currentRole'] = $data->role_name;
-                $msg['message'] = "Your " . $data->assessment_type . " application is still in workflow and pending at " . $data->role_name . ". Please Track your application with " . $data->application_no;
-            } else {
-
-                $sms = "";
-                $req->merge(["propId" => $propertyId]);
-                $demand = $holdingTaxController->getHoldingDues($req);
-                if ($demand->original['status'] == true) {
-                    $demandDetails = $demand->original['data']['duesList'];
-                    //Temporary solution please comment next two lines
-                    if (in_array($type, ['Reassesment', 'Mutation', 'Bifurcation']))
-                        $sms = "Please Clear The Due Amount Of ₹" . $demandDetails['payableAmount'] . " Before Applying The Application.";
-                    if ($demandDetails['dueFromFyear'] < getFY())
-                        $sms = "Please Clear The Arrear Amount Of ₹" . $demandDetails['payableAmount'] . " Before Applying The Application.";
-                }
-                if ($sms) {
-                    $msg['inWorkflow'] = true;
-                    $msg['message'] = $sms;
-                } else {
-                    $msg['inWorkflow'] = false;
-                }
-            }
-
-            return responseMsgs(true, 'Data Checked', $msg, '011705', '01', responseTime(), 'Post', '');
-        } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", '011705', '01', responseTime(), 'Post', '');
-        }
-    }
-
-    /**
-     * | Check if th property is occupied 
-       | CheckProperty:1.1
-     */
-    public function checkOccupiedProperty($req)
-    {
-        $propTypes = Config::get("PropertyConstaint.PROPERTY-TYPE");
-        $propTypes = collect($propTypes)->flip();
-        $propDtls = PropProperty::find($req->propertyId);
-        $propDtls->prop_type_mstr_id;
-        if (in_array($propDtls->prop_type_mstr_id, [$propTypes['SUPER STRUCTURE'], $propTypes['OCCUPIED PROPERTY']])) {
-            $msg = "SUPER STRUCTURE & OCCUPIED PROPERTY Cannot Apply For " . $req->type;
-            return $msg;
-        }
-    }
-
-    /**
-     * | Get the Property LatLong for Heat map
-     * | Using wardId used in dashboard data 
-       | For MVP testing
-       | getpropLatLong:1
-     */
-    public function getpropLatLong(Request $req)
-    {
-        $req->validate([
-            'wardId' => 'required|integer',
-            'ulbId' =>  'nullable|integer',
-        ]);
-        try {
-            $mPropDemand    = new PropDemand();
-            $mPropProperty  = new PropProperty();
-            $propDetails    = $mPropProperty->getPropLatlong($req->wardId, $req->ulbId);
-            $propertyIds    = $propDetails->pluck('property_id');
-            $propDemand     = $mPropDemand->getDueDemandByPropIdV2($propertyIds);
-            $propDemand     = collect($propDemand);
-            $currentDate    = Carbon::now()->format('Y-04-01');
-            $refCurrentDate = Carbon::createFromFormat('Y-m-d', $currentDate);
-            $ref2023        = Carbon::createFromFormat('Y-m-d', "2023-01-01")->toDateString();
-
-            # Looping process for 
-            $propDetails = collect($propDetails)->map(function ($value)
-            use ($propDemand, $refCurrentDate, $ref2023) {
-
-                $geoDate    = strtotime($value['created_at']);
-                $geoDate    = date('Y-m-d', $geoDate);
-                $path       = $this->readDocumentPath($value['doc_path']);
-
-                # arrrer,current,paid
-                $refUnpaidPropDemands   = $propDemand->where('property_id', $value['property_id']);
-                $checkPropDemand        = collect($refUnpaidPropDemands)->last();
-                if (!$checkPropDemand) {
-                    $currentStatus  = 3;                                                             // Static
-                    $statusName     = "No Dues";                                                         // Static
-                }
-                if ($checkPropDemand) {
-                    if (is_null($checkPropDemand->due_date)) {
-                        $currentStatus  = 3;                                                         // Static
-                        $statusName     = "No Dues";                                                     // Static
-                    }
-                    $refDate = Carbon::createFromFormat('Y-m-d', $checkPropDemand->due_date);
-                    if ($refDate < $refCurrentDate) {
-                        $currentStatus  = 1;                                                         // Static
-                        $statusName     = "Arrear";                                                    // Static
-                    } else {
-                        $currentStatus  = 2;                                                         // Static
-                        $statusName     = "Current Dues";                                               // Static
-                    }
-                }
-                $value['statusName']    = $statusName;
-                $value['currentStatus'] = $currentStatus;
-
-                # For the document 
-                if ($geoDate < $ref2023) {
-                    $path = $this->readRefDocumentPath($value['doc_path']);
-                    $value['full_doc'] = !empty(trim($value['doc_path'])) ? $path : null;
-                    return $value;
-                }
-                $value['full_doc'] = !empty(trim($value['doc_path'])) ? $path : null;
-                return $value;
-            })->filter();
-
-            return responseMsgs(true, "latLong Details", remove_null($propDetails), "011707", "01", responseTime(), "POST", $req->deviceId);
-        } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), $e->getFile(), "011707", "01", responseTime(), "POST", $req->deviceId);
-        }
-    }
-
-    /**
-     * | Read the document path for the reference document
-       | getpropLatLong:1.1
-     */
-    public function readRefDocumentPath($path)
-    {
-        $path = ("https://smartulb.co.in/RMCDMC/getImageLink.php?path=" . "/" . $path);                      // Static
-        return $path;
-    }
-
-    /**
-     * | Read the document path for the document
-       | getpropLatLong:1.2
-     */
-    public function readDocumentPath($path)
-    {
-        $path = (config('app.url') . "/" . $path);
-        return $path;
-    }
-
-    /**
      * | Get citizen details with property_id and activate in case of deactive
      * | written by prity pandey
      */
@@ -573,88 +669,6 @@ class PropertyController extends Controller
         }
     }
 
-    /**
-     * | Check Amalgamation Property
-     */
-    public function checkAmalgamationProperty(Request $request)
-    {
-        try {
-            $validated = Validator::make(
-                $request->all(),
-                [
-                    'holdingNo' => 'required|array',
-                ]
-            );
-            if ($validated->fails()) {
-                return validationError($validated);
-            }
-            $mPropProperties = new PropProperty();
-            $mPropFloor = new PropFloor();
-            $holdingTaxController = new HoldingTaxController($this->_safRepo);
-            $holdingDtls = $mPropProperties->searchCollectiveHolding($request->holdingNo);
-            foreach ($request->holdingNo as $holdingNo) {
-                $holdingDtlsV1 = $mPropProperties->searchByHoldingNo($holdingNo);
-                if (collect($holdingDtlsV1)->isEmpty())
-                    throw new Exception("No Property found for the respective holding no." . $holdingNo);
-            }
-            if (collect($holdingDtls)->isEmpty())
-                throw new Exception("No Property found for the respective holding no.");
 
-            $plotArea = collect($holdingDtls)->sum('area_of_plot');
-            $propertyIds = collect($holdingDtls)->pluck('id');
-            $floorDtls = $mPropFloor->getAppartmentFloor($propertyIds)->get();
-            $demands = array();
-            foreach ($propertyIds as $propId) {
-                $request->merge(["propId" => $propId]);
-                $demand = $holdingTaxController->getHoldingDues($request);
-                $demand = $demand->original;
-                if ($demand['status'] == true) {
-                    throw new Exception("Previous Demand is not clear for the respective property." . $demand['data']['basicDetails']['holding_no'] ?? 'N/A'); // Return false immediately if any demand has status false
-                }
-                if ($demand['status'] == false) {
-                    $demand['data']['basicDetails']['property_id'] = $propId;
-                    array_push($demands, $demand['data']['basicDetails']);
-                }
-            }
-
-            if (collect($demands)->isEmpty())
-                throw new Exception("Previous Demand is not clear for the respective property.");
-
-            return responseMsgs(true, "Amalgamation Requirement Fulfilled", $demands, '011707', '01', responseTime(), $request->getMethod(), $request->deviceId);
-        } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), [], '011707', '01', responseTime(), $request->getMethod(), $request->deviceId);
-        }
-    }
-
-    /**
-     * | Master Holding Data
-     * | Fetch master holding data including amalgamated properties and floors.
-     */
-    public function masterHoldingData(Request $request)
-    {
-        try {
-            $mPropFloor = new PropFloor();
-            $mPropProperties = new PropProperty();
-            $holdingLists = array();
-            $safController = new ActiveSafController($this->_safRepo);
-            $propIds = collect($request->amalgamation)->pluck('propId')->unique();
-            $holdingDtls = $mPropProperties->getMultipleProperty($propIds);
-            $plotArea = collect($holdingDtls)->sum('area_of_plot');
-            $floorDtls = $mPropFloor->getAppartmentFloor($propIds)->get();
-            $masterHoldingId = collect($request->amalgamation)->where('isMasterHolding', true)->first();
-            $reqPropId = new Request(['propertyId' => $masterHoldingId['propId']]);
-            $masterData = $safController->getPropByHoldingNo($reqPropId)->original['data'];
-            $masterData['floors'] = $floorDtls;
-            $masterData['area_of_plot'] = $plotArea;
-            foreach ($holdingDtls as $property) {
-                $holdingList = $property->new_holding_no ?? $property->holding_no;
-                array_push($holdingLists, $holdingList);
-            }
-            $masterData['holdingNoLists'] = $holdingLists;
-
-            return responseMsgs(true, "Master Holding Data", $masterData, '011707', '01', responseTime(), $request->getMethod(), $request->deviceId);
-        } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), [], '011707', '01', responseTime(), $request->getMethod(), $request->deviceId);
-        }
-    }
+ 
 }
