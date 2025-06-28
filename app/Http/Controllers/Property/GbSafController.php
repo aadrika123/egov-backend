@@ -478,188 +478,6 @@ class GbSafController extends Controller
     }
 
     /**
-     * | Site Verification
-     * | Handle site verification for a SAF (Site Approval Form) based on user role.
-     */
-    public function siteVerification(ReqGbSiteVerification $req)
-    {
-        try {
-            $taxCollectorRole = Config::get('PropertyConstaint.GBSAF-LABEL.TC');
-            $ulbTaxCollectorRole = Config::get('PropertyConstaint.GBSAF-LABEL.UTC');
-            $propActiveSaf = new PropActiveSaf();
-            $verification = new PropSafVerification();
-            $mWfRoleUsermap = new WfRoleusermap();
-            $verificationDtl = new PropSafVerificationDtl();
-            $userId = authUser($req)->id;
-            $ulbId = authUser($req)->ulb_id;
-
-            $safDtls = $propActiveSaf->getSafNo($req->safId);
-            $workflowId = $safDtls->workflow_id;
-            $roadWidthType = $this->readRoadWidthType($req->roadWidth);                                 // Read Road Width Type by Trait
-            $getRoleReq = new Request([                                                                 // make request to get role id of the user
-                'userId' => $userId,
-                'workflowId' => $workflowId
-            ]);
-
-            $readRoleDtls = $mWfRoleUsermap->getRoleByUserWfId($getRoleReq);
-            $roleId = $readRoleDtls->wf_role_id;
-
-            DB::beginTransaction();
-            switch ($roleId) {
-                case $taxCollectorRole:                                                                  // In Case of Agency TAX Collector
-                    $req->agencyVerification = true;
-                    $req->ulbVerification = false;
-                    $msg = "Site Successfully Verified";
-                    break;
-                case $ulbTaxCollectorRole:                                                                // In Case of Ulb Tax Collector
-                    $req->agencyVerification = false;
-                    $req->ulbVerification = true;
-                    $msg = "Site Successfully Verified";
-                    $propActiveSaf->verifyFieldStatus($req->safId);                                         // Enable Fields Verify Status
-                    break;
-
-                default:
-                    return responseMsg(false, "Forbidden Access", "");
-            }
-            $req->merge(['roadType' => $roadWidthType, 'userId' => $userId, 'ulbId' => $ulbId]);
-            // Verification Store
-            $verificationId = $verification->store($req);                            // Model function to store verification and get the id
-            // Verification Dtl Table Update                                         // For Tax Collector
-            foreach ($req->floor as $floorDetail) {
-                if ($floorDetail['useType'] == 1)
-                    $carpetArea =  $floorDetail['buildupArea'] * 0.70;
-                else
-                    $carpetArea =  $floorDetail['buildupArea'] * 0.80;
-
-                $floorReq = [
-                    'verification_id' => $verificationId,
-                    'saf_id' => $req->safId,
-                    'saf_floor_id' => $floorDetail['floorId'] ?? null,
-                    'floor_mstr_id' => $floorDetail['floorNo'],
-                    'usage_type_id' => $floorDetail['useType'],
-                    'construction_type_id' => $floorDetail['constructionType'],
-                    'occupancy_type_id' => $floorDetail['occupancyType'],
-                    'builtup_area' => $floorDetail['buildupArea'],
-                    'date_from' => $floorDetail['dateFrom'],
-                    'date_to' => $floorDetail['dateUpto'],
-                    'carpet_area' => $carpetArea,
-                    'user_id' => $userId,
-                    'ulb_id' => $ulbId
-                ];
-                $verificationDtl->store($floorReq);
-            }
-
-            DB::commit();
-            return responseMsgs(true, $msg, "", "011806", "1.0", responseTime(), "POST", $req->deviceId);
-        } catch (Exception $e) {
-            DB::rollBack();
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-
-    /**
-     * | Geo tagging
-     * | Handle geo-tagging of images for a given SAF (Site Approval Form).
-     */
-    public function geoTagging(Request $req)
-    {
-        $req->validate([
-            "safId" => "required|numeric",
-            "imagePath" => "required|array|min:3|max:3",
-            "imagePath.*" => "required|image|mimes:jpeg,jpg,png,gif",
-            "directionType" => "required|array|min:3|max:3",
-            "directionType.*" => "required|In:Left,Right,Front",
-            "longitude" => "required|array|min:3|max:3",
-            "longitude.*" => "required|numeric",
-            "latitude" => "required|array|min:3|max:3",
-            "latitude.*" => "required|numeric"
-        ]);
-        try {
-            $docUpload = new DocUpload;
-            $geoTagging = new PropSafGeotagUpload();
-            $relativePath = Config::get('PropertyConstaint.GEOTAGGING_RELATIVE_PATH');
-            $safDtls = PropActiveSaf::findOrFail($req->safId);
-            $images = $req->imagePath;
-            $directionTypes = $req->directionType;
-            $longitude = $req->longitude;
-            $latitude = $req->latitude;
-
-            DB::beginTransaction();
-            collect($images)->map(function ($image, $key) use ($directionTypes, $relativePath, $req, $docUpload, $longitude, $latitude, $geoTagging) {
-                $refImageName = 'saf-geotagging-' . $directionTypes[$key] . '-' . $req->safId;
-                $docExistReqs = new Request([
-                    'safId' => $req->safId,
-                    'directionType' => $directionTypes[$key]
-                ]);
-                // $imageName = $docUpload->upload($refImageName, $image, $relativePath);         // <------- Get uploaded image name and move the image in folder
-                $newDocRequest = new Request(["document" => $image]);
-                $docDetail = $docUpload->checkDoc($newDocRequest);
-                $isDocExist = $geoTagging->getGeoTagBySafIdDirectionType($docExistReqs);
-
-                $docReqs = [
-                    'saf_id' => $req->safId,
-                    // 'image_path' => $imageName,
-                    'direction_type' => $directionTypes[$key],
-                    'longitude' => $longitude[$key],
-                    'latitude' => $latitude[$key],
-                    // 'relative_path' => $relativePath,
-                    'user_id' => authUser($req)->id,
-                    'unique_id' => $docDetail['data']['uniqueId'],
-                    'reference_no' => $docDetail['data']['ReferenceNo'],
-                ];
-                if ($isDocExist)
-                    $geoTagging->edit($isDocExist, $docReqs);
-                else
-                    $geoTagging->store($docReqs);
-            });
-
-            $safDtls->is_geo_tagged = true;
-            $safDtls->save();
-
-            DB::commit();
-            return responseMsgs(true, "Geo Tagging Done Successfully", "", "011807", "1.0", responseTime(), "POST", $req->deviceId);
-        } catch (Exception $e) {
-            DB::rollBack();
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-
-    /**
-     * | Get The Verification done by Agency Tc
-     */
-    public function getTcVerifications(Request $req)
-    {
-        $req->validate([
-            'safId' => 'required|numeric'
-        ]);
-        try {
-            $data = array();
-            $safVerifications = new PropSafVerification();
-            $safVerificationDtls = new PropSafVerificationDtl();
-            $mSafGeoTag = new PropSafGeotagUpload();
-            $docUpload = new DocUpload;
-
-            $data = $safVerifications->getVerificationsData($req->safId);                       // <--------- Prop Saf Verification Model Function to Get Prop Saf Verifications Data 
-            if (collect($data)->isEmpty())
-                throw new Exception("Tc Verification Not Done");
-
-            $data = json_decode(json_encode($data), true);
-
-            $verificationDtls = $safVerificationDtls->getFullVerificationDtls($data['id']);     // <----- Prop Saf Verification Model Function to Get Verification Floor Dtls
-            $existingFloors = $verificationDtls->where('saf_floor_id', '!=', NULL);
-            $newFloors = $verificationDtls->where('saf_floor_id', NULL);
-            $data['newFloors'] = $newFloors->values();
-            $data['existingFloors'] = $existingFloors->values();
-            $geoTags = $mSafGeoTag->getGeoTags($req->safId);
-            $geoTags = $docUpload->getDocUrl($geoTags);           #_Calling BLL for Document Path from DMS
-            $data['geoTagging'] = $geoTags;
-            return responseMsgs(true, "TC Verification Details", remove_null($data), "011808", "1.0", responseTime(), "POST", $req->deviceId);
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-
-    /**
      * | Back to citizen
      */
     public function backToCitizen(Request $req)
@@ -816,45 +634,6 @@ class GbSafController extends Controller
             return responseMsgs(true, "Data Fetched", remove_null($specialList), "011812", "1.0", responseTime(), "POST", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-
-    /**
-     * | Get Static Saf Details
-     */
-    public function getStaticSafDetails(Request $req)
-    {
-        $req->validate([
-            'applicationId' => 'required|digits_between:1,9223372036854775807'
-        ]);
-
-        try {
-            // Variable Assignments
-            $mPropActiveSaf = new PropActiveSaf();
-            $mPropActiveGbOfficer = new PropActiveGbOfficer();
-            $mActiveSafsFloors = new PropActiveSafsFloor();
-            $mPropSafMemoDtls = new PropSafMemoDtl();
-            $memoDtls = array();
-            $data = array();
-
-            // Derivative Assignments
-            $data = $mPropActiveSaf->getActiveSafDtls()                         // <------- Model function Active SAF Details
-                ->where('prop_active_safs.id', $req->applicationId)
-                ->first();
-            if (!$data)
-                throw new Exception("Data Not Found");
-            $data = json_decode(json_encode($data), true);
-
-            $officerDtls = $mPropActiveGbOfficer->getOfficerBySafId($data['id']);
-            $data['officer'] = $officerDtls;
-            $getFloorDtls = $mActiveSafsFloors->getFloorsBySafId($data['id']);      // Model Function to Get Floor Details
-            $data['floors'] = $getFloorDtls;
-
-            $memoDtls = $mPropSafMemoDtls->memoLists($data['id']);
-            $data['memoDtls'] = $memoDtls;
-            return responseMsgs(true, "Saf Dtls", remove_null($data), "011813", "1.0", responseTime(), "POST", $req->deviceId ?? "");
-        } catch (Exception $e) {
-            return $e->getMessage();
         }
     }
 
@@ -1484,6 +1263,232 @@ class GbSafController extends Controller
             return responseMsgs(true, 'Data Fetched', remove_null($fullDetailsData), "011819", "1.0", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    # ---------------------------------------------------------#
+    # ----- APIs that are currently inactive or unused --------#
+    # ---------------------------------------------------------#
+
+    
+    /**
+     * | Site Verification
+     * | Handle site verification for a SAF (Site Approval Form) based on user role.
+     */
+    public function siteVerification(ReqGbSiteVerification $req)
+    {
+        try {
+            $taxCollectorRole = Config::get('PropertyConstaint.GBSAF-LABEL.TC');
+            $ulbTaxCollectorRole = Config::get('PropertyConstaint.GBSAF-LABEL.UTC');
+            $propActiveSaf = new PropActiveSaf();
+            $verification = new PropSafVerification();
+            $mWfRoleUsermap = new WfRoleusermap();
+            $verificationDtl = new PropSafVerificationDtl();
+            $userId = authUser($req)->id;
+            $ulbId = authUser($req)->ulb_id;
+
+            $safDtls = $propActiveSaf->getSafNo($req->safId);
+            $workflowId = $safDtls->workflow_id;
+            $roadWidthType = $this->readRoadWidthType($req->roadWidth);                                 // Read Road Width Type by Trait
+            $getRoleReq = new Request([                                                                 // make request to get role id of the user
+                'userId' => $userId,
+                'workflowId' => $workflowId
+            ]);
+
+            $readRoleDtls = $mWfRoleUsermap->getRoleByUserWfId($getRoleReq);
+            $roleId = $readRoleDtls->wf_role_id;
+
+            DB::beginTransaction();
+            switch ($roleId) {
+                case $taxCollectorRole:                                                                  // In Case of Agency TAX Collector
+                    $req->agencyVerification = true;
+                    $req->ulbVerification = false;
+                    $msg = "Site Successfully Verified";
+                    break;
+                case $ulbTaxCollectorRole:                                                                // In Case of Ulb Tax Collector
+                    $req->agencyVerification = false;
+                    $req->ulbVerification = true;
+                    $msg = "Site Successfully Verified";
+                    $propActiveSaf->verifyFieldStatus($req->safId);                                         // Enable Fields Verify Status
+                    break;
+
+                default:
+                    return responseMsg(false, "Forbidden Access", "");
+            }
+            $req->merge(['roadType' => $roadWidthType, 'userId' => $userId, 'ulbId' => $ulbId]);
+            // Verification Store
+            $verificationId = $verification->store($req);                            // Model function to store verification and get the id
+            // Verification Dtl Table Update                                         // For Tax Collector
+            foreach ($req->floor as $floorDetail) {
+                if ($floorDetail['useType'] == 1)
+                    $carpetArea =  $floorDetail['buildupArea'] * 0.70;
+                else
+                    $carpetArea =  $floorDetail['buildupArea'] * 0.80;
+
+                $floorReq = [
+                    'verification_id' => $verificationId,
+                    'saf_id' => $req->safId,
+                    'saf_floor_id' => $floorDetail['floorId'] ?? null,
+                    'floor_mstr_id' => $floorDetail['floorNo'],
+                    'usage_type_id' => $floorDetail['useType'],
+                    'construction_type_id' => $floorDetail['constructionType'],
+                    'occupancy_type_id' => $floorDetail['occupancyType'],
+                    'builtup_area' => $floorDetail['buildupArea'],
+                    'date_from' => $floorDetail['dateFrom'],
+                    'date_to' => $floorDetail['dateUpto'],
+                    'carpet_area' => $carpetArea,
+                    'user_id' => $userId,
+                    'ulb_id' => $ulbId
+                ];
+                $verificationDtl->store($floorReq);
+            }
+
+            DB::commit();
+            return responseMsgs(true, $msg, "", "011806", "1.0", responseTime(), "POST", $req->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Geo tagging
+     * | Handle geo-tagging of images for a given SAF (Site Approval Form).
+     */
+    public function geoTagging(Request $req)
+    {
+        $req->validate([
+            "safId" => "required|numeric",
+            "imagePath" => "required|array|min:3|max:3",
+            "imagePath.*" => "required|image|mimes:jpeg,jpg,png,gif",
+            "directionType" => "required|array|min:3|max:3",
+            "directionType.*" => "required|In:Left,Right,Front",
+            "longitude" => "required|array|min:3|max:3",
+            "longitude.*" => "required|numeric",
+            "latitude" => "required|array|min:3|max:3",
+            "latitude.*" => "required|numeric"
+        ]);
+        try {
+            $docUpload = new DocUpload;
+            $geoTagging = new PropSafGeotagUpload();
+            $relativePath = Config::get('PropertyConstaint.GEOTAGGING_RELATIVE_PATH');
+            $safDtls = PropActiveSaf::findOrFail($req->safId);
+            $images = $req->imagePath;
+            $directionTypes = $req->directionType;
+            $longitude = $req->longitude;
+            $latitude = $req->latitude;
+
+            DB::beginTransaction();
+            collect($images)->map(function ($image, $key) use ($directionTypes, $relativePath, $req, $docUpload, $longitude, $latitude, $geoTagging) {
+                $refImageName = 'saf-geotagging-' . $directionTypes[$key] . '-' . $req->safId;
+                $docExistReqs = new Request([
+                    'safId' => $req->safId,
+                    'directionType' => $directionTypes[$key]
+                ]);
+                // $imageName = $docUpload->upload($refImageName, $image, $relativePath);         // <------- Get uploaded image name and move the image in folder
+                $newDocRequest = new Request(["document" => $image]);
+                $docDetail = $docUpload->checkDoc($newDocRequest);
+                $isDocExist = $geoTagging->getGeoTagBySafIdDirectionType($docExistReqs);
+
+                $docReqs = [
+                    'saf_id' => $req->safId,
+                    // 'image_path' => $imageName,
+                    'direction_type' => $directionTypes[$key],
+                    'longitude' => $longitude[$key],
+                    'latitude' => $latitude[$key],
+                    // 'relative_path' => $relativePath,
+                    'user_id' => authUser($req)->id,
+                    'unique_id' => $docDetail['data']['uniqueId'],
+                    'reference_no' => $docDetail['data']['ReferenceNo'],
+                ];
+                if ($isDocExist)
+                    $geoTagging->edit($isDocExist, $docReqs);
+                else
+                    $geoTagging->store($docReqs);
+            });
+
+            $safDtls->is_geo_tagged = true;
+            $safDtls->save();
+
+            DB::commit();
+            return responseMsgs(true, "Geo Tagging Done Successfully", "", "011807", "1.0", responseTime(), "POST", $req->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Get The Verification done by Agency Tc
+     */
+    public function getTcVerifications(Request $req)
+    {
+        $req->validate([
+            'safId' => 'required|numeric'
+        ]);
+        try {
+            $data = array();
+            $safVerifications = new PropSafVerification();
+            $safVerificationDtls = new PropSafVerificationDtl();
+            $mSafGeoTag = new PropSafGeotagUpload();
+            $docUpload = new DocUpload;
+
+            $data = $safVerifications->getVerificationsData($req->safId);                       // <--------- Prop Saf Verification Model Function to Get Prop Saf Verifications Data 
+            if (collect($data)->isEmpty())
+                throw new Exception("Tc Verification Not Done");
+
+            $data = json_decode(json_encode($data), true);
+
+            $verificationDtls = $safVerificationDtls->getFullVerificationDtls($data['id']);     // <----- Prop Saf Verification Model Function to Get Verification Floor Dtls
+            $existingFloors = $verificationDtls->where('saf_floor_id', '!=', NULL);
+            $newFloors = $verificationDtls->where('saf_floor_id', NULL);
+            $data['newFloors'] = $newFloors->values();
+            $data['existingFloors'] = $existingFloors->values();
+            $geoTags = $mSafGeoTag->getGeoTags($req->safId);
+            $geoTags = $docUpload->getDocUrl($geoTags);           #_Calling BLL for Document Path from DMS
+            $data['geoTagging'] = $geoTags;
+            return responseMsgs(true, "TC Verification Details", remove_null($data), "011808", "1.0", responseTime(), "POST", $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Get Static Saf Details
+     */
+    public function getStaticSafDetails(Request $req)
+    {
+        $req->validate([
+            'applicationId' => 'required|digits_between:1,9223372036854775807'
+        ]);
+
+        try {
+            // Variable Assignments
+            $mPropActiveSaf = new PropActiveSaf();
+            $mPropActiveGbOfficer = new PropActiveGbOfficer();
+            $mActiveSafsFloors = new PropActiveSafsFloor();
+            $mPropSafMemoDtls = new PropSafMemoDtl();
+            $memoDtls = array();
+            $data = array();
+
+            // Derivative Assignments
+            $data = $mPropActiveSaf->getActiveSafDtls()                         // <------- Model function Active SAF Details
+                ->where('prop_active_safs.id', $req->applicationId)
+                ->first();
+            if (!$data)
+                throw new Exception("Data Not Found");
+            $data = json_decode(json_encode($data), true);
+
+            $officerDtls = $mPropActiveGbOfficer->getOfficerBySafId($data['id']);
+            $data['officer'] = $officerDtls;
+            $getFloorDtls = $mActiveSafsFloors->getFloorsBySafId($data['id']);      // Model Function to Get Floor Details
+            $data['floors'] = $getFloorDtls;
+
+            $memoDtls = $mPropSafMemoDtls->memoLists($data['id']);
+            $data['memoDtls'] = $memoDtls;
+            return responseMsgs(true, "Saf Dtls", remove_null($data), "011813", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return $e->getMessage();
         }
     }
 }

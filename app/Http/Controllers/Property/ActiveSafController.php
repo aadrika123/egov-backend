@@ -286,48 +286,6 @@ class ActiveSafController extends Controller
     }
 
     /**
-     * | Edit Applied Saf by SAF Id for BackOffice
-     * | -----------------------------------------------
-     * | Validates request data, updates SAF and owner details within a transaction.
-     * | Rolls back if any error occurs.
-     * | ---------------------------------------------------------------
-     */
-    public function editSaf(Request $req)
-    {
-        $req->validate([
-            'id' => 'required|numeric',
-            'owner' => 'array',
-            'owner.*.ownerId' => 'required|numeric',
-            'owner.*.ownerName' => 'required',
-            'owner.*.guardianName' => 'required',
-            'owner.*.relation' => 'required',
-            'owner.*.mobileNo' => 'numeric|string|digits:10',
-            'owner.*.aadhar' => 'numeric|string|digits:12|nullable',
-            'owner.*.email' => 'email|nullable',
-        ]);
-
-        try {
-            $mPropSaf = new PropActiveSaf();
-            $mPropSafOwners = new PropActiveSafsOwner();
-            $mOwners = $req->owner;
-
-            DB::beginTransaction();
-            $mPropSaf->edit($req); // Updation SAF Basic Details
-
-            collect($mOwners)->map(function ($owner) use ($mPropSafOwners) {
-                // Updation of Owner Basic Details
-                $mPropSafOwners->edit($owner);
-            });
-
-            DB::commit();
-            return responseMsgs(true, "Successfully Updated the Data", "", "010104", 1.0, responseTime(), "POST", $req->deviceId);
-        } catch (Exception $e) {
-            DB::rollBack();
-            return responseMsgs(false, $e->getMessage(), "", "010104", 1.0, responseTime(), "POST", $req->deviceId);
-        }
-    }
-
-    /**
      * ---------------------- Saf Workflow Inbox --------------------
      * | Initialization
      * -----------------    
@@ -1984,77 +1942,6 @@ class ActiveSafController extends Controller
     }
 
     /**
-     * | Calculates the SAF tax based on the SAF ID.
-     * | --------------------------------------------------------------
-     * | This method validates parameters, retrieves SAF details, 
-     * | merges the holding number for specific assessment types, 
-     * | and calculates tax demand via CalculateSafById.
-     * |---------------------------------------------------------------
-     * | Status-closed
-     * | Rating - 5 
-     * | Query Cost: 384.58ms
-     * */
-    public function generateOrderId(Request $req)
-    {
-        $req->validate([
-            'id' => 'required|integer',
-        ]);
-
-        try {
-            $ipAddress = getClientIpAddress();
-            $mPropRazorPayRequest = new PropRazorpayRequest();
-            $postRazorPayPenaltyRebate = new PostRazorPayPenaltyRebate;
-            $url = Config::get('razorpay.PAYMENT_GATEWAY_URL');
-            $endPoint = Config::get('razorpay.PAYMENT_GATEWAY_END_POINT');
-            $authUser = authUser($req);
-            $req->merge(['departmentId' => 1]);
-            $safDetails = PropActiveSaf::find($req->id);
-            if (!$safDetails)
-                throw new Exception("Saf id not found");
-            if ($safDetails->payment_status == 1)
-                throw new Exception("Payment already done");
-            $calculateSafById = $this->calculateSafBySafId($req);
-            $demands = $calculateSafById->original['data']['demand'];
-            $details = $calculateSafById->original['data']['details'];
-            $totalAmount = $demands['payableAmount'];
-            $req->request->add(['workflowId' => $safDetails->workflow_id, 'ghostUserId' => 0, 'amount' => $totalAmount, 'auth' => $authUser]);
-            DB::beginTransaction();
-
-            $orderDetails = $this->saveGenerateOrderid($req);
-            if (!is_array($orderDetails))
-                throw new Exception($orderDetails->original['data']);
-
-            $demands = array_merge($demands->toArray(), [
-                'orderId' => $orderDetails['orderId']
-            ]);
-            // Store Razor pay Request
-            $razorPayRequest = [
-                'order_id' => $demands['orderId'],
-                'saf_id' => $req->id,
-                'from_fyear' => $demands['dueFromFyear'],
-                'from_qtr' => $demands['dueFromQtr'],
-                'to_fyear' => $demands['dueToFyear'],
-                'to_qtr' => $demands['dueToQtr'],
-                'demand_amt' => $demands['totalTax'],
-                'ulb_id' => $safDetails->ulb_id,
-                'ip_address' => $ipAddress,
-                'demand_list' => json_encode($details, true),
-                'amount' => $totalAmount,
-            ];
-            $storedRazorPayReqs = $mPropRazorPayRequest->store($razorPayRequest);
-            // Store Razor pay penalty Rebates
-            $postRazorPayPenaltyRebate->_safId = $req->id;
-            $postRazorPayPenaltyRebate->_razorPayRequestId = $storedRazorPayReqs['razorPayReqId'];
-            $postRazorPayPenaltyRebate->postRazorPayPenaltyRebates($demands);
-            DB::commit();
-            return responseMsgs(true, "Order ID Generated", remove_null($orderDetails), "010117", "1.0", "1s", "POST", $req->deviceId);
-        } catch (Exception $e) {
-            DB::rollBack();
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-
-    /**
      * | Post Penalty Rebates (14.2)
      * | -----------------------------------------------------------------------------
      * | Posts penalty and rebate details for a SAF (Some Application Form) transaction.
@@ -2105,158 +1992,6 @@ class ActiveSafController extends Controller
                 $mPaymentRebatePanelties->postRebatePenalty($reqs);
             }
         });
-    }
-
-    /**
-     * | SAF Payment
-     * | Status-Closed
-     * | Query Consting-374ms
-     * | Rating-3
-       | Also Related to collectWebhookDetails function (PaymentRepository)
-       | paymentSaf:1
-     */
-    public function paymentSaf(ReqPayment $req)
-    {
-        try {
-            $req->validate([
-                'paymentId' => "required",
-                "transactionNo" => "required"
-            ]);
-            // Variable Assignments
-            $mPropTransactions = new PropTransaction();
-            $mPropSafsDemands = new PropSafsDemand();
-            $mPropRazorPayRequest = new PropRazorpayRequest();
-            $mPropRazorpayPenalRebates = new PropRazorpayPenalrebate();
-            $mPropPenaltyRebates = new PropPenaltyrebate();
-            $mPropRazorpayResponse = new PropRazorpayResponse();
-            $mPropTranDtl = new PropTranDtl();
-            $previousHoldingDeactivation = new PreviousHoldingDeactivation;
-            $postSafPropTaxes = new PostSafPropTaxes;
-
-            $activeSaf = PropActiveSaf::findOrFail($req['id']);
-            if ($activeSaf->payment_status == 1)
-                throw new Exception("Payment Already Done");
-            $userId = $req['userId'];
-            $safId = $req['id'];
-            $orderId = $req['orderId'];
-            $paymentId = $req['paymentId'];
-
-            if ($activeSaf->payment_status == 1)
-                throw new Exception("Payment Already Done");
-            $req['ulbId'] = $activeSaf->ulb_id;
-            $razorPayReqs = new Request([
-                'orderId' => $orderId,
-                'key' => 'saf_id',
-                'keyId' => $req['id']
-            ]);
-            $propRazorPayRequest = $mPropRazorPayRequest->getRazorPayRequests($razorPayReqs);
-            if (collect($propRazorPayRequest)->isEmpty())
-                throw new Exception("No Order Request Found");
-
-            if (!$userId)
-                $userId = 0;                                                        // For Ghost User in case of online payment
-
-            $tranNo = $req['transactionNo'];
-            // Derivative Assignments
-            $demands = json_decode($propRazorPayRequest['demand_list']);
-            $amount = $propRazorPayRequest['amount'];
-
-            // if (!$demands || collect($demands)->isEmpty())
-            //     throw new Exception("Demand Not Available for Payment");
-            // Property Transactions
-            $activeSaf->payment_status = 1;             // Paid for Online
-
-            DB::beginTransaction();
-            DB::connection('pgsql_master')->beginTransaction();
-
-            $activeSaf->save();
-            // Replication of Prop Transactions
-            $tranReqs = [
-                'saf_id' => $req['id'],
-                'tran_date' => $this->_todayDate->format('Y-m-d'),
-                'tran_no' => $tranNo,
-                'payment_mode' => 'ONLINE',
-                'amount' => $amount,
-                'tran_date' => $this->_todayDate->format('Y-m-d'),
-                'verify_date' => $this->_todayDate->format('Y-m-d'),
-                'citizen_id' => $userId,
-                'is_citizen' => true,
-                'from_fyear' => $propRazorPayRequest->from_fyear,
-                'to_fyear' => $propRazorPayRequest->to_fyear,
-                'from_qtr' => $propRazorPayRequest->from_qtr,
-                'to_qtr' => $propRazorPayRequest->to_qtr,
-                'demand_amt' => $propRazorPayRequest->demand_amt,
-                'ulb_id' => $propRazorPayRequest->ulb_id,
-            ];
-
-            $storedTransaction = $mPropTransactions->storeTrans($tranReqs);
-            $tranId = $storedTransaction['id'];
-            $razorpayPenalRebates = $mPropRazorpayPenalRebates->getPenalRebatesByReqId($propRazorPayRequest->id);
-            // Replication of Razorpay Penalty Rebates to Prop Penal Rebates
-            foreach ($razorpayPenalRebates as $item) {
-                $propPenaltyRebateReqs = [
-                    'tran_id' => $tranId,
-                    'head_name' => $item['head_name'],
-                    'amount' => $item['amount'],
-                    'is_rebate' => $item['is_rebate'],
-                    'tran_date' => $this->_todayDate->format('Y-m-d'),
-                    'saf_id' => $safId,
-                ];
-                $mPropPenaltyRebates->postRebatePenalty($propPenaltyRebateReqs);
-            }
-
-            // Updation of Prop Razor pay Request
-            $propRazorPayRequest->status = 1;
-            $propRazorPayRequest->payment_id = $paymentId;
-            $propRazorPayRequest->save();
-
-            // Update Prop Razorpay Response
-            $razorpayResponseReq = [
-                'razorpay_request_id' => $propRazorPayRequest->id,
-                'order_id' => $orderId,
-                'payment_id' => $paymentId,
-                'saf_id' => $req['id'],
-                'from_fyear' => $propRazorPayRequest->from_fyear,
-                'from_qtr' => $propRazorPayRequest->from_qtr,
-                'to_fyear' => $propRazorPayRequest->to_fyear,
-                'to_qtr' => $propRazorPayRequest->to_qtr,
-                'demand_amt' => $propRazorPayRequest->demand_amt,
-                'ulb_id' => $activeSaf->ulb_id,
-                'ip_address' => getClientIpAddress(),
-            ];
-            $mPropRazorpayResponse->store($razorpayResponseReq);
-
-            foreach ($demands as $demand) {
-                $demand = (array) $demand;
-                unset($demand['ruleSet'], $demand['rwhPenalty'], $demand['onePercPenalty'], $demand['onePercPenaltyTax']);
-                if (isset($demand['status']))
-                    unset($demand['status']);
-                $demand['paid_status'] = 1;
-                $demand['saf_id'] = $safId;
-                $demand['balance'] = 0;
-                $storedSafDemand = $mPropSafsDemands->postDemands($demand);
-
-                $tranReq = [
-                    'tran_id' => $tranId,
-                    'saf_demand_id' => $storedSafDemand['demandId'],
-                    'total_demand' => $demand['amount'],
-                    'ulb_id' => $req['ulbId'],
-                ];
-                $mPropTranDtl->store($tranReq);
-            }
-            $previousHoldingDeactivation->deactivateHoldingDemands($activeSaf);  // Deactivate Property Holding
-            $this->sendToWorkflow($activeSaf);                                   // Send to Workflow(15.2)
-            $demands = collect($demands)->toArray();
-            $postSafPropTaxes->postSafTaxes($safId, $demands, $activeSaf->ulb_id);                  // Save Taxes
-
-            DB::commit();
-            DB::connection('pgsql_master')->commit();
-            return responseMsgs(true, "Payment Successfully Done", ['TransactionNo' => $tranNo], "010128", "1.0", responseTime(), "POST", $req->deviceId);
-        } catch (Exception $e) {
-            DB::rollBack();
-            DB::connection('pgsql_master')->rollBack();
-            return responseMsg(false, $e->getMessage(), "");
-        }
     }
 
     /**
@@ -3768,6 +3503,271 @@ class ActiveSafController extends Controller
             });
             return responseMsgs(true, "Data Fetched", remove_null($data), "010125", "1.0", responseTime(), "POST", $request->deviceId);
         } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+        /**
+     * | Edit Applied Saf by SAF Id for BackOffice
+     * | -----------------------------------------------
+     * | Validates request data, updates SAF and owner details within a transaction.
+     * | Rolls back if any error occurs.
+     * | ---------------------------------------------------------------
+     */
+    public function editSaf(Request $req)
+    {
+        $req->validate([
+            'id' => 'required|numeric',
+            'owner' => 'array',
+            'owner.*.ownerId' => 'required|numeric',
+            'owner.*.ownerName' => 'required',
+            'owner.*.guardianName' => 'required',
+            'owner.*.relation' => 'required',
+            'owner.*.mobileNo' => 'numeric|string|digits:10',
+            'owner.*.aadhar' => 'numeric|string|digits:12|nullable',
+            'owner.*.email' => 'email|nullable',
+        ]);
+
+        try {
+            $mPropSaf = new PropActiveSaf();
+            $mPropSafOwners = new PropActiveSafsOwner();
+            $mOwners = $req->owner;
+
+            DB::beginTransaction();
+            $mPropSaf->edit($req); // Updation SAF Basic Details
+
+            collect($mOwners)->map(function ($owner) use ($mPropSafOwners) {
+                // Updation of Owner Basic Details
+                $mPropSafOwners->edit($owner);
+            });
+
+            DB::commit();
+            return responseMsgs(true, "Successfully Updated the Data", "", "010104", 1.0, responseTime(), "POST", $req->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), "", "010104", 1.0, responseTime(), "POST", $req->deviceId);
+        }
+    }
+
+    /**
+     * | SAF Payment
+     * | Status-Closed
+     * | Query Consting-374ms
+     * | Rating-3
+       | Also Related to collectWebhookDetails function (PaymentRepository)
+       | paymentSaf:1
+     */
+    public function paymentSaf(ReqPayment $req)
+    {
+        try {
+            $req->validate([
+                'paymentId' => "required",
+                "transactionNo" => "required"
+            ]);
+            // Variable Assignments
+            $mPropTransactions = new PropTransaction();
+            $mPropSafsDemands = new PropSafsDemand();
+            $mPropRazorPayRequest = new PropRazorpayRequest();
+            $mPropRazorpayPenalRebates = new PropRazorpayPenalrebate();
+            $mPropPenaltyRebates = new PropPenaltyrebate();
+            $mPropRazorpayResponse = new PropRazorpayResponse();
+            $mPropTranDtl = new PropTranDtl();
+            $previousHoldingDeactivation = new PreviousHoldingDeactivation;
+            $postSafPropTaxes = new PostSafPropTaxes;
+
+            $activeSaf = PropActiveSaf::findOrFail($req['id']);
+            if ($activeSaf->payment_status == 1)
+                throw new Exception("Payment Already Done");
+            $userId = $req['userId'];
+            $safId = $req['id'];
+            $orderId = $req['orderId'];
+            $paymentId = $req['paymentId'];
+
+            if ($activeSaf->payment_status == 1)
+                throw new Exception("Payment Already Done");
+            $req['ulbId'] = $activeSaf->ulb_id;
+            $razorPayReqs = new Request([
+                'orderId' => $orderId,
+                'key' => 'saf_id',
+                'keyId' => $req['id']
+            ]);
+            $propRazorPayRequest = $mPropRazorPayRequest->getRazorPayRequests($razorPayReqs);
+            if (collect($propRazorPayRequest)->isEmpty())
+                throw new Exception("No Order Request Found");
+
+            if (!$userId)
+                $userId = 0;                                                        // For Ghost User in case of online payment
+
+            $tranNo = $req['transactionNo'];
+            // Derivative Assignments
+            $demands = json_decode($propRazorPayRequest['demand_list']);
+            $amount = $propRazorPayRequest['amount'];
+
+            // if (!$demands || collect($demands)->isEmpty())
+            //     throw new Exception("Demand Not Available for Payment");
+            // Property Transactions
+            $activeSaf->payment_status = 1;             // Paid for Online
+
+            DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
+
+            $activeSaf->save();
+            // Replication of Prop Transactions
+            $tranReqs = [
+                'saf_id' => $req['id'],
+                'tran_date' => $this->_todayDate->format('Y-m-d'),
+                'tran_no' => $tranNo,
+                'payment_mode' => 'ONLINE',
+                'amount' => $amount,
+                'tran_date' => $this->_todayDate->format('Y-m-d'),
+                'verify_date' => $this->_todayDate->format('Y-m-d'),
+                'citizen_id' => $userId,
+                'is_citizen' => true,
+                'from_fyear' => $propRazorPayRequest->from_fyear,
+                'to_fyear' => $propRazorPayRequest->to_fyear,
+                'from_qtr' => $propRazorPayRequest->from_qtr,
+                'to_qtr' => $propRazorPayRequest->to_qtr,
+                'demand_amt' => $propRazorPayRequest->demand_amt,
+                'ulb_id' => $propRazorPayRequest->ulb_id,
+            ];
+
+            $storedTransaction = $mPropTransactions->storeTrans($tranReqs);
+            $tranId = $storedTransaction['id'];
+            $razorpayPenalRebates = $mPropRazorpayPenalRebates->getPenalRebatesByReqId($propRazorPayRequest->id);
+            // Replication of Razorpay Penalty Rebates to Prop Penal Rebates
+            foreach ($razorpayPenalRebates as $item) {
+                $propPenaltyRebateReqs = [
+                    'tran_id' => $tranId,
+                    'head_name' => $item['head_name'],
+                    'amount' => $item['amount'],
+                    'is_rebate' => $item['is_rebate'],
+                    'tran_date' => $this->_todayDate->format('Y-m-d'),
+                    'saf_id' => $safId,
+                ];
+                $mPropPenaltyRebates->postRebatePenalty($propPenaltyRebateReqs);
+            }
+
+            // Updation of Prop Razor pay Request
+            $propRazorPayRequest->status = 1;
+            $propRazorPayRequest->payment_id = $paymentId;
+            $propRazorPayRequest->save();
+
+            // Update Prop Razorpay Response
+            $razorpayResponseReq = [
+                'razorpay_request_id' => $propRazorPayRequest->id,
+                'order_id' => $orderId,
+                'payment_id' => $paymentId,
+                'saf_id' => $req['id'],
+                'from_fyear' => $propRazorPayRequest->from_fyear,
+                'from_qtr' => $propRazorPayRequest->from_qtr,
+                'to_fyear' => $propRazorPayRequest->to_fyear,
+                'to_qtr' => $propRazorPayRequest->to_qtr,
+                'demand_amt' => $propRazorPayRequest->demand_amt,
+                'ulb_id' => $activeSaf->ulb_id,
+                'ip_address' => getClientIpAddress(),
+            ];
+            $mPropRazorpayResponse->store($razorpayResponseReq);
+
+            foreach ($demands as $demand) {
+                $demand = (array) $demand;
+                unset($demand['ruleSet'], $demand['rwhPenalty'], $demand['onePercPenalty'], $demand['onePercPenaltyTax']);
+                if (isset($demand['status']))
+                    unset($demand['status']);
+                $demand['paid_status'] = 1;
+                $demand['saf_id'] = $safId;
+                $demand['balance'] = 0;
+                $storedSafDemand = $mPropSafsDemands->postDemands($demand);
+
+                $tranReq = [
+                    'tran_id' => $tranId,
+                    'saf_demand_id' => $storedSafDemand['demandId'],
+                    'total_demand' => $demand['amount'],
+                    'ulb_id' => $req['ulbId'],
+                ];
+                $mPropTranDtl->store($tranReq);
+            }
+            $previousHoldingDeactivation->deactivateHoldingDemands($activeSaf);  // Deactivate Property Holding
+            $this->sendToWorkflow($activeSaf);                                   // Send to Workflow(15.2)
+            $demands = collect($demands)->toArray();
+            $postSafPropTaxes->postSafTaxes($safId, $demands, $activeSaf->ulb_id);                  // Save Taxes
+
+            DB::commit();
+            DB::connection('pgsql_master')->commit();
+            return responseMsgs(true, "Payment Successfully Done", ['TransactionNo' => $tranNo], "010128", "1.0", responseTime(), "POST", $req->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Calculates the SAF tax based on the SAF ID.
+     * | --------------------------------------------------------------
+     * | This method validates parameters, retrieves SAF details, 
+     * | merges the holding number for specific assessment types, 
+     * | and calculates tax demand via CalculateSafById.
+     * |---------------------------------------------------------------
+     * | Status-closed
+     * | Rating - 5 
+     * | Query Cost: 384.58ms
+     * */
+    public function generateOrderId(Request $req)
+    {
+        $req->validate([
+            'id' => 'required|integer',
+        ]);
+
+        try {
+            $ipAddress = getClientIpAddress();
+            $mPropRazorPayRequest = new PropRazorpayRequest();
+            $postRazorPayPenaltyRebate = new PostRazorPayPenaltyRebate;
+            $url = Config::get('razorpay.PAYMENT_GATEWAY_URL');
+            $endPoint = Config::get('razorpay.PAYMENT_GATEWAY_END_POINT');
+            $authUser = authUser($req);
+            $req->merge(['departmentId' => 1]);
+            $safDetails = PropActiveSaf::find($req->id);
+            if (!$safDetails)
+                throw new Exception("Saf id not found");
+            if ($safDetails->payment_status == 1)
+                throw new Exception("Payment already done");
+            $calculateSafById = $this->calculateSafBySafId($req);
+            $demands = $calculateSafById->original['data']['demand'];
+            $details = $calculateSafById->original['data']['details'];
+            $totalAmount = $demands['payableAmount'];
+            $req->request->add(['workflowId' => $safDetails->workflow_id, 'ghostUserId' => 0, 'amount' => $totalAmount, 'auth' => $authUser]);
+            DB::beginTransaction();
+
+            $orderDetails = $this->saveGenerateOrderid($req);
+            if (!is_array($orderDetails))
+                throw new Exception($orderDetails->original['data']);
+
+            $demands = array_merge($demands->toArray(), [
+                'orderId' => $orderDetails['orderId']
+            ]);
+            // Store Razor pay Request
+            $razorPayRequest = [
+                'order_id' => $demands['orderId'],
+                'saf_id' => $req->id,
+                'from_fyear' => $demands['dueFromFyear'],
+                'from_qtr' => $demands['dueFromQtr'],
+                'to_fyear' => $demands['dueToFyear'],
+                'to_qtr' => $demands['dueToQtr'],
+                'demand_amt' => $demands['totalTax'],
+                'ulb_id' => $safDetails->ulb_id,
+                'ip_address' => $ipAddress,
+                'demand_list' => json_encode($details, true),
+                'amount' => $totalAmount,
+            ];
+            $storedRazorPayReqs = $mPropRazorPayRequest->store($razorPayRequest);
+            // Store Razor pay penalty Rebates
+            $postRazorPayPenaltyRebate->_safId = $req->id;
+            $postRazorPayPenaltyRebate->_razorPayRequestId = $storedRazorPayReqs['razorPayReqId'];
+            $postRazorPayPenaltyRebate->postRazorPayPenaltyRebates($demands);
+            DB::commit();
+            return responseMsgs(true, "Order ID Generated", remove_null($orderDetails), "010117", "1.0", "1s", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
     }

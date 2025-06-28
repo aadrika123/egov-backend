@@ -22,6 +22,10 @@ class DocumentOperationController extends Controller
         $this->DocumentOperationRepo = $DocumentOperationRepo;
     }
 
+    # ---------------------------------------------------------#
+    # ------------- Currently inactive or unused --------------#
+    # ---------------------------------------------------------#
+
     // Get all Details Of the Document According to workflow and application ID
     public function getAllDocuments(Request $request)
     {

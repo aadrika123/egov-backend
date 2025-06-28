@@ -89,23 +89,6 @@ class HoldingTaxController extends Controller
         $this->_departmentSection   = Config::get('waterConstaint.DEPARTMENT_SECTION');
         $this->_paymentModes        = Config::get('payment-constants.PAYMENT_OFFLINE_MODE');
     }
-    /**
-     * | Generate Holding Demand(1)
-     * | Generate yearly demand for a property based on given property ID.
-     */
-    public function generateHoldingDemand(Request $req)
-    {
-        $req->validate([
-            'propId' => 'required|numeric'
-        ]);
-        try {
-            $yearlyDemandGeneration = new YearlyDemandGeneration;
-            $responseDemand = $yearlyDemandGeneration->generateHoldingDemand($req);
-            return responseMsgs(true, "Property Demand", remove_null($responseDemand), "011501", "1.0", "", "POST", $req->deviceId ?? "");
-        } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), ['holdingNo' => $yearlyDemandGeneration->_propertyDetails['holding_no']], "011501", "1.0", "", "POST", $req->deviceId ?? "");
-        }
-    }
 
     /**
      * | Read the Calculation From Date (1.1)
@@ -546,219 +529,6 @@ class HoldingTaxController extends Controller
     }
 
     /**
-     * | Validate propId, generate an order ID for the property dues,
-     * | store Razorpay request and penalty rebate details within a transaction.
-     * | Returns success response with order details or error on failure.
-       | generateOrderId:1
-    */
-    public function generateOrderId(Request $req)
-    {
-        $req->validate([
-            'propId' => 'required'
-        ]);
-        try {
-            $departmentId = 1;
-            $propProperties = new PropProperty();
-            $ipAddress = getClientIpAddress();
-            $mPropRazorPayRequest = new PropRazorpayRequest();
-            $postRazorPayPenaltyRebate = new PostRazorPayPenaltyRebate;
-            $url      = Config::get('razorpay.PAYMENT_GATEWAY_URL');
-            $endPoint = Config::get('razorpay.PAYMENT_GATEWAY_END_POINT');
-            $authUser = Auth()->user();
-            $demand = $this->getHoldingDues($req);
-            if ($demand->original['status'] == false)
-                throw new Exception($demand->original['message']);
-
-            $demandData = $demand->original['data'];
-            if ($demandData)
-                if (!$demandData)
-                    throw new Exception("Demand Not Available");
-            $amount  = $demandData['duesList']['payableAmount'];
-            $demands = $demandData['duesList'];
-            $demandDetails = $demandData['demandList'];
-            $propDtls = $propProperties->getPropById($req->propId);
-            $req->request->add([
-                'amount' => $amount,
-                'workflowId' => '0',
-                'departmentId' => $departmentId,
-                'ulbId' => $propDtls->ulb_id,
-                'id' => $req->propId,
-                'ghostUserId' => 0,
-                'auth' => $authUser
-            ]);
-            DB::beginTransaction();
-            $orderDetails = $this->saveGenerateOrderid($req);                                      //<---------- Generate Order ID Trait
-
-            $demands = array_merge($demands->toArray(), [
-                'orderId' => $orderDetails['orderId']
-            ]);
-            // Store Razor pay Request
-            $razorPayRequest = [
-                'order_id' => $demands['orderId'],
-                'prop_id' => $req->id,
-                'from_fyear' => $demands['dueFromFyear'],
-                'from_qtr' => $demands['dueFromQtr'],
-                'to_fyear' => $demands['dueToFyear'],
-                'to_qtr' => $demands['dueToQtr'],
-                'demand_amt' => $demands['totalDues'],
-                'ulb_id' => $propDtls->ulb_id,
-                'ip_address' => $ipAddress,
-                'demand_list' => json_encode($demandDetails, true),
-                'amount' => $amount,
-                'advance_amount' => $demands['advanceAmt']
-            ];
-            $storedRazorPayReqs = $mPropRazorPayRequest->store($razorPayRequest);
-            // Store Razor pay penalty Rebates
-            $postRazorPayPenaltyRebate->_propId = $req->id;
-            $postRazorPayPenaltyRebate->_razorPayRequestId = $storedRazorPayReqs['razorPayReqId'];
-            $postRazorPayPenaltyRebate->postRazorPayPenaltyRebates($demands);
-            DB::commit();
-            return responseMsgs(true, "Order id Generated", remove_null($orderDetails), "011503", "1.0", "", "POST", $req->deviceId ?? "");
-        } catch (Exception $e) {
-            DB::rollBack();
-            return responseMsgs(false, $e->getMessage(), "", "011503", "1.0", "", "POST", $req->deviceId ?? "");
-        }
-    }
-
-    /**
-     * | Generate Order ID(3) for multiple proeprties demand payment 
-       | generateOrderIdv:1:1
-     */
-    public function generateOrderIdv1(Request $req)
-    {
-        $req->validate([
-            'propId' => 'nullable|array',  // Ensure it's an array
-            'propId.*' => 'integer',       // Each value inside should be an integer
-            'consumerId' => 'nullable|array',
-            'consumerId.*' => 'integer',
-        ]);
-        try {
-            $departmentId = 1;
-            $propProperties = new PropProperty();
-            $ipAddress = getClientIpAddress();
-            $mPropRazorPayRequest = new PropRazorpayRequest();
-            $postRazorPayPenaltyRebate = new PostRazorPayPenaltyRebate;
-            $mWaterRazorPayRequest = new WaterRazorPayRequest();
-            $mPropDemand = new PropDemand();
-            $url      = Config::get('razorpay.PAYMENT_GATEWAY_URL');
-            $endPoint = Config::get('razorpay.PAYMENT_GATEWAY_END_POINT');
-
-            // $authUser = Auth()->user();
-            $amount = 0; // Initialize amount for properties
-            $consumerAmount = 0;
-            if ($req->propId) {
-                foreach ($req->propId as $propId) {
-                    $demand = $this->getHoldingDuesv1($req, $propId);
-                    if ($demand->original['status'] == false) {
-                        throw new Exception($demand->original['message']);
-                    }
-
-
-                    $demandData = $demand->original['data'];
-                    if (!$demandData) {
-                        throw new Exception("Demand Not Available");
-                    }
-
-                    $amount += $demandData['duesList']['payableAmount']; // Summing payable amounts
-                }
-            }
-            // Check if consumerDetails exists and calculate total amount for consumer demands
-            if (!empty($req->consumerDetails)) {
-                $consumerAmount = array_sum(array_column($req->consumerDetails, 'amount')); // Sum consumer amounts
-            }
-
-            // Final total amount calculation
-            $totalAmountdtl = $amount + $consumerAmount;
-
-            $req->request->add([
-                'amount' => $totalAmountdtl,
-                'workflowId' => '0',
-                'departmentId' => $departmentId,
-                // 'ulbId' => $propDtls->ulb_id,
-                'id' => $req->propId ?? $req->consumerDetails['consumerId'],
-                'ghostUserId' => 0,
-                // 'auth' => $authUser
-            ]);
-            // DB::beginTransaction();
-            $orderDetails = $this->saveGenerateOrderidv1($req);                                      //<---------- Generate Order ID Trait
-            // $demands = is_array($demands) ? $demands : [];
-            // $demands = array_merge($demands, ['orderId' => $orderDetails['orderId']]);
-            // Store Razor pay Request for property Demand
-            if ($req->propId) {
-                foreach ($req->propId as $propId) {
-                    $demand = $this->getHoldingDuesv1($req, $propId);
-
-                    if ($demand->original['status'] == false)
-                        throw new Exception($demand->original['message']);
-
-                    $demandData = $demand->original['data'];
-                    if ($demandData)
-                        if (!$demandData)
-                            throw new Exception("Demand Not Available");
-                    $amount  = $demandData['duesList']['payableAmount'];
-                    $demands = $demandData['duesList'];
-                    $propDtls = $propProperties->getPropById($req->propId);
-                    $demandDetails = $demandData['demandList'];
-                    $razorPayRequest = [
-                        'order_id' => $orderDetails['orderId'],
-                        'prop_id' => $propId,
-                        'from_fyear' => $demands['dueFromFyear'],
-                        'from_qtr' => $demands['dueFromQtr'],
-                        'to_fyear' => $demands['dueToFyear'],
-                        'to_qtr' => $demands['dueToQtr'],
-                        'demand_amt' => $demands['totalDues'],
-                        'ulb_id' => $propDtls->ulb_id,
-                        'ip_address' => $ipAddress,
-                        'demand_list' => json_encode($demandDetails, true),
-                        'amount' => $amount,
-                        'advance_amount' => $demands['advanceAmt']
-                    ];
-                    $storedRazorPayReqs = $mPropRazorPayRequest->store($razorPayRequest);
-                    // Store Razor pay penalty Rebates
-                    $postRazorPayPenaltyRebate->_propId = $propId;
-                    $postRazorPayPenaltyRebate->_razorPayRequestId = $storedRazorPayReqs['razorPayReqId'];
-                    $postRazorPayPenaltyRebate->postRazorPayPenaltyRebatesv1($demands, $propId);
-                }
-            }
-
-            // for water consumer demand payment
-            if (!empty($req->consumerDetails)) {
-                $waterModuleId  = Config::get('module-constants.WATER_MODULE_ID');
-                $paymentFor     = Config::get('waterConstaint.PAYMENT_FOR');
-                $totalAmount    = 0;
-                $refDetails     = [];
-
-                foreach ($req->consumerDetails as $consumer) {
-                    $startingDate = Carbon::createFromFormat('Y-m-d', $consumer['demandFrom'])->startOfMonth()->toDateString();
-                    $endDate = Carbon::createFromFormat('Y-m-d', $consumer['demandUpto'])->endOfMonth()->toDateString();
-
-                    $consumerData = $this->preOfflinePaymentParams($consumer, $startingDate, $endDate);
-                    $refDetails[] = $consumerData;
-                    $razorPayRequest = [
-                        'order_id' => $orderDetails['orderId'],
-                    ];
-                    // store request
-                    $mWaterRazorPayRequest->saveRequestDatav1($consumer, $req, $paymentFor['1'], $razorPayRequest, $consumerData);
-                    // Sum up all consumer charges
-                    if (!empty($consumerData['consumerChages'])) {
-                        foreach ($consumerData['consumerChages'] as $charge) {
-                            $totalAmount += (float) $charge['amount'];
-                        }
-                    }
-                }
-
-                // Add the total amount to the response
-                $refDetails['amount'] = $totalAmount;
-            }
-            // DB::commit();
-            return responseMsgs(true, "Order id Generated", remove_null($orderDetails), "011503", "1.0", "", "POST", $req->deviceId ?? "");
-        } catch (Exception $e) {
-            DB::rollBack();
-            return responseMsgs(false, $e->getMessage(), "", "011503", "1.0", "", "POST", $req->deviceId ?? "");
-        }
-    }
-
-    /**
      * | Check the Condition before payment
      * | Validate dates and consumer, fetch demand charges within date range,
      * | verify payment amount matches, calculate penalties and advance adjustments,
@@ -766,7 +536,7 @@ class HoldingTaxController extends Controller
        | Serial No : 05:01
        | Working
        | Check for the rounding of amount 
-       | generateOrderIdv:1:1.1
+       | generateOrderIdv1:1.1
      */
     public function preOfflinePaymentParams($consumer, $startingDate, $endDate)
     {
@@ -819,7 +589,7 @@ class HoldingTaxController extends Controller
      * | Advance and Adjustment calcullation 
         | Serial No : 06:02 / 05:01:01
         | Not Working
-        | generateOrderIdv:1:1.1.1
+        | generateOrderIdv1:1.1.1
      */
     public function checkAdvance($consumer)
     {
@@ -1058,133 +828,6 @@ class HoldingTaxController extends Controller
     }
 
     /**
-     * | Offline Payment Holding for (Cheque, Cash, DD and Neft)
-     */
-    public function offlinePaymentHolding(ReqPayment $req)
-    {
-        try {
-            $offlinePaymentModes = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
-            $todayDate = Carbon::now();
-            $userId = authUser($req)->id;
-            $propDemand = new PropDemand();
-            $idGeneration = new IdGeneration;
-            $mPropTrans = new PropTransaction();
-            $mPropOwner = new PropOwner();
-            $propId = $req['id'];
-            $verifyPaymentModes = Config::get('payment-constants.VERIFICATION_PAYMENT_MODES');
-            $mPropAdjustment = new PropAdjustment();
-            $propDetails = PropProperty::findOrFail($propId);
-            $ownerDetails = $mPropOwner->getfirstOwner($propId);
-
-            $tranNo = $idGeneration->generateTransactionNo($propDetails->ulb_id);
-
-            $propCalReq = new Request([
-                'propId' => $req['id'],
-                'fYear' => $req['fYear'],
-                'qtr' => $req['qtr'],
-                'auth' => $req->auth
-            ]);
-            $propCalculation = $this->getHoldingDues($propCalReq);
-
-            if ($propCalculation->original['status'] == false)
-                throw new Exception($propCalculation->original['message']);
-
-            $demands = $propCalculation->original['data']['demandList'];
-            $dueList = $propCalculation->original['data']['duesList'];
-
-            $advanceAmt = $dueList['advanceAmt'];
-            if ($demands->isEmpty())
-                throw new Exception("No Dues For this Property");
-            // Property Transactions
-            $tranBy = authUser($req)->user_type;
-            $req->merge([
-                'userId' => $userId,
-                'todayDate' => $todayDate->format('Y-m-d'),
-                'tranNo' => $tranNo,
-                'amount' => $dueList['payableAmount'],
-                'tranBy' => $tranBy
-            ]);
-            if (in_array($req['paymentMode'], $verifyPaymentModes)) {
-                $req->merge([
-                    'verifyStatus' => 2
-                ]);
-            }
-
-            DB::beginTransaction();
-            $req['ulbId'] = $propDetails->ulb_id;
-            $propTrans = $mPropTrans->postPropTransactions($req, $demands);
-            if (in_array($req['paymentMode'], $offlinePaymentModes)) {
-                $req->merge([
-                    'chequeDate' => $req['chequeDate'],
-                    'tranId' => $propTrans['id']
-                ]);
-                $this->postOtherPaymentModes($req);
-            }
-
-            // Reflect on Prop Tran Details
-            foreach ($demands as $demand) {
-                $propDemand = $propDemand->getDemandById($demand['id']);
-                $propDemand->balance = 0;
-                $propDemand->paid_status = 1;           // <-------- Update Demand Paid Status 
-                $propDemand->save();
-
-                $propTranDtl = new PropTranDtl();
-                $propTranDtl->tran_id = $propTrans['id'];
-                $propTranDtl->prop_demand_id = $demand['id'];
-                $propTranDtl->total_demand = $demand['amount'];
-                $propTranDtl->ulb_id = $propDetails->ulb_id;
-                $propTranDtl->save();
-            }
-
-            // Replication Prop Rebates Penalties
-            $this->postPaymentPenaltyRebate($dueList, $propId, $propTrans['id']);
-            // Advance Adjustment 
-            if ($advanceAmt > 0) {
-                $adjustReq = [
-                    'prop_id' => $propId,
-                    'tran_id' => $propTrans['id'],
-                    'amount' => $advanceAmt
-                ];
-                if ($tranBy == 'Citizen')
-                    $adjustReq = array_merge($adjustReq, ['citizen_id' => $userId ?? 0]);
-                else
-                    $adjustReq = array_merge($adjustReq, ['user_id' => $userId ?? 0]);
-
-                $mPropAdjustment->store($adjustReq);
-            }
-            DB::commit();
-            $ownerName   = $ownerDetails->applicant_name;
-            $ownerMobile = $ownerDetails->mobile_no;
-            $amount      = $req->amount;
-            $holdingNo   = $propDetails->new_holding_no ?? $propDetails->holding_no;
-            $url         = "https://jharkhandegovernance.com/citizen/paymentReceipt/direct/" . $tranNo . "/holding";
-
-            #_Whatsaap Message
-            if (strlen($ownerMobile) == 10) {
-
-                $whatsapp2 = (Whatsapp_Send(
-                    $ownerMobile,
-                    "holding_payment_receipt",
-                    [
-                        "content_type" => "text",
-                        [
-                            $ownerName,
-                            $amount,
-                            $holdingNo,
-                            $url
-                        ]
-                    ]
-                ));
-            }
-
-            return responseMsgs(true, "Payment Successfully Done", ['TransactionNo' => $tranNo], "011504", "1.0", "", "POST", $req->deviceId);
-        } catch (Exception $e) {
-            DB::rollBack();
-            return responseMsgs(false, $e->getMessage(), "", "011504", "1.0", "", "POST", $req->deviceId ?? "");
-        }
-    }
-
-    /**
      * | Post Other Payment Modes for Cheque,DD,Neft
        | Common function
      */
@@ -1224,68 +867,6 @@ class HoldingTaxController extends Controller
             // 'cluster_id' => $clusterId
         ];
         $mTempTransaction->tempTransaction($tranReqs);
-    }
-
-    /**
-     * | Legacy Payment Holding
-     * | Processes legacy payment holding with document upload and demand adjustment.
-     */
-    public function legacyPaymentHolding(ReqPayment $req)
-    {
-        $req->validate([
-            'document' => 'required|mimes:pdf,jpeg,png,jpg'
-        ]);
-        try {
-            $mPropDemand = new PropDemand();
-            $mPropProperty = new PropProperty();
-            $propWfId = Config::get('workflow-constants.PROPERTY_WORKFLOW_ID');
-            $docUpload = new DocUpload;
-            $refImageName = "LEGACY_PAYMENT";
-            $propModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
-            $relativePath = Config::get('PropertyConstaint.SAF_RELATIVE_PATH');
-            $mWfActiveDocument = new WfActiveDocument();
-
-            $propCalReq = new Request([
-                'propId' => $req['id'],
-                'fYear' => $req['fYear'],
-                'qtr' => $req['qtr']
-            ]);
-
-            $properties = $mPropProperty::findOrFail($req['id']);
-            $propCalculation = $this->getHoldingDues($propCalReq);
-            if ($propCalculation->original['status'] == false)
-                throw new Exception($propCalculation->original['message']);
-
-            // Image Upload
-            $imageName = $docUpload->upload($refImageName, $req->document, $relativePath);
-            $demands = $propCalculation->original['data']['demandList'];
-
-            $wfActiveDocReqs = [
-                'active_id' => $req['id'],
-                'workflow_id' => $propWfId,
-                'ulb_id' => $properties->ulb_id,
-                'module_id' => $propModuleId,
-                'doc_code' => $refImageName,
-                'relative_path' => $relativePath,
-                'document' => $imageName,
-                'uploaded_by' => authUser($req)->id,
-                'uploaded_by_type' => authUser($req)->user_type,
-                'doc_category' => $refImageName,
-            ];
-            DB::beginTransaction();
-            $mWfActiveDocument->create($wfActiveDocReqs);
-            foreach ($demands as $demand) {
-                $tblDemand = $mPropDemand->getDemandById($demand['id']);
-                $tblDemand->paid_status = 9;
-                $tblDemand->adjust_type = "Legacy Payment Adjustment";
-                $tblDemand->save();
-            }
-            DB::commit();
-            return responseMsgs(true, "Payment Successfully Done", ['TransactionNo' => ""], "011508", "1.0", "", "POST", $req->deviceId);
-        } catch (Exception $e) {
-            DB::rollBack();
-            return responseMsgs(false, $e->getMessage(), "", "011508", "1.0", "", "POST", $req->deviceId ?? "");
-        }
     }
 
     /**
@@ -1440,6 +1021,1091 @@ class HoldingTaxController extends Controller
     }
 
     /**
+     * | response demands(16.1)
+     * | Prepare the response format for demands based on the given rule.
+       | Common Function
+     */
+    public function responseDemand($rule)
+    {
+        return [
+            "floor" => $rule['floor'],
+            "buildupArea" => $rule['buildupArea'],
+            "usageFactor" => $rule['usageFactor'] ?? null,
+            "occupancyFactor" => $rule['occupancyFactor'],
+            "carpetArea" => $rule['carpetArea'] ?? null,
+            "rentalRate" => $rule['rentalRate'],
+            "taxPerc" => $rule['taxPerc'] ?? null,
+            "calculationFactor" => $rule['calculationFactor'] ?? null,
+            "arvPsf" => $rule['arvPsf'] ?? null,
+            "circleRate" => $rule['circleRate'] ?? "",
+            "arvTotalPropTax" => roundFigure($rule['arvTotalPropTax'] ?? 0),
+            "cvArvPropTax" => roundFigure($rule['cvArvPropTax'] ?? 0)
+        ];
+    }
+
+    /**
+     * | Get Floor Demand (16.2)
+     * | Generate other demands such as Mobile Tower, Hoarding Board, and Petrol Pump demands
+     * | based on basic property details and SAF calculation rules.
+       | comparativeDemand:1.2
+     */
+    public function generateOtherDemands($basicDetails, $safCalculation)
+    {
+        $onePercPenalty = 0;
+        $array['arvRule'] = array();
+        $array['cvRule'] = array();
+        $safCalculation->_capitalValueRateMPH = $safCalculation->readCapitalValueRateMHP();
+        // Mobile Tower
+        if ($basicDetails->is_mobile_tower == true) {
+            $safCalculation->_mobileTowerArea = $basicDetails->tower_area;
+            $dateFrom = $basicDetails->tower_installation_date;
+            if ($basicDetails->tower_installation_date < $safCalculation->_effectiveDateRule2) {
+                $rule2 = $safCalculation->calculateRuleSet2("mobileTower", $onePercPenalty, $dateFrom);
+                $rule2['floor'] = "mobileTower";
+                $rule2['usageFactor'] = $rule2['multiFactor'];
+                $rule2['arvPsf'] = $rule2['arv'];
+                array_push($array['arvRule'], $this->responseDemand($rule2)); // (16.1)
+            }
+
+            $rule3 = $safCalculation->calculateRuleSet3("mobileTower", $onePercPenalty, $dateFrom);
+            $rule3['floor'] = "mobileTower";
+            $rule3['rentalRate'] = $rule3['matrixFactor'];
+            $rule3['cvArvPropTax'] = $rule3['arv'];
+            array_push($array['cvRule'], $this->responseDemand($rule3));
+        }
+        // Hoarding Board
+        if ($basicDetails->is_hoarding_board == true) {
+            $safCalculation->_hoardingBoard['area'] = $basicDetails->hoarding_area;
+            $dateFrom = $basicDetails->hoarding_installation_date;
+            if ($basicDetails->hoarding_installation_date < $safCalculation->_effectiveDateRule2) {
+                $rule2 = $safCalculation->calculateRuleSet2("hoardingBoard", $onePercPenalty, $dateFrom);
+                $rule2['floor'] = "hoardingBoard";
+                $rule2['usageFactor'] = $rule2['multiFactor'];
+                $rule2['arvPsf'] = $rule2['arv'];
+                array_push($array['arvRule'], $this->responseDemand($rule2)); // (16.1)
+            }
+
+            $rule3 = $safCalculation->calculateRuleSet3("hoardingBoard", $onePercPenalty, $dateFrom);
+            $rule3['floor'] = "hoardingBoard";
+            $rule3['rentalRate'] = $rule3['matrixFactor'];
+            $rule3['cvArvPropTax'] = $rule3['arv'];
+            array_push($array['cvRule'], $this->responseDemand($rule3)); // (16.1)
+        }
+        // Petrol Pump
+        if ($basicDetails->is_petrol_pump == true) {
+            $safCalculation->_petrolPump['area'] = $basicDetails->under_ground_area;
+            $dateFrom = $basicDetails->petrol_pump_completion_date;
+            if ($basicDetails->petrol_pump_completion_date < $safCalculation->_effectiveDateRule2) {
+                $rule2 = $safCalculation->calculateRuleSet2("petrolPump", $onePercPenalty, $dateFrom);
+                $rule2['floor'] = "petrolPump";
+                $rule2['usageFactor'] = $rule2['multiFactor'];
+                $rule2['arvPsf'] = $rule2['arv'];
+                array_push($array['arvRule'], $this->responseDemand($rule2)); // (16.1)
+            }
+
+            $rule3 = $safCalculation->calculateRuleSet3("petrolPump", $onePercPenalty, $dateFrom);
+            $rule3['floor'] = "petrolPump";
+            $rule3['rentalRate'] = $rule3['matrixFactor'];
+            $rule3['cvArvPropTax'] = $rule3['arv'];
+            array_push($array['cvRule'], $this->responseDemand($rule3)); // (16.1)
+        }
+        return $array;
+    }
+
+    /**
+     * | Cluster Holding Dues
+     * | Retrieves and calculates total holding dues with penalties and rebates 
+     * | for all properties in a given cluster.
+       | Also use as API but currently not in use
+       | clusterPayment:1.1
+     */
+    public function getClusterHoldingDues(Request $req)
+    {
+        // $req->validate([
+        //     'clusterId' => 'required|integer'
+        // ]);
+        try {
+            $todayDate = Carbon::now();
+            $clusterId = $req->id;
+            $mPropProperty = new PropProperty();
+            $mClusters = new Cluster();
+            $penaltyRebateCalc = new PenaltyRebateCalculation;
+            $mPropAdvance = new PropAdvance();
+            $properties = $mPropProperty->getPropsByClusterId($clusterId);
+            $clusterDemands = array();
+            $finalClusterDemand = array();
+            $clusterDemandList = array();
+            $currentQuarter = calculateQtr($todayDate->format('Y-m-d'));
+            $loggedInUserType = authUser($req)->user_type;
+            $currentFYear = getFY();
+
+            $clusterDtls = $mClusters::findOrFail($clusterId);
+
+            if ($properties->isEmpty())
+                throw new Exception("Properties Not Available");
+
+            $arrear = $properties->sum('balance');
+            foreach ($properties as $item) {
+                $propIdReq = new Request([
+                    'propId' => $item['id']
+                ]);
+                $demandList = $this->getHoldingDues($propIdReq)->original['data'];
+                $propDues['duesList'] = $demandList['duesList'] ?? [];
+                $propDues['demandList'] = $demandList['demandList'] ?? [];
+                array_push($clusterDemandList, $propDues['demandList']);
+                array_push($clusterDemands, $propDues);
+            }
+            $collapsedDemand = collect($clusterDemandList)->collapse();                       // Clusters Demands Collapsed into One
+
+            if (collect($collapsedDemand)->isEmpty())
+                throw new Exception("Demand Not Available For This Cluster");
+
+            $groupedByYear = $collapsedDemand->groupBy('quarteryear');                        // Grouped By Financial Year and Quarter for the Separation of Demand  
+
+            $summedDemand = $groupedByYear->map(function ($item) use ($penaltyRebateCalc) {                            // Sum of all the Demands of Quarter and Financial Year
+                $quarterDueDate = $item->first()['due_date'];
+                $onePercPenaltyPerc = $penaltyRebateCalc->calcOnePercPenalty($quarterDueDate);
+                $balance = roundFigure($item->sum('balance'));
+
+                $onePercPenaltyTax = ($balance * $onePercPenaltyPerc) / 100;
+                $onePercPenaltyTax = roundFigure($onePercPenaltyTax);
+
+                return [
+                    'quarterYear' => $item->first()['quarteryear'],
+                    'arv' => roundFigure($item->sum('arv')),
+                    'qtr' => $item->first()['qtr'],
+                    'holding_tax' => roundFigure($item->sum('holding_tax')),
+                    'water_tax' => roundFigure($item->sum('water_tax')),
+                    'education_cess' => roundFigure($item->sum('education_cess')),
+                    'health_cess' => roundFigure($item->sum('health_cess')),
+                    'latrine_tax' => roundFigure($item->sum('latrine_tax')),
+                    'additional_tax' => roundFigure($item->sum('additional_tax')),
+                    'amount' => roundFigure($item->sum('amount')),
+                    'balance' => $balance,
+                    'fyear' => $item->first()['fyear'],
+                    'adjust_amt' => roundFigure($item->sum('adjust_amt')),
+                    'due_date' => $quarterDueDate,
+                    'onePercPenalty' => $onePercPenaltyPerc,
+                    'onePercPenaltyTax' => $onePercPenaltyTax,
+                ];
+            })->values();
+
+            $finalDues = collect($summedDemand)->sum('balance');
+            $finalDues = roundFigure($finalDues);
+
+            $finalOnePerc = collect($summedDemand)->sum('onePercPenaltyTax');
+            $finalOnePerc = roundFigure($finalOnePerc);
+
+            $finalAmt = $finalDues + $finalOnePerc + $arrear;
+            $duesFrom = collect($clusterDemands)->first()['duesList']['duesFrom'] ?? collect($clusterDemands)->last()['duesList']['duesFrom'];
+            $duesTo = collect($clusterDemands)->first()['duesList']['duesTo'] ?? collect($clusterDemands)->last()['duesList']['duesTo'];
+            $paymentUptoYrs = collect($clusterDemands)->first()['duesList']['paymentUptoYrs'] ?? collect($clusterDemands)->last()['duesList']['paymentUptoYrs'];
+            $paymentUptoQtrs = collect($clusterDemands)->first()['duesList']['paymentUptoQtrs'] ?? collect($clusterDemands)->last()['duesList']['paymentUptoQtrs'];
+
+            $advanceAdjustments = $mPropAdvance->getClusterAdvanceAdjustAmt($clusterId);
+
+            if (collect($advanceAdjustments)->isEmpty())
+                $advanceAmt = 0;
+            else
+                $advanceAmt = $advanceAdjustments->advance - $advanceAdjustments->adjustment_amt;
+
+            $advanceAmt = roundFigure($advanceAmt);
+            $finalClusterDemand['duesList'] = [
+                'paymentUptoYrs' => $paymentUptoYrs,
+                'paymentUptoQtrs' => $paymentUptoQtrs,
+                'duesFrom' => $duesFrom,
+                'duesTo' => $duesTo,
+                'totalDues' => $finalDues,
+                'onePercPenalty' => $finalOnePerc,
+                'finalAmt' => $finalAmt,
+                'arrear' => $arrear,
+                'advanceAmt' => $advanceAmt
+            ];
+            $mLastQuarterDemand = collect($summedDemand)->where('fyear', $currentFYear)->sum('balance');
+            $finalClusterDemand['duesList'] = $penaltyRebateCalc->readRebates($currentQuarter, $loggedInUserType, $mLastQuarterDemand, null, $finalAmt, $finalClusterDemand['duesList']);
+            $payableAmount = $finalAmt - ($finalClusterDemand['duesList']['rebateAmt'] + $finalClusterDemand['duesList']['specialRebateAmt']);
+            $finalClusterDemand['duesList']['payableAmount'] = round($payableAmount - $advanceAmt);
+
+            $finalClusterDemand['demandList'] = $summedDemand;
+            $finalClusterDemand['basicDetails'] = $clusterDtls;
+            return responseMsgs(true, "Generated Demand of the Cluster", remove_null($finalClusterDemand), "011505", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), ['basicDetails' => $clusterDtls], "011505", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
+    /**
+     * | Cluster Payment History
+     * | Retrieves and groups the payment transaction history for a given cluster.
+     */
+    public function clusterPaymentHistory(Request $req)
+    {
+        $req->validate([
+            'clusterId' => "required|numeric"
+        ]);
+
+        try {
+            $clusterId = $req->clusterId;
+            $mPropTrans = new PropTransaction();
+            $transactions = $mPropTrans->getPropTransactions($clusterId, "cluster_id");
+            if ($transactions->isEmpty())
+                throw new Exception("No Transaction Found for this Cluster");
+            $transactions = $transactions->groupBy('tran_type');
+            return responseMsgs(true, "Cluster Transactions", remove_null($transactions), "011516", "1.0", "", "", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "011516", "1.0", "", "", $req->deviceId ?? "");
+        }
+    }
+
+    /**
+     * | Generate Cluster Payment Receipt For cluster saf and Holding (011613)
+     */
+    public function clusterPaymentReceipt(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            ['tranNo' => 'required']
+        );
+        if ($validated->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'validation error',
+                'errors' => $validated->errors()
+            ], 401);
+        }
+        try {
+            $mTransaction = new PropTransaction();
+            $mPropPenalties = new PropPenaltyrebate();
+            $mClusters = new Cluster();
+            $paymentReceiptHelper = new PaymentReceiptHelper;
+
+            $mTowards = Config::get('PropertyConstaint.SAF_TOWARDS');
+            $mAccDescription = Config::get('PropertyConstaint.ACCOUNT_DESCRIPTION');
+            $mDepartmentSection = Config::get('PropertyConstaint.DEPARTMENT_SECTION');
+
+            $rebatePenalMstrs = collect(Config::get('PropertyConstaint.REBATE_PENAL_MASTERS'));
+            $onePercKey = $rebatePenalMstrs->where('id', 1)->first()['value'];
+            $specialRebateKey = $rebatePenalMstrs->where('id', 6)->first()['value'];
+            $firstQtrKey = $rebatePenalMstrs->where('id', 2)->first()['value'];
+            $onlineRebate = $rebatePenalMstrs->where('id', 3)->first()['value'];
+
+            $propTrans = $mTransaction->getPropByTranPropId($req->tranNo);
+            $clusterId = $propTrans->cluster_id;
+
+            $propCluster = $mClusters->getClusterDtlsById($clusterId);
+
+            // Get Property Penalty and Rebates
+            $penalRebates = $mPropPenalties->getPropPenalRebateByTranId($propTrans->id);
+
+            $onePercPenalty = collect($penalRebates)->where('head_name', $onePercKey)->first()->amount ?? 0;
+            $rebate = collect($penalRebates)->where('head_name', 'Rebate')->first()->amount ?? "";
+            $specialRebate = collect($penalRebates)->where('head_name', $specialRebateKey)->first()->amount ?? 0;
+            $firstQtrRebate = collect($penalRebates)->where('head_name', $firstQtrKey)->first()->amount ?? 0;
+            $jskOrOnlineRebate = collect($penalRebates)->where('head_name', $onlineRebate)->first()->amount ?? 0;
+            $lateAssessmentPenalty = 0;
+
+            $taxDetails = $paymentReceiptHelper->readPenalyPmtAmts($lateAssessmentPenalty, $onePercPenalty, $rebate, $specialRebate, $firstQtrRebate, $propTrans->amount, $jskOrOnlineRebate);
+            $responseData = [
+                "departmentSection" => $mDepartmentSection,
+                "accountDescription" => $mAccDescription,
+                "transactionDate" => $propTrans->tran_date,
+                "transactionNo" => $propTrans->tran_no,
+                "transactionTime" => $propTrans->created_at->format('H:i:s'),
+                "applicationNo" => "",
+                "customerName" => $propCluster->authorized_person_name,
+                "mobileNo" => $propCluster->mobile_no,
+                "receiptWard" => $propCluster->old_ward,
+                "address" => $propCluster->address,
+                "paidFrom" => $propTrans->from_fyear,
+                "paidFromQtr" => $propTrans->from_qtr,
+                "paidUpto" => $propTrans->to_fyear,
+                "paidUptoQtr" => $propTrans->to_qtr,
+                "paymentMode" => $propTrans->payment_mode,
+                "bankName" => $propTrans->bank_name,
+                "branchName" => $propTrans->branch_name,
+                "chequeNo" => $propTrans->cheque_no,
+                "chequeDate" => $propTrans->cheque_date,
+                "demandAmount" => $propTrans->demand_amt,
+                "taxDetails" => $taxDetails,
+                "ulbId" => $propCluster->ulb_id,
+                "oldWardNo" => $propCluster->old_ward,
+                "newWardNo" => $propCluster->new_ward,
+                "towards" => $mTowards,
+                "description" => [
+                    "keyString" => "Holding Tax"
+                ],
+                "totalPaidAmount" => $propTrans->amount,
+                "paidAmtInWords" => getIndianCurrency($propTrans->amount),
+            ];
+            return responseMsgs(true, "Cluster Payment Receipt", remove_null($responseData), "011517", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "011517", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
+    /**
+     * | Get properties under caretaker for a given user
+       | citizenPropWaterDtls:1.1
+     */
+    public function getCaretakerProperty($userId, Request $req)
+    {
+        $data = collect(); // Use collection instead of array
+        $mActiveCitizenCareTaker = new ActiveCitizenUndercare();
+        $propertiesByCitizen = $mActiveCitizenCareTaker->getTaggedPropsByCitizenId($userId);
+        $propIds = $propertiesByCitizen->pluck('property_id');
+
+        if ($propIds->isEmpty()) {
+            return $data;
+        }
+
+        $properties = PropProperty::whereIn('prop_properties.id', $propIds)
+            ->select(
+                'prop_properties.id',
+                'prop_properties.holding_no',
+                'prop_properties.new_holding_no',
+                DB::raw("TO_CHAR(application_date, 'DD-MM-YYYY') as application_date"),
+                'prop_owners.owner_name',
+                'prop_properties.balance',
+                'ulb_masters.ulb_name'
+            )
+            ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
+            ->join('ulb_masters', 'ulb_masters.id', 'prop_properties.ulb_id')
+            ->leftJoin('prop_demands', function ($join) {
+                $join->on('prop_demands.property_id', '=', 'prop_properties.id')
+                    ->where('prop_demands.paid_status', 0);
+            })
+            ->havingRaw("SUM(prop_demands.balance) > 0")
+            ->groupBy(
+                'prop_properties.id',
+                'prop_properties.holding_no',
+                'prop_properties.new_holding_no',
+                'prop_properties.application_date',
+                'prop_owners.owner_name',
+                'prop_properties.balance',
+                'ulb_masters.ulb_name',
+            )
+            ->get(); // Fetch initial data without demand amount
+
+        // Retrieve dues for each property
+        foreach ($properties as $property) {
+            $req->merge(["propId" => $property->id]);
+            $demandDues = $this->getHoldingDues($req);
+            $demandData = $demandDues->original['data'];
+            if ($demandData)
+                if (!$demandData)
+                    throw new Exception("Demand Not Available");
+            $property->total_demand_amount  = $demandData['duesList']['payableAmount'];
+        }
+        return $properties;
+    }
+
+
+    /**
+     * | View details of the caretaken water connection
+     * | using user id
+       | Working
+       | Serial No : 07
+       | citizenPropWaterDtls:1.2
+     */
+    public function viewCaretakenConnection(Request $request)
+    {
+        try {
+            $mWaterWaterConsumer        = new WaterConsumer();
+            $mActiveCitizenUndercare    = new ActiveCitizenUndercare();
+
+            $connectionDetails = $mActiveCitizenUndercare->getDetailsByCitizenIdv1();
+            $checkDemand = collect($connectionDetails)->first();
+            if (is_null($checkDemand))
+                throw new Exception("Under taken data not found!");
+
+            $consumerIds = collect($connectionDetails)->pluck('consumer_id');
+            $consumerDetails = $mWaterWaterConsumer->getConsumerByIds($consumerIds)->get();
+            $checkConsumer = collect($consumerDetails)->first();
+            return $consumerDetails;
+            // return responseMsgs(true, 'List of undertaken water connections!', remove_null($consumerDetails), "", "01", ".ms", "POST", $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "", "01", ".ms", "POST", $request->deviceId);
+        }
+    }
+
+
+
+    # ---------------------------------------------------------#
+    # ----- APIs that are currently inactive or unused --------#
+    # ---------------------------------------------------------#
+
+    
+    /**
+     * | Generate Holding Demand(1)
+     * | Generate yearly demand for a property based on given property ID.
+     */
+    public function generateHoldingDemand(Request $req)
+    {
+        $req->validate([
+            'propId' => 'required|numeric'
+        ]);
+        try {
+            $yearlyDemandGeneration = new YearlyDemandGeneration;
+            $responseDemand = $yearlyDemandGeneration->generateHoldingDemand($req);
+            return responseMsgs(true, "Property Demand", remove_null($responseDemand), "011501", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), ['holdingNo' => $yearlyDemandGeneration->_propertyDetails['holding_no']], "011501", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
+    /**
+     * | Validate propId, generate an order ID for the property dues,
+     * | store Razorpay request and penalty rebate details within a transaction.
+     * | Returns success response with order details or error on failure.
+       | generateOrderId:1
+    */
+    public function generateOrderId(Request $req)
+    {
+        $req->validate([
+            'propId' => 'required'
+        ]);
+        try {
+            $departmentId = 1;
+            $propProperties = new PropProperty();
+            $ipAddress = getClientIpAddress();
+            $mPropRazorPayRequest = new PropRazorpayRequest();
+            $postRazorPayPenaltyRebate = new PostRazorPayPenaltyRebate;
+            $url      = Config::get('razorpay.PAYMENT_GATEWAY_URL');
+            $endPoint = Config::get('razorpay.PAYMENT_GATEWAY_END_POINT');
+            $authUser = Auth()->user();
+            $demand = $this->getHoldingDues($req);
+            if ($demand->original['status'] == false)
+                throw new Exception($demand->original['message']);
+
+            $demandData = $demand->original['data'];
+            if ($demandData)
+                if (!$demandData)
+                    throw new Exception("Demand Not Available");
+            $amount  = $demandData['duesList']['payableAmount'];
+            $demands = $demandData['duesList'];
+            $demandDetails = $demandData['demandList'];
+            $propDtls = $propProperties->getPropById($req->propId);
+            $req->request->add([
+                'amount' => $amount,
+                'workflowId' => '0',
+                'departmentId' => $departmentId,
+                'ulbId' => $propDtls->ulb_id,
+                'id' => $req->propId,
+                'ghostUserId' => 0,
+                'auth' => $authUser
+            ]);
+            DB::beginTransaction();
+            $orderDetails = $this->saveGenerateOrderid($req);                                      //<---------- Generate Order ID Trait
+
+            $demands = array_merge($demands->toArray(), [
+                'orderId' => $orderDetails['orderId']
+            ]);
+            // Store Razor pay Request
+            $razorPayRequest = [
+                'order_id' => $demands['orderId'],
+                'prop_id' => $req->id,
+                'from_fyear' => $demands['dueFromFyear'],
+                'from_qtr' => $demands['dueFromQtr'],
+                'to_fyear' => $demands['dueToFyear'],
+                'to_qtr' => $demands['dueToQtr'],
+                'demand_amt' => $demands['totalDues'],
+                'ulb_id' => $propDtls->ulb_id,
+                'ip_address' => $ipAddress,
+                'demand_list' => json_encode($demandDetails, true),
+                'amount' => $amount,
+                'advance_amount' => $demands['advanceAmt']
+            ];
+            $storedRazorPayReqs = $mPropRazorPayRequest->store($razorPayRequest);
+            // Store Razor pay penalty Rebates
+            $postRazorPayPenaltyRebate->_propId = $req->id;
+            $postRazorPayPenaltyRebate->_razorPayRequestId = $storedRazorPayReqs['razorPayReqId'];
+            $postRazorPayPenaltyRebate->postRazorPayPenaltyRebates($demands);
+            DB::commit();
+            return responseMsgs(true, "Order id Generated", remove_null($orderDetails), "011503", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), "", "011503", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
+    /**
+     * | Offline Payment Holding for (Cheque, Cash, DD and Neft)
+     */
+    public function offlinePaymentHolding(ReqPayment $req)
+    {
+        try {
+            $offlinePaymentModes = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
+            $todayDate = Carbon::now();
+            $userId = authUser($req)->id;
+            $propDemand = new PropDemand();
+            $idGeneration = new IdGeneration;
+            $mPropTrans = new PropTransaction();
+            $mPropOwner = new PropOwner();
+            $propId = $req['id'];
+            $verifyPaymentModes = Config::get('payment-constants.VERIFICATION_PAYMENT_MODES');
+            $mPropAdjustment = new PropAdjustment();
+            $propDetails = PropProperty::findOrFail($propId);
+            $ownerDetails = $mPropOwner->getfirstOwner($propId);
+
+            $tranNo = $idGeneration->generateTransactionNo($propDetails->ulb_id);
+
+            $propCalReq = new Request([
+                'propId' => $req['id'],
+                'fYear' => $req['fYear'],
+                'qtr' => $req['qtr'],
+                'auth' => $req->auth
+            ]);
+            $propCalculation = $this->getHoldingDues($propCalReq);
+
+            if ($propCalculation->original['status'] == false)
+                throw new Exception($propCalculation->original['message']);
+
+            $demands = $propCalculation->original['data']['demandList'];
+            $dueList = $propCalculation->original['data']['duesList'];
+
+            $advanceAmt = $dueList['advanceAmt'];
+            if ($demands->isEmpty())
+                throw new Exception("No Dues For this Property");
+            // Property Transactions
+            $tranBy = authUser($req)->user_type;
+            $req->merge([
+                'userId' => $userId,
+                'todayDate' => $todayDate->format('Y-m-d'),
+                'tranNo' => $tranNo,
+                'amount' => $dueList['payableAmount'],
+                'tranBy' => $tranBy
+            ]);
+            if (in_array($req['paymentMode'], $verifyPaymentModes)) {
+                $req->merge([
+                    'verifyStatus' => 2
+                ]);
+            }
+
+            DB::beginTransaction();
+            $req['ulbId'] = $propDetails->ulb_id;
+            $propTrans = $mPropTrans->postPropTransactions($req, $demands);
+            if (in_array($req['paymentMode'], $offlinePaymentModes)) {
+                $req->merge([
+                    'chequeDate' => $req['chequeDate'],
+                    'tranId' => $propTrans['id']
+                ]);
+                $this->postOtherPaymentModes($req);
+            }
+
+            // Reflect on Prop Tran Details
+            foreach ($demands as $demand) {
+                $propDemand = $propDemand->getDemandById($demand['id']);
+                $propDemand->balance = 0;
+                $propDemand->paid_status = 1;           // <-------- Update Demand Paid Status 
+                $propDemand->save();
+
+                $propTranDtl = new PropTranDtl();
+                $propTranDtl->tran_id = $propTrans['id'];
+                $propTranDtl->prop_demand_id = $demand['id'];
+                $propTranDtl->total_demand = $demand['amount'];
+                $propTranDtl->ulb_id = $propDetails->ulb_id;
+                $propTranDtl->save();
+            }
+
+            // Replication Prop Rebates Penalties
+            $this->postPaymentPenaltyRebate($dueList, $propId, $propTrans['id']);
+            // Advance Adjustment 
+            if ($advanceAmt > 0) {
+                $adjustReq = [
+                    'prop_id' => $propId,
+                    'tran_id' => $propTrans['id'],
+                    'amount' => $advanceAmt
+                ];
+                if ($tranBy == 'Citizen')
+                    $adjustReq = array_merge($adjustReq, ['citizen_id' => $userId ?? 0]);
+                else
+                    $adjustReq = array_merge($adjustReq, ['user_id' => $userId ?? 0]);
+
+                $mPropAdjustment->store($adjustReq);
+            }
+            DB::commit();
+            $ownerName   = $ownerDetails->applicant_name;
+            $ownerMobile = $ownerDetails->mobile_no;
+            $amount      = $req->amount;
+            $holdingNo   = $propDetails->new_holding_no ?? $propDetails->holding_no;
+            $url         = "https://jharkhandegovernance.com/citizen/paymentReceipt/direct/" . $tranNo . "/holding";
+
+            #_Whatsaap Message
+            if (strlen($ownerMobile) == 10) {
+
+                $whatsapp2 = (Whatsapp_Send(
+                    $ownerMobile,
+                    "holding_payment_receipt",
+                    [
+                        "content_type" => "text",
+                        [
+                            $ownerName,
+                            $amount,
+                            $holdingNo,
+                            $url
+                        ]
+                    ]
+                ));
+            }
+
+            return responseMsgs(true, "Payment Successfully Done", ['TransactionNo' => $tranNo], "011504", "1.0", "", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), "", "011504", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
+    /**
+     * | Cluster Property Payments
+     * | Processes payment for all holding dues in a cluster, updates demands as paid,
+     * | records transactions, handles offline payment modes, and adjusts advance amounts.
+       | clusterPayment:1
+     */
+    public function clusterPayment(ReqPayment $req)
+    {
+        // $dueReq = new Request([
+        //     'clusterId' => $req->id
+        // ]);
+
+        try {
+            // return $req;
+            $clusterId = $req->id;
+            $todayDate = Carbon::now();
+            $idGeneration = new IdGeneration;
+            $mPropTrans = new PropTransaction();
+            $mPropDemand = new PropDemand();
+            $offlinePaymentModes = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
+            $mPropAdjustment = new PropAdjustment();
+
+            $dues = $this->getClusterHoldingDues($req);
+
+            if ($dues->original['status'] == false)
+                throw new Exception($dues->original['message']);
+
+            $dues = $dues->original['data'];
+            $demands = $dues['demandList'];
+            $tranNo = $idGeneration->generateTransactionNo($req['ulbId']);
+            $payableAmount = $dues['duesList']['payableAmount'];
+            $advanceAmt = $dues['duesList']['advanceAmt'];
+            // Property Transactions
+            if (in_array($req['paymentMode'], $offlinePaymentModes)) {
+                $userId = authUser($req)->id ?? null;
+                if (!$userId)
+                    throw new Exception("User Should Be Logged In");
+                $tranBy = authUser($req)->user_type;
+            }
+            $req->merge([
+                'userId' => $userId,
+                'todayDate' => $todayDate->format('Y-m-d'),
+                'tranNo' => $tranNo,
+                'amount' => $payableAmount,
+                'tranBy' => $tranBy,
+                'clusterType' => "Property"
+            ]);
+
+            DB::beginTransaction();
+            $propTrans = $mPropTrans->postClusterTransactions($req, $demands);
+
+            if (in_array($req['paymentMode'], $offlinePaymentModes)) {
+                $req->merge([
+                    'chequeDate' => $req['chequeDate'],
+                    'tranId' => $propTrans['id']
+                ]);
+                $this->postOtherPaymentModes($req);
+            }
+
+            $clusterDemand = $mPropDemand->getDemandsByClusterId($clusterId);
+            if ($clusterDemand->isEmpty())
+                throw new Exception("Demand Not Available");
+            // Reflect on Prop Tran Details
+            foreach ($clusterDemand as $demand) {
+                $propDemand = $mPropDemand->getDemandById($demand['id']);
+                $propDemand->balance = 0;
+                $propDemand->paid_status = 1;           // <-------- Update Demand Paid Status 
+                $propDemand->save();
+
+                $propTranDtl = new PropTranDtl();
+                $propTranDtl->tran_id = $propTrans['id'];
+                $propTranDtl->prop_demand_id = $demand['id'];
+                $propTranDtl->total_demand = $demand['amount'];
+                $propTranDtl->ulb_id = $req['ulbId'];
+                $propTranDtl->save();
+            }
+            // Replication Prop Rebates Penalties
+            $this->postPaymentPenaltyRebate($dues['duesList'], null, $propTrans['id'], $clusterId);
+
+            if ($advanceAmt > 0) {
+                $adjustReq = [
+                    'cluster_id' => $clusterId,
+                    'tran_id' => $propTrans['id'],
+                    'amount' => $advanceAmt
+                ];
+                if ($tranBy == 'Citizen')
+                    $adjustReq = array_merge($adjustReq, ['citizen_id' => $userId ?? 0]);
+                else
+                    $adjustReq = array_merge($adjustReq, ['user_id' => $userId ?? 0]);
+
+                $mPropAdjustment->store($adjustReq);
+            }
+            DB::commit();
+            return responseMsgs(true, "Payment Successfully Done", ["tranNo" => $tranNo], "011506", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), "", "011506", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
+    /**
+     * | Get Property Dues
+     * | Validates request and fetches dues details for a specified property.
+     */
+    public function propertyDues(Request $req)
+    {
+        $validator = Validator::make(
+            $req->all(),
+            ['propId' => 'required']
+        );
+        if ($validator->fails()) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'validation error',
+                'errors'  => $validator->errors()
+            ]);
+        }
+        $demandDues = $this->getHoldingDues($req);
+        if ($demandDues->original['status'] == false)
+            return responseMsgs(true, "No Dues Available for this Property", "");
+        $demandDues = $demandDues->original['data']['duesList'];
+        $demandDetails = $this->generateDemandDues($demandDues);
+        $dataRow['dataRow'] = $demandDetails;
+        $dataRow['btnUrl'] = "/viewDemandHoldingProperty/" . $req->propId;
+        $data['tableTop'] =  [
+            'headerTitle' => 'Property Dues',
+            'tableHead' => ["#", "Dues From", "Dues To", "Total Dues", "1 % Penalty", "Rebate Amt", "Payable Amount"],
+            'tableData' => [$dataRow]
+        ];
+        return responseMsgs(true, "Demand Dues", remove_null($data), "011507 ", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+    }
+
+    /**
+     * | Legacy Payment Holding
+     * | Processes legacy payment holding with document upload and demand adjustment.
+     */
+    public function legacyPaymentHolding(ReqPayment $req)
+    {
+        $req->validate([
+            'document' => 'required|mimes:pdf,jpeg,png,jpg'
+        ]);
+        try {
+            $mPropDemand = new PropDemand();
+            $mPropProperty = new PropProperty();
+            $propWfId = Config::get('workflow-constants.PROPERTY_WORKFLOW_ID');
+            $docUpload = new DocUpload;
+            $refImageName = "LEGACY_PAYMENT";
+            $propModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $relativePath = Config::get('PropertyConstaint.SAF_RELATIVE_PATH');
+            $mWfActiveDocument = new WfActiveDocument();
+
+            $propCalReq = new Request([
+                'propId' => $req['id'],
+                'fYear' => $req['fYear'],
+                'qtr' => $req['qtr']
+            ]);
+
+            $properties = $mPropProperty::findOrFail($req['id']);
+            $propCalculation = $this->getHoldingDues($propCalReq);
+            if ($propCalculation->original['status'] == false)
+                throw new Exception($propCalculation->original['message']);
+
+            // Image Upload
+            $imageName = $docUpload->upload($refImageName, $req->document, $relativePath);
+            $demands = $propCalculation->original['data']['demandList'];
+
+            $wfActiveDocReqs = [
+                'active_id' => $req['id'],
+                'workflow_id' => $propWfId,
+                'ulb_id' => $properties->ulb_id,
+                'module_id' => $propModuleId,
+                'doc_code' => $refImageName,
+                'relative_path' => $relativePath,
+                'document' => $imageName,
+                'uploaded_by' => authUser($req)->id,
+                'uploaded_by_type' => authUser($req)->user_type,
+                'doc_category' => $refImageName,
+            ];
+            DB::beginTransaction();
+            $mWfActiveDocument->create($wfActiveDocReqs);
+            foreach ($demands as $demand) {
+                $tblDemand = $mPropDemand->getDemandById($demand['id']);
+                $tblDemand->paid_status = 9;
+                $tblDemand->adjust_type = "Legacy Payment Adjustment";
+                $tblDemand->save();
+            }
+            DB::commit();
+            return responseMsgs(true, "Payment Successfully Done", ['TransactionNo' => ""], "011508", "1.0", "", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), "", "011508", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+    
+
+    /**
+     * | Generate Order ID(3) for multiple proeprties demand payment 
+       | generateOrderIdv1:1
+     */
+    public function generateOrderIdv1(Request $req)
+    {
+        $req->validate([
+            'propId' => 'nullable|array',  // Ensure it's an array
+            'propId.*' => 'integer',       // Each value inside should be an integer
+            'consumerId' => 'nullable|array',
+            'consumerId.*' => 'integer',
+        ]);
+        try {
+            $departmentId = 1;
+            $propProperties = new PropProperty();
+            $ipAddress = getClientIpAddress();
+            $mPropRazorPayRequest = new PropRazorpayRequest();
+            $postRazorPayPenaltyRebate = new PostRazorPayPenaltyRebate;
+            $mWaterRazorPayRequest = new WaterRazorPayRequest();
+            $mPropDemand = new PropDemand();
+            $url      = Config::get('razorpay.PAYMENT_GATEWAY_URL');
+            $endPoint = Config::get('razorpay.PAYMENT_GATEWAY_END_POINT');
+
+            // $authUser = Auth()->user();
+            $amount = 0; // Initialize amount for properties
+            $consumerAmount = 0;
+            if ($req->propId) {
+                foreach ($req->propId as $propId) {
+                    $demand = $this->getHoldingDuesv1($req, $propId);
+                    if ($demand->original['status'] == false) {
+                        throw new Exception($demand->original['message']);
+                    }
+
+
+                    $demandData = $demand->original['data'];
+                    if (!$demandData) {
+                        throw new Exception("Demand Not Available");
+                    }
+
+                    $amount += $demandData['duesList']['payableAmount']; // Summing payable amounts
+                }
+            }
+            // Check if consumerDetails exists and calculate total amount for consumer demands
+            if (!empty($req->consumerDetails)) {
+                $consumerAmount = array_sum(array_column($req->consumerDetails, 'amount')); // Sum consumer amounts
+            }
+
+            // Final total amount calculation
+            $totalAmountdtl = $amount + $consumerAmount;
+
+            $req->request->add([
+                'amount' => $totalAmountdtl,
+                'workflowId' => '0',
+                'departmentId' => $departmentId,
+                // 'ulbId' => $propDtls->ulb_id,
+                'id' => $req->propId ?? $req->consumerDetails['consumerId'],
+                'ghostUserId' => 0,
+                // 'auth' => $authUser
+            ]);
+            // DB::beginTransaction();
+            $orderDetails = $this->saveGenerateOrderidv1($req);                                      //<---------- Generate Order ID Trait
+            // $demands = is_array($demands) ? $demands : [];
+            // $demands = array_merge($demands, ['orderId' => $orderDetails['orderId']]);
+            // Store Razor pay Request for property Demand
+            if ($req->propId) {
+                foreach ($req->propId as $propId) {
+                    $demand = $this->getHoldingDuesv1($req, $propId);
+
+                    if ($demand->original['status'] == false)
+                        throw new Exception($demand->original['message']);
+
+                    $demandData = $demand->original['data'];
+                    if ($demandData)
+                        if (!$demandData)
+                            throw new Exception("Demand Not Available");
+                    $amount  = $demandData['duesList']['payableAmount'];
+                    $demands = $demandData['duesList'];
+                    $propDtls = $propProperties->getPropById($req->propId);
+                    $demandDetails = $demandData['demandList'];
+                    $razorPayRequest = [
+                        'order_id' => $orderDetails['orderId'],
+                        'prop_id' => $propId,
+                        'from_fyear' => $demands['dueFromFyear'],
+                        'from_qtr' => $demands['dueFromQtr'],
+                        'to_fyear' => $demands['dueToFyear'],
+                        'to_qtr' => $demands['dueToQtr'],
+                        'demand_amt' => $demands['totalDues'],
+                        'ulb_id' => $propDtls->ulb_id,
+                        'ip_address' => $ipAddress,
+                        'demand_list' => json_encode($demandDetails, true),
+                        'amount' => $amount,
+                        'advance_amount' => $demands['advanceAmt']
+                    ];
+                    $storedRazorPayReqs = $mPropRazorPayRequest->store($razorPayRequest);
+                    // Store Razor pay penalty Rebates
+                    $postRazorPayPenaltyRebate->_propId = $propId;
+                    $postRazorPayPenaltyRebate->_razorPayRequestId = $storedRazorPayReqs['razorPayReqId'];
+                    $postRazorPayPenaltyRebate->postRazorPayPenaltyRebatesv1($demands, $propId);
+                }
+            }
+
+            // for water consumer demand payment
+            if (!empty($req->consumerDetails)) {
+                $waterModuleId  = Config::get('module-constants.WATER_MODULE_ID');
+                $paymentFor     = Config::get('waterConstaint.PAYMENT_FOR');
+                $totalAmount    = 0;
+                $refDetails     = [];
+
+                foreach ($req->consumerDetails as $consumer) {
+                    $startingDate = Carbon::createFromFormat('Y-m-d', $consumer['demandFrom'])->startOfMonth()->toDateString();
+                    $endDate = Carbon::createFromFormat('Y-m-d', $consumer['demandUpto'])->endOfMonth()->toDateString();
+
+                    $consumerData = $this->preOfflinePaymentParams($consumer, $startingDate, $endDate);
+                    $refDetails[] = $consumerData;
+                    $razorPayRequest = [
+                        'order_id' => $orderDetails['orderId'],
+                    ];
+                    // store request
+                    $mWaterRazorPayRequest->saveRequestDatav1($consumer, $req, $paymentFor['1'], $razorPayRequest, $consumerData);
+                    // Sum up all consumer charges
+                    if (!empty($consumerData['consumerChages'])) {
+                        foreach ($consumerData['consumerChages'] as $charge) {
+                            $totalAmount += (float) $charge['amount'];
+                        }
+                    }
+                }
+
+                // Add the total amount to the response
+                $refDetails['amount'] = $totalAmount;
+            }
+            // DB::commit();
+            return responseMsgs(true, "Order id Generated", remove_null($orderDetails), "011503", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), "", "011503", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
+    /**
+     * | Get detail of citizen property details and water connection details with pending demands
+       | citizenPropWaterDtls:1
+     */
+    public function citizenPropWaterDtls(Request $request)
+    {
+        try {
+            // Authenticate user
+            $user = authUser($request);
+            $userId = $user->id;
+            $ulbId = $request->ulbId;
+
+            // Property Details with Demand Join (Excluding 0 or NULL demand)
+            $propTransactionQuery = PropProperty::leftJoin('prop_demands', function ($join) {
+                $join->on('prop_demands.property_id', '=', 'prop_properties.id')
+                    ->whereIn('prop_demands.status', [1, 2])
+                    ->where('prop_demands.paid_status', 0);
+            })
+                ->leftJoin('prop_owners', 'prop_owners.property_id', '=', 'prop_properties.id')
+                ->select(
+                    'prop_properties.id as property_id',
+                    'prop_properties.holding_no',
+                    'prop_properties.new_holding_no',
+                    'prop_properties.pt_no',
+                    'prop_properties.zone_mstr_id',
+                    'prop_properties.new_ward_mstr_id',
+                    'prop_properties.village_mauja_name',
+                    'prop_properties.prop_address',
+                    'prop_properties.khata_no',
+                    'prop_properties.plot_no',
+                    'prop_properties.ulb_id',
+                    DB::raw("STRING_AGG(DISTINCT prop_owners.owner_name, ', ') as owners")
+                    // DB::raw("COALESCE(SUM(prop_demands.balance), 0) as total_demand_amount")
+                )
+                ->where("prop_properties.citizen_id", $userId)
+                ->groupBy(
+                    'prop_properties.id',
+                    'prop_properties.holding_no',
+                    'prop_properties.new_holding_no',
+                    'prop_properties.pt_no',
+                    'prop_properties.zone_mstr_id',
+                    'prop_properties.new_ward_mstr_id',
+                    'prop_properties.village_mauja_name',
+                    'prop_properties.prop_address',
+                    'prop_properties.khata_no',
+                    'prop_properties.plot_no',
+                    'prop_properties.ulb_id'
+                )
+                ->havingRaw("SUM(prop_demands.balance) > 0")  // Excludes 0 or NULL total demand
+                ->get();
+            // Retrieve dues for each property
+            foreach ($propTransactionQuery as $property) {
+                $request->merge(["propId" => $property->property_id]);
+                $demandDues = $this->getHoldingDues($request);
+
+                if (!$demandDues || !isset($demandDues->original['data'])) {
+                    throw new Exception("Demand Data Not Available");
+                }
+
+                $demandData = $demandDues->original['data'];
+                $property->total_demand_amount = $demandData['duesList']['payableAmount'] ?? 0;
+            }
+            // Water Consumer Details with Demand Join (Excluding 0 or NULL demand)
+            $waterConsumerDetails = WaterConsumer::leftJoin('water_consumer_demands', function ($join) {
+                $join->on('water_consumer_demands.consumer_id', '=', 'water_consumers.id')
+                    ->where('water_consumer_demands.status', true)
+                    ->where('water_consumer_demands.paid_status', 0);
+            })
+                ->leftJoin('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_consumers.id')
+                ->select(
+                    'water_consumers.id as consumer_id',
+                    'water_consumers.consumer_no',
+                    'water_consumers.holding_no',
+                    'water_consumers.area_sqft',
+                    'water_consumers.address',
+                    'water_consumers.ulb_id',
+                    DB::raw("STRING_AGG(DISTINCT water_consumer_owners.applicant_name, ', ') as owners"),
+                    DB::raw("COALESCE(SUM(water_consumer_demands.balance_amount), 0) as total_demand_amount"),
+                    DB::raw("min(water_consumer_demands.demand_from) as demand_from"),
+                    DB::raw("max(water_consumer_demands.demand_upto) as demand_upto")
+                )
+                ->where("water_consumers.user_id", $userId)
+                ->where("water_consumers.user_type", 'Citizen')
+                ->groupBy(
+                    'water_consumers.id',
+                    'water_consumers.consumer_no',
+                    'water_consumers.holding_no',
+                    'water_consumers.area_sqft',
+                    'water_consumers.address',
+                    'water_consumers.ulb_id'
+                )
+                ->havingRaw("SUM(water_consumer_demands.balance_amount) > 0") // Excludes 0 or NULL total demand
+                ->get();
+
+            $propUndercaredtls = collect($this->getCaretakerProperty($userId, $request));
+
+            $mergedProperties = $propTransactionQuery->merge($propUndercaredtls);
+
+            // water under care 
+            $waterUnderCare = $this->viewCaretakenConnection($request);
+
+            $mergedWater = collect($waterConsumerDetails)->merge(collect($waterUnderCare));
+
+            // Combine the results
+            $data = [
+                "propDetails" => $mergedProperties,
+                "waterDetails" => $mergedWater,
+            ];
+
+            return responseMsgs(true, "Data Fetch Successfully", $data, "", 01, responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (\Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "", 01, responseTime(), $request->getMethod(), $request->deviceId);
+        }
+    }
+
+    
+
+    /**
      * | Generate Ulb Payment Receipt
        | proUlbReceipt:1
      */
@@ -1555,6 +2221,7 @@ class HoldingTaxController extends Controller
         ];
     }
 
+    
     /**
      * | Property Comparative Demand(16)
      * | Generate and return a comparative demand report for a given property ID.
@@ -1705,661 +2372,7 @@ class HoldingTaxController extends Controller
         ];
     }
 
-    /**
-     * | response demands(16.1)
-     * | Prepare the response format for demands based on the given rule.
-       | Common Function
-     */
-    public function responseDemand($rule)
-    {
-        return [
-            "floor" => $rule['floor'],
-            "buildupArea" => $rule['buildupArea'],
-            "usageFactor" => $rule['usageFactor'] ?? null,
-            "occupancyFactor" => $rule['occupancyFactor'],
-            "carpetArea" => $rule['carpetArea'] ?? null,
-            "rentalRate" => $rule['rentalRate'],
-            "taxPerc" => $rule['taxPerc'] ?? null,
-            "calculationFactor" => $rule['calculationFactor'] ?? null,
-            "arvPsf" => $rule['arvPsf'] ?? null,
-            "circleRate" => $rule['circleRate'] ?? "",
-            "arvTotalPropTax" => roundFigure($rule['arvTotalPropTax'] ?? 0),
-            "cvArvPropTax" => roundFigure($rule['cvArvPropTax'] ?? 0)
-        ];
-    }
-
-    /**
-     * | Get Floor Demand (16.2)
-     * | Generate other demands such as Mobile Tower, Hoarding Board, and Petrol Pump demands
-     * | based on basic property details and SAF calculation rules.
-       | comparativeDemand:1.2
-     */
-    public function generateOtherDemands($basicDetails, $safCalculation)
-    {
-        $onePercPenalty = 0;
-        $array['arvRule'] = array();
-        $array['cvRule'] = array();
-        $safCalculation->_capitalValueRateMPH = $safCalculation->readCapitalValueRateMHP();
-        // Mobile Tower
-        if ($basicDetails->is_mobile_tower == true) {
-            $safCalculation->_mobileTowerArea = $basicDetails->tower_area;
-            $dateFrom = $basicDetails->tower_installation_date;
-            if ($basicDetails->tower_installation_date < $safCalculation->_effectiveDateRule2) {
-                $rule2 = $safCalculation->calculateRuleSet2("mobileTower", $onePercPenalty, $dateFrom);
-                $rule2['floor'] = "mobileTower";
-                $rule2['usageFactor'] = $rule2['multiFactor'];
-                $rule2['arvPsf'] = $rule2['arv'];
-                array_push($array['arvRule'], $this->responseDemand($rule2)); // (16.1)
-            }
-
-            $rule3 = $safCalculation->calculateRuleSet3("mobileTower", $onePercPenalty, $dateFrom);
-            $rule3['floor'] = "mobileTower";
-            $rule3['rentalRate'] = $rule3['matrixFactor'];
-            $rule3['cvArvPropTax'] = $rule3['arv'];
-            array_push($array['cvRule'], $this->responseDemand($rule3));
-        }
-        // Hoarding Board
-        if ($basicDetails->is_hoarding_board == true) {
-            $safCalculation->_hoardingBoard['area'] = $basicDetails->hoarding_area;
-            $dateFrom = $basicDetails->hoarding_installation_date;
-            if ($basicDetails->hoarding_installation_date < $safCalculation->_effectiveDateRule2) {
-                $rule2 = $safCalculation->calculateRuleSet2("hoardingBoard", $onePercPenalty, $dateFrom);
-                $rule2['floor'] = "hoardingBoard";
-                $rule2['usageFactor'] = $rule2['multiFactor'];
-                $rule2['arvPsf'] = $rule2['arv'];
-                array_push($array['arvRule'], $this->responseDemand($rule2)); // (16.1)
-            }
-
-            $rule3 = $safCalculation->calculateRuleSet3("hoardingBoard", $onePercPenalty, $dateFrom);
-            $rule3['floor'] = "hoardingBoard";
-            $rule3['rentalRate'] = $rule3['matrixFactor'];
-            $rule3['cvArvPropTax'] = $rule3['arv'];
-            array_push($array['cvRule'], $this->responseDemand($rule3)); // (16.1)
-        }
-        // Petrol Pump
-        if ($basicDetails->is_petrol_pump == true) {
-            $safCalculation->_petrolPump['area'] = $basicDetails->under_ground_area;
-            $dateFrom = $basicDetails->petrol_pump_completion_date;
-            if ($basicDetails->petrol_pump_completion_date < $safCalculation->_effectiveDateRule2) {
-                $rule2 = $safCalculation->calculateRuleSet2("petrolPump", $onePercPenalty, $dateFrom);
-                $rule2['floor'] = "petrolPump";
-                $rule2['usageFactor'] = $rule2['multiFactor'];
-                $rule2['arvPsf'] = $rule2['arv'];
-                array_push($array['arvRule'], $this->responseDemand($rule2)); // (16.1)
-            }
-
-            $rule3 = $safCalculation->calculateRuleSet3("petrolPump", $onePercPenalty, $dateFrom);
-            $rule3['floor'] = "petrolPump";
-            $rule3['rentalRate'] = $rule3['matrixFactor'];
-            $rule3['cvArvPropTax'] = $rule3['arv'];
-            array_push($array['cvRule'], $this->responseDemand($rule3)); // (16.1)
-        }
-        return $array;
-    }
-
-    /**
-     * | Cluster Holding Dues
-     * | Retrieves and calculates total holding dues with penalties and rebates 
-     * | for all properties in a given cluster.
-       | clusterPayment:1.1
-     */
-    public function getClusterHoldingDues(Request $req)
-    {
-        // $req->validate([
-        //     'clusterId' => 'required|integer'
-        // ]);
-        try {
-            $todayDate = Carbon::now();
-            $clusterId = $req->id;
-            $mPropProperty = new PropProperty();
-            $mClusters = new Cluster();
-            $penaltyRebateCalc = new PenaltyRebateCalculation;
-            $mPropAdvance = new PropAdvance();
-            $properties = $mPropProperty->getPropsByClusterId($clusterId);
-            $clusterDemands = array();
-            $finalClusterDemand = array();
-            $clusterDemandList = array();
-            $currentQuarter = calculateQtr($todayDate->format('Y-m-d'));
-            $loggedInUserType = authUser($req)->user_type;
-            $currentFYear = getFY();
-
-            $clusterDtls = $mClusters::findOrFail($clusterId);
-
-            if ($properties->isEmpty())
-                throw new Exception("Properties Not Available");
-
-            $arrear = $properties->sum('balance');
-            foreach ($properties as $item) {
-                $propIdReq = new Request([
-                    'propId' => $item['id']
-                ]);
-                $demandList = $this->getHoldingDues($propIdReq)->original['data'];
-                $propDues['duesList'] = $demandList['duesList'] ?? [];
-                $propDues['demandList'] = $demandList['demandList'] ?? [];
-                array_push($clusterDemandList, $propDues['demandList']);
-                array_push($clusterDemands, $propDues);
-            }
-            $collapsedDemand = collect($clusterDemandList)->collapse();                       // Clusters Demands Collapsed into One
-
-            if (collect($collapsedDemand)->isEmpty())
-                throw new Exception("Demand Not Available For This Cluster");
-
-            $groupedByYear = $collapsedDemand->groupBy('quarteryear');                        // Grouped By Financial Year and Quarter for the Separation of Demand  
-
-            $summedDemand = $groupedByYear->map(function ($item) use ($penaltyRebateCalc) {                            // Sum of all the Demands of Quarter and Financial Year
-                $quarterDueDate = $item->first()['due_date'];
-                $onePercPenaltyPerc = $penaltyRebateCalc->calcOnePercPenalty($quarterDueDate);
-                $balance = roundFigure($item->sum('balance'));
-
-                $onePercPenaltyTax = ($balance * $onePercPenaltyPerc) / 100;
-                $onePercPenaltyTax = roundFigure($onePercPenaltyTax);
-
-                return [
-                    'quarterYear' => $item->first()['quarteryear'],
-                    'arv' => roundFigure($item->sum('arv')),
-                    'qtr' => $item->first()['qtr'],
-                    'holding_tax' => roundFigure($item->sum('holding_tax')),
-                    'water_tax' => roundFigure($item->sum('water_tax')),
-                    'education_cess' => roundFigure($item->sum('education_cess')),
-                    'health_cess' => roundFigure($item->sum('health_cess')),
-                    'latrine_tax' => roundFigure($item->sum('latrine_tax')),
-                    'additional_tax' => roundFigure($item->sum('additional_tax')),
-                    'amount' => roundFigure($item->sum('amount')),
-                    'balance' => $balance,
-                    'fyear' => $item->first()['fyear'],
-                    'adjust_amt' => roundFigure($item->sum('adjust_amt')),
-                    'due_date' => $quarterDueDate,
-                    'onePercPenalty' => $onePercPenaltyPerc,
-                    'onePercPenaltyTax' => $onePercPenaltyTax,
-                ];
-            })->values();
-
-            $finalDues = collect($summedDemand)->sum('balance');
-            $finalDues = roundFigure($finalDues);
-
-            $finalOnePerc = collect($summedDemand)->sum('onePercPenaltyTax');
-            $finalOnePerc = roundFigure($finalOnePerc);
-
-            $finalAmt = $finalDues + $finalOnePerc + $arrear;
-            $duesFrom = collect($clusterDemands)->first()['duesList']['duesFrom'] ?? collect($clusterDemands)->last()['duesList']['duesFrom'];
-            $duesTo = collect($clusterDemands)->first()['duesList']['duesTo'] ?? collect($clusterDemands)->last()['duesList']['duesTo'];
-            $paymentUptoYrs = collect($clusterDemands)->first()['duesList']['paymentUptoYrs'] ?? collect($clusterDemands)->last()['duesList']['paymentUptoYrs'];
-            $paymentUptoQtrs = collect($clusterDemands)->first()['duesList']['paymentUptoQtrs'] ?? collect($clusterDemands)->last()['duesList']['paymentUptoQtrs'];
-
-            $advanceAdjustments = $mPropAdvance->getClusterAdvanceAdjustAmt($clusterId);
-
-            if (collect($advanceAdjustments)->isEmpty())
-                $advanceAmt = 0;
-            else
-                $advanceAmt = $advanceAdjustments->advance - $advanceAdjustments->adjustment_amt;
-
-            $advanceAmt = roundFigure($advanceAmt);
-            $finalClusterDemand['duesList'] = [
-                'paymentUptoYrs' => $paymentUptoYrs,
-                'paymentUptoQtrs' => $paymentUptoQtrs,
-                'duesFrom' => $duesFrom,
-                'duesTo' => $duesTo,
-                'totalDues' => $finalDues,
-                'onePercPenalty' => $finalOnePerc,
-                'finalAmt' => $finalAmt,
-                'arrear' => $arrear,
-                'advanceAmt' => $advanceAmt
-            ];
-            $mLastQuarterDemand = collect($summedDemand)->where('fyear', $currentFYear)->sum('balance');
-            $finalClusterDemand['duesList'] = $penaltyRebateCalc->readRebates($currentQuarter, $loggedInUserType, $mLastQuarterDemand, null, $finalAmt, $finalClusterDemand['duesList']);
-            $payableAmount = $finalAmt - ($finalClusterDemand['duesList']['rebateAmt'] + $finalClusterDemand['duesList']['specialRebateAmt']);
-            $finalClusterDemand['duesList']['payableAmount'] = round($payableAmount - $advanceAmt);
-
-            $finalClusterDemand['demandList'] = $summedDemand;
-            $finalClusterDemand['basicDetails'] = $clusterDtls;
-            return responseMsgs(true, "Generated Demand of the Cluster", remove_null($finalClusterDemand), "011505", "1.0", "", "POST", $req->deviceId ?? "");
-        } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), ['basicDetails' => $clusterDtls], "011505", "1.0", "", "POST", $req->deviceId ?? "");
-        }
-    }
-
-    /**
-     * | Cluster Property Payments
-     * | Processes payment for all holding dues in a cluster, updates demands as paid,
-     * | records transactions, handles offline payment modes, and adjusts advance amounts.
-       | clusterPayment:1
-     */
-    public function clusterPayment(ReqPayment $req)
-    {
-        // $dueReq = new Request([
-        //     'clusterId' => $req->id
-        // ]);
-
-        try {
-            // return $req;
-            $clusterId = $req->id;
-            $todayDate = Carbon::now();
-            $idGeneration = new IdGeneration;
-            $mPropTrans = new PropTransaction();
-            $mPropDemand = new PropDemand();
-            $offlinePaymentModes = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
-            $mPropAdjustment = new PropAdjustment();
-
-            $dues = $this->getClusterHoldingDues($req);
-
-            if ($dues->original['status'] == false)
-                throw new Exception($dues->original['message']);
-
-            $dues = $dues->original['data'];
-            $demands = $dues['demandList'];
-            $tranNo = $idGeneration->generateTransactionNo($req['ulbId']);
-            $payableAmount = $dues['duesList']['payableAmount'];
-            $advanceAmt = $dues['duesList']['advanceAmt'];
-            // Property Transactions
-            if (in_array($req['paymentMode'], $offlinePaymentModes)) {
-                $userId = authUser($req)->id ?? null;
-                if (!$userId)
-                    throw new Exception("User Should Be Logged In");
-                $tranBy = authUser($req)->user_type;
-            }
-            $req->merge([
-                'userId' => $userId,
-                'todayDate' => $todayDate->format('Y-m-d'),
-                'tranNo' => $tranNo,
-                'amount' => $payableAmount,
-                'tranBy' => $tranBy,
-                'clusterType' => "Property"
-            ]);
-
-            DB::beginTransaction();
-            $propTrans = $mPropTrans->postClusterTransactions($req, $demands);
-
-            if (in_array($req['paymentMode'], $offlinePaymentModes)) {
-                $req->merge([
-                    'chequeDate' => $req['chequeDate'],
-                    'tranId' => $propTrans['id']
-                ]);
-                $this->postOtherPaymentModes($req);
-            }
-
-            $clusterDemand = $mPropDemand->getDemandsByClusterId($clusterId);
-            if ($clusterDemand->isEmpty())
-                throw new Exception("Demand Not Available");
-            // Reflect on Prop Tran Details
-            foreach ($clusterDemand as $demand) {
-                $propDemand = $mPropDemand->getDemandById($demand['id']);
-                $propDemand->balance = 0;
-                $propDemand->paid_status = 1;           // <-------- Update Demand Paid Status 
-                $propDemand->save();
-
-                $propTranDtl = new PropTranDtl();
-                $propTranDtl->tran_id = $propTrans['id'];
-                $propTranDtl->prop_demand_id = $demand['id'];
-                $propTranDtl->total_demand = $demand['amount'];
-                $propTranDtl->ulb_id = $req['ulbId'];
-                $propTranDtl->save();
-            }
-            // Replication Prop Rebates Penalties
-            $this->postPaymentPenaltyRebate($dues['duesList'], null, $propTrans['id'], $clusterId);
-
-            if ($advanceAmt > 0) {
-                $adjustReq = [
-                    'cluster_id' => $clusterId,
-                    'tran_id' => $propTrans['id'],
-                    'amount' => $advanceAmt
-                ];
-                if ($tranBy == 'Citizen')
-                    $adjustReq = array_merge($adjustReq, ['citizen_id' => $userId ?? 0]);
-                else
-                    $adjustReq = array_merge($adjustReq, ['user_id' => $userId ?? 0]);
-
-                $mPropAdjustment->store($adjustReq);
-            }
-            DB::commit();
-            return responseMsgs(true, "Payment Successfully Done", ["tranNo" => $tranNo], "011506", "1.0", "", "POST", $req->deviceId ?? "");
-        } catch (Exception $e) {
-            DB::rollBack();
-            return responseMsgs(false, $e->getMessage(), "", "011506", "1.0", "", "POST", $req->deviceId ?? "");
-        }
-    }
-
-    /**
-     * | Cluster Payment History
-     * | Retrieves and groups the payment transaction history for a given cluster.
-     */
-    public function clusterPaymentHistory(Request $req)
-    {
-        $req->validate([
-            'clusterId' => "required|numeric"
-        ]);
-
-        try {
-            $clusterId = $req->clusterId;
-            $mPropTrans = new PropTransaction();
-            $transactions = $mPropTrans->getPropTransactions($clusterId, "cluster_id");
-            if ($transactions->isEmpty())
-                throw new Exception("No Transaction Found for this Cluster");
-            $transactions = $transactions->groupBy('tran_type');
-            return responseMsgs(true, "Cluster Transactions", remove_null($transactions), "011516", "1.0", "", "", $req->deviceId ?? "");
-        } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "011516", "1.0", "", "", $req->deviceId ?? "");
-        }
-    }
-
-    /**
-     * | Generate Cluster Payment Receipt For cluster saf and Holding (011613)
-     */
-    public function clusterPaymentReceipt(Request $req)
-    {
-        $validated = Validator::make(
-            $req->all(),
-            ['tranNo' => 'required']
-        );
-        if ($validated->fails()) {
-            return response()->json([
-                'status' => false,
-                'message' => 'validation error',
-                'errors' => $validated->errors()
-            ], 401);
-        }
-        try {
-            $mTransaction = new PropTransaction();
-            $mPropPenalties = new PropPenaltyrebate();
-            $mClusters = new Cluster();
-            $paymentReceiptHelper = new PaymentReceiptHelper;
-
-            $mTowards = Config::get('PropertyConstaint.SAF_TOWARDS');
-            $mAccDescription = Config::get('PropertyConstaint.ACCOUNT_DESCRIPTION');
-            $mDepartmentSection = Config::get('PropertyConstaint.DEPARTMENT_SECTION');
-
-            $rebatePenalMstrs = collect(Config::get('PropertyConstaint.REBATE_PENAL_MASTERS'));
-            $onePercKey = $rebatePenalMstrs->where('id', 1)->first()['value'];
-            $specialRebateKey = $rebatePenalMstrs->where('id', 6)->first()['value'];
-            $firstQtrKey = $rebatePenalMstrs->where('id', 2)->first()['value'];
-            $onlineRebate = $rebatePenalMstrs->where('id', 3)->first()['value'];
-
-            $propTrans = $mTransaction->getPropByTranPropId($req->tranNo);
-            $clusterId = $propTrans->cluster_id;
-
-            $propCluster = $mClusters->getClusterDtlsById($clusterId);
-
-            // Get Property Penalty and Rebates
-            $penalRebates = $mPropPenalties->getPropPenalRebateByTranId($propTrans->id);
-
-            $onePercPenalty = collect($penalRebates)->where('head_name', $onePercKey)->first()->amount ?? 0;
-            $rebate = collect($penalRebates)->where('head_name', 'Rebate')->first()->amount ?? "";
-            $specialRebate = collect($penalRebates)->where('head_name', $specialRebateKey)->first()->amount ?? 0;
-            $firstQtrRebate = collect($penalRebates)->where('head_name', $firstQtrKey)->first()->amount ?? 0;
-            $jskOrOnlineRebate = collect($penalRebates)->where('head_name', $onlineRebate)->first()->amount ?? 0;
-            $lateAssessmentPenalty = 0;
-
-            $taxDetails = $paymentReceiptHelper->readPenalyPmtAmts($lateAssessmentPenalty, $onePercPenalty, $rebate, $specialRebate, $firstQtrRebate, $propTrans->amount, $jskOrOnlineRebate);
-            $responseData = [
-                "departmentSection" => $mDepartmentSection,
-                "accountDescription" => $mAccDescription,
-                "transactionDate" => $propTrans->tran_date,
-                "transactionNo" => $propTrans->tran_no,
-                "transactionTime" => $propTrans->created_at->format('H:i:s'),
-                "applicationNo" => "",
-                "customerName" => $propCluster->authorized_person_name,
-                "mobileNo" => $propCluster->mobile_no,
-                "receiptWard" => $propCluster->old_ward,
-                "address" => $propCluster->address,
-                "paidFrom" => $propTrans->from_fyear,
-                "paidFromQtr" => $propTrans->from_qtr,
-                "paidUpto" => $propTrans->to_fyear,
-                "paidUptoQtr" => $propTrans->to_qtr,
-                "paymentMode" => $propTrans->payment_mode,
-                "bankName" => $propTrans->bank_name,
-                "branchName" => $propTrans->branch_name,
-                "chequeNo" => $propTrans->cheque_no,
-                "chequeDate" => $propTrans->cheque_date,
-                "demandAmount" => $propTrans->demand_amt,
-                "taxDetails" => $taxDetails,
-                "ulbId" => $propCluster->ulb_id,
-                "oldWardNo" => $propCluster->old_ward,
-                "newWardNo" => $propCluster->new_ward,
-                "towards" => $mTowards,
-                "description" => [
-                    "keyString" => "Holding Tax"
-                ],
-                "totalPaidAmount" => $propTrans->amount,
-                "paidAmtInWords" => getIndianCurrency($propTrans->amount),
-            ];
-            return responseMsgs(true, "Cluster Payment Receipt", remove_null($responseData), "011517", "1.0", "", "POST", $req->deviceId ?? "");
-        } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "011517", "1.0", "", "POST", $req->deviceId ?? "");
-        }
-    }
-
-    /**
-     * | Get Property Dues
-     * | Validates request and fetches dues details for a specified property.
-     */
-    public function propertyDues(Request $req)
-    {
-        $validator = Validator::make(
-            $req->all(),
-            ['propId' => 'required']
-        );
-        if ($validator->fails()) {
-            return response()->json([
-                'status'  => false,
-                'message' => 'validation error',
-                'errors'  => $validator->errors()
-            ]);
-        }
-        $demandDues = $this->getHoldingDues($req);
-        if ($demandDues->original['status'] == false)
-            return responseMsgs(true, "No Dues Available for this Property", "");
-        $demandDues = $demandDues->original['data']['duesList'];
-        $demandDetails = $this->generateDemandDues($demandDues);
-        $dataRow['dataRow'] = $demandDetails;
-        $dataRow['btnUrl'] = "/viewDemandHoldingProperty/" . $req->propId;
-        $data['tableTop'] =  [
-            'headerTitle' => 'Property Dues',
-            'tableHead' => ["#", "Dues From", "Dues To", "Total Dues", "1 % Penalty", "Rebate Amt", "Payable Amount"],
-            'tableData' => [$dataRow]
-        ];
-        return responseMsgs(true, "Demand Dues", remove_null($data), "011507 ", "1.0", responseTime(), "POST", $req->deviceId ?? "");
-    }
-
-    /**
-     * | Get detail of citizen property details and water connection details with pending demands
-       | citizenPropWaterDtls:1
-     */
-    public function citizenPropWaterDtls(Request $request)
-    {
-        try {
-            // Authenticate user
-            $user = authUser($request);
-            $userId = $user->id;
-            $ulbId = $request->ulbId;
-
-            // Property Details with Demand Join (Excluding 0 or NULL demand)
-            $propTransactionQuery = PropProperty::leftJoin('prop_demands', function ($join) {
-                $join->on('prop_demands.property_id', '=', 'prop_properties.id')
-                    ->whereIn('prop_demands.status', [1, 2])
-                    ->where('prop_demands.paid_status', 0);
-            })
-                ->leftJoin('prop_owners', 'prop_owners.property_id', '=', 'prop_properties.id')
-                ->select(
-                    'prop_properties.id as property_id',
-                    'prop_properties.holding_no',
-                    'prop_properties.new_holding_no',
-                    'prop_properties.pt_no',
-                    'prop_properties.zone_mstr_id',
-                    'prop_properties.new_ward_mstr_id',
-                    'prop_properties.village_mauja_name',
-                    'prop_properties.prop_address',
-                    'prop_properties.khata_no',
-                    'prop_properties.plot_no',
-                    'prop_properties.ulb_id',
-                    DB::raw("STRING_AGG(DISTINCT prop_owners.owner_name, ', ') as owners")
-                    // DB::raw("COALESCE(SUM(prop_demands.balance), 0) as total_demand_amount")
-                )
-                ->where("prop_properties.citizen_id", $userId)
-                ->groupBy(
-                    'prop_properties.id',
-                    'prop_properties.holding_no',
-                    'prop_properties.new_holding_no',
-                    'prop_properties.pt_no',
-                    'prop_properties.zone_mstr_id',
-                    'prop_properties.new_ward_mstr_id',
-                    'prop_properties.village_mauja_name',
-                    'prop_properties.prop_address',
-                    'prop_properties.khata_no',
-                    'prop_properties.plot_no',
-                    'prop_properties.ulb_id'
-                )
-                ->havingRaw("SUM(prop_demands.balance) > 0")  // Excludes 0 or NULL total demand
-                ->get();
-            // Retrieve dues for each property
-            foreach ($propTransactionQuery as $property) {
-                $request->merge(["propId" => $property->property_id]);
-                $demandDues = $this->getHoldingDues($request);
-
-                if (!$demandDues || !isset($demandDues->original['data'])) {
-                    throw new Exception("Demand Data Not Available");
-                }
-
-                $demandData = $demandDues->original['data'];
-                $property->total_demand_amount = $demandData['duesList']['payableAmount'] ?? 0;
-            }
-            // Water Consumer Details with Demand Join (Excluding 0 or NULL demand)
-            $waterConsumerDetails = WaterConsumer::leftJoin('water_consumer_demands', function ($join) {
-                $join->on('water_consumer_demands.consumer_id', '=', 'water_consumers.id')
-                    ->where('water_consumer_demands.status', true)
-                    ->where('water_consumer_demands.paid_status', 0);
-            })
-                ->leftJoin('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_consumers.id')
-                ->select(
-                    'water_consumers.id as consumer_id',
-                    'water_consumers.consumer_no',
-                    'water_consumers.holding_no',
-                    'water_consumers.area_sqft',
-                    'water_consumers.address',
-                    'water_consumers.ulb_id',
-                    DB::raw("STRING_AGG(DISTINCT water_consumer_owners.applicant_name, ', ') as owners"),
-                    DB::raw("COALESCE(SUM(water_consumer_demands.balance_amount), 0) as total_demand_amount"),
-                    DB::raw("min(water_consumer_demands.demand_from) as demand_from"),
-                    DB::raw("max(water_consumer_demands.demand_upto) as demand_upto")
-                )
-                ->where("water_consumers.user_id", $userId)
-                ->where("water_consumers.user_type", 'Citizen')
-                ->groupBy(
-                    'water_consumers.id',
-                    'water_consumers.consumer_no',
-                    'water_consumers.holding_no',
-                    'water_consumers.area_sqft',
-                    'water_consumers.address',
-                    'water_consumers.ulb_id'
-                )
-                ->havingRaw("SUM(water_consumer_demands.balance_amount) > 0") // Excludes 0 or NULL total demand
-                ->get();
-
-            $propUndercaredtls = collect($this->getCaretakerProperty($userId, $request));
-
-            $mergedProperties = $propTransactionQuery->merge($propUndercaredtls);
-
-            // water under care 
-            $waterUnderCare = $this->viewCaretakenConnection($request);
-
-            $mergedWater = collect($waterConsumerDetails)->merge(collect($waterUnderCare));
-
-            // Combine the results
-            $data = [
-                "propDetails" => $mergedProperties,
-                "waterDetails" => $mergedWater,
-            ];
-
-            return responseMsgs(true, "Data Fetch Successfully", $data, "", 01, responseTime(), $request->getMethod(), $request->deviceId);
-        } catch (\Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "", 01, responseTime(), $request->getMethod(), $request->deviceId);
-        }
-    }
-
-    /**
-     * | Get properties under caretaker for a given user
-       | citizenPropWaterDtls:1.1
-     */
-    public function getCaretakerProperty($userId, Request $req)
-    {
-        $data = collect(); // Use collection instead of array
-        $mActiveCitizenCareTaker = new ActiveCitizenUndercare();
-        $propertiesByCitizen = $mActiveCitizenCareTaker->getTaggedPropsByCitizenId($userId);
-        $propIds = $propertiesByCitizen->pluck('property_id');
-
-        if ($propIds->isEmpty()) {
-            return $data;
-        }
-
-        $properties = PropProperty::whereIn('prop_properties.id', $propIds)
-            ->select(
-                'prop_properties.id',
-                'prop_properties.holding_no',
-                'prop_properties.new_holding_no',
-                DB::raw("TO_CHAR(application_date, 'DD-MM-YYYY') as application_date"),
-                'prop_owners.owner_name',
-                'prop_properties.balance',
-                'ulb_masters.ulb_name'
-            )
-            ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
-            ->join('ulb_masters', 'ulb_masters.id', 'prop_properties.ulb_id')
-            ->leftJoin('prop_demands', function ($join) {
-                $join->on('prop_demands.property_id', '=', 'prop_properties.id')
-                    ->where('prop_demands.paid_status', 0);
-            })
-            ->havingRaw("SUM(prop_demands.balance) > 0")
-            ->groupBy(
-                'prop_properties.id',
-                'prop_properties.holding_no',
-                'prop_properties.new_holding_no',
-                'prop_properties.application_date',
-                'prop_owners.owner_name',
-                'prop_properties.balance',
-                'ulb_masters.ulb_name',
-            )
-            ->get(); // Fetch initial data without demand amount
-
-        // Retrieve dues for each property
-        foreach ($properties as $property) {
-            $req->merge(["propId" => $property->id]);
-            $demandDues = $this->getHoldingDues($req);
-            $demandData = $demandDues->original['data'];
-            if ($demandData)
-                if (!$demandData)
-                    throw new Exception("Demand Not Available");
-            $property->total_demand_amount  = $demandData['duesList']['payableAmount'];
-        }
-        return $properties;
-    }
-
-
-    /**
-     * | View details of the caretaken water connection
-     * | using user id
-       | Working
-       | Serial No : 07
-       | citizenPropWaterDtls:1.2
-     */
-    public function viewCaretakenConnection(Request $request)
-    {
-        try {
-            $mWaterWaterConsumer        = new WaterConsumer();
-            $mActiveCitizenUndercare    = new ActiveCitizenUndercare();
-
-            $connectionDetails = $mActiveCitizenUndercare->getDetailsByCitizenIdv1();
-            $checkDemand = collect($connectionDetails)->first();
-            if (is_null($checkDemand))
-                throw new Exception("Under taken data not found!");
-
-            $consumerIds = collect($connectionDetails)->pluck('consumer_id');
-            $consumerDetails = $mWaterWaterConsumer->getConsumerByIds($consumerIds)->get();
-            $checkConsumer = collect($consumerDetails)->first();
-            return $consumerDetails;
-            // return responseMsgs(true, 'List of undertaken water connections!', remove_null($consumerDetails), "", "01", ".ms", "POST", $request->deviceId);
-        } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "", "01", ".ms", "POST", $request->deviceId);
-        }
-    }
-
-    /**
+        /**
      * | Generate Payment Receipt for Property and Water Connection
      * | Working
      * | Serial No : 08
@@ -2667,4 +2680,6 @@ class HoldingTaxController extends Controller
             return responseMsgs(false, $e->getMessage(), "", "", "01", "ms", "POST", "");
         }
     }
+
+    
 }
