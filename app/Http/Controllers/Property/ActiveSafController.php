@@ -1023,7 +1023,7 @@ class ActiveSafController extends Controller
                 break;
 
             case $wfLevels['DA']: // DA Condition
-                if ($propActiveSaf->assessment_type != 'Bifurcation') {
+                if ($propActiveSaf->assessment_type != 'Bifurcation' && $propActiveSaf->assessment_type != 'Amalgamation') {
                     $demandData = $mPropSafDemand->getDemandsBySafId($saf->id)->groupBy('fyear')->first();
                     if (collect($demandData)->isEmpty())
                         throw new Exception("Demand Not Available");
@@ -1082,7 +1082,7 @@ class ActiveSafController extends Controller
                     );
 
                     $memoReqs = new Request($mergedDemand);
-                    if ($saf->assessment_type == 'Bifurcation') {
+                    if ($saf->assessment_type == 'Bifurcation' || $saf->assessment_type == 'Amalgamation') {
                         $mPropMemoDtl->postSafMemoDtlsBi($memoReqs, $saf->id);
                     } else {
                         $mPropMemoDtl->postSafMemoDtls($memoReqs);
@@ -1450,7 +1450,7 @@ class ActiveSafController extends Controller
                 // for bifurction, amalgamation, mutation, new assessment
                 // $safApprovalBll->approvalProcess($safId);
 
-                if ($safDetails->assessment_type != 'Bifurcation') {
+                if ($safDetails->assessment_type != 'Bifurcation' && $safDetails->assessment_type != 'Amalgamation') {
                     $demand = $mPropDemand->getFirstDemandByFyearPropId($propId, $currentFinYear);
                     if (collect($demand)->isEmpty())
                         $demand = $mPropSafDemand->getFirstDemandByFyearSafId($safId, $currentFinYear);
@@ -1458,7 +1458,7 @@ class ActiveSafController extends Controller
                         throw new Exception("Demand Not Available for the Current Year to Generate FAM");
                 }
 
-                if ($safDetails->assessment_type == 'Bifurcation') {
+                if ($safDetails->assessment_type == 'Bifurcation' || $safDetails->assessment_type == 'Amalgamation') {
                     $date = Carbon::parse($safDetails->application_date);
                     $currentFinancialYear = getFinancialYear($date);
                     $demand = (object)[
@@ -1486,7 +1486,7 @@ class ActiveSafController extends Controller
                 $memoReqs = new Request($mergedDemand);
                 // $mPropSafMemoDtl->postSafMemoDtls($memoReqs);
 
-                if ($safDetails->assessment_type == 'Bifurcation') {
+                if ($safDetails->assessment_type == 'Bifurcation' || $safDetails->assessment_type == 'Amalgamation') {
                     $mPropSafMemoDtl->postSafMemoDtlsBi($memoReqs, $safId);
                 } else {
                     $mPropSafMemoDtl->postSafMemoDtls($memoReqs);
@@ -1621,7 +1621,7 @@ class ActiveSafController extends Controller
     //     }
     // }
 
-     public function finalApprovalSafReplica($mPropProperties, $propId, $fieldVerifiedSaf, $activeSaf, $ownerDetails, $floorDetails, $safId)
+    public function finalApprovalSafReplica($mPropProperties, $propId, $fieldVerifiedSaf, $activeSaf, $ownerDetails, $floorDetails, $safId)
     {
         $mPropFloors = new PropFloor();
 
@@ -1635,9 +1635,6 @@ class ActiveSafController extends Controller
         $approvedSaf->property_id = $propId;
         $approvedSaf->save();
 
-        // Delete the active SAF after replication
-        $activeSaf->delete();
-
         // Step 3: Replicate SAF owner details
         foreach ($ownerDetails as $ownerDetail) {
             $approvedOwner = $ownerDetail->replicate();
@@ -1648,51 +1645,64 @@ class ActiveSafController extends Controller
             $ownerDetail->delete();
         }
 
-        // Step 4: Handle floors only if property is not vacant land
-        if ($activeSaf->prop_type_mstr_id != 4) {
+        // Step 4: Replicate SAF floors
+        foreach ($floorDetails as $floorDetail) {
+            $approvedFloor = $floorDetail->replicate();
+            $approvedFloor->setTable('prop_safs_floors');
+            $approvedFloor->id = $floorDetail->id;
+            $approvedFloor->save();
+
+            $floorDetail->delete();
+        }
+
+        // Step 5: Update old property data if bifurcation
+        if ($activeSaf->assessment_type === 'Bifurcation') {
             $oldProperty = PropProperty::find($activeSaf->previous_holding_id);
+            $verifiedFloor = collect($fieldVerifiedSaf)->first();
 
-            if (!$oldProperty) {
-                throw new Exception("Old Property Not Found");
-            }
-
-            // Step 5: Replicate SAF floors
-            foreach ($floorDetails as $floorDetail) {
-                $approvedFloor = $floorDetail->replicate();
-                $approvedFloor->setTable('prop_safs_floors');
-                $approvedFloor->id = $floorDetail->id;
-                $approvedFloor->save();
-
-                $floorDetail->delete();
-            }
-
-            // Step 6: Update old property floor's builtup_area and carpet_area
-            if ($activeSaf->assesement_type == 'Bifurcation') {
+            if ($activeSaf->prop_type_mstr_id == 4) {
+                // Case: Bifurcation + Vacant Land (only update plot area)
+                if ($oldProperty && $verifiedFloor && isset($verifiedFloor->area_of_plot)) {
+                    $oldProperty->area_of_plot = max(0, $activeSaf->bifurcated_from_plot_area - $verifiedFloor->area_of_plot);
+                    $oldProperty->save();
+                }
+            } else {
+                // Case: Bifurcation + Non-vacant land (update floors and plot area)
                 $oldPropFloors = $mPropFloors->getFloorsByPropId($activeSaf->previous_holding_id);
+
                 if ($oldPropFloors) {
                     foreach ($oldPropFloors as $oldFloor) {
                         foreach ($floorDetails as $originalFloor) {
                             if ($originalFloor->floor_mstr_id == $oldFloor->floor_mstr_id) {
-                                foreach ($fieldVerifiedSaf as $verifiedFloor) {
-                                    if ($verifiedFloor->floor_mstr_id == $oldFloor->floor_mstr_id) {
-                                        $oldFloor->builtup_area = max(0, $originalFloor->bifurcated_from_buildup_area - $verifiedFloor->builtup_area);
-                                        $oldFloor->carpet_area = max(0, $originalFloor->carpet_area - $verifiedFloor->carpet_area);
+                                foreach ($fieldVerifiedSaf as $vf) {
+                                    if ($vf->floor_mstr_id == $oldFloor->floor_mstr_id) {
+                                        $oldFloor->builtup_area = max(0, $originalFloor->bifurcated_from_buildup_area - $vf->builtup_area);
+                                        $oldFloor->carpet_area = max(0, $originalFloor->carpet_area - $vf->carpet_area);
                                         $oldFloor->save();
-                                        break 2; // Break out of both inner loops
+                                        break 2;
                                     }
                                 }
                             }
                         }
                     }
                 }
-            }
-            // Step 7: Deactivate existing floors for the current property
-            $existingFloors = $mPropFloors->getFloorsByPropId($propId);
-            if ($existingFloors) {
-                $mPropFloors->deactivateFloorsByPropId($propId);
-            }
 
-            // Step 8: Add new floors from fieldVerifiedSaf
+                // Also update plot area
+                if ($oldProperty && $verifiedFloor && isset($verifiedFloor->area_of_plot)) {
+                    $oldProperty->area_of_plot = max(0, $activeSaf->bifurcated_from_plot_area - $verifiedFloor->area_of_plot);
+                    $oldProperty->save();
+                }
+            }
+        }
+
+        // Step 6: Deactivate existing floors for the new property
+        $existingFloors = $mPropFloors->getFloorsByPropId($propId);
+        if ($existingFloors) {
+            $mPropFloors->deactivateFloorsByPropId($propId);
+        }
+
+        // Step 7: Add new floors from fieldVerifiedSaf (skip if vacant land)
+        if ($activeSaf->prop_type_mstr_id != 4) {
             foreach ($fieldVerifiedSaf as $verifiedFloor) {
                 $floorRequest = new Request([
                     'floor_mstr_id' => $verifiedFloor->floor_mstr_id,
@@ -1710,7 +1720,13 @@ class ActiveSafController extends Controller
                 $mPropFloors->postFloor($floorRequest);
             }
         }
+
+        // Step 8: Delete the active SAF after all operations
+        $activeSaf->delete();
     }
+
+
+
 
     /**
      * * Handles the final rejection of a SAF (Self-Assessment Form).
@@ -2462,6 +2478,7 @@ class ActiveSafController extends Controller
             $verificationDtl = new PropSafVerificationDtl();
             $userId = authUser($req)->id;
             $ulbId = authUser($req)->ulb_id;
+            $userType = authUser($req)->user_type;
             $vacantLand = $propertyType['VACANT LAND'];
 
             $safDtls = $propActiveSaf->getSafNo($req->safId);
@@ -2517,7 +2534,8 @@ class ActiveSafController extends Controller
                         'date_to' => $floorDetail['dateUpto'],
                         'carpet_area' => $carpetArea,
                         'user_id' => $userId,
-                        'ulb_id' => $ulbId
+                        'ulb_id' => $ulbId,
+                        'verified_by' => $userType,
                     ];
                     $status = $verificationDtl->store($floorReq);
                 }

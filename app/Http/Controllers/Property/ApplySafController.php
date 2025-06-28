@@ -137,7 +137,7 @@ class ApplySafController extends Controller
             }
             $metaReqs['finisherRoleId'] = collect($finisherRoleId)['role_id'];
 
-            if ($request['assessmentType'] != 4) {
+            if ($request['assessmentType'] != 4 && $request['assessmentType'] != 5) { // Bifurcation and Amalgamation
                 $safTaxes = $safCalculation->calculateTax($request);
 
                 if ($safTaxes->original['status'] == false)
@@ -177,7 +177,7 @@ class ApplySafController extends Controller
                 'is_specially_abled' => $firstOwner['isSpeciallyAbled'],
             ];
             $demandResponse = null;
-            if ($request['assessmentType'] != 4) {
+            if ($request['assessmentType'] != 4 && $request['assessmentType'] != 5) { // Bifurcation and Amalgamation
                 $calculateSafById->generateSafDemand();
 
                 $generatedDemand = $calculateSafById->_generatedDemand;
@@ -188,7 +188,7 @@ class ApplySafController extends Controller
             DB::beginTransaction();
             DB::connection('pgsql_master')->beginTransaction();
 
-            if ($request->assessmentType == 'Bifurcation') {
+            if ($request->assessmentType == 'Bifurcation' || $request->assessmentType == 'Amalgamation') { // Bifurcation and Amalgamation
                 $request->merge(['paymentStatus' => '1']);
             } else {
                 $request->merge(['paymentStatus' => '0']);
