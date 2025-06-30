@@ -688,7 +688,10 @@ class PropProperty extends Model
             ->select(
                 'prop_properties.id as property_id',
                 'prop_saf_geotag_uploads.latitude',
-                'prop_saf_geotag_uploads.longitude'
+                'prop_saf_geotag_uploads.longitude',
+                'prop_properties.holding_no',
+                'prop_address'
+
             )
             ->join('prop_properties', 'prop_properties.saf_id', '=', 'prop_saf_geotag_uploads.saf_id')
             ->where('prop_properties.id', $propertyId)
