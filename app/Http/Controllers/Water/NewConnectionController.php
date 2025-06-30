@@ -191,6 +191,32 @@ class NewConnectionController extends Controller
      * | -- workflow --
      * | Display the data for water worflow
      */
+    // public function waterInbox(Request $request)
+    // {
+    //     try {
+    //         $user   = authUser($request);
+    //         $userId = $user->id;
+    //         $ulbId  = $user->ulb_id;
+    //         $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
+
+    //         $occupiedWards = $this->getWardByUserId($userId)->pluck('ward_id');
+    //         $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
+    //         $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
+
+    //         $waterList = $this->getWaterApplicatioList($workflowIds, $ulbId)
+    //             ->whereIn('water_applications.current_role', $roleId)
+    //             // ->whereIn('water_applications.ward_id', $occupiedWards)
+    //             // ->where('water_applications.is_escalate', false)
+    //             ->where('water_applications.parked', false)
+    //             // ->orderByDesc('water_applications.id')
+    //             ->get();
+    //         $filterWaterList = collect($waterList)->unique('id')->values();
+    //         return responseMsgs(true, "Inbox List Details!", remove_null($filterWaterList), '', '02', '', 'Post', '');
+    //     } catch (Exception $error) {
+    //         return responseMsg(false, $error->getMessage(), "");
+    //     }
+    // }
+
     public function waterInbox(Request $request)
     {
         try {
@@ -200,22 +226,32 @@ class NewConnectionController extends Controller
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
 
             $occupiedWards = $this->getWardByUserId($userId)->pluck('ward_id');
-            $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
-            $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
+            $roleIds = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
+            $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleIds)->pluck('workflow_id');
 
             $waterList = $this->getWaterApplicatioList($workflowIds, $ulbId)
-                ->whereIn('water_applications.current_role', $roleId)
-                // ->whereIn('water_applications.ward_id', $occupiedWards)
-                // ->where('water_applications.is_escalate', false)
-                ->where('water_applications.parked', false)
-                // ->orderByDesc('water_applications.id')
+                ->whereIn('water_applications.current_role', $roleIds)
+                ->where(function ($query) {
+                    $query->where(function ($q) {
+                        $q->where('water_applications.current_role', 11)
+                        ->whereIn('water_applications.parked', [true, false]);
+
+                    })
+                    ->orWhere(function ($q) {
+                        $q->where('water_applications.current_role', '!=', 11)
+                        ->where('water_applications.parked', false);
+                    });
+                })
                 ->get();
+
             $filterWaterList = collect($waterList)->unique('id')->values();
+
             return responseMsgs(true, "Inbox List Details!", remove_null($filterWaterList), '', '02', '', 'Post', '');
         } catch (Exception $error) {
             return responseMsg(false, $error->getMessage(), "");
         }
     }
+
 
     /**
      * | Water Outbox
