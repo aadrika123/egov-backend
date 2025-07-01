@@ -459,8 +459,8 @@ class NewConnectionController extends Controller
             $request->all(),
             [
                 "applicationId" => "required",
-                "status"        => "required",
-                "comment"       => "required"
+                "status" => "required",
+                "comment" => "required"
             ]
         );
         if ($validated->fails())
@@ -500,21 +500,21 @@ class NewConnectionController extends Controller
         $validated = Validator::make(
             $request->all(),
             [
-                'comment'       => 'required',
+                'comment' => 'required',
                 'applicationId' => 'required',
-                'senderRoleId'  => 'nullable|integer'
+                'senderRoleId' => 'nullable|integer'
             ]
         );
         if ($validated->fails())
             return validationError($validated);
         try {
-            $metaReqs       = array();
-            $user           = authUser($request);
-            $userType       = $user->user_type;
-            $userId         = $user->id;
-            $workflowTrack  = new WorkflowTrack();
+            $metaReqs = array();
+            $user = authUser($request);
+            $userType = $user->user_type;
+            $userId = $user->id;
+            $workflowTrack = new WorkflowTrack();
             $mWfRoleUsermap = new WfRoleusermap();
-            $mModuleId      = $this->_waterModulId;
+            $mModuleId = $this->_waterModulId;
 
             $applicationId = WaterApplication::find($request->applicationId);
             if (!$applicationId) {
@@ -523,11 +523,11 @@ class NewConnectionController extends Controller
 
             # Save On Workflow Track
             $metaReqs = [
-                'workflowId'        => $applicationId->workflow_id,
-                'moduleId'          => $mModuleId,
-                'refTableDotId'     => "water_applications.id",                                     // Static
-                'refTableIdValue'   => $applicationId->id,
-                'message'           => $request->comment
+                'workflowId' => $applicationId->workflow_id,
+                'moduleId' => $mModuleId,
+                'refTableDotId' => "water_applications.id",                                     // Static
+                'refTableIdValue' => $applicationId->id,
+                'message' => $request->comment
             ];
             $this->begin();
             if ($userType != 'Citizen') {                                                           // Static
@@ -556,9 +556,9 @@ class NewConnectionController extends Controller
     }
 
 
-  /* 
-  * | Get Approved Water Applications
-  */
+    /* 
+     * | Get Approved Water Applications
+     */
     public function approvedWaterApplications(Request $request)
     {
         try {
@@ -572,12 +572,12 @@ class NewConnectionController extends Controller
                 if ($validated->fails())
                     return validationError($validated);
 
-                $refConsumerId              = $request->id;
-                $mWaterConsumerMeter        = new WaterConsumerMeter();
+                $refConsumerId = $request->id;
+                $mWaterConsumerMeter = new WaterConsumerMeter();
                 $mWaterConsumerInitialMeter = new WaterConsumerInitialMeter();
-                $mWaterConsumerDemand       = new WaterConsumerDemand();
-                $refConnectionName          = Config::get('waterConstaint.METER_CONN_TYPE');
-                $flipConnection             = collect($refConnectionName)->flip();
+                $mWaterConsumerDemand = new WaterConsumerDemand();
+                $refConnectionName = Config::get('waterConstaint.METER_CONN_TYPE');
+                $flipConnection = collect($refConnectionName)->flip();
 
                 $consumerDetails = $this->newConnection->getApprovedWater($request);
                 $refApplicationId['applicationId'] = $consumerDetails['consumer_id'];
@@ -611,8 +611,8 @@ class NewConnectionController extends Controller
                             }
                             $consumerDemand['demandFrom'] = collect($refConsumerDemand)['demand_from'];
                             $consumerDemand['demandUpto'] = collect($refConsumerDemand)['demand_upto'];
-                            $startDate  = Carbon::parse($consumerDemand['demandFrom']);
-                            $endDate    = Carbon::parse($consumerDemand['demandUpto']);
+                            $startDate = Carbon::parse($consumerDemand['demandFrom']);
+                            $endDate = Carbon::parse($consumerDemand['demandUpto']);
                             $diffInDays = $endDate->diffInDays($startDate);
                             $refTaxUnitConsumed = ($fialMeterReading['initial_reading'] ?? 0) - ($finalSecondLastReading['initial_reading'] ?? 0);
 
@@ -656,12 +656,12 @@ class NewConnectionController extends Controller
     }
 
     /* 
-    * | UPDATE CODE TO FILTER THE DATA BY CONSUMER NO
-    * | PREVIOUSLY FILTER BY : ID 
-    * | UPDATED BY : CONSUMER NO
-    * | UPDATED ON : 2025-03-26
-    * | UPDATED BY : ALOK
-    */
+     * | UPDATE CODE TO FILTER THE DATA BY CONSUMER NO
+     * | PREVIOUSLY FILTER BY : ID 
+     * | UPDATED BY : CONSUMER NO
+     * | UPDATED ON : 2025-03-26
+     * | UPDATED BY : ALOK
+     */
     // public function approvedWaterApplications(Request $request)
     // {
     //     try {
@@ -762,7 +762,7 @@ class NewConnectionController extends Controller
     //         return responseMsg(false, $e->getMessage(), "");
     //     }
     // }  
-    
+
 
     /**
      * | Get the Field fieldVerifiedInbox 
@@ -771,10 +771,10 @@ class NewConnectionController extends Controller
     public function fieldVerifiedInbox(Request $request)
     {
         try {
-            $mWfWardUser            = new WfWardUser();
-            $mWfWorkflowRoleMaps    = new WfWorkflowrolemap();
-            $userId                 = authUser($request)->id;
-            $ulbId                  = authUser($request)->ulb_id;
+            $mWfWardUser = new WfWardUser();
+            $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
+            $userId = authUser($request)->id;
+            $ulbId = authUser($request)->ulb_id;
 
             $refWard = $mWfWardUser->getWardsByUserId($userId);
             $wardId = $refWard->map(function ($value) {
@@ -807,18 +807,18 @@ class NewConnectionController extends Controller
             $req->all(),
             [
                 'applicationId' => 'required|integer',
-                'comment'       => 'required|string'
+                'comment' => 'required|string'
             ]
         );
         if ($validated->fails())
             return validationError($validated);
 
         try {
-            $user               = authUser($req);
-            $WorkflowTrack      = new WorkflowTrack();
-            $refWorkflowId      = Config::get("workflow-constants.WATER_MASTER_ID");
-            $refApplyFrom       = config::get("waterConstaint.APP_APPLY_FROM");
-            $mWaterApplication  = WaterApplication::findOrFail($req->applicationId);
+            $user = authUser($req);
+            $WorkflowTrack = new WorkflowTrack();
+            $refWorkflowId = Config::get("workflow-constants.WATER_MASTER_ID");
+            $refApplyFrom = config::get("waterConstaint.APP_APPLY_FROM");
+            $mWaterApplication = WaterApplication::findOrFail($req->applicationId);
 
             $role = $this->_commonFunction->getUserRoll($user->id, $mWaterApplication->ulb_id, $refWorkflowId);
             $this->btcParamcheck($role, $mWaterApplication);
@@ -846,11 +846,11 @@ class NewConnectionController extends Controller
                 ->orderBy("track_date", 'DESC')
                 ->first();
 
-            $metaReqs['moduleId']           = $this->_waterModulId;
-            $metaReqs['workflowId']         = $mWaterApplication->workflow_id;
-            $metaReqs['refTableDotId']      = $this->_REF_TABLE;
-            $metaReqs['refTableIdValue']    = $req->applicationId;
-            $metaReqs['senderRoleId']       = $role->role_id;
+            $metaReqs['moduleId'] = $this->_waterModulId;
+            $metaReqs['workflowId'] = $mWaterApplication->workflow_id;
+            $metaReqs['refTableDotId'] = $this->_REF_TABLE;
+            $metaReqs['refTableIdValue'] = $req->applicationId;
+            $metaReqs['senderRoleId'] = $role->role_id;
 
             $metaReqs['trackDate'] = $lastworkflowtrack && $lastworkflowtrack->forward_date ? ($lastworkflowtrack->forward_date . " " . $lastworkflowtrack->forward_time) : Carbon::now()->format('Y-m-d H:i:s');
             $metaReqs['forwardDate'] = Carbon::now()->format('Y-m-d');
@@ -911,11 +911,11 @@ class NewConnectionController extends Controller
             return validationError($validated);
 
         try {
-            $user                       = authUser($req);
-            $mWaterApplication          = new WaterApplication();
-            $mWaterApplicant            = new WaterApplicant();
-            $mWaterConnectionCharge     = new WaterConnectionCharge();
-            $mWaterPenaltyInstallment   = new WaterPenaltyInstallment();
+            $user = authUser($req);
+            $mWaterApplication = new WaterApplication();
+            $mWaterApplicant = new WaterApplicant();
+            $mWaterConnectionCharge = new WaterConnectionCharge();
+            $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
 
             $applicantDetals = $mWaterApplication->getWaterApplicationsDetails($req->applicationId);
             $this->checkParamsForApplicationDelete($applicantDetals, $user);
@@ -967,22 +967,22 @@ class NewConnectionController extends Controller
         $validated = Validator::make(
             $req->all(),
             [
-                'applicatonId'  => 'required|integer',
-                'owner'         => 'nullable|array',
+                'applicatonId' => 'required|integer',
+                'owner' => 'nullable|array',
             ]
         );
         if ($validated->fails())
             return validationError($validated);
 
         try {
-            $mWaterApplication          = new WaterApplication();
-            $mWaterApplicant            = new WaterApplicant();
-            $mWaterConnectionCharge     = new WaterConnectionCharge();
-            $mWaterPenaltyInstallment   = new WaterPenaltyInstallment();
+            $mWaterApplication = new WaterApplication();
+            $mWaterApplicant = new WaterApplicant();
+            $mWaterConnectionCharge = new WaterConnectionCharge();
+            $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
             $repNewConnectionRepository = new NewConnectionRepository();
-            $mwaterAudit                = new waterAudit();
-            $levelRoles                 = Config::get('waterConstaint.ROLE-LABEL');
-            $refApplicationId           = $req->applicatonId;
+            $mwaterAudit = new waterAudit();
+            $levelRoles = Config::get('waterConstaint.ROLE-LABEL');
+            $refApplicationId = $req->applicatonId;
 
             $refWaterApplications = $mWaterApplication->getApplicationById($refApplicationId)->firstorFail();
             $this->checkEditParameters($req, $refWaterApplications);
@@ -1002,7 +1002,7 @@ class NewConnectionController extends Controller
             $checkPenalty = collect($penaltyInstallment)->first()->values();
             if ($checkPenalty) {
                 $refPenaltyInstallment = collect($penaltyInstallment)->map(function ($value) {
-                    return  $value['id'];
+                    return $value['id'];
                 });
             }
             $mwaterAudit->saveUpdatedDetailsId($refWaterApplications->id, $refWaterowner, $refConnectionCharges->id, $refPenaltyInstallment);
@@ -1067,10 +1067,10 @@ class NewConnectionController extends Controller
      */
     public function deactivateAndUpdateWater($refWaterApplicationId)
     {
-        $mWaterApplication          = new WaterApplication();
-        $mWaterApplicant            = new WaterApplicant();
-        $mWaterConnectionCharge     = new WaterConnectionCharge();
-        $mWaterPenaltyInstallment   = new WaterPenaltyInstallment();
+        $mWaterApplication = new WaterApplication();
+        $mWaterApplicant = new WaterApplicant();
+        $mWaterConnectionCharge = new WaterConnectionCharge();
+        $mWaterPenaltyInstallment = new WaterPenaltyInstallment();
 
         $mWaterApplication->deactivateApplication($refWaterApplicationId);
         $mWaterApplicant->deactivateApplicant($refWaterApplicationId);
@@ -1097,7 +1097,7 @@ class NewConnectionController extends Controller
         try {
             $user = authUser($request);
             $mWaterSiteInspectionsScheduling = new WaterSiteInspectionsScheduling();
-            $mWaterConnectionCharge  = new WaterConnectionCharge();
+            $mWaterConnectionCharge = new WaterConnectionCharge();
             $mWaterApplication = new WaterApplication();
             $mWaterApplicant = new WaterApplicant();
             $mWaterTran = new WaterTran();
@@ -1108,8 +1108,8 @@ class NewConnectionController extends Controller
 
             # Document Details
             $metaReqs = [
-                'userId'    => $user->id,
-                'ulbId'     => $user->ulb_id ?? $applicationDetails['applicationDetails']['ulb_id'],
+                'userId' => $user->id,
+                'ulbId' => $user->ulb_id ?? $applicationDetails['applicationDetails']['ulb_id'],
             ];
             $request->request->add($metaReqs);
             // $document = $this->getDocToUpload($request);                                                    // get the doc details
@@ -1129,11 +1129,11 @@ class NewConnectionController extends Controller
                 ->first();
             if ($charges) {
                 $calculation['calculation'] = [
-                    'connectionFee'     => $charges['conn_fee'],
-                    'penalty'           => $charges['penalty'],
-                    'totalAmount'       => $charges['amount'],
-                    'chargeCatagory'    => $charges['charge_category'],
-                    'paidStatus'        => $charges['paid_status']
+                    'connectionFee' => $charges['conn_fee'],
+                    'penalty' => $charges['penalty'],
+                    'totalAmount' => $charges['amount'],
+                    'chargeCatagory' => $charges['charge_category'],
+                    'paidStatus' => $charges['paid_status']
                 ];
                 $waterTransDetail = array_merge($waterTransDetail, $calculation);
             }
@@ -1154,9 +1154,9 @@ class NewConnectionController extends Controller
 
 
     /**
-      * | Upload the documents for the active application
-      * | Look on the concept of deactivation of the rejected documents 
-      * | Put the static "verify status" 2 in config  
+     * | Upload the documents for the active application
+     * | Look on the concept of deactivation of the rejected documents 
+     * | Put the static "verify status" 2 in config  
      */
     public function uploadWaterDoc(Request $req)
     {
@@ -1164,47 +1164,47 @@ class NewConnectionController extends Controller
             $req->all(),
             [
                 "applicationId" => "required|numeric",
-                "document"      => "required|mimes:pdf,jpeg,png,jpg|max:2048",
-                "docCode"       => "required",
-                "docCategory"   => "required",                                  // Recheck in case of undefined
-                "ownerId"       => "nullable|numeric"
+                "document" => "required|mimes:pdf,jpeg,png,jpg|max:2048",
+                "docCode" => "required",
+                "docCategory" => "required",                                  // Recheck in case of undefined
+                "ownerId" => "nullable|numeric"
             ]
         );
         if ($validated->fails())
             return validationError($validated);
 
         try {
-            $user               = authUser($req);
-            $metaReqs           = array();
-            $applicationId      = $req->applicationId;
-            $document           = $req->document;
-            $docUpload          = new DocUpload;
-            $mWfActiveDocument  = new WfActiveDocument();
-            $mWaterApplication  = new WaterApplication();
-            $relativePath       = Config::get('waterConstaint.WATER_RELATIVE_PATH');
-            $refmoduleId        = Config::get('module-constants.WATER_MODULE_ID');
+            $user = authUser($req);
+            $metaReqs = array();
+            $applicationId = $req->applicationId;
+            $document = $req->document;
+            $docUpload = new DocUpload;
+            $mWfActiveDocument = new WfActiveDocument();
+            $mWaterApplication = new WaterApplication();
+            $relativePath = Config::get('waterConstaint.WATER_RELATIVE_PATH');
+            $refmoduleId = Config::get('module-constants.WATER_MODULE_ID');
 
-            $getWaterDetails    = $mWaterApplication->getWaterApplicationsDetails($applicationId);
-            $refImageName       = $req->docRefName;
-            $refImageName       = $getWaterDetails->id . '-' . str_replace(' ', '_', $refImageName);
+            $getWaterDetails = $mWaterApplication->getWaterApplicationsDetails($applicationId);
+            $refImageName = $req->docRefName;
+            $refImageName = $getWaterDetails->id . '-' . str_replace(' ', '_', $refImageName);
             // $imageName          = $docUpload->upload($refImageName, $document, $relativePath);
-            $docDetail          = $docUpload->checkDoc($req);
+            $docDetail = $docUpload->checkDoc($req);
             // if ($docDetail->original['status'] == false)
             //     throw new Exception("Document Uploadation Failed");
 
             $metaReqs = [
-                'moduleId'      => $refmoduleId,
-                'activeId'      => $getWaterDetails->id,
-                'workflowId'    => $getWaterDetails->workflow_id,
-                'ulbId'         => $getWaterDetails->ulb_id,
-                'relativePath'  => $relativePath,
+                'moduleId' => $refmoduleId,
+                'activeId' => $getWaterDetails->id,
+                'workflowId' => $getWaterDetails->workflow_id,
+                'ulbId' => $getWaterDetails->ulb_id,
+                'relativePath' => $relativePath,
                 // 'document'      => $imageName,
-                'docCode'       => $req->docCode,
-                'ownerDtlId'    => $req->ownerId,
-                'docCategory'   => $req->docCategory,
-                'auth'          => $user,
-                'uniqueId'      => $docDetail['data']['uniqueId'],
-                'referenceNo'   => $docDetail['data']['ReferenceNo'],
+                'docCode' => $req->docCode,
+                'ownerDtlId' => $req->ownerId,
+                'docCategory' => $req->docCategory,
+                'auth' => $user,
+                'uniqueId' => $docDetail['data']['uniqueId'],
+                'referenceNo' => $docDetail['data']['ReferenceNo'],
 
             ];
 
@@ -1270,7 +1270,7 @@ class NewConnectionController extends Controller
     {
         $refWorkFlowMaster = Config::get('workflow-constants.WATER_MASTER_ID');
         switch ($isCitizen) {
-                # For citizen 
+            # For citizen 
             case (true):
                 if (!is_null($applicantDetals->current_role) && $applicantDetals->parked == true) {
                     return true;
@@ -1279,7 +1279,7 @@ class NewConnectionController extends Controller
                     throw new Exception("You aren't allowed to upload document!");
                 }
                 break;
-                # For user
+            # For user
             case (false):
                 $userId = $user->id;
                 $ulbId = $applicantDetals->ulb_id;
@@ -1334,9 +1334,9 @@ class NewConnectionController extends Controller
      */
     public function updateWaterStatus($req, $application)
     {
-        $mWaterTran         = new WaterTran();
-        $mWaterApplication  = new WaterApplication();
-        $refApplyFrom       = Config::get("waterConstaint.APP_APPLY_FROM");
+        $mWaterTran = new WaterTran();
+        $mWaterApplication = new WaterApplication();
+        $refApplyFrom = Config::get("waterConstaint.APP_APPLY_FROM");
         $mWaterApplication->activateUploadStatus($req->applicationId);
         # Auto forward to Da
         if ($application->payment_status == 1) {
@@ -1356,9 +1356,9 @@ class NewConnectionController extends Controller
      */
     public function autoForwardProcess($waterTransaction, $req, $application)
     {
-        $waterRoles         = $this->_waterRoles;
-        $refChargeCatagory  = Config::get("waterConstaint.CHARGE_CATAGORY");
-        $mWaterApplication  = new WaterApplication();
+        $waterRoles = $this->_waterRoles;
+        $refChargeCatagory = Config::get("waterConstaint.CHARGE_CATAGORY");
+        $mWaterApplication = new WaterApplication();
         if ($waterTransaction->tran_type == $refChargeCatagory['SITE_INSPECTON']) {
             throw new Exception("Error there is different charge catagory in application!");
         }
@@ -1417,16 +1417,16 @@ class NewConnectionController extends Controller
         if ($validated->fails())
             return validationError($validated);
         try {
-            $refApplication         = (array)null;
-            $refOwneres             = (array)null;
-            $requiedDocs            = (array)null;
-            $testOwnersDoc          = (array)null;
-            $data                   = (array)null;
+            $refApplication = (array) null;
+            $refOwneres = (array) null;
+            $requiedDocs = (array) null;
+            $testOwnersDoc = (array) null;
+            $data = (array) null;
             $docUpload = new DocUpload;
-            $refWaterNewConnection  = new WaterNewConnection();
-            $refWfActiveDocument    = new WfActiveDocument();
+            $refWaterNewConnection = new WaterNewConnection();
+            $refWfActiveDocument = new WfActiveDocument();
             $mWaterConnectionCharge = new WaterConnectionCharge();
-            $moduleId               = Config::get('module-constants.WATER_MODULE_ID');
+            $moduleId = Config::get('module-constants.WATER_MODULE_ID');
 
             $connectionId = $request->applicationId;
             $refApplication = WaterApplication::where("status", 1)->find($connectionId);
@@ -1452,7 +1452,7 @@ class NewConnectionController extends Controller
                 $doc = (array) null;
                 $doc["ownerName"] = $ownerList;
                 $doc['docName'] = $val->doc_for;
-                $refDocName  = str_replace('_', ' ', $val->doc_for);
+                $refDocName = str_replace('_', ' ', $val->doc_for);
                 $doc["refDocName"] = ucwords(strtolower($refDocName));
                 $doc['isMadatory'] = $val->is_mandatory;
                 $ref['docValue'] = $refWaterNewConnection->getDocumentList($val->doc_for);  # get All Related Document List
@@ -1514,7 +1514,8 @@ class NewConnectionController extends Controller
 
             $data["documentsList"]  = $requiedDocs;
             $data["ownersDocList"]  = $ownerDoc;
-            $data['doc_upload_status'] = $refApplication['doc_upload_status'];
+            $data['doc_upload_status'] = $refApplication['doc_upload_status']; 
+            $data['parked'] = $refApplication['parked']; 
             $data['connectionCharges'] = $connectionCharges;
             return responseMsg(true, "Document Uploaded!", $data);
         } catch (Exception $e) {
