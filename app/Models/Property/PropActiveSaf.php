@@ -3,6 +3,7 @@
 namespace App\Models\Property;
 
 use App\MicroServices\IdGeneration;
+use App\Models\Property\Logs\SafAmalgamatePropLog;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -16,13 +17,13 @@ class  PropActiveSaf extends Model
 
     protected $guarded = [];
     /** 
-     * | Store a new SAF record
+     * | Store a new SAF        
        | Reference Function : applySaf
      */
     public function store($req)
     {
         $reqs = [
-            'payment_status' => $req->paymentStatus,    
+            'payment_status' => $req->paymentStatus,
             'has_previous_holding_no' => $req->hasPreviousHoldingNo,
             'previous_holding_id' => $req->previousHoldingId,
             'previous_ward_mstr_id' => $req->previousWard,
@@ -1057,5 +1058,10 @@ class  PropActiveSaf extends Model
                 'is_trust_verified',
                 'rwh_date_from'
             )->first();
+    }
+
+    public function getAmalgamateLogs()
+    {
+        return $this->hasMany(SafAmalgamatePropLog::class, "saf_id", "id")->get();
     }
 }

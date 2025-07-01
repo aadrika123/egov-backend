@@ -87,6 +87,7 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use App\MicroServices\IdGenerator\HoldingNoGenerator;
+use App\Models\Property\Logs\SafAmalgamatePropLog;
 use Illuminate\Support\Facades\Http;
 
 class ActiveSafController extends Controller
@@ -918,6 +919,7 @@ class ActiveSafController extends Controller
         try {
             // Variable Assigments
             $userId = authUser($request)->id;
+            // $userId = 72;
             $wfLevels = Config::get('PropertyConstaint.SAF-LABEL');
             $saf = PropActiveSaf::findOrFail($request->applicationId);
             $mWfMstr = new WfWorkflow();
@@ -1088,10 +1090,14 @@ class ActiveSafController extends Controller
 
                 $propertyExist = $mPropProperty->where('saf_id', $saf->id)->first();
 
+                if ($propActiveSaf->assessment_type == 'Amalgamation') {
+                    $this->handleAmalgamation($saf);
+                }
+
                 if (!$propertyExist) {
                     $idGeneration = new PrefixIdGenerator($ptParamId, $saf->ulb_id);
 
-                    if (in_array($saf->assessment_type, ['New Assessment', 'Bifurcation', 'Amalgamation', 'Mutation'])) {
+                    if (in_array($saf->assessment_type, ['New Assessment', 'Bifurcation', 'Mutation'])) {  // no holding generation for Amalgamation
                         // Generate Holding No and PT No
                         $holdingNo = $holdingNoGenerator->generateHoldingNo($saf);
                         $ptNo = $idGeneration->generate();
@@ -1158,6 +1164,53 @@ class ActiveSafController extends Controller
             'ptNo' => $ptNo ?? "",
         ];
     }
+
+    protected function handleAmalgamation($saf)
+    {
+        $safAmalgation = new SafAmalgamatePropLog();
+        $mPropProperty = new PropProperty();
+
+        $safAmalgationEntries = $safAmalgation->where('saf_id', $saf->id)->get();
+        $masterAmalg = $safAmalgationEntries->where('is_master', true)->first();
+        $childAmalgs = $safAmalgationEntries->where('is_master', false);
+
+        if (!$masterAmalg || $childAmalgs->isEmpty()) {
+            throw new Exception("Amalgamation data incomplete");
+        }
+
+        $masterPropId = $masterAmalg->property_id;
+        $masterProp = $mPropProperty->find($masterPropId);
+
+        foreach ($childAmalgs as $child) {
+            $childProp = $mPropProperty->find($child->property_id);
+            if ($childProp && $masterProp) {
+                $masterProp->area_of_plot += $childProp->area_of_plot;
+                // Add other merging logic as needed
+                $masterProp->save();
+
+                PropFloor::where('property_id', $childProp->id)
+                    ->update(['property_id' => $masterPropId]);
+
+                PropOwner::where('property_id', $childProp->id)
+                    ->update(['property_id' => $masterPropId]);
+
+                PropDemand::where('property_id', $childProp->id)
+                    ->update(['property_id' => $masterPropId]);
+            }
+        }
+        if ($saf->assessment_type == "Amalgamation") {
+            $amalgamateProps = $saf->getAmalgamateLogs()->where("is_master", false);
+            foreach ($amalgamateProps as $amalgamateProp) {
+                $mpropProperty = PropProperty::find($amalgamateProp->property_id);
+                if ($mpropProperty) {
+                    $mpropProperty->status = 4;
+                    $mpropProperty->save();
+                }
+            }
+        }
+    }
+
+
 
     /**
      * | Checks and applies backward conditions based on the sender's role ID.
@@ -1275,7 +1328,7 @@ class ActiveSafController extends Controller
 
         $assessmentType = $activeSaf->assessment_type;
 
-        if (in_array($assessmentType, ['New Assessment', 'Bifurcation', 'Amalgamation', 'Mutation'])) { // Make New Property For New Assessment,Bifurcation and Amalgamation
+        if (in_array($assessmentType, ['New Assessment', 'Bifurcation', 'Mutation'])) { // Make New Property For New Assessment,Bifurcation and Amalgamation
             $propProperties = $toBeProperties->replicate();
             $propProperties->setTable('prop_properties');
             $propProperties->saf_id = $activeSaf->id;

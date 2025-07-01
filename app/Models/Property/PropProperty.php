@@ -286,7 +286,7 @@ class PropProperty extends Model
             ->where('prop_properties.cluster_id', $clusterId)
             ->where('prop_properties.status', 1)
             ->where('ref_prop_types.status', 1)
-            ->groupBy('prop_properties.id', 'ref_prop_types.property_type', 'prop_properties.new_ward_mstr_id','prop_properties.prop_address', 'prop_properties.cluster_id', 'prop_properties.holding_no', 'prop_properties.ulb_id', 'prop_properties.ward_mstr_id')
+            ->groupBy('prop_properties.id', 'ref_prop_types.property_type', 'prop_properties.new_ward_mstr_id', 'prop_properties.prop_address', 'prop_properties.cluster_id', 'prop_properties.holding_no', 'prop_properties.ulb_id', 'prop_properties.ward_mstr_id')
             ->get();
     }
 
@@ -949,5 +949,33 @@ class PropProperty extends Model
             $explodedPreviousHoldingIds = explode(',', $safDetails->id);
             $this->activateNewHoldingByIds($explodedPreviousHoldingIds);     // Deactivation of Holding
         }
+    }
+
+    public function Owneres()
+    {
+        return $this->hasMany(PropOwner::class, "property_id", "id")
+            ->where("status", 1)
+            ->orderBy("id", "ASC");
+    }
+
+    public function floars()
+    {
+        return $this->hasMany(PropFloor::class, "property_id", "id")
+            ->where(function ($where) {
+                $where->whereNull("date_upto")
+                    ->OrWhere("date_upto", ">=", Carbon::now()->format("Y-m-d"));
+            })
+            ->orderBy("id", "ASC");
+    }
+
+    public function getAllDemands()
+    {
+        return $this->hasMany(PropDemand::class, "property_id", "id")
+            ->where("status", 1)
+            ->orderBy("fyear", "ASC");
+    }
+    public function getAllTransection()
+    {
+        return $this->hasMany(PropTransaction::class, "property_id", "id")->where("status", 1);
     }
 }

@@ -11,6 +11,7 @@ use App\EloquentClass\Property\SafCalculation;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Property\reqApplySaf;
 use App\Http\Requests\ReqGBSaf;
+use App\Models\Property\Logs\SafAmalgamatePropLog;
 use App\Models\Property\PropActiveGbOfficer;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsFloor;
@@ -103,9 +104,11 @@ class ApplySafController extends Controller
             $user = authUser($request);
             $user_id = $user->id;
             $ulb_id = $request->ulbId ?? $user->ulb_id;
-            $userType = $user->user_type;
+            $userType = $user->user_type ?? 'Citizen';
             $metaReqs = array();
             $saf = new PropActiveSaf();
+
+            
             $mOwner = new PropActiveSafsOwner();
             $safCalculation = new SafCalculation();
             $calculateSafById = new CalculateSafById;
@@ -194,6 +197,11 @@ class ApplySafController extends Controller
                 $request->merge(['paymentStatus' => '0']);
             }
             $createSaf = $saf->store($request);                                         // Store SAF Using Model function 
+            if ($request->assessmentType == 5 || $request->assessmentType == "Amalgamation") {
+                $request->merge(["safId" => $createSaf->original['safId']]);
+                $SafAmalgamatePropLog = new SafAmalgamatePropLog();
+                $SafAmalgamatePropLog->store($request);
+            }
             $safId = $createSaf->original['safId'];
             $safNo = $createSaf->original['safNo'];
 
@@ -319,26 +327,26 @@ class ApplySafController extends Controller
             }
         }
 
-        // Amalgamation
-        if (in_array($assessmentType, ["Amalgamation"])) {
-            $previousHoldingIds = array();
-            $previousHoldingLists = array();
+        // // Amalgamation
+        // if (in_array($assessmentType, ["Amalgamation"])) {
+        //     $previousHoldingIds = array();
+        //     $previousHoldingLists = array();
 
-            foreach ($req->holdingNoLists as $holdingNoList) {
-                $propDtls = $mPropProperty->getPropertyId($holdingNoList);
-                if (!$propDtls)
-                    throw new Exception("Property Not Found For the holding");
-                $propId = $propDtls->id;
-                array_push($previousHoldingIds, $propId);
-                array_push($previousHoldingLists, $holdingNoList);
-            }
+        //     foreach ($req->holdingNoLists as $holdingNoList) {
+        //         $propDtls = $mPropProperty->getPropertyId($holdingNoList);
+        //         if (!$propDtls)
+        //             throw new Exception("Property Not Found For the holding");
+        //         $propId = $propDtls->id;
+        //         array_push($previousHoldingIds, $propId);
+        //         array_push($previousHoldingLists, $holdingNoList);
+        //     }
 
-            $req->merge([
-                'hasPreviousHoldingNo' => true,
-                'previousHoldingId' => implode(",", $previousHoldingIds),
-                'holdingNo' => implode(",", $req->holdingNoLists)
-            ]);
-        }
+        //     $req->merge([
+        //         'hasPreviousHoldingNo' => true,
+        //         'previousHoldingId' => implode(",", $previousHoldingIds),
+        //         'holdingNo' => implode(",", $req->holdingNoLists)
+        //     ]);
+        // }
     }
 
     /**
