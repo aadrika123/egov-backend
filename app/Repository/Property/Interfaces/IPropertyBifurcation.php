@@ -11,14 +11,21 @@ use Illuminate\Http\Request;
 
 interface IPropertyBifurcation
 {
-    public function addRecord(Request $request);
+    
     public function inbox(Request $request);
     public function outbox(Request $request);
-    public function postNextLevel(Request $request);
     public function readSafDtls($id);
     public function getDocList($request);
-    public function documentUpload(Request $request);
     public function safDocumentUpload(Request $request);
     public function getUploadDocuments(Request $request);
     public function CitizenPymentHistory(Request $request);
+    
+    
+    # ---------------------------------------------------------#
+    # ------------ currently inactive or unused ---------------#
+    # ---------------------------------------------------------#
+    
+    public function addRecord(Request $request);
+    public function postNextLevel(Request $request);
+    public function documentUpload(Request $request);
 }

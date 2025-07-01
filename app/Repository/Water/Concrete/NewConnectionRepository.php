@@ -445,9 +445,9 @@ class NewConnectionRepository implements iNewConnection
         }
 
         /* comment because issue ad BO side ( Backend Test) when forward without doc upload  : reverve it if furter*/
-        // if ($waterApplication->current_role != $role->role_id && !$role->is_initiator && (!$waterApplication->parked)) {
-        //     throw new Exception("You Have Not Pending This Application");
-        // }
+        if ($waterApplication->current_role != $role->role_id && !$role->is_initiator && (!$waterApplication->parked)) {
+            throw new Exception("You Have Not Pending This Application");
+        }
         if ($waterApplication->parked && !$role->is_initiator) {
             throw new Exception("You are not the authorized user to forward BTC application");
         }  
@@ -478,20 +478,20 @@ class NewConnectionRepository implements iNewConnection
         }
         if ($role->can_upload_document) {
             if (($role->serial_no < $receiverRole["serial_no"] ?? 0)) {
-                $waterApplication->doc_upload_status = true;
+                $waterApplication->doc_upload_status == true;
                 // $waterApplication->pending_status = 1;
                 $waterApplication->parked = false;
             }
             if (($role->serial_no > $receiverRole["serial_no"] ?? 0)) {
-                $waterApplication->doc_upload_status = false;
+                $waterApplication->doc_upload_status == false;
             }
         }
         if ($role->can_verify_document) {
             if (($role->serial_no < $receiverRole["serial_no"] ?? 0)) {
-                $waterApplication->doc_status = true;
+                $waterApplication->doc_status == true;
             }
             if (($role->serial_no < $receiverRole["serial_no"] ?? 0)) {
-                $waterApplication->doc_status = false;
+                $waterApplication->doc_status == false;
             }
         }
         #==== end this code added by sandeep==================
@@ -580,7 +580,7 @@ class NewConnectionRepository implements iNewConnection
         switch ($senderRoleId) {
             case $wfLevels['BO']:                                                                       // Back Office Condition
                 if ($application->doc_upload_status == false || $application->payment_status != 1)
-                    throw new Exception("Document Not Fully Uploaded or Payment in not Done!");
+                    throw new Exception("Document Not Fully Uploaded or Payment is not Done!");
                 break;
             case $wfLevels['DA']:                                                                       // DA Condition
                 $docList = $mWfActiveDocument->getApplicatonDoc($application->id, $application->workflow_id, $moduleId);
@@ -658,61 +658,47 @@ class NewConnectionRepository implements iNewConnection
             $appMadetoryDocRejected = collect();
             $appUploadedDoc->map(function ($val) use ($appUploadedDocVerified, $appUploadedDocRejected, $appMadetoryDocRejected) {
 
-                $appUploadedDocVerified->push(["is_docVerify" => (!empty($val["uploadedDoc"]) ? (((collect($val["uploadedDoc"])->all())["verifyStatus"]) ? true : false) : true)]);
-                $appUploadedDocRejected->push(["is_docRejected" => (!empty($val["uploadedDoc"]) ? (((collect($val["uploadedDoc"])->all())["verifyStatus"] == 2) ? true : false) : false)]);
-                if (in_array($val["docType"], ["R", "OR"])) {
-                    $appMadetoryDocRejected->push(["is_docRejected" => (!empty($val["uploadedDoc"]) ? (((collect($val["uploadedDoc"])->all())["verifyStatus"] == 2) ? true : false) : false)]);
-                }
-            });
-            $is_appUploadedDocVerified = $appUploadedDocVerified->where("is_docVerify", false);
-            $is_appUploadedDocRejected = $appUploadedDocRejected->where("is_docRejected", true);
-            $is_appUploadedMadetoryDocRejected = $appMadetoryDocRejected->where("is_docRejected", true);
-            // $is_appMandUploadedDoc              = $appMandetoryDoc->whereNull("uploadedDoc");
-            $is_appMandUploadedDoc = $appMandetoryDoc->filter(function ($val) {
-                return ($val["uploadedDoc"] == "" || $val["uploadedDoc"] == null);
-            });
-            $Wdocuments = collect();
-
-            $ownerDoc->each(function ($val) use (&$Wdocuments) {
-                $ownerId = $val["ownerDetails"]["ownerId"] ?? "";
-
-                collect($val["documents"])->each(function ($val1) use (&$Wdocuments, $ownerId) {
-                    $val1["ownerId"] = $ownerId;
-                    $val1["is_uploded"] = in_array($val1["docType"], ["R", "OR"])
-                        ? (!empty($val1["uploadedDoc"]) ? true : false)
-                        : true;
-
-                    $val1["is_docVerify"] = !empty($val1["uploadedDoc"])
-                        ? ((collect($val1["uploadedDoc"])->get("verifyStatus")) ? true : false)
-                        : true;
-
-                    $val1["is_docRejected"] = !empty($val1["uploadedDoc"])
-                        ? ((collect($val1["uploadedDoc"])->get("verifyStatus") == 2) ? true : false)
-                        : false;
-
-                    $val1["is_madetory_docRejected"] = (!empty($val1["uploadedDoc"]) && in_array($val1["docType"], ["R", "OR"]))
-                        ? ((collect($val1["uploadedDoc"])->get("verifyStatus") == 2) ? true : false)
-                        : false;
-
-                    $Wdocuments->push($val1);
-                });
-            });
-
-
-            $ownerMandetoryDoc = $Wdocuments->whereIn("docType", ["R", "OR"]);
-            $is_ownerUploadedDoc = $Wdocuments->where("is_uploded", false);
-            $is_ownerDocVerify = $Wdocuments->where("is_docVerify", false);
-            $is_ownerDocRejected = $Wdocuments->where("is_docRejected", true);
-            $is_ownerMadetoryDocRejected = $Wdocuments->where("is_madetory_docRejected", true);
-            if (($fromRole["can_upload_document"] ?? false) || (!$this->_COMMON_FUNCTION->checkUsersWithtocken("users"))) {
-                return (empty($is_ownerUploadedDoc->all()) && empty($is_ownerDocRejected->all()) && empty($is_appMandUploadedDoc->all()) && empty($is_appUploadedDocRejected->all()));
+            $appUploadedDocVerified->push(["is_docVerify" => (!empty($val["uploadedDoc"]) ? (((collect($val["uploadedDoc"])->all())["verifyStatus"]) ? true : false) : true)]);
+            $appUploadedDocRejected->push(["is_docRejected" => (!empty($val["uploadedDoc"]) ? (((collect($val["uploadedDoc"])->all())["verifyStatus"] == 2) ? true : false) : false)]);
+            if (in_array($val["docType"], ["R", "OR"])) {
+                $appMadetoryDocRejected->push(["is_docRejected" => (!empty($val["uploadedDoc"]) ? (((collect($val["uploadedDoc"])->all())["verifyStatus"] == 2) ? true : false) : false)]);
             }
-            if ($fromRole["can_verify_document"] ?? false) {
-                return (empty($is_ownerDocVerify->all()) && empty($is_appUploadedDocVerified->all()) && empty($is_ownerMadetoryDocRejected->all()) && empty($is_appUploadedMadetoryDocRejected->all()));
-            }
+        });
+        $is_appUploadedDocVerified = $appUploadedDocVerified->where("is_docVerify", false);
+        $is_appUploadedDocRejected = $appUploadedDocRejected->where("is_docRejected", true);
+        $is_appUploadedMadetoryDocRejected = $appMadetoryDocRejected->where("is_docRejected", true);
+        // $is_appMandUploadedDoc              = $appMandetoryDoc->whereNull("uploadedDoc");
+        $is_appMandUploadedDoc = $appMandetoryDoc->filter(function ($val) {
+            return ($val["uploadedDoc"] == "" || $val["uploadedDoc"] == null);
+        });
+        $Wdocuments = collect();
+        $ownerDoc->map(function ($val) use ($Wdocuments) {
+            $ownerId = $val["ownerDetails"]["ownerId"] ?? "";
+            $val["documents"]->map(function ($val1) use ($Wdocuments, $ownerId) {
+                $val1["ownerId"] = $ownerId;
+                $val1["is_uploded"] = (in_array($val1["docType"], ["R", "OR"])) ? ((!empty($val1["uploadedDoc"])) ? true : false) : true;
+                $val1["is_docVerify"] = !empty($val1["uploadedDoc"]) ? (((collect($val1["uploadedDoc"])->all())["verifyStatus"]) ? true : false) : true;
+                $val1["is_docRejected"] = !empty($val1["uploadedDoc"]) ? (((collect($val1["uploadedDoc"])->all())["verifyStatus"] == 2) ? true : false) : false;
+                $val1["is_madetory_docRejected"] = (!empty($val1["uploadedDoc"]) && in_array($val1["docType"], ["R", "OR"])) ? (((collect($val1["uploadedDoc"])->all())["verifyStatus"] == 2) ? true : false) : false;
+                $Wdocuments->push($val1);
+            });
+        });
+
+        $ownerMandetoryDoc = $Wdocuments->whereIn("docType", ["R", "OR"]);
+        $is_ownerUploadedDoc = $Wdocuments->where("is_uploded", false);
+        $is_ownerDocVerify = $Wdocuments->where("is_docVerify", false);
+        $is_ownerDocRejected = $Wdocuments->where("is_docRejected", true);
+        $is_ownerMadetoryDocRejected = $Wdocuments->where("is_madetory_docRejected", true);
+        if (($fromRole["can_upload_document"] ?? false) || (!$this->_COMMON_FUNCTION->checkUsersWithtocken("users"))) {
+            return (empty($is_ownerUploadedDoc->all()) && empty($is_ownerDocRejected->all()) && empty($is_appMandUploadedDoc->all()) && empty($is_appUploadedDocRejected->all()));
         }
-        return true;
+        if ($fromRole["can_verify_document"] ?? false) {
+            return (empty($is_ownerDocVerify->all()) && empty($is_appUploadedDocVerified->all()) && empty($is_ownerMadetoryDocRejected->all()) && empty($is_appUploadedMadetoryDocRejected->all()));
+        }
     }
+    return true;
+}
+
 
 
     /**

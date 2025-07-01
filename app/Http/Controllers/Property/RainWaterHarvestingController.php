@@ -286,38 +286,6 @@ class RainWaterHarvestingController extends Controller
     }
 
     /**
-     * | Fields Verified Inbox
-     * | Query Cost : 1.61 - 1.78 seconds
-     */
-    public function fieldVerifiedInbox(Request $req)
-    {
-        try {
-            $userId = authUser($req)->id;
-            $ulbId = authUser($req)->ulb_id;
-            $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
-            $harvestingList = new PropActiveHarvesting();
-            $perPage = $req->perPage ?? 10;
-
-            $occupiedWards = $this->getWardByUserId($userId)->pluck('ward_id');
-
-            $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
-            $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
-
-            $harvesting = $harvestingList->getHarvestingList($workflowIds)
-                ->where('prop_active_harvestings.ulb_id', $ulbId)                  // Repository function getSAF
-                ->where('is_field_verified', true)
-                ->whereIn('prop_active_harvestings.current_role', $roleId)
-                ->whereIn('a.ward_mstr_id', $occupiedWards)
-                ->orderByDesc('prop_active_harvestings.id')
-                ->paginate($perPage);
-
-            return responseMsgs(true, "field Verified Inbox!", remove_null($harvesting), "010918", 1.0, "", "POST", $req->deviceId);
-        } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "010918", 1.0, "", "POST", $req->deviceId);
-        }
-    }
-
-    /**
      * |----------------------- function for the Outbox --------------------------
      * | Rating : 2
      * | status :closed
@@ -389,50 +357,6 @@ class RainWaterHarvestingController extends Controller
             }
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-
-    /**
-     * | Fetches static details of a water harvesting application including applicant info, location, and document data.
-     * | Query Cost : 1.63 - 1.79 seconds
-     */
-    public function staticDetails(Request $req)
-    {
-        $req->validate([
-            'applicationId' => 'required|integer',
-        ]);
-        try {
-            $mPropActiveHarvesting = new PropActiveHarvesting();
-            $mPropHarvestingGeotagUpload = new PropHarvestingGeotagUpload();
-            $mWfActiveDocument =  new WfActiveDocument();
-            $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
-            $docUpload = new DocUpload;
-
-            $details = $mPropActiveHarvesting->getDetailsById($req->applicationId);
-            $geotagDtl = $mPropHarvestingGeotagUpload->getLatLong($req->applicationId);
-
-            $docs =  $mWfActiveDocument->getDocByRefIdsDocCode($req->applicationId, $details->workflow_id, $moduleId, ['WATER_HARVESTING'])->last();
-            $docs = $docUpload->getSingleDocUrl($docs);           #_Calling BLL for Document Path from DMS
-            $data = [
-                'id' => $details->id,
-                'applicationNo' => $details->application_no,
-                'harvestingBefore2017' => $details->harvesting_status,
-                'holdingNo' => $details->holding_no,
-                'newHoldingNo' => $details->new_holding_no,
-                'guardianName' => $details->guardian_name,
-                'applicantName' => $details->owner_name,
-                'wardNo' => $details->new_ward_no,
-                'propertyAddress' => $details->prop_address,
-                'mobileNo' => $details->mobile_no,
-                'dateOfCompletion' => $details->date_of_completion,
-                'harvestingImage' => $docs['doc_path'] ?? null, // Error in code due to doc_path thats why #added  ?? null
-                'latitude' => $geotagDtl->latitude ?? null,
-                'longitude' => $geotagDtl->longitude ?? null,
-            ];
-
-            return responseMsgs(true, "Static Details!", remove_null($data), "010909", 1.0, responseTime().'ms', "POST", $req->deviceId);
-        } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "010909", 1.0, responseTime().'ms', "POST", $req->deviceId);
         }
     }
 
@@ -723,101 +647,6 @@ class RainWaterHarvestingController extends Controller
             DB::commit();
             DB::connection('pgsql_master')->commit();
             return responseMsgs(true, $msg, "", '010906', 01, responseTime().'ms', 'Post', $req->deviceId);
-        } catch (Exception $e) {
-            DB::rollBack();
-            DB::connection('pgsql_master')->rollBack();
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-
-    /**
-     * |------------------ Rejection of the Harvesting -------------|
-     * | Rating- 
-     */
-    public function rejectionOfHarvesting(Request $req)
-    {
-        try {
-            $req->validate([
-                'applicationId' => 'required',
-            ]);
-            $userId = authUser($req)->id;
-            $getRole = $this->getRoleIdByUserId($userId);
-            $roleId = $getRole->map(function ($value, $key) {                         // Get user Workflow Roles
-                return $value->wf_role_id;
-            });
-
-            if (collect($roleId)->first() != $req->roleId) {
-                return responseMsg(false, " Access Forbidden!", "");
-            }
-
-            $activeHarvesting = PropActiveHarvesting::query()
-                ->where('id', $req->applicationId)
-                ->first();
-
-            $rejectedHarvesting = $activeHarvesting->replicate();
-            $rejectedHarvesting->setTable('prop_rejected_harvestings');
-            $rejectedHarvesting->id = $activeHarvesting->id;
-            $rejectedHarvesting->save();
-            $activeHarvesting->delete();
-
-            return responseMsgs(true, "Application Rejected !!", "", '010907', 01, responseTime().'ms', 'Post', $req->deviceId);
-        } catch (Exception $e) {
-            DB::rollBack();
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
-
-    /**
-     * | Independent Comments
-     */
-    public function commentIndependent(Request $request)
-    {
-        $request->validate([
-            'comment' => 'required',
-            'applicationId' => 'required|integer',
-        ]);
-
-        try {
-            $userId = authUser($request)->id;
-            $userType = authUser($request)->user_type;
-            $workflowTrack = new WorkflowTrack();
-            $mWfRoleUsermap = new WfRoleusermap();
-            $harvesting = PropActiveHarvesting::findOrFail($request->applicationId);                // SAF Details
-            $mModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
-            $metaReqs = array();
-            DB::beginTransaction();
-            DB::connection('pgsql_master')->beginTransaction();
-            // Save On Workflow Track For Level Independent
-            $metaReqs = [
-                'workflowId' => $harvesting->workflow_id,
-                'moduleId' => $mModuleId,
-                'refTableDotId' => "prop_active_harvestings.id",
-                'refTableIdValue' => $harvesting->id,
-                'message' => $request->comment
-            ];
-
-            if ($userType != 'Citizen') {
-                $roleReqs = new Request([
-                    'workflowId' => $harvesting->workflow_id,
-                    'userId' => $userId,
-                ]);
-                $wfRoleId = $mWfRoleUsermap->getRoleByUserWfId($roleReqs);
-                $metaReqs = array_merge($metaReqs, ['senderRoleId' => $wfRoleId->wf_role_id]);
-                $metaReqs = array_merge($metaReqs, ['user_id' => $userId]);
-            }
-            // For Citizen Independent Comment
-            if ($userType == 'Citizen') {
-                $metaReqs = array_merge($metaReqs, ['citizenId' => $userId]);
-                $metaReqs = array_merge($metaReqs, ['ulb_id' => $harvesting->ulb_id]);
-                $metaReqs = array_merge($metaReqs, ['user_id' => NULL]);
-            }
-
-            $request->request->add($metaReqs);
-            $workflowTrack->saveTrack($request);
-
-            DB::commit();
-            DB::connection('pgsql_master')->commit();
-            return responseMsgs(true, "You Have Commented Successfully!!", ['Comment' => $request->comment], "010912", "1.0", responseTime(), "POST", "");
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
@@ -1185,6 +1014,225 @@ class RainWaterHarvestingController extends Controller
             return 1;
     }
 
+    /**
+     * | check Post Condition for backward forward
+       | postNextLevel:1.1
+     */
+    public function checkPostCondition($senderRoleId, $wfLevels, $harvesting)
+    {
+        switch ($senderRoleId) {
+            case $wfLevels['BO']:                        // Back Office Condition
+                if ($harvesting->doc_upload_status == 0)
+                    throw new Exception("Document Not Fully Uploaded");
+                break;
+        }
+    }
+
+    /**
+     * | Get Req Docs
+     * | Parses and formats document requirement data into structured document metadata.
+       | Common Function
+     */
+    public function getReqDoc($data)
+    {
+        $document = explode(',', $data->requirements);
+        $key = array_shift($document);
+        $code = collect($document);
+        $label = array_shift($document);
+        $documents = collect();
+
+        $reqDoc['docType'] = $key;
+        $reqDoc['docName'] = substr($label, 1, -1);
+        $reqDoc['uploadedDoc'] = $documents->first();
+
+        $reqDoc['masters'] = collect($document)->map(function ($doc) {
+            $strLower = strtolower($doc);
+            $strReplace = str_replace('_', ' ', $strLower);
+            $arr = [
+                "documentCode" => $doc,
+                "docVal" => ucwords($strReplace),
+            ];
+            return $arr;
+        });
+
+        return $reqDoc;
+    }
+
+    # ---------------------------------------------------------#
+    # ----- APIs that are currently inactive or unused --------#
+    # ---------------------------------------------------------#
+
+    /**
+     * |------------------ Rejection of the Harvesting -------------|
+     * | Rating- 
+     */
+    public function rejectionOfHarvesting(Request $req)
+    {
+        try {
+            $req->validate([
+                'applicationId' => 'required',
+            ]);
+            $userId = authUser($req)->id;
+            $getRole = $this->getRoleIdByUserId($userId);
+            $roleId = $getRole->map(function ($value, $key) {                         // Get user Workflow Roles
+                return $value->wf_role_id;
+            });
+
+            if (collect($roleId)->first() != $req->roleId) {
+                return responseMsg(false, " Access Forbidden!", "");
+            }
+
+            $activeHarvesting = PropActiveHarvesting::query()
+                ->where('id', $req->applicationId)
+                ->first();
+
+            $rejectedHarvesting = $activeHarvesting->replicate();
+            $rejectedHarvesting->setTable('prop_rejected_harvestings');
+            $rejectedHarvesting->id = $activeHarvesting->id;
+            $rejectedHarvesting->save();
+            $activeHarvesting->delete();
+
+            return responseMsgs(true, "Application Rejected !!", "", '010907', 01, responseTime().'ms', 'Post', $req->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Fetches static details of a water harvesting application including applicant info, location, and document data.
+     * | Query Cost : 1.63 - 1.79 seconds
+     */
+    public function staticDetails(Request $req)
+    {
+        $req->validate([
+            'applicationId' => 'required|integer',
+        ]);
+        try {
+            $mPropActiveHarvesting = new PropActiveHarvesting();
+            $mPropHarvestingGeotagUpload = new PropHarvestingGeotagUpload();
+            $mWfActiveDocument =  new WfActiveDocument();
+            $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $docUpload = new DocUpload;
+
+            $details = $mPropActiveHarvesting->getDetailsById($req->applicationId);
+            $geotagDtl = $mPropHarvestingGeotagUpload->getLatLong($req->applicationId);
+
+            $docs =  $mWfActiveDocument->getDocByRefIdsDocCode($req->applicationId, $details->workflow_id, $moduleId, ['WATER_HARVESTING'])->last();
+            $docs = $docUpload->getSingleDocUrl($docs);           #_Calling BLL for Document Path from DMS
+            $data = [
+                'id' => $details->id,
+                'applicationNo' => $details->application_no,
+                'harvestingBefore2017' => $details->harvesting_status,
+                'holdingNo' => $details->holding_no,
+                'newHoldingNo' => $details->new_holding_no,
+                'guardianName' => $details->guardian_name,
+                'applicantName' => $details->owner_name,
+                'wardNo' => $details->new_ward_no,
+                'propertyAddress' => $details->prop_address,
+                'mobileNo' => $details->mobile_no,
+                'dateOfCompletion' => $details->date_of_completion,
+                'harvestingImage' => $docs['doc_path'] ?? null, // Error in code due to doc_path thats why #added  ?? null
+                'latitude' => $geotagDtl->latitude ?? null,
+                'longitude' => $geotagDtl->longitude ?? null,
+            ];
+
+            return responseMsgs(true, "Static Details!", remove_null($data), "010909", 1.0, responseTime().'ms', "POST", $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010909", 1.0, responseTime().'ms', "POST", $req->deviceId);
+        }
+    }
+
+    /**
+     * | Independent Comments
+     */
+    public function commentIndependent(Request $request)
+    {
+        $request->validate([
+            'comment' => 'required',
+            'applicationId' => 'required|integer',
+        ]);
+
+        try {
+            $userId = authUser($request)->id;
+            $userType = authUser($request)->user_type;
+            $workflowTrack = new WorkflowTrack();
+            $mWfRoleUsermap = new WfRoleusermap();
+            $harvesting = PropActiveHarvesting::findOrFail($request->applicationId);                // SAF Details
+            $mModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $metaReqs = array();
+            DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
+            // Save On Workflow Track For Level Independent
+            $metaReqs = [
+                'workflowId' => $harvesting->workflow_id,
+                'moduleId' => $mModuleId,
+                'refTableDotId' => "prop_active_harvestings.id",
+                'refTableIdValue' => $harvesting->id,
+                'message' => $request->comment
+            ];
+
+            if ($userType != 'Citizen') {
+                $roleReqs = new Request([
+                    'workflowId' => $harvesting->workflow_id,
+                    'userId' => $userId,
+                ]);
+                $wfRoleId = $mWfRoleUsermap->getRoleByUserWfId($roleReqs);
+                $metaReqs = array_merge($metaReqs, ['senderRoleId' => $wfRoleId->wf_role_id]);
+                $metaReqs = array_merge($metaReqs, ['user_id' => $userId]);
+            }
+            // For Citizen Independent Comment
+            if ($userType == 'Citizen') {
+                $metaReqs = array_merge($metaReqs, ['citizenId' => $userId]);
+                $metaReqs = array_merge($metaReqs, ['ulb_id' => $harvesting->ulb_id]);
+                $metaReqs = array_merge($metaReqs, ['user_id' => NULL]);
+            }
+
+            $request->request->add($metaReqs);
+            $workflowTrack->saveTrack($request);
+
+            DB::commit();
+            DB::connection('pgsql_master')->commit();
+            return responseMsgs(true, "You Have Commented Successfully!!", ['Comment' => $request->comment], "010912", "1.0", responseTime(), "POST", "");
+        } catch (Exception $e) {
+            DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Fields Verified Inbox
+     * | Query Cost : 1.61 - 1.78 seconds
+     */
+    public function fieldVerifiedInbox(Request $req)
+    {
+        try {
+            $userId = authUser($req)->id;
+            $ulbId = authUser($req)->ulb_id;
+            $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
+            $harvestingList = new PropActiveHarvesting();
+            $perPage = $req->perPage ?? 10;
+
+            $occupiedWards = $this->getWardByUserId($userId)->pluck('ward_id');
+
+            $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
+            $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
+
+            $harvesting = $harvestingList->getHarvestingList($workflowIds)
+                ->where('prop_active_harvestings.ulb_id', $ulbId)                  // Repository function getSAF
+                ->where('is_field_verified', true)
+                ->whereIn('prop_active_harvestings.current_role', $roleId)
+                ->whereIn('a.ward_mstr_id', $occupiedWards)
+                ->orderByDesc('prop_active_harvestings.id')
+                ->paginate($perPage);
+
+            return responseMsgs(true, "field Verified Inbox!", remove_null($harvesting), "010918", 1.0, "", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010918", 1.0, "", "POST", $req->deviceId);
+        }
+    }
+
 
     /**
      * | Site Verification
@@ -1344,49 +1392,5 @@ class RainWaterHarvestingController extends Controller
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
-    }
-
-    /**
-     * | check Post Condition for backward forward
-       | postNextLevel:1.1
-     */
-    public function checkPostCondition($senderRoleId, $wfLevels, $harvesting)
-    {
-        switch ($senderRoleId) {
-            case $wfLevels['BO']:                        // Back Office Condition
-                if ($harvesting->doc_upload_status == 0)
-                    throw new Exception("Document Not Fully Uploaded");
-                break;
-        }
-    }
-
-    /**
-     * | Get Req Docs
-     * | Parses and formats document requirement data into structured document metadata.
-       | Common Function
-     */
-    public function getReqDoc($data)
-    {
-        $document = explode(',', $data->requirements);
-        $key = array_shift($document);
-        $code = collect($document);
-        $label = array_shift($document);
-        $documents = collect();
-
-        $reqDoc['docType'] = $key;
-        $reqDoc['docName'] = substr($label, 1, -1);
-        $reqDoc['uploadedDoc'] = $documents->first();
-
-        $reqDoc['masters'] = collect($document)->map(function ($doc) {
-            $strLower = strtolower($doc);
-            $strReplace = str_replace('_', ' ', $strLower);
-            $arr = [
-                "documentCode" => $doc,
-                "docVal" => ucwords($strReplace),
-            ];
-            return $arr;
-        });
-
-        return $reqDoc;
     }
 }

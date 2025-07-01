@@ -50,81 +50,8 @@ use Illuminate\Support\Facades\Validator;
 class ActiveSafControllerV2 extends Controller
 {
     use SAF;
-    /**
-     * | Edit Applied Saf by SAF Id for BackOffice
-     * | Serial 01
-     */
-    public function editCitizenSaf(reqApplySaf $req)
-    {
-        $req->validate([
-            'id' => 'required|numeric'
-        ]);
-        try {
-            $id = $req->id;
-            $mPropActiveSaf = PropActiveSaf::find($id);
-            $citizenId = authUser($req)->id;
-            $mPropSafOwners = new PropActiveSafsOwner();
-            $mPropSafFloors = new PropActiveSafsFloor();
-            $mActiveSaf = new PropActiveSaf();
-            $reqOwners = $req->owner;
-            $reqFloors = $req->floor;
 
-            $refSafFloors = $mPropSafFloors->getSafFloorsBySafId($id);
-            $refSafOwners = $mPropSafOwners->getOwnersBySafId($id);
 
-            if ($mPropActiveSaf->payment_status == 1)
-                throw new Exception("You cannot edit the application");
-
-            if ($mPropActiveSaf->payment_status == 0) {
-                // Floors
-                $newFloors = collect($reqFloors)->whereNull('safFloorId')->values();
-                $existingFloors = collect($reqFloors)->whereNotNull('safFloorId')->values();
-                $existingFloorIds = $existingFloors->pluck('safFloorId');
-                $toDeleteFloors = $refSafFloors->whereNotIn('id', $existingFloorIds)->values();
-                $toDeleteFloorIds = $toDeleteFloors->pluck('id');
-                // Owners
-                $newOwners = collect($reqOwners)->whereNull('safOwnerId')->values();
-                $existingOwners = collect($reqOwners)->whereNotNull('safOwnerId')->values();
-                $existingOwnerIds = $existingOwners->pluck('safOwnerId');
-                $toDeleteOwners = $refSafOwners->whereNotIn('id', $existingOwnerIds)->values();
-                $toDeleteOwnerIds = $toDeleteOwners->pluck('id');
-
-                $roadWidthType = $this->readRoadWidthType($req->roadType);          // Read Road Width Type
-                $req = $req->merge(['road_type_mstr_id' => $roadWidthType]);
-
-                DB::beginTransaction();
-                // Edit Active Saf
-                $mActiveSaf->safEdit($req, $mPropActiveSaf, $citizenId);
-                // Delete No Existing floors
-                PropActiveSafsFloor::destroy($toDeleteFloorIds);
-                // Update Existing floors
-                foreach ($existingFloors as $existingFloor) {
-                    $mPropSafFloors->editFloor($existingFloor, $citizenId);
-                }
-                // Add New Floors
-                foreach ($newFloors as $newFloor) {
-                    $mPropSafFloors->addfloor($newFloor, $id, $citizenId ,$req->assessmentType);
-                }
-
-                // Delete No Existing Owners
-                PropActiveSafsOwner::destroy($toDeleteOwnerIds);
-                // Update Existing Owners
-                foreach ($existingOwners as $existingOwner) {
-                    $mPropSafOwners->edit($existingOwner);
-                }
-
-                // Add New Owners
-                foreach ($newOwners as $newOwner) {
-                    $mPropSafOwners->addOwner($newOwner, $id, $citizenId);
-                }
-            }
-            DB::commit();
-            return responseMsgs(true, "Successfully Updated the Data", "", "011602", 1.0, "308ms", "POST", $req->deviceId);
-        } catch (Exception $e) {
-            DB::rollBack();
-            return responseMsgs(false, $e->getMessage(), "", "011602", 1.0, "308ms", "POST", $req->deviceId);
-        }
-    }
 
     /**
      * | Deletes a SAF record if payment not done; marks related owners and floors as inactive.
@@ -255,7 +182,7 @@ class ActiveSafControllerV2 extends Controller
 
     /**
      * | Generate Tax Table
-       | memoReceipt:1
+       | memoReceipt:1.1
      */
     public function generateTaxTable($taxDetails)
     {
@@ -274,6 +201,7 @@ class ActiveSafControllerV2 extends Controller
         });
     }
 
+    
     /**
      * | Search Holding of user not logged in
      * | Serial 04
@@ -321,6 +249,88 @@ class ActiveSafControllerV2 extends Controller
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsgs(false, $e->getMessage(), "", "011610", 1.0, "308ms", "POST", $req->deviceId);
+        }
+    }
+
+
+    # ---------------------------------------------------------#
+    # ----- APIs that are currently inactive or unused --------#
+    # ---------------------------------------------------------#
+
+
+    /**
+     * | Edit Applied Saf by SAF Id for BackOffice
+     * | Serial 01
+     */
+    public function editCitizenSaf(reqApplySaf $req)
+    {
+        $req->validate([
+            'id' => 'required|numeric'
+        ]);
+        try {
+            $id = $req->id;
+            $mPropActiveSaf = PropActiveSaf::find($id);
+            $citizenId = authUser($req)->id;
+            $mPropSafOwners = new PropActiveSafsOwner();
+            $mPropSafFloors = new PropActiveSafsFloor();
+            $mActiveSaf = new PropActiveSaf();
+            $reqOwners = $req->owner;
+            $reqFloors = $req->floor;
+
+            $refSafFloors = $mPropSafFloors->getSafFloorsBySafId($id);
+            $refSafOwners = $mPropSafOwners->getOwnersBySafId($id);
+
+            if ($mPropActiveSaf->payment_status == 1)
+                throw new Exception("You cannot edit the application");
+
+            if ($mPropActiveSaf->payment_status == 0) {
+                // Floors
+                $newFloors = collect($reqFloors)->whereNull('safFloorId')->values();
+                $existingFloors = collect($reqFloors)->whereNotNull('safFloorId')->values();
+                $existingFloorIds = $existingFloors->pluck('safFloorId');
+                $toDeleteFloors = $refSafFloors->whereNotIn('id', $existingFloorIds)->values();
+                $toDeleteFloorIds = $toDeleteFloors->pluck('id');
+                // Owners
+                $newOwners = collect($reqOwners)->whereNull('safOwnerId')->values();
+                $existingOwners = collect($reqOwners)->whereNotNull('safOwnerId')->values();
+                $existingOwnerIds = $existingOwners->pluck('safOwnerId');
+                $toDeleteOwners = $refSafOwners->whereNotIn('id', $existingOwnerIds)->values();
+                $toDeleteOwnerIds = $toDeleteOwners->pluck('id');
+
+                $roadWidthType = $this->readRoadWidthType($req->roadType);          // Read Road Width Type
+                $req = $req->merge(['road_type_mstr_id' => $roadWidthType]);
+
+                DB::beginTransaction();
+                // Edit Active Saf
+                $mActiveSaf->safEdit($req, $mPropActiveSaf, $citizenId);
+                // Delete No Existing floors
+                PropActiveSafsFloor::destroy($toDeleteFloorIds);
+                // Update Existing floors
+                foreach ($existingFloors as $existingFloor) {
+                    $mPropSafFloors->editFloor($existingFloor, $citizenId);
+                }
+                // Add New Floors
+                foreach ($newFloors as $newFloor) {
+                    $mPropSafFloors->addfloor($newFloor, $id, $citizenId ,$req->assessmentType);
+                }
+
+                // Delete No Existing Owners
+                PropActiveSafsOwner::destroy($toDeleteOwnerIds);
+                // Update Existing Owners
+                foreach ($existingOwners as $existingOwner) {
+                    $mPropSafOwners->edit($existingOwner);
+                }
+
+                // Add New Owners
+                foreach ($newOwners as $newOwner) {
+                    $mPropSafOwners->addOwner($newOwner, $id, $citizenId);
+                }
+            }
+            DB::commit();
+            return responseMsgs(true, "Successfully Updated the Data", "", "011602", 1.0, "308ms", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), "", "011602", 1.0, "308ms", "POST", $req->deviceId);
         }
     }
 

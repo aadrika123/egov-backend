@@ -118,25 +118,6 @@ class ReportController extends Controller
     }
 
     /**
-     * | Get the level form details.
-       | userWiseLevelPending:1.1
-     */
-    public function levelformdetail(Request $request)
-    {
-        $request->validate(
-            [
-                "ulbId" => "nullable|digits_between:1,9223372036854775807",
-                "roleId" => "nullable|digits_between:1,9223372036854775807",
-                "userId" => "nullable|digits_between:1,9223372036854775807",
-                "page" => "nullable|digits_between:1,9223372036854775807",
-                "perPage" => "nullable|digits_between:1,9223372036854775807",
-            ]
-        );
-        $request->request->add(["metaData" => ["012405", 1.1, null, $request->getMethod(), null,]]);
-        return $this->Repository->levelformdetail($request);
-    }
-
-    /**
      * | Get the pending forms for a specific user and level.
      */
     public function levelUserPending(Request $request)
@@ -151,46 +132,6 @@ class ReportController extends Controller
         );
         $request->request->add(["metaData" => ["012406", 1.1, null, $request->getMethod(), null,]]);
         return $this->Repository->levelUserPending($request);
-    }
-
-    /**
-     * | Get the pending forms for a specific user and level.
-       | userWiseLevelPending:1
-     */
-    public function userWiseLevelPending(Request $request)
-    {
-        $request->validate(
-            [
-                "userId" => "required|digits_between:1,9223372036854775807",
-                "ulbId" => "nullable|digits_between:1,9223372036854775807",
-                "page" => "nullable|digits_between:1,9223372036854775807",
-                "perPage" => "nullable|digits_between:1,9223372036854775807",
-            ]
-        );
-        $request->request->add(["metaData" => ["012407", 1.1, null, $request->getMethod(), null,]]);
-
-        $refUser        = Auth()->user();
-        $refUserId      = $refUser->id;
-        $ulbId          = $refUser->ulb_id;
-        $safWorkFlow = Config::get('workflow-constants.SAF_WORKFLOW_ID');
-        if ($request->ulbId) {
-            $ulbId = $request->ulbId;
-        }
-
-        $respons =  $this->levelformdetail($request);
-        $metaData = collect($request->metaData)->all();
-        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
-
-        $roles = ($this->_common->getUserRoll($request->userId, $ulbId, $safWorkFlow));
-        $respons = json_decode(json_encode($respons), true);
-        if ($respons["original"]["status"]) {
-            $respons["original"]["data"]["data"] = collect($respons["original"]["data"]["data"])->map(function ($val) use ($roles) {
-                $val["role_name"] = $roles->role_name ?? "";
-                $val["role_id"] = $roles->role_id ?? 0;
-                return $val;
-            });
-        }
-        return responseMsgs($respons["original"]["status"], $respons["original"]["message"], $respons["original"]["data"], $apiId, $version, $queryRunTime, $action, $deviceId);
     }
 
     /**
@@ -243,28 +184,6 @@ class ReportController extends Controller
             ]
         );
         $request->request->add(["metaData" => ["012421", 1.1, null, $request->getMethod(), null,]]);
-        return $this->Repository->PropPaymentModeWiseSummery($request);
-    }
-
-    /**
-     * | Get the SAF payment mode wise summary.
-     */
-    public function PaymentModeWiseSummery(Request $request)
-    {
-        $request->merge(["metaData" => ["012422", 1.1, null, $request->getMethod(), null,]]);
-        $validation = Validator::make($request->all(), [
-            "fromDate" => "required|date|date_format:Y-m-d",
-            "uptoDate" => "required|date|date_format:Y-m-d",
-            "ulbId" => "nullable|digits_between:1,9223372036854775807",
-            "wardId" => "nullable|digits_between:1,9223372036854775807",
-            "paymentMode" => "nullable",
-            "userId" => "nullable|digits_between:1,9223372036854775807",
-        ]);
-        $metaData = collect($request->metaData)->all();
-        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
-        if ($validation->fails()) {
-            return responseMsgs(false, "given Data invalid", $validation->errors(), $apiId, $version, $queryRunTime, $action, $deviceId);
-        }
         return $this->Repository->PropPaymentModeWiseSummery($request);
     }
 
@@ -651,6 +570,95 @@ class ReportController extends Controller
     {
         return $this->Repository->rebateNpenalty($request);
     }
+
+
+    # ---------------------------------------------------------#
+    # ----- APIs that are currently inactive or unused --------#
+    # ---------------------------------------------------------#
+
+    /**
+     * | Get the pending forms for a specific user and level.
+       | userWiseLevelPending:1
+     */
+    public function userWiseLevelPending(Request $request)
+    {
+        $request->validate(
+            [
+                "userId" => "required|digits_between:1,9223372036854775807",
+                "ulbId" => "nullable|digits_between:1,9223372036854775807",
+                "page" => "nullable|digits_between:1,9223372036854775807",
+                "perPage" => "nullable|digits_between:1,9223372036854775807",
+            ]
+        );
+        $request->request->add(["metaData" => ["012407", 1.1, null, $request->getMethod(), null,]]);
+
+        $refUser        = Auth()->user();
+        $refUserId      = $refUser->id;
+        $ulbId          = $refUser->ulb_id;
+        $safWorkFlow = Config::get('workflow-constants.SAF_WORKFLOW_ID');
+        if ($request->ulbId) {
+            $ulbId = $request->ulbId;
+        }
+
+        $respons =  $this->levelformdetail($request);
+        $metaData = collect($request->metaData)->all();
+        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
+
+        $roles = ($this->_common->getUserRoll($request->userId, $ulbId, $safWorkFlow));
+        $respons = json_decode(json_encode($respons), true);
+        if ($respons["original"]["status"]) {
+            $respons["original"]["data"]["data"] = collect($respons["original"]["data"]["data"])->map(function ($val) use ($roles) {
+                $val["role_name"] = $roles->role_name ?? "";
+                $val["role_id"] = $roles->role_id ?? 0;
+                return $val;
+            });
+        }
+        return responseMsgs($respons["original"]["status"], $respons["original"]["message"], $respons["original"]["data"], $apiId, $version, $queryRunTime, $action, $deviceId);
+    }
+
+    /**
+     * | Get the level form details.
+       | userWiseLevelPending:1.1
+     */
+    public function levelformdetail(Request $request)
+    {
+        $request->validate(
+            [
+                "ulbId" => "nullable|digits_between:1,9223372036854775807",
+                "roleId" => "nullable|digits_between:1,9223372036854775807",
+                "userId" => "nullable|digits_between:1,9223372036854775807",
+                "page" => "nullable|digits_between:1,9223372036854775807",
+                "perPage" => "nullable|digits_between:1,9223372036854775807",
+            ]
+        );
+        $request->request->add(["metaData" => ["012405", 1.1, null, $request->getMethod(), null,]]);
+        return $this->Repository->levelformdetail($request);
+    }
+
+
+    /**
+     * | Get the SAF payment mode wise summary.
+     */
+    public function PaymentModeWiseSummery(Request $request)
+    {
+        $request->merge(["metaData" => ["012422", 1.1, null, $request->getMethod(), null,]]);
+        $validation = Validator::make($request->all(), [
+            "fromDate" => "required|date|date_format:Y-m-d",
+            "uptoDate" => "required|date|date_format:Y-m-d",
+            "ulbId" => "nullable|digits_between:1,9223372036854775807",
+            "wardId" => "nullable|digits_between:1,9223372036854775807",
+            "paymentMode" => "nullable",
+            "userId" => "nullable|digits_between:1,9223372036854775807",
+        ]);
+        $metaData = collect($request->metaData)->all();
+        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
+        if ($validation->fails()) {
+            return responseMsgs(false, "given Data invalid", $validation->errors(), $apiId, $version, $queryRunTime, $action, $deviceId);
+        }
+        return $this->Repository->PropPaymentModeWiseSummery($request);
+    }
+
+    
 
     /**
      * | Mpl Report
@@ -1118,8 +1126,6 @@ class ReportController extends Controller
             return responseMsgs(false, $e->getMessage(), "", "", 01, responseTime(), $request->getMethod(), $request->deviceId);
         }
     }
-
-
 
     // written by prity pandey
     /**
@@ -2246,4 +2252,6 @@ class ReportController extends Controller
         }
             
     }
+
+
 }

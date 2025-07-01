@@ -25,14 +25,6 @@ class PropertyBifurcationController extends Controller
         $this->Repository = $Repository;
         $this->Property = new PropertyDeactivate();
     }
-    public function readHoldigbyNo(Request $request)
-    {
-        return $this->Property->readHoldigbyNo($request);
-    }
-    public function addRecord(reqBifurcation $request)
-    {
-        return $this->Repository->addRecord($request);
-    }
     public function inbox(Request $request)
     {
         return $this->Repository->inbox($request);
@@ -41,17 +33,9 @@ class PropertyBifurcationController extends Controller
     {
         return $this->Repository->outbox($request);
     }
-    public function postNextLevel(Request $request)
-    {
-        return $this->Repository->postNextLevel($request);
-    }
     public function readSafDtls(Request $request)
     {
         return $this->Repository->readSafDtls($request->id);
-    }
-    public function documentUpload(Request $request)
-    {
-        return $this->Repository->documentUpload($request);
     }
     //saf
     public function safDocumentUpload(Request $request)
@@ -71,5 +55,31 @@ class PropertyBifurcationController extends Controller
     public function CitizenPymentHistory(Request $request)
     {
         return $this->Repository->CitizenPymentHistory($request);
+    }
+
+    
+    # ---------------------------------------------------------#
+    # ----- APIs that are currently inactive or unused --------#
+    # ---------------------------------------------------------#
+
+    
+    public function readHoldigbyNo(Request $request)
+    {
+        return $this->Property->readHoldigbyNo($request);
+    }
+    
+    public function addRecord(reqBifurcation $request)
+    {
+        return $this->Repository->addRecord($request);
+    }
+    
+    public function postNextLevel(Request $request)
+    {
+        return $this->Repository->postNextLevel($request);
+    }
+
+    public function documentUpload(Request $request)
+    {
+        return $this->Repository->documentUpload($request);
     }
 }

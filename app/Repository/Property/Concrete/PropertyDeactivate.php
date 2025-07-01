@@ -59,59 +59,6 @@ class PropertyDeactivate implements IPropertyDeactivate
         $this->_REF_TABLE           = null;
         $this->_DOC_PATH            = null;
     }
-    /**
-     * | Searching the valide Property With New Holding No
-       | Common Function
-     */
-    public function readHoldigbyNo(Request $request)
-    {
-        try {
-            $refUser    = Auth()->user();
-            $refUserId  = $refUser->id;
-            $refUlbId   = $refUser->ulb_id;
-            $rules["holdingNo"] = "required|string";
-            $validator = Validator::make($request->all(), $rules,);
-            if ($validator->fails()) {
-                return responseMsg(false, $validator->errors(), $request->all());
-            }
-            $mHoldingNo = strtoupper($request->holdingNo);
-            // DB::enableQueryLog();
-            $property = PropProperty::select(
-                "id",
-                "new_holding_no",
-                "holding_no",
-                "prop_address",
-                DB::raw("owners.owner_name, owners.guardian_name, owners.mobile_no")
-            )
-                ->leftjoin(
-                    DB::raw("(SELECT DISTINCT(property_id) AS property_id,
-                                                        STRING_AGG(owner_name, ',') AS owner_name,
-                                                        STRING_AGG(guardian_name, ',') AS guardian_name,
-                                                        STRING_AGG(mobile_no::text, ',') AS mobile_no
-                                                    FROM prop_owners 
-                                                    JOIN prop_properties ON prop_properties.id = prop_owners.property_id
-                                                        AND  prop_properties.status =1 and upper(prop_properties.new_holding_no) = '$mHoldingNo'
-                                                        AND prop_properties.ulb_id = $refUlbId
-                                                    WHERE prop_owners.status =1 
-                                                    GROUP BY property_id 
-                                                    )owners"),
-                    function ($join) {
-                        $join->on("owners.property_id", "prop_properties.id");
-                    }
-                )
-                ->whereRaw("UPPER(prop_properties.new_holding_no) = ?", [$mHoldingNo])
-                ->where("prop_properties.ulb_id", $refUlbId)
-                ->get();
-            // dd(DB::getQueryLog());
-            if (sizeOf($property) < 1) {
-                throw new Exception("Holding Not Found");
-            }
-            $data['property'] = $property;
-            return responseMsgs(true, "", remove_null($data),"010401","01",responseTime(),$request->getMethod(),$request->deviceId);
-        } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), $request->all(),"010401","01",responseTime(),$request->getMethod(),$request->deviceId);
-        }
-    }
 
     /**
      * | Apply The Property Deactivation Request With Proper Comment And Document
@@ -720,4 +667,65 @@ class PropertyDeactivate implements IPropertyDeactivate
             echo $e->getMessage();
         }
     }
+
+    # ---------------------------------------------------------#
+    # ----- APIs that are currently inactive or unused --------#
+    # ---------------------------------------------------------#
+
+    
+    /**
+     * | Searching the valide Property With New Holding No
+       | Common Function
+     */
+    public function readHoldigbyNo(Request $request)
+    {
+        try {
+            $refUser    = Auth()->user();
+            $refUserId  = $refUser->id;
+            $refUlbId   = $refUser->ulb_id;
+            $rules["holdingNo"] = "required|string";
+            $validator = Validator::make($request->all(), $rules,);
+            if ($validator->fails()) {
+                return responseMsg(false, $validator->errors(), $request->all());
+            }
+            $mHoldingNo = strtoupper($request->holdingNo);
+            // DB::enableQueryLog();
+            $property = PropProperty::select(
+                "id",
+                "new_holding_no",
+                "holding_no",
+                "prop_address",
+                DB::raw("owners.owner_name, owners.guardian_name, owners.mobile_no")
+            )
+                ->leftjoin(
+                    DB::raw("(SELECT DISTINCT(property_id) AS property_id,
+                                                        STRING_AGG(owner_name, ',') AS owner_name,
+                                                        STRING_AGG(guardian_name, ',') AS guardian_name,
+                                                        STRING_AGG(mobile_no::text, ',') AS mobile_no
+                                                    FROM prop_owners 
+                                                    JOIN prop_properties ON prop_properties.id = prop_owners.property_id
+                                                        AND  prop_properties.status =1 and upper(prop_properties.new_holding_no) = '$mHoldingNo'
+                                                        AND prop_properties.ulb_id = $refUlbId
+                                                    WHERE prop_owners.status =1 
+                                                    GROUP BY property_id 
+                                                    )owners"),
+                    function ($join) {
+                        $join->on("owners.property_id", "prop_properties.id");
+                    }
+                )
+                ->whereRaw("UPPER(prop_properties.new_holding_no) = ?", [$mHoldingNo])
+                ->where("prop_properties.ulb_id", $refUlbId)
+                ->get();
+            // dd(DB::getQueryLog());
+            if (sizeOf($property) < 1) {
+                throw new Exception("Holding Not Found");
+            }
+            $data['property'] = $property;
+            return responseMsgs(true, "", remove_null($data),"010401","01",responseTime(),$request->getMethod(),$request->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $request->all(),"010401","01",responseTime(),$request->getMethod(),$request->deviceId);
+        }
+    }
+
+    
 }
