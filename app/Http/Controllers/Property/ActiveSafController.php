@@ -1452,6 +1452,7 @@ class ActiveSafController extends Controller
             $safApprovalBll = new SafApprovalBll();;
 
             $userId = authUser($req)->id;
+            // $userId = 77;
             $safId = $req->applicationId;
             // Derivative Assignments
             $safDetails = PropActiveSaf::findOrFail($req->applicationId);
@@ -1478,12 +1479,16 @@ class ActiveSafController extends Controller
             $floorDetails = PropActiveSafsFloor::query()
                 ->where('saf_id', $req->applicationId)
                 ->get();
+            $propId = null;
+            if ($activeSaf->assessment_type !== 'Amalgamation') {
+                $propDtls = $mPropProperties->getPropIdBySafId($req->applicationId);
 
-            $propDtls = $mPropProperties->getPropIdBySafId($req->applicationId);
-            if (!$propDtls) {
-                throw new Exception("Property Not Found For the Saf");
+                if (!$propDtls) {
+                    throw new Exception("Property Not Found For the Saf");
+                }
+
+                $propId = $propDtls->id;
             }
-            $propId = $propDtls->id;
 
             if ($safDetails->prop_type_mstr_id != 4)
                 $fieldVerifiedSaf = $propSafVerification->getVerificationsBySafId($safId);          // Get fields Verified Saf with all Floor Details
@@ -1679,7 +1684,9 @@ class ActiveSafController extends Controller
         $mPropFloors = new PropFloor();
 
         // Step 1: Replicate verified SAF into prop_properties table
-        $mPropProperties->replicateVerifiedSaf($propId, collect($fieldVerifiedSaf)->first());
+        if ($activeSaf->assessment_type != 'Amalgamation') {
+            $mPropProperties->replicateAmalgamationSaf($propId, collect($fieldVerifiedSaf)->first());
+        }
 
         // Step 2: Replicate and approve the active SAF
         $approvedSaf = $activeSaf->replicate();
@@ -1861,7 +1868,76 @@ class ActiveSafController extends Controller
             $approvedProperty->status = 0;
             $approvedProperty->save();
         }
+
+        // Property Amalgamation Reversion
+        if (in_array($activeSaf->assessment_type, ['Amalgamation'])) {
+            $this->revertAmalgamation($activeSaf);
+        }
     }
+
+    protected function revertAmalgamation($saf)
+    {
+        if ($saf->assessment_type !== "Amalgamation") {
+            return;
+        }
+
+        $safAmalgation = new SafAmalgamatePropLog();
+        $mPropProperty = new PropProperty();
+
+        $safAmalgationEntries = $safAmalgation->where('saf_id', $saf->id)->get();
+        $masterAmalg = $safAmalgationEntries->where('is_master', true)->first();
+        $childAmalgs = $safAmalgationEntries->where('is_master', false);
+
+        if (!$masterAmalg || $childAmalgs->isEmpty()) {
+            throw new \Exception("Amalgamation data incomplete for revert");
+        }
+
+        $masterPropId = $masterAmalg->property_id;
+        $masterProp = $mPropProperty->find($masterPropId);
+        foreach ($childAmalgs as $child) {
+            $childPropId = $child->property_id;
+            $childProp = $mPropProperty->find($child->property_id);
+            if ($childProp && $masterProp) {
+                $masterProp->area_of_plot -= $childProp->area_of_plot;
+                // Add other merging logic as needed
+                $masterProp->save();
+            }
+
+            // ✅ Only revert those floors/owners/demands that were originally part of child
+            $floorIds = json_decode($child->floors_ids ?? '[]', true);
+            $ownerIds = json_decode($child->owners_ids ?? '[]', true);
+            $demandIds = json_decode($child->demand_ids ?? '[]', true);
+
+            // Revert floors
+            if (!empty($floorIds)) {
+                PropFloor::where('property_id', $masterPropId)
+                    ->whereIn('id', $floorIds)
+                    ->update(['property_id' => $childPropId]);
+            }
+
+            // Revert owners
+            if (!empty($ownerIds)) {
+                PropOwner::where('property_id', $masterPropId)
+                    ->whereIn('id', $ownerIds)
+                    ->update(['property_id' => $childPropId]);
+            }
+
+            // Revert demands
+            if (!empty($demandIds)) {
+                PropDemand::where('property_id', $masterPropId)
+                    ->whereIn('id', $demandIds)
+                    ->update(['property_id' => $childPropId]);
+            }
+
+            // ✅ Reactivate child property
+            $childProp = $mPropProperty->find($childPropId);
+            if ($childProp) {
+                $childProp->status = 1;
+                $childProp->save();
+            }
+        }
+    }
+
 
     /**
      * | Back to Citizen
@@ -3560,7 +3636,7 @@ class ActiveSafController extends Controller
         }
     }
 
-        /**
+    /**
      * | Edit Applied Saf by SAF Id for BackOffice
      * | -----------------------------------------------
      * | Validates request data, updates SAF and owner details within a transaction.
