@@ -1685,7 +1685,7 @@ class ActiveSafController extends Controller
 
         // Step 1: Replicate verified SAF into prop_properties table
         if ($activeSaf->assessment_type != 'Amalgamation') {
-            $mPropProperties->replicateAmalgamationSaf($propId, collect($fieldVerifiedSaf)->first());
+            $mPropProperties->replicateVerifiedSaf($propId, collect($fieldVerifiedSaf)->first());
         }
 
         // Step 2: Replicate and approve the active SAF
