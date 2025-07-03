@@ -362,7 +362,7 @@ class PropertyDetailsController extends Controller
      * | ownerName, etc., with optional zone, ward, and legacy filters.
        | This API is also connected with serApplication function(NoticeController)
     */
-    /* public function propertyListByKey(Request $request)
+    public function propertyListByKey(Request $request)
     {
         $request->validate([
             'filteredBy' => "required",
@@ -488,123 +488,123 @@ class PropertyDetailsController extends Controller
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011302", "1.0", "", "POST", $request->deviceId ?? "");
         }
-    } */
+    } 
 
-    public function propertyListByKey(Request $request)
-    {
-        $request->validate([
-            'filteredBy' => "required",
-            'parameter' => "nullable",
-            'zoneId' => "nullable|digits_between:1,9223372036854775807",
-            'wardId' => "nullable|digits_between:1,9223372036854775807",
-            'withGeoTags' => "nullable|boolean",
-        ]);
+    // public function propertyListByKey(Request $request)
+    // {
+    //     $request->validate([
+    //         'filteredBy' => "required",
+    //         'parameter' => "nullable",
+    //         'zoneId' => "nullable|digits_between:1,9223372036854775807",
+    //         'wardId' => "nullable|digits_between:1,9223372036854775807",
+    //         'withGeoTags' => "nullable|boolean",
+    //     ]);
 
-        try {
-            $mPropProperty = new PropProperty();
-            $mWfRoleUser = new WfRoleusermap();
-            $user = authUser($request);
-            $userId = $user->id;
-            $userType = $user->user_type;
-            $ulbId = $user->ulb_id ?? $request->ulbId;
-            $role = $mWfRoleUser->getRoleIdByUserId($userId)->pluck('wf_role_id')->first();
+    //     try {
+    //         $mPropProperty = new PropProperty();
+    //         $mWfRoleUser = new WfRoleusermap();
+    //         $user = authUser($request);
+    //         $userId = $user->id;
+    //         $userType = $user->user_type;
+    //         $ulbId = $user->ulb_id ?? $request->ulbId;
+    //         $role = $mWfRoleUser->getRoleIdByUserId($userId)->pluck('wf_role_id')->first();
 
-            $key = $request->filteredBy;
-            $parameter = $request->parameter;
-            $isLegacy = $request->isLegacy;
-            $perPage = $request->perPage ?? 10;
+    //         $key = $request->filteredBy;
+    //         $parameter = $request->parameter;
+    //         $isLegacy = $request->isLegacy;
+    //         $perPage = $request->perPage ?? 10;
 
-            // Start filtering
-            switch ($key) {
-                case "holdingNo":
-                    $data = $mPropProperty->searchProperty($ulbId)
-                        ->where(function ($q) use ($parameter) {
-                            $q->where('prop_properties.holding_no', $parameter)
-                                ->orWhere('prop_properties.new_holding_no', $parameter);
-                        });
-                    break;
-                case "ptn":
-                    $data = $mPropProperty->searchProperty($ulbId)
-                        ->where('prop_properties.pt_no', 'LIKE', '%' . $parameter . '%');
-                    break;
-                case "ownerName":
-                    $data = $mPropProperty->searchProperty($ulbId)
-                        ->where('prop_owners.owner_name', 'LIKE', '%' . strtoupper($parameter) . '%');
-                    break;
-                case "address":
-                    $data = $mPropProperty->searchProperty($ulbId)
-                        ->where('prop_properties.prop_address', 'LIKE', '%' . strtoupper($parameter) . '%');
-                    break;
-                case "mobileNo":
-                    $data = $mPropProperty->searchProperty($ulbId)
-                        ->where('prop_owners.mobile_no', 'LIKE', '%' . $parameter . '%');
-                    break;
-                case "khataNo":
-                    $data = $mPropProperty->searchProperty($ulbId);
+    //         // Start filtering
+    //         switch ($key) {
+    //             case "holdingNo":
+    //                 $data = $mPropProperty->searchProperty($ulbId)
+    //                     ->where(function ($q) use ($parameter) {
+    //                         $q->where('prop_properties.holding_no', $parameter)
+    //                             ->orWhere('prop_properties.new_holding_no', $parameter);
+    //                     });
+    //                 break;
+    //             case "ptn":
+    //                 $data = $mPropProperty->searchProperty($ulbId)
+    //                     ->where('prop_properties.pt_no', 'LIKE', '%' . $parameter . '%');
+    //                 break;
+    //             case "ownerName":
+    //                 $data = $mPropProperty->searchProperty($ulbId)
+    //                     ->where('prop_owners.owner_name', 'LIKE', '%' . strtoupper($parameter) . '%');
+    //                 break;
+    //             case "address":
+    //                 $data = $mPropProperty->searchProperty($ulbId)
+    //                     ->where('prop_properties.prop_address', 'LIKE', '%' . strtoupper($parameter) . '%');
+    //                 break;
+    //             case "mobileNo":
+    //                 $data = $mPropProperty->searchProperty($ulbId)
+    //                     ->where('prop_owners.mobile_no', 'LIKE', '%' . $parameter . '%');
+    //                 break;
+    //             case "khataNo":
+    //                 $data = $mPropProperty->searchProperty($ulbId);
 
-                    if ($request->khataNo)
-                        $data = $data->where('prop_properties.khata_no', $request->khataNo);
-                    if ($request->plotNo)
-                        $data = $data->where('prop_properties.plot_no', $request->plotNo);
-                    if ($request->maujaName)
-                        $data = $data->where('prop_properties.village_mauja_name', $request->maujaName);
-                    break;
-            }
+    //                 if ($request->khataNo)
+    //                     $data = $data->where('prop_properties.khata_no', $request->khataNo);
+    //                 if ($request->plotNo)
+    //                     $data = $data->where('prop_properties.plot_no', $request->plotNo);
+    //                 if ($request->maujaName)
+    //                     $data = $data->where('prop_properties.village_mauja_name', $request->maujaName);
+    //                 break;
+    //         }
 
-            // Filters
-            if ($request->zoneId)
-                $data = $data->where("prop_properties.zone_mstr_id", $request->zoneId);
-            if ($request->wardId)
-                $data = $data->where("prop_properties.new_ward_mstr_id", $request->wardId);
-            if ($userType != 'Citizen')
-                $data = $data->where('prop_properties.ulb_id', $ulbId);
+    //         // Filters
+    //         if ($request->zoneId)
+    //             $data = $data->where("prop_properties.zone_mstr_id", $request->zoneId);
+    //         if ($request->wardId)
+    //             $data = $data->where("prop_properties.new_ward_mstr_id", $request->wardId);
+    //         if ($userType != 'Citizen')
+    //             $data = $data->where('prop_properties.ulb_id', $ulbId);
 
-            // Legacy vs Non-Legacy
-            if ($isLegacy === true) {
-                $paginator = $data
-                    ->where('new_holding_no', null)
-                    ->paginate($perPage);
-            } else {
-                $paginator = $data
-                    ->where('new_holding_no', '!=', null)
-                    ->paginate($perPage);
-            }
+    //         // Legacy vs Non-Legacy
+    //         if ($isLegacy === true) {
+    //             $paginator = $data
+    //                 ->where('new_holding_no', null)
+    //                 ->paginate($perPage);
+    //         } else {
+    //             $paginator = $data
+    //                 ->where('new_holding_no', '!=', null)
+    //                 ->paginate($perPage);
+    //         }
 
-            $result = [
-                "current_page" => $paginator->currentPage(),
-                "last_page" => $paginator->lastPage(),
-                "data" => $paginator->items(),
-                "total" => $paginator->total(),
-            ];
+    //         $result = [
+    //             "current_page" => $paginator->currentPage(),
+    //             "last_page" => $paginator->lastPage(),
+    //             "data" => $paginator->items(),
+    //             "total" => $paginator->total(),
+    //         ];
 
-            return responseMsgs(true, "Application Details", remove_null($result), "011302", "1.0", responseTime(), "POST", $request->deviceId ?? "");
-        } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "011302", "1.0", "", "POST", $request->deviceId ?? "");
-        }
-    }
+    //         return responseMsgs(true, "Application Details", remove_null($result), "011302", "1.0", responseTime(), "POST", $request->deviceId ?? "");
+    //     } catch (Exception $e) {
+    //         return responseMsgs(false, $e->getMessage(), "", "011302", "1.0", "", "POST", $request->deviceId ?? "");
+    //     }
+    // }
 
     /**
      * | Fetch GeoTag data for a property by its ID
      */
-    public function getPropertyGeoTag(Request $request)
-    {
-        $request->validate([
-            'propertyId' => 'required|integer|exists:prop_properties,id',
-        ]);
+    // public function getPropertyGeoTag(Request $request)
+    // {
+    //     $request->validate([
+    //         'propertyId' => 'required|integer|exists:prop_properties,id',
+    //     ]);
 
-        $mPropProperty = new PropProperty();
+    //     $mPropProperty = new PropProperty();
 
-        try {
-            $propertyId = $request->propertyId;
+    //     try {
+    //         $propertyId = $request->propertyId;
 
             
-            $geoTag = $mPropProperty->getGeoTagByPropertyId($propertyId);
+    //         $geoTag = $mPropProperty->getGeoTagByPropertyId($propertyId);
 
-            return responseMsgs(true, "GeoTag data fetched", $geoTag ?? [], "011306", "1.0", responseTime(), "POST", $request->deviceId ?? "");
-        } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "011306", "1.0", "", "POST", $request->deviceId ?? "");
-        }
-    }
+    //         return responseMsgs(true, "GeoTag data fetched", $geoTag ?? [], "011306", "1.0", responseTime(), "POST", $request->deviceId ?? "");
+    //     } catch (Exception $e) {
+    //         return responseMsgs(false, $e->getMessage(), "", "011306", "1.0", "", "POST", $request->deviceId ?? "");
+    //     }
+    // }
 
     /**
      * | Fetch paginated property list filtered by keys like holdingNo, ptn, ownerName, address, mobileNo, or khata/plot/mauja combinations.

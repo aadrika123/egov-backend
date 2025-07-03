@@ -610,7 +610,7 @@ class PropProperty extends Model
      * | Search Property
        | Reference Function : propertyListByKey
      */
-    /*  public function searchProperty($ulbId)
+    public function searchProperty($ulbId)
      {
          return PropProperty::select(
              'prop_properties.id',
@@ -641,64 +641,64 @@ class PropProperty extends Model
              })
              ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
              ->where('prop_properties.ulb_id', $ulbId);
-     } */
+     } 
 
     // Property search (cleaned)
-    public function searchProperty($ulbId)
-    {
-        return PropProperty::select(
-            'prop_properties.id',
-            'prop_properties.ulb_id',
-            'prop_properties.holding_no',
-            'prop_properties.ward_mstr_id',
-            'prop_properties.zone_mstr_id',
-            'prop_properties.new_holding_no',
-            'prop_properties.pt_no',
-            'prop_properties.khata_no',
-            'prop_properties.plot_no',
-            'ward_name',
-            'prop_address',
-            'prop_properties.status as active_status',
-            DB::raw("string_agg(prop_owners.mobile_no::VARCHAR,',') as mobile_no"),
-            DB::raw("string_agg(prop_owners.owner_name,',') as owner_name")
-        )
-            ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
-            ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
-            ->where('prop_properties.ulb_id', $ulbId)
-            ->groupBy(
-                'prop_properties.id',
-                'prop_properties.ulb_id',
-                'prop_properties.holding_no',
-                'prop_properties.ward_mstr_id',
-                'prop_properties.zone_mstr_id',
-                'prop_properties.new_holding_no',
-                'prop_properties.pt_no',
-                'prop_properties.khata_no',
-                'prop_properties.plot_no',
-                'ward_name',
-                'prop_address',
-                'prop_properties.status'
-            );
-    }
+    // public function searchProperty($ulbId)
+    // {
+    //     return PropProperty::select(
+    //         'prop_properties.id',
+    //         'prop_properties.ulb_id',
+    //         'prop_properties.holding_no',
+    //         'prop_properties.ward_mstr_id',
+    //         'prop_properties.zone_mstr_id',
+    //         'prop_properties.new_holding_no',
+    //         'prop_properties.pt_no',
+    //         'prop_properties.khata_no',
+    //         'prop_properties.plot_no',
+    //         'ward_name',
+    //         'prop_address',
+    //         'prop_properties.status as active_status',
+    //         DB::raw("string_agg(prop_owners.mobile_no::VARCHAR,',') as mobile_no"),
+    //         DB::raw("string_agg(prop_owners.owner_name,',') as owner_name")
+    //     )
+    //         ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
+    //         ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
+    //         ->where('prop_properties.ulb_id', $ulbId)
+    //         ->groupBy(
+    //             'prop_properties.id',
+    //             'prop_properties.ulb_id',
+    //             'prop_properties.holding_no',
+    //             'prop_properties.ward_mstr_id',
+    //             'prop_properties.zone_mstr_id',
+    //             'prop_properties.new_holding_no',
+    //             'prop_properties.pt_no',
+    //             'prop_properties.khata_no',
+    //             'prop_properties.plot_no',
+    //             'ward_name',
+    //             'prop_address',
+    //             'prop_properties.status'
+    //         );
+    // }
 
     // Geotag query by property IDs
-    public function getGeoTagByPropertyId($propertyId)
-    {
-        return DB::table('prop_saf_geotag_uploads')
-            ->select(
-                'prop_properties.id as property_id',
-                'prop_saf_geotag_uploads.latitude',
-                'prop_saf_geotag_uploads.longitude',
-                'prop_properties.holding_no',
-                'prop_address'
+    // public function getGeoTagByPropertyId($propertyId)
+    // {
+    //     return DB::table('prop_saf_geotag_uploads')
+    //         ->select(
+    //             'prop_properties.id as property_id',
+    //             'prop_saf_geotag_uploads.latitude',
+    //             'prop_saf_geotag_uploads.longitude',
+    //             'prop_properties.holding_no',
+    //             'prop_address'
 
-            )
-            ->join('prop_properties', 'prop_properties.saf_id', '=', 'prop_saf_geotag_uploads.saf_id')
-            ->where('prop_properties.id', $propertyId)
-            ->where('prop_saf_geotag_uploads.direction_type', 'ILIKE', '%front%')
-            ->groupBy('prop_properties.id', 'prop_saf_geotag_uploads.latitude', 'prop_saf_geotag_uploads.longitude')
-            ->first();
-    }
+    //         )
+    //         ->join('prop_properties', 'prop_properties.saf_id', '=', 'prop_saf_geotag_uploads.saf_id')
+    //         ->where('prop_properties.id', $propertyId)
+    //         ->where('prop_saf_geotag_uploads.direction_type', 'ILIKE', '%front%')
+    //         ->groupBy('prop_properties.id', 'prop_saf_geotag_uploads.latitude', 'prop_saf_geotag_uploads.longitude')
+    //         ->first();
+    // }
 
 
 
