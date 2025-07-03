@@ -3157,6 +3157,7 @@ class ActiveSafController extends Controller
 
                 $safDetails2["is_water_harvesting"] = $safDetails2["has_water_harvesting"];
                 $safDetails2["rwh_date_from"] = $safDetails2["rwh_date_from"];
+                $safDetails2["apartment_details_id"] = $saf->apartment_details_id;     // added 
 
                 $safDetails2['floors'] = $verifications_detals;
                 $safDetails2['floors'] = $safDetails2['floors']->map(function ($val) {
