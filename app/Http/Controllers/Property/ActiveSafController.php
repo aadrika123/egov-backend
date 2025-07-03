@@ -1490,12 +1490,22 @@ class ActiveSafController extends Controller
                 $propId = $propDtls->id;
             }
 
-            if ($safDetails->prop_type_mstr_id != 4)
-                $fieldVerifiedSaf = $propSafVerification->getVerificationsBySafId($safId);          // Get fields Verified Saf with all Floor Details
-            else
+            $fieldVerifiedSaf = null;
+
+            if ($safDetails->prop_type_mstr_id != 4) {
+                $fieldVerifiedSaf = $propSafVerification->getVerificationsBySafId($safId); // Try this first
+            }
+
+            // If empty or null, then try the fallback
+            if (collect($fieldVerifiedSaf)->isEmpty()) {
                 $fieldVerifiedSaf = $propSafVerification->getVerifications($safId);
-            if (collect($fieldVerifiedSaf)->isEmpty())
+            }   
+
+            // Final check
+            if (collect($fieldVerifiedSaf)->isEmpty()) {
                 throw new Exception("Site Verification not Exist");
+            }
+
 
             #_Multiple Database Connection Started
             DB::beginTransaction();
