@@ -288,7 +288,7 @@ class CitizenRepository implements iCitizenRepository
     public function appliedTradeApplications($userId)
     {
         $applications = array();
-        $tradeApplications = ActiveTradeLicence::select('active_trade_licences.id as application_id', 'application_no', 'holding_no', 'workflow_id', 'active_trade_licences.created_at', 'active_trade_licences.updated_at','ulb_name')
+        $tradeApplications = ActiveTradeLicence::select('active_trade_licences.id as application_id', 'application_no', 'holding_no', 'workflow_id', 'active_trade_licences.created_at', 'active_trade_licences.updated_at', 'ulb_name')
             ->join('ulb_masters', 'ulb_masters.id', '=', 'active_trade_licences.ulb_id')
             ->where('citizen_id', $userId)
             ->where('is_active', 1)
@@ -368,7 +368,7 @@ class CitizenRepository implements iCitizenRepository
                     'prop_properties.new_holding_no',
                     DB::raw("TO_CHAR(application_date, 'DD-MM-YYYY') as application_date"),
                     'prop_owners.owner_name',
-                    'prop_properties.balance',
+                    'prop_demands.balance',
                     'prop_transactions.amount',
                     "ulb_name",
                     DB::raw("TO_CHAR(prop_transactions.tran_date, 'DD-MM-YYYY') as tran_date"),
@@ -377,6 +377,12 @@ class CitizenRepository implements iCitizenRepository
                 ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
                 ->join('ulb_masters', 'ulb_masters.id', 'prop_properties.ulb_id')
                 ->leftjoin('prop_transactions', 'prop_transactions.property_id', 'prop_properties.id')
+                ->leftJoin(DB::raw("(
+                                     SELECT property_id, SUM(balance) as balance
+                                     FROM prop_demands
+                                     where paid_status = 0
+                                     GROUP BY property_id
+                                       ) as prop_demands"), 'prop_demands.property_id', '=', 'prop_properties.id')
                 ->orderBydesc('prop_transactions.id')
                 ->first();
 
