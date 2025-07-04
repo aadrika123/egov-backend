@@ -99,7 +99,7 @@ class PropertyController extends Controller
         }
     }
 
-        /**
+    /**
      * | Check if the property id exist in the workflow
        | CheckProperty:1
      */
@@ -238,9 +238,9 @@ class PropertyController extends Controller
             return $msg;
         }
     }
-    
 
-       /**
+
+    /**
      * | Master Holding Data
      * | Fetch master holding data including amalgamated properties and floors.
      */
@@ -256,7 +256,8 @@ class PropertyController extends Controller
             $plotArea = collect($holdingDtls)->sum('area_of_plot');
             $floorDtls = $mPropFloor->getAppartmentFloor($propIds)->get();
             $masterHoldingId = collect($request->amalgamation)->where('isMasterHolding', true)->first();
-            $amalgamatHoldingId = collect($request->amalgamation)->where('isMasterHolding', false)->first();
+            $amalgamatHoldingId = collect($request->amalgamation)->where('isMasterHolding', false)->values()->all();
+
             $reqPropId = new Request(['propertyId' => $masterHoldingId['propId']]);
             $masterData = $safController->getPropByHoldingNo($reqPropId)->original['data'];
             $masterData['floors'] = $floorDtls;
@@ -367,9 +368,9 @@ class PropertyController extends Controller
         $path = (config('app.url') . "/" . $path);
         return $path;
     }
-    
 
-    
+
+
     # ---------------------------------------------------------#
     # ----- APIs that are currently inactive or unused --------#
     # ---------------------------------------------------------#
@@ -671,7 +672,4 @@ class PropertyController extends Controller
             return responseMsgs(false, $e->getMessage(), [], '011707', '01', responseTime(), $request->getMethod(), $request->deviceId);
         }
     }
-
-
- 
 }
