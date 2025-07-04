@@ -2,21 +2,28 @@
 
 namespace App\Repository\Citizen;
 
+use App\EloquentClass\Property\PenaltyRebateCalculation;
+use App\Models\UlbMaster;
 use Illuminate\Http\Request;
 use App\Repository\Citizen\iCitizenRepository;
 use App\Models\ActiveCitizen;
 use App\Models\Citizen\ActiveCitizenUndercare;
 use App\Models\Payment\PaymentRequest;
+use App\Models\Property\PropAdvance;
+use App\Models\Property\PropDemand;
 use App\Models\Property\PropLevelPending;
+use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
 use App\Models\Trade\ActiveLicence;
 use App\Models\Trade\ActiveTradeLicence;
 use App\Models\Trade\TradeLicence;
 use App\Models\User;
 use App\Models\Water\WaterApplication;
+use App\Models\Workflows\WfRoleusermap;
 use App\Models\WorkflowTrack;
 use App\Traits\Auth;
 use App\Traits\Workflow\Workflow;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -81,6 +88,7 @@ class CitizenRepository implements iCitizenRepository
     {
         try {
             $userId = authUser($req)->id;
+            // $userId = 36;
             $applications = array();
 
             if ($req->getMethod() == 'GET') {                                                       // For All Applications
@@ -351,17 +359,18 @@ class CitizenRepository implements iCitizenRepository
     //
     public function getCaretakerProperty($userId)
     {
-        $data = array();
+        $data = [];
         $mActiveCitizenCareTaker = new ActiveCitizenUndercare();
         $propertiesByCitizen = $mActiveCitizenCareTaker->getTaggedPropsByCitizenId($userId);
-        $propIds =  ($propertiesByCitizen->pluck('property_id'));
+        $propIds = $propertiesByCitizen->pluck('property_id');
+
         if ($propIds->isEmpty())
             return $data;
 
         foreach ($propIds as $propId) {
-            if (!$propId)
-                continue;
-            $propdtl =  PropProperty::where('prop_properties.id', $propId)
+            if (!$propId) continue;
+
+            $propdtl = PropProperty::where('prop_properties.id', $propId)
                 ->select(
                     'prop_properties.id',
                     'prop_properties.holding_no',
@@ -371,20 +380,31 @@ class CitizenRepository implements iCitizenRepository
                     'prop_demands.balance',
                     'prop_transactions.amount',
                     "ulb_name",
-                    DB::raw("TO_CHAR(prop_transactions.tran_date, 'DD-MM-YYYY') as tran_date"),
-
+                    DB::raw("TO_CHAR(prop_transactions.tran_date, 'DD-MM-YYYY') as tran_date")
                 )
                 ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
                 ->join('ulb_masters', 'ulb_masters.id', 'prop_properties.ulb_id')
-                ->leftjoin('prop_transactions', 'prop_transactions.property_id', 'prop_properties.id')
+                ->leftJoin('prop_transactions', 'prop_transactions.property_id', 'prop_properties.id')
                 ->leftJoin(DB::raw("(
-                                     SELECT property_id, SUM(balance) as balance
-                                     FROM prop_demands
-                                     where paid_status = 0
-                                     GROUP BY property_id
-                                       ) as prop_demands"), 'prop_demands.property_id', '=', 'prop_properties.id')
-                ->orderBydesc('prop_transactions.id')
+                SELECT property_id, SUM(balance) as balance
+                FROM prop_demands
+                WHERE paid_status = 0
+                GROUP BY property_id
+            ) as prop_demands"), 'prop_demands.property_id', '=', 'prop_properties.id')
+                ->orderByDesc('prop_transactions.id')
                 ->first();
+
+            if (!$propdtl) continue;
+
+            // Now get demand dues from API/controller method
+            $request = new Request();
+            $request->merge(["propId" => $propId]);
+            $demandDues = $this->getHoldingDues($request);
+
+            $totalDemandAmount = 0;
+            if ($demandDues && isset($demandDues->original['data']['duesList']['payableAmount'])) {
+                $totalDemandAmount = $demandDues->original['data']['duesList']['payableAmount'];
+            }
 
             $propDtls = [
                 'prop_id' => $propdtl->id,
@@ -392,16 +412,18 @@ class CitizenRepository implements iCitizenRepository
                 'new_holding_no' => $propdtl->new_holding_no,
                 'apply_date' => $propdtl->application_date,
                 'owner_name' => $propdtl->owner_name,
-                'leftamount' => $propdtl->balance,
+                'leftamount' => $totalDemandAmount, // more accurate than just balance
                 'lastpaidamount' => $propdtl->amount,
                 'lastpaiddate' => $propdtl->tran_date,
                 'ulb_name' => $propdtl->ulb_name,
             ];
 
-            array_push($data, $propDtls);
+            $data[] = $propDtls;
         }
+
         return collect($data);
     }
+
 
     /**
      * | Get care taker trade
@@ -496,5 +518,211 @@ class CitizenRepository implements iCitizenRepository
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
+    }
+
+    /**
+     * | Get Holding Dues(2)
+     * | Validates the input property ID, then calculates and returns
+       | Common Function
+     */
+    public function getHoldingDues(Request $req)
+    {
+        $req->validate([
+            'propId' => 'required|digits_between:1,9223372036854775807'
+        ]);
+
+        try {
+            $todayDate = Carbon::now()->format('Y-m-d');
+            $mPropAdvance = new PropAdvance();
+            $mPropDemand = new PropDemand();
+            $mPropProperty = new PropProperty();
+            $penaltyRebateCalc = new PenaltyRebateCalculation;
+            $mWfRoleUser = new WfRoleusermap();
+            $currentQuarter = calculateQtr(Carbon::now()->format('Y-m-d'));
+            $currentFYear = getFY();
+            $canTakePayment = false; // Initializing $canTakePayment to false by default
+            if ($req->auth) {
+                $canTakePaymentRole = [4, 5, 8];
+                $user = authUser($req);
+                $roleIds = $mWfRoleUser->getRoleIdByUserId($user->id)->pluck('wf_role_id')->toArray();
+
+                foreach ($roleIds as $roleId) {
+                    if (in_array($roleId, $canTakePaymentRole)) {
+                        $canTakePayment = true;
+                        break; // No need to continue checking once we find a match
+                    }
+                }
+            }
+            $loggedInUserType = $user->user_type ?? "Citizen";
+            $mPropOwners = new PropOwner();
+            $pendingFYears = collect();
+            $qtrs = collect([1, 2, 3, 4]);
+            $mUlbMasters = new UlbMaster();
+
+            $ownerDetails = $mPropOwners->getOwnerByPropId($req->propId)->first();
+            $demand = array();
+            $demandList = $mPropDemand->getDueDemandByPropId($req->propId);
+            $demandList = collect($demandList);
+
+            collect($demandList)->map(function ($value) use ($pendingFYears) {
+                $fYear = $value->fyear;
+                $pendingFYears->push($fYear);
+            });
+            // Property Part Payment
+            if (isset($req->fYear) && isset($req->qtr)) {
+                $demandTillQtr = $demandList->where('fyear', $req->fYear)->where('qtr', $req->qtr)->first();
+                if (collect($demandTillQtr)->isNotEmpty()) {
+                    $demandDueDate = $demandTillQtr->due_date;
+                    $demandList = $demandList->filter(function ($item) use ($demandDueDate) {
+                        return $item->due_date <= $demandDueDate;
+                    });
+                    $demandList = $demandList->values();
+                }
+
+                if (collect($demandTillQtr)->isEmpty())
+                    $demandList = collect();                                    // Demand List blank in case of fyear and qtr         
+            }
+            $propDtls = $mPropProperty->getPropById($req->propId);
+            $balance = $propDtls->balance ?? 0;
+
+            $propBasicDtls = $mPropProperty->getPropBasicDtls($req->propId);
+            if (collect($propBasicDtls)->isEmpty()) {
+                throw new Exception("Property Details Not Available");
+            }
+            $holdingType = $propBasicDtls->holding_type;
+            $ownershipType = $propBasicDtls->ownership_type;
+            $basicDtls = collect($propBasicDtls)->only([
+                'holding_no',
+                'new_holding_no',
+                'old_ward_no',
+                'new_ward_no',
+                'property_type',
+                'zone_mstr_id',
+                'is_mobile_tower',
+                'is_hoarding_board',
+                'is_petrol_pump',
+                'is_water_harvesting',
+                'ulb_id',
+                'prop_address',
+                'area_of_plot'
+            ]);
+            $basicDtls["holding_type"] = $holdingType;
+            $basicDtls["ownership_type"] = $ownershipType;
+
+            if ($demandList->isEmpty())
+                throw new Exception("No Dues Found Please See Your Payment History For Your Recent Transactions");
+
+            $demandList = $demandList->map(function ($item) {                                // One Perc Penalty Tax
+                return $this->calcOnePercPenalty($item);
+            });
+
+            $dues = roundFigure($demandList->sum('balance'));
+            $dues = ($dues > 0) ? $dues : 0;
+
+            $onePercTax = roundFigure($demandList->sum('onePercPenaltyTax'));
+            $onePercTax = ($onePercTax > 0) ? $onePercTax : 0;
+
+            $rwhPenaltyTax = roundFigure($demandList->sum('additional_tax'));
+            $advanceAdjustments = $mPropAdvance->getPropAdvanceAdjustAmt($req->propId);
+            if (collect($advanceAdjustments)->isEmpty())
+                $advanceAmt = 0;
+            else
+                $advanceAmt = $advanceAdjustments->advance - $advanceAdjustments->adjustment_amt;
+
+            $mLastQuarterDemand = $demandList->where('fyear', $currentFYear)->sum('balance');
+
+            $paymentUptoYrs = $pendingFYears->unique()->values();
+            $dueFrom = "Quarter " . $demandList->last()->qtr . "/ Year " . $demandList->last()->fyear;
+            $dueTo = "Quarter " . $demandList->first()->qtr . "/ Year " . $demandList->first()->fyear;
+            $totalDuesList = [
+                'dueFromFyear' => $demandList->last()->fyear,
+                'dueFromQtr' => $demandList->last()->qtr,
+                'dueToFyear' => $demandList->first()->fyear,
+                'dueToQtr' => $demandList->first()->qtr,
+                'totalDues' => $dues,
+                'duesFrom' => $dueFrom,
+                'duesTo' => $dueTo,
+                'onePercPenalty' => $onePercTax,
+                'totalQuarters' => $demandList->count(),
+                'arrear' => $balance,
+                'advanceAmt' => $advanceAmt,
+                'additionalTax' => $rwhPenaltyTax
+            ];
+            $currentQtr = calculateQtr($todayDate);
+
+            $pendingQtrs = $qtrs->filter(function ($value) use ($currentQtr) {
+                return $value >= $currentQtr;
+            });
+
+            $totalDuesList = $penaltyRebateCalc->readRebates($currentQuarter, $loggedInUserType, $mLastQuarterDemand, $ownerDetails, $dues, $totalDuesList);
+
+            $totalRebates = $totalDuesList['rebateAmt'] + $totalDuesList['specialRebateAmt'];
+            $finalPayableAmt = ($dues + $onePercTax + $balance) - ($totalRebates + $advanceAmt);
+            if ($finalPayableAmt < 0)
+                $finalPayableAmt = 0;
+            $totalDuesList['totalRebatesAmt'] = $totalRebates;
+            $totalDuesList['totalPenaltiesAmt'] = $onePercTax;
+            $totalDuesList['payableAmount'] = round($finalPayableAmt);
+            $totalDuesList['paymentUptoYrs'] = [$paymentUptoYrs->first()];
+            $totalDuesList['paymentUptoQtrs'] = $pendingQtrs->unique()->values()->sort()->values();
+
+            $demand['duesList'] = $totalDuesList;
+            $demand['demandList'] = $demandList;
+
+            $demand['basicDetails'] = $basicDtls;
+            if ($canTakePayment == false) {
+                $canTakePayment = in_array($loggedInUserType, ['Citizen']) ? true : false;
+            }
+
+            $demand['can_pay'] = $canTakePayment;
+            // $demand['can_pay'] = true;
+
+            // Calculations for showing demand receipt without any rebate
+            $total = roundFigure($dues - $advanceAmt);
+            if ($total < 0)
+                $total = 0;
+            $totalPayable = round($total + $onePercTax);
+            $totalPayable = roundFigure($totalPayable);
+            if ($totalPayable < 0)
+                $totalPayable = 0;
+            $demand['dueReceipt'] = [
+                'holdingNo' => $basicDtls['holding_no'],
+                'new_holding_no' => $basicDtls['new_holding_no'],
+                'area_of_plot' => $basicDtls['area_of_plot'],
+                'date' => $todayDate,
+                'wardNo' => $basicDtls['old_ward_no'],
+                'newWardNo' => $basicDtls['new_ward_no'],
+                'holding_type' => $holdingType,
+                'ownerName' => $ownerDetails->ownerName,
+                'ownerMobile' => $ownerDetails->mobileNo,
+                'address' => $basicDtls['prop_address'],
+                'duesFrom' => $dueFrom,
+                'duesTo' => $dueTo,
+                'rwhPenalty' => $rwhPenaltyTax,
+                'demand' => $dues,
+                'alreadyPaid' => $advanceAmt,
+                'total' => $total,
+                'onePercPenalty' => $onePercTax,
+                'totalPayable' => $totalPayable,
+                'totalPayableInWords' => getIndianCurrency($totalPayable)
+            ];
+
+            $ulb = $mUlbMasters->getUlbDetails($propDtls->ulb_id);
+            $demand['ulbDetails'] = $ulb;
+            return responseMsgs(true, "Demand Details", remove_null($demand), "011502", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), ['basicDetails' => $basicDtls ?? []], "011502", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
+    public function calcOnePercPenalty($item)
+    {
+        $penaltyRebateCalc = new PenaltyRebateCalculation;
+        $dueDate = $item->due_date ?? $item['due_date'];
+        $onePercPenalty = $penaltyRebateCalc->calcOnePercPenalty($dueDate);        // Calculation One Percent Penalty
+        $item['onePercPenalty'] = $onePercPenalty;
+        $onePercPenaltyTax = ($item['balance'] * $onePercPenalty) / 100;
+        $item['onePercPenaltyTax'] = roundFigure($onePercPenaltyTax);
+        return $item;
     }
 }
