@@ -912,8 +912,9 @@ class HoldingTaxController extends Controller
 
             $ownerDetails = $propProperty['owners']->first();
             // Get Ulb Details
-            // $ulbDetails = $mUlbMasters->getUlbDetails($propProperty['ulb_id']);
-            $ulbDetails = $mUlbMasters->getUlbDetails($req->ulbId);
+            $ulbDetails = $mUlbMasters->getUlbDetails($propProperty['ulb_id']);
+
+            // $ulbDetails = $mUlbMasters->getUlbDetails($req->ulbId);
             // Get Property Penalty and Rebates
             $penalRebates = $mPropPenalties->getPropPenalRebateByTranId($propTrans->id);
 
@@ -1434,7 +1435,7 @@ class HoldingTaxController extends Controller
     # ----- APIs that are currently inactive or unused --------#
     # ---------------------------------------------------------#
 
-    
+
     /**
      * | Generate Holding Demand(1)
      * | Generate yearly demand for a property based on given property ID.
@@ -1458,7 +1459,7 @@ class HoldingTaxController extends Controller
      * | store Razorpay request and penalty rebate details within a transaction.
      * | Returns success response with order details or error on failure.
        | generateOrderId:1
-    */
+     */
     public function generateOrderId(Request $req)
     {
         $req->validate([
@@ -1848,7 +1849,7 @@ class HoldingTaxController extends Controller
             return responseMsgs(false, $e->getMessage(), "", "011508", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
-    
+
 
     /**
      * | Generate Order ID(3) for multiple proeprties demand payment 
@@ -1996,8 +1997,8 @@ class HoldingTaxController extends Controller
     {
         try {
             // Authenticate user
-            $user = authUser($request);
-            $userId = $user->id;
+            // $user = authUser($request);
+            $userId = $user->id ?? 15;
             $ulbId = $request->ulbId;
 
             // Property Details with Demand Join (Excluding 0 or NULL demand)
@@ -2103,7 +2104,7 @@ class HoldingTaxController extends Controller
         }
     }
 
-    
+
 
     /**
      * | Generate Ulb Payment Receipt
@@ -2221,7 +2222,7 @@ class HoldingTaxController extends Controller
         ];
     }
 
-    
+
     /**
      * | Property Comparative Demand(16)
      * | Generate and return a comparative demand report for a given property ID.
@@ -2372,7 +2373,7 @@ class HoldingTaxController extends Controller
         ];
     }
 
-        /**
+    /**
      * | Generate Payment Receipt for Property and Water Connection
      * | Working
      * | Serial No : 08
@@ -2680,6 +2681,4 @@ class HoldingTaxController extends Controller
             return responseMsgs(false, $e->getMessage(), "", "", "01", "ms", "POST", "");
         }
     }
-
-    
 }
