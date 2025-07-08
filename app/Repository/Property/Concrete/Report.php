@@ -1110,9 +1110,9 @@ class Report implements IReport
         $metaData = collect($request->metaData)->all();
         list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
         try {
-            // $refUser        = authUser($request);
-            $refUserId      = $refUser->id ?? 203;
-            $ulbId          = $refUser->ulb_id ?? 2;
+            $refUser        = authUser($request);
+            $refUserId      = $refUser->id;
+            $ulbId          = $refUser->ulb_id;
             $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
             $wardId = null;
             $userId = null;
@@ -1294,8 +1294,8 @@ class Report implements IReport
 
             $collection = $collection->get();
             $refund     = $refund->get();
-             $doorToDoor = $doorToDoor->get();
-          return   $jsk        = $jsk->get();
+            $doorToDoor = $doorToDoor->get();
+            $jsk        = $jsk->get();
 
             $totalCollection = $collection->sum("amount");
             $totalHolding = $collection->sum("holding_count");
