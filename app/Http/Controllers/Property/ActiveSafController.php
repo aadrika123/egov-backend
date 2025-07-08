@@ -1499,7 +1499,7 @@ class ActiveSafController extends Controller
             // If empty or null, then try the fallback
             if (collect($fieldVerifiedSaf)->isEmpty()) {
                 $fieldVerifiedSaf = $propSafVerification->getVerifications($safId);
-            }   
+            }
 
             // Final check
             if (collect($fieldVerifiedSaf)->isEmpty()) {
@@ -2918,7 +2918,7 @@ class ActiveSafController extends Controller
             if (!$verifications) {
                 throw new Exception("verification Data NOt Found");
             }
-            $saf = PropActiveSaf::select(
+           $saf = PropActiveSaf::select(
                 'prop_active_safs.*',
                 'p.property_type',
                 'r.road_type',
@@ -2975,7 +2975,7 @@ class ActiveSafController extends Controller
             if (!$saf) {
                 throw new Exception("Saf Data Not Found");
             }
-            $floars = DB::table($tbl . "_floors")
+           $floars = DB::table($tbl . "_floors")
                 ->select($tbl . "_floors.*", 'f.floor_name', 'u.usage_type', 'o.occupancy_type', 'c.construction_type')
                 ->leftjoin('ref_prop_floors as f', 'f.id', '=', $tbl . "_floors.floor_mstr_id")
                 ->leftjoin('ref_prop_usage_types as u', 'u.id', '=', $tbl . "_floors.usage_type_mstr_id")
@@ -2983,7 +2983,7 @@ class ActiveSafController extends Controller
                 ->leftjoin('ref_prop_construction_types as c', 'c.id', '=', $tbl . "_floors.const_type_mstr_id")
                 ->where($tbl . "_floors.saf_id", $saf->id)
                 ->get();
-            $verifications_detals = PropSafVerificationDtl::select('prop_saf_verification_dtls.*', 'f.floor_name', 'u.usage_type', 'o.occupancy_type', 'c.construction_type')
+             $verifications_detals = PropSafVerificationDtl::select('prop_saf_verification_dtls.*', 'f.floor_name', 'u.usage_type', 'o.occupancy_type', 'c.construction_type')
                 ->leftjoin('ref_prop_floors as f', 'f.id', '=', 'prop_saf_verification_dtls.floor_mstr_id')
                 ->leftjoin('ref_prop_usage_types as u', 'u.id', '=', 'prop_saf_verification_dtls.usage_type_id')
                 ->leftjoin('ref_prop_occupancy_types as o', 'o.id', '=', 'prop_saf_verification_dtls.occupancy_type_id')
@@ -3058,6 +3058,8 @@ class ActiveSafController extends Controller
                     $saf_data = collect(array_values(objToArray(($floars->where("id", $val->saf_floor_id))->values())))->all();
                     $verification = collect(array_values(objToArray(($verifications_detals->where("id", $val->id))->values())))->all();
                 }
+
+            //   return  $verification = collect($verification)->all();
                 return [
                     "floar_name" => $val->floor_name,
                     "values" => [

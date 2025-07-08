@@ -10,6 +10,7 @@ use App\EloquentClass\Property\PenaltyRebateCalculation;
 use App\EloquentClass\Property\SafCalculation;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Property\reqApplySaf;
+use App\Http\Requests\Property\ReqSiteVerification;
 use App\Http\Requests\ReqGBSaf;
 use App\Models\Property\Logs\SafAmalgamatePropLog;
 use App\Models\Property\PropActiveGbOfficer;
@@ -104,11 +105,11 @@ class ApplySafController extends Controller
             $user = authUser($request);
             $user_id = $user->id;
             $ulb_id = $request->ulbId ?? $user->ulb_id;
-            $userType = $user->user_type ?? 'Citizen';
+            $userType = $user->user_type ?? 'Citizen'; // Default to Citizen if not set
             $metaReqs = array();
             $saf = new PropActiveSaf();
 
-            
+
             $mOwner = new PropActiveSafsOwner();
             $safCalculation = new SafCalculation();
             $calculateSafById = new CalculateSafById;
@@ -216,15 +217,71 @@ class ApplySafController extends Controller
             }
 
             // Floor Details
-            if ($request->propertyType != 4) {
+            if ($request->propertyType != 4 && !empty($request['floor'])) {
+                $floorDetail = $request['floor'];
                 if ($request['floor']) {
                     $floorDetail = $request['floor'];
                     $this->checkBifurcationFloorCondition($floorDetail);
                     foreach ($floorDetail as $floorDetails) {
                         $floor = new PropActiveSafsFloor();
-                        $floor->addfloor($floorDetails, $safId, $user_id, $request->assessmentType, $request['biDateOfPurchase']);
+                        $floorId = $floor->addfloor($floorDetails, $safId, $user_id, $request->assessmentType, $request['biDateOfPurchase']);
+                        // Add the new floorId to the floor data
+                        $floorDetails['floorId'] = $floorId;
+
+                        // Store updated floor record
+                        $updatedFloorData[] = $floorDetails;
                     }
                 }
+            }
+            if ($userType == 'TC') {
+                $activeSafController = app()->make(ActiveSafController::class);
+
+                // Build the payload array
+                $verificationPayload = [
+                    'safId' => $safId,
+                    'propertyType' => $request->propertyType,
+                    'roadWidth' => $request->roadType,
+                    'areaOfPlot' => $request->areaOfPlot ?? 0,
+                    'wardId' => $request->ward ?? 1,
+
+                    'isMobileTower' => (bool) $request->isMobileTower,
+                    'mobileTower' => [
+                        'area' => $request->mobileTower['area'] ?? null,
+                        'dateFrom' => $request->mobileTower['dateFrom'] ?? null,
+                    ],
+
+                    'isHoardingBoard' => (bool) $request->isHoardingBoard,
+                    'hoardingBoard' => [
+                        'area' => $request->hoardingBoard['area'] ?? null,
+                        'dateFrom' => $request->hoardingBoard['dateFrom'] ?? null,
+                    ],
+
+                    'isPetrolPump' => (bool) $request->isPetrolPump,
+                    'petrolPump' => [
+                        'area' => $request->petrolPump['area'] ?? null,
+                        'dateFrom' => $request->petrolPump['dateFrom'] ?? null,
+                    ],
+
+                    'isWaterHarvesting' => (bool) $request->isWaterHarvesting,
+                    'rwhDateFrom' => $request->rwhDateFrom ?? null,
+                    'deviceId' => $request->deviceId ?? null,
+                ];
+
+                // Add floor details if propertyType is not 4
+                if ($request->propertyType != 4) {
+                    $verificationPayload['floor'] = $updatedFloorData ?? [];
+                }
+
+                // Create ReqSiteVerification request instance
+                $verReq = ReqSiteVerification::create(
+                    '/site-verification',
+                    'POST',
+                    $verificationPayload
+                );
+
+
+                // Call the siteVerification method
+                $siteVerifyResponse = $activeSafController->siteVerification($verReq);
             }
 
             // Citizen Notification

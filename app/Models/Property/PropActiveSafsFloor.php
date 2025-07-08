@@ -145,6 +145,7 @@ class PropActiveSafsFloor extends Model
         $floor->user_id = $userId;
         $floor->bifurcated_from_buildup_area = isset($req['biBuildupArea']) ? $req['buildupArea'] : null;
         $floor->save();
+        return $floor->id;
     }
 
     /**

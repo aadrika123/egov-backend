@@ -422,7 +422,7 @@ class Report implements IReport
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
         }
-    }  
+    }
 
     /**
      * | saf prop Individual demand collection
@@ -1110,9 +1110,9 @@ class Report implements IReport
         $metaData = collect($request->metaData)->all();
         list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
         try {
-            $refUser        = authUser($request);
-            $refUserId      = $refUser->id;
-            $ulbId          = $refUser->ulb_id;
+            // $refUser        = authUser($request);
+            $refUserId      = $refUser->id ?? 203;
+            $ulbId          = $refUser->ulb_id ?? 2;
             $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
             $wardId = null;
             $userId = null;
@@ -1127,7 +1127,7 @@ class Report implements IReport
                 $uptoDate = $request->uptoDate;
             }
             if ($request->userId) {
-                $userId = $request->userId;
+                $userId = $request->userId ;
             }
             if ($request->paymentMode) {
                 $paymentMode = $request->paymentMode;
@@ -1253,6 +1253,7 @@ class Report implements IReport
                         SUM(COALESCE(prop_transactions.amount,0)) AS amount
                         ")
                 )
+                      // AND wf_workflows.id in (3,4,5)
                 ->LEFTJOIN(DB::RAW("(
                                         SELECT * 
                                         FROM prop_transactions
@@ -1269,7 +1270,7 @@ class Report implements IReport
                                                 WHERE wf_roles.is_suspended = FALSE 
                                                     AND wf_workflows.ulb_id = 2
                                                     AND wf_roles.id in (8,108)
-                                                    AND wf_workflows.id in (3,4,5)
+                                                                                        
                                                 GROUP BY wf_roleusermaps.user_id
                                                 ORDER BY wf_roleusermaps.user_id
                                         ) collecter on prop_transactions.user_id  = collecter.role_user_id
@@ -1293,8 +1294,8 @@ class Report implements IReport
 
             $collection = $collection->get();
             $refund     = $refund->get();
-            $doorToDoor = $doorToDoor->get();
-            $jsk        = $jsk->get();
+             $doorToDoor = $doorToDoor->get();
+          return   $jsk        = $jsk->get();
 
             $totalCollection = $collection->sum("amount");
             $totalHolding = $collection->sum("holding_count");
