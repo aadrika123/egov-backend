@@ -126,6 +126,7 @@ class HoldingTaxController extends Controller
      * | Get Holding Dues(2)
      * | Validates the input property ID, then calculates and returns
        | Common Function
+     * | modified by Arshad 
      */
     public function getHoldingDues(Request $req)
     {
@@ -250,11 +251,11 @@ class HoldingTaxController extends Controller
                 'advanceAmt' => $advanceAmt,
                 'additionalTax' => $rwhPenaltyTax
             ];
-            $currentQtr = calculateQtr($todayDate);
+            // $currentQtr = calculateQtr($todayDate);
 
-            $pendingQtrs = $qtrs->filter(function ($value) use ($currentQtr) {
-                return $value >= $currentQtr;
-            });
+            // $pendingQtrs = $qtrs->filter(function ($value) use ($currentQtr) {
+            //     // return $value >= $currentQtr;
+            // });
 
             $totalDuesList = $penaltyRebateCalc->readRebates($currentQuarter, $loggedInUserType, $mLastQuarterDemand, $ownerDetails, $dues, $totalDuesList);
 
@@ -266,7 +267,8 @@ class HoldingTaxController extends Controller
             $totalDuesList['totalPenaltiesAmt'] = $onePercTax;
             $totalDuesList['payableAmount'] = round($finalPayableAmt);
             $totalDuesList['paymentUptoYrs'] = [$paymentUptoYrs->first()];
-            $totalDuesList['paymentUptoQtrs'] = $pendingQtrs->unique()->values()->sort()->values();
+            // $totalDuesList['paymentUptoQtrs'] = $pendingQtrs->unique()->values()->sort()->values();
+            $totalDuesList['paymentUptoQtrs'] = $demandList->pluck('qtr')->unique()->sort()->values();;
 
             $demand['duesList'] = $totalDuesList;
             $demand['demandList'] = $demandList;
