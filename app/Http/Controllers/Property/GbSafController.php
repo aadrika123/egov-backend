@@ -1180,6 +1180,7 @@ class GbSafController extends Controller
             $forwardBackward = new WorkflowMap;
             $mPropSafs = new PropSaf();
             $mPropGbOfficer = new PropGbOfficer();
+            $mPropFloor = new PropFloor();
             $mRefTable = Config::get('PropertyConstaint.SAF_REF_TABLE');
             // Saf Details
             $data = array();
@@ -1237,7 +1238,11 @@ class GbSafController extends Controller
                 'tableData' => [$officerDetails]
             ];
             // Floor Details
-            $getFloorDtls = $mActiveSafsFloors->getFloorsBySafId($data->id);      // Model Function to Get Floor Details
+            $getFloorDtls = $mActiveSafsFloors->getFloorsBySafId($data->id);      // Model Function to Get Floor Details for active saf
+            if (!$getFloorDtls) {
+                $getFloorDtls = $mActiveSafsFloors->getFloorsBySafId($data->id);      // Model Function to Get Floor Details for apporve saf
+            }
+
             $floorDetails = $this->generateFloorDetails($getFloorDtls);
             $floorElement = [
                 'headerTitle' => 'Floor Details',
