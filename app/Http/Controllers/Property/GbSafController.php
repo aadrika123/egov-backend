@@ -1213,6 +1213,7 @@ class GbSafController extends Controller
             $fullDetailsData['apply_date'] = $data->application_date;
             $fullDetailsData['doc_verify_status'] = $data->doc_verify_status;
             $fullDetailsData['doc_upload_status'] = $data->doc_upload_status;
+            $fullDetailsData['holding_no'] = $data->holding_no;
             $fullDetailsData['fullDetailsData']['dataArray'] = new Collection([$basicElement, $propertyElement]);
             // Table Array
             // Owner Details
@@ -1270,7 +1271,7 @@ class GbSafController extends Controller
     # ----- APIs that are currently inactive or unused --------#
     # ---------------------------------------------------------#
 
-    
+
     /**
      * | Site Verification
      * | Handle site verification for a SAF (Site Approval Form) based on user role.
