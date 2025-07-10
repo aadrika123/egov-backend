@@ -450,6 +450,51 @@ class WaterConsumer extends Model
                 'ulb_name'
             );
     }
+    /** 
+     * | Get consumer by consumer id for citizen under care water connections 
+     */
+    public function getConsumerByIdsv1($consumerIds)
+    {
+        return WaterConsumer::select(
+            'water_consumers.id',
+            'water_consumers.consumer_no',
+            'water_consumers.ward_mstr_id',
+            'water_consumers.address',
+            'water_consumers.holding_no',
+            'water_consumers.saf_no',
+            'water_consumers.ulb_id',
+            'ulb_ward_masters.ward_name',
+            'ulb_name',
+            DB::raw("string_agg(DISTINCT water_consumer_owners.applicant_name,',') as applicant_name"),
+            DB::raw("string_agg(DISTINCT water_consumer_owners.mobile_no::VARCHAR,',') as mobile_no"),
+            DB::raw("string_agg(DISTINCT water_consumer_owners.guardian_name,',') as guardian_name"),
+            DB::raw("COALESCE(SUM(water_consumer_demands.balance_amount), 0) as total_demand_amount"),
+            DB::raw("min(water_consumer_demands.demand_from) as demand_from"),
+            DB::raw("max(water_consumer_demands.demand_upto) as demand_upto")
+        )
+            ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_consumers.id')
+            ->join('ulb_masters', 'ulb_masters.id', '=', 'water_consumers.ulb_id')
+            ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_consumers.ward_mstr_id')
+            ->leftJoin('water_consumer_demands', function ($join) {
+                $join->on('water_consumer_demands.consumer_id', '=', 'water_consumers.id');
+                // ->where('water_consumer_demands.paid_status', 1);
+            })
+            ->havingRaw("SUM(water_consumer_demands.balance_amount) > 0") // Excludes 0 or NULL total demand
+            ->whereIn("water_consumers.id", $consumerIds)
+            ->where('water_consumers.status', 1)
+            ->groupBy(
+                'water_consumers.saf_no',
+                'water_consumers.holding_no',
+                'water_consumers.address',
+                'water_consumers.id',
+                'water_consumers.ulb_id',
+                'water_consumer_owners.consumer_id',
+                'water_consumers.consumer_no',
+                'water_consumers.ward_mstr_id',
+                'ulb_ward_masters.ward_name',
+                'ulb_name'
+            );
+    }
 
     /**
      * | Get water consumer according to apply connection id 
@@ -535,7 +580,8 @@ class WaterConsumer extends Model
     /* 
      * | Get Owner Details According to propId
     */
-    public function getWaterConnectionDtl($propId){
+    public function getWaterConnectionDtl($propId)
+    {
 
         return WaterConsumer::where('prop_dtl_id', $propId)
             ->select(
@@ -543,7 +589,7 @@ class WaterConsumer extends Model
                 'consumer_no as consumerNo',
                 'connection_type as connectionType',
                 'pipeline_type  as pipelineType',
-                    DB::raw("
+                DB::raw("
                         CASE water_consumers.status
                             WHEN 1 THEN 'Active'
                             WHEN 0 THEN 'Deactive'

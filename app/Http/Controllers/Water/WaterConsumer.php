@@ -848,7 +848,7 @@ class WaterConsumer extends Controller
                 throw new Exception("Under taken data not found!");
 
             $consumerIds = collect($connectionDetails)->pluck('consumer_id');
-            $consumerDetails = $mWaterWaterConsumer->getConsumerByIds($consumerIds)->get();
+            $consumerDetails = $mWaterWaterConsumer->getConsumerByIdsv1($consumerIds)->get();
             $checkConsumer = collect($consumerDetails)->first();
             if (is_null($checkConsumer)) {
                 throw new Exception("Consuemr Details Not Found!");
