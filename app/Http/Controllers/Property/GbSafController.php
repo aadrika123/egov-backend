@@ -19,6 +19,7 @@ use App\Models\Property\PropDemand;
 use App\Models\Property\PropFloor;
 use App\Models\Property\PropGbofficer;
 use App\Models\Property\PropProperty;
+use App\Models\Property\PropSaf;
 use App\Models\Property\PropSafGeotagUpload;
 use App\Models\Property\PropSafMemoDtl;
 use App\Models\Property\PropSafsDemand;
@@ -1177,6 +1178,8 @@ class GbSafController extends Controller
             $mWorkflowTracks = new WorkflowTrack();
             $mCustomDetails = new CustomDetail();
             $forwardBackward = new WorkflowMap;
+            $mPropSafs = new PropSaf();
+            $mPropGbOfficer = new PropGbOfficer();
             $mRefTable = Config::get('PropertyConstaint.SAF_REF_TABLE');
             // Saf Details
             $data = array();
@@ -1189,6 +1192,11 @@ class GbSafController extends Controller
             if ($req->safNo) {                                  // <-------- Search By SAF No
                 $data = $mPropActiveSaf->getActiveSafDtls()    // <------- Model Function Active SAF Details
                     ->where('prop_active_safs.saf_no', $req->safNo)
+                    ->first();
+            }
+            if ($data == null && $req->applicationId) {
+                $data = $mPropSafs->getSafs()
+                    ->where('prop_safs.id', $req->applicationId)
                     ->first();
             }
             // return $data;
@@ -1217,7 +1225,11 @@ class GbSafController extends Controller
             $fullDetailsData['fullDetailsData']['dataArray'] = new Collection([$basicElement, $propertyElement]);
             // Table Array
             // Owner Details
-            $getOfficerDetails = $mPropActiveGbOfficer->getOfficerBySafId($data->id);    // Model function to get Owner Details
+            $getOfficerDetails = $mPropActiveGbOfficer->getOfficerBySafId($data->id);    // Model function to get Owner Details it for active saf
+            if (!$getOfficerDetails) {
+                $getOfficerDetails = $mPropGbOfficer->getOfficerBySafIdv1($data->id);    // Model function to get Owner Details it for approve saf
+            }
+
             $officerDetails = $this->generateOfficerDetails($getOfficerDetails);
             $officerElement = [
                 'headerTitle' => 'Officer Details',

@@ -75,4 +75,17 @@ class PropGbofficer extends Model
             ->where('saf_id', $safId)
             ->first();
     }
+    /**
+     * | Get Officer by SAF Id
+     */
+    public function getOfficerBySafIdv1($safId)
+    {
+        return PropGbOfficer::select(
+            'officer_name',
+            'designation',
+            'mobile_no'
+        )
+            ->where('saf_id', $safId)
+            ->first();
+    }
 }
