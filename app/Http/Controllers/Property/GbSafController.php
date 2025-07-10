@@ -45,6 +45,8 @@ use Illuminate\Database\Eloquent\Collection;
 use Exception;
 use Illuminate\Pipeline\Pipeline;
 
+use function PHPUnit\Framework\isEmpty;
+
 /**
  * | Created On-13-03-2023
  * | Created by-Mrinal Kumar
@@ -1239,8 +1241,8 @@ class GbSafController extends Controller
             ];
             // Floor Details
             $getFloorDtls = $mActiveSafsFloors->getFloorsBySafId($data->id);      // Model Function to Get Floor Details for active saf
-            if (!$getFloorDtls) {
-                $getFloorDtls = $mActiveSafsFloors->getFloorsBySafId($data->id);      // Model Function to Get Floor Details for apporve saf
+            if (isEmpty($getFloorDtls)) {
+                $getFloorDtls = $mPropFloor->getFloorsBySafId($data->id);      // Model Function to Get Floor Details for apporve saf
             }
 
             $floorDetails = $this->generateFloorDetails($getFloorDtls);
