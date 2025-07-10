@@ -1999,8 +1999,8 @@ class HoldingTaxController extends Controller
     {
         try {
             // Authenticate user
-            // $user = authUser($request);
-            $userId = $user->id ?? 15;
+            $user = authUser($request);
+            $userId = $user->id;
             $ulbId = $request->ulbId;
 
             // Property Details with Demand Join (Excluding 0 or NULL demand)
