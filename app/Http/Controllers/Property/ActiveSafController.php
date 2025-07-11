@@ -715,6 +715,7 @@ class ActiveSafController extends Controller
             $mPropActiveSafOwner = new PropActiveSafsOwner();
             $mActiveSafsFloors   = new PropActiveSafsFloor();
             $mPropSafMemoDtls    = new PropSafMemoDtl();
+            $mSafAmalgamatePropLog    = new SafAmalgamatePropLog();
 
             $prevOwnerDtls = array();
             $memoDtls = array();
@@ -756,6 +757,11 @@ class ActiveSafController extends Controller
             $ownerDtls = $mPropActiveSafOwner->getOwnersBySafId($data['id']);
             if (collect($ownerDtls)->isEmpty())
                 $ownerDtls = $mPropSafOwner->getOwnersBySafId($data['id']);
+            $mSafAmalgamatePropDetails = $mSafAmalgamatePropLog
+                ->select('saf_amalgamate_prop_logs.holding_no')
+                ->where('saf_id', $data['id'])  // Or your actual condition
+                ->where('is_master', false)
+                ->get();
 
             $data['previous_owners'] = $prevOwnerDtls;
             $data['owners'] = $ownerDtls;
@@ -766,6 +772,7 @@ class ActiveSafController extends Controller
 
             $memoDtls = $mPropSafMemoDtls->memoLists($data['id']);
             $data['memoDtls'] = $memoDtls;
+            $data['amalgamation_properties_hol'] = collect($mSafAmalgamatePropDetails)->pluck('holding_no')->toArray();
             return responseMsgs(true, "Saf Dtls", remove_null($data), "010126", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(true, $e->getMessage(), [], "010125", "1.0", "", "POST", $req->deviceId ?? "");
