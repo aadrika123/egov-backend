@@ -365,6 +365,9 @@ Route::group(['middleware' => ['json.response', 'auth_maker', 'apilogger']], fun
     Route::post('gbsaf/doc-verify-reject', 'docVerifyReject');                 #API_ID = 011817
     Route::post('gbsaf/independent-comment', 'commentIndependent');            #API_ID = 011818
     Route::post('gbsaf/details', 'gbSafDetails');                              #API_ID = 011819
+    Route::post('get-filter-property-details-gb', 'propertyGbListByKey');       #API_ID = 011820
+    Route::post('saf/get-gb-prop-byholding', 'getGbPropByHoldingNo');           # API_ID = 011821
+    Route::post('get-gb-holding-dues', 'getGbHoldingDues');                      # API_ID = 011822
   });
 
   /**
@@ -870,7 +873,7 @@ Route::controller(MasterReferenceController::class)->group(function () {
   //alok
   Route::post('m-dashboard-slider-data', 'dashboardSliderData');
 
-   //blog post
+  //blog post
   Route::post('m-store-blog-post', 'storeBlogPost');
   Route::post('m-list-of-all-blog', 'allBlogs');
   Route::post('m-update-blog', 'editBlog');

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Property;
 
 use App\BLL\DocUrl;
+use App\EloquentClass\Property\PenaltyRebateCalculation;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Property\ReqGbSiteVerification;
 use App\MicroServices\DocUpload;
@@ -15,6 +16,7 @@ use App\Models\Masters\RefRequiredDocument;
 use App\Models\Property\PropActiveGbOfficer;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsFloor;
+use App\Models\Property\PropAdvance;
 use App\Models\Property\PropDemand;
 use App\Models\Property\PropFloor;
 use App\Models\Property\PropGbofficer;
@@ -25,6 +27,11 @@ use App\Models\Property\PropSafMemoDtl;
 use App\Models\Property\PropSafsDemand;
 use App\Models\Property\PropSafVerification;
 use App\Models\Property\PropSafVerificationDtl;
+use App\Models\Property\PropTransaction;
+use App\Models\Trade\ActiveTradeLicence;
+use App\Models\Trade\TradeLicence;
+use App\Models\UlbMaster;
+use App\Models\Water\WaterConsumer;
 use App\Models\Workflows\WfActiveDocument;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWardUser;
@@ -1509,6 +1516,555 @@ class GbSafController extends Controller
             return responseMsgs(true, "Saf Dtls", remove_null($data), "011813", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return $e->getMessage();
+        }
+    }
+
+    /**
+     * this function is used to get the list of properties based on the key provided in the request.
+     * It supports searching by holding number, PTN, owner name, address, mobile number, khata number, plot number, and mauja name.
+     * It also allows filtering by zone and ward IDs if provided.
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     * @throws \Illuminate\Validation\ValidationException
+     * | propertyGbListByKey:1.1
+     *  
+     */
+    public function propertyGbListByKey(Request $request)
+    {
+        $request->validate([
+            'filteredBy' => "required",
+            'parameter' => "nullable",
+            'zoneId' => "nullable|digits_between:1,9223372036854775807",
+            'wardId' => "nullable|digits_between:1,9223372036854775807",
+        ]);
+
+        try {
+            $mPropProperty = new PropProperty();
+            $mWfRoleUser = new WfRoleusermap();
+            $user = authUser($request);
+            $userId = $user->id;
+            $userType = $user->user_type;
+            $ulbId = $user->ulb_id ?? $request->ulbId;
+            $roleIds = $mWfRoleUser->getRoleIdByUserId($userId)->pluck('wf_role_id');                      // Model to () get Role By User Id
+            $role = $roleIds->first();
+            $key = $request->filteredBy;
+            $parameter = $request->parameter;
+            $isLegacy = $request->isLegacy;
+            $perPage = $request->perPage ?? 10;
+
+
+            switch ($key) {
+                case ("holdingNo"):
+                    $data = $mPropProperty->searchGbProperty($ulbId)
+                        ->where('prop_properties.holding_no', $parameter)
+                        ->orWhere('prop_properties.new_holding_no', $parameter);
+                    break;
+
+                case ("ptn"):
+                    $data = $mPropProperty->searchGbProperty($ulbId)
+                        ->where('prop_properties.pt_no', 'LIKE', '%' . $parameter . '%');
+                    break;
+
+                case ("ownerName"):
+                    $data = $mPropProperty->searchGbProperty($ulbId)
+                        ->where('prop_owners.owner_name', 'LIKE', '%' . strtoupper($parameter) . '%');
+                    break;
+
+                case ("address"):
+                    $data = $mPropProperty->searchGbProperty($ulbId)
+                        ->where('prop_properties.prop_address', 'LIKE', '%' . strtoupper($parameter) . '%');
+                    break;
+
+                case ("mobileNo"):
+                    $data = $mPropProperty->searchGbProperty($ulbId)
+                        ->where('prop_owners.mobile_no', 'LIKE', '%' . $parameter . '%');
+                    break;
+
+                case ("khataNo"):
+                    if ($request->khataNo)
+                        $data = $mPropProperty->searchGbProperty($ulbId)
+                            ->where('prop_properties.khata_no', $request->khataNo);
+
+                    if ($request->plotNo)
+                        $data = $mPropProperty->searchGbProperty($ulbId)
+                            ->where('prop_properties.plot_no',  $request->plotNo);
+
+                    if ($request->maujaName)
+                        $data = $mPropProperty->searchGbProperty($ulbId)
+                            ->where('prop_properties.village_mauja_name',  $request->maujaName);
+
+                    if ($request->khataNo && $request->plotNo)
+                        $data = $mPropProperty->searchGbProperty($ulbId)
+                            ->where('prop_properties.khata_no',  $request->khataNo)
+                            ->where('prop_properties.plot_no',  $request->plotNo);
+
+                    if ($request->khataNo && $request->maujaName)
+                        $data = $mPropProperty->searchGbProperty($ulbId)
+                            ->where('prop_properties.khata_no',  $request->khataNo)
+                            ->where('prop_properties.village_mauja_name',  $request->maujaName);
+
+                    if ($request->plotNo && $request->maujaName)
+                        $data = $mPropProperty->searchGbProperty($ulbId)
+                            ->where('prop_properties.plot_no',  $request->plotNo)
+                            ->where('prop_properties.village_mauja_name',  $request->maujaName);
+
+                    if ($request->khataNo && $request->plotNo && $request->maujaName)
+                        $data = $mPropProperty->searchGbProperty($ulbId)
+                            ->where('prop_properties.khata_no',  $request->khataNo)
+                            ->where('prop_properties.plot_no',  $request->plotNo)
+                            ->where('prop_properties.village_mauja_name',  $request->maujaName);
+                    break;
+            }
+            if ($request->zoneId)
+                $data = $data->where("prop_properties.zone_mstr_id", $request->zoneId);
+
+            if ($request->wardId)
+                $data = $data->where("prop_properties.new_ward_mstr_id", $request->wardId);
+
+            if ($userType != 'Citizen')
+                $data = $data->where('prop_properties.ulb_id', $ulbId);
+
+            if ($isLegacy == true) {
+                $paginator = $data->where('new_holding_no', null)
+                    ->where('latitude', null)
+                    ->where('longitude', null)
+                    ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'latitude', 'longitude')
+                    ->paginate($perPage);
+            }
+            if ($isLegacy == false) {
+                if ($key == 'ptn') {
+                    $paginator =
+                        $data
+                        ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'latitude', 'longitude')
+                        ->paginate($perPage);
+                } else {
+                    $paginator = $data->where('new_holding_no', '!=', null)
+                        ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'latitude', 'longitude')
+                        ->paginate($perPage);
+                }
+            }
+
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
+            ];
+
+            return responseMsgs(true, "Application Details", remove_null($list), "011302", "1.0", responseTime(), "POST", $request->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "011302", "1.0", "", "POST", $request->deviceId ?? "");
+        }
+    }
+
+    /** 
+     * | modified by prity pandey : Get Property Details by Property Holding No
+     * | added water consumer details and trade license details of property 
+     * | Query Costing: 299.45ms
+       | Common Function
+     * | getGbPropByHoldingNo:1.1
+     */
+    public function getGbPropByHoldingNo(Request $req)
+    {
+        $req->validate(
+            isset($req->holdingNo) ? ['holdingNo' => 'required'] : ['propertyId' => 'required|numeric']
+        );
+
+        try {
+            $mProperties = new PropProperty();
+            $mPropFloors = new PropFloor();
+            $mPropGbOfficer = new PropGbofficer();
+            $propertyDtl = [];
+
+            if ($req->holdingNo) {
+                $properties = $mProperties->getPropDtls()
+                    ->where('prop_properties.holding_no', $req->holdingNo)
+                    ->first();
+            }
+
+            if ($req->propertyId) {
+                $properties = $mProperties->getPropDtls()
+                    ->where('prop_properties.id', $req->propertyId)
+                    ->first();
+            }
+
+            if (!$properties) {
+                throw new Exception("Property Not Found");
+            }
+
+            $floors = $mPropFloors->getPropFloors($properties->id);
+            $owners = $mPropGbOfficer->getOfficerByPropIdv1($properties->id);
+
+            if ($req->holdingNo) {
+                $mWater = new WaterConsumer();
+                $waterDetails = $mWater->select(
+                    'water_consumers.id',
+                    'water_consumers.consumer_no',
+                    'water_consumers.ward_mstr_id',
+                    'water_consumers.address',
+                    'water_consumers.holding_no',
+                    'water_consumers.saf_no',
+                    'water_consumers.ulb_id',
+                    'ulb_ward_masters.ward_name',
+                    DB::raw("string_agg(water_consumer_owners.applicant_name,',') as applicant_name"),
+                    DB::raw("string_agg(water_consumer_owners.mobile_no::VARCHAR,',') as mobile_no"),
+                    DB::raw("string_agg(water_consumer_owners.guardian_name,',') as guardian_name")
+                )
+                    ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_consumers.id')
+                    ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_consumers.ward_mstr_id')
+                    ->where('water_consumers.status', 1)
+                    ->where('water_consumers.holding_no', $req->holdingNo)
+                    ->groupBy(
+                        'water_consumers.saf_no',
+                        'water_consumers.holding_no',
+                        'water_consumers.address',
+                        'water_consumers.id',
+                        'water_consumers.ulb_id',
+                        'water_consumer_owners.consumer_id',
+                        'water_consumers.consumer_no',
+                        'water_consumers.ward_mstr_id',
+                        'ulb_ward_masters.ward_name'
+                    )
+                    ->first();
+            }
+            if ($req->propertyId) {
+                $mWater = new WaterConsumer();
+                $waterDetails = $mWater->select(
+                    'water_consumers.id',
+                    'water_consumers.consumer_no',
+                    'water_consumers.ward_mstr_id',
+                    'water_consumers.address',
+                    'water_consumers.prop_dtl_id',
+                    'water_consumers.holding_no',
+                    'water_consumers.saf_no',
+                    'water_consumers.ulb_id',
+                    'ulb_ward_masters.ward_name',
+                    DB::raw("string_agg(water_consumer_owners.applicant_name,',') as applicant_name"),
+                    DB::raw("string_agg(water_consumer_owners.mobile_no::VARCHAR,',') as mobile_no"),
+                    DB::raw("string_agg(water_consumer_owners.guardian_name,',') as guardian_name")
+                )
+                    ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_consumers.id')
+                    ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_consumers.ward_mstr_id')
+                    ->where('water_consumers.status', 1)
+                    ->where('water_consumers.prop_dtl_id', $req->propertyId)
+                    ->groupBy(
+                        'water_consumers.saf_no',
+                        'water_consumers.prop_dtl_id',
+                        'water_consumers.address',
+                        'water_consumers.id',
+                        'water_consumers.ulb_id',
+                        'water_consumer_owners.consumer_id',
+                        'water_consumers.consumer_no',
+                        'water_consumers.ward_mstr_id',
+                        'ulb_ward_masters.ward_name'
+                    )
+                    ->first();
+            }
+
+            if ($req->holdingNo) {
+                $approveTrade = TradeLicence::select(
+                    "trade_licences.*",
+                    "owner.*",
+                    DB::raw("ulb_ward_masters.ward_name as ward_no,'trade_licences' AS tbl")
+                )
+                    ->leftjoin("ulb_ward_masters", "ulb_ward_masters.id", "=", "trade_licences.ward_id")
+                    ->leftjoin(
+                        DB::raw("(SELECT temp_id,
+                                    string_agg(owner_name,',') as owner_name,
+                                    string_agg(guardian_name,',') as guardian_name,
+                                    string_agg(mobile_no,',') as mobile
+                                    FROM trade_owners
+                                    WHERE is_active =true
+                                    GROUP BY temp_id
+                                    ) owner
+                                    "),
+                        function ($join) {
+                            $join->on("owner.temp_id", "=", "trade_licences.id");
+                        }
+                    )
+                    ->where('trade_licences.is_active', TRUE)
+                    ->where('trade_licences.holding_no', $req->holdingNo);
+
+                $activetrade = ActiveTradeLicence::select(
+                    "active_trade_licences.*",
+                    "owner.*",
+                    DB::raw("ulb_ward_masters.ward_name as ward_no,'active_trade_licences' AS tbl")
+                )
+                    ->leftjoin("ulb_ward_masters", "ulb_ward_masters.id", "=", "active_trade_licences.ward_id")
+                    ->leftjoin(
+                        DB::raw("(SELECT temp_id,
+                            string_agg(owner_name,',') as owner_name,
+                            string_agg(guardian_name,',') as guardian_name,
+                            string_agg(mobile_no,',') as mobile
+                            FROM active_trade_owners
+                            WHERE is_active =true
+                            GROUP BY temp_id
+                            ) owner
+                            "),
+                        function ($join) {
+                            $join->on("owner.temp_id", "=", "active_trade_licences.id");
+                        }
+                    )
+                    ->where('active_trade_licences.is_active', TRUE)
+                    ->where('active_trade_licences.holding_no', $req->holdingNo);
+
+                $tradeLicense = $approveTrade->union($activetrade)->get();
+            }
+            if ($req->propertyId) {
+                $approveTrade = TradeLicence::select(
+                    "trade_licences.*",
+                    "owner.*",
+                    DB::raw("ulb_ward_masters.ward_name as ward_no,'trade_licences' AS tbl")
+                )
+                    ->leftjoin("ulb_ward_masters", "ulb_ward_masters.id", "=", "trade_licences.ward_id")
+                    ->leftjoin(
+                        DB::raw("(SELECT temp_id,
+                                    string_agg(owner_name,',') as owner_name,
+                                    string_agg(guardian_name,',') as guardian_name,
+                                    string_agg(mobile_no,',') as mobile
+                                    FROM trade_owners
+                                    WHERE is_active =true
+                                    GROUP BY temp_id
+                                    ) owner
+                                    "),
+                        function ($join) {
+                            $join->on("owner.temp_id", "=", "trade_licences.id");
+                        }
+                    )
+                    ->where('trade_licences.is_active', TRUE)
+                    ->where('trade_licences.property_id', $req->propertyId);
+
+                $activetrade = ActiveTradeLicence::select(
+                    "active_trade_licences.*",
+                    "owner.*",
+                    DB::raw("ulb_ward_masters.ward_name as ward_no,'active_trade_licences' AS tbl")
+                )
+                    ->leftjoin("ulb_ward_masters", "ulb_ward_masters.id", "=", "active_trade_licences.ward_id")
+                    ->leftjoin(
+                        DB::raw("(SELECT temp_id,
+                            string_agg(owner_name,',') as owner_name,
+                            string_agg(guardian_name,',') as guardian_name,
+                            string_agg(mobile_no,',') as mobile
+                            FROM active_trade_owners
+                            WHERE is_active =true
+                            GROUP BY temp_id
+                            ) owner
+                            "),
+                        function ($join) {
+                            $join->on("owner.temp_id", "=", "active_trade_licences.id");
+                        }
+                    )
+                    ->where('active_trade_licences.is_active', TRUE)
+                    ->where('active_trade_licences.property_id', $req->propertyId);
+
+                $tradeLicense = $approveTrade->union($activetrade)->get();
+            }
+            $propertyDtl = collect($properties);
+            $propertyDtl['floors'] = $floors;
+            $propertyDtl['owners'] = $owners;
+            $propertyDtl['water'] = $waterDetails;
+            $propertyDtl['trade'] = $tradeLicense;
+
+            return responseMsgs(true, "Property Details", remove_null($propertyDtl), "010116", "1.0", "", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Get Holding Dues(2)
+     * | Validates the input property ID, then calculates and returns
+       | Common Function
+     * | create by Arshad 
+     */
+    public function getGbHoldingDues(Request $req)
+    {
+        $req->validate([
+            'propId' => 'required|digits_between:1,9223372036854775807'
+        ]);
+
+        try {
+            $todayDate = Carbon::now()->format('Y-m-d');
+            $mPropAdvance = new PropAdvance();
+            $mPropDemand = new PropDemand();
+            $mPropProperty = new PropProperty();
+            $penaltyRebateCalc = new PenaltyRebateCalculation;
+            $mWfRoleUser = new WfRoleusermap();
+            $currentQuarter = calculateQtr(Carbon::now()->format('Y-m-d'));
+            $currentFYear = getFY();
+            $canTakePayment = false; // Initializing $canTakePayment to false by default
+            if ($req->auth) {
+                $canTakePaymentRole = [4, 5, 8];
+                $user = authUser($req);
+                $roleIds = $mWfRoleUser->getRoleIdByUserId($user->id)->pluck('wf_role_id')->toArray();
+
+                foreach ($roleIds as $roleId) {
+                    if (in_array($roleId, $canTakePaymentRole)) {
+                        $canTakePayment = true;
+                        break; // No need to continue checking once we find a match
+                    }
+                }
+            }
+            $loggedInUserType = $user->user_type ?? "Citizen";
+            $mPropGbOfficer = new PropGbofficer();
+            $pendingFYears = collect();
+            $qtrs = collect([1, 2, 3, 4]);
+            $mUlbMasters = new UlbMaster();
+
+            $officerDetails = $mPropGbOfficer->getOfficerByPropIdv1($req->propId)->first();
+            $demand = array();
+            $demandList = $mPropDemand->getDueDemandByPropId($req->propId);
+            $demandList = collect($demandList);
+
+            collect($demandList)->map(function ($value) use ($pendingFYears) {
+                $fYear = $value->fyear;
+                $pendingFYears->push($fYear);
+            });
+            // Property Part Payment
+            if (isset($req->fYear) && isset($req->qtr)) {
+                $demandTillQtr = $demandList->where('fyear', $req->fYear)->where('qtr', $req->qtr)->first();
+                if (collect($demandTillQtr)->isNotEmpty()) {
+                    $demandDueDate = $demandTillQtr->due_date;
+                    $demandList = $demandList->filter(function ($item) use ($demandDueDate) {
+                        return $item->due_date <= $demandDueDate;
+                    });
+                    $demandList = $demandList->values();
+                }
+
+                if (collect($demandTillQtr)->isEmpty())
+                    $demandList = collect();                                    // Demand List blank in case of fyear and qtr         
+            }
+            $propDtls = $mPropProperty->getPropById($req->propId);
+            $balance = $propDtls->balance ?? 0;
+
+            $propBasicDtls = $mPropProperty->getPropBasicDtls($req->propId);
+            if (collect($propBasicDtls)->isEmpty()) {
+                throw new Exception("Property Details Not Available");
+            }
+            $holdingType = $propBasicDtls->holding_type;
+            $ownershipType = $propBasicDtls->ownership_type;
+            $basicDtls = collect($propBasicDtls)->only([
+                'holding_no',
+                'new_holding_no',
+                'old_ward_no',
+                'new_ward_no',
+                'property_type',
+                'zone_mstr_id',
+                'is_mobile_tower',
+                'is_hoarding_board',
+                'is_petrol_pump',
+                'is_water_harvesting',
+                'ulb_id',
+                'prop_address',
+                'area_of_plot'
+            ]);
+            $basicDtls["holding_type"] = $holdingType;
+            $basicDtls["ownership_type"] = $ownershipType;
+
+            if ($demandList->isEmpty())
+                throw new Exception("No Dues Found Please See Your Payment History For Your Recent Transactions");
+
+            $demandList = $demandList->map(function ($item) {                                // One Perc Penalty Tax
+                return $this->calcOnePercPenalty($item);
+            });
+
+            $dues = roundFigure($demandList->sum('balance'));
+            $dues = ($dues > 0) ? $dues : 0;
+
+            $onePercTax = roundFigure($demandList->sum('onePercPenaltyTax'));
+            $onePercTax = ($onePercTax > 0) ? $onePercTax : 0;
+
+            $rwhPenaltyTax = roundFigure($demandList->sum('additional_tax'));
+            $advanceAdjustments = $mPropAdvance->getPropAdvanceAdjustAmt($req->propId);
+            if (collect($advanceAdjustments)->isEmpty())
+                $advanceAmt = 0;
+            else
+                $advanceAmt = $advanceAdjustments->advance - $advanceAdjustments->adjustment_amt;
+
+            $mLastQuarterDemand = $demandList->where('fyear', $currentFYear)->sum('balance');
+
+            $paymentUptoYrs = $pendingFYears->unique()->values();
+            $dueFrom = "Quarter " . $demandList->last()->qtr . "/ Year " . $demandList->last()->fyear;
+            $dueTo = "Quarter " . $demandList->first()->qtr . "/ Year " . $demandList->first()->fyear;
+            $totalDuesList = [
+                'dueFromFyear' => $demandList->last()->fyear,
+                'dueFromQtr' => $demandList->last()->qtr,
+                'dueToFyear' => $demandList->first()->fyear,
+                'dueToQtr' => $demandList->first()->qtr,
+                'totalDues' => $dues,
+                'duesFrom' => $dueFrom,
+                'duesTo' => $dueTo,
+                'onePercPenalty' => $onePercTax,
+                'totalQuarters' => $demandList->count(),
+                'arrear' => $balance,
+                'advanceAmt' => $advanceAmt,
+                'additionalTax' => $rwhPenaltyTax
+            ];
+            // $currentQtr = calculateQtr($todayDate);
+
+            // $pendingQtrs = $qtrs->filter(function ($value) use ($currentQtr) {
+            //     // return $value >= $currentQtr;
+            // });
+
+            $totalDuesList = $penaltyRebateCalc->readRebates($currentQuarter, $loggedInUserType, $mLastQuarterDemand, $ownerDetails, $dues, $totalDuesList);
+
+            $totalRebates = $totalDuesList['rebateAmt'] + $totalDuesList['specialRebateAmt'];
+            $finalPayableAmt = ($dues + $onePercTax + $balance) - ($totalRebates + $advanceAmt);
+            if ($finalPayableAmt < 0)
+                $finalPayableAmt = 0;
+            $totalDuesList['totalRebatesAmt'] = $totalRebates;
+            $totalDuesList['totalPenaltiesAmt'] = $onePercTax;
+            $totalDuesList['payableAmount'] = round($finalPayableAmt);
+            $totalDuesList['paymentUptoYrs'] = [$paymentUptoYrs->first()];
+            // $totalDuesList['paymentUptoQtrs'] = $pendingQtrs->unique()->values()->sort()->values();
+            $totalDuesList['paymentUptoQtrs'] = $demandList->pluck('qtr')->unique()->sort()->values();;
+
+            $demand['duesList'] = $totalDuesList;
+            $demand['demandList'] = $demandList;
+
+            $demand['basicDetails'] = $basicDtls;
+            if ($canTakePayment == false) {
+                $canTakePayment = in_array($loggedInUserType, ['Citizen']) ? true : false;
+            }
+
+            $demand['can_pay'] = $canTakePayment;
+            // $demand['can_pay'] = true;
+
+            // Calculations for showing demand receipt without any rebate
+            $total = roundFigure($dues - $advanceAmt);
+            if ($total < 0)
+                $total = 0;
+            $totalPayable = round($total + $onePercTax);
+            $totalPayable = roundFigure($totalPayable);
+            if ($totalPayable < 0)
+                $totalPayable = 0;
+            $demand['dueReceipt'] = [
+                'holdingNo' => $basicDtls['holding_no'],
+                'new_holding_no' => $basicDtls['new_holding_no'],
+                'area_of_plot' => $basicDtls['area_of_plot'],
+                'date' => $todayDate,
+                'wardNo' => $basicDtls['old_ward_no'],
+                'newWardNo' => $basicDtls['new_ward_no'],
+                'holding_type' => $holdingType,
+                'ownerName' => $officerDetails->officer_name,
+                'ownerMobile' => $officerDetails->mobileNo,
+                'address' => $basicDtls['prop_address'],
+                'duesFrom' => $dueFrom,
+                'duesTo' => $dueTo,
+                'rwhPenalty' => $rwhPenaltyTax,
+                'demand' => $dues,
+                'alreadyPaid' => $advanceAmt,
+                'total' => $total,
+                'onePercPenalty' => $onePercTax,
+                'totalPayable' => $totalPayable,
+                'totalPayableInWords' => getIndianCurrency($totalPayable)
+            ];
+
+            $ulb = $mUlbMasters->getUlbDetails($propDtls->ulb_id);
+            $demand['ulbDetails'] = $ulb;
+            return responseMsgs(true, "Demand Details", remove_null($demand), "011502", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), ['basicDetails' => $basicDtls ?? []], "011502", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 }
