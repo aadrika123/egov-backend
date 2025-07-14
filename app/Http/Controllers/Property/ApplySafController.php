@@ -271,18 +271,23 @@ class ApplySafController extends Controller
                 if ($request->propertyType != 4) {
                     $verificationPayload['floor'] = $updatedFloorData ?? [];
                 }
+                // ✅ Merge deeply so verificationPayload overrides $request values
+                // Final payload: only 'auth' + verification data
+                $finalPayload = [
+                    'auth' => $request->auth,
+                ] + $verificationPayload;
 
-                // Create ReqSiteVerification request instance
+                // Create new internal request
                 $verReq = ReqSiteVerification::create(
                     '/site-verification',
                     'POST',
-                    $verificationPayload
+                    $finalPayload
                 );
-
 
                 // Call the siteVerification method
                 $siteVerifyResponse = $activeSafController->siteVerification($verReq);
             }
+
 
             // Citizen Notification
             if ($userType == 'Citizen') {
