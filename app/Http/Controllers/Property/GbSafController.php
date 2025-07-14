@@ -1248,7 +1248,7 @@ class GbSafController extends Controller
             ];
             // Floor Details
             $getFloorDtls = $mActiveSafsFloors->getFloorsBySafId($data->id);      // Model Function to Get Floor Details for active saf
-            if (isEmpty($getFloorDtls)) {
+            if (empty($getFloorDtls)) {
                 $getFloorDtls = $mPropFloor->getFloorsBySafId($data->id);      // Model Function to Get Floor Details for apporve saf
             }
 
