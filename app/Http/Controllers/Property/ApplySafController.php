@@ -21,6 +21,7 @@ use App\Models\Property\PropDemand;
 use App\Models\Property\PropFloor;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropSafsDemand;
+use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\WorkflowTrack;
 use App\Repository\Auth\EloquentAuthRepository;
@@ -138,6 +139,22 @@ class ApplySafController extends Controller
                 $metaReqs['initiatorRoleId'] = collect($initiatorRoleId)['forward_role_id'];         // Send to DA in Case of Citizen
                 $metaReqs['userId'] = null;
                 $metaReqs['citizenId'] = $user_id;
+            } elseif ($userType == 'TC') {
+                // TC: Retrieve TC role from workflow and set as initiator
+                $wfRole = new WfRoleusermap();
+
+                $request->merge([
+                    'userId' => $user_id,
+                    'workflowId' => $ulbWorkflowId->id
+                ]);
+
+                $getRole = $wfRole->getRoleByUserWfId($request);
+
+                if (empty($getRole))
+                    throw new Exception("Workflow role mapping not found for this TC user.");
+
+                $metaReqs['initiatorRoleId'] = $getRole->wf_role_id; // ✅ Use TC role as initiator
+                $metaReqs['tcId'] = $user_id;                     // Optional: track TC ID
             }
             $metaReqs['finisherRoleId'] = collect($finisherRoleId)['role_id'];
 
