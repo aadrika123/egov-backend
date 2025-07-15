@@ -936,6 +936,9 @@ class ActiveSafController extends Controller
                     $forwardBackwardIds->forward_role_id = $wfLevels['SI'];
                     $saf->is_bt_da = false;
                 }
+                if ($saf->user_type == 'TC' && $saf->current_role == 5) {
+                    $forwardBackwardIds->forward_role_id = $wfLevels['BO']; // Back Office  role_id
+                }
 
                 $saf->current_role = $forwardBackwardIds->forward_role_id;
                 $saf->last_role_id =  $forwardBackwardIds->forward_role_id;                     // Update Last Role Id
@@ -2625,7 +2628,7 @@ class ActiveSafController extends Controller
             $userId = authUser($req)->id;
             $ulbId = authUser($req)->ulb_id;
             $userType = authUser($req)->user_type;
-            $vacantLand = $propertyType['VACANT LAND']; 
+            $vacantLand = $propertyType['VACANT LAND'];
 
             $safDtls = $propActiveSaf->getSafNo($req->safId);
             $workflowId = $safDtls->workflow_id;
