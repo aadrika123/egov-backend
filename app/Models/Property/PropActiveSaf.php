@@ -20,7 +20,7 @@ class  PropActiveSaf extends Model
      * | Store a new SAF        
        | Reference Function : applySaf
      */
-    public function store($req)
+    public function store($req, $userType)
     {
         $reqs = [
             'payment_status' => $req->paymentStatus,
@@ -106,6 +106,7 @@ class  PropActiveSaf extends Model
             'is_trust' => $req->isTrust ?? false,
             'trust_type' => $req->trustType ?? null,
             "bifurcated_from_plot_area" => isset($req->bifurcatedPlot) ? $req->areaOfPlot : null,
+            "user_type" => $userType ?? 'jsk',
         ];
         $propActiveSafs = PropActiveSaf::create($reqs);                 // SAF No is Created Using Observer
         return response()->json([

@@ -214,7 +214,7 @@ class ApplySafController extends Controller
             } else {
                 $request->merge(['paymentStatus' => '0']);
             }
-            $createSaf = $saf->store($request);                                         // Store SAF Using Model function 
+            $createSaf = $saf->store($request, $userType);                                         // Store SAF Using Model function 
             if ($request->assessmentType == 5 || $request->assessmentType == "Amalgamation") {
                 $request->merge(["safId" => $createSaf->original['safId']]);
                 $SafAmalgamatePropLog = new SafAmalgamatePropLog();
