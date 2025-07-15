@@ -149,6 +149,20 @@ class WfActiveDocument extends Model
             ->where('owner_dtl_id', $ownerId)
             ->where('status', 1);
     }
+    /**
+     * | Check if the Doc Category already Existing or not
+       | Common Function
+       | Version 1
+     */
+    public function isDocCategoryExistsv1($activeId, $workflowId, $moduleId, $docCode, $ownerId = null)
+    {
+        return WfActiveDocument::where('active_id', $activeId)
+            ->where('workflow_id', $workflowId)
+            ->where('module_id', $moduleId)
+            ->where('doc_code', $docCode)
+            ->where('owner_dtl_id', $ownerId)
+            ->where('status', 1);
+    }
 
 
     /**
@@ -229,7 +243,7 @@ class WfActiveDocument extends Model
     /** 
      * | water document View
        | Reference Function : getUploadDocuments
-    */
+     */
     public function getWaterDocsByAppNo($applicationId, $workflowId, $moduleId)
     {
         $secondConnection = 'pgsql_water';
@@ -258,7 +272,7 @@ class WfActiveDocument extends Model
 
     /** 
      * | water document View
-    */
+     */
     public function getWaterDocsByAppNov1($applicationId, $workflowId, $moduleId)
     {
         $secondConnection = 'pgsql_master';
@@ -288,7 +302,7 @@ class WfActiveDocument extends Model
      * | Fetches and returns consumer documents for a specific application from the pgsql_water 
      * | database based on application, workflow, and module IDs
        | Common Function
-    */
+     */
     public function getConsumerDocsByAppNo($applicationId, $workflowId, $moduleId)
     {
         $secondConnection = 'pgsql_water';
@@ -317,7 +331,7 @@ class WfActiveDocument extends Model
      * | Retrieves trade-related document details for a given application from the 
      * | pgsql_trade database, including DMS file paths and owner information
        | Common Function
-    */
+     */
     public function getTradeDocByAppNo($applicationId, $workflowId, $moduleId)
     {
         $dms = Config::get('module-constants.DMS_URL');
@@ -483,7 +497,7 @@ class WfActiveDocument extends Model
             ->whereIn('doc_code', $docCode)
             ->get();
     }
-    
+
     /**
      * | Get Uploaded documents
        | Common Function
@@ -589,7 +603,7 @@ class WfActiveDocument extends Model
                 'd.unique_id',
                 'd.reference_no'
             )
-            ->join('water_consumer_active_requests as wcar', 'wcar.id', '=', 'd.active_id')   
+            ->join('water_consumer_active_requests as wcar', 'wcar.id', '=', 'd.active_id')
             ->whereIn('d.verify_status', [0, 2])
 
             ->where('d.workflow_id', 193)
@@ -597,5 +611,4 @@ class WfActiveDocument extends Model
             ->where('d.active_id', $consumerId)
             ->get();
     }
-
 }
