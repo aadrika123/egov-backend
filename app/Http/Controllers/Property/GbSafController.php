@@ -905,7 +905,14 @@ class GbSafController extends Controller
             $metaReqs['referenceNo'] = $docDetail['data']['ReferenceNo'];
 
             $metaReqs = new Request($metaReqs);
-            $mWfActiveDocument->postDocuments($metaReqs);
+            $ifDocExist = $mWfActiveDocument->isDocCategoryExists($getSafDtls->id, $getSafDtls->workflow_id, $propModuleId, $req->docCategory, $req->ownerId)->first();   // Checking if the document is already existing or not
+            if (collect($ifDocExist)->isEmpty()) {
+                $mWfActiveDocument->postDocuments($metaReqs);
+            }
+            if (collect($ifDocExist)->isNotEmpty()) {
+                $mWfActiveDocument->editDocuments($ifDocExist, $metaReqs);
+            }
+            // $mWfActiveDocument->postDocuments($metaReqs);
 
             $getSafDtls->doc_upload_status = 1;
             $getSafDtls->save();
