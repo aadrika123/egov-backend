@@ -1247,9 +1247,9 @@ class GbSafController extends Controller
                 'tableData' => [$officerDetails]
             ];
             // Floor Details
-            $getFloorDtls = $mActiveSafsFloors->getFloorsBySafId($data->id);      // Model Function to Get Floor Details for active saf
-            if (empty($getFloorDtls)) {
-                $getFloorDtls = $mPropFloor->getFloorsBySafId($data->id);      // Model Function to Get Floor Details for apporve saf
+            $getFloorDtls = $mActiveSafsFloors->getFloorsBySafId($data->id);
+            if (empty($getFloorDtls) || !is_array($getFloorDtls) || count($getFloorDtls) === 0) {
+                $getFloorDtls = $mPropFloor->getFloorsBySafId($data->id); // Approved SAF
             }
 
             $floorDetails = $this->generateFloorDetails($getFloorDtls);

@@ -2625,7 +2625,7 @@ class ActiveSafController extends Controller
             $userId = authUser($req)->id;
             $ulbId = authUser($req)->ulb_id;
             $userType = authUser($req)->user_type;
-            $vacantLand = $propertyType['VACANT LAND'];
+            $vacantLand = $propertyType['VACANT LAND']; 
 
             $safDtls = $propActiveSaf->getSafNo($req->safId);
             $workflowId = $safDtls->workflow_id;
