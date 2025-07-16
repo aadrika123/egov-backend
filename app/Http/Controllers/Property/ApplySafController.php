@@ -158,23 +158,23 @@ class ApplySafController extends Controller
             }
             $metaReqs['finisherRoleId'] = collect($finisherRoleId)['role_id'];
 
-            if ($request['assessmentType'] != 4 && $request['assessmentType'] != 5) { // Bifurcation and Amalgamation
-                $safTaxes = $safCalculation->calculateTax($request);
+            // if ($request['assessmentType'] != 4 && $request['assessmentType'] != 5) { // Bifurcation and Amalgamation
+            $safTaxes = $safCalculation->calculateTax($request);
 
-                if ($safTaxes->original['status'] == false)
-                    throw new Exception($safTaxes->original['message']);
-            } else {
-                $safTaxes = (object)[
-                    'original' => [
-                        'status' => true,
-                        'data' => [
-                            'demand' => [
-                                'isResidential' => true
-                            ]
-                        ]
-                    ]
-                ];
-            }
+            if ($safTaxes->original['status'] == false)
+                throw new Exception($safTaxes->original['message']);
+            // } else {
+            //     $safTaxes = (object)[
+            //         'original' => [
+            //             'status' => true,
+            //             'data' => [
+            //                 'demand' => [
+            //                     'isResidential' => true
+            //                 ]
+            //             ]
+            //         ]
+            //     ];
+            // }
 
 
             $metaReqs['isTrust'] = $this->isPropTrust($request['floor']);
@@ -198,13 +198,13 @@ class ApplySafController extends Controller
                 'is_specially_abled' => $firstOwner['isSpeciallyAbled'],
             ];
             $demandResponse = null;
-            if ($request['assessmentType'] != 4 && $request['assessmentType'] != 5) { // Bifurcation and Amalgamation
+            // if ($request['assessmentType'] != 4 && $request['assessmentType'] != 5) { // Bifurcation and Amalgamation
                 $calculateSafById->generateSafDemand();
 
                 $generatedDemand = $calculateSafById->_generatedDemand;
                 $isResidential = $safTaxes->original['data']['demand']['isResidential'];
                 $demandResponse = $generateSafApplyDemandResponse->generateResponse($generatedDemand, $isResidential);
-            }
+            // }
 
             DB::beginTransaction();
             DB::connection('pgsql_master')->beginTransaction();

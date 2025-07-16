@@ -66,10 +66,10 @@ class TcVerificationDemandAdjust
         $this->_quaterlyTax = $this->calculateQuaterlyTax();           // (1.1)
         $this->adjustVerifiedDemand();
         $this->tblUpdateDemandAdjust();
-        if ($this->_reqs['assessmentType'] != 'Amalgamation') {
+        // if ($this->_reqs['assessmentType'] != 'Amalgamation') {
             $this->_postSafPropTaxes->postPropTaxes($this->_reqs['propId'], $this->_quaterlyTax->toArray()); // Add Property Taxes
 
-        }
+        // }
     }
 
     /**

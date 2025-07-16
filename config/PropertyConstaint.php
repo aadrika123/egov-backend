@@ -314,7 +314,7 @@ return [
     [
         "Reassessment",
         "Mutation",
-        // "Bifurcation"
+        "Bifurcation"
     ],
 
     "ULB-TYPE-ID" => [
