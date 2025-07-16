@@ -33,6 +33,7 @@ class SafRepository implements iSafRepository
                 'ward.ward_name as ward_no',
                 'prop_active_safs.prop_type_mstr_id',
                 'prop_active_safs.appartment_name',
+                'prop_active_safs.doc_upload_status',
                 DB::raw("string_agg(o.id::VARCHAR,',') as owner_id"),
                 DB::raw("string_agg(o.owner_name,',') as owner_name"),
                 DB::raw("string_agg(o.mobile_no,',') as mobile_no"),

@@ -318,6 +318,15 @@ class ActiveSafController extends Controller
                 ->where('prop_active_safs.status', 1)
                 ->whereIn('current_role', $roleIds)
                 ->whereIn('ward_mstr_id', $occupiedWards)
+                ->when(true, function ($query) {
+                    $query->where(function ($q) {
+                        $q->where('current_role', '!=', 6)
+                            ->orWhere(function ($sub) {
+                                $sub->where('current_role', 6)
+                                    ->where('doc_upload_status', 1);
+                            });
+                    });
+                })
                 ->orderByDesc('id')
                 ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name');
 
