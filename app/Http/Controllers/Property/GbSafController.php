@@ -1197,6 +1197,7 @@ class GbSafController extends Controller
             $mPropSafs = new PropSaf();
             $mPropGbOfficer = new PropGbOfficer();
             $mPropFloor = new PropFloor();
+            $mPropSafMemoDtls    = new PropSafMemoDtl();
             $mRefTable = Config::get('PropertyConstaint.SAF_REF_TABLE');
             // Saf Details
             $data = array();
@@ -1255,9 +1256,10 @@ class GbSafController extends Controller
             ];
             // Floor Details
             $getFloorDtls = $mActiveSafsFloors->getFloorsBySafId($data->id);
-            if (empty($getFloorDtls) || !is_array($getFloorDtls) || count($getFloorDtls) === 0) {
-                $getFloorDtls = $mPropFloor->getFloorsBySafId($data->id); // Approved SAF
+            if (is_array($getFloorDtls) && $getFloorDtls === []) {
+                $getFloorDtls = $mPropFloor->getFloorsBySafId($data->id);
             }
+
 
             $floorDetails = $this->generateFloorDetails($getFloorDtls);
             $floorElement = [
@@ -1293,6 +1295,8 @@ class GbSafController extends Controller
 
             $custom = $mCustomDetails->getCustomDetails($req);
             $fullDetailsData['departmentalPost'] = collect($custom)['original']['data'];
+            $memoDtls = $mPropSafMemoDtls->memoLists($data['id']);
+            $fullDetailsData['memoDtls'] = $memoDtls;
 
             return responseMsgs(true, 'Data Fetched', remove_null($fullDetailsData), "011819", "1.0", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {

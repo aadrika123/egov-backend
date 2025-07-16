@@ -481,6 +481,7 @@ class ApplySafController extends Controller
      * | It calculates property tax, saves building and officer details, and initiates the workflow process.
      * | 
      * | Main Function M1
+     * | Modified by Arshad
      */
     public function applyGbSaf(ReqGBSaf $req)
     {
@@ -544,7 +545,8 @@ class ApplySafController extends Controller
             $safReq = [
                 'assessment_type' => $req->assessmentType,
                 'ulb_id' => $ulbId,
-                'prop_type_mstr_id' => 2,               // Independent Building
+                // 'prop_type_mstr_id' => 2,               // Independent Building
+                'prop_type_mstr_id' => $req->propertyType,               // modify by Arshad 
                 'building_name' => $req->buildingName,
                 'gb_office_name' => $req->nameOfOffice,
                 'ward_mstr_id' => $req->wardId,
@@ -576,7 +578,30 @@ class ApplySafController extends Controller
                 'finisher_role_id' => $finisherRoleId->role_id,
                 'workflow_id' => $ulbWfId->wf_master_id,
                 'is_trust' => $isTrust,
-                'trust_type' => $req->trustType ?? null
+                'trust_type' => $req->trustType ?? null,
+                'khata_no' => $req->khataNo ?? null,
+                'plot_no' => $req->plotNo ?? null,
+                'corr_dist' => $req->district ?? null,
+                'is_water_harvesting' => $req->isWaterHarvesting,
+                'rwh_date_from' => ($req->isWaterHarvesting == 1) ? $req->rwhDateFrom : null,
+                'village_mauja_name' => $req->villageName,
+                'elect_consumer_no' => $req->electricityCustNo,
+                'elect_acc_no' => $req->electricityAccNo,
+                'elect_bind_book_no' => $req->electricityBindBookNo,
+                'elect_cons_category' => $req->electricityConsCategory,
+                'user_id' => $userId,
+                'citizen_id' => ($userType == $this->_citizenUserType) ? $userId : null,
+                'user_type' => $userType,
+                'holding_no' => $req->holdingNo ?? null,
+                'location' => $req->location ?? null,
+                'landmark' => $req->landMark ?? null,
+                'holding_no' => $req->holdingNo ?? null,
+                'road_width' => $req->roadType,
+                'corr_city' => $req->city,
+                'prop_state' => $req->state,
+                'corr_state' => $req->state,
+                'prop_pin_code' => $req->pinCode ?? null,
+
             ];
             DB::beginTransaction();
             DB::connection('pgsql_master')->beginTransaction();
