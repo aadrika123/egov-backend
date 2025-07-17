@@ -83,7 +83,9 @@ class PropGbofficer extends Model
     return PropGbOfficer::select(
       'officer_name',
       'designation',
-      'mobile_no'
+      'mobile_no',
+      'email',
+      'address'
     )
       ->where('saf_id', $safId)
       ->first();
