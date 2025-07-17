@@ -199,11 +199,11 @@ class ApplySafController extends Controller
             ];
             $demandResponse = null;
             // if ($request['assessmentType'] != 4 && $request['assessmentType'] != 5) { // Bifurcation and Amalgamation
-                $calculateSafById->generateSafDemand();
+            $calculateSafById->generateSafDemand();
 
-                $generatedDemand = $calculateSafById->_generatedDemand;
-                $isResidential = $safTaxes->original['data']['demand']['isResidential'];
-                $demandResponse = $generateSafApplyDemandResponse->generateResponse($generatedDemand, $isResidential);
+            $generatedDemand = $calculateSafById->_generatedDemand;
+            $isResidential = $safTaxes->original['data']['demand']['isResidential'];
+            $demandResponse = $generateSafApplyDemandResponse->generateResponse($generatedDemand, $isResidential);
             // }
 
             DB::beginTransaction();
@@ -550,6 +550,7 @@ class ApplySafController extends Controller
                 'building_name' => $req->buildingName,
                 'gb_office_name' => $req->nameOfOffice,
                 'ward_mstr_id' => $req->wardId,
+                'new_ward_mstr_id' => $req->newWardId,
                 'prop_address' => $req->buildingAddress,
                 'gb_usage_types' => $req->gbUsageTypes,
                 'gb_prop_usage_types' => $req->gbPropUsageTypes,
@@ -594,13 +595,16 @@ class ApplySafController extends Controller
                 'user_type' => $userType,
                 'holding_no' => $req->holdingNo ?? null,
                 'location' => $req->location ?? null,
-                'landmark' => $req->landMark ?? null,
+                'landmark' => $req->landmark ?? null,
                 'holding_no' => $req->holdingNo ?? null,
                 'road_width' => $req->roadType,
                 'corr_city' => $req->city,
+                'prop_city' => $req->city,
+                'prop_dist' => $req->district,
                 'prop_state' => $req->state,
                 'corr_state' => $req->state,
                 'prop_pin_code' => $req->pinCode ?? null,
+                'street_name' => $req->streetName ?? null,
 
             ];
             DB::beginTransaction();
