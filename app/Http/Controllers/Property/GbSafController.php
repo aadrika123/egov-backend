@@ -1256,7 +1256,7 @@ class GbSafController extends Controller
             ];
             // Floor Details
             $getFloorDtls = $mActiveSafsFloors->getFloorsBySafId($data->id);
-            if (is_array($getFloorDtls) && $getFloorDtls === []) {
+            if ($getFloorDtls->isEmpty()) {
                 $getFloorDtls = $mPropFloor->getFloorsBySafId($data->id);
             }
 

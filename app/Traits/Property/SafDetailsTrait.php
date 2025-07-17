@@ -354,7 +354,10 @@ trait SafDetailsTrait
             ['displayString' => 'Property has Mobile Tower(s) ?', 'key' => 'isMobileTower', 'value' => ($data->is_mobile_tower == false) ? 'No' : 'Yes', 'canBtc' => 'true', 'canEdit' => 'true'],
             ['displayString' => 'Property has Hoarding Board(s) ?', 'key' => 'isHoardingBoard', 'value' => ($data->is_hoarding_board == false) ? 'No' : 'Yes', 'canBtc' => 'true', 'canEdit' => 'true'],
             ['displayString' => 'Property has Rain Water Harvesting ?', 'key' => 'isWaterHarvesting', 'value' => ($data->is_water_harvesting == false) ? 'No' : 'Yes', 'canBtc' => 'true', 'canEdit' => 'true'],
-            ['displayString' => 'Holding No?', 'key' => 'holding_no', 'value' => $data->holding_no, 'canBtc' => 'true', 'canEdit' => 'true']
+            ['displayString' => 'Holding No?', 'key' => 'holding_no', 'value' => $data->holding_no, 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'Khata No?', 'key' => 'khata_no', 'value' => $data->khata_no, 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'Plot No?', 'key' => 'plot_no', 'value' => $data->plot_no, 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'Village Name?', 'key' => 'village_mauja_name', 'value' => $data->village_mauja_name, 'canBtc' => 'true', 'canEdit' => 'true']
         ]);
     }
 
@@ -375,6 +378,7 @@ trait SafDetailsTrait
             ['displayString' => 'State', 'key' => 'state', 'value' => $data->prop_state, 'canBtc' => 'true', 'canEdit' => 'true'],
             ['displayString' => 'Pin', 'key' => 'pin', 'value' => $data->prop_pin_code, 'canBtc' => 'true', 'canEdit' => 'true'],
             ['displayString' => 'Locality', 'key' => 'locality', 'value' => $data->prop_address, 'canBtc' => 'true', 'canEdit' => 'true'],
+            ['displayString' => 'Property Address', 'key' => 'prop_address', 'value' => $data->prop_address, 'canBtc' => 'true', 'canEdit' => 'true'],
         ]);
     }
 
