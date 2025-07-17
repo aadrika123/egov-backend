@@ -759,6 +759,7 @@ class GbSafController extends Controller
      */
     public function finalApprovalSafReplica($mPropProperties, $propId, $fieldVerifiedSaf, $activeSaf, $officerDetails, $floorDetails, $mPropFloors, $safId)
     {
+        $mPropFloors = new PropFloor();
         $mPropProperties->replicateVerifiedSaf($propId, collect($fieldVerifiedSaf)->first());             // Replicate to Saf Table
         $approvedSaf = $activeSaf->replicate();
         $approvedSaf->setTable('prop_safs');
@@ -782,6 +783,11 @@ class GbSafController extends Controller
             $approvedFloor->id = $floorDetail->id;
             $approvedFloor->save();
             $floorDetail->delete();
+        }
+        // Step 6: Deactivate existing floors for the new property
+        $existingFloors = $mPropFloors->getFloorsByPropId($propId);
+        if ($existingFloors) {
+            $mPropFloors->deactivateFloorsByPropId($propId);
         }
 
         foreach ($fieldVerifiedSaf as $key) {
@@ -813,6 +819,8 @@ class GbSafController extends Controller
      */
     public function finalRejectionSafReplica($activeSaf, $officerDetails, $floorDetails)
     {
+
+
         // Rejected SAF Application replication
         $rejectedSaf = $activeSaf->replicate();
         $rejectedSaf->setTable('prop_rejected_safs');
@@ -834,6 +842,12 @@ class GbSafController extends Controller
             $approvedFloor->id = $floorDetail->id;
             $approvedFloor->save();
             $floorDetail->delete();
+        }
+
+        // Step 6: Deactivate existing floors for the new property
+        $existingFloors = $mPropFloors->getFloorsByPropId($propId);
+        if ($existingFloors) {
+            $mPropFloors->deactivateFloorsByPropId($propId);
         }
     }
 
