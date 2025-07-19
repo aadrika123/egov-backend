@@ -10,6 +10,7 @@ use App\EloquentClass\Property\PenaltyRebateCalculation;
 use App\EloquentClass\Property\SafCalculation;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Property\reqApplySaf;
+use App\Http\Requests\Property\ReqPayment;
 use App\Http\Requests\Property\ReqSiteVerification;
 use App\Http\Requests\ReqGBSaf;
 use App\Models\Property\Logs\SafAmalgamatePropLog;
@@ -157,24 +158,10 @@ class ApplySafController extends Controller
                 $metaReqs['tcId'] = $user_id;                     // Optional: track TC ID
             }
             $metaReqs['finisherRoleId'] = collect($finisherRoleId)['role_id'];
-
-            // if ($request['assessmentType'] != 4 && $request['assessmentType'] != 5) { // Bifurcation and Amalgamation
             $safTaxes = $safCalculation->calculateTax($request);
 
             if ($safTaxes->original['status'] == false)
                 throw new Exception($safTaxes->original['message']);
-            // } else {
-            //     $safTaxes = (object)[
-            //         'original' => [
-            //             'status' => true,
-            //             'data' => [
-            //                 'demand' => [
-            //                     'isResidential' => true
-            //                 ]
-            //             ]
-            //         ]
-            //     ];
-            // }
 
 
             $metaReqs['isTrust'] = $this->isPropTrust($request['floor']);
@@ -198,13 +185,11 @@ class ApplySafController extends Controller
                 'is_specially_abled' => $firstOwner['isSpeciallyAbled'],
             ];
             $demandResponse = null;
-            // if ($request['assessmentType'] != 4 && $request['assessmentType'] != 5) { // Bifurcation and Amalgamation
             $calculateSafById->generateSafDemand();
 
             $generatedDemand = $calculateSafById->_generatedDemand;
             $isResidential = $safTaxes->original['data']['demand']['isResidential'];
             $demandResponse = $generateSafApplyDemandResponse->generateResponse($generatedDemand, $isResidential);
-            // }
 
             DB::beginTransaction();
             DB::connection('pgsql_master')->beginTransaction();
@@ -333,6 +318,245 @@ class ApplySafController extends Controller
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "010101", "1.0", responseTime(), "POST", $request->deviceId);
         }
     }
+    public function applySafv1(reqApplySaf $request)
+    {
+        try {
+            // ------------------------------------------------------
+            // ✅ Initialization
+            // ------------------------------------------------------
+            DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
+
+            $mApplyDate = Carbon::now()->format("Y-m-d");
+
+            // $user = authUser($request); // 🔧 Ensure user is properly fetched
+            $user_id = $user->id ?? 203;
+            $ulb_id = $request->ulbId ?? $user->ulb_id ?? 2;
+            $userType = $user->user_type ?? 'Citizen'; // Default to Citizen
+
+            // Model Instances
+            $saf = new PropActiveSaf();
+            $mOwner = new PropActiveSafsOwner();
+            $safCalculation = new SafCalculation();
+            $calculateSafById = new CalculateSafById();
+            $generateSafApplyDemandResponse = new GenerateSafApplyDemandResponse();
+
+            // ------------------------------------------------------
+            // ✅ Workflow IDs and Role Mapping
+            // ------------------------------------------------------
+            $ulbWorkflowId = $this->readAssessUlbWfId($request, $ulb_id);
+            $roadWidthType = $this->readRoadWidthType($request->roadType);
+            $request->request->add(['road_type_mstr_id' => $roadWidthType]);
+
+            $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);
+            $initiatorRoleId = collect(DB::select($refInitiatorRoleId))->first();
+            if (is_null($initiatorRoleId)) throw new Exception("Initiator Role Not Available");
+
+            $refFinisherRoleId = $this->getFinisherId($ulbWorkflowId->id);
+            $finisherRoleId = collect(DB::select($refFinisherRoleId))->first();
+            if (is_null($finisherRoleId)) throw new Exception("Finisher Role Not Available");
+
+            // ------------------------------------------------------
+            // ✅ Meta Request Preparation
+            // ------------------------------------------------------
+            $metaReqs = [
+                'roadWidthType'   => $roadWidthType,
+                'workflowId'      => $ulbWorkflowId->id,
+                'ulbId'           => $ulb_id,
+                'userId'          => $user_id,
+                'initiatorRoleId' => collect($initiatorRoleId)['role_id'],
+                'finisherRoleId'  => collect($finisherRoleId)['role_id'],
+            ];
+
+            if ($userType == $this->_citizenUserType) {
+                $metaReqs['initiatorRoleId'] = collect($initiatorRoleId)['forward_role_id'];
+                $metaReqs['userId'] = null;
+                $metaReqs['citizenId'] = $user_id;
+            } elseif ($userType == 'TC') {
+                $wfRole = new WfRoleusermap();
+                $request->merge([
+                    'userId' => $user_id,
+                    'workflowId' => $ulbWorkflowId->id
+                ]);
+                $getRole = $wfRole->getRoleByUserWfId($request);
+                if (empty($getRole)) throw new Exception("Workflow role mapping not found for this TC user.");
+
+                $metaReqs['initiatorRoleId'] = $getRole->wf_role_id;
+                $metaReqs['tcId'] = $user_id;
+            }
+
+            // ------------------------------------------------------
+            // ✅ SAF Tax Calculation
+            // ------------------------------------------------------
+            $safTaxes = $safCalculation->calculateTax($request);
+            if ($safTaxes->original['status'] == false)
+                throw new Exception($safTaxes->original['message']);
+
+            // ------------------------------------------------------
+            // ✅ Add Extra Meta Fields
+            // ------------------------------------------------------
+            $metaReqs['isTrust'] = $this->isPropTrust($request['floor']);
+            $metaReqs['holdingType'] = $this->holdingType($request['floor']);
+            $request->merge($metaReqs);
+            $this->_REQUEST = $request;
+
+            $this->mergeAssessedExtraFields();
+
+            // ------------------------------------------------------
+            // ✅ Demand Calculation
+            // ------------------------------------------------------
+            $calculateSafById->_calculatedDemand = $safTaxes->original['data'];
+            $calculateSafById->_safDetails['assessment_type'] = $request->assessmentType;
+            $calculateSafById->_safDetails['previous_holding_id'] = $request->previousHoldingId;
+
+            if (isset($request->holdingNo))
+                $calculateSafById->_holdingNo = $request->holdingNo;
+
+            $calculateSafById->_currentQuarter = calculateQtr($mApplyDate);
+
+            $firstOwner = collect($request['owner'])->first();
+            $calculateSafById->_firstOwner = [
+                'gender'             => $firstOwner['gender'],
+                'dob'                => $firstOwner['dob'],
+                'is_armed_force'     => $firstOwner['isArmedForce'],
+                'is_specially_abled' => $firstOwner['isSpeciallyAbled'],
+            ];
+
+            $calculateSafById->generateSafDemand();
+
+            $generatedDemand = $calculateSafById->_generatedDemand;
+            $isResidential = $safTaxes->original['data']['demand']['isResidential'];
+
+            // ✅ Move this AFTER all logic
+            $demandResponse = $generateSafApplyDemandResponse->generateResponse($generatedDemand, $isResidential);
+
+            // ------------------------------------------------------
+            // ✅ SAF Save
+            // ------------------------------------------------------
+            $request->merge(['paymentStatus' => ($request->assessmentType == 'Bifurcation' || $request->assessmentType == 'Amalgamation') ? '1' : '0']);
+
+            $createSaf = $saf->store($request, $userType);
+            $safId = $createSaf->original['safId'];
+            $safNo = $createSaf->original['safNo'];
+
+            // ✅ Amalgamation Log
+            if ($request->assessmentType == 5 || $request->assessmentType == "Amalgamation") {
+                $request->merge(["safId" => $safId]);
+                (new SafAmalgamatePropLog())->store($request);
+            }
+
+            // ✅ Owner Save
+            if ($request['owner']) {
+                $ownerDetail = $request['owner'];
+                if ($request->assessmentType == 'Mutation') {
+                    $ownerDetail = collect($ownerDetail)->where('propOwnerDetailId', null);
+                }
+                foreach ($ownerDetail as $ownerDetails) {
+                    $mOwner->addOwner($ownerDetails, $safId, $user_id);
+                }
+            }
+
+            // ✅ Floor Save
+            $updatedFloorData = [];
+            if ($request->propertyType != 4 && !empty($request['floor'])) {
+                $this->checkBifurcationFloorCondition($request['floor']);
+                foreach ($request['floor'] as $floorDetails) {
+                    $floor = new PropActiveSafsFloor();
+                    $floorId = $floor->addfloor($floorDetails, $safId, $user_id, $request->assessmentType, $request['biDateOfPurchase']);
+                    $floorDetails['floorId'] = $floorId;
+                    $updatedFloorData[] = $floorDetails;
+                }
+            }
+
+            // ------------------------------------------------------
+            // ✅ TC Site Verification Call
+            // ------------------------------------------------------
+            if ($userType == 'TC') {
+                $activeSafController = app()->make(ActiveSafController::class);
+                $verificationPayload = [
+                    'auth'             => $request->auth,
+                    'safId'            => $safId,
+                    'propertyType'     => $request->propertyType,
+                    'roadWidth'        => $request->roadType,
+                    'areaOfPlot'       => $request->areaOfPlot ?? 0,
+                    'wardId'           => $request->ward ?? 1,
+                    'isMobileTower'    => (bool)$request->isMobileTower,
+                    'mobileTower'      => $request->mobileTower ?? [],
+                    'isHoardingBoard'  => (bool)$request->isHoardingBoard,
+                    'hoardingBoard'    => $request->hoardingBoard ?? [],
+                    'isPetrolPump'     => (bool)$request->isPetrolPump,
+                    'petrolPump'       => $request->petrolPump ?? [],
+                    'isWaterHarvesting' => (bool)$request->isWaterHarvesting,
+                    'rwhDateFrom'      => $request->rwhDateFrom ?? null,
+                    'deviceId'         => $request->deviceId ?? null,
+                    'floor'            => $updatedFloorData,
+                ];
+                $verReq = ReqSiteVerification::create('/site-verification', 'POST', $verificationPayload);
+                $activeSafController->siteVerification($verReq);
+            }
+
+            // ------------------------------------------------------
+            // ✅ Citizen Notification
+            // ------------------------------------------------------
+            if ($userType == 'Citizen') {
+                $notify = [
+                    'userType'     => 'Citizen',
+                    'citizenId'    => $user_id,
+                    'category'     => 'Recent Application',
+                    'ulbId'        => $ulb_id,
+                    'ephameral'    => 0,
+                    'notification' => "Successfully Submitted Your Application. Your SAF No. $safNo",
+                ];
+                (new EloquentAuthRepository())->addNotification($notify);
+            }
+
+            // ------------------------------------------------------
+            // ✅ Offline Payment Call (Optional / If Required)
+            // ------------------------------------------------------
+            if (isset($demandResponse['amounts']['payableAmount']) && $demandResponse['amounts']['payableAmount'] == 0) {
+                $paymentPayload = [
+                    "id"             => $safId,
+                    "paymentMode"    => "CASH",
+                    "ulbId"          => $ulb_id,
+                    "chequeDate"     => "",
+                    "bankName"       => "",
+                    "branchName"     => "",
+                    "chequeNo"       => "",
+                    "advanceAmount"  => ""
+                ];
+
+                // Create internal Laravel request from ReqPayment
+                $paymentRequest = ReqPayment::create(
+                    '/offline-payment-saf',
+                    'POST',
+                    $paymentPayload
+                );
+
+                // Call controller method
+                $activeSafController = app()->make(ActiveSafController::class);
+                $activeSafController->offlinePaymentSaf($paymentRequest);
+            }
+            // ✅ Commit All Transactions
+            DB::commit();
+            DB::connection('pgsql_master')->commit();
+
+            // ------------------------------------------------------
+            // ✅ Final Response
+            // ------------------------------------------------------
+            return responseMsgs(true, "Successfully Submitted Your Application. Your SAF No. $safNo", [
+                "safNo"     => $safNo,
+                "applyDate" => ymdToDmyDate($mApplyDate),
+                "safId"     => $safId,
+                "demand"    => $demandResponse
+            ], "010101", "1.0", "1s", "POST", $request->deviceId);
+        } catch (Exception $e) {
+            // Rollback on Failure
+            DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
+            return responseMsgs(false, $e->getMessage(), $e->getFile(), "010101", "1.0", responseTime(), "POST", $request->deviceId);
+        }
+    }
+
 
     /**
      * | Read Assessment Type and Ulb Workflow Id
@@ -738,4 +962,239 @@ class ApplySafController extends Controller
         }
         return $generatedDemand;
     }
+    //  public function applySaf(reqApplySaf $request)
+    // {
+    //     try {
+    //         // Variable Assignments
+    //         $mApplyDate = Carbon::now()->format("Y-m-d");
+    //         $user = authUser($request);
+    //         $user_id = $user->id;
+    //         $ulb_id = $request->ulbId ?? $user->ulb_id;
+    //         $userType = $user->user_type ?? 'Citizen'; // Default to Citizen if not set
+    //         $metaReqs = array();
+    //         $saf = new PropActiveSaf();
+
+
+    //         $mOwner = new PropActiveSafsOwner();
+    //         $safCalculation = new SafCalculation();
+    //         $calculateSafById = new CalculateSafById;
+    //         $generateSafApplyDemandResponse = new GenerateSafApplyDemandResponse;
+    //         // Derivative Assignments
+    //         $ulbWorkflowId = $this->readAssessUlbWfId($request, $ulb_id);
+    //         $roadWidthType = $this->readRoadWidthType($request->roadType);          // Read Road Width Type
+
+    //         $request->request->add(['road_type_mstr_id' => $roadWidthType]);
+
+    //         $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);                                // Get Current Initiator ID
+    //         $initiatorRoleId = collect(DB::select($refInitiatorRoleId))->first();
+    //         if (is_null($initiatorRoleId))
+    //             throw new Exception("Initiator Role Not Available");
+    //         $refFinisherRoleId = $this->getFinisherId($ulbWorkflowId->id);
+    //         $finisherRoleId = collect(DB::select($refFinisherRoleId))->first();
+    //         if (is_null($finisherRoleId))
+    //             throw new Exception("Finisher Role Not Available");
+
+    //         $metaReqs['roadWidthType'] = $roadWidthType;
+    //         $metaReqs['workflowId'] = $ulbWorkflowId->id;
+    //         $metaReqs['ulbId'] = $ulb_id;
+    //         $metaReqs['userId'] = $user_id;
+    //         $metaReqs['initiatorRoleId'] = collect($initiatorRoleId)['role_id'];
+    //         if ($userType == $this->_citizenUserType) {
+    //             $metaReqs['initiatorRoleId'] = collect($initiatorRoleId)['forward_role_id'];         // Send to DA in Case of Citizen
+    //             $metaReqs['userId'] = null;
+    //             $metaReqs['citizenId'] = $user_id;
+    //         } elseif ($userType == 'TC') {
+    //             // TC: Retrieve TC role from workflow and set as initiator
+    //             $wfRole = new WfRoleusermap();
+
+    //             $request->merge([
+    //                 'userId' => $user_id,
+    //                 'workflowId' => $ulbWorkflowId->id
+    //             ]);
+
+    //             $getRole = $wfRole->getRoleByUserWfId($request);
+
+    //             if (empty($getRole))
+    //                 throw new Exception("Workflow role mapping not found for this TC user.");
+
+    //             $metaReqs['initiatorRoleId'] = $getRole->wf_role_id; // ✅ Use TC role as initiator
+    //             $metaReqs['tcId'] = $user_id;                     // Optional: track TC ID
+    //         }
+    //         $metaReqs['finisherRoleId'] = collect($finisherRoleId)['role_id'];
+
+    //         // if ($request['assessmentType'] != 4 && $request['assessmentType'] != 5) { // Bifurcation and Amalgamation
+    //         $safTaxes = $safCalculation->calculateTax($request);
+
+    //         if ($safTaxes->original['status'] == false)
+    //             throw new Exception($safTaxes->original['message']);
+    //         // } else {
+    //         //     $safTaxes = (object)[
+    //         //         'original' => [
+    //         //             'status' => true,
+    //         //             'data' => [
+    //         //                 'demand' => [
+    //         //                     'isResidential' => true
+    //         //                 ]
+    //         //             ]
+    //         //         ]
+    //         //     ];
+    //         // }
+
+
+    //         $metaReqs['isTrust'] = $this->isPropTrust($request['floor']);
+    //         $metaReqs['holdingType'] = $this->holdingType($request['floor']);
+    //         $request->merge($metaReqs);
+    //         $this->_REQUEST = $request;
+    //         $this->mergeAssessedExtraFields();                                          // Merge Extra Fields for Property Reassessment,Mutation,Bifurcation & Amalgamation(2.2)
+    //         // Generate Calculation
+    //         $calculateSafById->_calculatedDemand = $safTaxes->original['data'];
+    //         $calculateSafById->_safDetails['assessment_type'] = $request->assessmentType;
+    //         $calculateSafById->_safDetails['previous_holding_id'] = $request->previousHoldingId;
+
+    //         if (isset($request->holdingNo))
+    //             $calculateSafById->_holdingNo = $request->holdingNo;
+    //         $calculateSafById->_currentQuarter = calculateQtr($mApplyDate);
+    //         $firstOwner = collect($request['owner'])->first();
+    //         $calculateSafById->_firstOwner = [
+    //             'gender' => $firstOwner['gender'],
+    //             'dob' => $firstOwner['dob'],
+    //             'is_armed_force' => $firstOwner['isArmedForce'],
+    //             'is_specially_abled' => $firstOwner['isSpeciallyAbled'],
+    //         ];
+    //         $demandResponse = null;
+    //         // if ($request['assessmentType'] != 4 && $request['assessmentType'] != 5) { // Bifurcation and Amalgamation
+    //         $calculateSafById->generateSafDemand();
+
+    //         $generatedDemand = $calculateSafById->_generatedDemand;
+    //         $isResidential = $safTaxes->original['data']['demand']['isResidential'];
+    //         $demandResponse = $generateSafApplyDemandResponse->generateResponse($generatedDemand, $isResidential);
+    //         // }
+
+    //         DB::beginTransaction();
+    //         DB::connection('pgsql_master')->beginTransaction();
+
+    //         if ($request->assessmentType == 'Bifurcation' || $request->assessmentType == 'Amalgamation') { // Bifurcation and Amalgamation
+    //             $request->merge(['paymentStatus' => '1']);
+    //         } else {
+    //             $request->merge(['paymentStatus' => '0']);
+    //         }
+    //         $createSaf = $saf->store($request, $userType);                                         // Store SAF Using Model function 
+    //         if ($request->assessmentType == 5 || $request->assessmentType == "Amalgamation") {
+    //             $request->merge(["safId" => $createSaf->original['safId']]);
+    //             $SafAmalgamatePropLog = new SafAmalgamatePropLog();
+    //             $SafAmalgamatePropLog->store($request);
+    //         }
+    //         $safId = $createSaf->original['safId'];
+    //         $safNo = $createSaf->original['safNo'];
+
+    //         // SAF Owner Details
+    //         if ($request['owner']) {
+    //             $ownerDetail = $request['owner'];
+    //             if ($request->assessmentType == 'Mutation')                             // In Case of Mutation Avert Existing Owner Detail
+    //                 $ownerDetail = collect($ownerDetail)->where('propOwnerDetailId', null);
+    //             foreach ($ownerDetail as $ownerDetails) {
+    //                 $mOwner->addOwner($ownerDetails, $safId, $user_id);
+    //             }
+    //         }
+
+    //         // Floor Details
+    //         if ($request->propertyType != 4 && !empty($request['floor'])) {
+    //             $floorDetail = $request['floor'];
+    //             if ($request['floor']) {
+    //                 $floorDetail = $request['floor'];
+    //                 $this->checkBifurcationFloorCondition($floorDetail);
+    //                 foreach ($floorDetail as $floorDetails) {
+    //                     $floor = new PropActiveSafsFloor();
+    //                     $floorId = $floor->addfloor($floorDetails, $safId, $user_id, $request->assessmentType, $request['biDateOfPurchase']);
+    //                     // Add the new floorId to the floor data
+    //                     $floorDetails['floorId'] = $floorId;
+
+    //                     // Store updated floor record
+    //                     $updatedFloorData[] = $floorDetails;
+    //                 }
+    //             }
+    //         }
+    //         if ($userType == 'TC') {
+    //             $activeSafController = app()->make(ActiveSafController::class);
+
+    //             // Build the payload array
+    //             $verificationPayload = [
+    //                 'safId' => $safId,
+    //                 'propertyType' => $request->propertyType,
+    //                 'roadWidth' => $request->roadType,
+    //                 'areaOfPlot' => $request->areaOfPlot ?? 0,
+    //                 'wardId' => $request->ward ?? 1,
+
+    //                 'isMobileTower' => (bool) $request->isMobileTower,
+    //                 'mobileTower' => [
+    //                     'area' => $request->mobileTower['area'] ?? null,
+    //                     'dateFrom' => $request->mobileTower['dateFrom'] ?? null,
+    //                 ],
+
+    //                 'isHoardingBoard' => (bool) $request->isHoardingBoard,
+    //                 'hoardingBoard' => [
+    //                     'area' => $request->hoardingBoard['area'] ?? null,
+    //                     'dateFrom' => $request->hoardingBoard['dateFrom'] ?? null,
+    //                 ],
+
+    //                 'isPetrolPump' => (bool) $request->isPetrolPump,
+    //                 'petrolPump' => [
+    //                     'area' => $request->petrolPump['area'] ?? null,
+    //                     'dateFrom' => $request->petrolPump['dateFrom'] ?? null,
+    //                 ],
+
+    //                 'isWaterHarvesting' => (bool) $request->isWaterHarvesting,
+    //                 'rwhDateFrom' => $request->rwhDateFrom ?? null,
+    //                 'deviceId' => $request->deviceId ?? null,
+    //             ];
+
+    //             // Add floor details if propertyType is not 4
+    //             if ($request->propertyType != 4) {
+    //                 $verificationPayload['floor'] = $updatedFloorData ?? [];
+    //             }
+    //             // ✅ Merge deeply so verificationPayload overrides $request values
+    //             // Final payload: only 'auth' + verification data
+    //             $finalPayload = [
+    //                 'auth' => $request->auth,
+    //             ] + $verificationPayload;
+
+    //             // Create new internal request
+    //             $verReq = ReqSiteVerification::create(
+    //                 '/site-verification',
+    //                 'POST',
+    //                 $finalPayload
+    //             );
+
+    //             // Call the siteVerification method
+    //             $siteVerifyResponse = $activeSafController->siteVerification($verReq);
+    //         }
+
+
+    //         // Citizen Notification
+    //         if ($userType == 'Citizen') {
+    //             $mreq['userType']  = 'Citizen';
+    //             $mreq['citizenId'] = $user_id;
+    //             $mreq['category']  = 'Recent Application';
+    //             $mreq['ulbId']     = $ulb_id;
+    //             $mreq['ephameral'] = 0;
+    //             $mreq['notification'] = "Successfully Submitted Your Application Your SAF No. $safNo";
+    //             $rEloquentAuthRepository = new EloquentAuthRepository();
+    //             $rEloquentAuthRepository->addNotification($mreq);
+    //         }
+    //         // return $demandResponse;
+    //         // dd();
+    //         DB::commit();
+    //         DB::connection('pgsql_master')->commit();
+    //         return responseMsgs(true, "Successfully Submitted Your Application Your SAF No. $safNo", [
+    //             "safNo" => $safNo,
+    //             "applyDate" => ymdToDmyDate($mApplyDate),
+    //             "safId" => $safId,
+    //             "demand" => $demandResponse
+    //         ], "010101", "1.0", "1s", "POST", $request->deviceId);
+    //     } catch (Exception $e) {
+    //         DB::rollBack();
+    //         DB::connection('pgsql_master')->rollBack();
+    //         return responseMsgs(false, $e->getMessage(), $e->getFile(), "010101", "1.0", responseTime(), "POST", $request->deviceId);
+    //     }
+    // }
 }

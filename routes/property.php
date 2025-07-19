@@ -65,7 +65,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker', 'apilogger']], fun
      | Serial No : 01
    */
   Route::controller(ApplySafController::class)->group(function () {
-    Route::post('saf/apply', 'applySaf');                                 // Applying Saf Route                                                   #API_ID = 010101
+    Route::post('saf/apply', 'applySafv1');                                 // Applying Saf Route                                                   #API_ID = 010101
     Route::post('saf/gb-apply', 'applyGbSaf');                            // Applying GB Saf                                                     #API_ID = 010102
   });
 
