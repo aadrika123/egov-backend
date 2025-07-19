@@ -324,12 +324,11 @@ class ApplySafController extends Controller
             // ------------------------------------------------------
             // ✅ Initialization
             // ------------------------------------------------------
-            DB::beginTransaction();
-            DB::connection('pgsql_master')->beginTransaction();
+
 
             $mApplyDate = Carbon::now()->format("Y-m-d");
 
-            // $user = authUser($request); // 🔧 Ensure user is properly fetched
+            $user = authUser($request); // 🔧 Ensure user is properly fetched
             $user_id = $user->id ?? 203;
             $ulb_id = $request->ulbId ?? $user->ulb_id ?? 2;
             $userType = $user->user_type ?? 'Citizen'; // Default to Citizen
@@ -433,6 +432,8 @@ class ApplySafController extends Controller
             // ------------------------------------------------------
             // ✅ SAF Save
             // ------------------------------------------------------
+            DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
             $request->merge(['paymentStatus' => ($request->assessmentType == 'Bifurcation' || $request->assessmentType == 'Amalgamation') ? '1' : '0']);
 
             $createSaf = $saf->store($request, $userType);
@@ -515,6 +516,7 @@ class ApplySafController extends Controller
             // ------------------------------------------------------
             if (isset($demandResponse['amounts']['payableAmount']) && $demandResponse['amounts']['payableAmount'] == 0) {
                 $paymentPayload = [
+                    'auth'             => $request->auth,
                     "id"             => $safId,
                     "paymentMode"    => "CASH",
                     "ulbId"          => $ulb_id,
@@ -534,7 +536,7 @@ class ApplySafController extends Controller
 
                 // Call controller method
                 $activeSafController = app()->make(ActiveSafController::class);
-                $activeSafController->offlinePaymentSaf($paymentRequest);
+                $response = $activeSafController->offlinePaymentSaf($paymentRequest);
             }
             // ✅ Commit All Transactions
             DB::commit();

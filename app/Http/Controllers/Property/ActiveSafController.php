@@ -3509,7 +3509,9 @@ class ActiveSafController extends Controller
                 throw new Exception("Payment Already Done");
 
             $userId = authUser($req)->id;                                      // Authenticated user or Ghost User
+            // $userId = 203;                                      // Authenticated user or Ghost User
             $tranBy = authUser($req)->user_type;
+            // $tranBy = 'jsk';
 
             $tranNo = $req['transactionNo'];
             // Derivative Assignments
