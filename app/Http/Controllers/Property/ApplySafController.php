@@ -434,7 +434,7 @@ class ApplySafController extends Controller
             // ------------------------------------------------------
             DB::beginTransaction();
             DB::connection('pgsql_master')->beginTransaction();
-            $request->merge(['paymentStatus' => ($request->assessmentType == 'Bifurcation' || $request->assessmentType == 'Amalgamation') ? '1' : '0']);
+            // $request->merge(['paymentStatus' => ($request->assessmentType == 'Bifurcation' || $request->assessmentType == 'Amalgamation') ? '1' : '0']);
 
             $createSaf = $saf->store($request, $userType);
             $safId = $createSaf->original['safId'];

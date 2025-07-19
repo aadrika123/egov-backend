@@ -23,7 +23,7 @@ class  PropActiveSaf extends Model
     public function store($req, $userType)
     {
         $reqs = [
-            'payment_status' => $req->paymentStatus,
+            // 'payment_status' => $req->paymentStatus,
             'has_previous_holding_no' => $req->hasPreviousHoldingNo,
             'previous_holding_id' => $req->previousHoldingId,
             'previous_ward_mstr_id' => $req->previousWard,
