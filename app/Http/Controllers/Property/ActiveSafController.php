@@ -1090,7 +1090,7 @@ class ActiveSafController extends Controller
 
                     // Replicate SAF to property
                     $this->replicateSaf($saf->id);
-                    $propId = $this->_replicatedPropId;
+                    $propId = $this->_replicatedPropId ?? $saf->previous_holding_id;  //  in a case amalgamation, we use previous_holding_id of master holding id 
 
                     // Merge Demand for SAM Memo
                     $mergedDemand = array_merge(

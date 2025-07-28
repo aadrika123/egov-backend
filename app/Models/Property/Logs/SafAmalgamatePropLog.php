@@ -58,7 +58,7 @@ class SafAmalgamatePropLog extends PropParamModeL
             "owners_ids"=>json_encode($owners->pluck("id")),
             "owners_json"=>json_encode($owners->toArray(),JSON_UNESCAPED_UNICODE),
             "demand_ids"=>json_encode($demands->pluck("id")),
-            "demand_json"=>json_encode($demands->toArray(),JSON_UNESCAPED_UNICODE),
+            "demand_json"=>json_encode($demands->toArray(),JSON_UNESCAPED_UNICODE), 
             "tran_ids"=>json_encode($transactions->pluck("id")),
             "tran_json"=>json_encode($transactions->toArray(),JSON_UNESCAPED_UNICODE),
         ];

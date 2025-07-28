@@ -353,7 +353,7 @@ class CalculateSafById
      * | Adjust Amount In Case of Reassessment (1.2.1)
        | Common Function
      */
-    public function adjustAmount()
+    public function adjustAmountv1()
     {
         $propDemandList = array();
         $mSafDemand = new PropSafsDemand();
@@ -398,6 +398,112 @@ class CalculateSafById
             if ($item['balance'] == 0)
                 $item['onePercPenaltyTax'] = 0;
         }
+        return $this->_demandDetails = $generatedDemand;
+    }
+
+
+    public function adjustAmount()
+    {
+        $propDemandList = collect();
+        $safDemandList = collect();
+        $mSafDemand = new PropSafsDemand();
+        $propProperty = new PropProperty();
+        $mPropDemands = new PropDemand();
+        $generatedDemand = $this->_demandDetails;
+        // For Amalgamation, handle multiple property IDs
+        // Convert comma-separated string to array if necessary
+        $previousHoldingId = $this->_safDetails->previous_holding_id ?? $this->_safDetails['previous_holding_id'] ?? [];
+
+        if (!is_array($previousHoldingId)) {
+            $previousHoldingId = explode(',', $previousHoldingId);
+        }
+        $previousHoldingId = array_filter(array_map('trim', $previousHoldingId));
+
+        // Initialize collections
+        $safDemandList = collect();
+        $propDemandList = collect();
+
+        // For Amalgamation, handle multiple property IDs
+        if (in_array($this->_safDetails['assessment_type'], $this->_adjustmentAssessmentTypes)) {
+            foreach ($previousHoldingId as $holdingId) {
+                $propDtls = $propProperty->getPropById((int)$holdingId);
+                if (!$propDtls) {
+                    continue;
+                }
+
+                // Collect demands from each property
+                if ($propDtls->saf_id) {
+                    $safDemandList = $safDemandList->merge($mSafDemand->getFullDemandsBySafId($propDtls->saf_id));
+                }
+
+                $propDemandList = $propDemandList->merge($mPropDemands->getPaidDemandByPropId($propDtls->id));
+            }
+
+            if ($propDemandList->isEmpty() && $safDemandList->isEmpty()) {
+                throw new Exception("No previous demands found for amalgamation properties");
+            }
+        } else {
+            // Single property case
+            $singleHoldingId = is_array($previousHoldingId) ? $previousHoldingId[0] ?? null : $previousHoldingId;
+            if (!$singleHoldingId) {
+                throw new Exception("Previous Holding ID is required");
+            }
+
+            $propDtls = $propProperty->getPropById((int)$singleHoldingId);
+            if (!$propDtls) {
+                throw new Exception("Property detail Not Available");
+            }
+
+            if (!$propDtls->saf_id) {
+                throw new Exception("Previous Saf Id Not Available");
+            }
+
+            $safDemandList = $mSafDemand->getFullDemandsBySafId($propDtls->saf_id);
+            if ($safDemandList->isEmpty()) {
+                throw new Exception("Previous Saf Demand is Not Available");
+            }
+
+            $propDemandList = $mPropDemands->getPaidDemandByPropId($propDtls->id);
+        }
+
+
+
+
+        $generatedDemand = $generatedDemand->sortBy('due_date');
+        // dd($generatedDemand);
+
+        // Demand Adjustment
+        foreach ($generatedDemand as $item) {
+            $itemDueDate = $item['due_date'] ?? $item['dueDate'];
+            $demand = $propDemandList->where('due_date', $itemDueDate)->first();  // Check in Property Demand
+
+            if (collect($demand)->isEmpty())  // If not in property, check in SAF
+                $demand = $safDemandList->where('due_date', $itemDueDate)->first();
+
+            $itemAmt = $item['amount'] ?? $item['totalTax'];  // For TC 'totalTax' key
+
+            // Check for Amalgamation Type
+            if (in_array($this->_safDetails['assessment_type'], ['Amalgamation'])) {
+                $item['adjust_amount'] = $itemAmt;  // Adjust full amount for amalgamation
+            } else {
+                if (collect($demand)->isEmpty()) {
+                    $item['adjust_amount'] = 0;
+                } else {
+                    $item['adjust_amount'] = $demand->amount - $demand->balance;
+                }
+
+                if ($item['adjust_amount'] > $itemAmt) {
+                    $item['adjust_amount'] = $itemAmt;
+                }
+            }
+
+            $item['balance'] = roundFigure($itemAmt - $item['adjust_amount']);
+
+            if ($item['balance'] == 0) {
+                $item['onePercPenaltyTax'] = 0;
+            }
+        }
+
         return $this->_demandDetails = $generatedDemand;
     }
 
