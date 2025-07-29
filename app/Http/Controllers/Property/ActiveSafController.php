@@ -1499,11 +1499,19 @@ class ActiveSafController extends Controller
                 ->where('saf_id', $req->applicationId)
                 ->get();
             $propId = null;
-            if ($activeSaf->assessment_type !== 'Amalgamation') {
+            if ($activeSaf->assessment_type == 'Amalgamation') {
+                // For Amalgamation, use the previous holding ID directly
+                $propId = $activeSaf->previous_holding_id;
+
+                if (empty($propId)) {
+                    throw new Exception("Previous Holding ID not found for Amalgamation type");
+                }
+            } else {
+                // For other types, fetch property ID using the SAF application ID
                 $propDtls = $mPropProperties->getPropIdBySafId($req->applicationId);
 
-                if (!$propDtls) {
-                    throw new Exception("Property Not Found For the Saf");
+                if (empty($propDtls) || empty($propDtls->id)) {
+                    throw new Exception("Property not found for the given SAF application ID");
                 }
 
                 $propId = $propDtls->id;

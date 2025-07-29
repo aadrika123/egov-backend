@@ -67,7 +67,7 @@ class TcVerificationDemandAdjust
         $this->adjustVerifiedDemand();
         $this->tblUpdateDemandAdjust();
         // if ($this->_reqs['assessmentType'] != 'Amalgamation') {
-            $this->_postSafPropTaxes->postPropTaxes($this->_reqs['propId'], $this->_quaterlyTax->toArray()); // Add Property Taxes
+        $this->_postSafPropTaxes->postPropTaxes($this->_reqs['propId'], $this->_quaterlyTax->toArray()); // Add Property Taxes
 
         // }
     }
@@ -141,6 +141,7 @@ class TcVerificationDemandAdjust
             $this->_calculateSafByid->_demandDetails = $quaterlyTax;
             $this->_calculateSafByid->_holdingNo = $activeSafDtls->holding_no;
             $this->_calculateSafByid->_safDetails['previous_holding_id'] = $activeSafDtls->previous_holding_id;
+            $this->_calculateSafByid->_safDetails['assessment_type'] = $activeSafDtls->assessment_type;                   // modified for amalgamation
             $quaterlyTax = $this->_calculateSafByid->adjustAmount();
         }
         return $quaterlyTax;
