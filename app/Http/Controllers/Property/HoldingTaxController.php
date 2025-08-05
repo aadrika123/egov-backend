@@ -1422,7 +1422,7 @@ class HoldingTaxController extends Controller
                 throw new Exception("Under taken data not found!");
 
             $consumerIds = collect($connectionDetails)->pluck('consumer_id');
-            $consumerDetails = $mWaterWaterConsumer->getConsumerByIds($consumerIds)->get();
+            $consumerDetails = $mWaterWaterConsumer->getConsumerByIdsv1($consumerIds)->get();
             $checkConsumer = collect($consumerDetails)->first();
             return $consumerDetails;
             // return responseMsgs(true, 'List of undertaken water connections!', remove_null($consumerDetails), "", "01", ".ms", "POST", $request->deviceId);
