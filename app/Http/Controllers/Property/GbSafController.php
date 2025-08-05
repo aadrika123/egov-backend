@@ -745,7 +745,7 @@ class GbSafController extends Controller
             $propSafVerificationDtl->deactivateVerifications($req->applicationId);              // Deactivate Verification from Saf floor Dtls
             DB::commit();
             DB::connection('pgsql_master')->commit();
-            return responseMsgs(true, $msg, ['holdingNo' => $safDetails->holding_no], "011804", "1.0", responseTime(), "POST", $req->deviceId);
+            return responseMsgs(true, $msg, ['holdingNo' => $safDetails->holding_no, 'ptNo' => $safDetails->pt_no], "011804", "1.0", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
