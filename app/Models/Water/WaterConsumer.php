@@ -476,8 +476,8 @@ class WaterConsumer extends Model
             ->join('ulb_masters', 'ulb_masters.id', '=', 'water_consumers.ulb_id')
             ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_consumers.ward_mstr_id')
             ->leftJoin('water_consumer_demands', function ($join) {
-                $join->on('water_consumer_demands.consumer_id', '=', 'water_consumers.id');
-                // ->where('water_consumer_demands.paid_status', 1);
+                $join->on('water_consumer_demands.consumer_id', '=', 'water_consumers.id')
+                ->where('water_consumer_demands.paid_status', 0);
             })
             ->havingRaw("SUM(water_consumer_demands.balance_amount) > 0") // Excludes 0 or NULL total demand
             ->whereIn("water_consumers.id", $consumerIds)
