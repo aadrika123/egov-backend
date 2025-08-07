@@ -1112,12 +1112,20 @@ class ConcessionController extends Controller
             if (!$refApplication)
                 throw new Exception("Application Not Found for this id");
 
+            // Get JSON response
+            $response = $this->getDocList($refApplication);
 
-            $filterDocs = $this->getDocList($refApplication);             // Current Object(Saf Docuement List)
-            if (!empty($filterDocs))
-                $concessionDoc['listDocs'] = $this->filterDocument($filterDocs, $refApplication);                                     // function(1.2)
-            else
+            // Extract actual data from JSON response
+            $responseData = $response->getData(true); // true => associative array
+
+            $filterDocs = $responseData['data'] ?? [];
+
+            if (!empty($filterDocs)) {
+                $concessionDoc['listDocs'] = $this->filterDocument($filterDocs, $refApplication);
+            } else {
                 $concessionDoc['listDocs'] = [];
+            }
+
 
             return responseMsgs(true, "Successfully Done", remove_null($concessionDoc), "010614", '01', responseTime(),  $req->getMethod(), '');
         } catch (Exception $e) {
@@ -1179,7 +1187,7 @@ class ConcessionController extends Controller
         $documents = $mWfActiveDocument->getDocByRefIds($safId, $workflowId, $moduleId);
         $uploadedDocs = $docUpload->getDocUrl($documents);           #_Calling BLL for Document Path from DMS
 
-        $explodeDocs = collect(explode('#', $documentList));
+        $explodeDocs = collect($documentList);
 
         $filteredDocs = $explodeDocs->map(function ($explodeDoc) use ($uploadedDocs) {
             $document = explode(',', $explodeDoc);
