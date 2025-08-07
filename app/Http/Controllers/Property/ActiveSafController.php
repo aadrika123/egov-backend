@@ -1044,23 +1044,12 @@ class ActiveSafController extends Controller
                 break;
 
             case $wfLevels['DA']: // DA Condition
-                // if ($propActiveSaf->assessment_type != 'Bifurcation' && $propActiveSaf->assessment_type != 'Amalgamation') {
                 $demandData = $mPropSafDemand->getDemandsBySafId($saf->id)->groupBy('fyear')->first();
                 if (collect($demandData)->isEmpty())
                     throw new Exception("Demand Not Available");
                 $demand = $demandData->last();
                 if (collect($demand)->isEmpty())
                     throw new Exception("Demand Not Available to Generate SAM");
-                // } else {
-                //     $date = Carbon::parse($saf->application_date);
-                //     $currentFinancialYear = getFinancialYear($date);
-                //     $demand = (object)[
-                //         'fyear' => $currentFinancialYear,
-                //         'amount' => 0,
-                //         'monthly' => 0,
-                //         'payment_date' => null,
-                //     ];
-                // }
 
                 if ($saf->doc_verify_status == 0)
                     throw new Exception("Document Not Fully Verified");

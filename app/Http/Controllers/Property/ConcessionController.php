@@ -343,7 +343,7 @@ class ConcessionController extends Controller
                 ->thenReturn()
                 ->paginate($perPage);
 
-            return responseMsgs(true, "Outbox List", remove_null($inboxList), '010603', '01', responseTime().'ms', 'Post', '');
+            return responseMsgs(true, "Outbox List", remove_null($inboxList), '010603', '01', responseTime() . 'ms', 'Post', '');
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", '010603', '01', responseTime(),  $req->getMethod(), $req->deviceId);
         }
@@ -495,7 +495,7 @@ class ConcessionController extends Controller
                 ->thenReturn()
                 ->paginate($perPage);
 
-            return responseMsgs(true, "Inbox List", remove_null($inboxList), "010606", '01', responseTime(),$req->getMethod(), $req->deviceId);
+            return responseMsgs(true, "Inbox List", remove_null($inboxList), "010606", '01', responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", '010606', '01', responseTime(), $req->getMethod(), $req->deviceId);
         }
@@ -1063,7 +1063,7 @@ class ConcessionController extends Controller
     /** 
      * | Checks if all required concession documents for an application are uploaded and verified.
        | uploadDocument:1.1.1
-    */
+     */
     public function isAllDocs($applicationId, $refDocList, $getConcessionDtls)
     {
         $docList = array();
@@ -1111,6 +1111,7 @@ class ConcessionController extends Controller
             $refApplication = $mPropActiveConcession->getConcessionNo($req->applicationId);                      // Get Saf Details
             if (!$refApplication)
                 throw new Exception("Application Not Found for this id");
+
 
             $filterDocs = $this->getDocList($refApplication);             // Current Object(Saf Docuement List)
             if (!empty($filterDocs))
@@ -1178,7 +1179,7 @@ class ConcessionController extends Controller
         $documents = $mWfActiveDocument->getDocByRefIds($safId, $workflowId, $moduleId);
         $uploadedDocs = $docUpload->getDocUrl($documents);           #_Calling BLL for Document Path from DMS
 
-        $explodeDocs = $documentList;
+        $explodeDocs = collect(explode('#', $documentList));
 
         $filteredDocs = $explodeDocs->map(function ($explodeDoc) use ($uploadedDocs) {
             $document = explode(',', $explodeDoc);
