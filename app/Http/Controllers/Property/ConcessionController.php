@@ -1069,7 +1069,13 @@ class ConcessionController extends Controller
         $docList = array();
         $verifiedDocList = array();
         $concessionDocs = $this->getDocList($getConcessionDtls);
-        $docList['concessionDocs'] = explode('#', $concessionDocs);
+        // Extract actual data from JSON response
+        $responseData = $concessionDocs->getData(true); // true => associative array
+
+        $filterDocs = $responseData['data'] ?? [];
+
+        // $docList['concessionDocs'] = explode('#', $filterDocs);
+        $docList['concessionDocs'] = $filterDocs; // ✅ already an array
 
         $verifiedDocList['concessionDocs'] = $refDocList->where('owner_dtl_id', '!=', null)->values();
         $collectUploadDocList = collect();
@@ -1077,7 +1083,7 @@ class ConcessionController extends Controller
             return $collectUploadDocList->push($item['doc_code']);
         });
         $flag = 1;
-        foreach ($concessionDocs as $item) {
+        foreach ($filterDocs as $item) {
             $explodeDocs = explode(',', $item);
             array_shift($explodeDocs);
             foreach ($explodeDocs as $explodeDoc) {
@@ -1302,7 +1308,7 @@ class ConcessionController extends Controller
             $ifFullDocVerifiedV1 = $this->ifFullDocVerified($applicationId);
 
             if ($ifFullDocVerifiedV1 == 1) {                                     // If The Document Fully Verified Update Verify Status
-                $concessionDtl->doc_verify_status = 0;
+                $concessionDtl->doc_verify_status = 1;
                 $concessionDtl->save();
             }
 
