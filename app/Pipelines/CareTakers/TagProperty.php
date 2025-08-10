@@ -5,6 +5,8 @@ namespace App\Pipelines\CareTakers;
 use App\Models\Citizen\ActiveCitizenUndercare;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
+use App\Models\Trade\TradeLicence;
+use App\Models\Water\WaterConsumer;
 use Carbon\Carbon;
 use Closure;
 use Exception;
@@ -23,6 +25,9 @@ class TagProperty
     private $_currentDate;
     private $_mPropOwner;
     private $_propertyId;
+    private $_mWaterConsumer;
+    private $_mActiveCitizenUndercare;
+    private $_mTradeLicense;
 
     /**
      * | Initializing Master Values
@@ -33,6 +38,9 @@ class TagProperty
         $this->_mPropProperty = new PropProperty();
         $this->_currentDate = Carbon::now();
         $this->_mPropOwner = new PropOwner();
+        $this->_mWaterConsumer = new WaterConsumer();
+        $this->_mActiveCitizenUndercare    = new ActiveCitizenUndercare();
+        $this->_mTradeLicense    = new TradeLicence();
     }
 
     /**
@@ -45,7 +53,7 @@ class TagProperty
         if (request()->input('moduleId') != 1) {
             return $next($request);
         }
-
+        $userId = auth()->user()->id;
         $referenceNo = request()->input('referenceNo');
         $property = $this->_mPropProperty->getPropByPtnOrHolding($referenceNo);
         $this->_propertyId = $property->id;
@@ -58,6 +66,36 @@ class TagProperty
             'citizen_id' => auth()->user()->id
         ];
         $this->_mActiveCitizenUnderCares->store($underCareReq);
+        $water = $this->_mWaterConsumer->getWaterHolding($referenceNo);                // added by arshad
+        if ($water) {
+
+            $existingData = $this->_mActiveCitizenUndercare->getDetailsForUnderCare($userId, $water->id);
+            if (!$existingData) {
+                $underCareReq = [
+                    'consumer_id' => $water->id,
+                    'date_of_attachment' => $this->_currentDate,
+                    'mobile_no' => $propOwner->mobile_no,
+                    'citizen_id' => auth()->user()->id
+                ];
+                $this->_mActiveCitizenUnderCares->store($underCareReq);
+            }
+        }
+
+        $trade = $this->_mTradeLicense->getTradeHolding($referenceNo);                // added by arshad
+        if ($trade) {
+            $existingData = $this->_mActiveCitizenUndercare->getDetailsForUnderCarev1($userId, $trade->id);
+            if (!$existingData) {
+                $underCareReq = [
+                    'license_id' => $trade->license_no,
+                    'date_of_attachment' => $this->_currentDate,
+                    'mobile_no' => $propOwner->mobile_no,
+                    'citizen_id' => 36
+                ];
+                $this->_mActiveCitizenUnderCares->store($underCareReq);
+            }
+        }
+
+
         return "Property Successfully Tagged";
     }
 

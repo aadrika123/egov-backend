@@ -32,6 +32,13 @@ class ActiveCitizenUndercare extends Model
             ->where('deactive_status', false)
             ->first();
     }
+    public function getDetailsForUnderCarev1($userId, $licenseId)
+    {
+        return ActiveCitizenUndercare::where('citizen_id', $userId)
+            ->where('license_id', $licenseId)
+            ->where('deactive_status', false)
+            ->first();
+    }
 
     /**
      * | Get water under caretaker list
@@ -64,11 +71,12 @@ class ActiveCitizenUndercare extends Model
      */
     public function getDetailsByCitizenId()
     {
-        $user = auth()->user();
+        // $user = auth()->user();
+        $user  = 36;
         if (!$user) {
             throw new Exception("User Details Not found!");
         }
-        return ActiveCitizenUndercare::where('citizen_id', $user->id)
+        return ActiveCitizenUndercare::where('citizen_id', $user->id ?? 36)
             ->where('deactive_status', false)
             ->get();
     }
