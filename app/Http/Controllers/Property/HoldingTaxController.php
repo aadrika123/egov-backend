@@ -2094,10 +2094,23 @@ class HoldingTaxController extends Controller
 
             $mergedWater = collect($waterConsumerDetails)->merge(collect($waterUnderCare));
 
+            // Get Data of SWM Caretaker Connections
+            $url = Config::get('payment-constants.URL');
+
+            $refResponse = Http::withHeaders([])
+                ->withToken($request->bearerToken())
+                ->post($url . 'api/swm/caretaken-connections-demand');
+
+            // Check if request was successful
+            if (!$refResponse->successful()) {
+                throw new Exception("Payment API call failed with status: " . $refResponse->status());
+            }
+            $responseData = $refResponse->json(); // returns associative array
             // Combine the results
             $data = [
                 "propDetails" => $mergedProperties,
                 "waterDetails" => $mergedWater,
+                "SWM"          => $responseData['data'] ?? []
             ];
 
             return responseMsgs(true, "Data Fetch Successfully", $data, "", 01, responseTime(), $request->getMethod(), $request->deviceId);

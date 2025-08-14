@@ -56,5 +56,6 @@ return [
         "NEFT"      => "Neft",
         "ONLINE"    => "Online"
     ],
-    "TRAN_PARAM_ID" => 37
+    "TRAN_PARAM_ID" => 37,
+    "URL"                 => env('URL'),
 ];

@@ -655,6 +655,7 @@ class PaymentRepository implements iPayment
             ];
 
             # conditionaly upadting the request data
+            $responseData = [];
             if ($captured == 1) {
                 PaymentRequest::where('razorpay_order_id', $webhookData->payment_order_id)
                     ->update(['payment_status' => 1]);
@@ -733,6 +734,22 @@ class PaymentRepository implements iPayment
                         Http::withHeaders([])
                             ->post("$septicTankerApi->end_point", $transfer);
                         break;
+                    case ('17'): // Septic Tanker
+                        $swm = 3;
+                        $mApiMaster = new ApiMaster();
+                        $septicTankerApi = $mApiMaster->getApiEndpoint($swm);
+
+                        // Make the POST request and capture the response
+                        $response = Http::withHeaders([])->post("$septicTankerApi->end_point", $transfer);
+
+                        // Decode JSON response
+                        $responseData = $response->json();
+
+                        // Use transactionNo from API response instead of $actualTransactionNo
+                        $actualTransactionNo = $responseData['data']['transactionNo'] ?? $actualTransactionNo;
+
+                        break;
+                    
                 }
                 return responseMsg(true, "Webhook Data Collected!", $actualTransactionNo);
             }
