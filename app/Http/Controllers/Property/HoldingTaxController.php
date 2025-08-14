@@ -2102,7 +2102,7 @@ class HoldingTaxController extends Controller
             ];
             $refResponse = Http::withHeaders([])
                 // ->withToken($request->bearerToken())
-                ->post($url . 'api/swm/caretaken-connections-demand' ,$metareq);
+                ->post($url . 'api/swm/caretaken-connections-demand', $metareq);
 
             // Check if request was successful
             if (!$refResponse->successful()) {
@@ -2113,7 +2113,7 @@ class HoldingTaxController extends Controller
             $data = [
                 "propDetails" => $mergedProperties,
                 "waterDetails" => $mergedWater,
-                "SWM"          => $responseData['data'] ?? []
+                "swmDetails"          => $responseData['data'] ?? []
             ];
 
             return responseMsgs(true, "Data Fetch Successfully", $data, "", 01, responseTime(), $request->getMethod(), $request->deviceId);
