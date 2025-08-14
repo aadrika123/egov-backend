@@ -2096,10 +2096,13 @@ class HoldingTaxController extends Controller
 
             // Get Data of SWM Caretaker Connections
             $url = Config::get('payment-constants.URL');
-
+            $metareq = [
+                'userId' => $userId,
+                'ulbId' => $ulbId
+            ];
             $refResponse = Http::withHeaders([])
-                ->withToken($request->bearerToken())
-                ->post($url . 'api/swm/caretaken-connections-demand');
+                // ->withToken($request->bearerToken())
+                ->post($url . 'api/swm/caretaken-connections-demand' ,$metareq);
 
             // Check if request was successful
             if (!$refResponse->successful()) {
