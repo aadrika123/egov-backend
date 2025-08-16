@@ -89,7 +89,7 @@ return [
             'sslmode' => 'prefer',
             'options'   => [
                 PDO::ATTR_PERSISTENT => true,
-                
+
             ],
         ],
 
@@ -140,6 +140,24 @@ return [
             'database' => env('DB_TANKER_DATABASE', 'forge'),
             'username' => env('DB_TANKER_USERNAME', 'forge'),
             'password' => env('DB_TANKER_PASSWORD', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'schema' => 'public',
+            'sslmode' => 'prefer',
+            'options'   => [
+                PDO::ATTR_PERSISTENT => true,
+            ],
+        ],
+        #_For  SWM Service
+        'pgsql_swm' => [
+            'driver' => 'pgsql',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_SWM_HOST', '127.0.0.1'),
+            'port' => env('DB_SWM_PORT', '5432'),
+            'database' => env('DB_SWM_DATABASE', 'forge'),
+            'username' => env('DB_SWM_USERNAME', 'forge'),
+            'password' => env('DB_SWM_PASSWORD', ''),
             'charset' => 'utf8',
             'prefix' => '',
             'prefix_indexes' => true,

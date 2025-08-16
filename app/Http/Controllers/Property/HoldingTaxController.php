@@ -1857,14 +1857,185 @@ class HoldingTaxController extends Controller
      * | Generate Order ID(3) for multiple proeprties demand payment 
        | generateOrderIdv1:1
      */
+    // public function generateOrderIdv1(Request $req)
+    // {
+    //     $req->validate([
+    //         'propId' => 'nullable|array',  // Ensure it's an array
+    //         'propId.*' => 'integer',       // Each value inside should be an integer
+    //         'consumerId' => 'nullable|array',
+    //         'consumerId.*' => 'integer',
+    //     ]);
+    //     try {
+    //         $departmentId = 1;
+    //         $propProperties = new PropProperty();
+    //         $ipAddress = getClientIpAddress();
+    //         $mPropRazorPayRequest = new PropRazorpayRequest();
+    //         $postRazorPayPenaltyRebate = new PostRazorPayPenaltyRebate;
+    //         $mWaterRazorPayRequest = new WaterRazorPayRequest();
+    //         $mPropDemand = new PropDemand();
+    //         $url      = Config::get('razorpay.PAYMENT_GATEWAY_URL');
+    //         $endPoint = Config::get('razorpay.PAYMENT_GATEWAY_END_POINT');
+
+    //         // $authUser = Auth()->user();
+    //         $amount = 0; // Initialize amount for properties
+    //         $consumerAmount = 0;
+    //         if ($req->propId) {
+    //             foreach ($req->propId as $propId) {
+    //                 $demand = $this->getHoldingDuesv1($req, $propId);
+    //                 if ($demand->original['status'] == false) {
+    //                     throw new Exception($demand->original['message']);
+    //                 }
+
+
+    //                 $demandData = $demand->original['data'];
+    //                 if (!$demandData) {
+    //                     throw new Exception("Demand Not Available");
+    //                 }
+
+    //                 $amount += $demandData['duesList']['payableAmount']; // Summing payable amounts
+    //             }
+    //         }
+    //         // Check if consumerDetails exists and calculate total amount for consumer demands
+    //         if (!empty($req->consumerDetails)) {
+    //             $consumerAmount = array_sum(array_column($req->consumerDetails, 'amount')); // Sum consumer amounts
+    //         }
+
+    //         // Final total amount calculation
+    //         $totalAmountdtl = $amount + $consumerAmount;
+
+    //         $req->request->add([
+    //             'amount' => $totalAmountdtl,
+    //             'workflowId' => '0',
+    //             'departmentId' => $departmentId,
+    //             // 'ulbId' => $propDtls->ulb_id,
+    //             'id' => $req->propId ?? $req->consumerDetails['consumerId'],
+    //             'ghostUserId' => 0,
+    //             // 'auth' => $authUser
+    //         ]);
+    //         // DB::beginTransaction();
+    //         $orderDetails = $this->saveGenerateOrderidv1($req);                                      //<---------- Generate Order ID Trait
+    //         // $demands = is_array($demands) ? $demands : [];
+    //         // $demands = array_merge($demands, ['orderId' => $orderDetails['orderId']]);
+    //         // Store Razor pay Request for property Demand
+    //         if ($req->propId) {
+    //             foreach ($req->propId as $propId) {
+    //                 $demand = $this->getHoldingDuesv1($req, $propId);
+
+    //                 if ($demand->original['status'] == false)
+    //                     throw new Exception($demand->original['message']);
+
+    //                 $demandData = $demand->original['data'];
+    //                 if ($demandData)
+    //                     if (!$demandData)
+    //                         throw new Exception("Demand Not Available");
+    //                 $amount  = $demandData['duesList']['payableAmount'];
+    //                 $demands = $demandData['duesList'];
+    //                 $propDtls = $propProperties->getPropById($req->propId);
+    //                 $demandDetails = $demandData['demandList'];
+    //                 $razorPayRequest = [
+    //                     'order_id' => $orderDetails['orderId'],
+    //                     'prop_id' => $propId,
+    //                     'from_fyear' => $demands['dueFromFyear'],
+    //                     'from_qtr' => $demands['dueFromQtr'],
+    //                     'to_fyear' => $demands['dueToFyear'],
+    //                     'to_qtr' => $demands['dueToQtr'],
+    //                     'demand_amt' => $demands['totalDues'],
+    //                     'ulb_id' => $propDtls->ulb_id,
+    //                     'ip_address' => $ipAddress,
+    //                     'demand_list' => json_encode($demandDetails, true),
+    //                     'amount' => $amount,
+    //                     'advance_amount' => $demands['advanceAmt']
+    //                 ];
+    //                 $storedRazorPayReqs = $mPropRazorPayRequest->store($razorPayRequest);
+    //                 // Store Razor pay penalty Rebates
+    //                 $postRazorPayPenaltyRebate->_propId = $propId;
+    //                 $postRazorPayPenaltyRebate->_razorPayRequestId = $storedRazorPayReqs['razorPayReqId'];
+    //                 $postRazorPayPenaltyRebate->postRazorPayPenaltyRebatesv1($demands, $propId);
+    //             }
+    //         }
+
+    //         // for water consumer demand payment
+    //         if (!empty($req->consumerDetails)) {
+    //             $waterModuleId  = Config::get('module-constants.WATER_MODULE_ID');
+    //             $paymentFor     = Config::get('waterConstaint.PAYMENT_FOR');
+    //             $totalAmount    = 0;
+    //             $refDetails     = [];
+
+    //             foreach ($req->consumerDetails as $consumer) {
+    //                 $startingDate = Carbon::createFromFormat('Y-m-d', $consumer['demandFrom'])->startOfMonth()->toDateString();
+    //                 $endDate = Carbon::createFromFormat('Y-m-d', $consumer['demandUpto'])->endOfMonth()->toDateString();
+
+    //                 $consumerData = $this->preOfflinePaymentParams($consumer, $startingDate, $endDate);
+    //                 $refDetails[] = $consumerData;
+    //                 $razorPayRequest = [
+    //                     'order_id' => $orderDetails['orderId'],
+    //                 ];
+    //                 // store request
+    //                 $mWaterRazorPayRequest->saveRequestDatav1($consumer, $req, $paymentFor['1'], $razorPayRequest, $consumerData);
+    //                 // Sum up all consumer charges
+    //                 if (!empty($consumerData['consumerChages'])) {
+    //                     foreach ($consumerData['consumerChages'] as $charge) {
+    //                         $totalAmount += (float) $charge['amount'];
+    //                     }
+    //                 }
+    //             }
+
+    //             // Add the total amount to the response
+    //             $refDetails['amount'] = $totalAmount;
+    //         }
+    //         // for water consumer demand payment
+    //         if (!empty($req->swmConsumerDetails)) {
+    //             $SWMModuleId  = Config::get('module-constants.SWM_MODULE_ID');
+    //             $paymentFor     = Config::get('waterConstaint.PAYMENT_FOR');
+    //             $url = Config::get('payment-constants.URL');
+    //             $totalAmount    = 0;
+    //             $refDetails     = [];
+
+    //             foreach ($req->swmConsumerDetails as $consumer) {
+    //                 $startingDate = Carbon::createFromFormat('Y-m-d', $consumer['demandFrom'])->startOfMonth()->toDateString();
+    //                 $endDate = Carbon::createFromFormat('Y-m-d', $consumer['demandUpto'])->endOfMonth()->toDateString();
+
+    //                 $refResponse = Http::withHeaders([])
+    //                     ->withToken($req->bearerToken())
+    //                     ->post($url . 'swm/citizen/check-param-online-demand', $req->swmConsumerDetails);
+
+    //                 $data = json_decode($refResponse);
+    //                 // Sum up all consumer charges
+    //                 if (!empty($consumerData['consumerChages'])) {
+    //                     foreach ($consumerData['consumerChages'] as $charge) {
+    //                         $totalAmount += (float) $charge['amount'];
+    //                     }
+    //                 }
+    //             }
+
+    //             // Add the total amount to the response
+    //             $refDetails['amount'] = $totalAmount;
+    //         }
+    //         // DB::commit();
+    //         return responseMsgs(true, "Order id Generated", remove_null($orderDetails), "011503", "1.0", "", "POST", $req->deviceId ?? "");
+    //     } catch (Exception $e) {
+    //         DB::rollBack();
+    //         return responseMsgs(false, $e->getMessage(), "", "011503", "1.0", "", "POST", $req->deviceId ?? "");
+    //     }
+    // }
+
     public function generateOrderIdv1(Request $req)
     {
         $req->validate([
-            'propId' => 'nullable|array',  // Ensure it's an array
-            'propId.*' => 'integer',       // Each value inside should be an integer
-            'consumerId' => 'nullable|array',
-            'consumerId.*' => 'integer',
+            'propId' => 'nullable|array',
+            'propId.*' => 'integer',
+            'consumerDetails' => 'nullable|array',
+            'consumerDetails.*.consumerId' => 'required|integer',
+            'consumerDetails.*.amount' => 'required|numeric',
+            'consumerDetails.*.demandFrom' => 'required|date',
+            'consumerDetails.*.demandUpto' => 'required|date',
+            'swmDetails' => 'nullable|array',
+            'swmDetails.*.consumerId' => 'required|integer',
+            'swmDetails.*.amount' => 'required|numeric',
+            'swmDetails.*.demandFrom' => 'required|date',
+            'swmDetails.*.demandUpto' => 'required|date',
         ]);
+
         try {
             $departmentId = 1;
             $propProperties = new PropProperty();
@@ -1872,66 +2043,87 @@ class HoldingTaxController extends Controller
             $mPropRazorPayRequest = new PropRazorpayRequest();
             $postRazorPayPenaltyRebate = new PostRazorPayPenaltyRebate;
             $mWaterRazorPayRequest = new WaterRazorPayRequest();
-            $mPropDemand = new PropDemand();
+
             $url      = Config::get('razorpay.PAYMENT_GATEWAY_URL');
             $endPoint = Config::get('razorpay.PAYMENT_GATEWAY_END_POINT');
 
-            // $authUser = Auth()->user();
-            $amount = 0; // Initialize amount for properties
-            $consumerAmount = 0;
+            $amount = 0; // property dues
+            $consumerAmount = 0; // water dues
+            $swmAmount = 0; // swm dues
+
+            /**
+             * -------------------
+             * Property Demand
+             * -------------------
+             */
             if ($req->propId) {
                 foreach ($req->propId as $propId) {
                     $demand = $this->getHoldingDuesv1($req, $propId);
                     if ($demand->original['status'] == false) {
                         throw new Exception($demand->original['message']);
                     }
-
-
                     $demandData = $demand->original['data'];
                     if (!$demandData) {
                         throw new Exception("Demand Not Available");
                     }
-
-                    $amount += $demandData['duesList']['payableAmount']; // Summing payable amounts
+                    $amount += $demandData['duesList']['payableAmount'];
                 }
             }
-            // Check if consumerDetails exists and calculate total amount for consumer demands
+
+            /**
+             * -------------------
+             * Water Demand
+             * -------------------
+             */
             if (!empty($req->consumerDetails)) {
-                $consumerAmount = array_sum(array_column($req->consumerDetails, 'amount')); // Sum consumer amounts
+                $consumerAmount = array_sum(array_column($req->consumerDetails, 'amount'));
             }
 
-            // Final total amount calculation
-            $totalAmountdtl = $amount + $consumerAmount;
+            /**
+             * -------------------
+             * SWM Demand
+             * -------------------
+             */
+            if (!empty($req->swmDetails)) {
+                $swmAmount = array_sum(array_column($req->swmDetails, 'amount'));
+            }
+
+            /**
+             * -------------------
+             * Final Total
+             * -------------------
+             */
+            $totalAmountdtl = $amount + $consumerAmount + $swmAmount;
 
             $req->request->add([
                 'amount' => $totalAmountdtl,
                 'workflowId' => '0',
                 'departmentId' => $departmentId,
-                // 'ulbId' => $propDtls->ulb_id,
-                'id' => $req->propId ?? $req->consumerDetails['consumerId'],
+                'id' => $req->propId ?? ($req->consumerDetails[0]['consumerId'] ?? $req->swmDetails[0]['consumerId']),
                 'ghostUserId' => 0,
-                // 'auth' => $authUser
             ]);
-            // DB::beginTransaction();
-            $orderDetails = $this->saveGenerateOrderidv1($req);                                      //<---------- Generate Order ID Trait
-            // $demands = is_array($demands) ? $demands : [];
-            // $demands = array_merge($demands, ['orderId' => $orderDetails['orderId']]);
-            // Store Razor pay Request for property Demand
+
+            $orderDetails = $this->saveGenerateOrderidv1($req);   //<--- Generate Order ID
+
+            /**
+             * -------------------
+             * Save Property Demand Requests
+             * -------------------
+             */
             if ($req->propId) {
                 foreach ($req->propId as $propId) {
                     $demand = $this->getHoldingDuesv1($req, $propId);
-
                     if ($demand->original['status'] == false)
                         throw new Exception($demand->original['message']);
 
                     $demandData = $demand->original['data'];
-                    if ($demandData)
-                        if (!$demandData)
-                            throw new Exception("Demand Not Available");
-                    $amount  = $demandData['duesList']['payableAmount'];
+                    if (!$demandData)
+                        throw new Exception("Demand Not Available");
+
                     $demands = $demandData['duesList'];
-                    $propDtls = $propProperties->getPropById($req->propId);
+                    $propDtls = $propProperties->getPropById($propId);
                     $demandDetails = $demandData['demandList'];
+
                     $razorPayRequest = [
                         'order_id' => $orderDetails['orderId'],
                         'prop_id' => $propId,
@@ -1943,18 +2135,22 @@ class HoldingTaxController extends Controller
                         'ulb_id' => $propDtls->ulb_id,
                         'ip_address' => $ipAddress,
                         'demand_list' => json_encode($demandDetails, true),
-                        'amount' => $amount,
+                        'amount' => $demands['payableAmount'],
                         'advance_amount' => $demands['advanceAmt']
                     ];
                     $storedRazorPayReqs = $mPropRazorPayRequest->store($razorPayRequest);
-                    // Store Razor pay penalty Rebates
+
                     $postRazorPayPenaltyRebate->_propId = $propId;
                     $postRazorPayPenaltyRebate->_razorPayRequestId = $storedRazorPayReqs['razorPayReqId'];
                     $postRazorPayPenaltyRebate->postRazorPayPenaltyRebatesv1($demands, $propId);
                 }
             }
 
-            // for water consumer demand payment
+            /**
+             * -------------------
+             * Save Water Consumer Demands
+             * -------------------
+             */
             if (!empty($req->consumerDetails)) {
                 $waterModuleId  = Config::get('module-constants.WATER_MODULE_ID');
                 $paymentFor     = Config::get('waterConstaint.PAYMENT_FOR');
@@ -1967,29 +2163,60 @@ class HoldingTaxController extends Controller
 
                     $consumerData = $this->preOfflinePaymentParams($consumer, $startingDate, $endDate);
                     $refDetails[] = $consumerData;
+
                     $razorPayRequest = [
                         'order_id' => $orderDetails['orderId'],
                     ];
-                    // store request
+
                     $mWaterRazorPayRequest->saveRequestDatav1($consumer, $req, $paymentFor['1'], $razorPayRequest, $consumerData);
-                    // Sum up all consumer charges
+
                     if (!empty($consumerData['consumerChages'])) {
                         foreach ($consumerData['consumerChages'] as $charge) {
                             $totalAmount += (float) $charge['amount'];
                         }
                     }
                 }
-
-                // Add the total amount to the response
                 $refDetails['amount'] = $totalAmount;
             }
-            // DB::commit();
+
+            /**
+             * -------------------
+             * Save SWM Consumer Demands
+             * -------------------
+             */
+            if (!empty($req->swmDetails)) {
+                $SWMModuleId  = Config::get('module-constants.SWM_MODULE_ID');
+                $paymentFor   = Config::get('waterConstaint.PAYMENT_FOR');
+                $url = Config::get('payment-constants.URL');
+                $totalAmount = 0;
+                $refDetails = [];
+
+                foreach ($req->swmDetails as $consumer) {
+                    $startingDate = Carbon::createFromFormat('Y-m-d', $consumer['demandFrom'])->startOfMonth()->toDateString();
+                    $endDate = Carbon::createFromFormat('Y-m-d', $consumer['demandUpto'])->endOfMonth()->toDateString();
+                    $consumer['orderId'] = $orderDetails['orderId'];
+                    $refResponse = Http::withHeaders([])
+                        ->withToken($req->bearerToken())
+                        ->post($url . 'api/swm/citizen/check-param-online-demand', $consumer);
+
+                    $consumerData = json_decode($refResponse, true);
+
+                    if (!empty($consumerData['consumerChages'])) {
+                        foreach ($consumerData['consumerChages'] as $charge) {
+                            $totalAmount += (float) $charge['amount'];
+                        }
+                    }
+                }
+                $refDetails['amount'] = $totalAmount;
+            }
+
             return responseMsgs(true, "Order id Generated", remove_null($orderDetails), "011503", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsgs(false, $e->getMessage(), "", "011503", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
+
 
     /**
      * | Get detail of citizen property details and water connection details with pending demands
