@@ -493,7 +493,8 @@ class WaterConsumer extends Model
                 'water_consumers.ward_mstr_id',
                 'ulb_ward_masters.ward_name',
                 'ulb_name'
-            );
+            )
+             ->havingRaw("SUM(water_consumer_demands.balance_amount) > 0"); // Excludes 0 or NULL total demand;
     }
 
     /**
