@@ -745,7 +745,22 @@ class PaymentRepository implements iPayment
                     case ('17'): // Septic Tanker
                         $swm = 3;
                         $mApiMaster = new ApiMaster();
-                        $septicTankerApi = $mApiMaster->getApiEndpoint($swm);
+                        $swmApi = $mApiMaster->getApiEndpoint($swm);
+
+                        // Make the POST request and capture the response
+                        $response = Http::withHeaders([])->post("$swmApi->end_point", $transfer);
+
+                        // Decode JSON response
+                        $responseData = $response->json();
+
+                        // Use transactionNo from API response instead of $actualTransactionNo
+                        $actualTransactionNo = $responseData['data']['transactionNo'] ?? $actualTransactionNo;
+
+                        break;
+                    case ('14'): // Septic Tanker
+                        $fine = 4;
+                        $mApiMaster = new ApiMaster();
+                        $septicTankerApi = $mApiMaster->getApiEndpoint($fine);
 
                         // Make the POST request and capture the response
                         $response = Http::withHeaders([])->post("$septicTankerApi->end_point", $transfer);
@@ -754,7 +769,7 @@ class PaymentRepository implements iPayment
                         $responseData = $response->json();
 
                         // Use transactionNo from API response instead of $actualTransactionNo
-                        $actualTransactionNo = $responseData['data']['transactionNo'] ?? $actualTransactionNo;
+                        $actualTransactionNo = $responseData['data']['tran_no'] ?? $actualTransactionNo;
 
                         break;
                 }
