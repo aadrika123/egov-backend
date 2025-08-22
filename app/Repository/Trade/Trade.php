@@ -1619,7 +1619,7 @@ class Trade implements ITrade
     {
         try {
             $refUser    = Auth()->user();
-            $refUlbId   = $refUser->ulb_id;
+            $refUlbId   = $refUser->ulb_id ?? $request->ulbId;
             $mInputs    = $request->all();
             $isCitizen = (($this->_COMMON_FUNCTION->checkUsersWithtocken("users")) ? false : true);
             $licence = ActiveTradeLicence::readConnection()->select(
@@ -1703,11 +1703,11 @@ class Trade implements ITrade
                     $join->on("owner.temp_id", "trade_renewals.id");
                 });
 
-            if (!$isCitizen) {
-                $licence = $licence->where("active_trade_licences.ulb_id", $refUlbId);
-                $aropved = $aropved->where("trade_licences.ulb_id", $refUlbId);
-                $old = $old->where("trade_renewals.ulb_id", $refUlbId);
-            }
+            // if (!$isCitizen) {
+            $licence = $licence->where("active_trade_licences.ulb_id", $refUlbId);
+            $aropved = $aropved->where("trade_licences.ulb_id", $refUlbId);
+            $old = $old->where("trade_renewals.ulb_id", $refUlbId);
+            // }
 
             if (isset($mInputs['entityValue']) && trim($mInputs['entityValue']) && isset($mInputs['entityName']) && trim($mInputs['entityName'])) {
                 $key = trim($mInputs['entityValue']);

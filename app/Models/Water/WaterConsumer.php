@@ -404,6 +404,17 @@ class WaterConsumer extends Model
             ->where('status', 1)
             ->first();
     }
+    /**
+     * | Fing data according to consumer No 
+     * | @param consumerNo
+     */
+    public function getConsumerByNov1($consumerNo, $ulbId)
+    {
+        return WaterConsumer::where('consumer_no', $consumerNo)
+            ->where('ulb_id', $ulbId)
+            ->where('status', 1)
+            ->first();
+    }
 
     /** 
      * | Get consumer by consumer id

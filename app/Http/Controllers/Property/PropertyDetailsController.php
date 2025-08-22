@@ -361,7 +361,7 @@ class PropertyDetailsController extends Controller
      * | Fetch paginated property list filtered by various keys like holdingNo, ptn, 
      * | ownerName, etc., with optional zone, ward, and legacy filters.
        | This API is also connected with serApplication function(NoticeController)
-    */
+     */
     public function propertyListByKey(Request $request)
     {
         $request->validate([
@@ -454,8 +454,8 @@ class PropertyDetailsController extends Controller
             if ($request->wardId)
                 $data = $data->where("prop_properties.new_ward_mstr_id", $request->wardId);
 
-            if ($userType != 'Citizen')
-                $data = $data->where('prop_properties.ulb_id', $ulbId);
+            // if ($userType != 'Citizen')
+            $data = $data->where('prop_properties.ulb_id', $ulbId);
 
             if ($isLegacy == true) {
                 $paginator = $data->where('new_holding_no', null)
@@ -488,7 +488,7 @@ class PropertyDetailsController extends Controller
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011302", "1.0", "", "POST", $request->deviceId ?? "");
         }
-    } 
+    }
 
     // public function propertyListByKey(Request $request)
     // {
@@ -597,7 +597,7 @@ class PropertyDetailsController extends Controller
     //     try {
     //         $propertyId = $request->propertyId;
 
-            
+
     //         $geoTag = $mPropProperty->getGeoTagByPropertyId($propertyId);
 
     //         return responseMsgs(true, "GeoTag data fetched", $geoTag ?? [], "011306", "1.0", responseTime(), "POST", $request->deviceId ?? "");
@@ -952,7 +952,7 @@ class PropertyDetailsController extends Controller
     # ----- APIs that are currently inactive or unused --------#
     # ---------------------------------------------------------#
 
-     // All saf no from Active Saf no
+    // All saf no from Active Saf no
     /**
      | ----------flag
      */
