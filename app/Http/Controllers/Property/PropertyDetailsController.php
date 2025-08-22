@@ -369,6 +369,7 @@ class PropertyDetailsController extends Controller
             'parameter' => "nullable",
             'zoneId' => "nullable|digits_between:1,9223372036854775807",
             'wardId' => "nullable|digits_between:1,9223372036854775807",
+            'ulbId' => "nullable|digits_between:1,9223372036854775807"
         ]);
 
         try {
@@ -454,7 +455,7 @@ class PropertyDetailsController extends Controller
             if ($request->wardId)
                 $data = $data->where("prop_properties.new_ward_mstr_id", $request->wardId);
 
-            if ($userType != 'Citizen')
+            // if ($userType != 'Citizen')
                 $data = $data->where('prop_properties.ulb_id', $ulbId);
 
             if ($isLegacy == true) {
