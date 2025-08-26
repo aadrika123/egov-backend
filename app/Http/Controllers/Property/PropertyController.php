@@ -56,6 +56,7 @@ class PropertyController extends Controller
                 $request->all(),
                 [
                     'holdingNo' => 'required|array',
+                    'ulbId' => 'required|numeric',
                 ]
             );
             if ($validated->fails()) {
@@ -69,6 +70,10 @@ class PropertyController extends Controller
                 $holdingDtlsV1 = $mPropProperties->searchByHoldingNo($holdingNo);
                 if (collect($holdingDtlsV1)->isEmpty())
                     throw new Exception("No Property found for the respective holding no." . $holdingNo);
+                // ✅ Extra validation: check ULB id
+                if (collect($holdingDtlsV1)->pluck('ulb_id')->first() != $request->ulbId) {
+                    throw new Exception("Holding No. " . $holdingNo . " does not belong to ULB");
+                }
             }
             if (collect($holdingDtls)->isEmpty())
                 throw new Exception("No Property found for the respective holding no.");
