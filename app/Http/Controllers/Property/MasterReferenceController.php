@@ -4238,10 +4238,12 @@ class MasterReferenceController extends Controller
     {
         try {
 
-            $sliderDtl = $this->allSliderListv1($req);
-            $list = [
+            // $sliderDtl = $this->allSliderListv1($req);
+            return  $list = [
 
-                "Slider" => $sliderDtl,
+                "Slider" => $this->allSliderListv1($req),                
+                "Assets" => $this->allListAssetesDash($req),
+
             ];
 
             return responseMsgs(true, "All Data", $list, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
