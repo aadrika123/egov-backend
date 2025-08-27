@@ -4239,16 +4239,16 @@ class MasterReferenceController extends Controller
         try {
 
             // $sliderDtl = $this->allSliderListv1($req);
-            return  $list = [
+            $list = [
 
                 "Slider" => $this->allSliderListv1($req),                
                 "Assets" => $this->allListAssetesDash($req),
 
             ];
 
-            return responseMsgs(true, "All Data", $list, "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+          return responseMsgs(true, "All Data", $list, "", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "120105", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            return responseMsgs(false, $e->getMessage(), "", "", "01", responseTime(), $req->getMethod(), $req->deviceId);
         }
     }
 
