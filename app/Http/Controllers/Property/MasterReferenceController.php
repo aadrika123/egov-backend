@@ -4413,24 +4413,74 @@ class MasterReferenceController extends Controller
     /* 
      * | Get all blogs list whose status is active (1)
     */
+    // public function activeBlogsList(Request $req)
+    // {
+    //     try {
+    //         $blogModel = new BlogPost();
+    //         $docUpload = new DocUpload();
+
+    //         $data = $blogModel->getActiveBlogsList()->map(function ($val) use ($docUpload) {
+    //             $url = $docUpload->getSingleDocUrl($val);
+    //             $val->is_suspended = $val->status;
+    //             $val->asset_file = $url["doc_path"] ?? null;
+    //             // unset($val->asset_file);
+    //             return $val;
+    //         });
+
+
+    //         return responseMsgs(true, "All Blog List", $data, "BLOG002", "01", responseTime(), $req->getMethod(), $req->deviceId);
+    //     } catch (Exception $e) {
+    //         return responseMsgs(false, $e->getMessage(), "", "BLOG002", "01", responseTime(), $req->getMethod(), $req->deviceId);
+    //     }
+    // }
+
+
     public function activeBlogsList(Request $req)
     {
         try {
             $blogModel = new BlogPost();
             $docUpload = new DocUpload();
 
-            $data = $blogModel->getActiveBlogsList()->map(function ($val) use ($docUpload) {
+            // Increment API hit count using Redis
+            $today = now()->toDateString();
+
+            $cacheKeyTotal = "dashboard_hits_total";
+            $cacheKeyToday = "dashboard_hits_" . $today;
+
+            $totalHits = Redis::incr($cacheKeyTotal);
+            $todayHits = Redis::incr($cacheKeyToday);
+            Redis::expire($cacheKeyToday, now()->endOfDay()->diffInSeconds());
+
+            // Fetch blogs
+            $blogs = $blogModel->getActiveBlogsList()->map(function ($val) use ($docUpload) {
                 $url = $docUpload->getSingleDocUrl($val);
                 $val->is_suspended = $val->status;
                 $val->asset_file = $url["doc_path"] ?? null;
-                // unset($val->asset_file);
                 return $val;
             });
 
+            // Prepare final response
+            $response = [
+                "status"   => true,
+                "message"  => "All Blog List",
+                "code"     => "BLOG002",
+                "version"  => "01",
+                "responseTime" => responseTime(),
+                "method"   => $req->getMethod(),
+                "deviceId" => $req->deviceId,
+                "data"     => [
+                    "blogs" => $blogs,
+                    "hits"  => [
+                        "totalHits" => $totalHits,
+                        "todayHits" => $todayHits
+                    ]
+                ]
+            ];
 
-            return responseMsgs(true, "All Blog List", $data, "BLOG002", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            return response()->json($response, 200);
+
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "BLOG002", "01", responseTime(), $req->getMethod(), $req->deviceId);
+             return responseMsgs(false, $e->getMessage(), "", "BLOG002", "01", responseTime(), $req->getMethod(), $req->deviceId);
         }
     }
 
