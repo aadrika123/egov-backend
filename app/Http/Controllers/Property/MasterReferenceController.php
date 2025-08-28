@@ -4459,7 +4459,6 @@ class MasterReferenceController extends Controller
                 return $val;
             });
 
-            // Prepare final response
             $response = [
                 "status"   => true,
                 "message"  => "All Blog List",
@@ -4468,14 +4467,13 @@ class MasterReferenceController extends Controller
                 "responseTime" => responseTime(),
                 "method"   => $req->getMethod(),
                 "deviceId" => $req->deviceId,
-                "data"     => [
-                    "blogs" => $blogs,
-                    "hits"  => [
-                        "totalHits" => $totalHits,
-                        "todayHits" => $todayHits
-                    ]
+                "data"     => $blogs,   // 
+                "hits"     => [         // 
+                    "totalHits" => $totalHits,
+                    "todayHits" => $todayHits
                 ]
             ];
+
 
             return response()->json($response, 200);
 
