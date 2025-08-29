@@ -913,8 +913,9 @@ class HoldingTaxController extends Controller
                 throw new Exception("Property Not Found");
 
             $ownerDetails = $propProperty['owners']->first();
+            $propProperty['ulb_id'];
             // Get Ulb Details
-            $ulbDetails = $mUlbMasters->getUlbDetails($propProperty['ulb_id']);
+            $ulbDetails = $mUlbMasters->getUlbDetails($req->ulbId ?? $propProperty['ulb_id']);
 
             // $ulbDetails = $mUlbMasters->getUlbDetails($req->ulbId);
             // Get Property Penalty and Rebates
