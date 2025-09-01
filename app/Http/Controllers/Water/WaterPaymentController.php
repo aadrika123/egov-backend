@@ -1843,6 +1843,8 @@ class WaterPaymentController extends Controller
             $refAccDescription    = $this->_accDescription;
             $refDepartmentSection = $this->_departmentSection;
 
+            $docBaseUrl = Config::get('module-constants.DOC_URL');
+
             $refRequest     = $request->toArray();
             // $flipRequest    = collect($refRequest)->flip();
             // $key            = $refRequest[$request->consumerNo];
@@ -1884,7 +1886,7 @@ class WaterPaymentController extends Controller
                 "ulbId"                 => $consumerDetails['ulb_id'],
                 "ulbName"               => $consumerDetails['ulb_name'],
                 "WardNo"                => $consumerDetails['ward_name'],
-                "logo"                  => $consumerDetails['logo'],
+                "ulbLogo"              => $docBaseUrl . '/' . $consumerDetails['logo'],
                 "towards"               => $refconsumerTowards,
                 "description"           => $refAccDescription,
                 "paidAmtInWords"        => getIndianCurrency($totalDemandAmount),
