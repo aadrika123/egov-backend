@@ -286,6 +286,7 @@ class ConcessionController extends Controller
                 ->where('prop_active_concessions.ulb_id', $ulbId)
                 ->whereIn('prop_active_concessions.current_role', $roleIds)
                 ->whereIn('a.ward_mstr_id', $occupiedWards)
+                ->where('prop_active_concessions.parked', null)    // null bacause in table there is default null value for parked instead of false
                 ->orderByDesc('prop_active_concessions.id');
 
             $inboxList = app(Pipeline::class)
@@ -773,7 +774,7 @@ class ConcessionController extends Controller
         try {
             $mWorkflowTrack = new WorkflowTrack();
             $concession = PropActiveConcession::find($req->applicationId);
-            if ($concession)
+            if (!$concession)
                 throw new Exception("Application Not Found");
 
             $senderRoleId = $concession->current_role;

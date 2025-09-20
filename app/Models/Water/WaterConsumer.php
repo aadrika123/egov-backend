@@ -394,6 +394,39 @@ class WaterConsumer extends Model
             );
     }
 
+    public function getRefDetailByConsumerNoV1($key, $refNo)
+    {
+        return WaterConsumer::select(
+            'water_consumers.id',
+            'water_consumers.consumer_no',
+            'water_consumers.ward_mstr_id',
+            'water_consumers.address',
+            'water_consumers.holding_no',
+            'water_consumers.saf_no',
+            'water_consumers.ulb_id',
+            'water_consumers.holding_no',
+            'water_consumers.saf_no',
+            'water_consumers.saf_no',
+            'water_consumers.apply_connection_id',
+            DB::raw("string_agg(water_consumer_owners.applicant_name,',') as applicant_name"),
+            DB::raw("string_agg(water_consumer_owners.mobile_no::VARCHAR,',') as mobile_no"),
+            DB::raw("string_agg(water_consumer_owners.guardian_name,',') as guardian_name"),
+        )
+            ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_consumers.id')          
+            ->where('water_consumers.' . $key, $refNo)
+            ->where('water_consumers.status', 1)
+            ->groupBy(
+                'water_consumers.saf_no',
+                'water_consumers.holding_no',
+                'water_consumers.address',
+                'water_consumers.id',
+                'water_consumers.ulb_id',
+                'water_consumer_owners.consumer_id',
+                'water_consumers.consumer_no',
+                'water_consumers.ward_mstr_id',
+            );
+    }
+
     /**
      * | Fing data according to consumer No 
      * | @param consumerNo
