@@ -1420,7 +1420,7 @@ class WaterPaymentController extends Controller
                 $chequeDetails = $mWaterChequeDtl->getChequeDtlsByTransId($transactionDetails['id'])->first();
             }
             # Application Deatils
-            $consumerDetails = $mWaterConsumer->getRefDetailByConsumerNo("id", $transactionDetails->related_id)->first();
+            $consumerDetails = $mWaterConsumer->getRefDetailByConsumerNoV1("id", $transactionDetails->related_id)->first();
             if (!$consumerDetails) {
                 throw new Exception("Application details not found!");
             }
@@ -1852,7 +1852,7 @@ class WaterPaymentController extends Controller
             // $refstring      = strtolower($string);
             $refstring      = 'consumer_no';
 
-            $consumerDetails = $mWaterConsumer->getRefDetailByConsumerNo($refstring, $request->consumerNo)->first();
+            $consumerDetails = $mWaterConsumer->getRefDetailByConsumerNoV1($refstring, $request->consumerNo)->first();
             if (!$consumerDetails) {
                 throw new Exception("Consumer details not found");
             }
@@ -1886,12 +1886,15 @@ class WaterPaymentController extends Controller
                 "ulbId"                 => $consumerDetails['ulb_id'],
                 "ulbName"               => $consumerDetails['ulb_name'],
                 "WardNo"                => $consumerDetails['ward_name'],
+                "state_logo"            => $docBaseUrl . "/" . "custom/jhk-govt-logo.png",
                 "ulbLogo"              => $docBaseUrl . '/' . $consumerDetails['logo'],
                 "towards"               => $refconsumerTowards,
                 "description"           => $refAccDescription,
                 "paidAmtInWords"        => getIndianCurrency($totalDemandAmount),
                 "billNumber"            => $lastestDemand->demand_no ?? null,
                 "advanceAmount"         => $advanceDetails['advanceAmount'] ?? 0,
+                "demand_generate_date" => $lastestDemand?->generation_date ? date('Y-m-d', strtotime($lastestDemand->generation_date)) : null,
+
 
             ];
             return responseMsgs(true, "water bill details!", remove_null($returnValues), "", "01", "", "POST", $request->deviceId);
@@ -2281,6 +2284,8 @@ class WaterPaymentController extends Controller
             $mPaymentModes      = $this->_paymentModes;
             $mSearchForRebate   = Config::get("waterConstaint.PENALTY_HEAD");
 
+            $docBaseUrl = Config::get('module-constants.DOC_URL');
+
             # transaction Deatils
             $transactionDetails = $mWaterTran->getTransactionByTransactionNo($refTransactionNo)
                 ->first();
@@ -2330,7 +2335,9 @@ class WaterPaymentController extends Controller
                 "ulbId"                 => $transactionDetails['ulb_id'],
                 "ulbName"               => $applicationDetails['ulb_name'],
                 "WardNo"                => $applicationDetails['ward_name'],
-                "logo"                  => $applicationDetails['logo'],
+                // "logo"                  => $applicationDetails['logo'],                
+                "state_logo" => $docBaseUrl . "/" . "custom/jhk-govt-logo.png",
+                "ulb_logo"               => $docBaseUrl . '/' . $applicationDetails['logo'],
                 "towards"               => $mTowards,
                 "description"           => $mAccDescription,
                 "rebate"                => $rebateAmount ?? 0,                                                           // Static
