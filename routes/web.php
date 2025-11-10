@@ -13,14 +13,9 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-// Route::get('/', function () {
-//     return view('welcome');
-// });
-
-Route::get('/market', function () {
-    return view('market.index'); // create this view file next
+Route::get('/', function () {
+    return view('welcome');
 });
-
 #---------------------------- document read ------------------------------
 Route::get('/getImageLink', function () {
     return view('getImageLink');
