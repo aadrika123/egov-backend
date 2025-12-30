@@ -399,47 +399,47 @@ class CitizenController extends Controller
         try {
             $userDtl = authUser($request);
             // Property Count
-            // $propCount = PropProperty::where('status', 1)
-            //     ->where('citizen_id', $userDtl->id)->count();
+            $propCount = PropProperty::where('status', 1)
+                ->where('citizen_id', $userDtl->id)->count();
 
-            // // Trade Count
-            // $tradeCount = TradeLicence::select(DB::raw("count(id) as total_trade"))
-            //     ->where('citizen_id', $userDtl->id)
-            //     ->where("is_active", true)
-            //     ->get();
+            // Trade Count
+            $tradeCount = TradeLicence::select(DB::raw("count(id) as total_trade"))
+                ->where('citizen_id', $userDtl->id)
+                ->where("is_active", true)
+                ->get();
 
-            // // Water Count
-            // $waterCount = WaterConsumer::select(DB::raw("count(id) as total_water_consumer"))
-            //     ->where('user_id', $userDtl->id)
-            //     ->where('user_type', 'Citizen')
-            //     ->where("status", 1)
-            //     ->get();
+            // Water Count
+            $waterCount = WaterConsumer::select(DB::raw("count(id) as total_water_consumer"))
+                ->where('user_id', $userDtl->id)
+                ->where('user_type', 'Citizen')
+                ->where("status", 1)
+                ->get();
 
-            // $active_citizen_prop_count = DB::table("active_citizen_undercares")
-            //     ->select(DB::raw('COUNT(property_id)'))
-            //     ->where('citizen_id', $userDtl->id)
-            //     ->where('deactive_status', false)
-            //     ->whereNotNull('property_id')
-            //     ->get();
-            // $active_citizen_trade_count = DB::table("active_citizen_undercares")
-            //     ->select(DB::raw('COUNT(license_id)'))
-            //     ->where('citizen_id', $userDtl->id)
-            //     ->where('deactive_status', false)
-            //     ->whereNotNull('license_id')
-            //     ->get();
-            // $active_citizen_water_count = DB::table("active_citizen_undercares")
-            //     ->select(DB::raw('COUNT(consumer_id)'))
-            //     ->where('citizen_id', $userDtl->id)
-            //     ->where('deactive_status', false)
-            //     ->whereNotNull('consumer_id')
-            //     ->get();
+            $active_citizen_prop_count = DB::table("active_citizen_undercares")
+                ->select(DB::raw('COUNT(property_id)'))
+                ->where('citizen_id', $userDtl->id)
+                ->where('deactive_status', false)
+                ->whereNotNull('property_id')
+                ->get();
+            $active_citizen_trade_count = DB::table("active_citizen_undercares")
+                ->select(DB::raw('COUNT(license_id)'))
+                ->where('citizen_id', $userDtl->id)
+                ->where('deactive_status', false)
+                ->whereNotNull('license_id')
+                ->get();
+            $active_citizen_water_count = DB::table("active_citizen_undercares")
+                ->select(DB::raw('COUNT(consumer_id)'))
+                ->where('citizen_id', $userDtl->id)
+                ->where('deactive_status', false)
+                ->whereNotNull('consumer_id')
+                ->get();
 
-            // $active_citizen_swm_count = DB::connection("pgsql_master")->table("active_citizen_undercares")
-            //     ->select(DB::raw('COUNT(swm_id)'))
-            //     ->where('citizen_id', $userDtl->id)
-            //     ->where("deactive_status", false)
-            //     ->whereNotNull('swm_id')
-            //     ->get();
+            $active_citizen_swm_count = DB::connection("pgsql_master")->table("active_citizen_undercares")
+                ->select(DB::raw('COUNT(swm_id)'))
+                ->where('citizen_id', $userDtl->id)
+                ->where("deactive_status", false)
+                ->whereNotNull('swm_id')
+                ->get();
 
             $active_citizen_fines_count = DB::connection("pgsql_master")->table("active_citizen_undercares")
                 ->select(DB::raw('COUNT(challan_id)'))
@@ -499,9 +499,9 @@ class CitizenController extends Controller
             $totalLodgeBanquet_count = $lodge_count + $banquet_count;  // sum of lodge and banquet
 
             $data = [
-                // "propDetails" => $propCount + $active_citizen_prop_count->first()->count,
-                // "tradeDetails" => $tradeCount->first()->total_trade + $active_citizen_trade_count->first()->count,
-                // "waterDetails" => $waterCount->first()->total_water_consumer + $active_citizen_water_count->first()->count,
+                "propDetails" => $propCount + $active_citizen_prop_count->first()->count,
+                "tradeDetails" => $tradeCount->first()->total_trade + $active_citizen_trade_count->first()->count,
+                "waterDetails" => $waterCount->first()->total_water_consumer + $active_citizen_water_count->first()->count,
                 "petDetails" => $pet_registration_count,
                 "marriageDetails" => $marriage_registration_count,
                 "advertisementDetails" => $totalAdvertisement_count,
@@ -509,7 +509,7 @@ class CitizenController extends Controller
                 "septicTankerDetails" => $septicTanker_count,
                 "lodgeBanquetDetails" => $totalLodgeBanquet_count,
                 "rigDetails" => $rig_count,
-                // "swmDetails" => $active_citizen_swm_count->first()->count,
+                "swmDetails" => $active_citizen_swm_count->first()->count,
                 "finesDetails" => $active_citizen_fines_count->first()->count
             ];
             return responseMsgs(true, "Total Count", $data, "", 01, responseTime(), $request->getMethod(), $request->deviceId);
