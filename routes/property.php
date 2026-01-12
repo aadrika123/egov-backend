@@ -552,6 +552,7 @@ Route::controller(ReportController::class)->group(function () {
   Route::post('report/mpl-todayCollection-new', 'mplReportCollectionNew'); #API_ID = 012430
   Route::post('report/ulb-list', 'ulbList'); #API_ID = 012430
   Route::post('live-dashboard-update', 'liveDashboardUpdate');
+  Route::post('live-dashboard-data', 'liveDashboardData');
 });
 // });
 

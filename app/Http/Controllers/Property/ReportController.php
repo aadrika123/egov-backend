@@ -2253,5 +2253,142 @@ class ReportController extends Controller
             
     }
 
+    /* 
+    * | Live Dashboard Data for all 15 revenue modules
+    */
+    public function liveDashboardData(Request $request)
+    {
+        try {
+            $ulbId = $request->ulb_id;
+
+            // Financial year
+            $financialYear = $request->financial_year ?? getFY();
+
+            $query = DB::connection('pgsql_reports')
+                ->table('tbl_analytical_dhashboards')
+                ->where('financial_year', $financialYear);
+
+            // Optional ULB filter
+            if ($ulbId) {
+                $query->where('ulb_id', $ulbId);
+            }
+
+            // Optional date filter
+            if ($request->filled('from_date') && $request->filled('to_date')) {
+                $query->whereBetween('created_at', [
+                    $request->from_date . ' 00:00:00',
+                    $request->to_date . ' 23:59:59'
+                ]);
+            }
+
+            $rows = $query->get();
+
+            $data = $this->formatDashboardData($rows);
+
+            return responseMsgs(
+                true,
+                "Live Dashboard Data",
+                $data,
+                "",
+                01,
+                responseTime(),
+                $request->getMethod(),
+                $request->deviceId
+            );
+
+        } catch (Exception $e) {
+            return responseMsgs(
+                false,
+                [$e->getMessage(), $e->getFile(), $e->getLine()],
+                "",
+                "",
+                01,
+                responseTime(),
+                $request->getMethod(),
+                $request->deviceId
+            );
+        }
+    }
+
+    private function formatDashboardData($rows)
+    {
+        return [
+            'property' => [
+                'total_collection'  => $rows->sum('property_total_collection'),
+                'total_application' => $rows->sum('property_total_application'),
+            ],
+
+            'water' => [
+                'total_collection'  => $rows->sum('water_total_collection'),
+                'total_registration'=> $rows->sum('water_total_registration'),
+            ],
+
+            'swm' => [
+                'total_collection'  => $rows->sum('swm_total_collection'),
+                'total_registration'=> $rows->sum('swm_total_registration'),
+            ],
+
+            'fines' => [
+                'total_collection'       => $rows->sum('fines_total_collection'),
+                'challan_generated'      => $rows->sum('fines_total_challan_generated'),
+            ],
+
+            'rig' => [
+                'total_collection'  => $rows->sum('rig_total_collection'),
+                'total_registration'=> $rows->sum('rig_total_registration'),
+            ],
+
+            'water_tanker' => [
+                'total_collection' => $rows->sum('water_tanker_total_collection'),
+                'total_booking'    => $rows->sum('water_tanker_total_booking'),
+            ],
+
+            'septic_tanker' => [
+                'total_collection' => $rows->sum('septic_tanker_total_collection'),
+                'total_booking'    => $rows->sum('septic_tanker_total_booking'),
+            ],
+
+            'pet' => [
+                'total_collection'  => $rows->sum('pet_total_collection'),
+                'total_registration'=> $rows->sum('pet_total_registration'),
+            ],
+
+            'public_transport' => [
+                'total_collection' => $rows->sum('public_transport_total_collection'),
+                'bill_cut'         => $rows->sum('public_transport_total_bill_cut'),
+            ],
+
+            'advertisement' => [
+                'total_collection'  => $rows->sum('advertisement_total_collection'),
+                'total_registration'=> $rows->sum('advertisement_total_registration'),
+            ],
+
+            'trade' => [
+                'total_collection'  => $rows->sum('trade_total_collection'),
+                'total_registration'=> $rows->sum('trade_total_registration'),
+            ],
+
+            'municipal_rental' => [
+                'total_collection' => $rows->sum('municipal_rental_total_collection'),
+                'total_shops'      => $rows->sum('municipal_rental_total_shops'),
+            ],
+
+            'marriage' => [
+                'total_collection'  => $rows->sum('marriage_total_collection'),
+                'total_registration'=> $rows->sum('marriage_total_registration'),
+            ],
+
+            'parking' => [
+                'total_collection' => $rows->sum('parking_total_collection'),
+                'bill_cut'         => $rows->sum('parking_total_bill_cut'),
+            ],
+
+            'lodge' => [
+                'total_collection'  => $rows->sum('lodge_total_collection'),
+                'total_registration'=> $rows->sum('lodge_total_registration'),
+            ],
+        ];
+    }
+
 
 }
