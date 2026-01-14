@@ -2448,6 +2448,7 @@ class ReportController extends Controller
                     'property'         => $this->propertyDashboard($date),
                     'water'            => $this->waterDashboard($date),
                     'trade'            => $this->tradeDashboard($date),
+                    'swm'              => $this->swmDashboard($date),
                     'water_tanker'     => $this->waterTankerDashboard($date),
                     'septic_tanker'    => $this->septicTankerDashboard($date),
                     'fines'            => $this->finesDashboard($date),
@@ -2852,6 +2853,46 @@ class ReportController extends Controller
             'top_ulbs' => $this->formatUlbs($agg)
         ];
     }
+
+    // SWM DASHBOARD
+    private function swmDashboard($date)
+    {
+        $db = DB::connection('pgsql_swm');
+        $from = $date->copy()->startOfDay();
+        $to   = $date->copy()->endOfDay();
+
+        // -------------------------------
+        // Registrations
+        // -------------------------------
+        $registrations = $db->table('swm_consumers')
+            ->whereBetween('stampdate', [$from, $to])
+            ->count();
+
+        // -------------------------------
+        // Collections
+        // -------------------------------
+        $agg = $db->table('swm_transactions as st')
+            ->leftJoin('ulb_masters as um', 'um.id', '=', 'st.ulb_id')
+            ->where('st.paid_status', 1)
+            ->where('st.total_remaining_amt', 0)
+            ->whereBetween('st.stampdate', [$from, $to])
+            ->selectRaw('
+                st.ulb_id,
+                um.ulb_name,
+                SUM(st.total_payable_amt) as daily_collection
+            ')
+            ->groupBy('st.ulb_id', 'um.ulb_name')
+            ->get();
+
+        return [
+            'todaysData' => [
+                'today_collections' => (float) $agg->sum('daily_collection'),
+                'total_applicant'   => $registrations,
+            ],
+            'top_ulbs' => $this->formatUlbs($agg)
+        ];
+    }
+
 
 
 }
