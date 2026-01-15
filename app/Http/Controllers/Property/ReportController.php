@@ -2440,34 +2440,53 @@ class ReportController extends Controller
 
             $date = today();
 
+            $modules = [
+                'property'         => $this->propertyDashboard($date),
+                'water'            => $this->waterDashboard($date),
+                'trade'            => $this->tradeDashboard($date),
+                'swm'              => $this->swmDashboard($date),
+                'water_tanker'     => $this->waterTankerDashboard($date),
+                'septic_tanker'    => $this->septicTankerDashboard($date),
+                'fines'            => $this->finesDashboard($date),
+                'rig'              => $this->rigDashboard($date),
+                'advertisements'   => $this->advertisementDashboard($date),
+                'lodge_banquet'    => $this->marketDashboard($date),
+                'pet'              => $this->petDashboard($date),
+                'marriage'         => $this->marriageDashboard($date),
+                'municipal_rental' => $this->municipalRentalDashboard($date),
+            ];
+
+            // -------------------------------
+            // Overall Today Collection
+            // -------------------------------
+            $overallCollection = collect($modules)->sum(function ($m) {
+                return $m['todaysData']['todays_collection']
+                    ?? $m['todaysData']['today_collections']
+                    ?? 0;
+            });
+
+            // -------------------------------
+            // Overall Top ULB Collection
+            // -------------------------------
+            $overallUlbAgg = $this->mergeUlbCollections($modules);
+
             return response()->json([
                 'status'  => true,
                 'message' => "Today's Collection Dashboard",
-                'filters' => ['date' => 'today'],
-                'data' => [
-                    'property'         => $this->propertyDashboard($date),
-                    'water'            => $this->waterDashboard($date),
-                    'trade'            => $this->tradeDashboard($date),
-                    'swm'              => $this->swmDashboard($date),
-                    'water_tanker'     => $this->waterTankerDashboard($date),
-                    'septic_tanker'    => $this->septicTankerDashboard($date),
-                    'fines'            => $this->finesDashboard($date),
-                    'rig'              => $this->rigDashboard($date),
-                    'advertisements'   => $this->advertisementDashboard($date),
-                    'lodge_banquet'    => $this->marketDashboard($date),
-                    'pet'              => $this->petDashboard($date),
-                    'marriage'         => $this->marriageDashboard($date),
-                    'municipal_rental' => $this->municipalRentalDashboard($date),
-                ]
+                // 'filters' => ['date' => 'today'],
+
+                // NEW OVERALL DATA
+                'overall' => [
+                    'todays_collection' => (float) $overallCollection,
+                    // 'top_ulb' => $overallUlbAgg->first(),   // single top ULB
+                    'top_ulbs' => $overallUlbAgg->take(10), // top 10 ULBs
+                ],
+
+                // EXISTING MODULE DATA
+                'data' => $modules
             ]);
 
-        } catch (\Throwable $e) {
-
-            Log::error('TodayCollectionDashboard Error', [
-                'msg' => $e->getMessage(),
-                'line' => $e->getLine(),
-                'file' => $e->getFile()
-            ]);
+        } catch (Exception $e) {
 
             return response()->json([
                 'status'  => false,
@@ -2475,6 +2494,7 @@ class ReportController extends Controller
             ], 500);
         }
     }
+
 
     // common function 
     private function formatUlbs($collection)
@@ -2491,6 +2511,36 @@ class ReportController extends Controller
             })
             ->values();
     }
+
+    private function mergeUlbCollections($allModules)
+    {
+        $merged = collect();
+
+        foreach ($allModules as $module) {
+            if (!empty($module['top_ulbs'])) {
+                foreach ($module['top_ulbs'] as $row) {
+                    $merged->push([
+                        'ulb_id' => $row->ulb_id,
+                        'ulb_name' => $row->ulb_name,
+                        'daily_collection' => $row->daily_collection,
+                    ]);
+                }
+            }
+        }
+
+        return $merged
+            ->groupBy('ulb_id')
+            ->map(function ($rows) {
+                return (object)[
+                    'ulb_id' => $rows->first()['ulb_id'],
+                    'ulb_name' => $rows->first()['ulb_name'],
+                    'daily_collection' => $rows->sum('daily_collection'),
+                ];
+            })
+            ->sortByDesc('daily_collection')
+            ->values();
+    }
+
 
     // individual module dashboard functions
 
@@ -2516,8 +2566,8 @@ class ReportController extends Controller
 
         return [
             'todaysData' => [
-                'today_collections' => (float) $agg->sum('daily_collection'),
-                'total_applicant'   => $registrations,
+                'todays_collection' => (float) $agg->sum('daily_collection'),
+                'todays_application'   => $registrations,
             ],
             'top_ulbs' => $this->formatUlbs($agg)
         ];
@@ -2544,8 +2594,8 @@ class ReportController extends Controller
 
         return [
             'todaysData' => [
-                'today_collections' => (float) $agg->sum('daily_collection'),
-                'total_applicant'   => $registrations,
+                'todays_collection' => (float) $agg->sum('daily_collection'),
+                'todays_registration'   => $registrations,
             ],
             'top_ulbs' => $this->formatUlbs($agg)
         ];
@@ -2572,8 +2622,8 @@ class ReportController extends Controller
 
         return [
             'todaysData' => [
-                'today_collections' => (float) $agg->sum('daily_collection'),
-                'total_applicant'   => $registrations,
+                'todays_collection' => (float) $agg->sum('daily_collection'),
+                'todays_booking'   => $registrations,
             ],
             'top_ulbs' => $this->formatUlbs($agg)
         ];
@@ -2600,8 +2650,8 @@ class ReportController extends Controller
 
         return [
             'todaysData' => [
-                'today_collections' => (float) $agg->sum('daily_collection'),
-                'total_applicant'   => $registrations,
+                'todays_collection' => (float) $agg->sum('daily_collection'),
+                'todays_booking'   => $registrations,
             ],
             'top_ulbs' => $this->formatUlbs($agg)
         ];
@@ -2629,8 +2679,8 @@ class ReportController extends Controller
 
         return [
             'todaysData' => [
-                'today_collections' => (float) $agg->sum('daily_collection'),
-                'total_applicant'   => $registrations,
+                'todays_collection' => (float) $agg->sum('daily_collection'),
+                'todays_registration'   => $registrations,
             ],
             'top_ulbs' => $this->formatUlbs($agg)
         ];
@@ -2657,8 +2707,8 @@ class ReportController extends Controller
 
         return [
             'todaysData' => [
-                'today_collections' => (float) $agg->sum('daily_collection'),
-                'total_applicant'   => $registrations,
+                'todays_collection' => (float) $agg->sum('daily_collection'),
+                'todays_challan_generated'   => $registrations,
             ],
             'top_ulbs' => $this->formatUlbs($agg)
         ];
@@ -2685,8 +2735,8 @@ class ReportController extends Controller
 
         return [
             'todaysData' => [
-                'today_collections' => (float) $agg->sum('daily_collection'),
-                'total_applicant'   => $registrations,
+                'todays_collection' => (float) $agg->sum('daily_collection'),
+                'todays_registration'   => $registrations,
             ],
             'top_ulbs' => $this->formatUlbs($agg)
         ];
@@ -2716,8 +2766,8 @@ class ReportController extends Controller
 
         return [
             'todaysData' => [
-                'today_collections' => (float) $agg->sum('daily_collection'),
-                'total_applicant'   => $registrations,
+                'todays_collection' => (float) $agg->sum('daily_collection'),
+                'todays_registration'   => $registrations,
             ],
             'top_ulbs' => $this->formatUlbs($agg)
         ];
@@ -2775,8 +2825,8 @@ class ReportController extends Controller
 
         return [
             'todaysData' => [
-                'today_collections' => (float) $agg->sum('daily_collection'),
-                'total_applicant'   => $registrations,
+                'todays_collection' => (float) $agg->sum('daily_collection'),
+                'todays_registration'   => $registrations,
             ],
             'top_ulbs' => $this->formatUlbs($agg)
         ];
@@ -2803,8 +2853,8 @@ class ReportController extends Controller
 
         return [
             'todaysData' => [
-                'today_collections' => (float) $agg->sum('daily_collection'),
-                'total_applicant'   => $registrations,
+                'todays_collection' => (float) $agg->sum('daily_collection'),
+                'todays_registration'   => $registrations,
             ],
             'top_ulbs' => $this->formatUlbs($agg)
         ];
@@ -2847,8 +2897,8 @@ class ReportController extends Controller
 
         return [
             'todaysData' => [
-                'today_collections' => (float) $agg->sum('daily_collection'),
-                'total_applicant'   => $registrations,
+                'todays_collection' => (float) $agg->sum('daily_collection'),
+                'todays_registration'   => $registrations,
             ],
             'top_ulbs' => $this->formatUlbs($agg)
         ];
@@ -2886,8 +2936,8 @@ class ReportController extends Controller
 
         return [
             'todaysData' => [
-                'today_collections' => (float) $agg->sum('daily_collection'),
-                'total_applicant'   => $registrations,
+                'todays_collection' => (float) $agg->sum('daily_collection'),
+                'todays_registration'   => $registrations,
             ],
             'top_ulbs' => $this->formatUlbs($agg)
         ];
