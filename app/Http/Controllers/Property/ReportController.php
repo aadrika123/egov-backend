@@ -2434,26 +2434,31 @@ class ReportController extends Controller
     /*     
     * | --------------    TODAY'S COLLECTION DASHBOARD DATA     -----------
     */ 
-    public function todayCollectionDashboard()
+    public function todayCollectionDashboard(Request $request)
     {
         try {
 
+            $request->validate([
+                'ulbId' => 'nullable|integer|exists:ulb_masters,id'
+            ]);
+
+            $ulbId = $request->ulbId;   // null or integer
             $date = today();
 
             $modules = [
-                'property'         => $this->propertyDashboard($date),
-                'water'            => $this->waterDashboard($date),
-                'trade'            => $this->tradeDashboard($date),
-                'swm'              => $this->swmDashboard($date),
-                'water_tanker'     => $this->waterTankerDashboard($date),
-                'septic_tanker'    => $this->septicTankerDashboard($date),
-                'fines'            => $this->finesDashboard($date),
-                'rig'              => $this->rigDashboard($date),
-                'advertisements'   => $this->advertisementDashboard($date),
-                'lodge_banquet'    => $this->marketDashboard($date),
-                'pet'              => $this->petDashboard($date),
-                'marriage'         => $this->marriageDashboard($date),
-                'municipal_rental' => $this->municipalRentalDashboard($date),
+                'property' => $this->propertyDashboard($date, $ulbId),
+                'water'            => $this->waterDashboard($date, $ulbId),
+                'trade'            => $this->tradeDashboard($date, $ulbId),
+                'swm'              => $this->swmDashboard($date, $ulbId),
+                'water_tanker'     => $this->waterTankerDashboard($date, $ulbId),
+                'septic_tanker'    => $this->septicTankerDashboard($date, $ulbId),
+                'fines'            => $this->finesDashboard($date, $ulbId),
+                'rig'              => $this->rigDashboard($date, $ulbId),
+                'advertisements'   => $this->advertisementDashboard($date, $ulbId),
+                'lodge_banquet'    => $this->marketDashboard($date, $ulbId),
+                'pet'              => $this->petDashboard($date, $ulbId),
+                'marriage'         => $this->marriageDashboard($date, $ulbId),
+                'municipal_rental' => $this->municipalRentalDashboard($date, $ulbId),
             ];
 
             // -------------------------------
@@ -2473,20 +2478,16 @@ class ReportController extends Controller
             return response()->json([
                 'status'  => true,
                 'message' => "Today's Collection Dashboard",
-                // 'filters' => ['date' => 'today'],
 
-                // NEW OVERALL DATA
                 'overall' => [
                     'todays_collection' => (float) $overallCollection,
-                    // 'top_ulb' => $overallUlbAgg->first(),   // single top ULB
-                    'top_ulbs' => $overallUlbAgg->take(10), // top 10 ULBs
+                    'top_ulbs' => $overallUlbAgg->take(10),
                 ],
 
-                // EXISTING MODULE DATA
                 'data' => $modules
             ]);
 
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
 
             return response()->json([
                 'status'  => false,
@@ -2494,7 +2495,6 @@ class ReportController extends Controller
             ], 500);
         }
     }
-
 
     // common function 
     private function formatUlbs($collection)
@@ -2541,25 +2541,38 @@ class ReportController extends Controller
             ->values();
     }
 
-
     // individual module dashboard functions
 
     // PROPERTY DASHBOARD
-    private function propertyDashboard($date)
+
+    private function propertyDashboard($date, $ulbId = null)
     {
         $from = $date->copy()->startOfDay();
         $to   = $date->copy()->endOfDay();
 
         $registrations =
-            DB::table('prop_active_safs')->whereBetween('created_at', [$from, $to])->count()
-            + DB::table('prop_active_concessions')->whereBetween('created_at', [$from, $to])->count()
-            + DB::table('prop_active_objections')->whereBetween('created_at', [$from, $to])->count()
-            + DB::table('prop_active_harvestings')->whereBetween('created_at', [$from, $to])->count();
+            DB::table('prop_active_safs')
+                ->whereBetween('created_at', [$from, $to])
+                ->when($ulbId, fn($q) => $q->where('ulb_id', $ulbId))
+                ->count()
+            + DB::table('prop_active_concessions')
+                ->whereBetween('created_at', [$from, $to])
+                ->when($ulbId, fn($q) => $q->where('ulb_id', $ulbId))
+                ->count()
+            + DB::table('prop_active_objections')
+                ->whereBetween('created_at', [$from, $to])
+                ->when($ulbId, fn($q) => $q->where('ulb_id', $ulbId))
+                ->count()
+            + DB::table('prop_active_harvestings')
+                ->whereBetween('created_at', [$from, $to])
+                ->when($ulbId, fn($q) => $q->where('ulb_id', $ulbId))
+                ->count();
 
         $agg = DB::table('prop_transactions as pt')
             ->leftJoin('ulb_masters as um', 'um.id', '=', 'pt.ulb_id')
             ->where('pt.status', 1)
             ->whereBetween('pt.created_at', [$from, $to])
+            ->when($ulbId, fn($q) => $q->where('pt.ulb_id', $ulbId))
             ->selectRaw('pt.ulb_id, um.ulb_name, SUM(pt.amount) as daily_collection')
             ->groupBy('pt.ulb_id', 'um.ulb_name')
             ->get();
@@ -2567,30 +2580,34 @@ class ReportController extends Controller
         return [
             'todaysData' => [
                 'todays_collection' => (float) $agg->sum('daily_collection'),
-                'todays_application'   => $registrations,
+                'todays_application' => $registrations,
             ],
             'top_ulbs' => $this->formatUlbs($agg)
         ];
     }
 
     // WATER DASHBOARD
-    private function waterDashboard($date)
+    private function waterDashboard($date, $ulbId = null)
     {
         $db = DB::connection('pgsql_water');
         $from = $date->copy()->startOfDay();
         $to   = $date->copy()->endOfDay();
 
         $registrations = $db->table('water_applications')
-            ->whereBetween('created_at', [$from, $to])
+            ->whereBetween('created_at', [$from, $to])            
+            ->when($ulbId, fn($q) => $q->where('ulb_id', $ulbId))
             ->count();
+
 
         $agg = $db->table('water_trans as wt')
             ->leftJoin('ulb_masters as um', 'um.id', '=', 'wt.ulb_id')
             ->where('wt.status', 1)
             ->whereBetween('wt.created_at', [$from, $to])
+            ->when($ulbId, fn($q) => $q->where('wt.ulb_id', $ulbId))
             ->selectRaw('wt.ulb_id, um.ulb_name, SUM(wt.amount) as daily_collection')
             ->groupBy('wt.ulb_id', 'um.ulb_name')
             ->get();
+
 
         return [
             'todaysData' => [
@@ -2602,20 +2619,28 @@ class ReportController extends Controller
     }
 
     // WATER TANKER DASHBOARD
-    private function waterTankerDashboard($date)
+    private function waterTankerDashboard($date, $ulbId = null)
     {
         $db = DB::connection('pgsql_tanker');
         $from = $date->copy()->startOfDay();
         $to   = $date->copy()->endOfDay();
 
+        // --------------------
+        // Bookings
+        // --------------------
         $registrations = $db->table('wt_bookings')
             ->whereBetween('created_at', [$from, $to])
+            ->when($ulbId, fn($q) => $q->where('ulb_id', $ulbId))
             ->count();
 
+        // --------------------
+        // Collections
+        // --------------------
         $agg = $db->table('wt_transactions as wt')
             ->leftJoin('ulb_masters as um', 'um.id', '=', 'wt.ulb_id')
             ->where('wt.status', 1)
             ->whereBetween('wt.created_at', [$from, $to])
+            ->when($ulbId, fn($q) => $q->where('wt.ulb_id', $ulbId))
             ->selectRaw('wt.ulb_id, um.ulb_name, SUM(wt.paid_amount) as daily_collection')
             ->groupBy('wt.ulb_id', 'um.ulb_name')
             ->get();
@@ -2623,14 +2648,14 @@ class ReportController extends Controller
         return [
             'todaysData' => [
                 'todays_collection' => (float) $agg->sum('daily_collection'),
-                'todays_booking'   => $registrations,
+                'todays_booking' => $registrations,
             ],
             'top_ulbs' => $this->formatUlbs($agg)
         ];
     }
 
     // SEPTIC TANKER DASHBOARD
-    private function septicTankerDashboard($date)
+    private function septicTankerDashboard($date, $ulbId = null)
     {
         $db = DB::connection('pgsql_tanker');
         $from = $date->copy()->startOfDay();
@@ -2638,12 +2663,14 @@ class ReportController extends Controller
 
         $registrations = $db->table('st_bookings')
             ->whereBetween('created_at', [$from, $to])
+            ->when($ulbId, fn($q) => $q->where('ulb_id', $ulbId))
             ->count();
 
         $agg = $db->table('st_transactions as st')
             ->leftJoin('ulb_masters as um', 'um.id', '=', 'st.ulb_id')
             ->where('st.status', 1)
             ->whereBetween('st.created_at', [$from, $to])
+            ->when($ulbId, fn($q) => $q->where('st.ulb_id', $ulbId))
             ->selectRaw('st.ulb_id, um.ulb_name, SUM(st.paid_amount) as daily_collection')
             ->groupBy('st.ulb_id', 'um.ulb_name')
             ->get();
@@ -2658,7 +2685,7 @@ class ReportController extends Controller
     }
 
     // TRADE DASHBOARD
-    private function tradeDashboard($date)
+    private function tradeDashboard($date, $ulbId = null)
     {
         $db = DB::connection('pgsql_trade');
         $from = $date->copy()->startOfDay();
@@ -2667,12 +2694,14 @@ class ReportController extends Controller
         $registrations = $db->table('active_trade_licences')
             ->where('is_active', true)
             ->whereBetween('created_at', [$from, $to])
+            ->when($ulbId, fn($q) => $q->where('ulb_id', $ulbId))
             ->count();
 
         $agg = $db->table('trade_transactions as tt')
             ->leftJoin('ulb_masters as um', 'um.id', '=', 'tt.ulb_id')
             ->where('tt.status', 1)
             ->whereBetween('tt.created_at', [$from, $to])
+            ->when($ulbId, fn($q) => $q->where('tt.ulb_id', $ulbId))
             ->selectRaw('tt.ulb_id, um.ulb_name, SUM(tt.paid_amount) as daily_collection')
             ->groupBy('tt.ulb_id', 'um.ulb_name')
             ->get();
@@ -2687,7 +2716,7 @@ class ReportController extends Controller
     }
 
     // FINES DASHBOARD
-    private function finesDashboard($date)
+    private function finesDashboard($date, $ulbId = null)
     {
         $db = DB::connection('pgsql_fines');
         $from = $date->copy()->startOfDay();
@@ -2695,12 +2724,14 @@ class ReportController extends Controller
 
         $registrations = $db->table('penalty_challans')
             ->whereBetween('created_at', [$from, $to])
+            // ->when($ulbId, fn($q) => $q->where('ulb_id', $ulbId))
             ->count();
 
         $agg = $db->table('penalty_transactions as pt')
             ->leftJoin('ulb_masters as um', 'um.id', '=', 'pt.ulb_id')
             ->where('pt.status', 1)
             ->whereBetween('pt.created_at', [$from, $to])
+            ->when($ulbId, fn($q) => $q->where('pt.ulb_id', $ulbId))
             ->selectRaw('pt.ulb_id, um.ulb_name, SUM(pt.amount) as daily_collection')
             ->groupBy('pt.ulb_id', 'um.ulb_name')
             ->get();
@@ -2715,7 +2746,7 @@ class ReportController extends Controller
     }
 
     // RIG DASHBOARD
-    private function rigDashboard($date)
+    private function rigDashboard($date, $ulbId = null)
     {
         $db = DB::connection('pgsql_fines');
         $from = $date->copy()->startOfDay();
@@ -2723,12 +2754,14 @@ class ReportController extends Controller
 
         $registrations = $db->table('rig_active_registrations')
             ->whereBetween('created_at', [$from, $to])
+            ->when($ulbId, fn($q) => $q->where('ulb_id', $ulbId))
             ->count();
 
         $agg = $db->table('rig_trans as rt')
             ->leftJoin('ulb_masters as um', 'um.id', '=', 'rt.ulb_id')
             ->where('rt.status', 1)
             ->whereBetween('rt.created_at', [$from, $to])
+            ->when($ulbId, fn($q) => $q->where('rt.ulb_id', $ulbId))
             ->selectRaw('rt.ulb_id, um.ulb_name, SUM(rt.amount) as daily_collection')
             ->groupBy('rt.ulb_id', 'um.ulb_name')
             ->get();
@@ -2743,23 +2776,36 @@ class ReportController extends Controller
     }
 
     // ADVERTISEMENTS DASHBOARD
-    private function advertisementDashboard($date)
+    private function advertisementDashboard($date, $ulbId = null)
     {
         $db = DB::connection('pgsql_advertisements');
         $from = $date->copy()->startOfDay();
         $to   = $date->copy()->endOfDay();
 
         $registrations =
-            $db->table('adv_active_selfadvertisements')->whereBetween('created_at', [$from, $to])->count()
-            + $db->table('adv_active_privatelands')->whereBetween('created_at', [$from, $to])->count()
-            + $db->table('adv_active_agencies')->whereBetween('created_at', [$from, $to])->count()
-            + $db->table('adv_active_vehicles')->whereBetween('created_at', [$from, $to])->count();
+            $db->table('adv_active_selfadvertisements')
+                ->whereBetween('created_at', [$from, $to])
+                ->when($ulbId, fn($q) => $q->where('ulb_id', $ulbId))
+                ->count()
+            + $db->table('adv_active_privatelands')
+                ->whereBetween('created_at', [$from, $to])
+                ->when($ulbId, fn($q) => $q->where('ulb_id', $ulbId))
+                ->count()
+            + $db->table('adv_active_agencies')
+                ->whereBetween('created_at', [$from, $to])
+                ->when($ulbId, fn($q) => $q->where('ulb_id', $ulbId))
+                ->count()
+            + $db->table('adv_active_vehicles')
+                ->whereBetween('created_at', [$from, $to])
+                ->when($ulbId, fn($q) => $q->where('ulb_id', $ulbId))
+                ->count();
 
         $agg = $db->table('adv_mar_transactions as at')
             ->leftJoin('ulb_masters as um', 'um.id', '=', 'at.ulb_id')
             ->where('at.status', 1)
             ->where('at.module_type', 'Advertisement')
             ->whereBetween('at.created_at', [$from, $to])
+            ->when($ulbId, fn($q) => $q->where('at.ulb_id', $ulbId))
             ->selectRaw('at.ulb_id, um.ulb_name, SUM(at.amount) as daily_collection')
             ->groupBy('at.ulb_id', 'um.ulb_name')
             ->get();
@@ -2774,23 +2820,37 @@ class ReportController extends Controller
     }
 
     // MARKET DASHBOARD
-    private function marketDashboard($date)
+    private function marketDashboard($date, $ulbId = null)
     {
         $db = DB::connection('pgsql_advertisements');
         $from = $date->copy()->startOfDay();
         $to   = $date->copy()->endOfDay();
 
         $registrations =
-            $db->table('mar_active_lodges')->whereBetween('created_at', [$from, $to])->count()
-            + $db->table('mar_active_banqute_halls')->whereBetween('created_at', [$from, $to])->count()
-            + $db->table('mar_active_dharamshalas')->whereBetween('created_at', [$from, $to])->count()
-            + $db->table('mar_active_hostels')->whereBetween('created_at', [$from, $to])->count();
+            $db->table('mar_active_lodges')
+                ->whereBetween('created_at', [$from, $to])
+                ->when($ulbId, fn($q) => $q->where('ulb_id', $ulbId))
+                ->count()
+            + $db->table('mar_active_banqute_halls')
+                ->whereBetween('created_at', [$from, $to])
+                ->when($ulbId, fn($q) => $q->where('ulb_id', $ulbId))
+                ->count()
+            + $db->table('mar_active_dharamshalas')
+                ->whereBetween('created_at', [$from, $to])
+                ->when($ulbId, fn($q) => $q->where('ulb_id', $ulbId))
+                ->count()
+            + $db->table('mar_active_hostels')
+                ->whereBetween('created_at', [$from, $to])
+                ->when($ulbId, fn($q) => $q->where('ulb_id', $ulbId))
+                ->count();
+
 
         $agg = $db->table('adv_mar_transactions as mt')
             ->leftJoin('ulb_masters as um', 'um.id', '=', 'mt.ulb_id')
             ->where('mt.status', 1)
             ->where('mt.module_type', 'Market')
             ->whereBetween('mt.created_at', [$from, $to])
+            ->when($ulbId, fn($q) => $q->where('mt.ulb_id', $ulbId))
             ->selectRaw('mt.ulb_id, um.ulb_name, SUM(mt.amount) as daily_collection')
             ->groupBy('mt.ulb_id', 'um.ulb_name')
             ->get();
@@ -2805,7 +2865,7 @@ class ReportController extends Controller
     }
 
     // PET DASHBOARD
-    private function petDashboard($date)
+    private function petDashboard($date, $ulbId = null)
     {
         $db = DB::connection('pgsql_advertisements');
         $from = $date->copy()->startOfDay();
@@ -2813,12 +2873,14 @@ class ReportController extends Controller
 
         $registrations = $db->table('pet_active_registrations')
             ->whereBetween('created_at', [$from, $to])
+            ->when($ulbId, fn($q) => $q->where('ulb_id', $ulbId))
             ->count();
 
         $agg = $db->table('pet_trans as pt')
             ->leftJoin('ulb_masters as um', 'um.id', '=', 'pt.ulb_id')
             ->where('pt.status', 1)
             ->whereBetween('pt.created_at', [$from, $to])
+            ->when($ulbId, fn($q) => $q->where('pt.ulb_id', $ulbId))
             ->selectRaw('pt.ulb_id, um.ulb_name, SUM(pt.amount) as daily_collection')
             ->groupBy('pt.ulb_id', 'um.ulb_name')
             ->get();
@@ -2833,7 +2895,7 @@ class ReportController extends Controller
     }
 
     // MARRIAGE DASHBOARD
-    private function marriageDashboard($date)
+    private function marriageDashboard($date, $ulbId = null)
     {
         $db = DB::connection('pgsql_advertisements');
         $from = $date->copy()->startOfDay();
@@ -2841,12 +2903,14 @@ class ReportController extends Controller
 
         $registrations = $db->table('marriage_active_registrations')
             ->whereBetween('created_at', [$from, $to])
+            ->when($ulbId, fn($q) => $q->where('ulb_id', $ulbId))
             ->count();
 
         $agg = $db->table('marriage_transactions as mt')
             ->leftJoin('ulb_masters as um', 'um.id', '=', 'mt.ulb_id')
             ->where('mt.status', 1)
             ->whereBetween('mt.created_at', [$from, $to])
+            ->when($ulbId, fn($q) => $q->where('mt.ulb_id', $ulbId))
             ->selectRaw('mt.ulb_id, um.ulb_name, SUM(mt.amount_paid) as daily_collection')
             ->groupBy('mt.ulb_id', 'um.ulb_name')
             ->get();
@@ -2861,20 +2925,27 @@ class ReportController extends Controller
     }
 
     // MUNICIPAL RENTAL DASHBOARD
-    private function municipalRentalDashboard($date)
+    private function municipalRentalDashboard($date, $ulbId = null)
     {
         $db = DB::connection('pgsql_advertisements');
         $from = $date->copy()->startOfDay();
         $to   = $date->copy()->endOfDay();
 
         $registrations =
-            $db->table('mar_tolls')->whereBetween('created_at', [$from, $to])->count()
-            + $db->table('mar_shops')->whereBetween('created_at', [$from, $to])->count();
+            $db->table('mar_tolls')            
+                ->whereBetween('created_at', [$from, $to])
+                ->when($ulbId, fn($q) => $q->where('ulb_id', $ulbId))
+                ->count()
+            + $db->table('mar_shops')            
+                ->whereBetween('created_at', [$from, $to])
+                ->when($ulbId, fn($q) => $q->where('ulb_id', $ulbId))
+                ->count();
 
         $tollAgg = $db->table('mar_toll_payments as tp')
             ->leftJoin('ulb_masters as um', 'um.id', '=', 'tp.ulb_id')
             ->where('tp.is_active', true)
             ->whereBetween('tp.created_at', [$from, $to])
+            ->when($ulbId, fn($q) => $q->where('tp.ulb_id', $ulbId))
             ->selectRaw('tp.ulb_id, um.ulb_name, SUM(tp.amount) as daily_collection')
             ->groupBy('tp.ulb_id', 'um.ulb_name')
             ->get();
@@ -2883,6 +2954,7 @@ class ReportController extends Controller
             ->leftJoin('ulb_masters as um', 'um.id', '=', 'sp.ulb_id')
             ->where('sp.is_active', true)
             ->whereBetween('sp.created_at', [$from, $to])
+            ->when($ulbId, fn($q) => $q->where('sp.ulb_id', $ulbId))
             ->selectRaw('sp.ulb_id, um.ulb_name, SUM(sp.amount) as daily_collection')
             ->groupBy('sp.ulb_id', 'um.ulb_name')
             ->get();
@@ -2905,7 +2977,7 @@ class ReportController extends Controller
     }
 
     // SWM DASHBOARD
-    private function swmDashboard($date)
+    private function swmDashboard($date, $ulbId = null) 
     {
         $db = DB::connection('pgsql_swm');
         $from = $date->copy()->startOfDay();
@@ -2916,6 +2988,7 @@ class ReportController extends Controller
         // -------------------------------
         $registrations = $db->table('swm_consumers')
             ->whereBetween('stampdate', [$from, $to])
+            ->when($ulbId, fn($q) => $q->where('ulb_id', $ulbId))
             ->count();
 
         // -------------------------------
@@ -2926,6 +2999,7 @@ class ReportController extends Controller
             ->where('st.paid_status', 1)
             ->where('st.total_remaining_amt', 0)
             ->whereBetween('st.stampdate', [$from, $to])
+            ->when($ulbId, fn($q) => $q->where('st.ulb_id', $ulbId))
             ->selectRaw('
                 st.ulb_id,
                 um.ulb_name,
