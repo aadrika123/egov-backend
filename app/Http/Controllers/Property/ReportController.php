@@ -2269,9 +2269,10 @@ class ReportController extends Controller
             }
 
             // ULB filter (OPTIONAL)
-            if ($request->filled('ulb_id')) {
-                $query->where('ulb_id', $request->ulb_id);
+            if ($request->filled('ulbId')) {
+                $query->where('ulb_id', $request->ulbId);
             }
+
 
             // Date filter (OPTIONAL)
             if ($request->filled('from_date') && $request->filled('to_date')) {
