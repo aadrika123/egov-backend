@@ -3114,33 +3114,40 @@ class ReportController extends Controller
     {
         try {
 
-            $rows = DB::connection('pgsql_master')
-                ->table('module_masters as mm')
-                ->join('menu_roles as mr', function ($join) {
-                    $join->on('mr.module_id', '=', 'mm.id')
-                        ->where('mr.is_suspended', false);
-                })
-                ->join('menu_roleusermaps as mrum', function ($join) {
-                    $join->on('mrum.menu_role_id', '=', 'mr.id')
-                        ->where('mrum.is_suspended', false);
-                })
-                ->join('users as u', function ($join) {
-                    $join->on('u.id', '=', 'mrum.user_id')
-                        ->where('u.suspended', false);
-                })
-                ->join('ulb_masters as um', 'um.id', '=', 'u.ulb_id')
-                ->where('mm.is_suspended', false)
-                ->select([
-                    'mm.module_name',
-                    'um.ulb_name',
-                    'u.user_name',
-                    DB::raw('COUNT(DISTINCT mrum.user_id) as user_count')
-                ])
-                ->groupBy('mm.module_name', 'um.ulb_name', 'u.user_name')
-                ->orderBy('mm.module_name')
-                ->orderBy('um.ulb_name')
-                ->orderBy('u.user_name')
-                ->get();
+          $rows = DB::connection('pgsql_master')
+            ->table('module_masters as mm')
+            ->join('menu_roles as mr', function ($join) {
+                $join->on('mr.module_id', '=', 'mm.id')
+                    ->where('mr.is_suspended', false);
+            })
+            ->join('menu_roleusermaps as mrum', function ($join) {
+                $join->on('mrum.menu_role_id', '=', 'mr.id')
+                    ->where('mrum.is_suspended', false);
+            })
+            ->join('users as u', function ($join) {
+                $join->on('u.id', '=', 'mrum.user_id')
+                    ->where('u.suspended', false);
+            })
+            ->join('ulb_masters as um', 'um.id', '=', 'u.ulb_id')
+            ->where('mm.is_suspended', false)
+            ->select([
+                'mm.id as module_id',
+                'mm.module_name',
+                'um.ulb_name',
+                'mr.menu_role_name as role_name',   // ✅ ROLE NAME
+                DB::raw('COUNT(DISTINCT u.id) as user_count') // ✅ COUNT USERS
+            ])
+            ->groupBy(
+                'mm.id',
+                'mm.module_name',
+                'um.ulb_name',
+                'mr.menu_role_name'
+            )
+            ->orderBy('mm.id')
+            ->orderBy('um.ulb_name')
+            ->orderBy('mr.menu_role_name')
+            ->get();
+
 
             $data = $this->formatModuleUlbUserData($rows);
 
@@ -3150,7 +3157,7 @@ class ReportController extends Controller
                 'data' => $data
             ]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
 
             return response()->json([
                 'status' => false,
@@ -3158,41 +3165,48 @@ class ReportController extends Controller
             ], 500);
         }
     }
-
-
+    
     private function formatModuleUlbUserData($rows)
     {
         $final = [];
 
         foreach ($rows as $row) {
 
-            $module = $row->module_name;
+            $moduleId = $row->module_id;
             $ulb = $row->ulb_name;
 
-            if (!isset($final[$module])) {
-                $final[$module] = [
-                    'moduleName' => $module,
+            if (!isset($final[$moduleId])) {
+                $final[$moduleId] = [
+                    'moduleId' => $moduleId,
+                    'moduleName' => $row->module_name,
                     'ulbs' => []
                 ];
             }
 
-            if (!isset($final[$module]['ulbs'][$ulb])) {
-                $final[$module]['ulbs'][$ulb] = [
+            if (!isset($final[$moduleId]['ulbs'][$ulb])) {
+                $final[$moduleId]['ulbs'][$ulb] = [
                     'ulbName' => $ulb,
                     'userCount' => []
                 ];
             }
 
-            // since grouped by user, each row = one user
-            $final[$module]['ulbs'][$ulb]['userCount'][] = [
-                'roleName' => $row->user_name,   // using user as role placeholder
+            // ✅ ROLE WISE COUNT
+            $final[$moduleId]['ulbs'][$ulb]['userCount'][] = [
+                'roleName' => $row->role_name,
                 'count' => (int)$row->user_count
             ];
         }
 
-        // convert associative arrays to indexed arrays
+        // MODULE ID ASC
+        ksort($final, SORT_NUMERIC);
+
         $output = [];
+
         foreach ($final as $module) {
+
+            // ULB NAME ASC
+            ksort($module['ulbs'], SORT_STRING | SORT_FLAG_CASE);
+
             $module['ulbs'] = array_values($module['ulbs']);
             $output[] = $module;
         }
@@ -3201,6 +3215,74 @@ class ReportController extends Controller
     }
 
 
+    public function dashboardSummaryCards(Request $request)
+    {
+        try {
+
+            // 1. Active ULBs
+            $activeUlbs = DB::connection('pgsql_master')->table('ulb_masters')
+                ->where('active_status', true)
+                ->count();
+
+            // 2. Active Districts
+            $activeDistricts = DB::connection('pgsql_master')->table('district_masters')
+                ->where('status', true)
+                ->count();
+
+            // 3. Total Citizens
+            // If you have citizen table
+            $totalCitizens = DB::table('users')
+                ->where('suspended', false)
+                 ->where('user_type', 'ILIKE', '%Admin%')
+                ->count();
+
+            // OR if citizens are in users table with role/type
+            /*
+            $totalCitizens = DB::table('users')
+                ->where('user_type', 'CITIZEN')
+                ->where('suspended', false)
+                ->count();
+            */
+
+            // 4. Total ULB Members (All staff users)
+            $totalUlbMembers = DB::table('users')
+                ->where('suspended', false)
+                ->where('user_type', '!=', 'CITIZEN')
+                ->count();
+
+            $data = [
+                'active_ulbs' => $activeUlbs,
+                'active_districts' => $activeDistricts,
+                'total_citizens' => $totalCitizens,
+                'total_ulb_members' => $totalUlbMembers,
+            ];
+
+            return responseMsgs(
+                true,
+                "Dashboard Summary Cards",
+                $data,
+                2001,
+                "1.0",
+                responseTime(),
+                $request->getMethod(),
+                $request->deviceId
+            );
+
+        } catch (\Exception $e) {
+
+            return responseMsgs(
+                false,
+                $e->getMessage(),
+                "",
+                500,
+                "1.0",
+                responseTime(),
+                $request->getMethod(),
+                $request->deviceId
+            );
+        }
+    }
+        
 
 }
     
