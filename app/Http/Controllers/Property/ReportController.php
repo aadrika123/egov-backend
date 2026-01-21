@@ -3108,5 +3108,123 @@ class ReportController extends Controller
         }
     }
 
+    
+
+
+    /**
+     * | ULB Module Role Count Dashboard
+     */
+    public function ulbModuleRoleCount(Request $request)
+    {
+        try {
+            $request->validate([
+                'ulbId' => 'nullable|integer|exists:ulb_masters,id'
+            ]);
+
+            $ulbId = $request->ulbId;
+            $data = $this->getModuleWiseRoleCount($ulbId);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'ULB Module Role Count',
+                'data' => $data
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Unable to fetch role count data.',
+            ], 500);
+        }
+    }
+
+    private function getModuleWiseRoleCount($ulbId = null)
+    {
+        // Module to workflow mapping
+        $moduleWorkflows = [
+            'Property' => [3, 4, 5],
+            'Water' => [6],
+            'Trade' => [7],
+            'SWM' => [8],
+            'Fines' => [9],
+            'Advertisement' => [10],
+        ];
+
+        $sql = "
+            SELECT 
+                um.ulb_name,
+                um.id as ulb_id,
+                ww.id as workflow_id,
+                wr.role_name,
+                COUNT(DISTINCT wru.user_id) as role_count
+            FROM ulb_masters um
+            LEFT JOIN wf_workflows ww ON ww.ulb_id = um.id AND ww.is_suspended = false
+            LEFT JOIN wf_workflowrolemaps wrm ON wrm.workflow_id = ww.id AND wrm.is_suspended = false  
+            LEFT JOIN wf_roles wr ON wr.id = wrm.wf_role_id AND wr.is_suspended = false
+            LEFT JOIN wf_roleusermaps wru ON wru.wf_role_id = wr.id AND wru.is_suspended = false
+            LEFT JOIN users u ON u.id = wru.user_id AND u.suspended = false
+            WHERE ww.id IS NOT NULL AND wr.role_name IS NOT NULL
+        ";
+
+        if ($ulbId) {
+            $sql .= " AND um.id = $ulbId";
+        }
+
+        $sql .= "
+            GROUP BY um.ulb_name, um.id, ww.id, wr.role_name
+            HAVING COUNT(DISTINCT wru.user_id) > 0
+            ORDER BY um.ulb_name, ww.id, wr.role_name
+        ";
+
+        $results = DB::select($sql);
+        return $this->formatModuleWiseData($results, $moduleWorkflows);
+    }
+
+    private function formatModuleWiseData($results, $moduleWorkflows)
+    {
+        $moduleData = [];
+
+        foreach ($moduleWorkflows as $moduleName => $workflowIds) {
+            $moduleUlbs = [];
+            $ulbGroups = [];
+
+            // Group results by ULB for this module
+            foreach ($results as $row) {
+                if (in_array($row->workflow_id, $workflowIds)) {
+                    $ulbName = $row->ulb_name;
+                    
+                    if (!isset($ulbGroups[$ulbName])) {
+                        $ulbGroups[$ulbName] = [];
+                    }
+                    
+                    $ulbGroups[$ulbName][] = [
+                        'roleName' => $row->role_name,
+                        'count' => (int)$row->role_count
+                    ];
+                }
+            }
+
+            // Format ULB data for this module
+            foreach ($ulbGroups as $ulbName => $userCounts) {
+                $moduleUlbs[] = [
+                    'ulbName' => $ulbName,
+                    'userCount' => $userCounts
+                ];
+            }
+
+            // Only add module if it has data
+            if (!empty($moduleUlbs)) {
+                $moduleData[] = [
+                    'moduleName' => $moduleName,
+                    'ulbs' => $moduleUlbs
+                ];
+            }
+        }
+
+        return $moduleData;
+    }
+
+
+
 }
     
