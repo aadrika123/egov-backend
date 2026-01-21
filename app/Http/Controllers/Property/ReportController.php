@@ -3165,7 +3165,7 @@ class ReportController extends Controller
             ], 500);
         }
     }
-    
+
     private function formatModuleUlbUserData($rows)
     {
         $final = [];
@@ -3283,6 +3283,56 @@ class ReportController extends Controller
         }
     }
         
+    // Roles by ULB and Module
+    public function rolesByUlbAndModule(Request $request)
+    {
+        try {
+
+            $request->validate([
+                'ulbId' => 'required|integer|exists:ulb_masters,id',
+                'moduleId' => 'required|integer|exists:module_masters,id',
+            ]);
+
+            $ulbId = $request->ulbId;
+            $moduleId = $request->moduleId;
+
+            $rows = DB::connection('pgsql_master')
+                ->table('menu_roles as mr')
+                ->join('menu_roleusermaps as mrum', function ($join) {
+                    $join->on('mrum.menu_role_id', '=', 'mr.id')
+                        ->where('mrum.is_suspended', false);
+                })
+                ->join('users as u', function ($join) use ($ulbId) {
+                    $join->on('u.id', '=', 'mrum.user_id')
+                        ->where('u.suspended', false)
+                        ->where('u.ulb_id', $ulbId);
+                })
+                ->where('mr.is_suspended', false)
+                ->where('mr.module_id', $moduleId)
+                ->select([
+                    'mr.id as role_id',
+                    'mr.menu_role_name as role_name'
+                ])
+                ->distinct()
+                ->orderBy('mr.id')
+                ->get();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Role List by ULB & Module',
+                'data' => $rows
+            ]);
+
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+
 
 }
     
