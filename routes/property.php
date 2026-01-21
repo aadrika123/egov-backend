@@ -555,6 +555,7 @@ Route::controller(ReportController::class)->group(function () {
   Route::post('live-dashboard-data', 'liveDashboardData');
   Route::post('today-collection-dashboard', 'todayCollectionDashboard');
   Route::post('ulb-wise-count-dashboard', 'ulbWiseApplicationCount');
+  Route::post('ulb-module-role-count-dashboard', 'ulbModuleRoleCount');
 });
 // });
 
