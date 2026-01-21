@@ -3032,6 +3032,7 @@ class ReportController extends Controller
                     DB::raw('SUM(property_total_application) as property_applications'),
                     DB::raw('SUM(water_total_registration) as water_applications'),
                     DB::raw('SUM(swm_total_registration) as swm_applications'),
+                    DB::raw('SUM(fines_total_challan_generated) as fines_applications'),
                     DB::raw('SUM(rig_total_registration) as rig_applications'),
                     DB::raw('SUM(water_tanker_total_booking) as water_tanker_applications'),
                     DB::raw('SUM(septic_tanker_total_booking) as septic_tanker_applications'),
@@ -3065,6 +3066,7 @@ class ReportController extends Controller
                     $row->property_applications +
                     $row->water_applications +
                     $row->swm_applications +
+                    $row->fines_applications +
                     $row->rig_applications +
                     $row->water_tanker_applications +
                     $row->septic_tanker_applications +
@@ -3085,6 +3087,7 @@ class ReportController extends Controller
                         'property' => (int)$row->property_applications,
                         'water' => (int)$row->water_applications,
                         'swm' => (int)$row->swm_applications,
+                        'fines' => (int)$row->fines_applications,
                         'rig' => (int)$row->rig_applications,
                         'water_tanker' => (int)$row->water_tanker_applications,
                         'septic_tanker' => (int)$row->septic_tanker_applications,
