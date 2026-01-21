@@ -3025,83 +3025,60 @@ class ReportController extends Controller
         try {
 
             $query = DB::connection('pgsql_reports')
-                ->table('tbl_analytical_dhashboards')
+                ->table('tbl_analytical_dhashboards as t')
                 ->select([
-                    'ulb_id',
+                    't.ulb_id',
                     'um.ulb_name',
-                    DB::raw('SUM(property_total_application) as property_applications'),
-                    DB::raw('SUM(water_total_registration) as water_applications'),
-                    DB::raw('SUM(swm_total_registration) as swm_applications'),
-                    DB::raw('SUM(fines_total_challan_generated) as fines_applications'),
-                    DB::raw('SUM(rig_total_registration) as rig_applications'),
-                    DB::raw('SUM(water_tanker_total_booking) as water_tanker_applications'),
-                    DB::raw('SUM(septic_tanker_total_booking) as septic_tanker_applications'),
-                    DB::raw('SUM(pet_total_registration) as pet_applications'),
-                    DB::raw('SUM(public_transport_total_bill_cut) as public_transport_applications'),
-                    DB::raw('SUM(advertisement_total_registration) as advertisement_applications'),
-                    DB::raw('SUM(trade_total_registration) as trade_applications'),
-                    DB::raw('SUM(municipal_rental_total_shops) as municipal_rental_applications'),
-                    DB::raw('SUM(marriage_total_registration) as marriage_applications'),
-                    DB::raw('SUM(parking_total_bill_cut) as parking_applications'),
-                    DB::raw('SUM(lodge_total_registration) as lodge_applications'),
-                ])
-                ->leftJoin('ulb_masters as um', 'um.id', '=', 'tbl_analytical_dhashboards.ulb_id')
-                ->groupBy('ulb_id','um.ulb_name');
 
-            // -----------------------------
-            // OPTIONAL: Financial Year
-            // -----------------------------
+                    DB::raw('SUM(t.property_total_application) as property_applications'),
+                    DB::raw('SUM(t.water_total_registration) as water_applications'),
+                    DB::raw('SUM(t.swm_total_registration) as swm_applications'),
+                    DB::raw('SUM(t.fines_total_challan_generated) as fines_applications'),
+                    DB::raw('SUM(t.rig_total_registration) as rig_applications'),
+                    DB::raw('SUM(t.water_tanker_total_booking) as water_tanker_applications'),
+                    DB::raw('SUM(t.septic_tanker_total_booking) as septic_tanker_applications'),
+                    DB::raw('SUM(t.pet_total_registration) as pet_applications'),
+                    DB::raw('SUM(t.public_transport_total_bill_cut) as public_transport_applications'),
+                    DB::raw('SUM(t.advertisement_total_registration) as advertisement_applications'),
+                    DB::raw('SUM(t.trade_total_registration) as trade_applications'),
+                    DB::raw('SUM(t.municipal_rental_total_shops) as municipal_rental_applications'),
+                    DB::raw('SUM(t.marriage_total_registration) as marriage_applications'),
+                    DB::raw('SUM(t.parking_total_bill_cut) as parking_applications'),
+                    DB::raw('SUM(t.lodge_total_registration) as lodge_applications'),
+                ])
+                ->leftJoin('ulb_masters as um', 'um.id', '=', 't.ulb_id')
+                ->groupBy('t.ulb_id', 'um.ulb_name');
+
+            // Optional Financial Year Filter
             if ($request->filled('financial_year')) {
-                $query->where('financial_year', $request->financial_year);
+                $query->where('t.financial_year', $request->financial_year);
             }
 
             $rows = $query->get();
 
-            // -----------------------------
-            // WRAP DATA BY ULB
-            // -----------------------------
+            // Transform data
             $data = $rows->map(function ($row) {
-
-                $totalApplications =
-                    $row->property_applications +
-                    $row->water_applications +
-                    $row->swm_applications +
-                    $row->fines_applications +
-                    $row->rig_applications +
-                    $row->water_tanker_applications +
-                    $row->septic_tanker_applications +
-                    $row->pet_applications +
-                    $row->public_transport_applications +
-                    $row->advertisement_applications +
-                    $row->trade_applications +
-                    $row->municipal_rental_applications +
-                    $row->marriage_applications +
-                    $row->parking_applications +
-                    $row->lodge_applications;
-
                 return [
-                    'ulb_id' => $row->ulb_id,
+                    'ulb_id'   => $row->ulb_id,
                     'ulb_name' => $row->ulb_name,
 
                     'applications' => [
-                        'property' => (int)$row->property_applications,
-                        'water' => (int)$row->water_applications,
-                        'swm' => (int)$row->swm_applications,
-                        'fines' => (int)$row->fines_applications,
-                        'rig' => (int)$row->rig_applications,
-                        'water_tanker' => (int)$row->water_tanker_applications,
-                        'septic_tanker' => (int)$row->septic_tanker_applications,
-                        'pet' => (int)$row->pet_applications,
-                        'public_transport' => (int)$row->public_transport_applications,
-                        'advertisement' => (int)$row->advertisement_applications,
-                        'trade' => (int)$row->trade_applications,
-                        'municipal_rental' => (int)$row->municipal_rental_applications,
-                        'marriage' => (int)$row->marriage_applications,
-                        'parking' => (int)$row->parking_applications,
-                        'lodge' => (int)$row->lodge_applications,
+                        'property'            => (int) $row->property_applications,
+                        'water'               => (int) $row->water_applications,
+                        'swm'                 => (int) $row->swm_applications,
+                        'fines'               => (int) $row->fines_applications,
+                        'rig'                 => (int) $row->rig_applications,
+                        'water_tanker'        => (int) $row->water_tanker_applications,
+                        'septic_tanker'       => (int) $row->septic_tanker_applications,
+                        'pet'                 => (int) $row->pet_applications,
+                        'public_transport'    => (int) $row->public_transport_applications,
+                        'advertisement'       => (int) $row->advertisement_applications,
+                        'trade'               => (int) $row->trade_applications,
+                        'municipal_rental'    => (int) $row->municipal_rental_applications,
+                        'marriage'            => (int) $row->marriage_applications,
+                        'parking'             => (int) $row->parking_applications,
+                        'lodge'               => (int) $row->lodge_applications,
                     ],
-
-                    'total_applications' => $totalApplications
                 ];
             });
 
@@ -3130,8 +3107,6 @@ class ReportController extends Controller
             );
         }
     }
-
-
 
 }
     
