@@ -3028,6 +3028,7 @@ class ReportController extends Controller
                 ->table('tbl_analytical_dhashboards')
                 ->select([
                     'ulb_id',
+                    'um.ulb_name',
                     DB::raw('SUM(property_total_application) as property_applications'),
                     DB::raw('SUM(water_total_registration) as water_applications'),
                     DB::raw('SUM(swm_total_registration) as swm_applications'),
@@ -3043,7 +3044,8 @@ class ReportController extends Controller
                     DB::raw('SUM(parking_total_bill_cut) as parking_applications'),
                     DB::raw('SUM(lodge_total_registration) as lodge_applications'),
                 ])
-                ->groupBy('ulb_id');
+                ->leftJoin('ulb_masters as um', 'um.id', '=', 'tbl_analytical_dhashboards.ulb_id')
+                ->groupBy('ulb_id','um.ulb_name');
 
             // -----------------------------
             // OPTIONAL: Financial Year
@@ -3077,6 +3079,7 @@ class ReportController extends Controller
 
                 return [
                     'ulb_id' => $row->ulb_id,
+                    'ulb_name' => $row->ulb_name,
 
                     'applications' => [
                         'property' => (int)$row->property_applications,
@@ -3128,3 +3131,4 @@ class ReportController extends Controller
 
 
 }
+    
