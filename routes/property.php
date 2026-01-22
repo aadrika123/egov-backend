@@ -51,6 +51,10 @@ use App\Http\Controllers\Property\PropertyMutationController;
  * | Property Module by Anshu Kumar from - 11/10/2022
  * ----------------------------------------------------------------------------------------
  */
+    
+  Route::get('/health-check', function () {
+      return response()->json(['status' => 'ok']);
+  });
 
 Route::post('api-test', function () {
   return "Welcome to Property Module";
@@ -68,7 +72,6 @@ Route::group(['middleware' => ['json.response', 'auth_maker', 'apilogger']], fun
     Route::post('saf/apply', 'applySafv1');                                 // Applying Saf Route                                                   #API_ID = 010101
     Route::post('saf/gb-apply', 'applyGbSaf');                            // Applying GB Saf                                                     #API_ID = 010102
   });
-
 
 
   Route::controller(ActiveSafController::class)->group(function () {
