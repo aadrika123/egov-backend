@@ -16,7 +16,9 @@ use App\Http\Controllers\Dashboard\StateDashboardController;
  * | Jsk Controller
      Serial No : 01
  */
-
+  Route::get('/health-check', function () {
+      return response()->json(['status' => 'ok']);
+  });
 
 /**
  * | State Dashboard

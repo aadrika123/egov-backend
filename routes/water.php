@@ -20,6 +20,10 @@ use Illuminate\Support\Facades\Route;
  * | Created By-Anshu Kumar
  */
 
+  Route::get('/health-check', function () {
+      return response()->json(['status' => 'ok']);
+  });
+
 Route::post('/apply-new-connection', function () {
     dd('Welcome to simple Water route file');
 });

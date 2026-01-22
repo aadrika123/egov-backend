@@ -32,6 +32,11 @@ use Illuminate\Http\Request;
 |--------------------------------------------------------------------------
 
 */
+
+  Route::get('/health-check', function () {
+      return response()->json(['status' => 'ok']);
+  });
+  
 Route::group(['middleware' => ['auth:sanctum','json.response','expireBearerToken','request_logger']], function () {
  
     Route::post('test',[BugController::class,'test']);
