@@ -33,7 +33,7 @@ use Illuminate\Http\Request;
 
 */
 
-  Route::get('/health-check', function () {
+  Route::get('bugs/health-check', function () {
       return response()->json(['status' => 'ok']);
   });
   
