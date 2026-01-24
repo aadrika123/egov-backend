@@ -1901,7 +1901,7 @@ class MasterReferenceController extends Controller
             "id" => "required",
             'key' => 'required',
             "assetName" => "required",
-            'assetFile' => 'required|mimes:pdf,jpeg,png,jpg',
+            'assetFile' => 'required|mimes:pdf,jpeg,png,jpg,webp',
             "ulbId" => "nullable"
         ]);
         try {
