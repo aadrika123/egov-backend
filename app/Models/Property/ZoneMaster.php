@@ -15,7 +15,7 @@ class ZoneMaster extends Model
      */
     public function getZone($ulbId)
     {
-        return ZoneMaster::on('pgsql::read')->select('id', 'zone')
+        return ZoneMaster::select('id', 'zone')
             ->where('ulb_id', $ulbId)
             ->get();
     }
