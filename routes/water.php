@@ -80,6 +80,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
         Route::post('admin/application/je-site-details', 'getJeSiteDetails');                           // Workflow/Admin
         Route::post('admin/application/online-technical-inspection', 'onlineSiteInspection');           // Workflow
         Route::post('admin/application/technical-inspection-details', 'getTechnicalInsDetails');        // Workflow
+        Route::post('consumer-info-watsapp-chat', 'ConsumerInfoWatsappChat');        
 
     });
 
