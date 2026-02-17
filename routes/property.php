@@ -278,7 +278,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker', 'apilogger']], fun
   Route::controller(PropertyDetailsController::class)->group(function () {
     Route::post('get-filter-application-details', 'applicationsListByKey');       #API_ID = 011301
     // unauth temperary
-    // Route::post('get-filter-property-details', 'propertyListByKey');              #API_ID = 011302
+    Route::post('get-filter-property-details', 'propertyListByKey');              #API_ID = 011302
     Route::get('get-list-saf', 'getListOfSaf');                                   #API_ID = 011303                   
     Route::post('active-application/get-user-details', 'getUserDetails');         #API_ID = 011304        
     Route::post('get-Property-Geo-Tags', 'getPropertyGeoTag');         #API_ID = 011306        
