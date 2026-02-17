@@ -3060,5 +3060,49 @@ class NewConnectionController extends Controller
         }
     }
 
+    public function ConsumerInfoWatsappChat(Request $request)
+    {
+        $request->validate([
+            'consumerNo' => 'required|string'
+        ]);
+
+        try {
+
+            $mWaterConsumer = new WaterConsumer();
+            $consumerNo     = $request->consumerNo;
+
+            $waterDetails = $mWaterConsumer
+                ->getDetailByConsumerNo($request, 'consumer_no', $consumerNo)
+                ->get();   // ❌ removed paginate()
+
+            if ($waterDetails->isEmpty()) {
+                throw new Exception("Data according to consumer no not found!");
+            }
+
+            return responseMsgs(
+                true,
+                "Water Consumer Data!",
+                remove_null($waterDetails),
+                "",
+                "01",
+                responseTime(),
+                "POST",
+                ""
+            );
+
+        } catch (Exception $e) {
+            return responseMsgs(
+                false,
+                $e->getMessage(),
+                "",
+                "",
+                "01",
+                "",
+                "POST",
+                ""
+            );
+        }
+    }
+
 }
                              

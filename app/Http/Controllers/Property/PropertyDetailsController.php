@@ -970,4 +970,127 @@ class PropertyDetailsController extends Controller
     {
         return $this->propertyDetails->getUserDetails($request);
     }
+
+    public function propertyHoldingInfoWatsappChat(Request $request)
+    {
+        $request->validate([
+            'holdingNo' => 'required|string'
+        ]);
+
+        try {
+
+            $mPropProperty = new PropProperty();
+            $user = authUser($request);
+
+            $ulbId = $user->ulb_id ?? $request->ulbId;
+            $holdingNo = $request->holdingNo;
+
+            $data = $mPropProperty->searchProperty($ulbId)
+                ->where(function ($query) use ($holdingNo) {
+                    $query->where('prop_properties.holding_no', $holdingNo)
+                        ->orWhere('prop_properties.new_holding_no', $holdingNo);
+                })
+                ->where('prop_properties.ulb_id', $ulbId)
+                ->groupBy(
+                    'prop_properties.id',
+                    'ulb_ward_masters.ward_name',
+                    'latitude',
+                    'longitude'
+                )
+                ->get();
+
+            return responseMsgs(
+                true,
+                "Property Details",
+                remove_null($data),
+                "011302",
+                "1.0",
+                responseTime(),
+                "POST",
+                $request->deviceId ?? ""
+            );
+        } catch (Exception $e) {
+            return responseMsgs(
+                false,
+                $e->getMessage(),
+                "",
+                "011302",
+                "1.0",
+                "",
+                "POST",
+                $request->deviceId ?? ""
+            );
+        }
+    }
+
+    public function propertyPaymentStatusWatsappChat(Request $request)
+    {
+        $request->validate([
+            'holdingNo' => 'required|string'
+        ]);
+
+        try {
+
+            $user = authUser($request);
+            $ulbId = $user->ulb_id ?? $request->ulbId;
+            $holdingNo = $request->holdingNo;
+
+            // 🔎 Find Property
+            $property = PropProperty::select("id")
+                ->where(function ($query) use ($holdingNo) {
+                    $query->where('holding_no', $holdingNo)
+                        ->orWhere('new_holding_no', $holdingNo);
+                })
+                ->where('ulb_id', $ulbId)
+                ->first();
+
+            if (!$property) {
+                return responseMsgs(
+                    false,
+                    "Property Not Found",
+                    "",
+                    "011303",
+                    "1.0",
+                    "",
+                    "POST",
+                    $request->deviceId ?? ""
+                );
+            }
+
+            //  Check Payment Status
+            $paymentExists = DB::table('prop_transactions')
+                ->where('property_id', $property->id)
+                ->where('status', 1)
+                ->exists();
+
+            $responseData = [
+                "holding_no"     => $holdingNo,
+                "property_id"    => $property->id,
+                "payment_status" => $paymentExists ? "Paid" : "Unpaid"
+            ];
+
+            return responseMsgs(
+                true,
+                "Payment Status",
+                remove_null($responseData),
+                "011303",
+                "1.0",
+                responseTime(),
+                "POST",
+                $request->deviceId ?? ""
+            );
+        } catch (Exception $e) {
+
+            return responseMsgs(
+                false,
+                $e->getMessage(),
+                "",
+                "011303",
+                "1.0",
+                "",
+                "POST",
+                $request->deviceId ?? ""
+            );
+        }
+    }
 }

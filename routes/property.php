@@ -286,6 +286,8 @@ Route::group(['middleware' => ['json.response', 'auth_maker', 'apilogger']], fun
 
     // added by alok
     // Route::post('details/get-owner-details', 'getOwnerDetailsInfo');  #API_ID = 011305
+    Route::post('propertyHoldingInfoWatsappChat', 'propertyHoldingInfoWatsappChat');
+    Route::post('propertyPaymentStatusWatsappChat', 'propertyPaymentStatusWatsappChat');
   });
 
 
