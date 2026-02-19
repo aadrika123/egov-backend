@@ -314,6 +314,8 @@ Route::group(['middleware' => ['json.response', 'auth_maker', 'apilogger']], fun
     Route::post('legacy-payment-holding', 'legacyPaymentHolding');           //Legacy Property Payment  water/caretaker-otp                                  #API_ID = 011508
     Route::post('generate-orderId', 'generateOrderIdv1');                    //Legacy Property Payment                                    #API_ID = 011508
     Route::post('citizen/property-water-dtls', 'citizenPropWaterDtls');           #API_ID = 011305   
+    Route::post('get-holding-imp-dtls', 'getHoldingImpDtls');           #API_ID = 011305   
+    Route::get('demand-pdf/{propertyId}', 'generateDemandPdf');           #API_ID = 011511   
   });
 
   /**
