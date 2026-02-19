@@ -59,6 +59,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
+use PDF;
 
 class HoldingTaxController extends Controller
 {
@@ -2927,4 +2928,91 @@ class HoldingTaxController extends Controller
             return responseMsgs(false, $e->getMessage(), "", "", "01", "ms", "POST", "");
         }
     }
+
+    /**
+     * | Get Holding Demand Details
+     * | Serial No : 10
+     */
+    public function getHoldingImpDtls(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            ['holdingNo' => 'required']
+        );
+
+        if ($validated->fails()) {
+            return validationError($validated);
+        }
+
+        try {
+            $property = DB::table('prop_properties')
+                ->where('holding_no', $req->holdingNo)
+                ->first();
+
+            if (!$property) {
+                throw new Exception("Property not found!");
+            }
+
+            $currentDemand = DB::table('prop_demands')
+                ->where('property_id', $property->id)
+                ->where('paid_status', 0)
+                ->orderBy('due_date', 'desc')
+                ->first();
+
+            $arrears = DB::table('prop_demands')
+                ->where('property_id', $property->id)
+                ->where('paid_status', 0)
+                ->where('due_date', '<', now())
+                ->sum('amount');
+
+            $data = [
+                'current_demand_amount' => $currentDemand->amount ?? 0,
+                'due_date' => $currentDemand->due_date ?? null,
+                'arrears' => $arrears ?? 0,
+                'pdf_demand_statement' => url('/api/property/demand-pdf/' . $property->id),
+                'payment_link' => url('/api/property/payment/' . $property->id)
+            ];
+
+            return responseMsgs(true, "Holding Demand Details", $data, "", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "", "01", "ms", "POST", "");
+        }
+    }
+
+    /**
+     * | Generate Demand PDF
+     * | Serial No : 11
+     */
+    public function generateDemandPdf($propertyId)
+    {
+        try {
+            $property = DB::table('prop_properties')->where('id', $propertyId)->first();
+            if (!$property) {
+                throw new Exception("Property not found!");
+            }
+
+            $demands = DB::table('prop_demands')
+                ->where('property_id', $propertyId)
+                ->where('paid_status', 0)
+                ->orderBy('due_date')
+                ->get();
+
+            $ulb = DB::table('ulb_masters')->where('id', $property->ulb_id)->first();
+
+            $data = [
+                'property' => $property,
+                'demands' => $demands,
+                'ulb' => $ulb,
+                'totalAmount' => $demands->sum('amount'),
+                'generatedDate' => now()->format('d-m-Y')
+            ];
+
+            $pdf = PDF::loadView('pdf.demand-statement', $data);
+            return $pdf->download('demand-statement-' . $property->holding_no . '.pdf');
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "", "01", "ms", "GET", "");
+        }
+    }
+
+
 }
