@@ -2965,17 +2965,96 @@ class HoldingTaxController extends Controller
                 ->where('due_date', '<', now())
                 ->sum('amount');
 
+            $totalDemand = DB::table('prop_demands')
+                ->where('property_id', $property->id)
+                ->where('paid_status', 0)
+                ->sum('amount');
+
             $data = [
+                'property_id' => $property->id,
+                'holding_no' => $property->holding_no,
                 'current_demand_amount' => $currentDemand->amount ?? 0,
                 'due_date' => $currentDemand->due_date ?? null,
                 'arrears' => $arrears ?? 0,
+                'total_payable' => $totalDemand ?? 0,
                 'pdf_demand_statement' => url('/api/property/demand-pdf/' . $property->id),
-                'payment_link' => url('/api/property/payment/' . $property->id)
+                'payment_link' => url('/api/property/initiate-payment/' . $property->id)
             ];
 
             return responseMsgs(true, "Holding Demand Details", $data, "", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "", "01", "ms", "POST", "");
+        }
+    }
+
+    /**
+     * | Initiate Payment for Property
+     * | Serial No : 12
+     */
+    public function initiatePayment($propertyId)
+    {
+        try {
+            $req = new Request(['propId' => $propertyId]);
+            $demand = $this->getHoldingDues($req);
+            
+            if ($demand->original['status'] == false) {
+                throw new Exception($demand->original['message']);
+            }
+
+            $demandData = $demand->original['data'];
+            if (!$demandData) {
+                throw new Exception("Demand Not Available");
+            }
+
+            $amount = $demandData['duesList']['payableAmount'];
+            $propProperties = new PropProperty();
+            $propDtls = $propProperties->getPropById($propertyId);
+
+            $orderReq = new Request([
+                'propId' => $propertyId,
+                'amount' => $amount,
+                'workflowId' => '0',
+                'departmentId' => 1,
+                'ulbId' => $propDtls->ulb_id,
+                'id' => $propertyId,
+                'ghostUserId' => 0
+            ]);
+
+            DB::beginTransaction();
+            $orderDetails = $this->saveGenerateOrderid($orderReq);
+
+            $demands = $demandData['duesList'];
+            $demandDetails = $demandData['demandList'];
+
+            $mPropRazorPayRequest = new PropRazorpayRequest();
+            $postRazorPayPenaltyRebate = new PostRazorPayPenaltyRebate;
+
+            $razorPayRequest = [
+                'order_id' => $orderDetails['orderId'],
+                'prop_id' => $propertyId,
+                'from_fyear' => $demands['dueFromFyear'],
+                'from_qtr' => $demands['dueFromQtr'],
+                'to_fyear' => $demands['dueToFyear'],
+                'to_qtr' => $demands['dueToQtr'],
+                'demand_amt' => $demands['totalDues'],
+                'ulb_id' => $propDtls->ulb_id,
+                'ip_address' => getClientIpAddress(),
+                'demand_list' => json_encode($demandDetails, true),
+                'amount' => $amount,
+                'advance_amount' => $demands['advanceAmt']
+            ];
+            $storedRazorPayReqs = $mPropRazorPayRequest->store($razorPayRequest);
+
+            $postRazorPayPenaltyRebate->_propId = $propertyId;
+            $postRazorPayPenaltyRebate->_razorPayRequestId = $storedRazorPayReqs['razorPayReqId'];
+            $postRazorPayPenaltyRebate->postRazorPayPenaltyRebates($demands);
+
+            DB::commit();
+
+            return responseMsgs(true, "Payment Initiated", $orderDetails, "", "1.0", "", "GET", "");
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), "", "", "01", "ms", "GET", "");
         }
     }
 

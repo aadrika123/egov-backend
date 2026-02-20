@@ -316,6 +316,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker', 'apilogger']], fun
     Route::post('citizen/property-water-dtls', 'citizenPropWaterDtls');           #API_ID = 011305   
     Route::post('get-holding-imp-dtls', 'getHoldingImpDtls');           #API_ID = 011305   
     Route::get('demand-pdf/{propertyId}', 'generateDemandPdf');           #API_ID = 011511   
+    Route::get('initiate-payment/{propertyId}', 'initiatePayment');           #API_ID = 011512   
   });
 
   /**
