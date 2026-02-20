@@ -3051,7 +3051,12 @@ class HoldingTaxController extends Controller
 
             DB::commit();
 
-            return responseMsgs(true, "Payment Initiated", $orderDetails, "", "1.0", "", "GET", "");
+            return view('payment-page', [
+                'orderId' => $orderDetails['orderId'],
+                'amount' => $amount,
+                'propertyId' => $propertyId,
+                'holdingNo' => $propDtls->holding_no
+            ]);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsgs(false, $e->getMessage(), "", "", "01", "ms", "GET", "");
