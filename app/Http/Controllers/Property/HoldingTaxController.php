@@ -2946,7 +2946,10 @@ class HoldingTaxController extends Controller
 
         try {
             $property = DB::table('prop_properties')
-                ->where('holding_no', $req->holdingNo)
+                ->leftJoin('prop_owners', 'prop_properties.id', '=', 'prop_owners.property_id')
+                ->where('prop_properties.holding_no', $req->holdingNo)
+                ->where('prop_owners.status', 1)
+                ->select('prop_properties.*', 'prop_owners.owner_name', 'prop_owners.mobile_no as owner_mobile')
                 ->first();
 
             if (!$property) {
@@ -2971,14 +2974,16 @@ class HoldingTaxController extends Controller
                 ->sum('amount');
 
             $data = [
-                'property_id' => $property->id,
-                'holding_no' => $property->holding_no,
+                'property_id'           => $property->id,
+                'holding_no'            => $property->holding_no,
+                'owner_name'            => $property->owner_name ?? 'N/A',
+                'owner_mobile'          => $property->owner_mobile ?? 'N/A',
                 'current_demand_amount' => $currentDemand->amount ?? 0,
-                'due_date' => $currentDemand->due_date ?? null,
-                'arrears' => $arrears ?? 0,
-                'total_payable' => $totalDemand ?? 0,
-                'pdf_demand_statement' => url('/api/property/demand-pdf/' . $property->id),
-                'payment_link' => url('/api/property/initiate-payment/' . $property->id)
+                'due_date'              => $currentDemand->due_date ?? null,
+                'arrears'               => $arrears ?? 0,
+                'total_payable'         => $totalDemand ?? 0,
+                'pdf_demand_statement'  => url('/api/property/demand-pdf/' . $property->id),
+                'payment_link'          => url('/api/property/initiate-payment/' . $property->id),
             ];
 
             return responseMsgs(true, "Holding Demand Details", $data, "", "1.0", "", "POST", $req->deviceId ?? "");
