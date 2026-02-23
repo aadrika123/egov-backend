@@ -289,9 +289,8 @@ class PaymentRepository implements iPayment
     public function gettingWebhookDetails(Request $request)
     {
         try {
-            # creating json of webhook data
-            // $paymentId = $request->payload['payment']['entity']['id'];
-            // Storage::disk('public')->put($paymentId . '.json', json_encode($request->all()));
+            # creating json of webhook data for debugging
+            Storage::disk('public')->put('webhook_' . time() . '.json', json_encode($request->all()));
 
             if (!empty($request)) {
                 $mWebhookDetails = $this->collectWebhookDetails($request);
@@ -299,7 +298,8 @@ class PaymentRepository implements iPayment
             }
             return responseMsg(false, "WEBHOOK DATA NOT ACCUIRED!", "");
         } catch (Exception $error) {
-            return responseMsg(false, "OPERATIONAL ERROR!", $error->getMessage());
+            Storage::disk('public')->put('webhook_error_' . time() . '.txt', $error->getMessage() . ' Line: ' . $error->getLine() . ' File: ' . $error->getFile());
+            return responseMsg(false, "OPERATIONAL ERROR!", $error->getMessage() . ' at line ' . $error->getLine());
         }
     }
 
@@ -622,15 +622,15 @@ class PaymentRepository implements iPayment
             $webhookEntity  = "";
             $contains       = "";
             $notes          = "";
-            $depatmentId    = $request['departmentId'];  // ModuleId
-            $status         = $request['status'];
-            $captured       = $request['captured'];
-            $aCard          = $request['card_id'];
+            $depatmentId    = $request['departmentId'] ?? null;  // ModuleId
+            $status         = $request['status'] ?? null;
+            $captured       = $request['captured'] ?? 0;
+            $aCard          = $request['card_id'] ?? null;
             $amount         = (int) ($request['amount'] ?? 0);
 
             $actulaAmount = $amount;
             $firstKey = "";
-            $actualTransactionNo = $this->generatingTransactionId($request['ulb_id']);
+            $actualTransactionNo = $this->generatingTransactionId($request['ulb_id'] ?? 1);
 
             # Save card details 
             if (!is_null($aCard)) {
@@ -647,17 +647,17 @@ class PaymentRepository implements iPayment
             // }
             # data transfer to the respective module's database 
             $transfer = [
-                'paymentMode'   => $webhookData->payment_method,
-                'id'            => $request['applicationId'],
+                'paymentMode'   => $request['payment_method'] ?? 'ONLINE',
+                'id'            => $request['applicationId'] ?? null,
                 'amount'        => $actulaAmount,
-                'workflowId'    => $webhookData->workflow_id,
+                'workflowId'    => $request['workflow_id'] ?? 0,
                 'transactionNo' => $actualTransactionNo,
-                'userId'        => $webhookData->user_id,
-                'ulbId'         => $request['ulb_id'],
+                'userId'        => $request['user_id'] ?? null,
+                'ulbId'         => $request['ulb_id'] ?? null,
                 'departmentId'  => $depatmentId,                        //ModuleId
-                'orderId'       => $webhookData->payment_order_id,
-                'paymentId'     => $webhookData->payment_id,
-                'tranDate'      => $request['created_at'],
+                'orderId'       => $request['payment_order_id'] ?? null,
+                'paymentId'     => $request['payment_id'] ?? null,
+                'tranDate'      => $request['created_at'] ?? now(),
                 'gatewayType'   => 1,                                   // Razorpay Id
                 'citizenId'     => $request['citizenId']  ?? ""
             ];
@@ -665,13 +665,13 @@ class PaymentRepository implements iPayment
             # conditionaly upadting the request data
             $responseData = [];
             if ($captured == 1) {
-                PaymentRequest::where('razorpay_order_id', $webhookData->payment_order_id)
+                PaymentRequest::where('razorpay_order_id', $request['payment_order_id'] ?? '')
                     ->update(['payment_status' => 1]);
 
                 # calling function for the modules                  
                 switch ($depatmentId) {
                     case ('1'):
-                        $refpropertyType = $webhookData->workflow_id;
+                        $refpropertyType = $request['workflow_id'] ?? 0;
                         if ($refpropertyType == 0) {
                             $objHoldingTaxController = new HoldingTaxController($this->_safRepo);
                             $transfer = new ReqPayment($transfer);
