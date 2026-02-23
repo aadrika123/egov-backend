@@ -344,7 +344,7 @@ class PaymentRepository implements iPayment
             # Extract variables from webhook payload
             $departmentId       = $request['departmentId'] ?? null;    // Module ID
             $ulbId              = $request['ulb_id'] ?? null;
-            $amount             = $request['amount'] ?? 0;
+            $amount             = (int) ($request['amount'] ?? 0);
             $applicationId      = $request['applicationId'] ?? null;
             $workflowId         = $webhookData->workflow_id ?? 0;
             $userId             = $webhookData->user_id ?? null;
@@ -626,7 +626,7 @@ class PaymentRepository implements iPayment
             $status         = $request['status'];
             $captured       = $request['captured'];
             $aCard          = $request['card_id'];
-            $amount         = $request['amount'];
+            $amount         = (int) ($request['amount'] ?? 0);
 
             $actulaAmount = $amount;
             $firstKey = "";
