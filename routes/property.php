@@ -983,5 +983,5 @@ Route::controller(ActiveSafController::class)->group(function () {
 Route::controller(HoldingTaxController::class)->group(function () {
   Route::post('prop-payment-receipt', 'propPaymentReceipt');               // Generate payment Receipt              #API_ID = 011302        
   Route::post('prop-water-payment-receipt', 'propPaymentReceiptv1');      // Generate payment Receipt              #API_ID = 011302        
-  Route::post('get-tran-by-holding-no', 'getTransactionsByHoldingNo');           
+  Route::post('get-tran-by-holding-no', 'getTransactionsByHoldingNo');    // This api is created for whatsap chat-bot        
 });
