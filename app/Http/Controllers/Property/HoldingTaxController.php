@@ -3103,5 +3103,42 @@ class HoldingTaxController extends Controller
         }
     }
 
+    /**
+     * | Get Transaction Numbers by Holding No
+     * | Serial No : 13
+     */
+
+    public function getTransactionsByHoldingNo(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            ['holdingNo' => 'required']
+        );
+
+        if ($validated->fails()) {
+            return validationError($validated);
+        }
+
+        try {
+            $property = DB::table('prop_properties')
+                ->where('holding_no', $req->holdingNo)
+                ->first();
+
+            if (!$property) {
+                throw new Exception("Property not found!");
+            }
+
+            $transactions = DB::table('prop_transactions')
+                ->where('property_id', $property->id)
+                ->select('tran_no', 'tran_date', 'amount', 'payment_mode')
+                ->orderBy('id', 'desc')
+                ->limit(3)
+                ->get();
+
+            return responseMsgs(true, "Transaction Numbers", $transactions, "", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "", "01", "ms", "POST", "");
+        }
+    }
 
 }
