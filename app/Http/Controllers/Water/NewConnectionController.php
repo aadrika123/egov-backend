@@ -64,6 +64,7 @@ use Exception;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Unique;
 use Ramsey\Collection\Collection as CollectionCollection;
@@ -1187,6 +1188,13 @@ class NewConnectionController extends Controller
             $getWaterDetails = $mWaterApplication->getWaterApplicationsDetails($applicationId);
             $refImageName = $req->docRefName;
             $refImageName = $getWaterDetails->id . '-' . str_replace(' ', '_', $refImageName);
+            
+            // Add ulb_id and module_id to request
+            $req->merge([
+                'ulb_id' => $getWaterDetails->ulb_id,
+                'module_id' => $refmoduleId
+            ]);
+            
             // $imageName          = $docUpload->upload($refImageName, $document, $relativePath);
             $docDetail = $docUpload->checkDoc($req);
             // if ($docDetail->original['status'] == false)
@@ -1255,7 +1263,30 @@ class NewConnectionController extends Controller
             }
 
             $this->commit();
-            return responseMsgs(true, "Document Uploadation Successful", "", "", "1.0", "", "POST", $req->deviceId ?? "");
+            
+            // Get document URL
+            $dmsUrl = Config::get('module-constants.DMS_URL');
+            $apiUrl = "$dmsUrl/backend/document/view-by-reference";
+            $docUrl = null;
+            
+            if (isset($docDetail['data']['ReferenceNo'])) {
+                $response = Http::withHeaders([
+                    "token" => "x6MUrMw0mI5ILhco1pJIbtP0xt0jEUZxNsrpNHiO55ppf8YkEn",
+                ])->post($apiUrl, ['referenceNo' => $docDetail['data']['ReferenceNo']]);
+                
+                if ($response->successful()) {
+                    $docUrl = $response->json()['data']['fullPath'] ?? null;
+                }
+            }
+            
+            $responseData = [
+                'uniqueId' => $docDetail['data']['uniqueId'] ?? null,
+                'referenceNo' => $docDetail['data']['ReferenceNo'] ?? null,
+                'docCode' => $req->docCode,
+                'docCategory' => $req->docCategory,
+                'docUrl' => $docUrl,
+            ];
+            return responseMsgs(true, "Document Uploadation Successful", $responseData, "", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             $this->rollback();
             return responseMsgs(false, $e->getMessage(), "", "", "1.0", "", "POST", $req->deviceId ?? "");
