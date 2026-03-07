@@ -95,14 +95,20 @@ class DocUpload
             $dmsUrl = Config::get('module-constants.DMS_URL');
             $api = "$dmsUrl/backend/document/upload";
 
+            $postData = ["tags" => $filename];
+            if ($request->ulb_id) {
+                $postData['ulb_id'] = $request->ulb_id;
+            }
+            if ($request->module_id) {
+                $postData['module_id'] = $request->module_id;
+            }
+
             $response = Http::withHeaders([
                 "x-digest"      => $hashedFile,
                 "token"         => "8Ufn6Jio6Obv9V7VXeP7gbzHSyRJcKluQOGorAD58qA1IQKYE0",
                 "folderPathId"  => 1
             ])->attach('file', file_get_contents($filePath), $filename)
-            ->post($api, [
-                "tags" => $filename
-            ]);
+            ->post($api, $postData);
 
             if ($response->successful()) {
                 return json_decode($response->body(), true);
@@ -169,8 +175,13 @@ class DocUpload
             $postData = [
                 "file" => $file,
                 "tags" => $filename,
-                // "reference" => 425
             ];
+            if ($request->ulb_id) {
+                $postData['ulb_id'] = $request->ulb_id;
+            }
+            if ($request->module_id) {
+                $postData['module_id'] = $request->module_id;
+            }
             $response = Http::withHeaders(
                 // $header->toArray()
                 [
