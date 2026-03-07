@@ -430,7 +430,10 @@ class SafCalculation
         $refParamRentalRate = json_decode(Redis::get('propMBuildingRentalConst:' . $this->_ulbId));         // Get Building Rental Constant From Redis
 
         if (!$refParamRentalRate) {                                                                         // Get Building Rental Constant From Database
-            $refParamRentalRate = MPropBuildingRentalconst::where('ulb_id', $this->_ulbId)->firstOrFail();
+            $refParamRentalRate = MPropBuildingRentalconst::where('ulb_id', $this->_ulbId)->first();
+            if (!$refParamRentalRate) {
+                throw new Exception("Building Rental Constant not found for ULB ID: " . $this->_ulbId);
+            }
             $this->_redis->set('propMBuildingRentalConst:' . $this->_ulbId, json_encode($refParamRentalRate));
         }
         $this->_paramRentalRate = $refParamRentalRate->x;
