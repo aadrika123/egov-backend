@@ -39,7 +39,7 @@ class CaretakerController extends Controller
             $mActiveCitizenUndercare    = new ActiveCitizenUndercare();
             $mWaterConsumer             = new WaterConsumer();
 
-            $waterDtl = $mWaterConsumer->getConsumerByNo($req->consumerNo);
+            $waterDtl = $mWaterConsumer->getConsumerByNov1($req->consumerNo, $req->ulbId);
             if (!isset($waterDtl))
                 throw new Exception('Water Connection Not Found!');
 

@@ -27,6 +27,7 @@ use Geocoder\Geocoder;
 use Geocoder\Query\GeocodeQuery;
 use Geocoder\Provider\GoogleMaps\GoogleMaps;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 #------------date 13/03/2023 -------------------------------------------------------------------------
 #   Code By Sandeep Bara
@@ -2253,5 +2254,1085 @@ class ReportController extends Controller
             
     }
 
+    /* 
+    * | Live Dashboard Data for all 15 revenue modules
+    */
+    public function liveDashboardData(Request $request)
+    {
+        try {
+            $query = DB::connection('pgsql_reports')
+                ->table('tbl_analytical_dhashboards');
+
+            // Financial year filter (OPTIONAL)
+            if ($request->filled('financial_year')) {
+                $query->where('financial_year', $request->financial_year);
+            }
+
+            // ULB filter (OPTIONAL)
+            if ($request->filled('ulbId')) {
+                $query->where('ulb_id', $request->ulbId);
+            }
+
+
+            // Date filter (OPTIONAL)
+            if ($request->filled('from_date') && $request->filled('to_date')) {
+                $query->whereBetween('created_at', [
+                    $request->from_date . ' 00:00:00',
+                    $request->to_date . ' 23:59:59'
+                ]);
+            }
+
+            $rows = $query->get();
+
+            $data = $this->formatDashboardData($rows);
+
+            return responseMsgs(
+                true,
+                "Live Dashboard Data",
+                $data,
+                "",
+                01,
+                responseTime(),
+                $request->getMethod(),
+                $request->deviceId
+            );
+
+        } catch (Exception $e) {
+            return responseMsgs(
+                false,
+                [$e->getMessage(), $e->getFile(), $e->getLine()],
+                "",
+                "",
+                01,
+                responseTime(),
+                $request->getMethod(),
+                $request->deviceId
+            );
+        }
+    }
+
+
+    private function formatDashboardData($rows)
+    {
+        $propertyCollection        = $rows->sum('property_total_collection');
+        $waterCollection           = $rows->sum('water_total_collection');
+        $swmCollection             = $rows->sum('swm_total_collection');
+        $finesCollection           = $rows->sum('fines_total_collection');
+        $rigCollection             = $rows->sum('rig_total_collection');
+        $waterTankerCollection     = $rows->sum('water_tanker_total_collection');
+        $septicTankerCollection    = $rows->sum('septic_tanker_total_collection');
+        $petCollection             = $rows->sum('pet_total_collection');
+        $publicTransportCollection = $rows->sum('public_transport_total_collection');
+        $advertisementCollection   = $rows->sum('advertisement_total_collection');
+        $tradeCollection           = $rows->sum('trade_total_collection');
+        $municipalRentalCollection = $rows->sum('municipal_rental_total_collection');
+        $marriageCollection        = $rows->sum('marriage_total_collection');
+        $parkingCollection         = $rows->sum('parking_total_collection');
+        $lodgeCollection           = $rows->sum('lodge_total_collection');
+
+        // GRAND TOTAL
+        $overallCollection =
+            $propertyCollection +
+            $waterCollection +
+            $swmCollection +
+            $finesCollection +
+            $rigCollection +
+            $waterTankerCollection +
+            $septicTankerCollection +
+            $petCollection +
+            $publicTransportCollection +
+            $advertisementCollection +
+            $tradeCollection +
+            $municipalRentalCollection +
+            $marriageCollection +
+            $parkingCollection +
+            $lodgeCollection;
+
+        return [
+
+            // OVERALL COLLECTION
+            'overall' => [
+                'total_collection' => $overallCollection,
+            ],
+
+            'property' => [
+                'total_collection'  => $propertyCollection,
+                'total_application' => $rows->sum('property_total_application'),
+            ],
+
+            'water' => [
+                'total_collection'   => $waterCollection,
+                'total_registration' => $rows->sum('water_total_registration'),
+            ],
+
+            'swm' => [
+                'total_collection'   => $swmCollection,
+                'total_registration' => $rows->sum('swm_total_registration'),
+            ],
+
+            'fines' => [
+                'total_collection'  => $finesCollection,
+                'challan_generated' => $rows->sum('fines_total_challan_generated'),
+            ],
+
+            'rig' => [
+                'total_collection'   => $rigCollection,
+                'total_registration' => $rows->sum('rig_total_registration'),
+            ],
+
+            'water_tanker' => [
+                'total_collection' => $waterTankerCollection,
+                'total_booking'    => $rows->sum('water_tanker_total_booking'),
+            ],
+
+            'septic_tanker' => [
+                'total_collection' => $septicTankerCollection,
+                'total_booking'    => $rows->sum('septic_tanker_total_booking'),
+            ],
+
+            'pet' => [
+                'total_collection'   => $petCollection,
+                'total_registration' => $rows->sum('pet_total_registration'),
+            ],
+
+            'public_transport' => [
+                'total_collection' => $publicTransportCollection,
+                'bill_cut'         => $rows->sum('public_transport_total_bill_cut'),
+            ],
+
+            'advertisement' => [
+                'total_collection'   => $advertisementCollection,
+                'total_registration' => $rows->sum('advertisement_total_registration'),
+            ],
+
+            'trade' => [
+                'total_collection'   => $tradeCollection,
+                'total_registration' => $rows->sum('trade_total_registration'),
+            ],
+
+            'municipal_rental' => [
+                'total_collection' => $municipalRentalCollection,
+                'total_shops'      => $rows->sum('municipal_rental_total_shops'),
+            ],
+
+            'marriage' => [
+                'total_collection'   => $marriageCollection,
+                'total_registration' => $rows->sum('marriage_total_registration'),
+            ],
+
+            'parking' => [
+                'total_collection' => $parkingCollection,
+                'bill_cut'         => $rows->sum('parking_total_bill_cut'),
+            ],
+
+            'lodge' => [
+                'total_collection'   => $lodgeCollection,
+                'total_registration' => $rows->sum('lodge_total_registration'),
+            ],
+        ];
+    }
+
+    /*     
+    * | --------------    TODAY'S COLLECTION DASHBOARD DATA     -----------
+    */ 
+    public function todayCollectionDashboard(Request $request)
+    {
+        try {
+
+            $request->validate([
+                'ulbId' => 'nullable|integer|exists:ulb_masters,id'
+            ]);
+
+            $ulbId = $request->ulbId;   // null or integer
+            $date = today();
+
+            $modules = [
+                'property' => $this->propertyDashboard($date, $ulbId),
+                'water'            => $this->waterDashboard($date, $ulbId),
+                'trade'            => $this->tradeDashboard($date, $ulbId),
+                'swm'              => $this->swmDashboard($date, $ulbId),
+                'water_tanker'     => $this->waterTankerDashboard($date, $ulbId),
+                'septic_tanker'    => $this->septicTankerDashboard($date, $ulbId),
+                'fines'            => $this->finesDashboard($date, $ulbId),
+                'rig'              => $this->rigDashboard($date, $ulbId),
+                'advertisements'   => $this->advertisementDashboard($date, $ulbId),
+                'lodge_banquet'    => $this->marketDashboard($date, $ulbId),
+                'pet'              => $this->petDashboard($date, $ulbId),
+                'marriage'         => $this->marriageDashboard($date, $ulbId),
+                'municipal_rental' => $this->municipalRentalDashboard($date, $ulbId),
+            ];
+
+            // -------------------------------
+            // Overall Today Collection
+            // -------------------------------
+            $overallCollection = collect($modules)->sum(function ($m) {
+                return $m['todaysData']['todays_collection']
+                    ?? $m['todaysData']['today_collections']
+                    ?? 0;
+            });
+
+            // -------------------------------
+            // Overall Top ULB Collection
+            // -------------------------------
+            $overallUlbAgg = $this->mergeUlbCollections($modules);
+
+            return response()->json([
+                'status'  => true,
+                'message' => "Today's Collection Dashboard",
+
+                'overall' => [
+                    'todays_collection' => (float) $overallCollection,
+                    'top_ulbs' => $overallUlbAgg->take(10),
+                ],
+
+                'data' => $modules
+            ]);
+
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'status'  => false,
+                'message' => 'Unable to fetch dashboard data.',
+            ], 500);
+        }
+    }
+
+    // common function 
+    private function formatUlbs($collection)
+    {
+        return $collection
+            ->sortByDesc('daily_collection')
+            ->take(5)
+            ->map(function ($row) {
+                $row->ulb_name = $row->ulb_name
+                    ? explode(' ', trim($row->ulb_name))[0]
+                    : 'NA';
+                $row->daily_collection = (float) $row->daily_collection;
+                return $row;
+            })
+            ->values();
+    }
+
+    private function mergeUlbCollections($allModules)
+    {
+        $merged = collect();
+
+        foreach ($allModules as $module) {
+            if (!empty($module['top_ulbs'])) {
+                foreach ($module['top_ulbs'] as $row) {
+                    $merged->push([
+                        'ulb_id' => $row->ulb_id,
+                        'ulb_name' => $row->ulb_name,
+                        'daily_collection' => $row->daily_collection,
+                    ]);
+                }
+            }
+        }
+
+        return $merged
+            ->groupBy('ulb_id')
+            ->map(function ($rows) {
+                return (object)[
+                    'ulb_id' => $rows->first()['ulb_id'],
+                    'ulb_name' => $rows->first()['ulb_name'],
+                    'daily_collection' => $rows->sum('daily_collection'),
+                ];
+            })
+            ->sortByDesc('daily_collection')
+            ->values();
+    }
+
+    // individual module dashboard functions
+
+    // PROPERTY DASHBOARD
+
+    private function propertyDashboard($date, $ulbId = null)
+    {
+        $from = $date->copy()->startOfDay();
+        $to   = $date->copy()->endOfDay();
+
+        $registrations =
+            DB::table('prop_active_safs')
+                ->whereBetween('created_at', [$from, $to])
+                ->when($ulbId, fn($q) => $q->where('ulb_id', $ulbId))
+                ->count()
+            + DB::table('prop_active_concessions')
+                ->whereBetween('created_at', [$from, $to])
+                ->when($ulbId, fn($q) => $q->where('ulb_id', $ulbId))
+                ->count()
+            + DB::table('prop_active_objections')
+                ->whereBetween('created_at', [$from, $to])
+                ->when($ulbId, fn($q) => $q->where('ulb_id', $ulbId))
+                ->count()
+            + DB::table('prop_active_harvestings')
+                ->whereBetween('created_at', [$from, $to])
+                ->when($ulbId, fn($q) => $q->where('ulb_id', $ulbId))
+                ->count();
+
+        $agg = DB::table('prop_transactions as pt')
+            ->leftJoin('ulb_masters as um', 'um.id', '=', 'pt.ulb_id')
+            ->where('pt.status', 1)
+            ->whereBetween('pt.created_at', [$from, $to])
+            ->when($ulbId, fn($q) => $q->where('pt.ulb_id', $ulbId))
+            ->selectRaw('pt.ulb_id, um.ulb_name, SUM(pt.amount) as daily_collection')
+            ->groupBy('pt.ulb_id', 'um.ulb_name')
+            ->get();
+
+        return [
+            'todaysData' => [
+                'todays_collection' => (float) $agg->sum('daily_collection'),
+                'todays_application' => $registrations,
+            ],
+            'top_ulbs' => $this->formatUlbs($agg)
+        ];
+    }
+
+    // WATER DASHBOARD
+    private function waterDashboard($date, $ulbId = null)
+    {
+        $db = DB::connection('pgsql_water');
+        $from = $date->copy()->startOfDay();
+        $to   = $date->copy()->endOfDay();
+
+        $registrations = $db->table('water_applications')
+            ->whereBetween('created_at', [$from, $to])            
+            ->when($ulbId, fn($q) => $q->where('ulb_id', $ulbId))
+            ->count();
+
+
+        $agg = $db->table('water_trans as wt')
+            ->leftJoin('ulb_masters as um', 'um.id', '=', 'wt.ulb_id')
+            ->where('wt.status', 1)
+            ->whereBetween('wt.created_at', [$from, $to])
+            ->when($ulbId, fn($q) => $q->where('wt.ulb_id', $ulbId))
+            ->selectRaw('wt.ulb_id, um.ulb_name, SUM(wt.amount) as daily_collection')
+            ->groupBy('wt.ulb_id', 'um.ulb_name')
+            ->get();
+
+
+        return [
+            'todaysData' => [
+                'todays_collection' => (float) $agg->sum('daily_collection'),
+                'todays_registration'   => $registrations,
+            ],
+            'top_ulbs' => $this->formatUlbs($agg)
+        ];
+    }
+
+    // WATER TANKER DASHBOARD
+    private function waterTankerDashboard($date, $ulbId = null)
+    {
+        $db = DB::connection('pgsql_tanker');
+        $from = $date->copy()->startOfDay();
+        $to   = $date->copy()->endOfDay();
+
+        // --------------------
+        // Bookings
+        // --------------------
+        $registrations = $db->table('wt_bookings')
+            ->whereBetween('created_at', [$from, $to])
+            ->when($ulbId, fn($q) => $q->where('ulb_id', $ulbId))
+            ->count();
+
+        // --------------------
+        // Collections
+        // --------------------
+        $agg = $db->table('wt_transactions as wt')
+            ->leftJoin('ulb_masters as um', 'um.id', '=', 'wt.ulb_id')
+            ->where('wt.status', 1)
+            ->whereBetween('wt.created_at', [$from, $to])
+            ->when($ulbId, fn($q) => $q->where('wt.ulb_id', $ulbId))
+            ->selectRaw('wt.ulb_id, um.ulb_name, SUM(wt.paid_amount) as daily_collection')
+            ->groupBy('wt.ulb_id', 'um.ulb_name')
+            ->get();
+
+        return [
+            'todaysData' => [
+                'todays_collection' => (float) $agg->sum('daily_collection'),
+                'todays_booking' => $registrations,
+            ],
+            'top_ulbs' => $this->formatUlbs($agg)
+        ];
+    }
+
+    // SEPTIC TANKER DASHBOARD
+    private function septicTankerDashboard($date, $ulbId = null)
+    {
+        $db = DB::connection('pgsql_tanker');
+        $from = $date->copy()->startOfDay();
+        $to   = $date->copy()->endOfDay();
+
+        $registrations = $db->table('st_bookings')
+            ->whereBetween('created_at', [$from, $to])
+            ->when($ulbId, fn($q) => $q->where('ulb_id', $ulbId))
+            ->count();
+
+        $agg = $db->table('st_transactions as st')
+            ->leftJoin('ulb_masters as um', 'um.id', '=', 'st.ulb_id')
+            ->where('st.status', 1)
+            ->whereBetween('st.created_at', [$from, $to])
+            ->when($ulbId, fn($q) => $q->where('st.ulb_id', $ulbId))
+            ->selectRaw('st.ulb_id, um.ulb_name, SUM(st.paid_amount) as daily_collection')
+            ->groupBy('st.ulb_id', 'um.ulb_name')
+            ->get();
+
+        return [
+            'todaysData' => [
+                'todays_collection' => (float) $agg->sum('daily_collection'),
+                'todays_booking'   => $registrations,
+            ],
+            'top_ulbs' => $this->formatUlbs($agg)
+        ];
+    }
+
+    // TRADE DASHBOARD
+    private function tradeDashboard($date, $ulbId = null)
+    {
+        $db = DB::connection('pgsql_trade');
+        $from = $date->copy()->startOfDay();
+        $to   = $date->copy()->endOfDay();
+
+        $registrations = $db->table('active_trade_licences')
+            ->where('is_active', true)
+            ->whereBetween('created_at', [$from, $to])
+            ->when($ulbId, fn($q) => $q->where('ulb_id', $ulbId))
+            ->count();
+
+        $agg = $db->table('trade_transactions as tt')
+            ->leftJoin('ulb_masters as um', 'um.id', '=', 'tt.ulb_id')
+            ->where('tt.status', 1)
+            ->whereBetween('tt.created_at', [$from, $to])
+            ->when($ulbId, fn($q) => $q->where('tt.ulb_id', $ulbId))
+            ->selectRaw('tt.ulb_id, um.ulb_name, SUM(tt.paid_amount) as daily_collection')
+            ->groupBy('tt.ulb_id', 'um.ulb_name')
+            ->get();
+
+        return [
+            'todaysData' => [
+                'todays_collection' => (float) $agg->sum('daily_collection'),
+                'todays_registration'   => $registrations,
+            ],
+            'top_ulbs' => $this->formatUlbs($agg)
+        ];
+    }
+
+    // FINES DASHBOARD
+    private function finesDashboard($date, $ulbId = null)
+    {
+        $db = DB::connection('pgsql_fines');
+        $from = $date->copy()->startOfDay();
+        $to   = $date->copy()->endOfDay();
+
+        $registrations = $db->table('penalty_challans')
+            ->whereBetween('created_at', [$from, $to])
+            // ->when($ulbId, fn($q) => $q->where('ulb_id', $ulbId))
+            ->count();
+
+        $agg = $db->table('penalty_transactions as pt')
+            ->leftJoin('ulb_masters as um', 'um.id', '=', 'pt.ulb_id')
+            ->where('pt.status', 1)
+            ->whereBetween('pt.created_at', [$from, $to])
+            ->when($ulbId, fn($q) => $q->where('pt.ulb_id', $ulbId))
+            ->selectRaw('pt.ulb_id, um.ulb_name, SUM(pt.amount) as daily_collection')
+            ->groupBy('pt.ulb_id', 'um.ulb_name')
+            ->get();
+
+        return [
+            'todaysData' => [
+                'todays_collection' => (float) $agg->sum('daily_collection'),
+                'todays_challan_generated'   => $registrations,
+            ],
+            'top_ulbs' => $this->formatUlbs($agg)
+        ];
+    }
+
+    // RIG DASHBOARD
+    private function rigDashboard($date, $ulbId = null)
+    {
+        $db = DB::connection('pgsql_fines');
+        $from = $date->copy()->startOfDay();
+        $to   = $date->copy()->endOfDay();
+
+        $registrations = $db->table('rig_active_registrations')
+            ->whereBetween('created_at', [$from, $to])
+            ->when($ulbId, fn($q) => $q->where('ulb_id', $ulbId))
+            ->count();
+
+        $agg = $db->table('rig_trans as rt')
+            ->leftJoin('ulb_masters as um', 'um.id', '=', 'rt.ulb_id')
+            ->where('rt.status', 1)
+            ->whereBetween('rt.created_at', [$from, $to])
+            ->when($ulbId, fn($q) => $q->where('rt.ulb_id', $ulbId))
+            ->selectRaw('rt.ulb_id, um.ulb_name, SUM(rt.amount) as daily_collection')
+            ->groupBy('rt.ulb_id', 'um.ulb_name')
+            ->get();
+
+        return [
+            'todaysData' => [
+                'todays_collection' => (float) $agg->sum('daily_collection'),
+                'todays_registration'   => $registrations,
+            ],
+            'top_ulbs' => $this->formatUlbs($agg)
+        ];
+    }
+
+    // ADVERTISEMENTS DASHBOARD
+    private function advertisementDashboard($date, $ulbId = null)
+    {
+        $db = DB::connection('pgsql_advertisements');
+        $from = $date->copy()->startOfDay();
+        $to   = $date->copy()->endOfDay();
+
+        $registrations =
+            $db->table('adv_active_selfadvertisements')
+                ->whereBetween('created_at', [$from, $to])
+                ->when($ulbId, fn($q) => $q->where('ulb_id', $ulbId))
+                ->count()
+            + $db->table('adv_active_privatelands')
+                ->whereBetween('created_at', [$from, $to])
+                ->when($ulbId, fn($q) => $q->where('ulb_id', $ulbId))
+                ->count()
+            + $db->table('adv_active_agencies')
+                ->whereBetween('created_at', [$from, $to])
+                ->when($ulbId, fn($q) => $q->where('ulb_id', $ulbId))
+                ->count()
+            + $db->table('adv_active_vehicles')
+                ->whereBetween('created_at', [$from, $to])
+                ->when($ulbId, fn($q) => $q->where('ulb_id', $ulbId))
+                ->count();
+
+        $agg = $db->table('adv_mar_transactions as at')
+            ->leftJoin('ulb_masters as um', 'um.id', '=', 'at.ulb_id')
+            ->where('at.status', 1)
+            ->where('at.module_type', 'Advertisement')
+            ->whereBetween('at.created_at', [$from, $to])
+            ->when($ulbId, fn($q) => $q->where('at.ulb_id', $ulbId))
+            ->selectRaw('at.ulb_id, um.ulb_name, SUM(at.amount) as daily_collection')
+            ->groupBy('at.ulb_id', 'um.ulb_name')
+            ->get();
+
+        return [
+            'todaysData' => [
+                'todays_collection' => (float) $agg->sum('daily_collection'),
+                'todays_registration'   => $registrations,
+            ],
+            'top_ulbs' => $this->formatUlbs($agg)
+        ];
+    }
+
+    // MARKET DASHBOARD
+    private function marketDashboard($date, $ulbId = null)
+    {
+        $db = DB::connection('pgsql_advertisements');
+        $from = $date->copy()->startOfDay();
+        $to   = $date->copy()->endOfDay();
+
+        $registrations =
+            $db->table('mar_active_lodges')
+                ->whereBetween('created_at', [$from, $to])
+                ->when($ulbId, fn($q) => $q->where('ulb_id', $ulbId))
+                ->count()
+            + $db->table('mar_active_banqute_halls')
+                ->whereBetween('created_at', [$from, $to])
+                ->when($ulbId, fn($q) => $q->where('ulb_id', $ulbId))
+                ->count()
+            + $db->table('mar_active_dharamshalas')
+                ->whereBetween('created_at', [$from, $to])
+                ->when($ulbId, fn($q) => $q->where('ulb_id', $ulbId))
+                ->count()
+            + $db->table('mar_active_hostels')
+                ->whereBetween('created_at', [$from, $to])
+                ->when($ulbId, fn($q) => $q->where('ulb_id', $ulbId))
+                ->count();
+
+
+        $agg = $db->table('adv_mar_transactions as mt')
+            ->leftJoin('ulb_masters as um', 'um.id', '=', 'mt.ulb_id')
+            ->where('mt.status', 1)
+            ->where('mt.module_type', 'Market')
+            ->whereBetween('mt.created_at', [$from, $to])
+            ->when($ulbId, fn($q) => $q->where('mt.ulb_id', $ulbId))
+            ->selectRaw('mt.ulb_id, um.ulb_name, SUM(mt.amount) as daily_collection')
+            ->groupBy('mt.ulb_id', 'um.ulb_name')
+            ->get();
+
+        return [
+            'todaysData' => [
+                'today_collections' => (float) $agg->sum('daily_collection'),
+                'total_applicant'   => $registrations,
+            ],
+            'top_ulbs' => $this->formatUlbs($agg)
+        ];
+    }
+
+    // PET DASHBOARD
+    private function petDashboard($date, $ulbId = null)
+    {
+        $db = DB::connection('pgsql_advertisements');
+        $from = $date->copy()->startOfDay();
+        $to   = $date->copy()->endOfDay();
+
+        $registrations = $db->table('pet_active_registrations')
+            ->whereBetween('created_at', [$from, $to])
+            ->when($ulbId, fn($q) => $q->where('ulb_id', $ulbId))
+            ->count();
+
+        $agg = $db->table('pet_trans as pt')
+            ->leftJoin('ulb_masters as um', 'um.id', '=', 'pt.ulb_id')
+            ->where('pt.status', 1)
+            ->whereBetween('pt.created_at', [$from, $to])
+            ->when($ulbId, fn($q) => $q->where('pt.ulb_id', $ulbId))
+            ->selectRaw('pt.ulb_id, um.ulb_name, SUM(pt.amount) as daily_collection')
+            ->groupBy('pt.ulb_id', 'um.ulb_name')
+            ->get();
+
+        return [
+            'todaysData' => [
+                'todays_collection' => (float) $agg->sum('daily_collection'),
+                'todays_registration'   => $registrations,
+            ],
+            'top_ulbs' => $this->formatUlbs($agg)
+        ];
+    }
+
+    // MARRIAGE DASHBOARD
+    private function marriageDashboard($date, $ulbId = null)
+    {
+        $db = DB::connection('pgsql_advertisements');
+        $from = $date->copy()->startOfDay();
+        $to   = $date->copy()->endOfDay();
+
+        $registrations = $db->table('marriage_active_registrations')
+            ->whereBetween('created_at', [$from, $to])
+            ->when($ulbId, fn($q) => $q->where('ulb_id', $ulbId))
+            ->count();
+
+        $agg = $db->table('marriage_transactions as mt')
+            ->leftJoin('ulb_masters as um', 'um.id', '=', 'mt.ulb_id')
+            ->where('mt.status', 1)
+            ->whereBetween('mt.created_at', [$from, $to])
+            ->when($ulbId, fn($q) => $q->where('mt.ulb_id', $ulbId))
+            ->selectRaw('mt.ulb_id, um.ulb_name, SUM(mt.amount_paid) as daily_collection')
+            ->groupBy('mt.ulb_id', 'um.ulb_name')
+            ->get();
+
+        return [
+            'todaysData' => [
+                'todays_collection' => (float) $agg->sum('daily_collection'),
+                'todays_registration'   => $registrations,
+            ],
+            'top_ulbs' => $this->formatUlbs($agg)
+        ];
+    }
+
+    // MUNICIPAL RENTAL DASHBOARD
+    private function municipalRentalDashboard($date, $ulbId = null)
+    {
+        $db = DB::connection('pgsql_advertisements');
+        $from = $date->copy()->startOfDay();
+        $to   = $date->copy()->endOfDay();
+
+        $registrations =
+            $db->table('mar_tolls')            
+                ->whereBetween('created_at', [$from, $to])
+                ->when($ulbId, fn($q) => $q->where('ulb_id', $ulbId))
+                ->count()
+            + $db->table('mar_shops')            
+                ->whereBetween('created_at', [$from, $to])
+                ->when($ulbId, fn($q) => $q->where('ulb_id', $ulbId))
+                ->count();
+
+        $tollAgg = $db->table('mar_toll_payments as tp')
+            ->leftJoin('ulb_masters as um', 'um.id', '=', 'tp.ulb_id')
+            ->where('tp.is_active', true)
+            ->whereBetween('tp.created_at', [$from, $to])
+            ->when($ulbId, fn($q) => $q->where('tp.ulb_id', $ulbId))
+            ->selectRaw('tp.ulb_id, um.ulb_name, SUM(tp.amount) as daily_collection')
+            ->groupBy('tp.ulb_id', 'um.ulb_name')
+            ->get();
+
+        $shopAgg = $db->table('mar_shop_payments as sp')
+            ->leftJoin('ulb_masters as um', 'um.id', '=', 'sp.ulb_id')
+            ->where('sp.is_active', true)
+            ->whereBetween('sp.created_at', [$from, $to])
+            ->when($ulbId, fn($q) => $q->where('sp.ulb_id', $ulbId))
+            ->selectRaw('sp.ulb_id, um.ulb_name, SUM(sp.amount) as daily_collection')
+            ->groupBy('sp.ulb_id', 'um.ulb_name')
+            ->get();
+
+        $agg = $tollAgg->merge($shopAgg)
+            ->groupBy('ulb_id')
+            ->map(fn($rows) => (object)[
+                'ulb_id' => $rows->first()->ulb_id,
+                'ulb_name' => $rows->first()->ulb_name,
+                'daily_collection' => $rows->sum('daily_collection'),
+            ])->values();
+
+        return [
+            'todaysData' => [
+                'todays_collection' => (float) $agg->sum('daily_collection'),
+                'todays_registration'   => $registrations,
+            ],
+            'top_ulbs' => $this->formatUlbs($agg)
+        ];
+    }
+
+    // SWM DASHBOARD
+    private function swmDashboard($date, $ulbId = null) 
+    {
+        $db = DB::connection('pgsql_swm');
+        $from = $date->copy()->startOfDay();
+        $to   = $date->copy()->endOfDay();
+
+        // -------------------------------
+        // Registrations
+        // -------------------------------
+        $registrations = $db->table('swm_consumers')
+            ->whereBetween('stampdate', [$from, $to])
+            ->when($ulbId, fn($q) => $q->where('ulb_id', $ulbId))
+            ->count();
+
+        // -------------------------------
+        // Collections
+        // -------------------------------
+        $agg = $db->table('swm_transactions as st')
+            ->leftJoin('ulb_masters as um', 'um.id', '=', 'st.ulb_id')
+            ->where('st.paid_status', 1)
+            ->where('st.total_remaining_amt', 0)
+            ->whereBetween('st.stampdate', [$from, $to])
+            ->when($ulbId, fn($q) => $q->where('st.ulb_id', $ulbId))
+            ->selectRaw('
+                st.ulb_id,
+                um.ulb_name,
+                SUM(st.total_payable_amt) as daily_collection
+            ')
+            ->groupBy('st.ulb_id', 'um.ulb_name')
+            ->get();
+
+        return [
+            'todaysData' => [
+                'todays_collection' => (float) $agg->sum('daily_collection'),
+                'todays_registration'   => $registrations,
+            ],
+            'top_ulbs' => $this->formatUlbs($agg)
+        ];
+    }
+
+
+    // ULB wise application count
+    public function ulbWiseApplicationCount(Request $request)
+    {
+        try {
+
+            $query = DB::connection('pgsql_reports')
+                ->table('tbl_analytical_dhashboards as t')
+                ->select([
+                    't.ulb_id',
+                    'um.ulb_name',
+
+                    DB::raw('SUM(t.property_total_application) as property_applications'),
+                    DB::raw('SUM(t.water_total_registration) as water_applications'),
+                    DB::raw('SUM(t.swm_total_registration) as swm_applications'),
+                    DB::raw('SUM(t.fines_total_challan_generated) as fines_applications'),
+                    DB::raw('SUM(t.rig_total_registration) as rig_applications'),
+                    DB::raw('SUM(t.water_tanker_total_booking) as water_tanker_applications'),
+                    DB::raw('SUM(t.septic_tanker_total_booking) as septic_tanker_applications'),
+                    DB::raw('SUM(t.pet_total_registration) as pet_applications'),
+                    DB::raw('SUM(t.public_transport_total_bill_cut) as public_transport_applications'),
+                    DB::raw('SUM(t.advertisement_total_registration) as advertisement_applications'),
+                    DB::raw('SUM(t.trade_total_registration) as trade_applications'),
+                    DB::raw('SUM(t.municipal_rental_total_shops) as municipal_rental_applications'),
+                    DB::raw('SUM(t.marriage_total_registration) as marriage_applications'),
+                    DB::raw('SUM(t.parking_total_bill_cut) as parking_applications'),
+                    DB::raw('SUM(t.lodge_total_registration) as lodge_applications'),
+                ])
+                ->leftJoin('ulb_masters as um', 'um.id', '=', 't.ulb_id')
+                ->groupBy('t.ulb_id', 'um.ulb_name');
+
+            // Optional Financial Year Filter
+            if ($request->filled('financial_year')) {
+                $query->where('t.financial_year', $request->financial_year);
+            }
+
+            $rows = $query->get();
+
+            // Transform data
+            $data = $rows->map(function ($row) {
+                return [
+                    'ulb_id'   => $row->ulb_id,
+                    'ulb_name' => $row->ulb_name,
+
+                    'applications' => [
+                        'property'            => (int) $row->property_applications,
+                        'water'               => (int) $row->water_applications,
+                        'swm'                 => (int) $row->swm_applications,
+                        'fines'               => (int) $row->fines_applications,
+                        'rig'                 => (int) $row->rig_applications,
+                        'water_tanker'        => (int) $row->water_tanker_applications,
+                        'septic_tanker'       => (int) $row->septic_tanker_applications,
+                        'pet'                 => (int) $row->pet_applications,
+                        'public_transport'    => (int) $row->public_transport_applications,
+                        'advertisement'       => (int) $row->advertisement_applications,
+                        'trade'               => (int) $row->trade_applications,
+                        'municipal_rental'    => (int) $row->municipal_rental_applications,
+                        'marriage'            => (int) $row->marriage_applications,
+                        'parking'             => (int) $row->parking_applications,
+                        'lodge'               => (int) $row->lodge_applications,
+                    ],
+                ];
+            });
+
+            return responseMsgs(
+                true,
+                "ULB Wise Application Count",
+                $data,
+                "",
+                01,
+                responseTime(),
+                $request->getMethod(),
+                $request->deviceId
+            );
+
+        } catch (\Exception $e) {
+
+            return responseMsgs(
+                false,
+                [$e->getMessage(), $e->getFile(), $e->getLine()],
+                "",
+                "",
+                01,
+                responseTime(),
+                $request->getMethod(),
+                $request->deviceId
+            );
+        }
+    }
+
+
+    // ULB Module Role Count
+    public function ulbModuleRoleCount(Request $request)
+    {
+        try {
+
+          $rows = DB::connection('pgsql_master')
+            ->table('module_masters as mm')
+            ->join('menu_roles as mr', function ($join) {
+                $join->on('mr.module_id', '=', 'mm.id')
+                    ->where('mr.is_suspended', false);
+            })
+            ->join('menu_roleusermaps as mrum', function ($join) {
+                $join->on('mrum.menu_role_id', '=', 'mr.id')
+                    ->where('mrum.is_suspended', false);
+            })
+            ->join('users as u', function ($join) {
+                $join->on('u.id', '=', 'mrum.user_id')
+                    ->where('u.suspended', false);
+            })
+            ->join('ulb_masters as um', 'um.id', '=', 'u.ulb_id')
+            ->where('mm.is_suspended', false)
+            ->select([
+                'mm.id as module_id',
+                'mm.module_name',
+                'um.ulb_name',
+                'mr.menu_role_name as role_name',   // ✅ ROLE NAME
+                DB::raw('COUNT(DISTINCT u.id) as user_count') // ✅ COUNT USERS
+            ])
+            ->groupBy(
+                'mm.id',
+                'mm.module_name',
+                'um.ulb_name',
+                'mr.menu_role_name'
+            )
+            ->orderBy('mm.id')
+            ->orderBy('um.ulb_name')
+            ->orderBy('mr.menu_role_name')
+            ->get();
+
+
+            $data = $this->formatModuleUlbUserData($rows);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'ULB Module Role Count',
+                'data' => $data
+            ]);
+
+        } catch (Exception $e) {
+
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    private function formatModuleUlbUserData($rows)
+    {
+        $final = [];
+
+        foreach ($rows as $row) {
+
+            $moduleId = $row->module_id;
+            $ulb = $row->ulb_name;
+
+            if (!isset($final[$moduleId])) {
+                $final[$moduleId] = [
+                    'moduleId' => $moduleId,
+                    'moduleName' => $row->module_name,
+                    'ulbs' => []
+                ];
+            }
+
+            if (!isset($final[$moduleId]['ulbs'][$ulb])) {
+                $final[$moduleId]['ulbs'][$ulb] = [
+                    'ulbName' => $ulb,
+                    'userCount' => []
+                ];
+            }
+
+            // ✅ ROLE WISE COUNT
+            $final[$moduleId]['ulbs'][$ulb]['userCount'][] = [
+                'roleName' => $row->role_name,
+                'count' => (int)$row->user_count
+            ];
+        }
+
+        // MODULE ID ASC
+        ksort($final, SORT_NUMERIC);
+
+        $output = [];
+
+        foreach ($final as $module) {
+
+            // ULB NAME ASC
+            ksort($module['ulbs'], SORT_STRING | SORT_FLAG_CASE);
+
+            $module['ulbs'] = array_values($module['ulbs']);
+            $output[] = $module;
+        }
+
+        return $output;
+    }
+
+
+    public function dashboardSummaryCards(Request $request)
+    {
+        try {
+
+            // 1. Active ULBs
+            $activeUlbs = DB::connection('pgsql_master')->table('ulb_masters')
+                ->where('active_status', true)
+                ->count();
+
+            // 2. Active Districts
+            $activeDistricts = DB::connection('pgsql_master')->table('district_masters')
+                ->where('status', true)
+                ->count();
+
+            // 3. Total Citizens
+            // If you have citizen table
+            $totalCitizens = DB::table('users')
+                ->where('suspended', false)
+                 ->where('user_type', 'ILIKE', '%Admin%')
+                ->count();
+
+            // OR if citizens are in users table with role/type
+            /*
+            $totalCitizens = DB::table('users')
+                ->where('user_type', 'CITIZEN')
+                ->where('suspended', false)
+                ->count();
+            */
+
+            // 4. Total ULB Members (All staff users)
+            $totalUlbMembers = DB::table('users')
+                ->where('suspended', false)
+                ->where('user_type', '!=', 'CITIZEN')
+                ->count();
+
+            $data = [
+                'active_ulbs' => $activeUlbs,
+                'active_districts' => $activeDistricts,
+                'total_citizens' => $totalCitizens,
+                'total_ulb_members' => $totalUlbMembers,
+            ];
+
+            return responseMsgs(
+                true,
+                "Dashboard Summary Cards",
+                $data,
+                2001,
+                "1.0",
+                responseTime(),
+                $request->getMethod(),
+                $request->deviceId
+            );
+
+        } catch (\Exception $e) {
+
+            return responseMsgs(
+                false,
+                $e->getMessage(),
+                "",
+                500,
+                "1.0",
+                responseTime(),
+                $request->getMethod(),
+                $request->deviceId
+            );
+        }
+    }
+        
+    // Roles by ULB and Module
+    // public function rolesByUlbAndModule(Request $request)
+    // {
+    //     try {
+
+    //         $request->validate([
+    //             'ulbId' => 'required|integer|exists:ulb_masters,id',
+    //             'moduleId' => 'required|integer|exists:module_masters,id',
+    //         ]);
+
+    //         $ulbId = $request->ulbId;
+    //         $moduleId = $request->moduleId;
+
+    //         $rows = DB::connection('pgsql_master')
+    //             ->table('menu_roles as mr')
+    //             ->join('menu_roleusermaps as mrum', function ($join) {
+    //                 $join->on('mrum.menu_role_id', '=', 'mr.id')
+    //                     ->where('mrum.is_suspended', false);
+    //             })
+    //             ->join('users as u', function ($join) use ($ulbId) {
+    //                 $join->on('u.id', '=', 'mrum.user_id')
+    //                     ->where('u.suspended', false)
+    //                     ->where('u.ulb_id', $ulbId);
+    //             })
+    //             ->where('mr.is_suspended', false)
+    //             ->where('mr.module_id', $moduleId)
+    //             ->select([
+    //                 'mr.id as role_id',
+    //                 'mr.menu_role_name as role_name'
+    //             ])
+    //             ->distinct()
+    //             ->orderBy('mr.id')
+    //             ->get();
+
+    //         return response()->json([
+    //             'status' => true,
+    //             'message' => 'Role List by ULB & Module',
+    //             'data' => $rows
+    //         ]);
+
+    //     } catch (\Exception $e) {
+
+    //         return response()->json([
+    //             'status' => false,
+    //             'message' => $e->getMessage(),
+    //         ], 500);
+    //     }
+    // }
+
+
 
 }
+    

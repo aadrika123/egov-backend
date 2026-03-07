@@ -44,8 +44,7 @@ class PropConcession extends Model
      */
     public function searchConcessions()
     {
-        return PropConcession::on('pgsql::read')
-            ->select(
+        return PropConcession::select(
                 'prop_concessions.id',
                 DB::raw("'approved' as status"),
                 'prop_concessions.application_no',
@@ -64,6 +63,9 @@ class PropConcession extends Model
             ->join('prop_properties as pp', 'pp.id', 'prop_concessions.property_id')
             ->join('ulb_ward_masters as u', 'u.id', 'pp.ward_mstr_id')
             ->join('ulb_ward_masters as uu', 'uu.id', 'pp.new_ward_mstr_id')
-            ->join('prop_owners', 'prop_owners.property_id', 'prop_concessions.prop_owner_id');
+            // ->join('prop_owners', 'prop_owners.property_id', 'prop_concessions.prop_owner_id');
+            ->join('prop_owners', 'prop_owners.id', '=', 'prop_concessions.prop_owner_id');
+
+
     }
 }

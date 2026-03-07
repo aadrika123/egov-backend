@@ -44,7 +44,7 @@ class PrefixIdGenerator implements iIdGenerator
         $stringVal = $ulbDistrictCode . $ulbCategory . $code;
 
         $stringSplit = collect(str_split($stringVal));
-        $flag = ($stringSplit->sum()) % 9;
+        $flag = ($stringSplit->filter(fn($char) => is_numeric($char))->sum()) % 9;
         $intVal = $params->int_val;
         // Case for the Increamental
         if ($this->incrementStatus == true) {

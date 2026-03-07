@@ -14,6 +14,10 @@ use Illuminate\Support\Facades\Route;
  * | Created By-sam kerketa
  */
 
+  Route::get('/health-check', function () {
+      return response()->json(['status' => 'ok']);
+  });
+
 /**
  * | Created On-14-11-2022 
  * | Created By- sam kerketta

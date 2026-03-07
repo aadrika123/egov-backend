@@ -227,7 +227,7 @@ class WaterConsumer extends Controller
             if (isset($calculatedDemand)) {
                 $demandDetails = collect($calculatedDemand['consumer_tax']['0']);
                 switch ($demandDetails['charge_type']) {
-                        # For Meter Connection
+                    # For Meter Connection
                     case ($refMeterConnectionType['1']):
                         $validated = Validator::make(
                             $request->all(),
@@ -248,7 +248,7 @@ class WaterConsumer extends Controller
                             $mWaterMeterReadingDoc->saveDemandDocs($meterDetails, $documentPath, $value);
                         });
                         break;
-                        # For Average Connection / Meter.Fixed
+                    # For Average Connection / Meter.Fixed
                     case ($refMeterConnectionType['5']):
                         $validated = Validator::make(
                             $request->all(),
@@ -269,7 +269,7 @@ class WaterConsumer extends Controller
                             $mWaterMeterReadingDoc->saveDemandDocs($meterDetails, $documentPath, $value);
                         });
                         break;
-                        # For Gallon Connection
+                    # For Gallon Connection
                     case ($refMeterConnectionType['2']):
                         $validated = Validator::make(
                             $request->all(),
@@ -291,7 +291,7 @@ class WaterConsumer extends Controller
                             $mWaterMeterReadingDoc->saveDemandDocs($meterDetails, $documentPath, $value);
                         });
                         break;
-                        # For Fixed connection
+                    # For Fixed connection
                     case ($refMeterConnectionType['3']):
                         $this->savingDemand($calculatedDemand, $request, $consumerDetails, $demandDetails['charge_type'], $refMeterConnectionType, $userDetails);
                         break;
@@ -558,31 +558,31 @@ class WaterConsumer extends Controller
         $requestedConnectionType    = $request->connectionType;
 
         switch ($currentConnectionType) {
-                # For Fixed Connection
+            # For Fixed Connection
             case ($refMeterConnType['Fixed']):
                 if ($requestedConnectionType != $refMeterConnType['Meter'] || $requestedConnectionType != $refMeterConnType['Gallon']) {
                     throw new Exception("Invalid connection type update for Fixed!");
                 }
                 break;
-                # For Fixed Meter Connection
+            # For Fixed Meter Connection
             case ($refMeterConnType['Meter']):
                 if ($requestedConnectionType != $refMeterConnType['Meter'] || $requestedConnectionType != $refMeterConnType['Gallon'] || $requestedConnectionType != $refMeterConnType['Meter/Fixed']) {
                     throw new Exception("Invalid connection type update for Fixed!");
                 }
                 break;
-                # For Fixed Gallon Connection
+            # For Fixed Gallon Connection
             case ($refMeterConnType['Gallon']):
                 if ($requestedConnectionType != $refMeterConnType['Meter']) {
                     throw new Exception("Invalid connection type update for Fixed!");
                 }
                 break;
-                # For Fixed Meter/Fixed Connection
+            # For Fixed Meter/Fixed Connection
             case ($refMeterConnType['Meter/Fixed']):
                 if ($requestedConnectionType != $refMeterConnType['Meter']) {
                     throw new Exception("Invalid connection type update for Fixed!");
                 }
                 break;
-                # Default
+            # Default
             default:
                 throw new Exception("Invalid Meter Connection!");
                 break;
@@ -848,7 +848,7 @@ class WaterConsumer extends Controller
                 throw new Exception("Under taken data not found!");
 
             $consumerIds = collect($connectionDetails)->pluck('consumer_id');
-            $consumerDetails = $mWaterWaterConsumer->getConsumerByIdsv1($consumerIds)->get();
+            $consumerDetails = $mWaterWaterConsumer->getConsumerByIdsv2($consumerIds)->get();
             $checkConsumer = collect($consumerDetails)->first();
             if (is_null($checkConsumer)) {
                 throw new Exception("Consuemr Details Not Found!");
@@ -1094,7 +1094,7 @@ class WaterConsumer extends Controller
         }
     }
 
-    
+
     /**
      * | Search the governmental prop water commention 
      * | Search only the Gov water connections 
@@ -1786,7 +1786,7 @@ class WaterConsumer extends Controller
     }
 
 
-  
+
     /**
      * | Apply for water connection deactivation with charges, workflow mapping, and document upload
      * | written by prity pandey
@@ -2351,7 +2351,7 @@ class WaterConsumer extends Controller
     {
         $refWorkFlowMaster = Config::get('workflow-constants.WATER_MASTER_ID');
         switch ($isCitizen) {
-                # For citizen 
+            # For citizen 
             case (true):
                 if (!is_null($applicantDetals->current_role) && $applicantDetals->parked == true) {
                     return true;
@@ -2360,7 +2360,7 @@ class WaterConsumer extends Controller
                     throw new Exception("You aren't allowed to upload document!");
                 }
                 break;
-                # For user
+            # For user
             case (false):
                 $userId = $user->id;
                 $ulbId = $applicantDetals->ulb_id;
@@ -2542,13 +2542,12 @@ class WaterConsumer extends Controller
             // Handle filtering logic in the controller
             switch ($key) {
                 case 'consumerNo':
-                    $data = $mwaterConsumer->getOwnerDetails( $parameter)->get();
-                    break;
-                    
-                case 'applicationNo':
-                    $data = $mwaterApproApplicant->getOwnerDetails( $parameter)->get();
+                    $data = $mwaterConsumer->getOwnerDetails($parameter)->get();
                     break;
 
+                case 'applicationNo':
+                    $data = $mwaterApproApplicant->getOwnerDetails($parameter)->get();
+                    break;
             }
 
             if ($data->isEmpty()) {
@@ -2556,8 +2555,7 @@ class WaterConsumer extends Controller
             }
 
             return responseMsgs(true, "Application Details", remove_null($data), "", "1.0", "", "POST", $request->deviceId ?? "");
-        
-        }catch (Exception $e) {
+        } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "", "1.0", "", "POST", $request->deviceId ?? "");
         }
     }

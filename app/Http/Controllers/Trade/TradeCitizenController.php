@@ -1254,5 +1254,105 @@ class TradeCitizenController extends Controller
         }
     }
 
+    public function licenceInfoWhatsappChat(Request $request)
+    {
+        try {
+
+            $rules = [
+                "licenceNo" => "required"
+            ];
+
+            $validator = Validator::make($request->all(), $rules);
+
+            if ($validator->fails()) {
+                return responseMsgs(
+                    false,
+                    $validator->errors(),
+                    "",
+                    "",
+                    "01",
+                    "",
+                    "POST",
+                    ""
+                );
+            }
+
+            $licenceNo = trim($request->licenceNo);
+
+            // Pending
+            $pending = ActiveTradeLicence::select(
+                "id",
+                "application_no",
+                "provisional_license_no",
+                "license_no",
+                "firm_name",
+                "application_date",
+                "apply_from",
+                "valid_upto",
+                DB::raw("'Pending' as type")
+            )
+            ->where("license_no", "ILIKE", "%{$licenceNo}%");
+
+            // Approved
+            $approved = TradeLicence::select(
+                "id",
+                "application_no",
+                "provisional_license_no",
+                "license_no",
+                "firm_name",
+                "application_date",
+                "apply_from",
+                "valid_upto",
+                DB::raw("'Approved' as type")
+            )
+            ->where("license_no", "ILIKE", "%{$licenceNo}%");
+
+            // Old
+            $old = TradeRenewal::select(
+                "id",
+                "application_no",
+                "provisional_license_no",
+                "license_no",
+                "firm_name",
+                "application_date",
+                "apply_from",
+                "valid_upto",
+                DB::raw("'Old' as type")
+            )
+            ->where("license_no", "ILIKE", "%{$licenceNo}%");
+
+            $waterDetails = $pending
+                ->union($approved)
+                ->union($old)
+                ->orderBy("id", "DESC")
+                ->get();
+
+            return responseMsgs(
+                true,
+                "Trade Licence Data!",
+                remove_null($waterDetails),
+                "",
+                "01",
+                responseTime(),
+                "POST",
+                ""
+            );
+
+        } catch (Exception $e) {
+
+            return responseMsgs(
+                false,
+                $e->getMessage(),
+                "",
+                "",
+                "01",
+                "",
+                "POST",
+                ""
+            );
+        }
+    }
+
+
     
 }

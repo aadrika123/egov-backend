@@ -57,9 +57,9 @@ trait Razorpay
             $request->all(),
             [
                 'id'            => 'required|integer',
-                'amount'        => 'required|',
-                'workflowId'    => 'required|',
-                'ulbId'         => 'nullable'
+                'amount'        => 'required|integer',
+                'workflowId'    => 'required|integer',
+                'ulbId'         => 'nullable|integer'
             ]
         );
         if ($validated->fails())
