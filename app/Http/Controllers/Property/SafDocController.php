@@ -266,7 +266,7 @@ class SafDocController extends Controller
             }
             DB::commit();
             DB::connection('pgsql_master')->commit();
-            return responseMsgs(true, "Document Uploadation Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true, "Document Uploaded Successful", "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
