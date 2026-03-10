@@ -41,29 +41,30 @@ class DocUpload
     public function checkDoc($request)
     {
         try {
-            // $contentType = (collect(($request->headers->all())['content-type'] ?? "")->first());
             $dmsUrl = Config::get('module-constants.DMS_URL');
             $file = $request->document;
             $filePath = $file->getPathname();
             $hashedFile = hash_file('sha256', $filePath);
-            $filename = ($request->document)->getClientOriginalName();
+            $filename = $file->getClientOriginalName();
             $api = "$dmsUrl/backend/document/upload";
-            $transfer = [
-                "file" => $request->document,
-                "tags" => $filename,
-                // "reference" => 425
+            
+            $postData = [
+                "tags" => substr($filename, 0, 7),
             ];
+            
+            if ($request->ulb_id && $request->module_id) {
+                $postData['ulb_id'] = (string) $request->ulb_id;
+                $postData['module_id'] = (string) $request->module_id;
+            } elseif ($request->ulb_id && !$request->module_id) {
+                $postData['ulb_id'] = (string) $request->ulb_id;
+            }
+            
             $returnData = Http::withHeaders([
-                "x-digest"      => "$hashedFile",
-                "token"         => "8Ufn6Jio6Obv9V7VXeP7gbzHSyRJcKluQOGorAD58qA1IQKYE0",
-                "folderPathId"  => 1
-            ])->attach([
-                [
-                    'file',
-                    file_get_contents($filePath),
-                    $filename
-                ]
-            ])->post("$api", $transfer);
+                "x-digest" => "$hashedFile",
+                "token" => "x6MUrMw0mI5ILhco1pJIbtP0xt0jEUZxNsrpNHiO55ppf8YkEn",
+            ])->attach('file', file_get_contents($filePath), $filename)
+            ->post("$api", $postData);
+            
             if ($returnData->successful()) {
                 return (json_decode($returnData->body(), true));
             }
@@ -95,14 +96,21 @@ class DocUpload
             $dmsUrl = Config::get('module-constants.DMS_URL');
             $api = "$dmsUrl/backend/document/upload";
 
+            $postData = ["tags" => $filename];
+            if ($request->ulb_id) {
+                $postData['ulb_id'] = $request->ulb_id;
+            }
+            if ($request->module_id) {
+                $postData['module_id'] = $request->module_id;
+            }
+
             $response = Http::withHeaders([
                 "x-digest"      => $hashedFile,
-                "token"         => "8Ufn6Jio6Obv9V7VXeP7gbzHSyRJcKluQOGorAD58qA1IQKYE0",
+                // "token"         => "8Ufn6Jio6Obv9V7VXeP7gbzHSyRJcKluQOGorAD58qA1IQKYE0",
+                "token"         => "x6MUrMw0mI5ILhco1pJIbtP0xt0jEUZxNsrpNHiO55ppf8YkEn",
                 "folderPathId"  => 1
             ])->attach('file', file_get_contents($filePath), $filename)
-            ->post($api, [
-                "tags" => $filename
-            ]);
+            ->post($api, $postData);
 
             if ($response->successful()) {
                 return json_decode($response->body(), true);
@@ -146,7 +154,8 @@ class DocUpload
         $header = apache_request_headers();
         $header = collect($header)->merge(
             [
-                "token"         => "8Ufn6Jio6Obv9V7VXeP7gbzHSyRJcKluQOGorAD58qA1IQKYE0",
+                // "token"         => "8Ufn6Jio6Obv9V7VXeP7gbzHSyRJcKluQOGorAD58qA1IQKYE0",
+                "token"         => "x6MUrMw0mI5ILhco1pJIbtP0xt0jEUZxNsrpNHiO55ppf8YkEn",
                 "folderPathId"  => 1
             ]
         );
@@ -169,13 +178,19 @@ class DocUpload
             $postData = [
                 "file" => $file,
                 "tags" => $filename,
-                // "reference" => 425
             ];
+            if ($request->ulb_id) {
+                $postData['ulb_id'] = $request->ulb_id;
+            }
+            if ($request->module_id) {
+                $postData['module_id'] = $request->module_id;
+            }
             $response = Http::withHeaders(
                 // $header->toArray()
                 [
                     "x-digest"      => "$hashedFile",
-                    "token"         => "8Ufn6Jio6Obv9V7VXeP7gbzHSyRJcKluQOGorAD58qA1IQKYE0",
+                    "token"         => "x6MUrMw0mI5ILhco1pJIbtP0xt0jEUZxNsrpNHiO55ppf8YkEn",
+                    // "token"         => "8Ufn6Jio6Obv9V7VXeP7gbzHSyRJcKluQOGorAD58qA1IQKYE0",
                     "folderPathId"  => 1
                 ]
 
@@ -268,7 +283,8 @@ class DocUpload
             ];
             if ($document->reference_no) {
                 $response = Http::withHeaders([
-                    "token" => "8Ufn6Jio6Obv9V7VXeP7gbzHSyRJcKluQOGorAD58qA1IQKYE0",
+                    // "token" => "8Ufn6Jio6Obv9V7VXeP7gbzHSyRJcKluQOGorAD58qA1IQKYE0",
+                    "token" => "x6MUrMw0mI5ILhco1pJIbtP0xt0jEUZxNsrpNHiO55ppf8YkEn",
                 ])->post($apiUrl, $postData);
 
                 if ($response->successful()) {
@@ -306,7 +322,9 @@ class DocUpload
                 'referenceNo' => $document->reference_no,
             ];
             $response = Http::withHeaders([
-                "token" => "8Ufn6Jio6Obv9V7VXeP7gbzHSyRJcKluQOGorAD58qA1IQKYE0",
+                // "token" => "8Ufn6Jio6Obv9V7VXeP7gbzHSyRJcKluQOGorAD58qA1IQKYE0",
+                
+                "token"         => "x6MUrMw0mI5ILhco1pJIbtP0xt0jEUZxNsrpNHiO55ppf8YkEn",
             ])->post($apiUrl, $postData);
 
             if ($response->successful()) {
