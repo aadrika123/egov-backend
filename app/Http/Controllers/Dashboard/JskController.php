@@ -30,6 +30,17 @@ use App\Models\Workflows\WfWorkflowrolemap;
 class JskController extends Controller
 {
     use Workflow;
+    
+    /**
+     * | Get role by user ID without ULB filtering
+     */
+    private function getRoleByUserId($userId) {
+        return DB::table('wf_roleusermaps')
+            ->join('wf_roles', 'wf_roleusermaps.wf_role_id', '=', 'wf_roles.id')
+            ->where('wf_roleusermaps.user_id', $userId)
+            ->select('wf_roles.*')
+            ->first();
+    }
     /**
      * | Property Dashboard Details
      * /Written by prity pandey
@@ -137,7 +148,7 @@ class JskController extends Controller
             $mPropActiveDeactivation = new PropActiveDeactivationRequest();
             $mTempTransaction = new TempTransaction();
             $mWorkflowTrack = new WorkflowTrack();
-            $currentRole =  $this->getRoleByUserUlbId($ulbId, $userId);
+            $currentRole = ($userType == 'JSK') ? $this->getRoleByUserId($userId) : $this->getRoleByUserUlbId($ulbId, $userId);
 
             if (in_array($userType, $rUserType)) {
                 $saf = $mpropActiveSaf->todayAppliedApplications($userId);
@@ -165,7 +176,7 @@ class JskController extends Controller
                 $data['totalApplication'] = $data['saf'] + $data['objection'] + $data['concession'] + $data['harvesting'] + $data['deactivation'];
             }
 
-            if (in_array($currentRole->role_name, $role)) {
+            if ($currentRole && in_array($currentRole->role_name, $role)) {
                 $safReceivedApp =  $mpropActiveSaf->todayReceivedApplication($currentRole->id, $ulbId)->count();
                 $objectionReceivedApp =  $mPropActiveObjection->todayReceivedApplication($currentRole->id, $ulbId)->count();
                 $concessionReceivedApp =  $mPropActiveConcession->todayReceivedApplication($currentRole->id, $ulbId)->count();
@@ -181,7 +192,7 @@ class JskController extends Controller
                 $data['totalForwadedApplication'] = $mWorkflowTrack->todayForwadedApplication($currentRole->id, $ulbId, $propertyWorflows)->count();
             }
 
-            if ($currentRole->role_name == 'EXECUTIVE OFFICER') {
+            if ($currentRole && $currentRole->role_name == 'EXECUTIVE OFFICER') {
                 $safReceivedApp =  $mpropActiveSaf->todayReceivedApplication($currentRole->id, $ulbId)->count();
                 $objectionReceivedApp =  $mPropActiveObjection->todayReceivedApplication($currentRole->id, $ulbId)->count();
                 $concessionReceivedApp =  $mPropActiveConcession->todayReceivedApplication($currentRole->id, $ulbId)->count();
