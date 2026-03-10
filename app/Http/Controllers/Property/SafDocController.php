@@ -220,7 +220,12 @@ class SafDocController extends Controller
             $refImageName = $req->docCode;
             $refImageName = $getSafDtls->id . '-' . $refImageName;
             $document = $req->document;
+            $req->merge(['ulb_id' => $getSafDtls->ulb_id, 'module_id' => $propModuleId]);
             $docDetail = $docUpload->checkDoc($req);
+            
+            if (!$docDetail['status']) {
+                throw new Exception($docDetail['message'] ?? 'Document upload failed');
+            }
             $metaReqs['module_id'] = $propModuleId;
             $metaReqs['active_id'] = $getSafDtls->id;
             $metaReqs['workflow_id'] = $getSafDtls->workflow_id;
