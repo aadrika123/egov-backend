@@ -289,9 +289,8 @@ class PaymentRepository implements iPayment
     public function gettingWebhookDetails(Request $request)
     {
         try {
-            # creating json of webhook data
-            // $paymentId = $request->payload['payment']['entity']['id'];
-            // Storage::disk('public')->put($paymentId . '.json', json_encode($request->all()));
+            # creating json of webhook data for debugging
+            Storage::disk('public')->put('webhook_' . time() . '.json', json_encode($request->all()));
 
             if (!empty($request)) {
                 $mWebhookDetails = $this->collectWebhookDetails($request);
@@ -299,7 +298,8 @@ class PaymentRepository implements iPayment
             }
             return responseMsg(false, "WEBHOOK DATA NOT ACCUIRED!", "");
         } catch (Exception $error) {
-            return responseMsg(false, "OPERATIONAL ERROR!", $error->getMessage());
+            Storage::disk('public')->put('webhook_error_' . time() . '.txt', $error->getMessage() . ' Line: ' . $error->getLine() . ' File: ' . $error->getFile());
+            return responseMsg(false, "OPERATIONAL ERROR!", $error->getMessage() . ' at line ' . $error->getLine());
         }
     }
 
@@ -334,79 +334,87 @@ class PaymentRepository implements iPayment
 
     public function collectWebhookDetailsv1($webhookData)
     {
-        $request = $webhookData->toArray();
         try {
-            # Variable Defining Section
-            $webhookEntity  = "";
-            $contains       = "";
-            $notes          = "";
-            $depatmentId    = $request['departmentId'];  // ModuleId
-            // $status         = $request['status'];
-            $captured       = $request['captured'];
-            // $aCard          = $request['card_id'];
-            $amount         = $request['amount'];
-            $mPropRazorpayRequest = new PropRazorpayRequest();
+            $request = $webhookData->toArray();
+
+            # Initialize required models
+            $mPropRazorpayRequest  = new PropRazorpayRequest();
             $mWaterRazorpayRequest = new WaterRazorPayRequest();
 
-            $actulaAmount = $amount;
-            // $firstKey = "";
-            $actualTransactionNo = $this->generatingTransactionId($request['ulb_id']);
+            # Extract variables from webhook payload
+            $departmentId       = $request['departmentId'] ?? null;    // Module ID
+            $ulbId              = $request['ulb_id'] ?? null;
+            $amount             = (int) ($request['amount'] ?? 0);
+            $applicationId      = $request['applicationId'] ?? null;
+            $workflowId         = $webhookData->workflow_id ?? 0;
+            $userId             = $webhookData->user_id ?? null;
+            $orderId            = $webhookData->payment_order_id ?? null;
+            $paymentId          = $webhookData->payment_id ?? null;
+            $paymentMode        = $webhookData->payment_method ?? 'ONLINE';
+            $transactionDate    = $request['created_at'] ?? now();
+            $citizenId          = $request['citizenId'] ?? "";
 
-            // # Save card details 
-            // if (!is_null($aCard)) {
-            //     $webhookCardDetails = $webhookEntity['card'];
-            //     $objcard = new CardDetail();
-            //     $objcard->saveCardDetails($webhookCardDetails);
-            // }
+            # Generate Unique Transaction Number
+            $actualTransactionNo = $this->generatingTransactionId($ulbId);
 
-            # Data to be stored in webhook table
-            // $webhookData = new WebhookPaymentData();
-            // $refWebhookDetails = $webhookData->getWebhookRecord($request, $captured, $webhookEntity, $status)->first();
-            // if (is_null($refWebhookDetails)) {
-            //     $webhookData = $webhookData->saveWebhookData($request, $captured, $actulaAmount, $status, $notes, $firstKey, $contains, $actualTransactionNo, $webhookEntity);
-            // }
-            # data transfer to the respective module's database 
-            $transfer = [
-                'paymentMode'   => $webhookData->payment_method,
-                'id'            => $request['applicationId'],
-                'amount'        => $actulaAmount,
-                'workflowId'    => $webhookData->workflow_id,
+            # Transfer object for module-specific payment processing
+            $transferData = [
+                'paymentMode'   => $paymentMode,
+                'id'            => $applicationId,
+                'amount'        => $amount,
+                'workflowId'    => $workflowId,
                 'transactionNo' => $actualTransactionNo,
-                'userId'        => $webhookData->user_id,
-                'ulbId'         => $request['ulb_id'],
-                'departmentId'  => $depatmentId,                        //ModuleId
-                'orderId'       => $webhookData->payment_order_id,
-                'paymentId'     => $webhookData->payment_id,
-                'tranDate'      => $request['created_at'],
-                'gatewayType'   => 1,                                   // Razorpay Id
-                'citizenId'     => $request['citizenId']  ?? ""
+                'userId'        => $userId,
+                'ulbId'         => $ulbId,
+                'departmentId'  => $departmentId,
+                'orderId'       => $orderId,
+                'paymentId'     => $paymentId,
+                'tranDate'      => $transactionDate,
+                'gatewayType'   => 1, // Razorpay
+                'citizenId'     => $citizenId,
             ];
-            // property Razorpay Request
 
-            // Property Razorpay Request
-            // Property Razorpay Request
-            $checkRequest = $mPropRazorpayRequest->getRazorPayRequestsv1($transfer);
-            $checkWaterRequest = $mWaterRazorpayRequest->getRazorPayRequestsv1($transfer);
-            if ($checkRequest) {
-                foreach ($checkRequest as $req) {
-                    // Convert object to an array before passing it to ReqPayment
+            # --- Handle Property Module Requests ---
+            $propertyRequests = $mPropRazorpayRequest->getRazorPayRequestsv1($transferData);
+            if ($propertyRequests) {
+                foreach ($propertyRequests as $req) {
                     $paymentRequest = new ReqPayment($req->toArray());
+                    $this->paymentHolding($paymentRequest, $transferData);
+                }
+            }
 
-                    // Call the paymentHolding method
-                    $this->paymentHolding($paymentRequest, $transfer);
+            # --- Handle Water Module Requests ---
+            $waterRequests = $mWaterRazorpayRequest->getRazorPayRequestsv1($transferData);
+            if ($waterRequests) {
+                foreach ($waterRequests as $req) {
+                    $this->razorPayResponse($req, $transferData);
                 }
             }
-            if ($checkWaterRequest) {
-                foreach ($checkWaterRequest as $req) {
-                    // Convert object to an array before passing it to ReqPaymen
-                    $data = $this->razorPayResponse($req, $transfer);
-                }
+            # --- Handle SWM Module Requests ---
+            $swmRequests = DB::connection("pgsql_swm")->table("razorpay_reqs")
+                ->where('order_id', $orderId)
+                ->count();
+            if ($swmRequests) {
+                $swm = 3;
+                $mApiMaster = new ApiMaster();
+                $septicTankerApi = $mApiMaster->getApiEndpoint($swm);
+
+                // Make the POST request and capture the response
+                $response = Http::withHeaders([])->post("$septicTankerApi->end_point", $transferData);
+
+                // Decode JSON response
+                $responseData = $response->json();
+
+                // Use transactionNo from API response instead of $actualTransactionNo
+                $actualTransactionNo = $responseData['data']['transactionNo'] ?? $actualTransactionNo;
             }
+
             return responseMsg(true, "Webhook Data Collected!", $actualTransactionNo);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $e->getLine());
         }
     }
+
 
 
     /**
@@ -614,15 +622,15 @@ class PaymentRepository implements iPayment
             $webhookEntity  = "";
             $contains       = "";
             $notes          = "";
-            $depatmentId    = $request['departmentId'];  // ModuleId
-            $status         = $request['status'];
-            $captured       = $request['captured'];
-            $aCard          = $request['card_id'];
-            $amount         = $request['amount'];
+            $depatmentId    = $request['departmentId'] ?? null;  // ModuleId
+            $status         = $request['status'] ?? null;
+            $captured       = $request['captured'] ?? 0;
+            $aCard          = $request['card_id'] ?? null;
+            $amount         = (int) ($request['amount'] ?? 0);
 
             $actulaAmount = $amount;
             $firstKey = "";
-            $actualTransactionNo = $this->generatingTransactionId($request['ulb_id']);
+            $actualTransactionNo = $this->generatingTransactionId($request['ulb_id'] ?? 1);
 
             # Save card details 
             if (!is_null($aCard)) {
@@ -639,30 +647,31 @@ class PaymentRepository implements iPayment
             // }
             # data transfer to the respective module's database 
             $transfer = [
-                'paymentMode'   => $webhookData->payment_method,
-                'id'            => $request['applicationId'],
+                'paymentMode'   => $request['payment_method'] ?? 'ONLINE',
+                'id'            => $request['applicationId'] ?? null,
                 'amount'        => $actulaAmount,
-                'workflowId'    => $webhookData->workflow_id,
+                'workflowId'    => $request['workflow_id'] ?? 0,
                 'transactionNo' => $actualTransactionNo,
-                'userId'        => $webhookData->user_id,
-                'ulbId'         => $request['ulb_id'],
+                'userId'        => $request['user_id'] ?? null,
+                'ulbId'         => $request['ulb_id'] ?? null,
                 'departmentId'  => $depatmentId,                        //ModuleId
-                'orderId'       => $webhookData->payment_order_id,
-                'paymentId'     => $webhookData->payment_id,
-                'tranDate'      => $request['created_at'],
+                'orderId'       => $request['payment_order_id'] ?? null,
+                'paymentId'     => $request['payment_id'] ?? null,
+                'tranDate'      => $request['created_at'] ?? now(),
                 'gatewayType'   => 1,                                   // Razorpay Id
                 'citizenId'     => $request['citizenId']  ?? ""
             ];
 
             # conditionaly upadting the request data
+            $responseData = [];
             if ($captured == 1) {
-                PaymentRequest::where('razorpay_order_id', $webhookData->payment_order_id)
+                PaymentRequest::where('razorpay_order_id', $request['payment_order_id'] ?? '')
                     ->update(['payment_status' => 1]);
 
                 # calling function for the modules                  
                 switch ($depatmentId) {
                     case ('1'):
-                        $refpropertyType = $webhookData->workflow_id;
+                        $refpropertyType = $request['workflow_id'] ?? 0;
                         if ($refpropertyType == 0) {
                             $objHoldingTaxController = new HoldingTaxController($this->_safRepo);
                             $transfer = new ReqPayment($transfer);
@@ -732,6 +741,36 @@ class PaymentRepository implements iPayment
                         $septicTankerApi = $mApiMaster->getApiEndpoint($septicTanker);
                         Http::withHeaders([])
                             ->post("$septicTankerApi->end_point", $transfer);
+                        break;
+                    case ('17'): // Septic Tanker
+                        $swm = 3;
+                        $mApiMaster = new ApiMaster();
+                        $swmApi = $mApiMaster->getApiEndpoint($swm);
+
+                        // Make the POST request and capture the response
+                        $response = Http::withHeaders([])->post("$swmApi->end_point", $transfer);
+
+                        // Decode JSON response
+                        $responseData = $response->json();
+
+                        // Use transactionNo from API response instead of $actualTransactionNo
+                        $actualTransactionNo = $responseData['data']['transactionNo'] ?? $actualTransactionNo;
+
+                        break;
+                    case ('14'): // Septic Tanker
+                        $fine = 4;
+                        $mApiMaster = new ApiMaster();
+                        $septicTankerApi = $mApiMaster->getApiEndpoint($fine);
+
+                        // Make the POST request and capture the response
+                        $response = Http::withHeaders([])->post("$septicTankerApi->end_point", $transfer);
+
+                        // Decode JSON response
+                        $responseData = $response->json();
+
+                        // Use transactionNo from API response instead of $actualTransactionNo
+                        $actualTransactionNo = $responseData['data']['tran_no'] ?? $actualTransactionNo;
+
                         break;
                 }
                 return responseMsg(true, "Webhook Data Collected!", $actualTransactionNo);

@@ -234,9 +234,9 @@ class WaterConsumer extends Model
         )
             ->leftjoin('water_connection_through_mstrs', 'water_connection_through_mstrs.id', '=', 'water_consumers.connection_through_id')
             ->join('ulb_masters', 'ulb_masters.id', '=', 'water_consumers.ulb_id')
-            ->join('water_connection_type_mstrs', 'water_connection_type_mstrs.id', '=', 'water_consumers.connection_type_id')
+            ->leftjoin('water_connection_type_mstrs', 'water_connection_type_mstrs.id', '=', 'water_consumers.connection_type_id')
             ->leftjoin('water_property_type_mstrs', 'water_property_type_mstrs.id', '=', 'water_consumers.property_type_id')
-            ->join('water_owner_type_mstrs', 'water_owner_type_mstrs.id', '=', 'water_consumers.owner_type_id')
+            ->leftjoin('water_owner_type_mstrs', 'water_owner_type_mstrs.id', '=', 'water_consumers.owner_type_id')
             ->leftjoin('water_param_pipeline_types', 'water_param_pipeline_types.id', '=', 'water_consumers.pipeline_type_id')
 
             ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_consumers.ward_mstr_id')
@@ -394,6 +394,39 @@ class WaterConsumer extends Model
             );
     }
 
+    public function getRefDetailByConsumerNoV1($key, $refNo)
+    {
+        return WaterConsumer::select(
+            'water_consumers.id',
+            'water_consumers.consumer_no',
+            'water_consumers.ward_mstr_id',
+            'water_consumers.address',
+            'water_consumers.holding_no',
+            'water_consumers.saf_no',
+            'water_consumers.ulb_id',
+            'water_consumers.holding_no',
+            'water_consumers.saf_no',
+            'water_consumers.saf_no',
+            'water_consumers.apply_connection_id',
+            DB::raw("string_agg(water_consumer_owners.applicant_name,',') as applicant_name"),
+            DB::raw("string_agg(water_consumer_owners.mobile_no::VARCHAR,',') as mobile_no"),
+            DB::raw("string_agg(water_consumer_owners.guardian_name,',') as guardian_name"),
+        )
+            ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_consumers.id')          
+            ->where('water_consumers.' . $key, $refNo)
+            ->where('water_consumers.status', 1)
+            ->groupBy(
+                'water_consumers.saf_no',
+                'water_consumers.holding_no',
+                'water_consumers.address',
+                'water_consumers.id',
+                'water_consumers.ulb_id',
+                'water_consumer_owners.consumer_id',
+                'water_consumers.consumer_no',
+                'water_consumers.ward_mstr_id',
+            );
+    }
+
     /**
      * | Fing data according to consumer No 
      * | @param consumerNo
@@ -401,6 +434,17 @@ class WaterConsumer extends Model
     public function getConsumerByNo($consumerNo)
     {
         return WaterConsumer::where('consumer_no', $consumerNo)
+            ->where('status', 1)
+            ->first();
+    }
+    /**
+     * | Fing data according to consumer No 
+     * | @param consumerNo
+     */
+    public function getConsumerByNov1($consumerNo, $ulbId)
+    {
+        return WaterConsumer::where('consumer_no', $consumerNo)
+            ->where('ulb_id', $ulbId)
             ->where('status', 1)
             ->first();
     }
@@ -477,9 +521,55 @@ class WaterConsumer extends Model
             ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_consumers.ward_mstr_id')
             ->leftJoin('water_consumer_demands', function ($join) {
                 $join->on('water_consumer_demands.consumer_id', '=', 'water_consumers.id')
-                ->where('water_consumer_demands.paid_status', 0);
+                    ->where('water_consumer_demands.paid_status', 0);
             })
-            ->havingRaw("SUM(water_consumer_demands.balance_amount) > 0") // Excludes 0 or NULL total demand
+            // ->havingRaw("SUM(water_consumer_demands.balance_amount) > 0") // Excludes 0 or NULL total demand
+            ->whereIn("water_consumers.id", $consumerIds)
+            ->where('water_consumers.status', 1)
+            ->groupBy(
+                'water_consumers.saf_no',
+                'water_consumers.holding_no',
+                'water_consumers.address',
+                'water_consumers.id',
+                'water_consumers.ulb_id',
+                'water_consumer_owners.consumer_id',
+                'water_consumers.consumer_no',
+                'water_consumers.ward_mstr_id',
+                'ulb_ward_masters.ward_name',
+                'ulb_name'
+            )
+            ->havingRaw("SUM(water_consumer_demands.balance_amount) > 0"); // Excludes 0 or NULL total demand;
+    }
+    /** 
+     * | Get consumer by consumer id for citizen under care water connections 
+     */
+    public function getConsumerByIdsv2($consumerIds)
+    {
+        return WaterConsumer::select(
+            'water_consumers.id',
+            'water_consumers.consumer_no',
+            'water_consumers.ward_mstr_id',
+            'water_consumers.address',
+            'water_consumers.holding_no',
+            'water_consumers.saf_no',
+            'water_consumers.ulb_id',
+            'ulb_ward_masters.ward_name',
+            'ulb_name',
+            DB::raw("string_agg(DISTINCT water_consumer_owners.applicant_name,',') as applicant_name"),
+            DB::raw("string_agg(DISTINCT water_consumer_owners.mobile_no::VARCHAR,',') as mobile_no"),
+            DB::raw("string_agg(DISTINCT water_consumer_owners.guardian_name,',') as guardian_name"),
+            DB::raw("COALESCE(SUM(water_consumer_demands.balance_amount), 0) as total_demand_amount"),
+            DB::raw("min(water_consumer_demands.demand_from) as demand_from"),
+            DB::raw("max(water_consumer_demands.demand_upto) as demand_upto")
+        )
+            ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_consumers.id')
+            ->join('ulb_masters', 'ulb_masters.id', '=', 'water_consumers.ulb_id')
+            ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_consumers.ward_mstr_id')
+            ->leftJoin('water_consumer_demands', function ($join) {
+                $join->on('water_consumer_demands.consumer_id', '=', 'water_consumers.id')
+                    ->where('water_consumer_demands.paid_status', 0);
+            })
+            // ->havingRaw("SUM(water_consumer_demands.balance_amount) > 0") // Excludes 0 or NULL total demand
             ->whereIn("water_consumers.id", $consumerIds)
             ->where('water_consumers.status', 1)
             ->groupBy(
@@ -605,5 +695,12 @@ class WaterConsumer extends Model
             ->where('water_consumers.status', 1)
             ->orderBy('water_consumers.id')
             ->get();
+    }
+
+    public function getWaterHolding($refrenceNo)
+    {
+        return WaterConsumer::select('id')
+            ->where('holding_no', $refrenceNo)
+            ->first();
     }
 }

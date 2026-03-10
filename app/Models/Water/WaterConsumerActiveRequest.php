@@ -171,6 +171,7 @@ class WaterConsumerActiveRequest extends Model
             'water_consumer_active_requests.doc_upload_status',
             'ulb_ward_masters.ward_name',
             'ulb_masters.ulb_name',
+            'ulb_masters.logo',
             DB::raw('(
                 SELECT string_agg(applicant_name, \',\') 
                 FROM water_consumer_owners 

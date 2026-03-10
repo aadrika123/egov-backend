@@ -408,8 +408,6 @@ class CitizenController extends Controller
                 ->where("is_active", true)
                 ->get();
 
-
-
             // Water Count
             $waterCount = WaterConsumer::select(DB::raw("count(id) as total_water_consumer"))
                 ->where('user_id', $userDtl->id)
@@ -434,6 +432,20 @@ class CitizenController extends Controller
                 ->where('citizen_id', $userDtl->id)
                 ->where('deactive_status', false)
                 ->whereNotNull('consumer_id')
+                ->get();
+
+            $active_citizen_swm_count = DB::connection("pgsql_master")->table("active_citizen_undercares")
+                ->select(DB::raw('COUNT(swm_id)'))
+                ->where('citizen_id', $userDtl->id)
+                ->where("deactive_status", false)
+                ->whereNotNull('swm_id')
+                ->get();
+
+            $active_citizen_fines_count = DB::connection("pgsql_master")->table("active_citizen_undercares")
+                ->select(DB::raw('COUNT(challan_id)'))
+                ->where('citizen_id', $userDtl->id)
+                ->where("deactive_status", false)
+                ->whereNotNull('challan_id')
                 ->get();
 
             $pet_registration_count = DB::connection("pgsql_advertisements")->table("pet_approved_registrations")
@@ -496,13 +508,16 @@ class CitizenController extends Controller
                 "waterTankerDetails" => $waterTanker_count,
                 "septicTankerDetails" => $septicTanker_count,
                 "lodgeBanquetDetails" => $totalLodgeBanquet_count,
-                "rigDetails" => $rig_count
+                "rigDetails" => $rig_count,
+                "swmDetails" => $active_citizen_swm_count->first()->count,
+                "finesDetails" => $active_citizen_fines_count->first()->count
             ];
             return responseMsgs(true, "Total Count", $data, "", 01, responseTime(), $request->getMethod(), $request->deviceId);
         } catch (\Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "", 01, responseTime(), $request->getMethod(), $request->deviceId);
         }
     }
+
 
 
 

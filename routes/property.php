@@ -51,6 +51,10 @@ use App\Http\Controllers\Property\PropertyMutationController;
  * | Property Module by Anshu Kumar from - 11/10/2022
  * ----------------------------------------------------------------------------------------
  */
+    
+  Route::get('/health-check', function () {
+      return response()->json(['status' => 'ok']);
+  });
 
 Route::post('api-test', function () {
   return "Welcome to Property Module";
@@ -68,7 +72,6 @@ Route::group(['middleware' => ['json.response', 'auth_maker', 'apilogger']], fun
     Route::post('saf/apply', 'applySafv1');                                 // Applying Saf Route                                                   #API_ID = 010101
     Route::post('saf/gb-apply', 'applyGbSaf');                            // Applying GB Saf                                                     #API_ID = 010102
   });
-
 
 
   Route::controller(ActiveSafController::class)->group(function () {
@@ -274,6 +277,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker', 'apilogger']], fun
    */
   Route::controller(PropertyDetailsController::class)->group(function () {
     Route::post('get-filter-application-details', 'applicationsListByKey');       #API_ID = 011301
+    // unauth temperary
     Route::post('get-filter-property-details', 'propertyListByKey');              #API_ID = 011302
     Route::get('get-list-saf', 'getListOfSaf');                                   #API_ID = 011303                   
     Route::post('active-application/get-user-details', 'getUserDetails');         #API_ID = 011304        
@@ -282,6 +286,8 @@ Route::group(['middleware' => ['json.response', 'auth_maker', 'apilogger']], fun
 
     // added by alok
     // Route::post('details/get-owner-details', 'getOwnerDetailsInfo');  #API_ID = 011305
+    Route::post('propertyHoldingInfoWatsappChat', 'propertyHoldingInfoWatsappChat');
+    Route::post('propertyPaymentStatusWatsappChat', 'propertyPaymentStatusWatsappChat');
   });
 
 
@@ -304,10 +310,13 @@ Route::group(['middleware' => ['json.response', 'auth_maker', 'apilogger']], fun
     Route::post('offline-payment-holding', 'offlinePaymentHolding');         //Payment Holding                                            #API_ID = 011504
     Route::post('prop/get-cluster-holding-due', 'getClusterHoldingDues');    //Property Cluster Dues                                      #API_ID = 011505
     Route::post('prop/cluster-payment', 'clusterPayment');                   //Cluster Payment                                            #API_ID = 011506
-    Route::post('prop-dues', 'propertyDues');                                //Property Dues Dynamic                                      #API_ID = 011507            
+    Route::post('prop-dues', 'propertyDues');                                //Property Dues Dynamic                     0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000                 #API_ID = 011507            
     Route::post('legacy-payment-holding', 'legacyPaymentHolding');           //Legacy Property Payment  water/caretaker-otp                                  #API_ID = 011508
     Route::post('generate-orderId', 'generateOrderIdv1');                    //Legacy Property Payment                                    #API_ID = 011508
     Route::post('citizen/property-water-dtls', 'citizenPropWaterDtls');           #API_ID = 011305   
+    Route::post('get-holding-imp-dtls', 'getHoldingImpDtls');           #API_ID = 011305   
+    Route::get('demand-pdf/{propertyId}', 'generateDemandPdf');           #API_ID = 011511   
+    Route::get('initiate-payment/{propertyId}', 'initiatePayment');           #API_ID = 011512   
   });
 
   /**
@@ -552,6 +561,12 @@ Route::controller(ReportController::class)->group(function () {
   Route::post('report/mpl-todayCollection-new', 'mplReportCollectionNew'); #API_ID = 012430
   Route::post('report/ulb-list', 'ulbList'); #API_ID = 012430
   Route::post('live-dashboard-update', 'liveDashboardUpdate');
+  Route::post('live-dashboard-data', 'liveDashboardData');
+  Route::post('today-collection-dashboard', 'todayCollectionDashboard');
+  Route::post('ulb-wise-count-dashboard', 'ulbWiseApplicationCount');
+  Route::post('ulb-module-role-count-dashboard', 'ulbModuleRoleCount');
+  Route::post('dashboard-summary-cards', 'dashboardSummaryCards');
+  Route::post('roles-by-ulb-module', 'rolesByUlbAndModule');
 });
 // });
 
@@ -967,5 +982,6 @@ Route::controller(ActiveSafController::class)->group(function () {
 
 Route::controller(HoldingTaxController::class)->group(function () {
   Route::post('prop-payment-receipt', 'propPaymentReceipt');               // Generate payment Receipt              #API_ID = 011302        
-  Route::post('prop-water-payment-receipt', 'propPaymentReceiptv1');               // Generate payment Receipt              #API_ID = 011302        
+  Route::post('prop-water-payment-receipt', 'propPaymentReceiptv1');      // Generate payment Receipt              #API_ID = 011302        
+  Route::post('get-tran-by-holding-no', 'getTransactionsByHoldingNo');    // This api is created for whatsap chat-bot        
 });

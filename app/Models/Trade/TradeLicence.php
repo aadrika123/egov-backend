@@ -146,6 +146,10 @@ class TradeLicence extends TradeParamModel
             ->leftJoin('ulb_masters', 'ulb_masters.id', '=', 'trade_licences.ulb_id')
             ->where($key, $parameter);
     }
-
-
+    public function getTradeHolding($refrenceNo)
+    {
+        return TradeLicence::select('id', 'license_no')
+            ->where('holding_no', $refrenceNo)
+            ->first();
+    }
 }

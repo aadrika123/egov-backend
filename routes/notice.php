@@ -2,6 +2,10 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Notice\NoticeController;
 
+  Route::get('/health-check', function () {
+      return response()->json(['status' => 'ok']);
+  });
+
 Route::group(['middleware' => ['json.response', "auth_maker"]], function () {    
     Route::controller(NoticeController::class)->group(function () {
         Route::post("read-notice-type", "noticeType");

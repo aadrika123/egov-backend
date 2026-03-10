@@ -313,11 +313,15 @@ class ActiveSafController extends Controller
             $roleIds = $mWfRoleUser->getRoleIdByUserId($userId)->pluck('wf_role_id');              // Model to () get Role By User Id
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleIds)->pluck('workflow_id');
             $safDtl = $this->Repository->getSaf($workflowIds)                                        // Repository function to get SAF Details
+                ->join('ulb_ward_masters', function($join) {
+                    $join->on(DB::raw('CAST(ulb_ward_masters.ward_name AS INTEGER)'), '=', 'prop_active_safs.ward_mstr_id')
+                         ->on('ulb_ward_masters.ulb_id', '=', 'prop_active_safs.ulb_id');
+                })
                 ->where('parked', false)
                 ->where('prop_active_safs.ulb_id', $ulbId)
                 ->where('prop_active_safs.status', 1)
                 ->whereIn('current_role', $roleIds)
-                ->whereIn('ward_mstr_id', $occupiedWards)
+                ->whereIn('ulb_ward_masters.id', $occupiedWards)
                 ->when(true, function ($query) {
                     $query->where(function ($q) {
                         $q->where('current_role', '!=', 6)
@@ -1044,23 +1048,12 @@ class ActiveSafController extends Controller
                 break;
 
             case $wfLevels['DA']: // DA Condition
-                // if ($propActiveSaf->assessment_type != 'Bifurcation' && $propActiveSaf->assessment_type != 'Amalgamation') {
                 $demandData = $mPropSafDemand->getDemandsBySafId($saf->id)->groupBy('fyear')->first();
                 if (collect($demandData)->isEmpty())
                     throw new Exception("Demand Not Available");
                 $demand = $demandData->last();
                 if (collect($demand)->isEmpty())
                     throw new Exception("Demand Not Available to Generate SAM");
-                // } else {
-                //     $date = Carbon::parse($saf->application_date);
-                //     $currentFinancialYear = getFinancialYear($date);
-                //     $demand = (object)[
-                //         'fyear' => $currentFinancialYear,
-                //         'amount' => 0,
-                //         'monthly' => 0,
-                //         'payment_date' => null,
-                //     ];
-                // }
 
                 if ($saf->doc_verify_status == 0)
                     throw new Exception("Document Not Fully Verified");

@@ -18,6 +18,10 @@ use App\Http\Controllers\Trade\ReportController;
  STATUS [OPEN]
  */
 
+   Route::get('/health-check', function () {
+      return response()->json(['status' => 'ok']);
+  });
+
 Route::group(['middleware' => ['json.response', "auth_maker"]], function () {
 
     Route::controller(TradeApplication::class)->group(function () {
@@ -124,6 +128,7 @@ Route::group(['middleware' => ['json.response', "auth_maker"]], function () {
 
         //created by : alok    
         Route::post('application-search/get-owner-details', "getOwnerDetailsInfo"); #api_id = 012123
+        Route::post('licenceInfoWhatsappChat', "licenceInfoWhatsappChat"); 
     });
 
     #-----------report----------------------------------

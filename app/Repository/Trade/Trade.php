@@ -1619,7 +1619,7 @@ class Trade implements ITrade
     {
         try {
             $refUser    = Auth()->user();
-            $refUlbId   = $refUser->ulb_id;
+            $refUlbId   = $refUser->ulb_id ?? $request->ulbId;
             $mInputs    = $request->all();
             $isCitizen = (($this->_COMMON_FUNCTION->checkUsersWithtocken("users")) ? false : true);
             $licence = ActiveTradeLicence::readConnection()->select(
@@ -1703,11 +1703,11 @@ class Trade implements ITrade
                     $join->on("owner.temp_id", "trade_renewals.id");
                 });
 
-            if (!$isCitizen) {
-                $licence = $licence->where("active_trade_licences.ulb_id", $refUlbId);
-                $aropved = $aropved->where("trade_licences.ulb_id", $refUlbId);
-                $old = $old->where("trade_renewals.ulb_id", $refUlbId);
-            }
+            // if (!$isCitizen) {
+            $licence = $licence->where("active_trade_licences.ulb_id", $refUlbId);
+            $aropved = $aropved->where("trade_licences.ulb_id", $refUlbId);
+            $old = $old->where("trade_renewals.ulb_id", $refUlbId);
+            // }
 
             if (isset($mInputs['entityValue']) && trim($mInputs['entityValue']) && isset($mInputs['entityName']) && trim($mInputs['entityName'])) {
                 $key = trim($mInputs['entityValue']);
@@ -1727,6 +1727,8 @@ class Trade implements ITrade
                         $query->orwhere('owner.guardian_name', 'ILIKE', '%' . $key . '%');
                     } elseif ($column == "MOBILE") {
                         $query->orwhere('owner.mobile_no', 'ILIKE', '%' . $key . '%');
+                    } elseif ($column == "HOLDING") {
+                        $query->orwhere('active_trade_licences.holding_no', 'ILIKE', '%' . $key . '%');
                     } else {
                         $query->orwhere('active_trade_licences.application_no', 'ILIKE', '%' . $key . '%');
                     }
@@ -1739,6 +1741,8 @@ class Trade implements ITrade
                         $query->orwhere('trade_licences.application_no', 'ILIKE', '%' . $key . '%');
                     } elseif ($column == "LICENSE") {
                         $query->orwhere('trade_licences.license_no', 'ILIKE', '%' . $key . '%');
+                    } elseif ($column == "HOLDING") {
+                        $query->orwhere('trade_licences.holding_no', 'ILIKE', '%' . $key . '%');
                     } elseif ($column == "PROVISIONAL") {
                         $query->orwhere('trade_licences.provisional_license_no', 'ILIKE', '%' . $key . '%');
                     } elseif ($column == "OWNER") {
@@ -1759,6 +1763,8 @@ class Trade implements ITrade
                         $query->orwhere('trade_renewals.application_no', 'ILIKE', '%' . $key . '%');
                     } elseif ($column == "LICENSE") {
                         $query->orwhere('trade_renewals.license_no', 'ILIKE', '%' . $key . '%');
+                    } elseif ($column == "HOLDING") {
+                        $query->orwhere('trade_renewals.holding_no', 'ILIKE', '%' . $key . '%');
                     } elseif ($column == "PROVISIONAL") {
                         $query->orwhere('trade_renewals.provisional_license_no', 'ILIKE', '%' . $key . '%');
                     } elseif ($column == "OWNER") {

@@ -361,14 +361,14 @@ class PropertyDetailsController extends Controller
      * | Fetch paginated property list filtered by various keys like holdingNo, ptn, 
      * | ownerName, etc., with optional zone, ward, and legacy filters.
        | This API is also connected with serApplication function(NoticeController)
-    */
+     */
     public function propertyListByKey(Request $request)
     {
         $request->validate([
             'filteredBy' => "required",
             'parameter' => "nullable",
             'zoneId' => "nullable|digits_between:1,9223372036854775807",
-            'wardId' => "nullable|digits_between:1,9223372036854775807",
+            'wardId' => "nullable|digits_between:1,9223372036854775807"
         ]);
 
         try {
@@ -454,8 +454,8 @@ class PropertyDetailsController extends Controller
             if ($request->wardId)
                 $data = $data->where("prop_properties.new_ward_mstr_id", $request->wardId);
 
-            if ($userType != 'Citizen')
-                $data = $data->where('prop_properties.ulb_id', $ulbId);
+            // if ($userType != 'Citizen')
+            $data = $data->where('prop_properties.ulb_id', $ulbId);
 
             if ($isLegacy == true) {
                 $paginator = $data->where('new_holding_no', null)
@@ -488,7 +488,7 @@ class PropertyDetailsController extends Controller
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011302", "1.0", "", "POST", $request->deviceId ?? "");
         }
-    } 
+    }
 
     // public function propertyListByKey(Request $request)
     // {
@@ -597,7 +597,7 @@ class PropertyDetailsController extends Controller
     //     try {
     //         $propertyId = $request->propertyId;
 
-            
+
     //         $geoTag = $mPropProperty->getGeoTagByPropertyId($propertyId);
 
     //         return responseMsgs(true, "GeoTag data fetched", $geoTag ?? [], "011306", "1.0", responseTime(), "POST", $request->deviceId ?? "");
@@ -952,7 +952,7 @@ class PropertyDetailsController extends Controller
     # ----- APIs that are currently inactive or unused --------#
     # ---------------------------------------------------------#
 
-     // All saf no from Active Saf no
+    // All saf no from Active Saf no
     /**
      | ----------flag
      */
@@ -969,5 +969,128 @@ class PropertyDetailsController extends Controller
     public function getUserDetails(Request $request)
     {
         return $this->propertyDetails->getUserDetails($request);
+    }
+
+    public function propertyHoldingInfoWatsappChat(Request $request)
+    {
+        $request->validate([
+            'holdingNo' => 'required|string'
+        ]);
+
+        try {
+
+            $mPropProperty = new PropProperty();
+            $user = authUser($request);
+
+            $ulbId = $user->ulb_id ?? $request->ulbId;
+            $holdingNo = $request->holdingNo;
+
+            $data = $mPropProperty->searchProperty($ulbId)
+                ->where(function ($query) use ($holdingNo) {
+                    $query->where('prop_properties.holding_no', $holdingNo)
+                        ->orWhere('prop_properties.new_holding_no', $holdingNo);
+                })
+                ->where('prop_properties.ulb_id', $ulbId)
+                ->groupBy(
+                    'prop_properties.id',
+                    'ulb_ward_masters.ward_name',
+                    'latitude',
+                    'longitude'
+                )
+                ->get();
+
+            return responseMsgs(
+                true,
+                "Property Details",
+                remove_null($data),
+                "011302",
+                "1.0",
+                responseTime(),
+                "POST",
+                $request->deviceId ?? ""
+            );
+        } catch (Exception $e) {
+            return responseMsgs(
+                false,
+                $e->getMessage(),
+                "",
+                "011302",
+                "1.0",
+                "",
+                "POST",
+                $request->deviceId ?? ""
+            );
+        }
+    }
+
+    public function propertyPaymentStatusWatsappChat(Request $request)
+    {
+        $request->validate([
+            'holdingNo' => 'required|string'
+        ]);
+
+        try {
+
+            $user = authUser($request);
+            $ulbId = $user->ulb_id ?? $request->ulbId;
+            $holdingNo = $request->holdingNo;
+
+            // 🔎 Find Property
+            $property = PropProperty::select("id")
+                ->where(function ($query) use ($holdingNo) {
+                    $query->where('holding_no', $holdingNo)
+                        ->orWhere('new_holding_no', $holdingNo);
+                })
+                ->where('ulb_id', $ulbId)
+                ->first();
+
+            if (!$property) {
+                return responseMsgs(
+                    false,
+                    "Property Not Found",
+                    "",
+                    "011303",
+                    "1.0",
+                    "",
+                    "POST",
+                    $request->deviceId ?? ""
+                );
+            }
+
+            //  Check Payment Status
+            $paymentExists = DB::table('prop_transactions')
+                ->where('property_id', $property->id)
+                ->where('status', 1)
+                ->exists();
+
+            $responseData = [
+                "holding_no"     => $holdingNo,
+                "property_id"    => $property->id,
+                "payment_status" => $paymentExists ? "Paid" : "Unpaid"
+            ];
+
+            return responseMsgs(
+                true,
+                "Payment Status",
+                remove_null($responseData),
+                "011303",
+                "1.0",
+                responseTime(),
+                "POST",
+                $request->deviceId ?? ""
+            );
+        } catch (Exception $e) {
+
+            return responseMsgs(
+                false,
+                $e->getMessage(),
+                "",
+                "011303",
+                "1.0",
+                "",
+                "POST",
+                $request->deviceId ?? ""
+            );
+        }
     }
 }

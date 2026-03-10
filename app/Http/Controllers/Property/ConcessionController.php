@@ -286,6 +286,7 @@ class ConcessionController extends Controller
                 ->where('prop_active_concessions.ulb_id', $ulbId)
                 ->whereIn('prop_active_concessions.current_role', $roleIds)
                 ->whereIn('a.ward_mstr_id', $occupiedWards)
+                ->where('prop_active_concessions.parked', null)    // null bacause in table there is default null value for parked instead of false
                 ->orderByDesc('prop_active_concessions.id');
 
             $inboxList = app(Pipeline::class)
@@ -343,7 +344,7 @@ class ConcessionController extends Controller
                 ->thenReturn()
                 ->paginate($perPage);
 
-            return responseMsgs(true, "Outbox List", remove_null($inboxList), '010603', '01', responseTime().'ms', 'Post', '');
+            return responseMsgs(true, "Outbox List", remove_null($inboxList), '010603', '01', responseTime() . 'ms', 'Post', '');
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", '010603', '01', responseTime(),  $req->getMethod(), $req->deviceId);
         }
@@ -495,7 +496,7 @@ class ConcessionController extends Controller
                 ->thenReturn()
                 ->paginate($perPage);
 
-            return responseMsgs(true, "Inbox List", remove_null($inboxList), "010606", '01', responseTime(),$req->getMethod(), $req->deviceId);
+            return responseMsgs(true, "Inbox List", remove_null($inboxList), "010606", '01', responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", '010606', '01', responseTime(), $req->getMethod(), $req->deviceId);
         }
@@ -773,7 +774,7 @@ class ConcessionController extends Controller
         try {
             $mWorkflowTrack = new WorkflowTrack();
             $concession = PropActiveConcession::find($req->applicationId);
-            if ($concession)
+            if (!$concession)
                 throw new Exception("Application Not Found");
 
             $senderRoleId = $concession->current_role;
@@ -1063,13 +1064,19 @@ class ConcessionController extends Controller
     /** 
      * | Checks if all required concession documents for an application are uploaded and verified.
        | uploadDocument:1.1.1
-    */
+     */
     public function isAllDocs($applicationId, $refDocList, $getConcessionDtls)
     {
         $docList = array();
         $verifiedDocList = array();
         $concessionDocs = $this->getDocList($getConcessionDtls);
-        $docList['concessionDocs'] = explode('#', $concessionDocs);
+        // Extract actual data from JSON response
+        $responseData = $concessionDocs->getData(true); // true => associative array
+
+        $filterDocs = $responseData['data'] ?? [];
+
+        // $docList['concessionDocs'] = explode('#', $filterDocs);
+        $docList['concessionDocs'] = $filterDocs; // ✅ already an array
 
         $verifiedDocList['concessionDocs'] = $refDocList->where('owner_dtl_id', '!=', null)->values();
         $collectUploadDocList = collect();
@@ -1077,7 +1084,7 @@ class ConcessionController extends Controller
             return $collectUploadDocList->push($item['doc_code']);
         });
         $flag = 1;
-        foreach ($concessionDocs as $item) {
+        foreach ($filterDocs as $item) {
             $explodeDocs = explode(',', $item);
             array_shift($explodeDocs);
             foreach ($explodeDocs as $explodeDoc) {
@@ -1112,11 +1119,20 @@ class ConcessionController extends Controller
             if (!$refApplication)
                 throw new Exception("Application Not Found for this id");
 
-            $filterDocs = $this->getDocList($refApplication);             // Current Object(Saf Docuement List)
-            if (!empty($filterDocs))
-                $concessionDoc['listDocs'] = $this->filterDocument($filterDocs, $refApplication);                                     // function(1.2)
-            else
+            // Get JSON response
+            $response = $this->getDocList($refApplication);
+
+            // Extract actual data from JSON response
+            $responseData = $response->getData(true); // true => associative array
+
+            $filterDocs = $responseData['data'] ?? [];
+
+            if (!empty($filterDocs)) {
+                $concessionDoc['listDocs'] = $this->filterDocument($filterDocs, $refApplication);
+            } else {
                 $concessionDoc['listDocs'] = [];
+            }
+
 
             return responseMsgs(true, "Successfully Done", remove_null($concessionDoc), "010614", '01', responseTime(),  $req->getMethod(), '');
         } catch (Exception $e) {
@@ -1178,7 +1194,7 @@ class ConcessionController extends Controller
         $documents = $mWfActiveDocument->getDocByRefIds($safId, $workflowId, $moduleId);
         $uploadedDocs = $docUpload->getDocUrl($documents);           #_Calling BLL for Document Path from DMS
 
-        $explodeDocs = $documentList;
+        $explodeDocs = collect($documentList);
 
         $filteredDocs = $explodeDocs->map(function ($explodeDoc) use ($uploadedDocs) {
             $document = explode(',', $explodeDoc);
@@ -1293,7 +1309,7 @@ class ConcessionController extends Controller
             $ifFullDocVerifiedV1 = $this->ifFullDocVerified($applicationId);
 
             if ($ifFullDocVerifiedV1 == 1) {                                     // If The Document Fully Verified Update Verify Status
-                $concessionDtl->doc_verify_status = 0;
+                $concessionDtl->doc_verify_status = 1;
                 $concessionDtl->save();
             }
 
