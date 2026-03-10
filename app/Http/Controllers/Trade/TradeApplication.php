@@ -505,6 +505,7 @@ class TradeApplication extends Controller
             $refImageName = $req->docCode;
             $refImageName = $getLicenceDtls->id . '-' . str_replace(' ', '_', $refImageName);
             $document = $req->document;
+            $req->merge(['ulb_id' => $getLicenceDtls->ulb_id, 'module_id' => $this->_MODULE_ID]);
             $uploads = (object)$docUpload->checkDoc($req);
             if(!$uploads->status)
             {
