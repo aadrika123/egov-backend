@@ -80,7 +80,7 @@ pipeline {
                         credentialsId: 'github-credentials'
 
                     script {
-                        def overlay = (env.BRANCH_NAME == 'main' || env.BRANCH_NAME == 'master') ? 'production' : 'staging'
+                        def overlay = 'staging'
 
                         dir("apps/${APP_NAME}/${overlay}") {
                             sh "kustomize edit set image ${IMAGE}=${IMAGE}:${env.IMAGE_TAG}"
