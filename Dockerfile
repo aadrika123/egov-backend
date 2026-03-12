@@ -1,5 +1,10 @@
 # ─── Stage 1: Composer dependencies ─────────────────────────────────────────
-FROM composer:2.7 AS vendor
+FROM php:8.1-cli AS vendor
+
+# Install composer
+COPY --from=composer:2.7 /usr/bin/composer /usr/bin/composer
+
+RUN apt-get update && apt-get install -y --no-install-recommends unzip git libzip-dev && docker-php-ext-install zip && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 COPY composer.json composer.lock ./
