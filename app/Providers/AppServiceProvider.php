@@ -13,7 +13,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        $this->app->register(\KitLoong\MigrationsGenerator\MigrationsGeneratorServiceProvider::class);
+        if (class_exists(\KitLoong\MigrationsGenerator\MigrationsGeneratorServiceProvider::class)) {
+            $this->app->register(\KitLoong\MigrationsGenerator\MigrationsGeneratorServiceProvider::class);
+        }
     }
 
     /**
