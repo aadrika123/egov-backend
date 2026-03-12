@@ -100,9 +100,10 @@ pipeline {
                                 git add .
                                 git commit -m "${DEPLOY_MSG}"
 
+                                git remote set-url origin "https://${GIT_USER}:${GIT_TOKEN}@github.com/${CONFIG_REPO}.git"
                                 for i in 1 2 3; do
                                     git pull --rebase origin main && \
-                                    git push https://${GIT_USER}:${GIT_TOKEN}@${PUSH_URL#https://} main && break
+                                    git push origin main && break
                                     echo "Push failed (attempt $i/3), retrying..."
                                     sleep 2
                                 done
