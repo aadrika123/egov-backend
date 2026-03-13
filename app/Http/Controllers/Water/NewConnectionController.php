@@ -1246,7 +1246,9 @@ class NewConnectionController extends Controller
                     $mWaterApplication->updateParkedstatus($status, $applicationId);
                 }
             }
-            #check full doc upload
+            $this->commit();
+            
+            #check full doc upload AFTER commit
             $refCheckDocument = $this->checkFullDocUpload($req);
 
             # Update the Doc Upload Satus in Application Table
@@ -1255,8 +1257,6 @@ class NewConnectionController extends Controller
             } else {
                 $this->updateWaterStatus($req, $getWaterDetails);
             }
-
-            $this->commit();
             
             // Get document URL
             $dmsUrl = Config::get('module-constants.DMS_URL');
