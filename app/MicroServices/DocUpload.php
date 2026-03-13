@@ -52,11 +52,43 @@ class DocUpload
                 "tags" => substr($filename, 0, 7),
             ];
             
-            if ($request->ulb_id && $request->module_id) {
-                $postData['ulb_id'] = (string) $request->ulb_id;
-                $postData['module_id'] = (string) $request->module_id;
-            } elseif ($request->ulb_id && !$request->module_id) {
-                $postData['ulb_id'] = (string) $request->ulb_id;
+            // Auto-extract ulb_id and module_id if not present in request
+            $ulbId = $request->ulb_id;
+            $moduleId = $request->module_id;
+            
+            // If not in request, try to get from authenticated user and other sources
+            if (!$ulbId || !$moduleId) {
+                try {
+                    $user = authUser($request);
+                    if (!$ulbId && isset($user->ulb_id)) {
+                        $ulbId = $user->ulb_id;
+                    }
+                    // Try multiple sources for module_id
+                    if (!$moduleId) {
+                        if ($request->moduleId) {
+                            $moduleId = $request->moduleId;
+                        } elseif ($request->has('applicationId')) {
+                            // Try to detect module from URL or context
+                            $path = $request->path();
+                            if (stripos($path, 'water') !== false) {
+                                $moduleId = Config::get('module-constants.WATER_MODULE_ID');
+                            } elseif (stripos($path, 'property') !== false || stripos($path, 'saf') !== false) {
+                                $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
+                            } elseif (stripos($path, 'trade') !== false) {
+                                $moduleId = Config::get('module-constants.TRADE_MODULE_ID');
+                            }
+                        }
+                    }
+                } catch (Exception $e) {
+                    // If authUser fails, continue without ulb_id/module_id
+                }
+            }
+            
+            if ($ulbId && $moduleId) {
+                $postData['ulb_id'] = (string) $ulbId;
+                $postData['module_id'] = (string) $moduleId;
+            } elseif ($ulbId && !$moduleId) {
+                $postData['ulb_id'] = (string) $ulbId;
             }
             
             $returnData = Http::withHeaders([

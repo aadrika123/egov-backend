@@ -1189,12 +1189,6 @@ class NewConnectionController extends Controller
             $refImageName = $req->docRefName;
             $refImageName = $getWaterDetails->id . '-' . str_replace(' ', '_', $refImageName);
             
-            // Add ulb_id and module_id to request
-            $req->merge([
-                'ulb_id' => $getWaterDetails->ulb_id,
-                'module_id' => $refmoduleId
-            ]);
-            
             // $imageName          = $docUpload->upload($refImageName, $document, $relativePath);
             $docDetail = $docUpload->checkDoc($req);
             // if ($docDetail->original['status'] == false)
@@ -1252,7 +1246,9 @@ class NewConnectionController extends Controller
                     $mWaterApplication->updateParkedstatus($status, $applicationId);
                 }
             }
-            #check full doc upload
+            $this->commit();
+            
+            #check full doc upload AFTER commit
             $refCheckDocument = $this->checkFullDocUpload($req);
 
             # Update the Doc Upload Satus in Application Table
@@ -1261,8 +1257,6 @@ class NewConnectionController extends Controller
             } else {
                 $this->updateWaterStatus($req, $getWaterDetails);
             }
-
-            $this->commit();
             
             // Get document URL
             $dmsUrl = Config::get('module-constants.DMS_URL');
@@ -1338,8 +1332,7 @@ class NewConnectionController extends Controller
         $refOwnerDoc = collect($documentList)['original']['data']['ownersDocList'];
         $checkDocument = collect($refDoc)->map(function ($value, $key) {
             if ($value['isMadatory'] == 1) {
-                $doc = collect($value['uploadDoc'])->first();
-                if (is_null($doc) || $value['uploadDoc']['verify_status'] == 2) {
+                if (empty($value['uploadDoc']) || !isset($value['uploadDoc']['doc_path'])) {
                     return false;
                 }
                 return true;
@@ -1348,8 +1341,7 @@ class NewConnectionController extends Controller
         });
         $checkOwnerDocument = collect($refOwnerDoc)->map(function ($value, $key) {
             if ($value['isMadatory'] == 1) {
-                $doc = collect($value['uploadDoc'])->first();
-                if (is_null($doc) || $value['uploadDoc']['verify_status'] == 2) {
+                if (empty($value['uploadDoc']) || !isset($value['uploadDoc']['doc_path'])) {
                     return false;
                 }
                 return true;
