@@ -81,6 +81,7 @@ pipeline {
 
                     script {
                         def overlay = 'staging'
+                        def gitopsBranch = (overlay == 'production') ? 'main' : 'staging'
 
                         dir("apps/${APP_NAME}/${overlay}") {
                             sh "kustomize edit set image ${IMAGE}=${IMAGE}:${env.IMAGE_TAG}"
@@ -102,8 +103,8 @@ pipeline {
 
                                 git remote set-url origin "https://${GIT_USER}:${GIT_TOKEN}@github.com/${CONFIG_REPO}.git"
                                 for i in 1 2 3; do
-                                    git pull --rebase origin main && \
-                                    git push origin main && break
+                                    git pull --rebase origin ${gitopsBranch} && \
+                                    git push origin ${gitopsBranch} && break
                                     echo "Push failed (attempt $i/3), retrying..."
                                     sleep 2
                                 done
